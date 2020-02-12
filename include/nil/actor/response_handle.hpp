@@ -1,0 +1,166 @@
+//---------------------------------------------------------------------------//
+// Copyright (c) 2011-2018 Dominik Charousset
+// Copyright (c) 2018-2019 Nil Foundation AG
+// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+//
+// Distributed under the terms and conditions of the BSD 3-Clause License or
+// (at your option) under the terms and conditions of the Boost Software
+// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt for Boost License or
+// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+//---------------------------------------------------------------------------//
+
+#pragma once
+
+#include <type_traits>
+
+#include <nil/actor/sec.hpp>
+#include <nil/actor/catch_all.hpp>
+#include <nil/actor/message_id.hpp>
+#include <nil/actor/typed_behavior.hpp>
+#include <nil/actor/system_messages.hpp>
+
+#include <nil/actor/detail/type_list.hpp>
+#include <nil/actor/detail/typed_actor_util.hpp>
+
+namespace nil {
+    namespace actor {
+
+        /// This helper class identifies an expected response message
+        /// and enables `request(...).then(...)`.
+        template<class Self, class Output, bool IsBlocking>
+        class response_handle;
+
+        /******************************************************************************
+         *                                 nonblocking                                *
+         ******************************************************************************/
+        template<class Self, class Output>
+        class response_handle<Self, Output, false> {
+        public:
+            response_handle() = delete;
+            response_handle(const response_handle &) = default;
+            response_handle &operator=(const response_handle &) = default;
+
+            response_handle(message_id mid, Self *self) : mid_(mid), self_(self) {
+                // nop
+            }
+
+            template<class F, class E = detail::is_callable_t<F>>
+            void await(F f) const {
+                await_impl(f);
+            }
+
+            template<class F,
+                     class OnError,
+                     class E1 = detail::is_callable_t<F>,
+                     class E2 = detail::is_handler_for_ef<OnError, error>>
+            void await(F f, OnError e) const {
+                await_impl(f, e);
+            }
+
+            template<class F, class E = detail::is_callable_t<F>>
+            void then(F f) const {
+                then_impl(f);
+            }
+
+            template<class F,
+                     class OnError,
+                     class E1 = detail::is_callable_t<F>,
+                     class E2 = detail::is_handler_for_ef<OnError, error>>
+            void then(F f, OnError e) const {
+                then_impl(f, e);
+            }
+
+            Self *self() {
+                return self_;
+            }
+
+        private:
+            template<class F>
+            void await_impl(F &f) const {
+                static_assert(std::is_same<void, typename detail::get_callable_trait<F>::result_type>::value,
+                              "response handlers are not allowed to have a return "
+                              "type other than void");
+                detail::type_checker<Output, F>::check();
+                self_->add_awaited_response_handler(mid_, message_handler {std::move(f)});
+            }
+
+            template<class F, class OnError>
+            void await_impl(F &f, OnError &ef) const {
+                static_assert(std::is_same<void, typename detail::get_callable_trait<F>::result_type>::value,
+                              "response handlers are not allowed to have a return "
+                              "type other than void");
+                detail::type_checker<Output, F>::check();
+                self_->add_awaited_response_handler(mid_, behavior {std::move(f), std::move(ef)});
+            }
+
+            template<class F>
+            void then_impl(F &f) const {
+                static_assert(std::is_same<void, typename detail::get_callable_trait<F>::result_type>::value,
+                              "response handlers are not allowed to have a return "
+                              "type other than void");
+                detail::type_checker<Output, F>::check();
+                self_->add_multiplexed_response_handler(mid_, behavior {std::move(f)});
+            }
+
+            template<class F, class OnError>
+            void then_impl(F &f, OnError &ef) const {
+                static_assert(std::is_same<void, typename detail::get_callable_trait<F>::result_type>::value,
+                              "response handlers are not allowed to have a return "
+                              "type other than void");
+                detail::type_checker<Output, F>::check();
+                self_->add_multiplexed_response_handler(mid_, behavior {std::move(f), std::move(ef)});
+            }
+
+            message_id mid_;
+            Self *self_;
+        };
+
+        /******************************************************************************
+         *                                  blocking                                  *
+         ******************************************************************************/
+        template<class Self, class Output>
+        class response_handle<Self, Output, true> {
+        public:
+            response_handle() = delete;
+            response_handle(const response_handle &) = default;
+            response_handle &operator=(const response_handle &) = default;
+
+            response_handle(message_id mid, Self *self) : mid_(mid), self_(self) {
+                // nop
+            }
+
+            using error_handler = std::function<void(error &)>;
+
+            template<class F, class OnError, class E = detail::is_handler_for_ef<OnError, error>>
+            detail::is_callable_t<F> receive(F f, OnError ef) {
+                static_assert(std::is_same<void, typename detail::get_callable_trait<F>::result_type>::value,
+                              "response handlers are not allowed to have a return "
+                              "type other than void");
+                detail::type_checker<Output, F>::check();
+                typename Self::accept_one_cond rc;
+                self_->varargs_receive(rc, mid_, std::move(f), std::move(ef));
+            }
+
+            template<class OnError, class F, class E = detail::is_callable_t<F>>
+            detail::is_handler_for_ef<OnError, error> receive(OnError ef, F f) {
+                receive(std::move(f), std::move(ef));
+            }
+
+            template<class OnError, class F, class E = detail::is_handler_for_ef<OnError, error>>
+            void receive(OnError ef, catch_all<F> ca) {
+                typename Self::accept_one_cond rc;
+                self_->varargs_receive(rc, mid_, std::move(ef), std::move(ca));
+            }
+
+            Self *self() {
+                return self_;
+            }
+
+        private:
+            message_id mid_;
+            Self *self_;
+        };
+
+    }    // namespace actor
+}    // namespace nil
