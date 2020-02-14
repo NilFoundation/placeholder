@@ -167,12 +167,12 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
 
 # configure build_config.hpp header
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/build_config.hpp.in"
-               "${CMAKE_BINARY_DIR}/include/nil/mtl/detail/build_config.hpp"
+               "${CMAKE_BINARY_DIR}/include/nil/actor/detail/build_config.hpp"
                @ONLY)
-install(FILES "${CMAKE_BINARY_DIR}/include/nil/mtl/detail/build_config.hpp"
-        DESTINATION include/nil/mtl/detail)
+install(FILES "${CMAKE_BINARY_DIR}/include/nil/actor/detail/build_config.hpp"
+        DESTINATION include/nil/actor/detail)
 list(APPEND LIBMTL_CORE_HDRS
-     "${CMAKE_BINARY_DIR}/include/nil/mtl/detail/build_config.hpp")
+     "${CMAKE_BINARY_DIR}/include/nil/actor/detail/build_config.hpp")
 
 add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} ${${CURRENT_PROJECT_NAME}_SOURCES}
             ${${CURRENT_PROJECT_NAME}_HEADERS} ${LIBMTL_CORE_HDRS})
