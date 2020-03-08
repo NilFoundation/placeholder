@@ -14,6 +14,7 @@
 #include <ostream>
 
 #include <nil/actor/detail/type_traits.hpp>
+#include <nil/actor/deep_to_string.hpp>
 #include <nil/actor/expected.hpp>
 #include <nil/actor/pec.hpp>
 

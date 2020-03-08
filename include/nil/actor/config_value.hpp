@@ -203,38 +203,52 @@ namespace nil {
 
         // -- SumType-like access ------------------------------------------------------
 
+        struct config_value_access_unspecialized {};
+
         /// @relates config_value
         template<class T>
-        struct config_value_access;
+        struct config_value_access : config_value_access_unspecialized {};
 
-        /// Delegates to config_value_access for all specialized versions.
-        template<class T, bool IsIntegral = std::is_integral<T>::value>
-        struct select_config_value_access {
-            using type = config_value_access<T>;
+#define ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(type) \
+    template<>                                  \
+    struct config_value_access<type> : default_config_value_access<type> {}
+
+        ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(bool);
+        ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(double);
+        ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(atom_value);
+        ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(timespan);
+        ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(std::string);
+        ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(config_value::list);
+        ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(config_value::dictionary);
+
+#undef ACTOR_DEFAULT_CONFIG_VALUE_ACCESS
+
+        enum class select_config_value_hint {
+            is_custom,
+            is_integral,
+            is_list,
+            is_map,
+            is_missing,
         };
 
-        /// Catches all non-specialized integer types.
         template<class T>
-        struct select_config_value_access<T, true> {
-            struct type {
-                static bool is(const config_value &x) {
-                    auto ptr = nil::actor::get_if<typename config_value::integer>(x.get_data_ptr());
-                    return ptr != nullptr && detail::bounds_checker<T>::check(*ptr);
-                }
+        constexpr select_config_value_hint select_config_value_oracle() {
+            return !std::is_base_of<config_value_access_unspecialized, config_value_access<T>>::value ?
+                       select_config_value_hint::is_custom :
+                       (std::is_integral<T>::value ?
+                            select_config_value_hint::is_integral :
+                            (detail::is_map_like<T>::value ?
+                                 select_config_value_hint::is_map :
+                                 (detail::is_list_like<T>::value ? select_config_value_hint::is_list :
+                                                                   select_config_value_hint::is_missing)));
+        }
 
-                static optional<T> get_if(const config_value *x) {
-                    auto ptr = nil::actor::get_if<typename config_value::integer>(x->get_data_ptr());
-                    if (ptr != nullptr && detail::bounds_checker<T>::check(*ptr))
-                        return static_cast<T>(*ptr);
-                    return none;
-                }
-
-                static T get(const config_value &x) {
-                    auto res = get_if(&x);
-                    ACTOR_ASSERT(res != none);
-                    return *res;
-                }
-            };
+        /// Delegates to config_value_access for all specialized versions.
+        template<class T, select_config_value_hint Hint = select_config_value_oracle<T>()>
+        struct select_config_value_access {
+            static_assert(Hint == select_config_value_hint::is_custom,
+                          "no default or specialization for config_value_access found");
+            using type = config_value_access<T>;
         };
 
         template<class T>
@@ -309,10 +323,145 @@ namespace nil {
             }
         };
 
+        // -- SumType-like access ------------------------------------------------------
+
+        template<class T>
+        struct default_config_value_access {
+            static bool is(const config_value &x) {
+                return holds_alternative<T>(x.get_data());
+            }
+
+            static const T *get_if(const config_value *x) {
+                return nil::actor::get_if<T>(&(x->get_data()));
+            }
+
+            static T get(const config_value &x) {
+                return nil::actor::get<T>(x.get_data());
+            }
+
+            static T convert(T x) {
+                return x;
+            }
+
+            static void parse_cli(string_parser_state &ps, T &x) {
+                detail::parse(ps, x);
+            }
+        };
+
+        /// Catches all non-specialized integer types.
+        template<class T>
+        struct select_config_value_access<T, select_config_value_hint::is_integral> {
+            struct type {
+                static bool is(const config_value &x) {
+                    auto ptr = nil::actor::get_if<typename config_value::integer>(x.get_data_ptr());
+                    return ptr != nullptr && detail::bounds_checker<T>::check(*ptr);
+                }
+
+                static optional<T> get_if(const config_value *x) {
+                    auto ptr = nil::actor::get_if<typename config_value::integer>(x->get_data_ptr());
+                    if (ptr != nullptr && detail::bounds_checker<T>::check(*ptr))
+                        return static_cast<T>(*ptr);
+                    return none;
+                }
+
+                static T get(const config_value &x) {
+                    auto res = get_if(&x);
+                    ACTOR_ASSERT(res != none);
+                    return *res;
+                }
+            };
+        };
+
+        /// Catches all non-specialized list types.
+        template<class T>
+        struct select_config_value_access<T, select_config_value_hint::is_list> {
+            struct type {
+                using list_type = T;
+
+                using value_type = typename list_type::value_type;
+
+                static bool is(const config_value &x) {
+                    auto lst = nil::actor::get_if<config_value::list>(&x);
+                    if (lst != nullptr) {
+                        return std::all_of(lst->begin(), lst->end(), [](const config_value &y) {
+                            return nil::actor::holds_alternative<value_type>(y);
+                        });
+                    }
+                    return false;
+                }
+
+                static optional<list_type> get_if(const config_value *x) {
+                    list_type result;
+                    auto out = std::inserter(result, result.end());
+                    auto extract = [&](const config_value &y) {
+                        auto opt = nil::actor::get_if<value_type>(&y);
+                        if (opt) {
+                            *out++ = move_if_optional(opt);
+                            return true;
+                        }
+                        return false;
+                    };
+                    auto lst = nil::actor::get_if<config_value::list>(x);
+                    if (lst != nullptr && std::all_of(lst->begin(), lst->end(), extract))
+                        return result;
+                    return none;
+                }
+
+                static list_type get(const config_value &x) {
+                    auto result = get_if(&x);
+                    if (!result)
+                        ACTOR_RAISE_ERROR("invalid type found");
+                    return std::move(*result);
+                }
+            };
+        };
+
+        /// Catches all non-specialized list types.
+        template<class T>
+        struct select_config_value_access<T, select_config_value_hint::is_map> {
+            struct type {
+                using map_type = T;
+
+                using mapped_type = typename map_type::mapped_type;
+
+                static bool is(const config_value &x) {
+                    using value_type = config_value::dictionary::value_type;
+                    auto dict = nil::actor::get_if<config_value::dictionary>(&x);
+                    if (dict != nullptr) {
+                        return std::all_of(dict->begin(), dict->end(), [](const value_type &y) {
+                            return nil::actor::holds_alternative<mapped_type>(y.second);
+                        });
+                    }
+                    return false;
+                }
+
+                static optional<map_type> get_if(const config_value *x) {
+                    using value_type = config_value::dictionary::value_type;
+                    map_type result;
+                    auto extract = [&](const value_type &y) {
+                        if (auto opt = nil::actor::get_if<mapped_type>(&y.second)) {
+                            result.emplace(y.first, *opt);
+                            return true;
+                        }
+                        return false;
+                    };
+                    auto dict = nil::actor::get_if<config_value::dictionary>(x);
+                    if (dict != nullptr && std::all_of(dict->begin(), dict->end(), extract))
+                        return result;
+                    return none;
+                }
+
+                static map_type get(const config_value &x) {
+                    auto result = get_if(&x);
+                    if (!result)
+                        ACTOR_RAISE_ERROR("invalid type found");
+                    return std::move(*result);
+                }
+            };
+        };
+
         template<>
         struct config_value_access<float> {
-            static constexpr bool specialized = true;
-
             static bool is(const config_value &x) {
                 return holds_alternative<double>(x.get_data());
             }
@@ -329,56 +478,12 @@ namespace nil {
             }
         };
 
-        /// Implements automagic unboxing of `std::vector<T>` from a homogeneous
-        /// `config_value::list`.
-        /// @relates config_value
-        template<class T>
-        struct config_value_access<std::vector<T>> {
-            using vector_type = std::vector<T>;
-
-            static constexpr bool specialized = true;
-
-            static bool is(const config_value &x) {
-                auto lst = nil::actor::get_if<config_value::list>(&x);
-                if (lst != nullptr) {
-                    return std::all_of(lst->begin(), lst->end(),
-                                       [](const config_value &y) { return nil::actor::holds_alternative<T>(y); });
-                }
-                return false;
-            }
-
-            static optional<vector_type> get_if(const config_value *x) {
-                vector_type result;
-                auto extract = [&](const config_value &y) {
-                    auto opt = nil::actor::get_if<T>(&y);
-                    if (opt) {
-                        result.emplace_back(*opt);
-                        return true;
-                    }
-                    return false;
-                };
-                auto lst = nil::actor::get_if<config_value::list>(x);
-                if (lst != nullptr && std::all_of(lst->begin(), lst->end(), extract))
-                    return result;
-                return none;
-            }
-
-            static vector_type get(const config_value &x) {
-                auto result = get_if(&x);
-                if (!result)
-                    ACTOR_RAISE_ERROR("invalid type found");
-                return std::move(*result);
-            }
-        };
-
         /// Implements automagic unboxing of `std::tuple<Ts...>` from a heterogeneous
         ///`config_value::list`.
         /// @relates config_value
         template<class... Ts>
         struct config_value_access<std::tuple<Ts...>> {
             using tuple_type = std::tuple<Ts...>;
-
-            static constexpr bool specialized = true;
 
             static bool is(const config_value &x) {
                 if (auto lst = nil::actor::get_if<config_value::list>(&x)) {
@@ -446,8 +551,6 @@ namespace nil {
 
             using kvp = std::pair<const std::string, config_value>;
 
-            static constexpr bool specialized = true;
-
             static bool is(const config_value &x) {
                 auto lst = nil::actor::get_if<config_value::dictionary>(&x);
                 if (lst != nullptr) {
@@ -504,6 +607,12 @@ namespace nil {
 
         /// @relates config_value
         std::ostream &operator<<(std::ostream &out, const config_value &x);
+
+        template<class... Ts>
+        config_value make_config_value_list(Ts &&... xs) {
+            std::vector<config_value> lst {config_value {std::forward<Ts>(xs)}...};
+            return config_value {std::move(lst)};
+        }
 
         /// @relates config_value
         template<class Inspector>

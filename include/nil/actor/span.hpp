@@ -203,6 +203,13 @@ namespace nil {
             return {reinterpret_cast<byte *>(xs.data()), xs.size_bytes()};
         }
 
+        /// Convenience function to make using `nil::actor::span` more convenient without the
+        /// deduction guides.
+        template<class T, size_t N>
+        span<T> make_span(T (&xs)[N]) {
+            return {xs, N};
+        }
+
         /// Convenience function to make using `actor::span` more convenient without the
         /// deduction guides.
         template<class T>
