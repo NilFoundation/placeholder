@@ -218,7 +218,7 @@ namespace nil {
                              string_view fn, std::string msg, std::thread::id t, actor_id a, timestamp ts) :
             level(lvl),
             line_number(line), category_name(cat), pretty_fun(full_fun), simple_fun(fun), file_name(fn),
-            message(std::move(msg)), tid(std::move(t)), aid(a), tstamp(ts) {
+            message(std::move(msg)), tid(t), aid(a), tstamp(ts) {
             // nop
         }
 
@@ -254,7 +254,7 @@ namespace nil {
         }
 
         std::string logger::line_builder::get() const {
-            return std::move(str_);
+            return str_;
         }
 
         // returns the actor ID for the current thread
