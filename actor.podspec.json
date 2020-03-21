@@ -30,6 +30,9 @@
           "subspecs": [
             {
               "name": "actor",
+              "source_files": [
+                "include/nil/actor/*.{hpp}"
+              ],
               "subspecs": [
                 {
                   "name": "detail",
