@@ -33,6 +33,10 @@ if(NOT Boost_FOUND)
     cm_find_package(Boost COMPONENTS chrono program_options random system thread)
 endif()
 
+if(NOT ACTOR_LOG_LEVEL)
+    set(ACTOR_LOG_LEVEL "-1")
+endif()
+
 # get header files; only needed by CMake generators,
 # e.g., for creating proper Xcode projects
 file(GLOB_RECURSE ${CURRENT_PROJECT_NAME}_HEADERS "include/nil/actor/**.hpp")
@@ -40,7 +44,7 @@ file(GLOB_RECURSE ${CURRENT_PROJECT_NAME}_HEADERS "include/nil/actor/**.hpp")
 # list cpp files excluding platform-dependent files
 set(${CURRENT_PROJECT_NAME}_SOURCES
     src/decorator/sequencer.cpp
-#    src/decorator/splitter.cpp
+    #    src/decorator/splitter.cpp
 
     src/detail/parser/chars.cpp
     src/detail/abstract_worker.cpp
@@ -49,15 +53,15 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/detail/behavior_impl.cpp
     src/detail/behavior_stack.cpp
     src/detail/blocking_behavior.cpp
-#    src/detail/concatenated_tuple.cpp
-#    src/detail/decorated_tuple.cpp
+    #    src/detail/concatenated_tuple.cpp
+    #    src/detail/decorated_tuple.cpp
     src/detail/dynamic_message_data.cpp
     src/detail/fnv_hash.cpp
     src/detail/get_mac_addresses.cpp
     src/detail/get_process_id.cpp
     src/detail/get_root_uuid.cpp
     src/detail/invoke_result_visitor.cpp
-#    src/detail/merged_tuple.cpp
+    #    src/detail/merged_tuple.cpp
     src/detail/message_data.cpp
     src/detail/parse.cpp
     src/detail/pretty_type_name.cpp
