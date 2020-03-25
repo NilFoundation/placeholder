@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2019 Dominik Charousset
-// Copyright (c) 2018-2020 Nil Foundation AG
 // Copyright (c) 2018-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
