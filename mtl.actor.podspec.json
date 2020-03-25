@@ -1,5 +1,5 @@
 {
-  "name": "Mtl.Actor",
+  "name": "mtl.actor",
   "version": "0.1.0",
   "summary": "=nil; Actor C++ Actor Model Implementation",
   "description": "=nil; Mtl.Actor provides C++17 actor model implementation",
