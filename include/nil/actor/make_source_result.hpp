@@ -1,29 +1,31 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+#include <tuple>
+
+#include <nil/actor/delegated.hpp>
+#include <nil/actor/detail/implicit_conversions.hpp>
 #include <nil/actor/fwd.hpp>
+#include <nil/actor/stream.hpp>
 #include <nil/actor/stream_slot.hpp>
 #include <nil/actor/stream_source.hpp>
-
-#include <nil/actor/detail/implicit_conversions.hpp>
 
 namespace nil {
     namespace actor {
 
         /// Returns a stream source with the slot ID of its first outbound path.
         template<class DownstreamManager, class... Ts>
-        struct make_source_result {
+        class make_source_result : public delegated<stream<typename DownstreamManager::output_type>, Ts...> {
+        public:
             // -- member types -----------------------------------------------------------
 
             /// Type of a single element.
@@ -35,8 +37,11 @@ namespace nil {
             /// Pointer to a fully typed stream manager.
             using source_ptr_type = intrusive_ptr<source_type>;
 
-            /// The return type for `scheduled_actor::make_source`.
-            using output_stream_type = output_stream<output_type, Ts...>;
+            /// The return type for `scheduled_actor::make_stage`.
+            using stream_type = stream<output_type>;
+
+            /// Type of user-defined handshake arguments.
+            using handshake_arguments = std::tuple<Ts...>;
 
             // -- constructors, destructors, and assignment operators --------------------
 
@@ -53,23 +58,17 @@ namespace nil {
             make_source_result &operator=(make_source_result &&) = default;
             make_source_result &operator=(const make_source_result &) = default;
 
-            // -- conversion operators ---------------------------------------------------
-
-            inline operator output_stream_type() const noexcept {
-                return {};
-            }
-
             // -- properties -------------------------------------------------------------
 
-            inline stream_slot outbound_slot() const noexcept {
+            stream_slot outbound_slot() const noexcept {
                 return slot_;
             }
 
-            inline source_ptr_type &ptr() noexcept {
+            source_ptr_type &ptr() noexcept {
                 return ptr_;
             }
 
-            inline const source_ptr_type &ptr() const noexcept {
+            const source_ptr_type &ptr() const noexcept {
                 return ptr_;
             }
 

@@ -1,29 +1,27 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+#include <functional>
 #include <string>
 #include <utility>
-#include <functional>
 
+#include <nil/actor/abstract_group.hpp>
+#include <nil/actor/detail/comparable.hpp>
+
+#include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/fwd.hpp>
-#include <nil/actor/none.hpp>
 #include <nil/actor/group_module.hpp>
 #include <nil/actor/intrusive_ptr.hpp>
-#include <nil/actor/abstract_group.hpp>
-
-#include <nil/actor/detail/comparable.hpp>
-#include <nil/actor/detail/type_traits.hpp>
+#include <nil/actor/none.hpp>
 
 namespace nil {
     namespace actor {
@@ -36,7 +34,7 @@ namespace nil {
         /// @relates group
         constexpr invalid_group_t invalid_group = invalid_group_t {};
 
-        class group : detail::comparable<group>, detail::comparable<group, invalid_group_t> {
+        class BOOST_SYMBOL_VISIBLE group : detail::comparable<group>, detail::comparable<group, invalid_group_t> {
         public:
             using signatures = none_t;
 
@@ -74,13 +72,13 @@ namespace nil {
                 return ptr_ ? 1 : 0;
             }
 
-            friend error_code<sec> inspect(binary_serializer &, group &);
+            friend BOOST_SYMBOL_VISIBLE error inspect(serializer &, group &);
 
-            friend error inspect(deserializer &, group &);
+            friend BOOST_SYMBOL_VISIBLE error_code<sec> inspect(binary_serializer &, group &);
 
-            friend error_code<sec> inspect(binary_deserializer &, group &);
+            friend BOOST_SYMBOL_VISIBLE error inspect(deserializer &, group &);
 
-            friend error inspect(serializer &, group &);
+            friend BOOST_SYMBOL_VISIBLE error_code<sec> inspect(binary_deserializer &, group &);
 
             abstract_group *get() const noexcept {
                 return ptr_.get();
@@ -118,7 +116,7 @@ namespace nil {
 
         private:
             abstract_group *release() noexcept {
-                return ptr_.detach();
+                return ptr_.release();
             }
 
             group(abstract_group *, bool);
@@ -127,7 +125,7 @@ namespace nil {
         };
 
         /// @relates group
-        std::string to_string(const group &x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(const group &x);
 
     }    // namespace actor
 }    // namespace nil

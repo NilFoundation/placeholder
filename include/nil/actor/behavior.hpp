@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,14 +13,13 @@
 #include <functional>
 #include <type_traits>
 
-#include <nil/actor/none.hpp>
-
-#include <nil/actor/duration.hpp>
-#include <nil/actor/timeout_definition.hpp>
+#include <nil/actor/detail/behavior_impl.hpp>
 
 #include <nil/actor/detail/type_list.hpp>
 #include <nil/actor/detail/type_traits.hpp>
-#include <nil/actor/detail/behavior_impl.hpp>
+#include <nil/actor/none.hpp>
+#include <nil/actor/timeout_definition.hpp>
+#include <nil/actor/timespan.hpp>
 
 namespace nil {
     namespace actor {
@@ -31,7 +28,7 @@ namespace nil {
 
         /// Describes the behavior of an actor, i.e., provides a message
         /// handler and an optional timeout.
-        class behavior {
+        class BOOST_SYMBOL_VISIBLE behavior {
         public:
             friend class message_handler;
 
@@ -64,7 +61,7 @@ namespace nil {
                 impl_ = detail::make_behavior(std::forward<Ts>(xs)...);
             }
 
-            inline void swap(behavior &other) {
+            void swap(behavior &other) {
                 impl_.swap(other.impl_);
             }
 
@@ -79,37 +76,28 @@ namespace nil {
             void assign(behavior other);
 
             /// Invokes the timeout callback if set.
-            inline void handle_timeout() {
+            void handle_timeout() {
                 impl_->handle_timeout();
             }
 
-            /// Returns the duration after which receive operations
+            /// Returns the timespan after which receive operations
             /// using this behavior should time out.
-            inline const duration &timeout() const {
+            timespan timeout() const noexcept {
                 return impl_->timeout();
             }
 
             /// Runs this handler and returns its (optional) result.
-            inline optional<message> operator()(message &xs) {
-                return impl_ ? impl_->invoke(xs) : none;
-            }
-
-            inline optional<message> operator()(type_erased_tuple &xs) {
+            optional<message> operator()(message &xs) {
                 return impl_ ? impl_->invoke(xs) : none;
             }
 
             /// Runs this handler with callback.
-            inline match_case::result operator()(detail::invoke_result_visitor &f, type_erased_tuple &xs) {
-                return impl_ ? impl_->invoke(f, xs) : match_case::no_match;
-            }
-
-            /// Runs this handler with callback.
-            inline match_case::result operator()(detail::invoke_result_visitor &f, message &xs) {
-                return impl_ ? impl_->invoke(f, xs) : match_case::no_match;
+            match_result operator()(detail::invoke_result_visitor &f, message &xs) {
+                return impl_ ? impl_->invoke(f, xs) : match_result::no_match;
             }
 
             /// Checks whether this behavior is not empty.
-            inline operator bool() const {
+            operator bool() const {
                 return static_cast<bool>(impl_);
             }
 
@@ -117,15 +105,15 @@ namespace nil {
 
             using impl_ptr = intrusive_ptr<detail::behavior_impl>;
 
-            inline const impl_ptr &as_behavior_impl() const {
+            const impl_ptr &as_behavior_impl() const {
                 return impl_;
             }
 
-            inline behavior(impl_ptr ptr) : impl_(std::move(ptr)) {
+            behavior(impl_ptr ptr) : impl_(std::move(ptr)) {
                 // nop
             }
 
-            inline behavior &unbox() {
+            behavior &unbox() {
                 return *this;
             }
 

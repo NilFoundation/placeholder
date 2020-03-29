@@ -1,136 +1,109 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
-
-#include <utility>
 
 #include <nil/actor/detail/behavior_impl.hpp>
 
+#include <utility>
+
 #include <nil/actor/message_handler.hpp>
-#include <nil/actor/make_type_erased_tuple_view.hpp>
 
-namespace nil {
-    namespace actor {
-        namespace detail {
+namespace nil::actor::detail {
 
-            namespace {
+    namespace {
 
-                class combinator final : public behavior_impl {
-                public:
-                    match_case::result invoke(detail::invoke_result_visitor &f, type_erased_tuple &xs) override {
-                        auto x = first->invoke(f, xs);
-                        return x == match_case::no_match ? second->invoke(f, xs) : x;
-                    }
+        class combinator final : public behavior_impl {
+        public:
+            match_result invoke(detail::invoke_result_visitor &f, message &xs) override {
+                auto x = first->invoke(f, xs);
+                return x == match_result::no_match ? second->invoke(f, xs) : x;
+            }
 
-                    void handle_timeout() override {
-                        // the second behavior overrides the timeout handling of
-                        // first behavior
-                        return second->handle_timeout();
-                    }
+            void handle_timeout() override {
+                // the second behavior overrides the timeout handling of
+                // first behavior
+                return second->handle_timeout();
+            }
 
-                    combinator(pointer p0, const pointer &p1) :
-                        behavior_impl(p1->timeout()), first(std::move(p0)), second(p1) {
-                        // nop
-                    }
-
-                private:
-                    pointer first;
-                    pointer second;
-                };
-
-                class maybe_message_visitor : public detail::invoke_result_visitor {
-                public:
-                    optional<message> value;
-
-                    void operator()() override {
-                        value = message {};
-                    }
-
-                    void operator()(error &x) override {
-                        value = make_message(std::move(x));
-                    }
-
-                    void operator()(message &x) override {
-                        value = std::move(x);
-                    }
-
-                    void operator()(const none_t &) override {
-                        (*this)();
-                    }
-                };
-
-            }    // namespace
-
-            behavior_impl::~behavior_impl() {
+            combinator(pointer p0, const pointer &p1) : behavior_impl(p1->timeout()), first(std::move(p0)), second(p1) {
                 // nop
             }
 
-            behavior_impl::behavior_impl(duration tout) : timeout_(tout), begin_(nullptr), end_(nullptr) {
-                // nop
+        private:
+            pointer first;
+            pointer second;
+        };
+
+        class maybe_message_visitor : public detail::invoke_result_visitor {
+        public:
+            optional<message> value;
+
+            void operator()() override {
+                value = message {};
             }
 
-            match_case::result behavior_impl::invoke_empty(detail::invoke_result_visitor &f) {
-                auto xs = make_type_erased_tuple_view();
-                return invoke(f, xs);
+            void operator()(error &x) override {
+                value = make_message(std::move(x));
             }
 
-            match_case::result behavior_impl::invoke(detail::invoke_result_visitor &f, type_erased_tuple &xs) {
-                auto msg_token = xs.type_token();
-                for (auto i = begin_; i != end_; ++i)
-                    if (i->type_token == msg_token)
-                        switch (i->ptr->invoke(f, xs)) {
-                            case match_case::no_match:
-                                break;
-                            case match_case::match:
-                                return match_case::match;
-                            case match_case::skip:
-                                return match_case::skip;
-                        };
-                return match_case::no_match;
+            void operator()(message &x) override {
+                value = std::move(x);
             }
 
-            optional<message> behavior_impl::invoke(message &xs) {
-                maybe_message_visitor f;
-                // the following const-cast is safe, because invoke() is aware of
-                // copy-on-write and does not modify x if it's shared
-                if (!xs.empty())
-                    invoke(f, *const_cast<message_data *>(xs.cvals().get()));
-                else
-                    invoke_empty(f);
-                return std::move(f.value);
+            void operator()(const none_t &) override {
+                (*this)();
             }
+        };
 
-            optional<message> behavior_impl::invoke(type_erased_tuple &xs) {
-                maybe_message_visitor f;
-                invoke(f, xs);
-                return std::move(f.value);
-            }
+    }    // namespace
 
-            match_case::result behavior_impl::invoke(detail::invoke_result_visitor &f, message &xs) {
-                // the following const-cast is safe, because invoke() is aware of
-                // copy-on-write and does not modify x if it's shared
-                if (!xs.empty())
-                    return invoke(f, *const_cast<message_data *>(xs.cvals().get()));
-                return invoke_empty(f);
-            }
+    behavior_impl::~behavior_impl() {
+        // nop
+    }
 
-            void behavior_impl::handle_timeout() {
-                // nop
-            }
+    behavior_impl::behavior_impl() : timeout_(infinite) {
+        // nop
+    }
 
-            behavior_impl::pointer behavior_impl::or_else(const pointer &other) {
-                ACTOR_ASSERT(other != nullptr);
-                return make_counted<combinator>(this, other);
-            }
+    behavior_impl::behavior_impl(timespan tout) : timeout_(tout) {
+        // nop
+    }
 
-        }    // namespace detail
-    }        // namespace actor
-}    // namespace nil
+    match_result behavior_impl::invoke_empty(detail::invoke_result_visitor &f) {
+        message xs;
+        return invoke(f, xs);
+    }
+
+    optional<message> behavior_impl::invoke(message &xs) {
+        maybe_message_visitor f;
+        // the following const-cast is safe, because invoke() is aware of
+        // copy-on-write and does not modify x if it's shared
+        if (!xs.empty())
+            invoke(f, xs);
+        else
+            invoke_empty(f);
+        return std::move(f.value);
+    }
+
+    match_result behavior_impl::invoke(detail::invoke_result_visitor &f, message &xs) {
+        if (!xs.empty())
+            return invoke(f, xs);
+        return invoke_empty(f);
+    }
+
+    void behavior_impl::handle_timeout() {
+        // nop
+    }
+
+    behavior_impl::pointer behavior_impl::or_else(const pointer &other) {
+        ACTOR_ASSERT(other != nullptr);
+        return make_counted<combinator>(this, other);
+    }
+
+}    // namespace nil::actor::detail

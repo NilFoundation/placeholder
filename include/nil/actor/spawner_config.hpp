@@ -1,44 +1,45 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <atomic>
-#include <string>
-#include <memory>
-#include <typeindex>
 #include <functional>
+#include <memory>
+#include <string>
 #include <type_traits>
+#include <typeindex>
 #include <unordered_map>
 
-#include <nil/actor/defaults.hpp>
 #include <nil/actor/actor_factory.hpp>
+#include <nil/actor/actor_profiler.hpp>
+#include <nil/actor/config_option.hpp>
+#include <nil/actor/config_option_adder.hpp>
+#include <nil/actor/config_option_set.hpp>
 #include <nil/actor/config_value.hpp>
+
+#include <nil/actor/detail/safe_equal.hpp>
+#include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/dictionary.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/is_typed_actor.hpp>
 #include <nil/actor/named_actor_config.hpp>
+#include <nil/actor/settings.hpp>
 #include <nil/actor/stream.hpp>
 #include <nil/actor/thread_hook.hpp>
-#include <nil/actor/type_erased_value.hpp>
-
-#include <nil/actor/detail/safe_equal.hpp>
-#include <nil/actor/detail/type_traits.hpp>
 
 namespace nil {
     namespace actor {
 
         /// Configures an `spawner` on startup.
-        class spawner_config {
+        class BOOST_SYMBOL_VISIBLE spawner_config {
         public:
             // -- member types -----------------------------------------------------------
 
@@ -48,33 +49,36 @@ namespace nil {
 
             using thread_hooks = std::vector<std::unique_ptr<thread_hook>>;
 
+            template<class K, class V>
+            using hash_map = std::unordered_map<K, V>;
+
             using module_factory = std::function<spawner::module *(spawner &)>;
 
             using module_factory_vector = std::vector<module_factory>;
 
-            using value_factory = std::function<type_erased_value_ptr()>;
+            using actor_factory_map = hash_map<std::string, actor_factory>;
 
-            using value_factory_string_map = std::unordered_map<std::string, value_factory>;
+            using portable_name_map = hash_map<std::type_index, std::string>;
 
-            using value_factory_rtti_map = std::unordered_map<std::type_index, value_factory>;
+            using error_renderer = std::function<std::string(uint8_t, const message &)>;
 
-            using actor_factory_map = std::unordered_map<std::string, actor_factory>;
-
-            using portable_name_map = std::unordered_map<std::type_index, std::string>;
-
-            using error_renderer = std::function<std::string(uint8_t, atom_value, const message &)>;
-
-            using error_renderer_map = std::unordered_map<atom_value, error_renderer>;
+            using error_renderer_map = hash_map<uint8_t, error_renderer>;
 
             using group_module_factory = std::function<group_module *()>;
 
             using group_module_factory_vector = std::vector<group_module_factory>;
 
+            using config_map = dictionary<config_value::dictionary>;
+
             using string_list = std::vector<std::string>;
 
-            using named_actor_config_map = std::unordered_map<std::string, named_actor_config>;
+            using named_actor_config_map = hash_map<std::string, named_actor_config>;
+
+            using opt_group = config_option_adder;
 
             // -- constructors, destructors, and assignment operators --------------------
+
+            virtual ~spawner_config();
 
             spawner_config();
 
@@ -88,7 +92,35 @@ namespace nil {
             /// @private
             settings content;
 
+            /// Extracts all parameters from the config, including entries with default
+            /// values.
+            virtual settings dump_content() const;
+
+            /// Sets a config by using its INI name `config_name` to `config_value`.
+            template<class T>
+            spawner_config &set(string_view name, T &&value) {
+                return set_impl(name, config_value {std::forward<T>(value)});
+            }
+
             // -- modifiers --------------------------------------------------------------
+
+            /// Parses `args` as tuple of strings containing CLI options and `ini_stream`
+            /// as INI formatted input stream.
+            error parse(string_list args, std::istream &ini);
+
+            /// Parses `args` as tuple of strings containing CLI options and tries to
+            /// open `ini_file_cstr` as INI formatted config file. The parsers tries to
+            /// open `caf-application.ini` if `ini_file_cstr` is `nullptr`.
+            error parse(string_list args, const char *ini_file_cstr = nullptr);
+
+            /// Parses the CLI options `{argc, argv}` and `ini_stream` as INI formatted
+            /// input stream.
+            error parse(int argc, char **argv, std::istream &ini);
+
+            /// Parses the CLI options `{argc, argv}` and tries to open `ini_file_cstr`
+            /// as INI formatted config file. The parsers tries to open
+            /// `caf-application.ini` if `ini_file_cstr` is `nullptr`.
+            error parse(int argc, char **argv, const char *ini_file_cstr = nullptr);
 
             /// Allows other nodes to spawn actors created by `fun`
             /// dynamically by using `name` as identifier.
@@ -101,8 +133,7 @@ namespace nil {
             template<class T, class... Ts>
             spawner_config &add_actor_type(std::string name) {
                 using handle = typename infer_handle_from_class<T>::type;
-                if (!std::is_same<handle, actor>::value)
-                    add_message_type<handle>(name);
+                static_assert(detail::is_complete<type_id<handle>>);
                 return add_actor_factory(std::move(name), make_actor_factory<T, Ts...>());
             }
 
@@ -112,41 +143,20 @@ namespace nil {
             template<class F>
             spawner_config &add_actor_type(std::string name, F f) {
                 using handle = typename infer_handle_from_fun<F>::type;
-                if (!std::is_same<handle, actor>::value)
-                    add_message_type<handle>(name);
+                static_assert(detail::is_complete<type_id<handle>>);
                 return add_actor_factory(std::move(name), make_actor_factory(std::move(f)));
-            }
-
-            /// Adds message type `T` with runtime type info `name`.
-            template<class T>
-            spawner_config &add_message_type(std::string name) {
-                static_assert(std::is_empty<T>::value || std::is_same<T, actor>::value    // silence add_actor_type err
-                                  || is_typed_actor<T>::value ||
-                                  (std::is_default_constructible<T>::value && std::is_copy_constructible<T>::value),
-                              "T must provide default and copy constructors");
-                std::string stream_name = "stream<";
-                stream_name += name;
-                stream_name += ">";
-                add_message_type_impl<stream<T>>(std::move(stream_name));
-                std::string vec_name = "std::vector<";
-                vec_name += name;
-                vec_name += ">";
-                add_message_type_impl<std::vector<T>>(std::move(vec_name));
-                add_message_type_impl<T>(std::move(name));
-                return *this;
             }
 
             /// Enables the actor system to convert errors of this error category
             /// to human-readable strings via `renderer`.
-            spawner_config &add_error_category(atom_value x, error_renderer y);
+            spawner_config &add_error_category(uint8_t category, error_renderer f);
 
             /// Enables the actor system to convert errors of this error category
             /// to human-readable strings via `to_string(T)`.
             template<class T>
-            spawner_config &add_error_category(atom_value category) {
+            spawner_config &add_error_category(uint8_t category, string_view category_name) {
                 auto f = [=](uint8_t val, const std::string &ctx) -> std::string {
-                    std::string result;
-                    result = to_string(category);
+                    std::string result {category_name.begin(), category_name.end()};
                     result += ": ";
                     result += to_string(static_cast<T>(val));
                     if (!ctx.empty()) {
@@ -156,7 +166,7 @@ namespace nil {
                     }
                     return result;
                 };
-                return add_error_category(category, f);
+                return add_error_category(category, error_renderer {f});
             }
 
             /// Loads module `T` with optional template parameters `Ts...`.
@@ -189,7 +199,17 @@ namespace nil {
                 return *this;
             }
 
-            // -- actor-run parameters -----------------------------------------------------
+            // -- parser and CLI state ---------------------------------------------------
+
+            /// Stores whether the help text was printed. If set to `true`, the
+            /// application should not use this config to initialize an `spawner`
+            /// and instead return from `main` immediately.
+            bool cli_helptext_printed;
+
+            /// Stores CLI arguments that were not consumed by CAF.
+            string_list remainder;
+
+            // -- caf-run parameters -----------------------------------------------------
 
             /// Stores whether this node was started in slave mode.
             bool slave_mode;
@@ -202,139 +222,28 @@ namespace nil {
 
             // -- stream parameters ------------------------------------------------------
 
-            /// processing time per batch
-            timespan stream_desired_batch_complexity = defaults::stream::desired_batch_complexity;
+            /// @private
+            timespan stream_desired_batch_complexity;
 
-            /// maximum delay for partial batches
-            timespan stream_max_batch_delay = defaults::stream::max_batch_delay;
+            /// @private
+            timespan stream_max_batch_delay;
 
-            /// time between emitting credit
-            timespan stream_credit_round_interval = defaults::stream::credit_round_interval;
+            /// @private
+            timespan stream_credit_round_interval;
 
             /// @private
             timespan stream_tick_duration() const noexcept;
 
-            // -- scheduler parameters ------------------------------------------------------
-
-            /// 'stealing' (default) or 'sharing'
-            atom_value scheduler_policy = defaults::scheduler::policy;
-
-            /// maximum number of worker threads
-            std::size_t scheduler_max_threads = defaults::scheduler::max_threads;
-
-            /// amount of messages actors can consume per run
-            std::size_t scheduler_max_throughput = defaults::scheduler::max_throughput;
-
-            /// enables profiler output
-            bool scheduler_enable_profiling = false;
-
-            /// data collection rate
-            timespan scheduler_profiling_resolution = defaults::scheduler::profiling_resolution;
-
-            /// output file for the profiler
-            std::string scheduler_profiling_output_file;
-
-            // -- work stealing parameters ------------------------------------------------------
-
-            /// amount of aggressive steal attempts
-            std::size_t work_stealing_aggressive_poll_attempts = defaults::work_stealing::aggressive_poll_attempts;
-
-            /// frequency of aggressive steal attempts
-            std::size_t work_stealing_aggressive_steal_interval = defaults::work_stealing::aggressive_steal_interval;
-
-            /// amount of moderate steal attempts
-            std::size_t work_stealing_moderate_poll_attempts = defaults::work_stealing::moderate_poll_attempts;
-
-            /// frequency of moderate steal attempts
-            std::size_t work_stealing_moderate_steal_interval = defaults::work_stealing::moderate_steal_interval;
-
-            /// sleep duration between moderate steal attempts
-            timespan work_stealing_moderate_sleep_duration = defaults::work_stealing::moderate_sleep_duration;
-
-            /// frequency of relaxed steal attempts
-            std::size_t work_stealing_relaxed_steal_interval = defaults::work_stealing::relaxed_steal_interval;
-
-            /// sleep duration between relaxed steal attempts
-            timespan work_stealing_relaxed_sleep_duration = defaults::work_stealing::relaxed_sleep_duration;
-
-            // -- logger parameters ------------------------------------------------------
-
-            /// default verbosity for file and console
-            atom_value logger_verbosity = defaults::logger::console_verbosity;
-
-            /// filesystem path of the log file
-            std::string logger_file_name = defaults::logger::file_name;
-
-            /// line format for individual log file entires
-            std::string logger_file_format = defaults::logger::file_format;
-
-            /// file output verbosity
-            atom_value logger_file_verbosity = defaults::logger::file_verbosity;
-
-            /// std::clog output: none, colored, or uncolored
-            atom_value logger_console = defaults::logger::console;
-
-            /// line format for printed log entires
-            std::string logger_console_format = defaults::logger::console_format;
-
-            /// console output verbosity
-            atom_value logger_console_verbosity = defaults::logger::console_verbosity;
-
-            /// excluded components for logging
-            std::vector<atom_value> logger_component_blacklist;
-
-            // -- middleman parameters ------------------------------------------------------
-
-            /// either 'default' or 'asio' (if available)
-            atom_value middleman_network_backend = defaults::middleman::network_backend;
-
-            /// valid application identifiers of this node
-            std::vector<std::string> middleman_app_identifiers = defaults::middleman::app_identifiers;
-
-            /// enables automatic connection management
-            bool middleman_enable_automatic_connections;
-
-            /// max. number of consecutive reads per broker
-            std::size_t middleman_max_consecutive_reads = defaults::middleman::max_consecutive_reads;
-
-            /// interval of heartbeat messages
-            timespan middleman_heartbeat_interval = timespan(defaults::middleman::heartbeat_interval);
-
-            /// schedule utility actors instead of dedicating threads
-            bool middleman_attach_utility_actors;
-
-            /// disables background activity of the multiplexer
-            bool middleman_manual_multiplexing;
-
-            /// number of deserialization workers
-            std::size_t middleman_workers = defaults::middleman::workers;
-
-            // -- OpenCL parameters ------------------------------------------------------
-
-            /// whitelist for OpenCL devices
-            std::string opencl_device_ids;
-
             // -- OpenSSL parameters -----------------------------------------------------
 
-            /// path to the PEM-formatted certificate file
             std::string openssl_certificate;
-
-            /// path to the private key file for this node
             std::string openssl_key;
-
-            /// passphrase to decrypt the private key
             std::string openssl_passphrase;
-
-            /// path to an OpenSSL-style directory of trusted certificates
             std::string openssl_capath;
-
-            /// path to a file of concatenated PEM-formatted certificates
             std::string openssl_cafile;
 
             // -- factories --------------------------------------------------------------
 
-            value_factory_string_map value_factories_by_name;
-            value_factory_rtti_map value_factories_by_rtti;
             actor_factory_map actor_factories;
             module_factory_vector module_factories;
             hook_factory_vector hook_factories;
@@ -344,15 +253,27 @@ namespace nil {
 
             thread_hooks thread_hooks_;
 
-            // -- run-time type information ----------------------------------------------
+            /// Provides system-wide callbacks for several actor operations.
+            /// @experimental
+            /// @note Has no effect unless building CAF with ACTOR_ENABLE_ACTOR_PROFILER.
+            actor_profiler *profiler = nullptr;
 
-            portable_name_map type_names_by_rtti;
+            /// Enables CAF to deserialize application-specific tracing information.
+            /// @experimental
+            /// @note Has no effect unless building CAF with ACTOR_ENABLE_ACTOR_PROFILER.
+            tracing_data_factory *tracing_context = nullptr;
 
             // -- rendering of user-defined types ----------------------------------------
 
             error_renderer_map error_renderers;
 
-            // -- utility for actor-run ----------------------------------------------------
+            // -- parsing parameters -----------------------------------------------------
+
+            /// Configures the file path for the INI file, `caf-application.ini` per
+            /// default.
+            std::string config_file_path;
+
+            // -- utility for caf-run ----------------------------------------------------
 
             // Config parameter for individual actor types.
             named_actor_config_map named_actor_configs;
@@ -363,24 +284,116 @@ namespace nil {
 
             static std::string render(const error &err);
 
-            static std::string render_sec(uint8_t, atom_value, const message &);
+            static std::string render_sec(uint8_t, const message &);
 
-            static std::string render_exit_reason(uint8_t, atom_value, const message &);
+            static std::string render_exit_reason(uint8_t, const message &);
 
-            static std::string render_pec(uint8_t, atom_value, const message &);
+            static std::string render_pec(uint8_t, const message &);
 
             // -- config file parsing ----------------------------------------------------
 
+            /// Tries to open `filename` and parses its content as CAF config file.
+            /// @param filename Relative or absolute path to the config file.
+            /// @returns A ::settings dictionary with the parsed content of `filename` on
+            ///          success, an ::error otherwise.
+            static expected<settings> parse_config_file(const char *filename);
+
+            /// Tries to open `filename` and parses its content as CAF config file. Also
+            /// type-checks user-defined parameters in `opts`.
+            /// @param filename Relative or absolute path to the config file.
+            /// @param opts User-defined config options for type checking.
+            /// @returns A ::settings dictionary with the parsed content of `filename` on
+            ///          success, an ::error otherwise.
+            static expected<settings> parse_config_file(const char *filename, const config_option_set &opts);
+
+            /// Tries to open `filename`, parses its content as CAF config file and
+            /// stores all entries in `result` (overrides conflicting entries). Also
+            /// type-checks user-defined parameters in `opts`.
+            /// @param filename Relative or absolute path to the config file.
+            /// @param opts User-defined config options for type checking.
+            /// @param result Storage for parsed entries. Note that `result` will contain
+            ///               partial results if this function returns an error.
+            /// @returns A default-constructed ::error on success, the error code of the
+            ///          parser otherwise.
+            static error parse_config_file(const char *filename, const config_option_set &opts, settings &result);
+
+            /// Parses the content of `source` using CAF's config format.
+            /// @param source Character sequence in CAF's config format.
+            /// @returns A ::settings dictionary with the parsed content of `source` on
+            ///          success, an ::error otherwise.
+            static expected<settings> parse_config(std::istream &source);
+
+            /// Parses the content of `source` using CAF's config format. Also
+            /// type-checks user-defined parameters in `opts`.
+            /// @param source Character sequence in CAF's config format.
+            /// @param opts User-defined config options for type checking.
+            /// @returns A ::settings dictionary with the parsed content of `source` on
+            ///          success, an ::error otherwise.
+            static expected<settings> parse_config(std::istream &source, const config_option_set &opts);
+
+            /// Parses the content of `source` using CAF's config format and stores all
+            /// entries in `result` (overrides conflicting entries). Also type-checks
+            /// user-defined parameters in `opts`.
+            /// @param source Character sequence in CAF's config format.
+            /// @param opts User-defined config options for type checking.
+            /// @param result Storage for parsed entries. Note that `result` will contain
+            ///               partial results if this function returns an error.
+            /// @returns A default-constructed ::error on success, the error code of the
+            ///          parser otherwise.
+            static error parse_config(std::istream &source, const config_option_set &opts, settings &result);
+
+        protected:
+            config_option_set custom_options_;
+
         private:
-            template<class T>
-            void add_message_type_impl(std::string name) {
-                type_names_by_rtti.emplace(std::type_index(typeid(T)), name);
-                value_factories_by_name.emplace(std::move(name), &make_type_erased_value<T>);
-                value_factories_by_rtti.emplace(std::type_index(typeid(T)), &make_type_erased_value<T>);
-            }
+            spawner_config &set_impl(string_view name, config_value value);
+
+            error extract_config_file_path(string_list &args);
+
+            /// Adjusts the content of the configuration, e.g., for ensuring backwards
+            /// compatibility with older options.
+            error adjust_content();
         };
 
         /// Returns all user-provided configuration parameters.
-        const settings &content(const spawner_config &cfg);
+        BOOST_SYMBOL_VISIBLE const settings &content(const spawner_config &cfg);
+
+        /// Tries to retrieve the value associated to `name` from `cfg`.
+        /// @relates spawner_config
+        template<class T>
+        auto get_if(const spawner_config *cfg, string_view name) {
+            return get_if<T>(&content(*cfg), name);
+        }
+
+        /// Retrieves the value associated to `name` from `cfg`.
+        /// @relates spawner_config
+        template<class T>
+        T get(const spawner_config &cfg, string_view name) {
+            return get<T>(content(cfg), name);
+        }
+
+        /// Retrieves the value associated to `name` from `cfg` or returns
+        /// `default_value`.
+        /// @relates spawner_config
+        template<class T, class = typename std::enable_if<!std::is_pointer<T>::value &&
+                                                          !std::is_convertible<T, string_view>::value>::type>
+        T get_or(const spawner_config &cfg, string_view name, T default_value) {
+            return get_or(content(cfg), name, std::move(default_value));
+        }
+
+        /// Retrieves the value associated to `name` from `cfg` or returns
+        /// `default_value`.
+        /// @relates spawner_config
+        inline std::string get_or(const spawner_config &cfg, string_view name, string_view default_value) {
+            return get_or(content(cfg), name, default_value);
+        }
+
+        /// Returns whether `xs` associates a value of type `T` to `name`.
+        /// @relates spawner_config
+        template<class T>
+        bool holds_alternative(const spawner_config &cfg, string_view name) {
+            return holds_alternative<T>(content(cfg), name);
+        }
+
     }    // namespace actor
 }    // namespace nil

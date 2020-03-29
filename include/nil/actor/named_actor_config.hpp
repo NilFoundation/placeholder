@@ -1,22 +1,26 @@
-//---------------------------------------------------------------------------//
-// Copyright (c) 2011-2015 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
-//
-// Distributed under the terms and conditions of the BSD 3-Clause License or
-// (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
-//---------------------------------------------------------------------------//
+/******************************************************************************
+ *                       ____    _    _____                                   *
+ *                      / ___|  / \  |  ___|    C++                           *
+ *                     | |     / _ \ | |_       Actor                         *
+ *                     | |___ / ___ \|  _|      Framework                     *
+ *                      \____/_/   \_|_|                                      *
+ *                                                                            *
+ * Copyright (C) 2011 - 2015                                                  *
+ *                                                                            *
+ * Distributed under the terms and conditions of the BSD 3-Clause License or  *
+ * (at your option) under the terms and conditions of the Boost Software      *
+ * License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.       *
+ *                                                                            *
+ * If you did not receive a copy of the license files, see                    *
+ * http://opensource.org/licenses/BSD-3-Clause and                            *
+ * http://www.boost.org/LICENSE_1_0.txt.                                      *
+ ******************************************************************************/
 
 #pragma once
 
 #include <cstddef>
 
-#include <nil/actor/atom.hpp>
 #include <nil/actor/deep_to_string.hpp>
-
 #include <nil/actor/meta/type_name.hpp>
 
 namespace nil {
@@ -24,7 +28,7 @@ namespace nil {
 
         /// Stores a flow-control configuration.
         struct named_actor_config {
-            atom_value strategy;
+            std::string strategy;
             size_t low_watermark;
             size_t max_pending;
         };

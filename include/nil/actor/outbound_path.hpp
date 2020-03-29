@@ -1,39 +1,36 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <vector>
-#include <cstdint>
-#include <cstddef>
 
 #include <nil/actor/actor_control_block.hpp>
+
+#include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/downstream_msg.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/logger.hpp>
+#include <nil/actor/meta/type_name.hpp>
 #include <nil/actor/stream_aborter.hpp>
 #include <nil/actor/stream_slot.hpp>
 #include <nil/actor/system_messages.hpp>
-
-#include <nil/actor/detail/type_traits.hpp>
-
-#include <nil/actor/meta/type_name.hpp>
 
 namespace nil {
     namespace actor {
 
         /// State for a single path to a sink of a `downstream_manager`.
-        class outbound_path {
+        class BOOST_SYMBOL_VISIBLE outbound_path {
         public:
             // -- member types -----------------------------------------------------------
 
@@ -59,10 +56,6 @@ namespace nil {
             ~outbound_path();
 
             // -- downstream communication -----------------------------------------------
-
-            /// Sends an `open_stream_msg` handshake.
-            static void emit_open(local_actor *self, stream_slot slot, strong_actor_ptr to, message handshake_data,
-                                  stream_priority prio);
 
             /// Sends a `downstream_msg::batch` on this path. Decrements `open_credit` by
             /// `xs_size` and increments `next_batch_id` by 1.
@@ -98,7 +91,7 @@ namespace nil {
                     return;
                 ACTOR_ASSERT(open_credit >= 0);
                 ACTOR_ASSERT(desired_batch_size > 0);
-                ACTOR_ASSERT(cache.size() <= std::numeric_limits<int32_t>::max());
+                ACTOR_ASSERT(cache.size() <= static_cast<size_t>(std::numeric_limits<int32_t>::max()));
                 auto first = cache.begin();
                 auto last = first + std::min(open_credit, static_cast<int32_t>(cache.size()));
                 if (first == last)
@@ -153,7 +146,7 @@ namespace nil {
             /// Ideal batch size. Configured by the sink.
             int32_t desired_batch_size;
 
-            /// ID of the first unacknowledged batch. Note that ACTOR uses accumulative
+            /// ID of the first unacknowledged batch. Note that CAF uses accumulative
             /// ACKs, i.e., receiving an ACK with a higher ID is not an error.
             int64_t next_ack_id;
 

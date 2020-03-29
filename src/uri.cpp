@@ -1,33 +1,29 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/uri.hpp>
-#include <nil/actor/optional.hpp>
 
-#include <nil/actor/serialization/binary_serializer.hpp>
-#include <nil/actor/serialization/binary_deserializer.hpp>
-#include <nil/actor/serialization/deserializer.hpp>
-#include <nil/actor/serialization/serializer.hpp>
-
+#include <nil/actor/binary_deserializer.hpp>
+#include <nil/actor/binary_serializer.hpp>
+#include <nil/actor/deserializer.hpp>
 #include <nil/actor/detail/append_percent_encoded.hpp>
 #include <nil/actor/detail/fnv_hash.hpp>
 #include <nil/actor/detail/overload.hpp>
 #include <nil/actor/detail/parse.hpp>
 #include <nil/actor/detail/parser/read_uri.hpp>
 #include <nil/actor/detail/uri_impl.hpp>
-
 #include <nil/actor/error.hpp>
 #include <nil/actor/expected.hpp>
 #include <nil/actor/make_counted.hpp>
+#include <nil/actor/optional.hpp>
+#include <nil/actor/serializer.hpp>
 
 namespace nil {
     namespace actor {
@@ -95,6 +91,65 @@ namespace nil {
             return string_view {str()}.compare(x);
         }
 
+        // -- parsing ------------------------------------------------------------------
+
+        namespace {
+
+            class nop_builder {
+            public:
+                template<class T>
+                nop_builder &scheme(T &&) {
+                    return *this;
+                }
+
+                template<class T>
+                nop_builder &userinfo(T &&) {
+                    return *this;
+                }
+
+                template<class T>
+                nop_builder &host(T &&) {
+                    return *this;
+                }
+
+                template<class T>
+                nop_builder &port(T &&) {
+                    return *this;
+                }
+
+                template<class T>
+                nop_builder &path(T &&) {
+                    return *this;
+                }
+
+                template<class T>
+                nop_builder &query(T &&) {
+                    return *this;
+                }
+
+                template<class T>
+                nop_builder &fragment(T &&) {
+                    return *this;
+                }
+            };
+
+        }    // namespace
+
+        bool uri::can_parse(string_view str) noexcept {
+            string_parser_state ps {str.begin(), str.end()};
+            nop_builder builder;
+            if (ps.consume('<')) {
+                detail::parser::read_uri(ps, builder);
+                if (ps.code > pec::trailing_character)
+                    return false;
+                if (!ps.consume('>'))
+                    return false;
+            } else {
+                detail::parser::read_uri(ps, builder);
+            }
+            return ps.code == pec::success;
+        }
+
         // -- friend functions ---------------------------------------------------------
 
         error inspect(nil::actor::serializer &dst, uri &x) {
@@ -155,11 +210,11 @@ namespace nil {
         }
 
         error parse(string_view str, uri &dest) {
-            detail::parse_state ps {str.begin(), str.end()};
+            string_parser_state ps {str.begin(), str.end()};
             parse(ps, dest);
             if (ps.code == pec::success)
                 return none;
-            return make_error(ps.code, static_cast<size_t>(ps.line), static_cast<size_t>(ps.column));
+            return make_error(ps);
         }
 
         expected<uri> make_uri(string_view str) {
@@ -168,5 +223,6 @@ namespace nil {
                 return err;
             return result;
         }
+
     }    // namespace actor
 }    // namespace nil

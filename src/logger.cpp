@@ -1,31 +1,29 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/logger.hpp>
 
-#include <ctime>
-#include <thread>
-#include <cstring>
-#include <iomanip>
-#include <fstream>
 #include <algorithm>
 #include <condition_variable>
+#include <cstring>
+#include <ctime>
+#include <fstream>
+#include <iomanip>
+#include <thread>
 #include <unordered_map>
-
-#include <nil/actor/config.hpp>
+#include <utility>
 
 #include <nil/actor/actor_proxy.hpp>
 #include <nil/actor/spawner.hpp>
 #include <nil/actor/spawner_config.hpp>
+#include <nil/actor/config.hpp>
 #include <nil/actor/defaults.hpp>
 #include <nil/actor/detail/get_process_id.hpp>
 #include <nil/actor/detail/pretty_type_name.hpp>
@@ -33,6 +31,7 @@
 #include <nil/actor/intrusive/task_result.hpp>
 #include <nil/actor/local_actor.hpp>
 #include <nil/actor/locks.hpp>
+#include <nil/actor/message.hpp>
 #include <nil/actor/string_algorithms.hpp>
 #include <nil/actor/term.hpp>
 #include <nil/actor/timestamp.hpp>
@@ -41,6 +40,12 @@ namespace nil {
     namespace actor {
 
         namespace {
+
+            // Stores the ID of the currently running actor.
+            thread_local actor_id current_actor_id;
+
+            // Stores a pointer to the system-wide logger.
+            thread_local intrusive_ptr<logger> current_logger_ptr;
 
             constexpr string_view log_level_name[] = {
                 "QUIET", "", "", "ERROR", "", "", "WARN", "", "", "INFO", "", "", "DEBUG", "", "", "TRACE",
@@ -57,24 +62,19 @@ namespace nil {
                 "`anonymous-namespace'",    // MSVC
             };
 
-            /// Converts a verbosity atom to its integer counterpart.
-            unsigned to_level_int(atom_value x) {
-                switch (atom_uint(to_lowercase(x))) {
-                    default:
-                        return ACTOR_LOG_LEVEL_QUIET;
-                    case atom_uint("quiet"):
-                        return ACTOR_LOG_LEVEL_QUIET;
-                    case atom_uint("error"):
-                        return ACTOR_LOG_LEVEL_ERROR;
-                    case atom_uint("warning"):
-                        return ACTOR_LOG_LEVEL_WARNING;
-                    case atom_uint("info"):
-                        return ACTOR_LOG_LEVEL_INFO;
-                    case atom_uint("debug"):
-                        return ACTOR_LOG_LEVEL_DEBUG;
-                    case atom_uint("trace"):
-                        return ACTOR_LOG_LEVEL_TRACE;
-                }
+            /// Converts a verbosity level to its integer counterpart.
+            unsigned to_level_int(string_view x) {
+                if (x == "error")
+                    return ACTOR_LOG_LEVEL_ERROR;
+                if (x == "warning")
+                    return ACTOR_LOG_LEVEL_WARNING;
+                if (x == "info")
+                    return ACTOR_LOG_LEVEL_INFO;
+                if (x == "debug")
+                    return ACTOR_LOG_LEVEL_DEBUG;
+                if (x == "trace")
+                    return ACTOR_LOG_LEVEL_TRACE;
+                return ACTOR_LOG_LEVEL_QUIET;
             }
 
             // Reduces symbol by printing all prefixes to `out` and returning the
@@ -164,48 +164,6 @@ namespace nil {
                 return symbol;
             }
 
-#if defined(ACTOR_NO_THREAD_LOCAL)
-
-            pthread_key_t s_key;
-            pthread_once_t s_key_once = PTHREAD_ONCE_INIT;
-
-            void logger_ptr_destructor(void *ptr) {
-                if (ptr != nullptr) {
-                    intrusive_ptr_release(reinterpret_cast<logger *>(ptr));
-                }
-            }
-
-            void make_logger_ptr() {
-                pthread_key_create(&s_key, logger_ptr_destructor);
-            }
-
-            void set_current_logger(logger *x) {
-                pthread_once(&s_key_once, make_logger_ptr);
-                logger_ptr_destructor(pthread_getspecific(s_key));
-                if (x != nullptr)
-                    intrusive_ptr_add_ref(x);
-                pthread_setspecific(s_key, x);
-            }
-
-            logger *get_current_logger() {
-                pthread_once(&s_key_once, make_logger_ptr);
-                return reinterpret_cast<logger *>(pthread_getspecific(s_key));
-            }
-
-#else    // !ACTOR_NO_THREAD_LOCAL
-
-            thread_local intrusive_ptr<logger> current_logger;
-
-            inline void set_current_logger(logger *x) {
-                current_logger.reset(x);
-            }
-
-            inline logger *get_current_logger() {
-                return current_logger.get();
-            }
-
-#endif    // ACTOR_NO_THREAD_LOCAL
-
         }    // namespace
 
         logger::config::config() :
@@ -214,11 +172,11 @@ namespace nil {
             // nop
         }
 
-        logger::event::event(unsigned lvl, unsigned line, atom_value cat, string_view full_fun, string_view fun,
+        logger::event::event(unsigned lvl, unsigned line, string_view cat, string_view full_fun, string_view fun,
                              string_view fn, std::string msg, std::thread::id t, actor_id a, timestamp ts) :
             level(lvl),
             line_number(line), category_name(cat), pretty_fun(full_fun), simple_fun(fun), file_name(fn),
-            message(std::move(msg)), tid(t), aid(a), tstamp(ts) {
+            message(std::move(msg)), tid(std::move(t)), aid(a), tstamp(ts) {
             // nop
         }
 
@@ -254,33 +212,18 @@ namespace nil {
         }
 
         std::string logger::line_builder::get() const {
-            return str_;
+            return std::move(str_);
         }
 
         // returns the actor ID for the current thread
+
         actor_id logger::thread_local_aid() {
-            shared_lock<detail::shared_spinlock> guard {aids_lock_};
-            auto i = aids_.find(std::this_thread::get_id());
-            if (i != aids_.end())
-                return i->second;
-            return 0;
+            return current_actor_id;
         }
 
         actor_id logger::thread_local_aid(actor_id aid) {
-            auto tid = std::this_thread::get_id();
-            upgrade_lock<detail::shared_spinlock> guard {aids_lock_};
-            auto i = aids_.find(tid);
-            if (i != aids_.end()) {
-                // we modify it despite the shared lock because the elements themselves
-                // are considered thread-local
-                auto res = i->second;
-                i->second = aid;
-                return res;
-            }
-            // upgrade to unique lock and insert new element
-            upgrade_to_unique_lock<detail::shared_spinlock> uguard {guard};
-            aids_.emplace(tid, aid);
-            return 0;    // was empty before
+            std::swap(current_actor_id, aid);
+            return aid;
         }
 
         void logger::log(event &&x) {
@@ -290,22 +233,19 @@ namespace nil {
                 queue_.push_back(std::move(x));
         }
 
-        void logger::set_current_actor_system(spawner *x) {
-            if (x != nullptr)
-                set_current_logger(&x->logger());
-            else
-                set_current_logger(nullptr);
+        void logger::set_current_spawner(spawner *x) {
+            current_logger_ptr.reset(x != nullptr ? &x->logger() : nullptr);
         }
 
         logger *logger::current_logger() {
-            return get_current_logger();
+            return current_logger_ptr.get();
         }
 
-        bool logger::accepts(unsigned level, atom_value cname) {
+        bool logger::accepts(unsigned level, string_view cname) {
             if (level > cfg_.verbosity)
                 return false;
             return !std::any_of(component_blacklist.begin(), component_blacklist.end(),
-                                [=](atom_value name) { return name == cname; });
+                                [=](string_view name) { return name == cname; });
         }
 
         logger::logger(spawner &sys) : system_(sys), t0_(make_timestamp()) {
@@ -323,25 +263,48 @@ namespace nil {
         void logger::init(spawner_config &cfg) {
             ACTOR_IGNORE_UNUSED(cfg);
             namespace lg = defaults::logger;
-            auto blacklist = cfg.logger_component_blacklist;
-            if (!cfg.logger_component_blacklist.empty())
-                component_blacklist = std::move(blacklist);
-            // Parse the configured log level.
-            auto file_verbosity = cfg.logger_file_verbosity;
-            auto console_verbosity = cfg.logger_console_verbosity;
-            cfg_.file_verbosity = to_level_int(file_verbosity);
-            cfg_.console_verbosity = to_level_int(console_verbosity);
+            using string_list = std::vector<std::string>;
+            auto blacklist = get_if<string_list>(&cfg, "logger.component-blacklist");
+            if (blacklist)
+                component_blacklist = move_if_optional(blacklist);
+            // Parse the configured log level. We only store a string_view to the
+            // verbosity levels, so we make sure we actually get a string pointer here
+            // (and not an optional<string>).
+            const std::string *verbosity = get_if<std::string>(&cfg, "logger.verbosity");
+            auto set_level = [&](auto &var, auto var_default, string_view var_key) {
+                // User-provided overrides have the highest priority.
+                if (const std::string *var_override = get_if<std::string>(&cfg, var_key)) {
+                    var = *var_override;
+                    return;
+                }
+                // If present, "logger.verbosity" overrides the defaults for both file and
+                // console verbosity level.
+                if (verbosity) {
+                    var = *verbosity;
+                    return;
+                }
+                var = var_default;
+            };
+            string_view file_str;
+            string_view console_str;
+            set_level(file_str, lg::file_verbosity, "logger.file-verbosity");
+            set_level(console_str, lg::console_verbosity, "logger.console-verbosity");
+            cfg_.file_verbosity = to_level_int(file_str);
+            cfg_.console_verbosity = to_level_int(console_str);
             cfg_.verbosity = std::max(cfg_.file_verbosity, cfg_.console_verbosity);
             // Parse the format string.
-            file_format_ = parse_format(cfg.logger_file_format);
-            console_format_ = parse_format(cfg.logger_console_format);
+            file_format_ = parse_format(get_or(cfg, "logger.file-format", lg::file_format));
+            console_format_ = parse_format(get_or(cfg, "logger.console-format", lg::console_format));
             // Set flags.
-            auto con_atm = cfg.logger_console;
-            if (to_lowercase(con_atm) == atom("colored")) {
+            if (get_or(cfg, "logger.inline-output", false))
+                cfg_.inline_output = true;
+            auto con = get_or(cfg, "logger.console", lg::console);
+            if (con == "colored") {
                 cfg_.console_coloring = true;
-            } else if (to_lowercase(con_atm) != atom("uncolored")) {
-                // Disable logger_console output if neither 'colored' nor 'uncolored' are present.
+            } else if (con != "uncolored") {
+                // Disable console output if neither 'colored' nor 'uncolored' are present.
                 cfg_.console_verbosity = ACTOR_LOG_LEVEL_QUIET;
+                cfg_.verbosity = cfg_.file_verbosity;
             }
         }
 
@@ -362,7 +325,7 @@ namespace nil {
             //                          ^~~~~~~~~~~~~
             // Here, we output Java-style "my.namespace" to `out`.
             auto reduced = x.pretty_fun;
-            // Skip all prefixes that can preceed the return type.
+            // Skip all prefixes that can precede the return type.
             auto skip = [&](string_view str) {
                 if (starts_with(reduced, str)) {
                     reduced.remove_prefix(str.size());
@@ -414,61 +377,35 @@ namespace nil {
             out << e.simple_fun;
         }
 
-        void logger::render_time_diff(std::ostream &out, timestamp t0, timestamp tn) {
-            out << std::chrono::duration_cast<std::chrono::milliseconds>(tn - t0).count();
-        }
-
         void logger::render_date(std::ostream &out, timestamp x) {
             out << deep_to_string(x);
         }
 
         void logger::render(std::ostream &out, const line_format &lf, const event &x) const {
-            for (auto &f : lf)
-                switch (f.kind) {
-                    case category_field:
-                        out << to_string(x.category_name);
-                        break;
-                    case class_name_field:
-                        render_fun_prefix(out, x);
-                        break;
-                    case date_field:
-                        render_date(out, x.tstamp);
-                        break;
-                    case file_field:
-                        out << x.file_name;
-                        break;
-                    case line_field:
-                        out << x.line_number;
-                        break;
-                    case message_field:
-                        out << x.message;
-                        break;
-                    case method_field:
-                        render_fun_name(out, x);
-                        break;
-                    case newline_field:
-                        out << std::endl;
-                        break;
-                    case priority_field:
-                        out << log_level_name[x.level];
-                        break;
-                    case runtime_field:
-                        render_time_diff(out, t0_, x.tstamp);
-                        break;
-                    case thread_field:
-                        out << x.tid;
-                        break;
-                    case actor_field:
-                        out << "actor" << x.aid;
-                        break;
-                    case percent_sign_field:
-                        out << '%';
-                        break;
-                    case plain_text_field:
-                        out << f.text;
-                        break;
-                    default:;    // nop
-                }
+            auto ms_time_diff = [](timestamp t0, timestamp tn) {
+                using namespace std::chrono;
+                return duration_cast<milliseconds>(tn - t0).count();
+            };
+            // clang-format off
+  for (auto& f : lf)
+    switch (f.kind) {
+      case category_field:     out << x.category_name;             break;
+      case class_name_field:   render_fun_prefix(out, x);          break;
+      case date_field:         render_date(out, x.tstamp);         break;
+      case file_field:         out << x.file_name;                 break;
+      case line_field:         out << x.line_number;               break;
+      case message_field:      out << x.message;                   break;
+      case method_field:       render_fun_name(out, x);            break;
+      case newline_field:      out << std::endl;                   break;
+      case priority_field:     out << log_level_name[x.level];     break;
+      case runtime_field:      out << ms_time_diff(t0_, x.tstamp); break;
+      case thread_field:       out << x.tid;                       break;
+      case actor_field:        out << "actor" << x.aid;            break;
+      case percent_sign_field: out << '%';                         break;
+      case plain_text_field:   out << f.text;                      break;
+      default: ; // nop
+    }
+            // clang-format on
         }
 
         logger::line_format logger::parse_format(const std::string &format_str) {
@@ -479,50 +416,27 @@ namespace nil {
             for (; i != format_str.end(); ++i) {
                 if (read_percent_sign) {
                     field_type ft;
-                    switch (*i) {
-                        case 'c':
-                            ft = category_field;
-                            break;
-                        case 'C':
-                            ft = class_name_field;
-                            break;
-                        case 'd':
-                            ft = date_field;
-                            break;
-                        case 'F':
-                            ft = file_field;
-                            break;
-                        case 'L':
-                            ft = line_field;
-                            break;
-                        case 'm':
-                            ft = message_field;
-                            break;
-                        case 'M':
-                            ft = method_field;
-                            break;
-                        case 'n':
-                            ft = newline_field;
-                            break;
-                        case 'p':
-                            ft = priority_field;
-                            break;
-                        case 'r':
-                            ft = runtime_field;
-                            break;
-                        case 't':
-                            ft = thread_field;
-                            break;
-                        case 'a':
-                            ft = actor_field;
-                            break;
-                        case '%':
-                            ft = percent_sign_field;
-                            break;
-                        default:
-                            ft = invalid_field;
-                            std::cerr << "invalid field specifier in format string: " << *i << std::endl;
-                    }
+                    // clang-format off
+      switch (*i) {
+        case 'c': ft = category_field;     break;
+        case 'C': ft = class_name_field;   break;
+        case 'd': ft = date_field;         break;
+        case 'F': ft =  file_field;        break;
+        case 'L': ft = line_field;         break;
+        case 'm': ft = message_field;      break;
+        case 'M': ft = method_field;       break;
+        case 'n': ft = newline_field;      break;
+        case 'p': ft = priority_field;     break;
+        case 'r': ft = runtime_field;      break;
+        case 't': ft = thread_field;       break;
+        case 'a': ft = actor_field;        break;
+        case '%': ft = percent_sign_field; break;
+        default:
+          ft = invalid_field;
+          std::cerr << "invalid field specifier in format string: "
+                    << *i << std::endl;
+      }
+                    // clang-format on
                     if (ft != invalid_field)
                         res.emplace_back(field {ft, std::string {}});
                     plain_text_first = i + 1;
@@ -613,27 +527,21 @@ namespace nil {
             handle_console_event(x);
         }
 
-        namespace detail {
-            template<typename ConfigOptionType>
-            static inline std::string make_message(const spawner &system,
-                                                   const std::vector<atom_value> &component_blacklist,
-                                                   const ConfigOptionType &option) {
+        void logger::log_first_line() {
+            auto e = ACTOR_LOG_MAKE_EVENT(0, ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_DEBUG, "");
+            auto make_message = [&](string_view config_name, std::string default_value) {
                 std::string msg = "level = ";
-                msg += to_string(option);
+                msg += get_or(system_.config(), config_name, default_value);
                 msg += ", node = ";
-                msg += to_string(system.node());
+                msg += to_string(system_.node());
                 msg += ", component-blacklist = ";
                 msg += deep_to_string(component_blacklist);
                 return msg;
             };
-        }    // namespace detail
-
-        void logger::log_first_line() {
-            auto e = ACTOR_LOG_MAKE_EVENT(0, ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_DEBUG, "");
             namespace lg = defaults::logger;
-            e.message = detail::make_message(system_, component_blacklist, system_.config().logger_file_verbosity);
+            e.message = make_message("logger.file-verbosity", to_string(lg::file_verbosity));
             handle_file_event(e);
-            e.message = detail::make_message(system_, component_blacklist, system_.config().logger_console_verbosity);
+            e.message = make_message("logger.console-verbosity", to_string(lg::console_verbosity));
             handle_console_event(e);
         }
 
@@ -646,9 +554,9 @@ namespace nil {
             parent_thread_ = std::this_thread::get_id();
             if (verbosity() == ACTOR_LOG_LEVEL_QUIET)
                 return;
-            file_name_ = system_.config().logger_file_name;
+            file_name_ = get_or(system_.config(), "logger.file-name", defaults::logger::file_name);
             if (file_name_.empty()) {
-                // No need to continue if logger_console and log file are disabled.
+                // No need to continue if console and log file are disabled.
                 if (console_verbosity() == ACTOR_LOG_LEVEL_QUIET)
                     return;
             } else {
@@ -678,7 +586,7 @@ namespace nil {
                 log_first_line();
             } else {
                 thread_ = std::thread {[this] {
-                    detail::set_thread_name("actor.logger");
+                    detail::set_thread_name("caf.logger");
                     this->system_.thread_started();
                     this->run();
                     this->system_.thread_terminates();

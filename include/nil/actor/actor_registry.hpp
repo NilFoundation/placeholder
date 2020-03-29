@@ -1,42 +1,41 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <mutex>
-#include <thread>
 #include <atomic>
-#include <cstdint>
-#include <unordered_map>
 #include <condition_variable>
+#include <cstdint>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <unordered_map>
 
-#include <nil/actor/fwd.hpp>
+#include <nil/actor/abstract_actor.hpp>
 #include <nil/actor/actor.hpp>
 #include <nil/actor/actor_cast.hpp>
-#include <nil/actor/abstract_actor.hpp>
 #include <nil/actor/actor_control_block.hpp>
 
 #include <nil/actor/detail/shared_spinlock.hpp>
+#include <nil/actor/fwd.hpp>
 
 namespace nil {
     namespace actor {
 
-        /// A registry is used to associate actors to IDs or atoms (names). This
-        /// allows a middleman to lookup actor handles after receiving actor IDs
-        /// via the network and enables developers to use well-known names to
-        /// identify important actors independent from their ID at runtime.
-        /// Note that the registry does *not* contain all actors of an actor system.
-        /// The middleman registers actors as needed.
-        class actor_registry {
+        /// A registry is used to associate actors to IDs or names. This allows a
+        /// middleman to lookup actor handles after receiving actor IDs via the network
+        /// and enables developers to use well-known names to identify important actors
+        /// independent from their ID at runtime. Note that the registry does *not*
+        /// contain all actors of an actor system. The middleman registers actors as
+        /// needed.
+        class BOOST_SYMBOL_VISIBLE actor_registry {
         public:
             friend class spawner;
 
@@ -73,21 +72,22 @@ namespace nil {
 
             /// Returns the actor associated with `key` or `invalid_actor`.
             template<class T = strong_actor_ptr>
-            T get(atom_value key) const {
+            T get(const std::string &key) const {
                 return actor_cast<T>(get_impl(key));
             }
 
             /// Associates given actor to `key`.
             template<class T>
-            void put(atom_value key, const T &value) {
-                // using reference here and before to allow putting a scoped_actor without calling .ptr()
-                put_impl(key, actor_cast<strong_actor_ptr>(value));
+            void put(const std::string &key, const T &value) {
+                // using reference here and before to allow putting a scoped_actor without
+                // calling .ptr()
+                put_impl(std::move(key), actor_cast<strong_actor_ptr>(value));
             }
 
             /// Removes a name mapping.
-            void erase(atom_value key);
+            void erase(const std::string &key);
 
-            using name_map = std::unordered_map<atom_value, strong_actor_ptr>;
+            using name_map = std::unordered_map<std::string, strong_actor_ptr>;
 
             name_map named_actors() const;
 
@@ -105,10 +105,10 @@ namespace nil {
             void put_impl(actor_id key, strong_actor_ptr val);
 
             /// Returns the actor associated with `key` or `invalid_actor`.
-            strong_actor_ptr get_impl(atom_value key) const;
+            strong_actor_ptr get_impl(const std::string &key) const;
 
             /// Associates given actor to `key`.
-            void put_impl(atom_value key, strong_actor_ptr value);
+            void put_impl(const std::string &key, strong_actor_ptr value);
 
             using entries = std::unordered_map<actor_id, strong_actor_ptr>;
 

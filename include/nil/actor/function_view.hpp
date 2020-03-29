@@ -1,25 +1,25 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <new>
 #include <functional>
+#include <new>
 #include <utility>
 
+
 #include <nil/actor/expected.hpp>
-#include <nil/actor/typed_actor.hpp>
-#include <nil/actor/scoped_actor.hpp>
 #include <nil/actor/response_type.hpp>
+#include <nil/actor/scoped_actor.hpp>
+#include <nil/actor/timespan.hpp>
+#include <nil/actor/typed_actor.hpp>
 
 namespace nil {
     namespace actor {
@@ -29,7 +29,7 @@ namespace nil {
         public:
             using type = function_view_storage;
 
-            function_view_storage(T &storage) : storage_(&storage) {
+            explicit function_view_storage(T &storage) : storage_(&storage) {
                 // nop
             }
 
@@ -46,7 +46,7 @@ namespace nil {
         public:
             using type = function_view_storage;
 
-            function_view_storage(std::tuple<Ts...> &storage) : storage_(&storage) {
+            explicit function_view_storage(std::tuple<Ts...> &storage) : storage_(&storage) {
                 // nop
             }
 
@@ -63,7 +63,7 @@ namespace nil {
         public:
             using type = function_view_storage;
 
-            function_view_storage(unit_t &) {
+            explicit function_view_storage(unit_t &) {
                 // nop
             }
 
@@ -72,15 +72,15 @@ namespace nil {
             }
         };
 
-        struct function_view_storage_catch_all {
+        struct BOOST_SYMBOL_VISIBLE function_view_storage_catch_all {
             message *storage_;
 
-            function_view_storage_catch_all(message &ptr) : storage_(&ptr) {
+            explicit function_view_storage_catch_all(message &ptr) : storage_(&ptr) {
                 // nop
             }
 
-            result<message> operator()(message_view &xs) {
-                *storage_ = xs.move_content_to_message();
+            result<message> operator()(message &msg) {
+                *storage_ = std::move(msg);
                 return message {};
             }
         };
@@ -128,11 +128,19 @@ namespace nil {
         public:
             using type = Actor;
 
-            function_view(duration rel_timeout = infinite) : timeout(rel_timeout) {
+            function_view() : timeout(infinite) {
                 // nop
             }
 
-            function_view(type impl, duration rel_timeout = infinite) : timeout(rel_timeout), impl_(std::move(impl)) {
+            explicit function_view(timespan rel_timeout) : timeout(rel_timeout) {
+                // nop
+            }
+
+            explicit function_view(type impl) : timeout(infinite), impl_(std::move(impl)) {
+                new_self(impl_);
+            }
+
+            function_view(type impl, timespan rel_timeout) : timeout(rel_timeout), impl_(std::move(impl)) {
                 new_self(impl_);
             }
 
@@ -156,21 +164,24 @@ namespace nil {
             }
 
             /// Sends a request message to the assigned actor and returns the result.
-            template<class... Ts,
-                     class R = function_view_flattened_result_t<typename response_type<
-                         typename type::signatures,
-                         detail::implicit_conversions_t<typename std::decay<Ts>::type>...>::tuple_type>>
-            expected<R> operator()(Ts &&... xs) {
+            template<class... Ts>
+            auto operator()(Ts &&... xs) {
+                static_assert(sizeof...(Ts) > 0, "no message to send");
+                using trait = response_type<typename type::signatures, detail::strip_and_convert_t<Ts>...>;
+                static_assert(trait::valid, "receiver does not accept given message");
+                using tuple_type = typename trait::tuple_type;
+                using value_type = function_view_flattened_result_t<tuple_type>;
+                using result_type = expected<value_type>;
                 if (!impl_)
-                    return sec::bad_function_call;
+                    return result_type {sec::bad_function_call};
                 error err;
-                function_view_result<R> result;
+                function_view_result<value_type> result;
                 self_->request(impl_, timeout, std::forward<Ts>(xs)...)
                     .receive([&](error &x) { err = std::move(x); },
-                             typename function_view_storage<R>::type {result.value});
+                             typename function_view_storage<value_type>::type {result.value});
                 if (err)
-                    return err;
-                return flatten(result.value);
+                    return result_type {err};
+                return result_type {flatten(result.value)};
             }
 
             void assign(type x) {
@@ -196,7 +207,7 @@ namespace nil {
                 return impl_;
             }
 
-            duration timeout;
+            timespan timeout;
 
         private:
             template<class T>
@@ -248,8 +259,8 @@ namespace nil {
         /// @relates function_view
         /// @experimental
         template<class T>
-        function_view<T> make_function_view(const T &x, duration t = infinite) {
-            return {x, t};
+        auto make_function_view(const T &x, timespan t = infinite) {
+            return function_view<T> {x, t};
         }
 
     }    // namespace actor

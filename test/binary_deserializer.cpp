@@ -1,20 +1,18 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE binary_deserializer_test
+#define BOOST_TEST_MODULE binary_deserializer
 
-#include <nil/actor/test/dsl.hpp>
+#include <nil/actor/binary_serializer.hpp>
 
-#include <nil/actor/serialization/binary_deserializer.hpp>
+#include "core-test.hpp"
 
 #include <cstring>
 #include <vector>
@@ -23,10 +21,9 @@
 #include <nil/actor/spawner_config.hpp>
 #include <nil/actor/byte.hpp>
 #include <nil/actor/byte_buffer.hpp>
-#include <nil/actor/duration.hpp>
 #include <nil/actor/timestamp.hpp>
 
-using namespace nil::actor;
+using namespace caf;
 
 namespace {
 
@@ -36,33 +33,6 @@ namespace {
 
     byte operator"" _b(char x) {
         return static_cast<byte>(x);
-    }
-
-    enum class test_enum : int32_t {
-        a,
-        b,
-        c,
-    };
-
-    struct test_data {
-        int32_t i32_;
-        int64_t i64_;
-        float f32_;
-        double f64_;
-        nil::actor::duration dur_;
-        nil::actor::timestamp ts_;
-        test_enum te_;
-        std::string str_;
-    };
-
-    bool operator==(const test_data &data, const test_data &other) {
-        return (data.f64_ == other.f64_ && data.i32_ == other.i32_ && data.i64_ == other.i64_ &&
-                data.str_ == other.str_ && data.te_ == other.te_ && data.ts_ == other.ts_);
-    }
-
-    template<class Inspector>
-    typename Inspector::result_type inspect(Inspector &f, test_data &x) {
-        return f(nil::actor::meta::type_name("test_data"), x.i32_, x.i64_, x.f32_, x.f64_, x.dur_, x.ts_, x.te_, x.str_);
     }
 
     struct fixture {
@@ -87,13 +57,13 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(binary_deserializer_tests, fixture)
 
-#define SUBTEST(msg)         \
-    BOOST_TEST_MESSAGE(msg); \
+#define SUBTEST(msg)  \
+    ACTOR_MESSAGE(msg); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 
 #define CHECK_EQ(lhs, rhs) BOOST_CHECK_EQUAL(lhs, rhs)
 
-#define CHECK_LOAD(type, value, ...) BOOST_CHECK(load<type>({__VA_ARGS__}) == value)
+#define CHECK_LOAD(type, value, ...) BOOST_CHECK_EQUAL(load<type>({__VA_ARGS__}), value)
 
 BOOST_AUTO_TEST_CASE(binary_deserializer_handles_all_primitive_types) {
     SUBTEST("8-bit integers") {
@@ -178,18 +148,11 @@ BOOST_AUTO_TEST_CASE(container_types) {
 }
 
 BOOST_AUTO_TEST_CASE(binary_serializer_picks_up_inspect_functions) {
-    SUBTEST("duration") {
-        CHECK_LOAD(duration, duration(time_unit::minutes, 3),
-                   // Bytes 1-4 contain the time_unit.
-                   0_b, 0_b, 0_b, 1_b,
-                   // Bytes 5-12 contain the count.
-                   0_b, 0_b, 0_b, 0_b, 0_b, 0_b, 0_b, 3_b);
-    }
     SUBTEST("node ID") {
         auto nid = make_node_id(123, "000102030405060708090A0B0C0D0E0F10111213");
         CHECK_LOAD(node_id, unbox(nid),
-                   // Implementation ID: atom("default").
-                   0_b, 0_b, 0x3E_b, 0x9A_b, 0xAB_b, 0x9B_b, 0xAC_b, 0x79_b,
+                   // Implementation ID: node_id::default_data::class_id (1)
+                   1_b,
                    // Process ID.
                    0_b, 0_b, 0_b, 123_b,
                    // Host ID.
@@ -201,7 +164,6 @@ BOOST_AUTO_TEST_CASE(binary_serializer_picks_up_inspect_functions) {
                          -1234567890123456789ll,
                          3.45,
                          54.3,
-                         nil::actor::duration(nil::actor::time_unit::seconds, 123),
                          nil::actor::timestamp {nil::actor::timestamp::duration {1478715821 * 1000000000ll}},
                          test_enum::b,
                          "Lorem ipsum dolor sit amet."};
@@ -214,10 +176,6 @@ BOOST_AUTO_TEST_CASE(binary_serializer_picks_up_inspect_functions) {
                    0x40_b, 0x5C_b, 0xCC_b, 0xCD_b,
                    // 64-bit f64_ member: 54.3
                    0x40_b, 0x4B_b, 0x26_b, 0x66_b, 0x66_b, 0x66_b, 0x66_b, 0x66_b,
-                   // 32-bit dur_.unit member: time_unit::seconds
-                   0x00_b, 0x00_b, 0x00_b, 0x02_b,
-                   // 64-bit dur_.count member: 123
-                   0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x00_b, 0x7B_b,
                    // 64-bit ts_ member.
                    0x14_b, 0x85_b, 0x74_b, 0x34_b, 0x62_b, 0x74_b, 0x82_b, 0x00_b,
                    // 32-bit te_ member: test_enum::b

@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/actor_pool.hpp>
@@ -48,7 +46,7 @@ namespace nil {
             void broadcast_dispatch(spawner &, actor_pool::uplock &, const actor_pool::actor_vec &vec,
                                     mailbox_element_ptr &ptr, execution_unit *host) {
                 ACTOR_ASSERT(!vec.empty());
-                auto msg = ptr->move_content_to_message();
+                auto msg = ptr->payload;
                 for (auto &worker : vec)
                     worker->enqueue(ptr->sender, ptr->mid, msg, host);
             }
@@ -108,7 +106,7 @@ namespace nil {
 
         void actor_pool::enqueue(mailbox_element_ptr what, execution_unit *eu) {
             upgrade_lock<detail::shared_spinlock> guard {workers_mtx_};
-            if (filter(guard, what->sender, what->mid, *what, eu))
+            if (filter(guard, what->sender, what->mid, what->payload, eu))
                 return;
             policy_(home_system(), guard, workers_, what, eu);
         }
@@ -133,29 +131,27 @@ namespace nil {
         }
 
         bool actor_pool::filter(upgrade_lock<detail::shared_spinlock> &guard, const strong_actor_ptr &sender,
-                                message_id mid, message_view &mv, execution_unit *eu) {
-            auto &content = mv.content();
+                                message_id mid, message &content, execution_unit *eu) {
             ACTOR_LOG_TRACE(ACTOR_ARG(mid) << ACTOR_ARG(content));
-            if (content.match_elements<exit_msg>()) {
+            if (auto view = make_const_typed_message_view<exit_msg>(content)) {
                 // acquire second mutex as well
                 std::vector<actor> workers;
-                auto em = content.get_as<exit_msg>(0).reason;
-                if (cleanup(std::move(em), eu)) {
-                    auto tmp = mv.move_content_to_message();
-                    // send exit messages *always* to all middleman_workers and clear vector afterwards
+                auto reason = get<0>(view).reason;
+                if (cleanup(std::move(reason), eu)) {
+                    // send exit messages *always* to all workers and clear vector afterwards
                     // but first swap workers_ out of the critical section
                     upgrade_to_unique_lock<detail::shared_spinlock> unique_guard {guard};
                     workers_.swap(workers);
                     unique_guard.unlock();
                     for (auto &w : workers)
-                        anon_send(w, tmp);
+                        anon_send(w, content);
                     unregister_from_system();
                 }
                 return true;
             }
-            if (content.match_elements<down_msg>()) {
+            if (auto view = make_const_typed_message_view<down_msg>(content)) {
                 // remove failed worker from pool
-                auto &dm = content.get_as<down_msg>(0);
+                const auto &dm = get<0>(view);
                 upgrade_to_unique_lock<detail::shared_spinlock> unique_guard {guard};
                 auto last = workers_.end();
                 auto i = std::find(workers_.begin(), workers_.end(), dm.source);
@@ -169,16 +165,16 @@ namespace nil {
                 }
                 return true;
             }
-            if (content.match_elements<sys_atom, put_atom, actor>()) {
-                auto &worker = content.get_as<actor>(2);
+            if (auto view = make_const_typed_message_view<sys_atom, put_atom, actor>(content)) {
+                const auto &worker = get<2>(view);
                 worker->attach(default_attachable::make_monitor(worker.address(), address()));
                 upgrade_to_unique_lock<detail::shared_spinlock> unique_guard {guard};
                 workers_.push_back(worker);
                 return true;
             }
-            if (content.match_elements<sys_atom, delete_atom, actor>()) {
+            if (auto view = make_const_typed_message_view<sys_atom, delete_atom, actor>(content)) {
                 upgrade_to_unique_lock<detail::shared_spinlock> unique_guard {guard};
-                auto &what = content.get_as<actor>(2);
+                auto &what = get<2>(view);
                 auto last = workers_.end();
                 auto i = std::find(workers_.begin(), last, what);
                 if (i != last) {

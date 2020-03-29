@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <set>
@@ -21,8 +19,8 @@
 #include <nil/actor/all.hpp>
 #include <nil/actor/group.hpp>
 #include <nil/actor/message.hpp>
-#include <nil/actor/serialization/serializer.hpp>
-#include <nil/actor/serialization/deserializer.hpp>
+#include <nil/actor/serializer.hpp>
+#include <nil/actor/deserializer.hpp>
 #include <nil/actor/event_based_actor.hpp>
 
 #include <nil/actor/group_manager.hpp>
@@ -50,7 +48,8 @@ namespace nil {
                         ys.push_back(x);
                     }
                 // Don't block when using the test coordinator.
-                if (atom("testing") != sys.config().scheduler_policy)
+                if (auto policy = get_if<std::string>(&sys.config(), "scheduler.policy");
+                    policy && *policy != "testing")
                     self->wait_for(ys);
             }
 
@@ -149,8 +148,8 @@ namespace nil {
                     ACTOR_LOG_TRACE("");
                     // instead of dropping "unexpected" messages,
                     // we simply forward them to our acquaintances
-                    auto fwd = [=](scheduled_actor *, message_view &x) -> result<message> {
-                        send_to_acquaintances(x.move_content_to_message());
+                    auto fwd = [=](scheduled_actor *, message &msg) -> result<message> {
+                        send_to_acquaintances(std::move(msg));
                         return message {};
                     };
                     set_default_handler(fwd);
@@ -227,8 +226,9 @@ namespace nil {
                 local_group_proxy(spawner &sys, actor remote_broker, local_group_module &mod, std::string id,
                                   node_id nid) :
                     local_group(mod, std::move(id), std::move(nid), std::move(remote_broker)),
-                    proxy_broker_ {sys.spawn<proxy_broker, hidden>(this)}, monitor_ {sys.spawn<hidden>(
-                                                                               broker_monitor_actor, this)} {
+                    proxy_broker_ {sys.spawn<proxy_broker, hidden>(this)}, monitor_ {
+                                                                               sys.spawn<hidden>(broker_monitor_actor,
+                                                                                                 this)} {
                     // nop
                 }
 
@@ -238,7 +238,7 @@ namespace nil {
                     if (res.first) {
                         // join remote source
                         if (res.second == 1)
-                            anon_send(broker_, join_atom::value, proxy_broker_);
+                            anon_send(broker_, join_atom_v, proxy_broker_);
                         return true;
                     }
                     ACTOR_LOG_WARNING("actor already joined group");
@@ -251,14 +251,14 @@ namespace nil {
                     if (res.first && res.second == 0) {
                         // leave the remote source,
                         // because there's no more subscriber on this node
-                        anon_send(broker_, leave_atom::value, proxy_broker_);
+                        anon_send(broker_, leave_atom_v, proxy_broker_);
                     }
                 }
 
                 void enqueue(strong_actor_ptr sender, message_id mid, message msg, execution_unit *eu) override {
                     ACTOR_LOG_TRACE(ACTOR_ARG(sender) << ACTOR_ARG(mid) << ACTOR_ARG(msg));
                     // forward message to the broker
-                    broker_->enqueue(std::move(sender), mid, make_message(forward_atom::value, std::move(msg)), eu);
+                    broker_->enqueue(std::move(sender), mid, make_message(forward_atom_v, std::move(msg)), eu);
                 }
 
                 void stop() override {
@@ -289,8 +289,8 @@ namespace nil {
                 ACTOR_LOG_TRACE("");
                 // instead of dropping "unexpected" messages,
                 // we simply forward them to our acquaintances
-                auto fwd = [=](local_actor *, message_view &x) -> result<message> {
-                    group_->send_all_subscribers(current_element_->sender, x.move_content_to_message(), context());
+                auto fwd = [=](local_actor *, message &msg) -> result<message> {
+                    group_->send_all_subscribers(current_element_->sender, std::move(msg), context());
                     return message {};
                 };
                 set_default_handler(fwd);
@@ -329,9 +329,8 @@ namespace nil {
                     // deserialize identifier and broker
                     std::string identifier;
                     strong_actor_ptr broker_ptr;
-                    auto e = source(identifier, broker_ptr);
-                    if (e)
-                        return e;
+                    if (auto err = source(identifier, broker_ptr))
+                        return err;
                     ACTOR_LOG_DEBUG(ACTOR_ARG(identifier) << ACTOR_ARG(broker_ptr));
                     if (!broker_ptr) {
                         storage = invalid_group;
@@ -356,6 +355,7 @@ namespace nil {
                     storage = group {p.first->second};
                     return none;
                 }
+
                 error load(deserializer &source, group &storage) override {
                     return load_impl(source, storage);
                 }

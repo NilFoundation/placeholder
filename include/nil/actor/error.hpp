@@ -1,58 +1,33 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <cstdint>
-#include <utility>
 #include <functional>
-
-#include <nil/actor/fwd.hpp>
-#include <nil/actor/atom.hpp>
-#include <nil/actor/none.hpp>
-#include <nil/actor/atom.hpp>
-#include <nil/actor/error_code.hpp>
-
-#include <nil/actor/meta/type_name.hpp>
-#include <nil/actor/meta/load_callback.hpp>
-#include <nil/actor/meta/omittable_if_empty.hpp>
+#include <utility>
 
 #include <nil/actor/detail/comparable.hpp>
 
+#include <nil/actor/error_category.hpp>
+#include <nil/actor/error_code.hpp>
+#include <nil/actor/fwd.hpp>
+#include <nil/actor/message.hpp>
+#include <nil/actor/meta/load_callback.hpp>
+#include <nil/actor/meta/omittable_if_empty.hpp>
+#include <nil/actor/meta/save_callback.hpp>
+#include <nil/actor/meta/type_name.hpp>
+#include <nil/actor/none.hpp>
+
 namespace nil {
     namespace actor {
-
-        class error;
-
-        /// Evaluates to true if `T` is an enum with a free function
-        /// `make_error` for converting it to an `error`.
-        template<class T>
-        struct has_make_error {
-        private:
-            template<class U>
-            static auto test_make_error(U *x) -> decltype(make_error(*x));
-
-            template<class U>
-            static auto test_make_error(...) -> void;
-
-            using type = decltype(test_make_error<T>(nullptr));
-
-        public:
-            static constexpr bool value = std::is_enum<T>::value && std::is_same<error, type>::value;
-        };
-
-        /// Convenience alias for `std::enable_if<has_make_error<T>::value, U>::type`.
-        template<class T, class U = void>
-        using enable_if_has_make_error_t = typename std::enable_if<has_make_error<T>::value, U>::type;
 
         /// A serializable type for storing error codes with category and optional,
         /// human-readable context information. Unlike error handling classes from
@@ -80,53 +55,55 @@ namespace nil {
         ///
         /// The C++ standard library uses category singletons and virtual dispatching
         /// to correlate error codes to descriptive strings. However, singletons are
-        /// a poor choice when it comes to serialization. ACTOR uses atoms for
+        /// a poor choice when it comes to serialization. CAF uses atoms for
         /// categories instead and requires users to register custom error categories
         /// to the actor system. This makes the actor system the natural instance for
         /// rendering error messages via `spawner::render(const error&)`.
-        class error : detail::comparable<error> {
+        class BOOST_SYMBOL_VISIBLE error : detail::comparable<error> {
         public:
             // -- member types -----------------------------------------------------------
 
             using inspect_fun =
-                std::function<error(meta::type_name_t, uint8_t &, atom_value &, meta::omittable_if_empty_t, message &)>;
+                std::function<error(meta::type_name_t, uint8_t &, uint8_t &, meta::omittable_if_empty_t, message &)>;
 
             // -- constructors, destructors, and assignment operators --------------------
 
             error() noexcept;
+
             error(none_t) noexcept;
 
             error(error &&) noexcept;
+
             error &operator=(error &&) noexcept;
 
             error(const error &);
+
             error &operator=(const error &);
 
-            error(uint8_t x, atom_value y);
-            error(uint8_t x, atom_value y, message z);
+            error(uint8_t x, uint8_t y);
 
-            template<class E, class = enable_if_has_make_error_t<E>>
-            error(E error_value) : error(make_error(error_value)) {
+            error(uint8_t x, uint8_t y, message z);
+
+            template<class Enum, uint8_t Category = error_category<Enum>::value>
+            error(Enum error_value) : error(static_cast<uint8_t>(error_value), Category) {
+                // nop
+            }
+
+            template<class Enum>
+            error(error_code<Enum> code) : error(static_cast<uint8_t>(code.value()), error_category<Enum>::value) {
                 // nop
             }
 
             template<class E>
-            error(error_code<E> code) : error(code.value()) {
-                // nop
-            }
-
-            template<class E, class = enable_if_has_make_error_t<E>>
             error &operator=(E error_value) {
-                auto tmp = make_error(error_value);
+                error tmp {error_value};
                 std::swap(data_, tmp.data_);
                 return *this;
             }
 
             template<class E>
             error &operator=(error_code<E> code) {
-                auto tmp = make_error(code.value());
-                std::swap(data_, tmp.data_);
-                return *this;
+                return *this = code.value();
             }
 
             ~error();
@@ -139,7 +116,7 @@ namespace nil {
 
             /// Returns the category of this error.
             /// @pre `*this != none`
-            atom_value category() const noexcept;
+            uint8_t category() const noexcept;
 
             /// Returns context information to this error.
             /// @pre `*this != none`
@@ -157,7 +134,7 @@ namespace nil {
 
             int compare(const error &) const noexcept;
 
-            int compare(uint8_t x, atom_value y) const noexcept;
+            int compare(uint8_t x, uint8_t y) const noexcept;
 
             // -- modifiers --------------------------------------------------------------
 
@@ -218,7 +195,7 @@ namespace nil {
 
             uint8_t &code_ref() noexcept;
 
-            atom_value &category_ref() noexcept;
+            uint8_t &category_ref() noexcept;
 
             void init();
 
@@ -232,7 +209,20 @@ namespace nil {
         };
 
         /// @relates error
-        std::string to_string(const error &x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(const error &x);
+
+        /// @relates error
+        template<class Enum>
+        error make_error(Enum code) {
+            return error {static_cast<uint8_t>(code), error_category<Enum>::value};
+        }
+
+        /// @relates error
+        template<class Enum, class T, class... Ts>
+        error make_error(Enum code, T &&x, Ts &&... xs) {
+            return error {static_cast<uint8_t>(code), error_category<Enum>::value,
+                          make_message(std::forward<T>(x), std::forward<Ts>(xs)...)};
+        }
 
         /// @relates error
         inline bool operator==(const error &x, none_t) {
@@ -245,15 +235,16 @@ namespace nil {
         }
 
         /// @relates error
-        template<class E, class = enable_if_has_make_error_t<E>>
-        bool operator==(const error &x, E y) {
-            return x == make_error(y);
+        template<class Enum, uint8_t Category = error_category<Enum>::value>
+        bool operator==(const error &x, Enum y) {
+            auto code = static_cast<uint8_t>(y);
+            return code == 0 ? !x : x && x.category() == Category && x.code() == code;
         }
 
         /// @relates error
-        template<class E, class = enable_if_has_make_error_t<E>>
-        bool operator==(E x, const error &y) {
-            return make_error(x) == y;
+        template<class Enum, uint8_t Category = error_category<Enum>::value>
+        bool operator==(Enum x, const error &y) {
+            return y == x;
         }
 
         /// @relates error
@@ -267,14 +258,14 @@ namespace nil {
         }
 
         /// @relates error
-        template<class E, class = enable_if_has_make_error_t<E>>
-        bool operator!=(const error &x, E y) {
+        template<class Enum, uint8_t Category = error_category<Enum>::value>
+        bool operator!=(const error &x, Enum y) {
             return !(x == y);
         }
 
         /// @relates error
-        template<class E, class = enable_if_has_make_error_t<E>>
-        bool operator!=(E x, const error &y) {
+        template<class Enum, uint8_t Category = error_category<Enum>::value>
+        bool operator!=(Enum x, const error &y) {
             return !(x == y);
         }
 

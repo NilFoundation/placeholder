@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -28,10 +26,10 @@
 #include <nil/actor/behavior.hpp>
 #include <nil/actor/check_typed_input.hpp>
 #include <nil/actor/delegated.hpp>
+
 #include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/detail/typed_actor_util.hpp>
 #include <nil/actor/detail/unique_function.hpp>
-#include <nil/actor/duration.hpp>
 #include <nil/actor/error.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/message.hpp>
@@ -43,6 +41,7 @@
 #include <nil/actor/response_type.hpp>
 #include <nil/actor/resumable.hpp>
 #include <nil/actor/spawn_options.hpp>
+#include <nil/actor/timespan.hpp>
 #include <nil/actor/typed_actor.hpp>
 #include <nil/actor/typed_response_promise.hpp>
 
@@ -51,7 +50,7 @@ namespace nil {
 
         /// Base class for actors running on this node, either
         /// living in an own thread or cooperatively scheduled.
-        class local_actor : public monitorable_actor {
+        class BOOST_SYMBOL_VISIBLE local_actor : public monitorable_actor {
         public:
             // -- member types -----------------------------------------------------------
 
@@ -75,29 +74,24 @@ namespace nil {
             /// Returns the current time.
             clock_type::time_point now() const noexcept;
 
-            /// Returns the difference between `t0` and `t1`, allowing the clock to
-            /// return any arbitrary value depending on the measurement that took place.
-            clock_type::duration difference(atom_value measurement, clock_type::time_point t0,
-                                            clock_type::time_point t1);
-
             // -- timeout management -----------------------------------------------------
 
             /// Requests a new timeout for `mid`.
             /// @pre `mid.is_request()`
-            void request_response_timeout(const duration &d, message_id mid);
+            void request_response_timeout(timespan d, message_id mid);
 
             // -- spawn functions --------------------------------------------------------
 
             template<class T, spawn_options Os = no_spawn_options, class... Ts>
             infer_handle_from_class_t<T> spawn(Ts &&... xs) {
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 return eval_opts(Os, system().spawn_class<T, make_unbound(Os)>(cfg, std::forward<Ts>(xs)...));
             }
 
             template<class T, spawn_options Os = no_spawn_options>
             infer_handle_from_state_t<T> spawn() {
                 using impl = composable_behavior_based_actor<T>;
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 return eval_opts(Os, system().spawn_class<impl, make_unbound(Os)>(cfg));
             }
 
@@ -106,7 +100,7 @@ namespace nil {
                 using impl = infer_impl_from_fun_t<F>;
                 static constexpr bool spawnable = detail::spawnable<F, impl, Ts...>();
                 static_assert(spawnable, "cannot spawn function-based actor with given arguments");
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 static constexpr spawn_options unbound = make_unbound(Os);
                 detail::bool_token<spawnable> enabled;
                 return eval_opts(Os, system().spawn_functor<unbound>(enabled, cfg, fun, std::forward<Ts>(xs)...));
@@ -114,21 +108,21 @@ namespace nil {
 
             template<class T, spawn_options Os = no_spawn_options, class Groups, class... Ts>
             actor spawn_in_groups(const Groups &gs, Ts &&... xs) {
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, gs.begin(), gs.end(),
                                                                                          std::forward<Ts>(xs)...));
             }
 
             template<class T, spawn_options Os = no_spawn_options, class... Ts>
             actor spawn_in_groups(std::initializer_list<group> gs, Ts &&... xs) {
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, gs.begin(), gs.end(),
                                                                                          std::forward<Ts>(xs)...));
             }
 
             template<class T, spawn_options Os = no_spawn_options, class... Ts>
             actor spawn_in_group(const group &grp, Ts &&... xs) {
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 auto first = &grp;
                 return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, first, first + 1,
                                                                                          std::forward<Ts>(xs)...));
@@ -136,21 +130,21 @@ namespace nil {
 
             template<spawn_options Os = no_spawn_options, class Groups, class F, class... Ts>
             actor spawn_in_groups(const Groups &gs, F fun, Ts &&... xs) {
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 return eval_opts(Os, system().spawn_fun_in_groups<make_unbound(Os)>(cfg, gs.begin(), gs.end(), fun,
                                                                                     std::forward<Ts>(xs)...));
             }
 
             template<spawn_options Os = no_spawn_options, class F, class... Ts>
             actor spawn_in_groups(std::initializer_list<group> gs, F fun, Ts &&... xs) {
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 return eval_opts(Os, system().spawn_fun_in_groups<make_unbound(Os)>(cfg, gs.begin(), gs.end(), fun,
                                                                                     std::forward<Ts>(xs)...));
             }
 
             template<spawn_options Os = no_spawn_options, class F, class... Ts>
             actor spawn_in_group(const group &grp, F fun, Ts &&... xs) {
-                actor_config cfg {context()};
+                actor_config cfg {context(), this};
                 auto first = &grp;
                 return eval_opts(Os,
                                  system().spawn_fun_in_groups<make_unbound(Os)>(cfg, first, first + 1, fun,
@@ -159,16 +153,17 @@ namespace nil {
 
             // -- sending asynchronous messages ------------------------------------------
 
-            /// Sends an exit message to `dest`.
+            /// Sends an exit message to `whom`.
             void send_exit(const actor_addr &whom, error reason);
 
-            void send_exit(const strong_actor_ptr &dest, error reason);
+            /// Sends an exit message to `whom`.
+            void send_exit(const strong_actor_ptr &whom, error reason);
 
-            /// Sends an exit message to `dest`.
+            /// Sends an exit message to `whom`.
             template<class ActorHandle>
-            void send_exit(const ActorHandle &dest, error reason) {
-                if (dest)
-                    dest->eq_impl(make_message_id(), ctrl(), context(), exit_msg {address(), std::move(reason)});
+            void send_exit(const ActorHandle &whom, error reason) {
+                if (whom)
+                    whom->eq_impl(make_message_id(), ctrl(), context(), exit_msg {address(), std::move(reason)});
             }
 
             // -- miscellaneous actor operations -----------------------------------------
@@ -279,9 +274,13 @@ namespace nil {
                 current_element_ = ptr;
             }
 
+            /// Adds a unidirectional `monitor` to `node`.
+            /// @note Each call to `monitor` creates a new, independent monitor.
+            void monitor(const node_id &node);
+
             /// Adds a unidirectional `monitor` to `whom`.
             /// @note Each call to `monitor` creates a new, independent monitor.
-            template<message_priority P = message_priority::normal, class Handle = actor>
+            template<message_priority P = message_priority::normal, class Handle>
             void monitor(const Handle &whom) {
                 monitor(actor_cast<abstract_actor *>(whom), P);
             }
@@ -289,8 +288,12 @@ namespace nil {
             /// Removes a monitor from `whom`.
             void demonitor(const actor_addr &whom);
 
+            /// Removes a monitor from `node`.
+            void demonitor(const node_id &node);
+
             /// Removes a monitor from `whom`.
-            inline void demonitor(const actor &whom) {
+            template<class Handle>
+            void demonitor(const Handle &whom) {
                 demonitor(whom.address());
             }
 
@@ -367,18 +370,8 @@ namespace nil {
             typename response_type<typename Handle::signatures,
                                    detail::implicit_conversions_t<typename std::decay<Ts>::type>...>::delegated_type
                 delegate(const Handle &dest, Ts &&... xs) {
-                static_assert(sizeof...(Ts) > 0, "nothing to delegate");
-                using token =
-                    detail::type_list<typename detail::implicit_conversions<typename std::decay<Ts>::type>::type...>;
-                static_assert(response_type_unbox<signatures_of_t<Handle>, token>::valid,
-                              "receiver does not accept given message");
-                auto mid = current_element_->mid;
-                current_element_->mid =
-                    P == message_priority::high ? mid.with_high_priority() : mid.with_normal_priority();
-                dest->enqueue(make_mailbox_element(std::move(current_element_->sender), mid,
-                                                   std::move(current_element_->stages), std::forward<Ts>(xs)...),
-                              context());
-                return {};
+                auto rp = make_response_promise();
+                return rp.template delegate<P>(dest, std::forward<Ts>(xs)...);
             }
 
             virtual void initialize();
@@ -386,6 +379,8 @@ namespace nil {
             bool cleanup(error &&fail_state, execution_unit *host) override;
 
             message_id new_request_id(message_priority mp);
+
+            /// @endcond
 
         protected:
             // -- member variables -------------------------------------------------------
@@ -402,5 +397,6 @@ namespace nil {
             /// Factory function for returning initial behavior in function-based actors.
             detail::unique_function<behavior(local_actor *)> initial_behavior_fac_;
         };
+
     }    // namespace actor
 }    // namespace nil

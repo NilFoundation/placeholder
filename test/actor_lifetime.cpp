@@ -1,31 +1,22 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#include <nil/actor/config.hpp>
+#define BOOST_TEST_MODULE actor_lifetime
 
-#define BOOST_TEST_MODULE actor_lifetime_test
+#include "core-test.hpp"
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-
-#include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <mutex>
 
 #include <nil/actor/all.hpp>
-
-#include <nil/actor/test/dsl.hpp>
-
-using check_atom = nil::actor::atom_constant<nil::actor::atom("check")>;
 
 using namespace nil::actor;
 
@@ -59,7 +50,9 @@ namespace {
         }
 
         behavior make_behavior() override {
-            return {[=](int x) { return x; }};
+            return {
+                [=](int x) { return x; },
+            };
         }
     };
 
@@ -69,20 +62,20 @@ namespace {
             self->set_exit_handler([self](exit_msg &msg) {
                 // must be still alive at this point
                 BOOST_CHECK_EQUAL(s_testees.load(), 1);
-                BOOST_CHECK(msg.reason == exit_reason::user_shutdown);
-                self->send(self, check_atom::value);
+                BOOST_CHECK_EQUAL(msg.reason, exit_reason::user_shutdown);
+                self->send(self, ok_atom_v);
             });
             self->link_to(aut);
         } else {
             self->set_down_handler([self](down_msg &msg) {
                 // must be still alive at this point
                 BOOST_CHECK_EQUAL(s_testees.load(), 1);
-                BOOST_CHECK(msg.reason == exit_reason::user_shutdown);
+                BOOST_CHECK_EQUAL(msg.reason, exit_reason::user_shutdown);
                 // testee might be still running its cleanup code in
                 // another worker thread; by waiting some milliseconds, we make sure
                 // testee had enough time to return control to the scheduler
                 // which in turn destroys it by dropping the last remaining reference
-                self->send(self, check_atom::value);
+                self->send(self, ok_atom_v);
             });
             self->monitor(aut);
         }
@@ -92,22 +85,23 @@ namespace {
             s_tester_init_done = true;
             s_cv.notify_one();
         }
-        return {[self](check_atom) {
-            {    // make sure aut's dtor and on_exit() have been called
-                std::unique_lock<std::mutex> guard {s_mtx};
-                while (!s_testee_cleanup_done.load()) {
-                    s_cv.wait(guard);
+        return {
+            [self](ok_atom) {
+                {    // make sure aut's dtor and on_exit() have been called
+                    std::unique_lock<std::mutex> guard {s_mtx};
+                    while (!s_testee_cleanup_done.load())
+                        s_cv.wait(guard);
                 }
-            }
-            BOOST_CHECK_EQUAL(s_testees.load(), 0);
-            BOOST_CHECK_EQUAL(s_pending_on_exits.load(), 0);
-            self->quit();
-        }};
+                BOOST_CHECK_EQUAL(s_testees.load(), 0);
+                BOOST_CHECK_EQUAL(s_pending_on_exits.load(), 0);
+                self->quit();
+            },
+        };
     }
 
     struct config : spawner_config {
         config() {
-            scheduler_policy = atom("testing");
+            set("scheduler.policy", "testing");
         }
     };
 
@@ -148,9 +142,8 @@ namespace {
                 // done.
                 {    // Wait for the exit_msg from the driver.
                     std::unique_lock<std::mutex> guard {s_mtx};
-                    while (!s_tester_init_done) {
+                    while (!s_tester_init_done)
                         s_cv.wait(guard);
-                    }
                 }
                 // Run the exit_msg.
                 sched.run_once();
@@ -172,8 +165,8 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(destructor_call_test) {
-    {    // lifetime scope of actor systme
+BOOST_AUTO_TEST_CASE(destructor_call) {
+    {    // lifetime scope of actor system
         spawner_config cfg;
         spawner system {cfg};
         system.spawn<testee>();
@@ -184,19 +177,19 @@ BOOST_AUTO_TEST_CASE(destructor_call_test) {
 
 BOOST_FIXTURE_TEST_SUITE(actor_lifetime_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(no_spawn_options_and_exit_msg_test) {
+BOOST_AUTO_TEST_CASE(no_spawn_options_and_exit_msg) {
     tst<exit_msg, no_spawn_options, no_spawn_options>();
 }
 
-BOOST_AUTO_TEST_CASE(no_spawn_options_and_down_msg_test) {
+BOOST_AUTO_TEST_CASE(no_spawn_options_and_down_msg) {
     tst<down_msg, no_spawn_options, no_spawn_options>();
 }
 
-BOOST_AUTO_TEST_CASE(mixed_spawn_options_and_exit_msg_test) {
+BOOST_AUTO_TEST_CASE(mixed_spawn_options_and_exit_msg) {
     tst<exit_msg, detached, no_spawn_options>();
 }
 
-BOOST_AUTO_TEST_CASE(mixed_spawn_options_and_down_msg_test) {
+BOOST_AUTO_TEST_CASE(mixed_spawn_options_and_down_msg) {
     tst<down_msg, detached, no_spawn_options>();
 }
 

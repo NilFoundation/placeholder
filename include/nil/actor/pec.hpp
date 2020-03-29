@@ -1,28 +1,27 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <string>
 
+
+#include <nil/actor/error_category.hpp>
 #include <nil/actor/fwd.hpp>
 
 namespace nil {
     namespace actor {
 
         /// PEC stands for "Parser Error Code". This enum contains error codes used by
-        /// various ACTOR parsers.
+        /// various CAF parsers.
         enum class pec : uint8_t {
             /// Not-an-error.
             success = 0,
@@ -39,7 +38,7 @@ namespace nil {
             /// Too many characters for an atom.
             too_many_characters,
             /// Unrecognized character after escaping `\`.
-            illegal_escape_sequence,
+            invalid_escape_sequence,
             /// Misplaced newline, e.g., inside a string.
             unexpected_newline,
             /// Parsed positive integer exceeds the number of available bits.
@@ -54,27 +53,29 @@ namespace nil {
             type_mismatch,
             /// Stopped at an unrecognized option name.
             not_an_option,
-            /// Stopped at an unparseable argument.
-            illegal_argument = 15,
+            /// Stopped at an unparsable argument.
+            invalid_argument = 15,
             /// Stopped because an argument was omitted.
             missing_argument,
             /// Stopped because the key of a category was taken.
-            illegal_category,
+            invalid_category,
+            /// Stopped at an unexpected field name while reading a user-defined type.
+            invalid_field_name,
+            /// Stopped at a repeated field name while reading a user-defined type.
+            repeated_field_name,
+            /// Stopped while reading a user-defined type with one or more missing
+            /// mandatory fields.
+            missing_field = 20,
+            /// Parsing a range statement ('n..m' or 'n..m..step') failed.
+            invalid_range_expression,
         };
 
-        /// Returns an error object from given error code.
-        error make_error(pec code);
+        BOOST_SYMBOL_VISIBLE std::string to_string(pec);
 
-        /// Returns an error object from given error code with additional context
-        /// information for where the parser stopped in the input.
-        error make_error(pec code, size_t line, size_t column);
-
-        /// Returns an error object from given error code with additional context
-        /// information for where the parser stopped in the argument.
-        error make_error(pec code, string_view argument);
-
-        /// @relates pec
-        const char *to_string(pec x);
+        template<>
+        struct error_category<pec> {
+            static constexpr uint8_t value = 1;
+        };
 
     }    // namespace actor
 }    // namespace nil

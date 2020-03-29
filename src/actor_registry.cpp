@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/actor_registry.hpp>
@@ -18,18 +16,16 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <nil/actor/sec.hpp>
+#include <nil/actor/spawner.hpp>
+#include <nil/actor/attachable.hpp>
+#include <nil/actor/detail/shared_spinlock.hpp>
+#include <nil/actor/event_based_actor.hpp>
+#include <nil/actor/exit_reason.hpp>
 #include <nil/actor/locks.hpp>
 #include <nil/actor/logger.hpp>
-#include <nil/actor/attachable.hpp>
-#include <nil/actor/exit_reason.hpp>
-#include <nil/actor/spawner.hpp>
 #include <nil/actor/scoped_actor.hpp>
+#include <nil/actor/sec.hpp>
 #include <nil/actor/stateful_actor.hpp>
-#include <nil/actor/event_based_actor.hpp>
-#include <nil/actor/uniform_type_info_map.hpp>
-
-#include <nil/actor/detail/shared_spinlock.hpp>
 
 namespace nil {
     namespace actor {
@@ -121,7 +117,7 @@ namespace nil {
             }
         }
 
-        strong_actor_ptr actor_registry::get_impl(atom_value key) const {
+        strong_actor_ptr actor_registry::get_impl(const std::string &key) const {
             shared_guard guard {named_entries_mtx_};
             auto i = named_entries_.find(key);
             if (i == named_entries_.end())
@@ -129,16 +125,16 @@ namespace nil {
             return i->second;
         }
 
-        void actor_registry::put_impl(atom_value key, strong_actor_ptr value) {
+        void actor_registry::put_impl(const std::string &key, strong_actor_ptr value) {
             if (value == nullptr) {
                 erase(key);
                 return;
             }
             exclusive_guard guard {named_entries_mtx_};
-            named_entries_.emplace(key, std::move(value));
+            named_entries_.emplace(std::move(key), std::move(value));
         }
 
-        void actor_registry::erase(atom_value key) {
+        void actor_registry::erase(const std::string &key) {
             // Stores a reference to the actor we're going to remove for the same
             // reasoning as in erase(actor_id).
             strong_actor_ptr ref;

@@ -1,26 +1,23 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2017 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE wdrr_fixed_multiplexed_queue_test
+#define BOOST_TEST_MODULE intrusive.wdrr_fixed_multiplexed_queue
+
+#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include <memory>
 
-#include <nil/actor/deep_to_string.hpp>
-
 #include <nil/actor/intrusive/drr_queue.hpp>
 #include <nil/actor/intrusive/singly_linked.hpp>
-#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
@@ -130,47 +127,47 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(wdrr_fixed_multiplexed_queue_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(default_constructed_test) {
-    BOOST_REQUIRE_EQUAL(queue.empty(), true);
+BOOST_AUTO_TEST_CASE(default_constructed) {
+    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
 }
 
-BOOST_AUTO_TEST_CASE(new_round_test) {
+BOOST_AUTO_TEST_CASE(new_round) {
     fill(queue, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12);
     // Allow f to consume 2 items per nested queue.
     fetch_helper f;
     auto round_result = queue.new_round(2, f);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(f.result, "0:3,0:6,1:1,1:4,2:2,2:5");
-    BOOST_REQUIRE_EQUAL(queue.empty(), false);
+    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
     // Allow f to consume one more item from each queue.
     f.result.clear();
     round_result = queue.new_round(1, f);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(f.result, "0:9,1:7,2:8");
-    BOOST_REQUIRE_EQUAL(queue.empty(), false);
+    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
     // Allow f to consume the remainder, i.e., 12.
     f.result.clear();
     round_result = queue.new_round(1000, f);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(f.result, "0:12");
-    BOOST_REQUIRE_EQUAL(queue.empty(), true);
+    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
 }
 
-BOOST_AUTO_TEST_CASE(priorities_test) {
+BOOST_AUTO_TEST_CASE(priorities) {
     queue.policy().enable_priorities = true;
     fill(queue, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     // Allow f to consume 2 items from the high priority and 1 item otherwise.
     BOOST_CHECK_EQUAL(fetch(1), "0:3,0:6,1:1,2:2");
-    BOOST_REQUIRE_EQUAL(queue.empty(), false);
+    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
     // Drain the high-priority queue with one item left per other queue.
     BOOST_CHECK_EQUAL(fetch(1), "0:9,1:4,2:5");
-    BOOST_REQUIRE_EQUAL(queue.empty(), false);
+    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
     // Drain queue.
     BOOST_CHECK_EQUAL(fetch(1000), "1:7,2:8");
-    BOOST_REQUIRE_EQUAL(queue.empty(), true);
+    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
 }
 
-BOOST_AUTO_TEST_CASE(peek_all_test) {
+BOOST_AUTO_TEST_CASE(peek_all) {
     auto queue_to_string = [&] {
         std::string str;
         auto peek_fun = [&](const inode &x) {
@@ -194,7 +191,7 @@ BOOST_AUTO_TEST_CASE(peek_all_test) {
     BOOST_CHECK_EQUAL(queue_to_string(), "3, 1, 4, 2");
 }
 
-BOOST_AUTO_TEST_CASE(to_string_test) {
+BOOST_AUTO_TEST_CASE(to_string) {
     BOOST_CHECK_EQUAL(deep_to_string(queue), "[]");
     fill(queue, 1, 2, 3, 4);
     BOOST_CHECK_EQUAL(deep_to_string(queue), "[3, 1, 4, 2]");

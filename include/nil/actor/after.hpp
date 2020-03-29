@@ -1,28 +1,29 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+#include <chrono>
 #include <tuple>
 #include <type_traits>
 
+
 #include <nil/actor/timeout_definition.hpp>
+#include <nil/actor/timespan.hpp>
 
 namespace nil {
     namespace actor {
 
-        class timeout_definition_builder {
+        class BOOST_SYMBOL_VISIBLE timeout_definition_builder {
         public:
-            constexpr timeout_definition_builder(duration d) : tout_(d) {
+            explicit constexpr timeout_definition_builder(timespan d) : tout_(d) {
                 // nop
             }
 
@@ -32,18 +33,14 @@ namespace nil {
             }
 
         private:
-            duration tout_;
+            timespan tout_;
         };
 
         /// Returns a generator for timeouts.
-        constexpr timeout_definition_builder after(duration d) {
-            return {d};
-        }
-
-        /// Returns a generator for timeouts.
         template<class Rep, class Period>
-        constexpr timeout_definition_builder after(std::chrono::duration<Rep, Period> d) {
-            return after(duration {d});
+        constexpr auto after(std::chrono::duration<Rep, Period> d) {
+            using std::chrono::duration_cast;
+            return timeout_definition_builder {duration_cast<timespan>(d)};
         }
 
     }    // namespace actor

@@ -1,37 +1,34 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2017 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+#include <cstdint>
 #include <utility>
 #include <vector>
-#include <cstdint>
 
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/actor_control_block.hpp>
-#include <nil/actor/atom.hpp>
+
+#include <nil/actor/detail/type_list.hpp>
 #include <nil/actor/message.hpp>
 #include <nil/actor/stream_priority.hpp>
 #include <nil/actor/stream_slot.hpp>
-#include <nil/actor/variant.hpp>
-
 #include <nil/actor/tag/boxing_type.hpp>
-
-#include <nil/actor/detail/type_list.hpp>
+#include <nil/actor/variant.hpp>
 
 namespace nil {
     namespace actor {
 
         /// Stream messages that travel downstream, i.e., batches and close messages.
-        struct downstream_msg : tag::boxing_type {
+        struct BOOST_SYMBOL_VISIBLE downstream_msg : tag::boxing_type {
             // -- nested types -----------------------------------------------------------
 
             /// Transmits stream data.

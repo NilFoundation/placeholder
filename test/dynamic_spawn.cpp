@@ -1,27 +1,24 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#include <nil/actor/config.hpp>
+#define BOOST_TEST_MODULE dynamic_spawn
 
-#define BOOST_TEST_MODULE dynamic_spawn_test
+#include <nil/actor/spawner.hpp>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/chrono/duration.hpp>
+#include "core-test.hpp"
 
-#include <stack>
 #include <atomic>
-#include <iostream>
+#include <chrono>
 #include <functional>
+#include <iostream>
+#include <stack>
 
 #include <nil/actor/all.hpp>
 
@@ -31,12 +28,6 @@ namespace {
 
     std::atomic<long> s_max_actor_instances;
     std::atomic<long> s_actor_instances;
-
-    using a_atom = atom_constant<atom("a")>;
-    using b_atom = atom_constant<atom("b")>;
-    using c_atom = atom_constant<atom("c")>;
-    using abc_atom = atom_constant<atom("abc")>;
-    using name_atom = atom_constant<atom("name")>;
 
     void inc_actor_instances() {
         long v1 = ++s_actor_instances;
@@ -74,34 +65,32 @@ namespace {
 
     // quits after 5 timeouts
     actor spawn_event_testee2(scoped_actor &parent) {
-        struct impl : event_based_actor {
+        struct wrapper : event_based_actor {
             actor parent;
-
-            impl(actor_config &cfg, actor parent_actor) : event_based_actor(cfg), parent(std::move(parent_actor)) {
+            wrapper(actor_config &cfg, actor parent_actor) : event_based_actor(cfg), parent(std::move(parent_actor)) {
                 inc_actor_instances();
             }
-
-            ~impl() override {
+            ~wrapper() override {
                 dec_actor_instances();
             }
-
             behavior wait4timeout(int remaining) {
-                return {after(std::chrono::milliseconds(1)) >> [=] {
-                    BOOST_TEST_MESSAGE("remaining: " << remaining);
-                    if (remaining == 1) {
-                        send(parent, ok_atom::value);
-                        quit();
-                    } else {
-                        become(wait4timeout(remaining - 1));
-                    }
-                }};
+                return {
+                    after(std::chrono::milliseconds(1)) >>
+                        [=] {
+                            ACTOR_MESSAGE("remaining: " << std::to_string(remaining));
+                            if (remaining == 1) {
+                                send(parent, ok_atom_v);
+                                quit();
+                            } else
+                                become(wait4timeout(remaining - 1));
+                        },
+                };
             }
-
             behavior make_behavior() override {
                 return wait4timeout(5);
             }
         };
-        return parent->spawn<impl>(parent);
+        return parent->spawn<wrapper>(parent);
     }
 
     class testee_actor : public blocking_actor {
@@ -116,7 +105,8 @@ namespace {
 
         void act() override {
             bool running = true;
-            receive_while(running)([&](int) { wait4float(); }, [&](get_atom) { return "wait4int"; },
+            receive_while(running)([&](int) { wait4float(); },
+                                   [&](get_atom) { return "wait4int"; },
                                    [&](exit_msg &em) {
                                        if (em.reason) {
                                            fail_state(std::move(em.reason));
@@ -153,7 +143,9 @@ namespace {
         }
 
         behavior make_behavior() override {
-            return {after(std::chrono::milliseconds(10)) >> [=] { unbecome(); }};
+            return {
+                after(std::chrono::milliseconds(10)) >> [=] { unbecome(); },
+            };
         }
     };
 
@@ -169,9 +161,11 @@ namespace {
 
         behavior make_behavior() override {
             set_default_handler(reflect);
-            return {[] {
-                // nop
-            }};
+            return {
+                [] {
+                    // nop
+                },
+            };
         }
     };
 
@@ -187,28 +181,34 @@ namespace {
 
         behavior make_behavior() override {
             set_default_handler(reflect);
-            return {[] {
-                // nop
-            }};
+            return {
+                [] {
+                    // nop
+                },
+            };
         }
     };
 
     behavior master(event_based_actor *self) {
-        return ([=](ok_atom) {
-            BOOST_TEST_MESSAGE("master: received done");
-            self->quit(exit_reason::user_shutdown);
-        });
+        return {
+            [=](ok_atom) {
+                ACTOR_MESSAGE("master: received done");
+                self->quit(exit_reason::user_shutdown);
+            },
+        };
     }
 
     behavior slave(event_based_actor *self, const actor &master) {
         self->link_to(master);
         self->set_exit_handler([=](exit_msg &msg) {
-            BOOST_TEST_MESSAGE("slave: received exit message");
+            ACTOR_MESSAGE("slave: received exit message");
             self->quit(msg.reason);
         });
-        return {[] {
-            // nop
-        }};
+        return {
+            [] {
+                // nop
+            },
+        };
     }
 
     class counting_actor : public event_based_actor {
@@ -223,11 +223,11 @@ namespace {
 
         behavior make_behavior() override {
             for (int i = 0; i < 100; ++i) {
-                send(this, ok_atom::value);
+                send(this, ok_atom_v);
             }
             BOOST_CHECK_EQUAL(mailbox().size(), 100u);
             for (int i = 0; i < 100; ++i) {
-                send(this, ok_atom::value);
+                send(this, ok_atom_v);
             }
             BOOST_CHECK_EQUAL(mailbox().size(), 200u);
             return {};
@@ -250,50 +250,66 @@ namespace {
             // destructor of spawner must make sure all
             // destructors of all actors have been run
             BOOST_CHECK_EQUAL(s_actor_instances.load(), 0);
-            BOOST_TEST_MESSAGE("max. # of actor instances: " << s_max_actor_instances.load());
+            ACTOR_MESSAGE("max. # of actor instances: " << s_max_actor_instances.load());
         }
     };
 
 }    // namespace
 
+BOOST_FIXTURE_TEST_SUITE(dynamic_spawn_tests, test_coordinator_fixture<>)
+
+BOOST_AUTO_TEST_CASE(mirror) {
+    auto mirror = self->spawn<simple_mirror>();
+    auto dummy = self->spawn([=](event_based_actor *ptr) -> behavior {
+        ptr->send(mirror, "hello mirror");
+        return {[](const std::string &msg) { BOOST_CHECK_EQUAL(msg, "hello mirror"); }};
+    });
+    run();
+    /*
+    self->send(mirror, "hello mirror");
+    run();
+    self->receive (
+      [](const std::string& msg) {
+        BOOST_CHECK_EQUAL(msg, "hello mirror");
+      }
+    );
+    */
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_FIXTURE_TEST_SUITE(atom_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(count_mailbox_test) {
+BOOST_AUTO_TEST_CASE(count_mailbox) {
     system.spawn<counting_actor>();
 }
 
-BOOST_AUTO_TEST_CASE(detached_actors_and_schedulued_actors_test) {
+BOOST_AUTO_TEST_CASE(detached_actors_and_schedulued_actors) {
     scoped_actor self {system};
     // check whether detached actors and scheduled actors interact w/o errors
     auto m = system.spawn<detached>(master);
     system.spawn(slave, m);
     system.spawn(slave, m);
-    self->send(m, ok_atom::value);
+    self->send(m, ok_atom_v);
 }
 
-BOOST_AUTO_TEST_CASE(self_receive_with_zero_timeout_test) {
+BOOST_AUTO_TEST_CASE(self_receive_with_zero_timeout) {
     scoped_actor self {system};
-    self->receive([&] { BOOST_ERROR("Unexpected message"); }, after(std::chrono::seconds(0)) >>
-                                                                  [] {
-                                                                      // mailbox empty
-                                                                  });
+    self->receive([&] { ACTOR_ERROR("Unexpected message"); },
+                  after(std::chrono::seconds(0)) >>
+                      [] {
+                          // mailbox empty
+                      });
 }
 
-BOOST_AUTO_TEST_CASE(mirror_test) {
-    scoped_actor self {system};
-    auto mirror = self->spawn<simple_mirror>();
-    self->send(mirror, "hello mirror");
-    self->receive([](const std::string &msg) { BOOST_CHECK_EQUAL(msg, "hello mirror"); });
-}
-
-BOOST_AUTO_TEST_CASE(detached_mirror_test) {
+BOOST_AUTO_TEST_CASE(detached_mirror) {
     scoped_actor self {system};
     auto mirror = self->spawn<simple_mirror, detached>();
     self->send(mirror, "hello mirror");
     self->receive([](const std::string &msg) { BOOST_CHECK_EQUAL(msg, "hello mirror"); });
 }
 
-BOOST_AUTO_TEST_CASE(send_to_self_test) {
+BOOST_AUTO_TEST_CASE(send_to_self) {
     scoped_actor self {system};
     self->send(self, 1, 2, 3, true);
     self->receive([](int a, int b, int c, bool d) {
@@ -306,14 +322,14 @@ BOOST_AUTO_TEST_CASE(send_to_self_test) {
     self->receive([] {});
 }
 
-BOOST_AUTO_TEST_CASE(echo_actor_messaging_test) {
+BOOST_AUTO_TEST_CASE(echo_actor_messaging) {
     scoped_actor self {system};
     auto mecho = system.spawn<echo_actor>();
     self->send(mecho, "hello echo");
     self->receive([](const std::string &arg) { BOOST_CHECK_EQUAL(arg, "hello echo"); });
 }
 
-BOOST_AUTO_TEST_CASE(delayed_send_test) {
+BOOST_AUTO_TEST_CASE(delayed_send) {
     scoped_actor self {system};
     self->delayed_send(self, std::chrono::milliseconds(1), 1, 2, 3);
     self->receive([](int a, int b, int c) {
@@ -323,7 +339,7 @@ BOOST_AUTO_TEST_CASE(delayed_send_test) {
     });
 }
 
-BOOST_AUTO_TEST_CASE(delayed_spawn_test) {
+BOOST_AUTO_TEST_CASE(delayed_spawn) {
     scoped_actor self {system};
     self->receive(after(std::chrono::milliseconds(1)) >> [] {});
     system.spawn<testee1>();
@@ -332,19 +348,19 @@ BOOST_AUTO_TEST_CASE(delayed_spawn_test) {
 BOOST_AUTO_TEST_CASE(spawn_event_testee2_test) {
     scoped_actor self {system};
     spawn_event_testee2(self);
-    self->receive([](ok_atom) { BOOST_TEST_MESSAGE("Received 'ok'"); });
+    self->receive([](ok_atom) { ACTOR_MESSAGE("Received 'ok'"); });
 }
 
-BOOST_AUTO_TEST_CASE(function_spawn_test) {
+BOOST_AUTO_TEST_CASE(function_spawn) {
     scoped_actor self {system};
     auto f = [](const std::string &name) -> behavior {
-        return ([name](get_atom) { return std::make_tuple(name_atom::value, name); });
+        return ([name](get_atom) { return std::make_tuple(name_atom_v, name); });
     };
     auto a1 = system.spawn(f, "alice");
     auto a2 = system.spawn(f, "bob");
-    self->send(a1, get_atom::value);
+    self->send(a1, get_atom_v);
     self->receive([&](name_atom, const std::string &name) { BOOST_CHECK_EQUAL(name, "alice"); });
-    self->send(a2, get_atom::value);
+    self->send(a2, get_atom_v);
     self->receive([&](name_atom, const std::string &name) { BOOST_CHECK_EQUAL(name, "bob"); });
     self->send_exit(a1, exit_reason::user_shutdown);
     self->send_exit(a2, exit_reason::user_shutdown);
@@ -354,29 +370,31 @@ using typed_testee = typed_actor<replies_to<abc_atom>::with<std::string>>;
 
 typed_testee::behavior_type testee() {
     return {[](abc_atom) {
-        BOOST_TEST_MESSAGE("received 'abc'");
+        ACTOR_MESSAGE("received 'abc'");
         return "abc";
     }};
 }
 
-BOOST_AUTO_TEST_CASE(typed_await_test) {
+BOOST_AUTO_TEST_CASE(typed_await) {
     scoped_actor self {system};
     auto f = make_function_view(system.spawn(testee));
-    BOOST_CHECK_EQUAL(f(abc_atom::value), "abc");
+    BOOST_CHECK_EQUAL(f(abc_atom_v), "abc");
 }
 
 // tests attach_functor() inside of an actor's constructor
-BOOST_AUTO_TEST_CASE(constructor_attach_test) {
+BOOST_AUTO_TEST_CASE(constructor_attach) {
     class testee : public event_based_actor {
     public:
         testee(actor_config &cfg, actor buddy) : event_based_actor(cfg), buddy_(buddy) {
-            attach_functor([=](const error &reason) { send(buddy, ok_atom::value, reason); });
+            attach_functor([=](const error &reason) { send(buddy, ok_atom_v, reason); });
         }
 
         behavior make_behavior() override {
-            return {[] {
-                // nop
-            }};
+            return {
+                [] {
+                    // nop
+                },
+            };
         }
 
         void on_exit() override {
@@ -390,25 +408,25 @@ BOOST_AUTO_TEST_CASE(constructor_attach_test) {
     public:
         spawner(actor_config &cfg) : event_based_actor(cfg), downs_(0), testee_(spawn<testee, monitored>(this)) {
             set_down_handler([=](down_msg &msg) {
-                BOOST_CHECK(msg.reason == exit_reason::user_shutdown);
-                if (++downs_ == 2) {
+                BOOST_CHECK_EQUAL(msg.reason, exit_reason::user_shutdown);
+                if (++downs_ == 2)
                     quit(msg.reason);
-                }
             });
             set_exit_handler([=](exit_msg &msg) { send_exit(testee_, std::move(msg.reason)); });
         }
 
         behavior make_behavior() override {
-            return {[=](ok_atom, const error &reason) {
-                BOOST_CHECK(reason == exit_reason::user_shutdown);
-                if (++downs_ == 2) {
-                    quit(reason);
-                }
-            }};
+            return {
+                [=](ok_atom, const error &reason) {
+                    BOOST_CHECK_EQUAL(reason, exit_reason::user_shutdown);
+                    if (++downs_ == 2)
+                        quit(reason);
+                },
+            };
         }
 
         void on_exit() override {
-            BOOST_TEST_MESSAGE("spawner::on_exit()");
+            ACTOR_MESSAGE("spawner::on_exit()");
             destroy(testee_);
         }
 
@@ -419,32 +437,50 @@ BOOST_AUTO_TEST_CASE(constructor_attach_test) {
     anon_send_exit(system.spawn<spawner>(), exit_reason::user_shutdown);
 }
 
-BOOST_AUTO_TEST_CASE(kill_the_immortal_test) {
+BOOST_AUTO_TEST_CASE(kill_the_immortal) {
     auto wannabe_immortal = system.spawn([](event_based_actor *self) -> behavior {
         self->set_exit_handler([](local_actor *, exit_msg &) {
             // nop
         });
-        return {[] {
-            // nop
-        }};
+        return {
+            [] {
+                // nop
+            },
+        };
     });
     scoped_actor self {system};
     self->send_exit(wannabe_immortal, exit_reason::kill);
     self->wait_for(wannabe_immortal);
 }
 
-BOOST_AUTO_TEST_CASE(move_only_argument_test) {
+BOOST_AUTO_TEST_CASE(move_only_argument) {
     using unique_int = std::unique_ptr<int>;
     unique_int uptr {new int(42)};
-    auto impl = [](event_based_actor *self, unique_int ptr) -> behavior {
+    auto wrapper = [](event_based_actor *self, unique_int ptr) -> behavior {
         auto i = *ptr;
         return {[=](float) {
             self->quit();
             return i;
         }};
     };
-    auto f = make_function_view(system.spawn(impl, std::move(uptr)));
+    auto f = make_function_view(system.spawn(wrapper, std::move(uptr)));
     BOOST_CHECK_EQUAL(to_string(f(1.f)), "(42)");
+}
+
+ACTOR_TEST(move - only function object) {
+    struct move_only_fun {
+        move_only_fun() = default;
+        move_only_fun(const move_only_fun &) = delete;
+        move_only_fun(move_only_fun &&) = default;
+
+        behavior operator()(event_based_actor *) {
+            return {};
+        }
+    };
+    spawner_config cfg;
+    spawner sys {cfg};
+    move_only_fun f;
+    sys.spawn(std::move(f));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,17 +1,15 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#include <nil/actor/config.hpp>
 #include <nil/actor/detail/get_root_uuid.hpp>
+#include <nil/actor/config.hpp>
 
 #ifndef ACTOR_MACOS    // not needed on Mac OS X
 namespace {
@@ -58,14 +56,13 @@ namespace nil {
 
 #elif defined(ACTOR_LINUX) || defined(ACTOR_BSD) || defined(ACTOR_CYGWIN)
 
-#include <vector>
-#include <string>
+#include <algorithm>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
-#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include <nil/actor/string_algorithms.hpp>
 
@@ -73,80 +70,76 @@ using std::ifstream;
 using std::string;
 using std::vector;
 
-namespace nil {
-    namespace actor {
-        namespace detail {
+namespace nil::actor::detail {
 
-            namespace {
+    namespace {
 
-                struct columns_iterator : std::iterator<std::forward_iterator_tag, vector<string>> {
-                    columns_iterator(ifstream *s = nullptr) : fs(s) {
-                        // nop
-                    }
-                    vector<string> &operator*() {
-                        return cols;
-                    }
-                    columns_iterator &operator++() {
-                        string line;
-                        if (!std::getline(*fs, line)) {
-                            fs = nullptr;
-                        } else {
-                            split(cols, line, is_any_of(" "), token_compress_on);
-                        }
-                        return *this;
-                    }
-                    ifstream *fs;
-                    vector<string> cols;
-                };
-
-                bool operator==(const columns_iterator &lhs, const columns_iterator &rhs) {
-                    return lhs.fs == rhs.fs;
-                }
-
-                bool operator!=(const columns_iterator &lhs, const columns_iterator &rhs) {
-                    return !(lhs == rhs);
-                }
-
-            }    // namespace
-
-            std::string get_root_uuid() {
-                string uuid;
-                ifstream fs;
-                fs.open("/etc/fstab", std::ios_base::in);
-                columns_iterator end;
-                auto i = find_if(columns_iterator {&fs}, end,
-                                 [](const vector<string> &cols) { return cols.size() == 6 && cols[1] == "/"; });
-                if (i != end) {
-                    uuid = move((*i)[0]);
-                    const char cstr[] = {"UUID="};
-                    auto slen = sizeof(cstr) - 1;
-                    if (uuid.compare(0, slen, cstr) == 0) {
-                        uuid.erase(0, slen);
-                    }
-                    // UUIDs are formatted as 8-4-4-4-12 hex digits groups
-                    auto cpy = uuid;
-                    replace_if(cpy.begin(), cpy.end(), ::isxdigit, 'F');
-                    // discard invalid UUID
-                    if (cpy != uuid_format) {
-                        uuid.clear();
-                    }
-                    // "\\?\Volume{5ec70abf-058c-11e1-bdda-806e6f6e6963}\"
-                }
-                return uuid;
+        struct columns_iterator : std::iterator<std::forward_iterator_tag, vector<string>> {
+            columns_iterator(ifstream *s = nullptr) : fs(s) {
+                // nop
             }
+            vector<string> &operator*() {
+                return cols;
+            }
+            columns_iterator &operator++() {
+                string line;
+                if (!std::getline(*fs, line)) {
+                    fs = nullptr;
+                } else {
+                    split(cols, line, is_any_of(" "), token_compress_on);
+                }
+                return *this;
+            }
+            ifstream *fs;
+            vector<string> cols;
+        };
 
-        }    // namespace detail
-    }        // namespace actor
-}    // namespace nil
+        bool operator==(const columns_iterator &lhs, const columns_iterator &rhs) {
+            return lhs.fs == rhs.fs;
+        }
+
+        bool operator!=(const columns_iterator &lhs, const columns_iterator &rhs) {
+            return !(lhs == rhs);
+        }
+
+    }    // namespace
+
+    std::string get_root_uuid() {
+        string uuid;
+        ifstream fs;
+        fs.open("/etc/fstab", std::ios_base::in);
+        columns_iterator end;
+        auto i = find_if(columns_iterator {&fs}, end,
+                         [](const vector<string> &cols) { return cols.size() == 6 && cols[1] == "/"; });
+        if (i != end) {
+            uuid = move((*i)[0]);
+            const char cstr[] = {"UUID="};
+            auto slen = sizeof(cstr) - 1;
+            if (uuid.compare(0, slen, cstr) == 0) {
+                uuid.erase(0, slen);
+            }
+            // UUIDs are formatted as 8-4-4-4-12 hex digits groups
+            auto cpy = uuid;
+            replace_if(cpy.begin(), cpy.end(), ::isxdigit, 'F');
+            // discard invalid UUID
+            if (cpy != uuid_format) {
+                uuid.clear();
+            }
+            // "\\?\Volume{5ec70abf-058c-11e1-bdda-806e6f6e6963}\"
+        }
+        return uuid;
+    }
+
+}    // namespace nil::actor::detail
 
 #elif defined(ACTOR_WINDOWS)
 
-#include <string>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
+#include <string>
 
-#include <windows.h>
 #include <tchar.h>
+#include <windows.h>
 
 namespace nil {
     namespace actor {

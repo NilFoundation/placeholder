@@ -1,41 +1,40 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <set>
-#include <mutex>
 #include <atomic>
-#include <memory>
-#include <string>
-#include <vector>
-#include <cstdint>
-#include <type_traits>
 #include <condition_variable>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
+#include <type_traits>
+#include <vector>
 
-#include <nil/actor/type_nr.hpp>
+#include <nil/actor/abstract_actor.hpp>
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/actor_cast.hpp>
-#include <nil/actor/abstract_actor.hpp>
-#include <nil/actor/mailbox_element.hpp>
 
-#include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/detail/functor_attachable.hpp>
+#include <nil/actor/detail/type_traits.hpp>
+#include <nil/actor/mailbox_element.hpp>
+#include <nil/actor/system_messages.hpp>
+#include <nil/actor/typed_message_view.hpp>
 
 namespace nil {
     namespace actor {
 
         /// Base class for all actor implementations.
-        class monitorable_actor : public abstract_actor {
+        class BOOST_SYMBOL_VISIBLE monitorable_actor : public abstract_actor {
         public:
             /// Returns an implementation-dependent name for logging purposes, which
             /// is only valid as long as the actor is running. The default
@@ -97,7 +96,7 @@ namespace nil {
 
         protected:
             /// Allows subclasses to add additional cleanup code to the
-            /// critical secion in `cleanup`. This member function is
+            /// critical section in `cleanup`. This member function is
             /// called inside of a critical section.
             virtual void on_cleanup(const error &reason);
 
@@ -115,7 +114,7 @@ namespace nil {
              ****************************************************************************/
 
             // precondition: `mtx_` is acquired
-            inline void attach_impl(attachable_ptr &ptr) {
+            void attach_impl(attachable_ptr &ptr) {
                 ptr->next.swap(attachables_head_);
                 attachables_head_.swap(ptr);
             }
@@ -132,8 +131,8 @@ namespace nil {
             template<class F>
             bool handle_system_message(mailbox_element &x, execution_unit *context, bool trap_exit,
                                        F &down_msg_handler) {
-                if (x.content().type_token() == make_type_token<down_msg>()) {
-                    down_msg_handler(x.content().get_mutable_as<down_msg>(0));
+                if (auto view = make_typed_message_view<down_msg>(x.payload)) {
+                    down_msg_handler(get<0>(view));
                     return true;
                 }
                 return handle_system_message(x, context, trap_exit);

@@ -1,19 +1,16 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE metaprogramming_test
+#define BOOST_TEST_MODULE metaprogramming
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include "core-test.hpp"
 
 #include <string>
 #include <cstdint>
@@ -21,7 +18,6 @@
 #include <type_traits>
 
 #include <nil/actor/all.hpp>
-#include <nil/actor/config.hpp>
 
 #include <nil/actor/detail/int_list.hpp>
 #include <nil/actor/detail/type_list.hpp>
@@ -41,34 +37,34 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(metaprogramming_test) {
+BOOST_AUTO_TEST_CASE(metaprogramming) {
     using std::is_same;
     using l1 = type_list<int, float, std::string>;
     using r1 = tl_reverse<l1>::type;
-    BOOST_CHECK((is_same<int, tl_at<l1, 0>::type>::value));
-    BOOST_CHECK((is_same<float, tl_at<l1, 1>::type>::value));
-    BOOST_CHECK((is_same<std::string, tl_at<l1, 2>::type>::value));
+    ACTOR_CHECK((is_same<int, tl_at<l1, 0>::type>::value));
+    ACTOR_CHECK((is_same<float, tl_at<l1, 1>::type>::value));
+    ACTOR_CHECK((is_same<std::string, tl_at<l1, 2>::type>::value));
     BOOST_CHECK_EQUAL(3u, tl_size<l1>::value);
     BOOST_CHECK_EQUAL(tl_size<r1>::value, tl_size<l1>::value);
-    BOOST_CHECK((is_same<tl_at<l1, 0>::type, tl_at<r1, 2>::type>::value));
-    BOOST_CHECK((is_same<tl_at<l1, 1>::type, tl_at<r1, 1>::type>::value));
-    BOOST_CHECK((is_same<tl_at<l1, 2>::type, tl_at<r1, 0>::type>::value));
+    ACTOR_CHECK((is_same<tl_at<l1, 0>::type, tl_at<r1, 2>::type>::value));
+    ACTOR_CHECK((is_same<tl_at<l1, 1>::type, tl_at<r1, 1>::type>::value));
+    ACTOR_CHECK((is_same<tl_at<l1, 2>::type, tl_at<r1, 0>::type>::value));
     using l2 = tl_concat<type_list<int>, l1>::type;
-    BOOST_CHECK((is_same<int, tl_head<l2>::type>::value));
-    BOOST_CHECK((is_same<l1, tl_tail<l2>::type>::value));
+    ACTOR_CHECK((is_same<int, tl_head<l2>::type>::value));
+    ACTOR_CHECK((is_same<l1, tl_tail<l2>::type>::value));
     BOOST_CHECK_EQUAL((detail::tl_count<l1, is_int>::value), 1u);
     BOOST_CHECK_EQUAL((detail::tl_count<l2, is_int>::value), 2u);
     using il0 = int_list<0, 1, 2, 3, 4, 5>;
     using il1 = int_list<4, 5>;
     using il2 = il_right<il0, 2>::type;
-    BOOST_CHECK((is_same<il2, il1>::value));
+    ACTOR_CHECK((is_same<il2, il1>::value));
     /* test tl_subset_of */ {
         using list_a = type_list<int, float, double>;
         using list_b = type_list<float, int, double, std::string>;
-        BOOST_CHECK((tl_subset_of<list_a, list_b>::value));
-        BOOST_CHECK(!(tl_subset_of<list_b, list_a>::value));
-        BOOST_CHECK((tl_subset_of<list_a, list_a>::value));
-        BOOST_CHECK((tl_subset_of<list_b, list_b>::value));
+        ACTOR_CHECK((tl_subset_of<list_a, list_b>::value));
+        ACTOR_CHECK(!(tl_subset_of<list_b, list_a>::value));
+        ACTOR_CHECK((tl_subset_of<list_a, list_a>::value));
+        ACTOR_CHECK((tl_subset_of<list_b, list_b>::value));
     }
 }
 
@@ -152,7 +148,7 @@ namespace std {
 
 }    // namespace std
 
-BOOST_AUTO_TEST_CASE(typed_behavior_assignment_test) {
+BOOST_AUTO_TEST_CASE(typed_behavior_assignment) {
     using bh1 = typed_beh<replies_to<int>::with<double>, replies_to<double, double>::with<int, int>>;
     // compatible handlers resulting in perfect match
     auto f1 = [=](int) { return 0.; };
@@ -225,38 +221,9 @@ BOOST_AUTO_TEST_CASE(typed_behavior_assignment_test) {
     BOOST_CHECK_EQUAL(bi_pair(false, -1), tb_assign<bh2>(h0, h1, h2, h3, h4, h5, h6, h7, h8));
 }
 
-BOOST_AUTO_TEST_CASE(composed_types_test) {
-    // message type for test message #1
-    auto msg_1 = tk<type_list<int>>();
-    // message type for test message #1
-    auto msg_2 = tk<type_list<double>>();
-    // interface type a
-    auto if_a = tk<type_list<replies_to<int>::with<double>, replies_to<double, double>::with<int, int>>>();
-    // interface type b
-    auto if_b = tk<type_list<replies_to<double>::with<std::string>>>();
-    // interface type c
-    auto if_c = tk<type_list<replies_to<int>::with_stream<double>>>();
-    // interface type b . a
-    auto if_ba = tk<typed_actor<replies_to<int>::with<std::string>>>();
-    // interface type b . c
-    auto if_bc = tk<typed_actor<replies_to<int>::with_stream<std::string>>>();
-    BOOST_TEST_MESSAGE("check whether actors return the correct types");
-    auto nil = tk<none_t>();
-    auto dbl = tk<type_list<double>>();
-    // auto dbl_stream = tk<output_stream<double>>();
-    BOOST_CHECK_EQUAL(res(if_a, msg_1), dbl);
-    BOOST_CHECK_EQUAL(res(if_a, msg_2), nil);
-    // BOOST_CHECK_EQUAL(res(if_c, msg_1), dbl_stream);
-    BOOST_TEST_MESSAGE("check types of actor compositions");
-    BOOST_CHECK_EQUAL(dot_op(if_b, if_a), if_ba);
-    BOOST_CHECK_EQUAL(dot_op(if_b, if_c), if_bc);
-}
-
 struct foo {};
 struct bar {};
-
 bool operator==(const bar &, const bar &);
-
 class baz {
 public:
     baz() = default;
@@ -269,15 +236,15 @@ private:
     std::string str_;
 };
 
-BOOST_AUTO_TEST_CASE(is_comparable_test) {
-    BOOST_CHECK((is_comparable<double, std::string>::value) == false);
-    BOOST_CHECK((is_comparable<foo, foo>::value) == false);
-    BOOST_CHECK((is_comparable<bar, bar>::value) == true);
-    BOOST_CHECK((is_comparable<double, bar>::value) == false);
-    BOOST_CHECK((is_comparable<bar, double>::value) == false);
-    BOOST_CHECK((is_comparable<baz, baz>::value) == true);
-    BOOST_CHECK((is_comparable<double, baz>::value) == false);
-    BOOST_CHECK((is_comparable<baz, double>::value) == false);
-    BOOST_CHECK((is_comparable<std::string, baz>::value) == false);
-    BOOST_CHECK((is_comparable<baz, std::string>::value) == false);
+BOOST_AUTO_TEST_CASE(is_comparable) {
+    ACTOR_CHECK((is_comparable<double, std::string>::value) == false);
+    ACTOR_CHECK((is_comparable<foo, foo>::value) == false);
+    ACTOR_CHECK((is_comparable<bar, bar>::value) == true);
+    ACTOR_CHECK((is_comparable<double, bar>::value) == false);
+    ACTOR_CHECK((is_comparable<bar, double>::value) == false);
+    ACTOR_CHECK((is_comparable<baz, baz>::value) == true);
+    ACTOR_CHECK((is_comparable<double, baz>::value) == false);
+    ACTOR_CHECK((is_comparable<baz, double>::value) == false);
+    ACTOR_CHECK((is_comparable<std::string, baz>::value) == false);
+    ACTOR_CHECK((is_comparable<baz, std::string>::value) == false);
 }

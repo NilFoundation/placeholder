@@ -1,22 +1,21 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <cstdint>
-#include <typeinfo>
 #include <functional>
+#include <typeinfo>
 
-#include <nil/actor/error.hpp>
+
+#include <nil/actor/error_code.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/rtti_pair.hpp>
 #include <nil/actor/type_nr.hpp>
@@ -25,7 +24,7 @@ namespace nil {
     namespace actor {
 
         /// Represents a single type-erased value.
-        class type_erased_value {
+        class BOOST_SYMBOL_VISIBLE type_erased_value {
         public:
             // -- constructors, destructors, and assignment operators --------------------
 
@@ -93,28 +92,24 @@ namespace nil {
             }
         };
 
-        /// @relates type_erased_value_impl
-        inline error inspect(serializer &f, type_erased_value &x) {
+        /// @relates type_erased_value
+        BOOST_SYMBOL_VISIBLE error inspect(serializer &f, const type_erased_value &x);
+
+        /// @relates type_erased_value
+        BOOST_SYMBOL_VISIBLE error inspect(deserializer &f, type_erased_value &x);
+
+        /// @relates type_erased_value
+        inline auto inspect(binary_serializer &f, const type_erased_value &x) {
             return x.save(f);
         }
 
-        /// @relates type_erased_value_impl
-        inline error_code<sec> inspect(binary_serializer &f, type_erased_value &x) {
-            return x.save(f);
-        }
-
-        /// @relates type_erased_value_impl
-        inline error inspect(deserializer &f, type_erased_value &x) {
+        /// @relates type_erased_value
+        inline auto inspect(binary_deserializer &f, type_erased_value &x) {
             return x.load(f);
         }
 
-        /// @relates type_erased_value_impl
-        inline error_code<sec> inspect(binary_deserializer &f, type_erased_value &x) {
-            return x.load(f);
-        }
-
-        /// @relates type_erased_value_impl
-        inline std::string to_string(const type_erased_value &x) {
+        /// @relates type_erased_value
+        inline auto to_string(const type_erased_value &x) {
             return x.stringify();
         }
 

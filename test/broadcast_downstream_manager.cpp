@@ -1,26 +1,26 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2017 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE broadcast_downstream_manager_test
-
-#include <boost/test/unit_test.hpp>
+#define BOOST_TEST_MODULE broadcast_downstream_manager
 
 #include <cstdint>
 #include <memory>
+#include <numeric>
+
+#include "core-test.hpp"
 
 #include <nil/actor/spawner.hpp>
-#include <nil/actor/actor_control_block.hpp>
 #include <nil/actor/spawner_config.hpp>
 #include <nil/actor/broadcast_downstream_manager.hpp>
+#include <nil/actor/detail/meta_object.hpp>
+#include <nil/actor/mixin/sender.hpp>
 #include <nil/actor/scheduled_actor.hpp>
 
 using namespace nil::actor;
@@ -70,7 +70,7 @@ namespace {
         }
 
         void enqueue(mailbox_element_ptr what, execution_unit *) override {
-            mbox.push_back(what->move_content_to_message());
+            mbox.push_back(std::move(what->payload));
         }
 
         void attach(attachable_ptr) override {
@@ -103,28 +103,26 @@ namespace {
 
         void add_path_to(entity &x, int32_t desired_batch_size) {
             auto ptr = mgr.out().add_path(next_slot++, x.ctrl());
-            BOOST_REQUIRE(ptr != nullptr);
-            ptr->desired_batch_size = desired_batch_size;
+            ACTOR_REQUIRE(ptr != nullptr);
+            ptr->set_desired_batch_size(desired_batch_size);
             ptr->slots.receiver = x.next_slot++;
             paths.emplace_back(ptr);
         }
 
         size_t credit_for(entity &x) {
-            auto pred = [&](outbound_path *ptr) { return ptr->hdl == reinterpret_cast<actor_control_block *>(&x); };
+            auto pred = [&](outbound_path *ptr) { return ptr->hdl == &x; };
             auto i = std::find_if(paths.begin(), paths.end(), pred);
-            BOOST_REQUIRE(i != paths.end());
+            ACTOR_REQUIRE(i != paths.end());
             return static_cast<size_t>((*i)->open_credit);
         }
 
         void new_round(int num, bool force_emit) {
-            for (auto &ptr : paths) {
+            for (auto &ptr : paths)
                 ptr->open_credit += num;
-            }
-            if (force_emit) {
+            if (force_emit)
                 mgr.out().force_emit_batches();
-            } else {
+            else
                 mgr.out().emit_batches();
-            }
         }
 
         const char *name() const override {
@@ -195,11 +193,11 @@ namespace {
             auto &mbox = x.mbox;
             std::vector<batch_type> result;
             for (auto &msg : mbox) {
-                BOOST_REQUIRE(msg.match_elements<downstream_msg>());
+                ACTOR_REQUIRE(msg.match_elements<downstream_msg>());
                 auto &dm = msg.get_mutable_as<downstream_msg>(0);
-                BOOST_REQUIRE(holds_alternative<downstream_msg::batch>(dm.content));
+                ACTOR_REQUIRE(holds_alternative<downstream_msg::batch>(dm.content));
                 auto &b = get<downstream_msg::batch>(dm.content);
-                BOOST_REQUIRE(b.xs.match_elements<batch_type>());
+                ACTOR_REQUIRE(b.xs.match_elements<batch_type>());
                 result.emplace_back(std::move(b.xs.get_mutable_as<batch_type>(0)));
             }
             mbox.clear();
@@ -227,9 +225,8 @@ namespace {
         }
 
         ~receive_checker() {
-            if (!moved_from) {
+            if (!moved_from)
                 f(xs, check_not_empty);
-            }
         }
 
         F f;
@@ -272,9 +269,9 @@ namespace {
     ;                                                                           \
     make_receive_checker([&](fixture::batches_type &xs, bool check_not_empty) { \
         if (!check_not_empty)                                                   \
-            BOOST_CHECK(batches(CONCAT(who, __LINE__)) == xs);                  \
+            BOOST_CHECK_EQUAL(batches(CONCAT(who, __LINE__)), xs);                \
         else                                                                    \
-            BOOST_CHECK(!batches(CONCAT(who, __LINE__)).empty());               \
+            ACTOR_CHECK(!batches(CONCAT(who, __LINE__)).empty());                 \
     }) <<
 
 #define ENTITY auto &CONCAT(who, __LINE__) =
@@ -300,16 +297,16 @@ namespace {
 #define ELEMENTS                                                                        \
     ;                                                                                   \
     CONCAT(who, __LINE__).new_round(CONCAT(amount, __LINE__), CONCAT(force, __LINE__)); \
-    BOOST_TEST_MESSAGE(CONCAT(who, __LINE__).name() << " tried sending " << CONCAT(amount, __LINE__) << " elements");
+    ACTOR_MESSAGE(CONCAT(who, __LINE__).name() << " tried sending " << CONCAT(amount, __LINE__) << " elements");
 
-#define FOR                                               \
-    struct CONCAT(for_helper_, __LINE__) {                \
-        entity &who;                                      \
-        size_t amount;                                    \
-        void operator<<(entity &x) const {                \
+#define FOR                                             \
+    struct CONCAT(for_helper_, __LINE__) {              \
+        entity &who;                                    \
+        size_t amount;                                  \
+        void operator<<(entity &x) const {              \
             BOOST_CHECK_EQUAL(who.credit_for(x), amount); \
-        }                                                 \
-    };                                                    \
+        }                                               \
+    };                                                  \
     CONCAT(for_helper_, __LINE__) {CONCAT(who, __LINE__), CONCAT(amount, __LINE__)} <<
 
 #define TOTAL BOOST_CHECK_EQUAL(CONCAT(who, __LINE__).mgr.out().total_credit(), CONCAT(amount, __LINE__))
@@ -320,11 +317,9 @@ namespace {
 
 // -- unit tests ---------------------------------------------------------------
 
-//@formatter:off
-
 BOOST_FIXTURE_TEST_SUITE(broadcast_downstream_manager, fixture)
 
-BOOST_AUTO_TEST_CASE(one_path_force_test) {
+BOOST_AUTO_TEST_CASE(one_path_force) {
     // Give alice 100 elements to send and a path to bob with desired batch size
     // of 10.
     alice.add_path_to(bob, 10);
@@ -363,7 +358,7 @@ BOOST_AUTO_TEST_CASE(one_path_force_test) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(one_path_without_force_test) {
+BOOST_AUTO_TEST_CASE(one_path_without_force) {
     // Give alice 100 elements to send and a path to bob with desired batch size
     // of 10.
     alice.add_path_to(bob, 10);
@@ -402,7 +397,7 @@ BOOST_AUTO_TEST_CASE(one_path_without_force_test) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(two_paths_different_sizes_force_test) {
+BOOST_AUTO_TEST_CASE(two_paths_different_sizes_force) {
     // Give alice 100 elements to send, a path to bob with desired batch size of
     // 10, and a path to carl with desired batch size of 7.
     alice.add_path_to(bob, 10);
@@ -453,7 +448,7 @@ BOOST_AUTO_TEST_CASE(two_paths_different_sizes_force_test) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(two_paths_different_sizes_without_force_test) {
+BOOST_AUTO_TEST_CASE(two_paths_different_sizes_without_force) {
     // Give alice 100 elements to send, a path to bob with desired batch size of
     // 10, and a path to carl with desired batch size of 7.
     alice.add_path_to(bob, 10);
@@ -495,4 +490,3 @@ BOOST_AUTO_TEST_CASE(two_paths_different_sizes_without_force_test) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-//@formatter:on

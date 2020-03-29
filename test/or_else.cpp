@@ -1,21 +1,17 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE or_else_test
+#define BOOST_TEST_MODULE or_else
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include "core-test.hpp"
 
-#include <nil/actor/config.hpp>
 #include <nil/actor/all.hpp>
 
 #define ERROR_HANDLER [&](error &err) { BOOST_FAIL(system.render(err)); }
@@ -24,20 +20,22 @@ using namespace nil::actor;
 
 namespace {
 
-    using a_atom = atom_constant<atom("a")>;
-    using b_atom = atom_constant<atom("b")>;
-    using c_atom = atom_constant<atom("c")>;
-
     message_handler handle_a() {
-        return [](a_atom) { return 1; };
+        return {
+            [](int8_t) { return "a"; },
+        };
     }
 
     message_handler handle_b() {
-        return [](b_atom) { return 2; };
+        return {
+            [](int16_t) { return "b"; },
+        };
     }
 
     message_handler handle_c() {
-        return [](c_atom) { return 3; };
+        return {
+            [](int32_t) { return "c"; },
+        };
     }
 
     struct fixture {
@@ -50,14 +48,13 @@ namespace {
 
         void run_testee(const actor &testee) {
             scoped_actor self {system};
-            self->request(testee, infinite, a_atom::value)
-                .receive([](int i) { BOOST_CHECK_EQUAL(i, 1); }, ERROR_HANDLER);
-            self->request(testee, infinite, b_atom::value)
-                .receive([](int i) { BOOST_CHECK_EQUAL(i, 2); }, ERROR_HANDLER);
-            self->request(testee, infinite, c_atom::value)
-                .receive([](int i) { BOOST_CHECK_EQUAL(i, 3); }, ERROR_HANDLER);
+            self->request(testee, infinite, int8_t {1})
+                .receive([](const std::string &str) { BOOST_CHECK_EQUAL(str, "a"); }, ERROR_HANDLER);
+            self->request(testee, infinite, int16_t {1})
+                .receive([](const std::string &str) { BOOST_CHECK_EQUAL(str, "b"); }, ERROR_HANDLER);
+            self->request(testee, infinite, int32_t {1})
+                .receive([](const std::string &str) { BOOST_CHECK_EQUAL(str, "c"); }, ERROR_HANDLER);
             self->send_exit(testee, exit_reason::user_shutdown);
-            self->await_all_other_actors_done();
         }
     };
 
@@ -65,17 +62,17 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(atom_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(composition1_test) {
+BOOST_AUTO_TEST_CASE(composition1) {
     run_testee(system.spawn([=] { return handle_a().or_else(handle_b()).or_else(handle_c()); }));
 }
 
-BOOST_AUTO_TEST_CASE(composition2_test) {
-    run_testee(system.spawn([=] { return handle_a().or_else(handle_b()).or_else([](c_atom) { return 3; }); }));
+BOOST_AUTO_TEST_CASE(composition2) {
+    run_testee(system.spawn([=] { return handle_a().or_else(handle_b()).or_else([](int32_t) { return "c"; }); }));
 }
 
-BOOST_AUTO_TEST_CASE(composition3_test) {
+BOOST_AUTO_TEST_CASE(composition3) {
     run_testee(system.spawn(
-        [=] { return message_handler {[](a_atom) { return 1; }}.or_else(handle_b()).or_else(handle_c()); }));
+        [=] { return message_handler {[](int8_t) { return "a"; }}.or_else(handle_b()).or_else(handle_c()); }));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

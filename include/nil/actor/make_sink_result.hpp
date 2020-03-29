@@ -1,17 +1,16 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+#include <nil/actor/delegated.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/stream_sink.hpp>
 #include <nil/actor/stream_slot.hpp>
@@ -21,7 +20,7 @@ namespace nil {
 
         /// Returns a stream sink with the slot ID of its first inbound path.
         template<class In>
-        class make_sink_result {
+        class make_sink_result : public delegated<void> {
         public:
             // -- member types -----------------------------------------------------------
 
@@ -33,9 +32,6 @@ namespace nil {
 
             /// Pointer to a fully typed stream manager.
             using sink_ptr_type = intrusive_ptr<sink_type>;
-
-            /// The return type for `scheduled_actor::make_sink`.
-            using output_stream_type = stream<input_type>;
 
             // -- constructors, destructors, and assignment operators --------------------
 
@@ -54,15 +50,15 @@ namespace nil {
 
             // -- properties -------------------------------------------------------------
 
-            inline stream_slot inbound_slot() const noexcept {
+            stream_slot inbound_slot() const noexcept {
                 return slot_;
             }
 
-            inline sink_ptr_type &ptr() noexcept {
+            sink_ptr_type &ptr() noexcept {
                 return ptr_;
             }
 
-            inline const sink_ptr_type &ptr() const noexcept {
+            const sink_ptr_type &ptr() const noexcept {
                 return ptr_;
             }
 

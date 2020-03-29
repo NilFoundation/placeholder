@@ -1,20 +1,18 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <type_traits>
 
-#include <nil/actor/atom.hpp>
+#include <nil/actor/fwd.hpp>
 
 namespace nil {
     namespace actor {
@@ -25,9 +23,9 @@ namespace nil {
         class param {
         public:
             enum flag {
-                shared_access,       // x_ lives in a shared type_erased_tuple
-                exclusive_access,    // x_ lives in an unshared type_erased_tuple
-                private_access       // x_ is a copy of the original value
+                shared_access,       // x_ lives in a shared message
+                exclusive_access,    // x_ lives in an unshared message
+                private_access,      // x_ is a copy of the original value
             };
 
             param(const void *ptr, bool is_shared) : x_(reinterpret_cast<T *>(const_cast<void *>(ptr))) {
@@ -35,6 +33,7 @@ namespace nil {
             }
 
             param(const param &other) = delete;
+
             param &operator=(const param &other) = delete;
 
             param(param &&other) : x_(other.x_), flag_(other.flag_) {
@@ -78,11 +77,22 @@ namespace nil {
             flag flag_;
         };
 
-        /// Convenience alias that wraps `T` into `param<T>`
-        /// unless `T` is arithmetic or an atom constant.
+        /// Converts `T` to `param<T>` unless `T` is arithmetic, an atom constant, or
+        /// a stream handshake.
         template<class T>
-        using param_t =
-            typename std::conditional<std::is_arithmetic<T>::value || is_atom_constant<T>::value, T, param<T>>::type;
+        struct add_param : std::conditional<std::is_arithmetic<T>::value || std::is_empty<T>::value, T, param<T>> {
+            // nop
+        };
+
+        template<class T>
+        struct add_param<stream<T>> {
+            using type = stream<T>;
+        };
+
+        /// Convenience alias that wraps `T` into `param<T>` unless `T` is arithmetic,
+        /// a stream handshake or an atom constant.
+        template<class T>
+        using param_t = typename add_param<T>::type;
 
         /// Unpacks `param<T>` to `T`.
         template<class T>
@@ -100,6 +110,25 @@ namespace nil {
         struct param_decay {
             using type = typename remove_param<typename std::decay<T>::type>::type;
         };
+
+        /// @relates param_decay
+        template<class T>
+        using param_decay_t = typename param_decay<T>::type;
+
+        /// Queries whether `T` is a ::param.
+        template<class T>
+        struct is_param {
+            static constexpr bool value = false;
+        };
+
+        template<class T>
+        struct is_param<param<T>> {
+            static constexpr bool value = true;
+        };
+
+        /// @relates is_param
+        template<class T>
+        constexpr bool is_param_v = is_param<T>::value;
 
     }    // namespace actor
 }    // namespace nil

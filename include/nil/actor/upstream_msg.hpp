@@ -1,39 +1,35 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+#include <cstdint>
 #include <utility>
 #include <vector>
-#include <cstdint>
 
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/actor_control_block.hpp>
-#include <nil/actor/atom.hpp>
+
+#include <nil/actor/detail/type_list.hpp>
 #include <nil/actor/message.hpp>
 #include <nil/actor/stream_priority.hpp>
 #include <nil/actor/stream_slot.hpp>
+#include <nil/actor/tag/boxing_type.hpp>
 #include <nil/actor/timespan.hpp>
 #include <nil/actor/variant.hpp>
-
-#include <nil/actor/tag/boxing_type.hpp>
-
-#include <nil/actor/detail/type_list.hpp>
 
 namespace nil {
     namespace actor {
 
         /// Stream messages that flow upstream, i.e., acks and drop messages.
-        struct upstream_msg : tag::boxing_type {
+        struct BOOST_SYMBOL_VISIBLE upstream_msg : tag::boxing_type {
             // -- nested types -----------------------------------------------------------
 
             /// Acknowledges a previous `open` message and finalizes a stream handshake.
@@ -160,7 +156,8 @@ namespace nil {
         /// @relates upstream_msg::ack_batch
         template<class Inspector>
         typename Inspector::result_type inspect(Inspector &f, upstream_msg::ack_batch &x) {
-            return f(meta::type_name("ack_batch"), x.new_capacity, x.desired_batch_size, x.acknowledged_id);
+            return f(meta::type_name("ack_batch"), x.new_capacity, x.desired_batch_size, x.acknowledged_id,
+                     x.max_capacity);
         }
 
         /// @relates upstream_msg::drop

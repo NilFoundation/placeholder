@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -42,8 +40,6 @@ namespace nil {
 
         /// An intrusive, reference counting smart pointer implementation with
         /// copy-on-write optimization.
-        /// @relates ref_counted
-        /// @relates intrusive_ptr
         template<class T>
         class intrusive_cow_ptr : detail::comparable<intrusive_cow_ptr<T>>,
                                   detail::comparable<intrusive_cow_ptr<T>, T *>,
@@ -70,7 +66,7 @@ namespace nil {
 
             intrusive_cow_ptr(intrusive_cow_ptr &&) noexcept = default;
 
-            intrusive_cow_ptr(const intrusive_cow_ptr &) = default;
+            intrusive_cow_ptr(const intrusive_cow_ptr &) noexcept = default;
 
             intrusive_cow_ptr(std::nullptr_t) noexcept {
                 // nop
@@ -91,7 +87,7 @@ namespace nil {
 
             intrusive_cow_ptr &operator=(intrusive_cow_ptr &&) noexcept = default;
 
-            intrusive_cow_ptr &operator=(const intrusive_cow_ptr &) = default;
+            intrusive_cow_ptr &operator=(const intrusive_cow_ptr &) noexcept = default;
 
             intrusive_cow_ptr &operator=(counting_pointer x) noexcept {
                 ptr_ = std::move(x);
@@ -134,6 +130,12 @@ namespace nil {
                 return ptr_.detach();
             }
 
+            /// Returns the raw pointer without modifying reference
+            /// count and sets this to `nullptr`.
+            pointer release() noexcept {
+                return ptr_.release();
+            }
+
             /// Forces a copy of the managed object unless it already has a reference
             /// count of exactly 1.
             void unshare() {
@@ -143,7 +145,7 @@ namespace nil {
 
             /// Returns a mutable pointer to the managed object.
             pointer unshared_ptr() {
-                return ptr_.get();
+                return intrusive_cow_ptr_unshare(ptr_.ptr_);
             }
 
             /// Returns a mutable reference to the managed object.

@@ -1,24 +1,23 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#include <nil/actor/serialization/binary_deserializer.hpp>
+#include <nil/actor/binary_deserializer.hpp>
 
 #include <iomanip>
 #include <sstream>
 #include <type_traits>
 
+#include <nil/actor/spawner.hpp>
 #include <nil/actor/detail/ieee_754.hpp>
 #include <nil/actor/detail/network_order.hpp>
-#include <nil/actor/spawner.hpp>
+#include <nil/actor/error.hpp>
 #include <nil/actor/sec.hpp>
 
 namespace nil {
@@ -26,10 +25,10 @@ namespace nil {
 
         namespace {
 
-            using apply_result = binary_deserializer::result_type;
+            using result_type = binary_deserializer::result_type;
 
             template<class T>
-            apply_result apply_int(binary_deserializer &source, T &x) {
+            result_type apply_int(binary_deserializer &source, T &x) {
                 auto tmp = std::make_unsigned_t<T> {};
                 if (auto err = source.apply(as_writable_bytes(make_span(&tmp, 1))))
                     return err;
@@ -38,7 +37,7 @@ namespace nil {
             }
 
             template<class T>
-            apply_result apply_float(binary_deserializer &source, T &x) {
+            result_type apply_float(binary_deserializer &source, T &x) {
                 auto tmp = typename detail::ieee_754_trait<T>::packed_type {};
                 if (auto err = apply_int(source, tmp))
                     return err;
@@ -61,21 +60,15 @@ namespace nil {
             // nop
         }
 
-        apply_result binary_deserializer::begin_object(uint16_t &nr, std::string &name) {
-            name.clear();
-            if (auto err = apply(nr))
-                return err;
-            if (nr == 0)
-                if (auto err = apply(name))
-                    return err;
+        result_type binary_deserializer::begin_object(type_id_t &type) {
+            return apply(type);
+        }
+
+        result_type binary_deserializer::end_object() noexcept {
             return none;
         }
 
-        apply_result binary_deserializer::end_object() noexcept {
-            return none;
-        }
-
-        apply_result binary_deserializer::begin_sequence(size_t &list_size) noexcept {
+        result_type binary_deserializer::begin_sequence(size_t &list_size) noexcept {
             // Use varbyte encoding to compress sequence size on the wire.
             uint32_t x = 0;
             int n = 0;
@@ -90,7 +83,7 @@ namespace nil {
             return none;
         }
 
-        apply_result binary_deserializer::end_sequence() noexcept {
+        result_type binary_deserializer::end_sequence() noexcept {
             return none;
         }
 
@@ -104,7 +97,7 @@ namespace nil {
             end_ = current_ + bytes.size();
         }
 
-        apply_result binary_deserializer::apply(bool &x) noexcept {
+        result_type binary_deserializer::apply(bool &x) noexcept {
             int8_t tmp = 0;
             if (auto err = apply(tmp))
                 return err;
@@ -112,7 +105,15 @@ namespace nil {
             return none;
         }
 
-        apply_result binary_deserializer::apply(int8_t &x) noexcept {
+        result_type binary_deserializer::apply(byte &x) noexcept {
+            if (range_check(1)) {
+                x = *current_++;
+                return none;
+            }
+            return sec::end_of_stream;
+        }
+
+        result_type binary_deserializer::apply(int8_t &x) noexcept {
             if (range_check(1)) {
                 x = static_cast<int8_t>(*current_++);
                 return none;
@@ -120,7 +121,7 @@ namespace nil {
             return sec::end_of_stream;
         }
 
-        apply_result binary_deserializer::apply(uint8_t &x) noexcept {
+        result_type binary_deserializer::apply(uint8_t &x) noexcept {
             if (range_check(1)) {
                 x = static_cast<uint8_t>(*current_++);
                 return none;
@@ -128,39 +129,39 @@ namespace nil {
             return sec::end_of_stream;
         }
 
-        apply_result binary_deserializer::apply(int16_t &x) noexcept {
+        result_type binary_deserializer::apply(int16_t &x) noexcept {
             return apply_int(*this, x);
         }
 
-        apply_result binary_deserializer::apply(uint16_t &x) noexcept {
+        result_type binary_deserializer::apply(uint16_t &x) noexcept {
             return apply_int(*this, x);
         }
 
-        apply_result binary_deserializer::apply(int32_t &x) noexcept {
+        result_type binary_deserializer::apply(int32_t &x) noexcept {
             return apply_int(*this, x);
         }
 
-        apply_result binary_deserializer::apply(uint32_t &x) noexcept {
+        result_type binary_deserializer::apply(uint32_t &x) noexcept {
             return apply_int(*this, x);
         }
 
-        apply_result binary_deserializer::apply(int64_t &x) noexcept {
+        result_type binary_deserializer::apply(int64_t &x) noexcept {
             return apply_int(*this, x);
         }
 
-        apply_result binary_deserializer::apply(uint64_t &x) noexcept {
+        result_type binary_deserializer::apply(uint64_t &x) noexcept {
             return apply_int(*this, x);
         }
 
-        apply_result binary_deserializer::apply(float &x) noexcept {
+        result_type binary_deserializer::apply(float &x) noexcept {
             return apply_float(*this, x);
         }
 
-        apply_result binary_deserializer::apply(double &x) noexcept {
+        result_type binary_deserializer::apply(double &x) noexcept {
             return apply_float(*this, x);
         }
 
-        apply_result binary_deserializer::apply(long double &x) {
+        result_type binary_deserializer::apply(long double &x) {
             // TODO: Our IEEE-754 conversion currently does not work for long double. The
             //       standard does not guarantee a fixed representation for this type, but
             //       on X86 we can usually rely on 80-bit precision. For now, we fall back
@@ -168,13 +169,13 @@ namespace nil {
             std::string tmp;
             if (auto err = apply(tmp))
                 return err;
-            std::istringstream iss {tmp};
+            std::istringstream iss {std::move(tmp)};
             if (iss >> x)
                 return none;
             return sec::invalid_argument;
         }
 
-        apply_result binary_deserializer::apply(span<byte> x) noexcept {
+        result_type binary_deserializer::apply(span<byte> x) noexcept {
             if (!range_check(x.size()))
                 return sec::end_of_stream;
             memcpy(x.data(), current_, x.size());
@@ -182,7 +183,7 @@ namespace nil {
             return none;
         }
 
-        apply_result binary_deserializer::apply(std::string &x) {
+        result_type binary_deserializer::apply(std::string &x) {
             x.clear();
             size_t str_size = 0;
             if (auto err = begin_sequence(str_size))
@@ -194,7 +195,7 @@ namespace nil {
             return end_sequence();
         }
 
-        apply_result binary_deserializer::apply(std::u16string &x) {
+        result_type binary_deserializer::apply(std::u16string &x) {
             x.clear();
             size_t str_size = 0;
             if (auto err = begin_sequence(str_size))
@@ -202,6 +203,7 @@ namespace nil {
             if (!range_check(str_size * sizeof(uint16_t)))
                 return sec::end_of_stream;
             for (size_t i = 0; i < str_size; ++i) {
+                // The standard does not guarantee that char16_t is exactly 16 bits.
                 uint16_t tmp;
                 unsafe_apply_int(*this, tmp);
                 x.push_back(static_cast<char16_t>(tmp));
@@ -209,7 +211,7 @@ namespace nil {
             return end_sequence();
         }
 
-        apply_result binary_deserializer::apply(std::u32string &x) {
+        result_type binary_deserializer::apply(std::u32string &x) {
             x.clear();
             size_t str_size = 0;
             if (auto err = begin_sequence(str_size))
@@ -225,7 +227,7 @@ namespace nil {
             return end_sequence();
         }
 
-        apply_result binary_deserializer::apply(std::vector<bool> &x) {
+        result_type binary_deserializer::apply(std::vector<bool> &x) {
             x.clear();
             size_t len = 0;
             if (auto err = begin_sequence(len))
@@ -279,5 +281,6 @@ namespace nil {
             }
             return end_sequence();
         }
+
     }    // namespace actor
 }    // namespace nil

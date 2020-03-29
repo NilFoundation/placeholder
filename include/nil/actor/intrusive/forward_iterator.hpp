@@ -1,12 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2017 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,104 +14,100 @@
 #include <iterator>
 #include <type_traits>
 
-namespace nil {
-    namespace actor {
-        namespace intrusive {
+namespace nil::actor::intrusive {
 
-            // A forward iterator for intrusive lists.
-            template<class T>
-            class forward_iterator {
-            public:
-                // -- member types -----------------------------------------------------------
+    // A forward iterator for intrusive lists.
+    template<class T>
+    class forward_iterator {
+    public:
+        // -- member types -----------------------------------------------------------
 
-                using difference_type = std::ptrdiff_t;
+        using difference_type = std::ptrdiff_t;
 
-                using value_type = T;
+        using value_type = T;
 
-                using pointer = value_type *;
+        using pointer = value_type *;
 
-                using const_pointer = const value_type *;
+        using const_pointer = const value_type *;
 
-                using reference = value_type &;
+        using reference = value_type &;
 
-                using const_reference = const value_type &;
+        using const_reference = const value_type &;
 
-                using node_type = typename std::conditional<std::is_const<T>::value, const typename T::node_type,
-                                                            typename T::node_type>::type;
+        using node_type = typename std::conditional<std::is_const<T>::value, const typename T::node_type,
+                                                    typename T::node_type>::type;
 
-                using node_pointer = node_type *;
+        using node_pointer = node_type *;
 
-                using iterator_category = std::forward_iterator_tag;
+        using iterator_category = std::forward_iterator_tag;
 
-                // -- static utility functions -----------------------------------------------
+        // -- static utility functions -----------------------------------------------
 
-                /// Casts a node type to its value type.
-                static pointer promote(node_pointer ptr) noexcept {
-                    return static_cast<pointer>(ptr);
-                }
+        /// Casts a node type to its value type.
+        static pointer promote(node_pointer ptr) noexcept {
+            return static_cast<pointer>(ptr);
+        }
 
-                // -- member variables -------------------------------------------------------
+        // -- member variables -------------------------------------------------------
 
-                node_pointer ptr;
+        node_pointer ptr;
 
-                // -- constructors, destructors, and assignment operators --------------------
+        // -- constructors, destructors, and assignment operators --------------------
 
-                constexpr forward_iterator(node_pointer init = nullptr) : ptr(init) {
-                    // nop
-                }
+        constexpr forward_iterator(node_pointer init = nullptr) : ptr(init) {
+            // nop
+        }
 
-                forward_iterator(const forward_iterator &) = default;
+        forward_iterator(const forward_iterator &) = default;
 
-                forward_iterator &operator=(const forward_iterator &) = default;
+        forward_iterator &operator=(const forward_iterator &) = default;
 
-                // -- convenience functions --------------------------------------------------
+        // -- convenience functions --------------------------------------------------
 
-                forward_iterator next() {
-                    return ptr->next;
-                }
+        forward_iterator next() {
+            return ptr->next;
+        }
 
-                // -- operators --------------------------------------------------------------
+        // -- operators --------------------------------------------------------------
 
-                forward_iterator &operator++() {
-                    ptr = promote(ptr->next);
-                    return *this;
-                }
+        forward_iterator &operator++() {
+            ptr = ptr->next;
+            return *this;
+        }
 
-                forward_iterator operator++(int) {
-                    forward_iterator res = *this;
-                    ptr = promote(ptr->next);
-                    return res;
-                }
+        forward_iterator operator++(int) {
+            forward_iterator res = *this;
+            ptr = ptr->next;
+            return res;
+        }
 
-                reference operator*() {
-                    return *promote(ptr);
-                }
+        reference operator*() {
+            return *promote(ptr);
+        }
 
-                const_reference operator*() const {
-                    return *promote(ptr);
-                }
+        const_reference operator*() const {
+            return *promote(ptr);
+        }
 
-                pointer operator->() {
-                    return promote(ptr);
-                }
+        pointer operator->() {
+            return promote(ptr);
+        }
 
-                const_pointer operator->() const {
-                    return promote(ptr);
-                }
-            };
+        const_pointer operator->() const {
+            return promote(ptr);
+        }
+    };
 
-            /// @relates forward_iterator
-            template<class T>
-            bool operator==(const forward_iterator<T> &x, const forward_iterator<T> &y) {
-                return x.ptr == y.ptr;
-            }
+    /// @relates forward_iterator
+    template<class T>
+    bool operator==(const forward_iterator<T> &x, const forward_iterator<T> &y) {
+        return x.ptr == y.ptr;
+    }
 
-            /// @relates forward_iterator
-            template<class T>
-            bool operator!=(const forward_iterator<T> &x, const forward_iterator<T> &y) {
-                return x.ptr != y.ptr;
-            }
+    /// @relates forward_iterator
+    template<class T>
+    bool operator!=(const forward_iterator<T> &x, const forward_iterator<T> &y) {
+        return x.ptr != y.ptr;
+    }
 
-        }    // namespace intrusive
-    }        // namespace actor
-}    // namespace nil
+}    // namespace nil::actor::intrusive

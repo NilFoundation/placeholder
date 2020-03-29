@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -19,13 +17,12 @@
 
 #include <nil/actor/actor.hpp>
 #include <nil/actor/actor_cast.hpp>
+
 #include <nil/actor/downstream_manager.hpp>
 #include <nil/actor/downstream_msg.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/mailbox_element.hpp>
-#include <nil/actor/make_message.hpp>
 #include <nil/actor/message_builder.hpp>
-#include <nil/actor/output_stream.hpp>
 #include <nil/actor/ref_counted.hpp>
 #include <nil/actor/stream.hpp>
 #include <nil/actor/stream_slot.hpp>
@@ -35,7 +32,7 @@ namespace nil {
     namespace actor {
 
         /// Manages a single stream with any number of in- and outbound paths.
-        class stream_manager : public ref_counted {
+        class BOOST_SYMBOL_VISIBLE stream_manager : public ref_counted {
         public:
             // -- constants --------------------------------------------------------------
 
@@ -43,9 +40,13 @@ namespace nil {
             /// outbound paths exist.
             static constexpr int is_continuous_flag = 0x0001;
 
-            /// Denotes whether the stream is about to stop, only sending already
-            /// buffered elements.
+            /// Denotes whether the stream is about to stop, only sending buffered
+            /// elements.
             static constexpr int is_shutting_down_flag = 0x0002;
+
+            /// Denotes whether the manager has stopped. Calling member functions such as
+            /// stop() or abort() on it no longer has any effect.
+            static constexpr int is_stopped_flag = 0x0004;
 
             // -- member types -----------------------------------------------------------
 
@@ -137,22 +138,22 @@ namespace nil {
 
             // -- properties -------------------------------------------------------------
 
-            /// Returns whether this stream is shutting down.
-            bool shutting_down() const noexcept {
-                return getf(is_shutting_down_flag);
+            /// Returns whether this stream is neither shutting down nor has stopped.
+            bool running() const noexcept {
+                return getf(is_shutting_down_flag | is_stopped_flag) == 0;
             }
 
             /// Returns whether this stream remains open even if no in- or outbound paths
             /// exist. The default is `false`. Does not keep a source alive past the
             /// point where its driver returns `done() == true`.
-            inline bool continuous() const noexcept {
+            bool continuous() const noexcept {
                 return getf(is_continuous_flag);
             }
 
             /// Sets whether this stream remains open even if no in- or outbound paths
             /// exist.
-            inline void continuous(bool x) noexcept {
-                if (!shutting_down()) {
+            void continuous(bool x) noexcept {
+                if (running()) {
                     if (x)
                         setf(is_continuous_flag);
                     else
@@ -161,7 +162,7 @@ namespace nil {
             }
 
             /// Returns the list of inbound paths.
-            inline const inbound_paths_list &inbound_paths() const noexcept {
+            const inbound_paths_list &inbound_paths() const noexcept {
                 return inbound_paths_;
             }
 
@@ -173,12 +174,12 @@ namespace nil {
             bool inbound_paths_idle() const noexcept;
 
             /// Returns the parent actor.
-            inline scheduled_actor *self() {
+            scheduled_actor *self() {
                 return self_;
             }
 
             /// Acquires credit on an inbound path. The calculated credit to fill our
-            /// queue fro two cycles is `desired`, but the manager is allowed to return
+            /// queue for two cycles is `desired`, but the manager is allowed to return
             /// any non-negative value.
             virtual int32_t acquire_credit(inbound_path *path, int32_t desired);
 
@@ -237,8 +238,8 @@ namespace nil {
             /// @pre `out().terminal() == false`
             /// @private
             template<class In>
-            stream_slot add_unchecked_inbound_path(const stream<In> &) {
-                return add_unchecked_inbound_path_impl(make_rtti_pair<In>());
+            stream_slot add_unchecked_inbound_path(stream<In>) {
+                return add_unchecked_inbound_path_impl(type_id_v<In>);
             }
 
             /// Adds a new outbound path to `rp.next()`.
@@ -255,7 +256,7 @@ namespace nil {
 
             /// Adds the current sender as an inbound path.
             /// @pre Current message is an `open_stream_msg`.
-            stream_slot add_unchecked_inbound_path_impl(rtti_pair rtti);
+            stream_slot add_unchecked_inbound_path_impl(type_id_t rtti);
 
         protected:
             // -- modifiers for self -----------------------------------------------------

@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/blocking_actor.hpp>
@@ -20,6 +18,7 @@
 #include <nil/actor/detail/invoke_result_visitor.hpp>
 #include <nil/actor/detail/set_thread_name.hpp>
 #include <nil/actor/detail/sync_request_bouncer.hpp>
+#include <nil/actor/invoke_message_result.hpp>
 #include <nil/actor/logger.hpp>
 
 namespace nil {
@@ -91,7 +90,7 @@ namespace nil {
             std::thread(
                 [](strong_actor_ptr ptr) {
                     // actor lives in its own thread
-                    detail::set_thread_name("actor.actor");
+                    detail::set_thread_name("caf.actor");
                     ptr->home_system->thread_started();
                     auto this_ptr = ptr->get();
                     ACTOR_ASSERT(dynamic_cast<blocking_actor *>(this_ptr) != nullptr);
@@ -150,59 +149,70 @@ namespace nil {
         intrusive::task_result blocking_actor::mailbox_visitor::operator()(mailbox_element &x) {
             ACTOR_LOG_TRACE(ACTOR_ARG(x));
             ACTOR_LOG_RECEIVE_EVENT((&x));
-            auto check_if_done = [&]() -> intrusive::task_result {
-                // Stop consuming items when reaching the end of the user-defined receive
-                // loop either via post or pre condition.
-                if (rcc.post() && rcc.pre())
-                    return intrusive::task_result::resume;
-                done = true;
-                return intrusive::task_result::stop;
+            ACTOR_BEFORE_PROCESSING(self, x);
+            // Wrap the actual body for the function.
+            auto body = [this, &x] {
+                auto check_if_done = [&]() -> intrusive::task_result {
+                    // Stop consuming items when reaching the end of the user-defined receive
+                    // loop either via post or pre condition.
+                    if (rcc.post() && rcc.pre())
+                        return intrusive::task_result::resume;
+                    done = true;
+                    return intrusive::task_result::stop;
+                };
+                // Skip messages that don't match our message ID.
+                if (mid.is_response()) {
+                    if (mid != x.mid) {
+                        return intrusive::task_result::skip;
+                    }
+                } else if (x.mid.is_response()) {
+                    return intrusive::task_result::skip;
+                }
+                // Automatically unlink from actors after receiving an exit.
+                if (auto view = make_const_typed_message_view<exit_msg>(x.content()))
+                    self->unlink_from(get<0>(view).source);
+                // Blocking actors can nest receives => push/pop `current_element_`
+                auto prev_element = self->current_element_;
+                self->current_element_ = &x;
+                auto g = detail::make_scope_guard([&] { self->current_element_ = prev_element; });
+                // Dispatch on x.
+                detail::default_invoke_result_visitor<blocking_actor> visitor {self};
+                switch (bhvr.nested(visitor, x.content())) {
+                    default:
+                        return check_if_done();
+                    case match_result::no_match: {    // Blocking actors can have fallback
+                                                      // handlers for catch-all rules.
+                        auto sres = bhvr.fallback(self->current_element_->payload);
+                        if (sres.flag != rt_skip) {
+                            visitor.visit(sres);
+                            return check_if_done();
+                        }
+                    }
+                        // Response handlers must get re-invoked with an error when receiving an
+                        // unexpected message.
+                        if (mid.is_response()) {
+                            auto err = make_error(sec::unexpected_response, std::move(x.payload));
+                            mailbox_element tmp {std::move(x.sender), x.mid, std::move(x.stages),
+                                                 make_message(std::move(err))};
+                            self->current_element_ = &tmp;
+                            bhvr.nested(tmp.content());
+                            return check_if_done();
+                        }
+                        ACTOR_ANNOTATE_FALLTHROUGH;
+                    case match_result::skip:
+                        return intrusive::task_result::skip;
+                }
             };
-            // Skip messages that don't match our message ID.
-            if (mid.is_response()) {
-                if (mid != x.mid) {
-                    ACTOR_LOG_SKIP_EVENT();
-                    return intrusive::task_result::skip;
-                }
-            } else if (x.mid.is_response()) {
+            // Post-process the returned value from the function body.
+            auto result = body();
+            if (result == intrusive::task_result::skip) {
+                ACTOR_AFTER_PROCESSING(self, invoke_message_result::skipped);
                 ACTOR_LOG_SKIP_EVENT();
-                return intrusive::task_result::skip;
+            } else {
+                ACTOR_AFTER_PROCESSING(self, invoke_message_result::consumed);
+                ACTOR_LOG_FINALIZE_EVENT();
             }
-            // Automatically unlink from actors after receiving an exit.
-            if (x.content().match_elements<exit_msg>())
-                self->unlink_from(x.content().get_as<exit_msg>(0).source);
-            // Blocking actors can nest receives => push/pop `current_element_`
-            auto prev_element = self->current_element_;
-            self->current_element_ = &x;
-            auto g = detail::make_scope_guard([&] { self->current_element_ = prev_element; });
-            // Dispatch on x.
-            detail::default_invoke_result_visitor<blocking_actor> visitor {self};
-            switch (bhvr.nested(visitor, x.content())) {
-                default:
-                    return check_if_done();
-                case match_case::no_match: {    // Blocking actors can have fallback handlers for catch-all rules.
-                    auto sres = bhvr.fallback(*self->current_element_);
-                    if (sres.flag != rt_skip) {
-                        visitor.visit(sres);
-                        ACTOR_LOG_FINALIZE_EVENT();
-                        return check_if_done();
-                    }
-                }
-                    // Response handlers must get re-invoked with an error when receiving an
-                    // unexpected message.
-                    if (mid.is_response()) {
-                        auto err = make_error(sec::unexpected_response, x.move_content_to_message());
-                        mailbox_element_view<error> tmp {std::move(x.sender), x.mid, std::move(x.stages), err};
-                        self->current_element_ = &tmp;
-                        bhvr.nested(tmp.content());
-                        ACTOR_LOG_FINALIZE_EVENT();
-                        return check_if_done();
-                    }
-                    ACTOR_ANNOTATE_FALLTHROUGH;
-                case match_case::skip:
-                    ACTOR_LOG_SKIP_EVENT();
-                    return intrusive::task_result::skip;
-            }
+            return result;
         }
 
         void blocking_actor::receive_impl(receive_cond &rcc, message_id mid, detail::blocking_behavior &bhvr) {
@@ -222,7 +232,7 @@ namespace nil {
             do {
                 // Reset the timeout each iteration.
                 auto rel_tout = bhvr.timeout();
-                if (!rel_tout.valid()) {
+                if (rel_tout == infinite) {
                     await_data();
                 } else {
                     auto abs_tout = std::chrono::high_resolution_clock::now();
@@ -263,12 +273,12 @@ namespace nil {
         void blocking_actor::varargs_tup_receive(receive_cond &rcc, message_id mid, std::tuple<behavior &> &tup) {
             using namespace detail;
             auto &bhvr = std::get<0>(tup);
-            if (bhvr.timeout().valid()) {
-                auto tmp = after(bhvr.timeout()) >> [&] { bhvr.handle_timeout(); };
-                auto fun = make_blocking_behavior(&bhvr, std::move(tmp));
+            if (bhvr.timeout() == infinite) {
+                auto fun = make_blocking_behavior(&bhvr);
                 receive_impl(rcc, mid, fun);
             } else {
-                auto fun = make_blocking_behavior(&bhvr);
+                auto tmp = after(bhvr.timeout()) >> [&] { bhvr.handle_timeout(); };
+                auto fun = make_blocking_behavior(&bhvr, std::move(tmp));
                 receive_impl(rcc, mid, fun);
             }
         }
@@ -287,11 +297,11 @@ namespace nil {
         }
 
         size_t blocking_actor::attach_functor(const strong_actor_ptr &ptr) {
-            using wait_for_atom = atom_constant<atom("waitFor")>;
             if (!ptr)
                 return 0;
             actor self {this};
-            ptr->get()->attach_functor([=](const error &) { anon_send(self, wait_for_atom::value); });
+            auto f = [self](const error &) { nil::actor::anon_send(self, wait_for_atom_v); };
+            ptr->get()->attach_functor(std::move(f));
             return 1;
         }
 

@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -16,6 +14,7 @@
 #include <nil/actor/spawner_config.hpp>
 #include <nil/actor/detail/type_list.hpp>
 #include <nil/actor/detail/type_traits.hpp>
+#include <nil/actor/init_global_meta_objects.hpp>
 
 namespace nil {
     namespace actor {
@@ -28,8 +27,8 @@ namespace nil {
             using config = spawner_config;
 
             template<class F>
-            void operator()(F &fun, spawner &sys, config &) {
-                fun(sys);
+            auto operator()(F &fun, spawner &sys, const config &) {
+                return fun(sys);
             }
         };
 
@@ -38,13 +37,32 @@ namespace nil {
             using config = T;
 
             template<class F>
-            void operator()(F &fun, spawner &sys, config &cfg) {
-                fun(sys, cfg);
+            auto operator()(F &fun, spawner &sys, const config &cfg) {
+                return fun(sys, cfg);
             }
         };
 
+        template<class T>
+        void exec_main_init_meta_objects_single() {
+            if constexpr (std::is_base_of<spawner::module, T>::value)
+                T::init_global_meta_objects();
+            else
+                init_global_meta_objects<T>();
+        }
+
+        template<class... Ts>
+        void exec_main_init_meta_objects() {
+            (exec_main_init_meta_objects_single<Ts>(), ...);
+        }
+
+        template<class T>
+        void exec_main_load_module(spawner_config &cfg) {
+            if constexpr (std::is_base_of<spawner::module, T>::value)
+                cfg.template load<T>();
+        }
+
         template<class... Ts, class F = void (*)(spawner &)>
-        int exec_main(F fun, int argc, char **argv, const char *config_file_name = "actor-application.ini") {
+        int exec_main(F fun, int argc, char **argv, const char *config_file_name = "caf-application.ini") {
             using trait = typename detail::get_callable_trait<F>::type;
             using arg_types = typename trait::arg_types;
             static_assert(detail::tl_size<arg_types>::value == 1 || detail::tl_size<arg_types>::value == 2,
@@ -70,8 +88,7 @@ namespace nil {
             if (cfg.cli_helptext_printed)
                 return EXIT_SUCCESS;
             // Load modules.
-            std::initializer_list<unit_t> unused {unit_t {cfg.template load<Ts>()}...};
-            ACTOR_IGNORE_UNUSED(unused);
+            (exec_main_load_module<Ts>(cfg), ...);
             // Initialize the actor system.
             spawner system {cfg};
             if (cfg.slave_mode) {
@@ -82,14 +99,21 @@ namespace nil {
                 return cfg.slave_mode_fun(system, cfg);
             }
             helper f;
-            f(fun, system, cfg);
-            return EXIT_SUCCESS;
+            using result_type = decltype(f(fun, system, cfg));
+            if constexpr (std::is_convertible<result_type, int>::value) {
+                return f(fun, system, cfg);
+            } else {
+                f(fun, system, cfg);
+                return EXIT_SUCCESS;
+            }
         }
 
     }    // namespace actor
 }    // namespace nil
 
-#define ACTOR_MAIN(...)                                                    \
-    int main(int argc, char **argv) {                                    \
-        return ::nil::actor::exec_main<__VA_ARGS__>(mtl_main, argc, argv); \
+#define ACTOR_MAIN(...)                                             \
+    int main(int argc, char **argv) {                             \
+        nil::actor::exec_main_init_meta_objects<__VA_ARGS__>();          \
+        nil::actor::core::init_global_meta_objects();                    \
+        return nil::actor::exec_main<__VA_ARGS__>(caf_main, argc, argv); \
     }

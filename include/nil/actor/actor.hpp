@@ -1,58 +1,39 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <string>
 #include <cstddef>
 #include <cstdint>
-#include <utility>
+#include <string>
 #include <type_traits>
+#include <utility>
 
-#include <nil/actor/config.hpp>
-
-#include <nil/actor/fwd.hpp>
-#include <nil/actor/message.hpp>
-#include <nil/actor/actor_marker.hpp>
-#include <nil/actor/error_code.hpp>
 #include <nil/actor/abstract_actor.hpp>
 #include <nil/actor/actor_control_block.hpp>
-
+#include <nil/actor/actor_traits.hpp>
+#include <nil/actor/config.hpp>
 #include <nil/actor/detail/comparable.hpp>
+
 #include <nil/actor/detail/type_traits.hpp>
+#include <nil/actor/fwd.hpp>
+#include <nil/actor/message.hpp>
 
 namespace nil {
     namespace actor {
 
-        template<class T>
-        struct is_convertible_to_actor {
-            static constexpr bool value =
-                !std::is_base_of<statically_typed_actor_base, T>::value &&
-                (std::is_base_of<actor_proxy, T>::value || std::is_base_of<local_actor, T>::value);
-        };
-
-        template<>
-        struct is_convertible_to_actor<scoped_actor> : std::true_type {
-            // nop
-        };
-
-        template<class T>
-        struct is_convertible_to_actor<T *> : is_convertible_to_actor<T> {};
-
         /// Identifies an untyped actor. Can be used with derived types
         /// of `event_based_actor`, `blocking_actor`, and `actor_proxy`.
-        class actor : detail::comparable<actor>,
-                      detail::comparable<actor, actor_addr>,
-                      detail::comparable<actor, strong_actor_ptr> {
+        class BOOST_SYMBOL_VISIBLE actor : detail::comparable<actor>,
+                                           detail::comparable<actor, actor_addr>,
+                                           detail::comparable<actor, strong_actor_ptr> {
         public:
             // -- friend types that need access to private ctors
             friend class local_actor;
@@ -62,6 +43,9 @@ namespace nil {
             // allow conversion via actor_cast
             template<class, class, int>
             friend class actor_cast_access;
+
+            // tell actor_cast which semantic this type uses
+            static constexpr bool has_weak_ptr_semantics = false;
 
             actor() = default;
             actor(actor &&) = default;
@@ -73,21 +57,20 @@ namespace nil {
 
             actor(const scoped_actor &);
 
-            template<class T,
-                     class = typename std::enable_if<std::is_base_of<dynamically_typed_actor_base, T>::value>::type>
+            template<class T, class = detail::enable_if_t<actor_traits<T>::is_dynamically_typed>>
             actor(T *ptr) : ptr_(ptr->ctrl()) {
-                BOOST_ASSERT(ptr != nullptr);
+                ACTOR_ASSERT(ptr != nullptr);
             }
 
-            template<class T>
-            typename std::enable_if<is_convertible_to_actor<T>::value, actor &>::type operator=(intrusive_ptr<T> ptr) {
+            template<class T, class = detail::enable_if_t<actor_traits<T>::is_dynamically_typed>>
+            actor &operator=(intrusive_ptr<T> ptr) {
                 actor tmp {std::move(ptr)};
                 swap(tmp);
                 return *this;
             }
 
-            template<class T>
-            typename std::enable_if<is_convertible_to_actor<T>::value, actor &>::type operator=(T *ptr) {
+            template<class T, class = detail::enable_if_t<actor_traits<T>::is_dynamically_typed>>
+            actor &operator=(T *ptr) {
                 actor tmp {ptr};
                 swap(tmp);
                 return *this;
@@ -131,7 +114,7 @@ namespace nil {
             /// @cond PRIVATE
 
             inline abstract_actor *operator->() const noexcept {
-                BOOST_ASSERT(ptr_);
+                ACTOR_ASSERT(ptr_);
                 return ptr_->get();
             }
 
@@ -169,8 +152,8 @@ namespace nil {
                 return ptr_.get();
             }
 
-            inline actor_control_block *detach() noexcept {
-                return ptr_.detach();
+            inline actor_control_block *release() noexcept {
+                return ptr_.release();
             }
 
             actor(actor_control_block *);
@@ -178,28 +161,20 @@ namespace nil {
             strong_actor_ptr ptr_;
         };
 
-        /*!
-         * @brief tell actor_cast which semantic this type uses
-         */
-        template<>
-        struct has_weak_ptr_semantics<actor> {
-            constexpr static const bool value = false;
-        };
-
         /// Combine `f` and `g` so that `(f*g)(x) = f(g(x))`.
-        actor operator*(actor f, actor g);
+        BOOST_SYMBOL_VISIBLE actor operator*(actor f, actor g);
 
         /// @relates actor
-        bool operator==(const actor &lhs, abstract_actor *rhs);
+        BOOST_SYMBOL_VISIBLE bool operator==(const actor &lhs, abstract_actor *rhs);
 
         /// @relates actor
-        bool operator==(abstract_actor *lhs, const actor &rhs);
+        BOOST_SYMBOL_VISIBLE bool operator==(abstract_actor *lhs, const actor &rhs);
 
         /// @relates actor
-        bool operator!=(const actor &lhs, abstract_actor *rhs);
+        BOOST_SYMBOL_VISIBLE bool operator!=(const actor &lhs, abstract_actor *rhs);
 
         /// @relates actor
-        bool operator!=(abstract_actor *lhs, const actor &rhs);
+        BOOST_SYMBOL_VISIBLE bool operator!=(abstract_actor *lhs, const actor &rhs);
 
     }    // namespace actor
 }    // namespace nil

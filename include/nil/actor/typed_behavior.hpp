@@ -1,22 +1,21 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <nil/actor/behavior.hpp>
 #include <nil/actor/deduce_mpi.hpp>
+#include <nil/actor/interface_mismatch.hpp>
 #include <nil/actor/message_handler.hpp>
 #include <nil/actor/system_messages.hpp>
-#include <nil/actor/interface_mismatch.hpp>
+#include <nil/actor/timespan.hpp>
 
 #include <nil/actor/detail/typed_actor_util.hpp>
 
@@ -100,7 +99,7 @@ namespace nil {
 
             // this function is called from typed_behavior<...>::set and its whole
             // purpose is to give users a nicer error message on a type mismatch
-            // (this function only has the type informations needed to understand the error)
+            // (this function only has the type information needed to understand the error)
             template<class SignatureList, class InputList>
             void static_check_typed_behavior_input() {
                 constexpr bool is_valid = valid_input<SignatureList, InputList>::value;
@@ -157,7 +156,8 @@ namespace nil {
                 using other_signatures = detail::type_list<Ts...>;
                 using m = interface_mismatch_t<other_signatures, signatures>;
                 // trigger static assert on mismatch
-                detail::static_error_printer<sizeof...(Ts), m::value, typename m::xs, typename m::ys> guard;
+                detail::static_error_printer<static_cast<int>(sizeof...(Ts)), m::value, typename m::xs, typename m::ys>
+                    guard;
                 ACTOR_IGNORE_UNUSED(guard);
             }
 
@@ -177,7 +177,7 @@ namespace nil {
             // -- modifiers --------------------------------------------------------------
 
             /// Exchanges the contents of this and other.
-            inline void swap(typed_behavior &other) {
+            void swap(typed_behavior &other) {
                 bhvr_.swap(other.bhvr_);
             }
 
@@ -195,7 +195,7 @@ namespace nil {
 
             /// Returns the duration after which receives using
             /// this behavior should time out.
-            const duration &timeout() const {
+            timespan timeout() const noexcept {
                 return bhvr_.timeout();
             }
 
@@ -214,12 +214,13 @@ namespace nil {
         private:
             typed_behavior() = default;
 
-            template<class... Ts>
-            void set(intrusive_ptr<detail::default_behavior_impl<std::tuple<Ts...>>> bp) {
+            template<class... Ts, class TimeoutDefinition>
+            void set(intrusive_ptr<detail::default_behavior_impl<std::tuple<Ts...>, TimeoutDefinition>> bp) {
                 using found_signatures = detail::type_list<deduce_mpi_t<Ts>...>;
                 using m = interface_mismatch_t<found_signatures, signatures>;
                 // trigger static assert on mismatch
-                detail::static_error_printer<sizeof...(Ts), m::value, typename m::xs, typename m::ys> guard;
+                detail::static_error_printer<static_cast<int>(sizeof...(Ts)), m::value, typename m::xs, typename m::ys>
+                    guard;
                 ACTOR_IGNORE_UNUSED(guard);
                 // final (type-erasure) step
                 intrusive_ptr<detail::behavior_impl> ptr = std::move(bp);
@@ -234,6 +235,12 @@ namespace nil {
 
         template<class... Sigs>
         struct is_typed_behavior<typed_behavior<Sigs...>> : std::true_type {};
+
+        /// Creates a typed behavior from given function objects.
+        template<class... Fs>
+        typed_behavior<deduce_mpi_t<Fs>...> make_typed_behavior(Fs... fs) {
+            return {std::move(fs)...};
+        }
 
     }    // namespace actor
 }    // namespace nil

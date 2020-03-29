@@ -1,66 +1,50 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <chrono>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 
 #include <nil/actor/actor_config.hpp>
-#include <nil/actor/actor_marker.hpp>
+#include <nil/actor/actor_traits.hpp>
 #include <nil/actor/after.hpp>
 #include <nil/actor/behavior.hpp>
+#include <nil/actor/detail/apply_args.hpp>
+#include <nil/actor/detail/blocking_behavior.hpp>
+
+#include <nil/actor/detail/type_list.hpp>
+#include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/extend.hpp>
 #include <nil/actor/fwd.hpp>
+#include <nil/actor/intrusive/drr_cached_queue.hpp>
+#include <nil/actor/intrusive/drr_queue.hpp>
+#include <nil/actor/intrusive/fifo_inbox.hpp>
+#include <nil/actor/intrusive/wdrr_dynamic_multiplexed_queue.hpp>
+#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
 #include <nil/actor/is_timeout_or_catch_all.hpp>
 #include <nil/actor/local_actor.hpp>
 #include <nil/actor/mailbox_element.hpp>
+#include <nil/actor/mixin/requester.hpp>
+#include <nil/actor/mixin/sender.hpp>
+#include <nil/actor/mixin/subscriber.hpp>
 #include <nil/actor/none.hpp>
-#include <nil/actor/send.hpp>
-#include <nil/actor/typed_actor.hpp>
-
 #include <nil/actor/policy/arg.hpp>
 #include <nil/actor/policy/categorized.hpp>
 #include <nil/actor/policy/downstream_messages.hpp>
 #include <nil/actor/policy/normal_messages.hpp>
 #include <nil/actor/policy/upstream_messages.hpp>
 #include <nil/actor/policy/urgent_messages.hpp>
-
-#include <nil/actor/detail/apply_args.hpp>
-#include <nil/actor/detail/blocking_behavior.hpp>
-#include <nil/actor/detail/type_list.hpp>
-#include <nil/actor/detail/type_traits.hpp>
-
-#include <nil/actor/intrusive/drr_cached_queue.hpp>
-#include <nil/actor/intrusive/drr_queue.hpp>
-#include <nil/actor/intrusive/fifo_inbox.hpp>
-#include <nil/actor/intrusive/wdrr_dynamic_multiplexed_queue.hpp>
-#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
-
-#include <nil/actor/mixin/requester.hpp>
-#include <nil/actor/mixin/sender.hpp>
-#include <nil/actor/mixin/subscriber.hpp>
-
-namespace nil {
-    namespace actor {
-        namespace mixin {
-
-            template<>
-            struct is_blocking_requester<blocking_actor> : std::true_type {};
-
-        }    // namespace mixin
-    }        // namespace actor
-}    // namespace nil
+#include <nil/actor/send.hpp>
+#include <nil/actor/typed_actor.hpp>
 
 namespace nil {
     namespace actor {
@@ -68,9 +52,15 @@ namespace nil {
         /// A thread-mapped or context-switching actor using a blocking
         /// receive rather than a behavior-stack based message processing.
         /// @extends local_actor
-        class blocking_actor
-            : public extend<local_actor, blocking_actor>::with<mixin::requester, mixin::sender, mixin::subscriber>,
-              public dynamically_typed_actor_base {
+        class BOOST_SYMBOL_VISIBLE blocking_actor
+            // clang-format off
+  : public extend<local_actor, blocking_actor>::
+           with<mixin::requester,
+                mixin::sender,
+                mixin::subscriber>,
+    public dynamically_typed_actor_base,
+    public blocking_actor_base {
+            // clang-format on
         public:
             // -- nested and member types ------------------------------------------------
 
@@ -117,7 +107,7 @@ namespace nil {
             // -- nested classes ---------------------------------------------------------
 
             /// Represents pre- and postconditions for receive loops.
-            class receive_cond {
+            class BOOST_SYMBOL_VISIBLE receive_cond {
             public:
                 virtual ~receive_cond();
 
@@ -129,14 +119,14 @@ namespace nil {
             };
 
             /// Pseudo receive condition modeling a single receive.
-            class accept_one_cond : public receive_cond {
+            class BOOST_SYMBOL_VISIBLE accept_one_cond : public receive_cond {
             public:
                 ~accept_one_cond() override;
                 bool post() override;
             };
 
             /// Implementation helper for `blocking_actor::receive_while`.
-            struct receive_while_helper {
+            struct BOOST_SYMBOL_VISIBLE receive_while_helper {
                 using fun_type = std::function<bool()>;
 
                 blocking_actor *self;
@@ -187,7 +177,7 @@ namespace nil {
             };
 
             /// Implementation helper for `blocking_actor::do_receive`.
-            struct do_receive_helper {
+            struct BOOST_SYMBOL_VISIBLE do_receive_helper {
                 std::function<void(receive_cond &rc)> cb;
 
                 template<class Statement>
@@ -330,7 +320,6 @@ namespace nil {
             /// Blocks this actor until all `xs...` have terminated.
             template<class... Ts>
             void wait_for(Ts &&... xs) {
-                using wait_for_atom = atom_constant<atom("waitFor")>;
                 size_t expected = 0;
                 size_t i = 0;
                 size_t attach_results[] = {attach_functor(xs)...};

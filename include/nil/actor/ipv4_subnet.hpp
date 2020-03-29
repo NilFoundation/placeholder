@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,12 +13,13 @@
 #include <cstdint>
 
 #include <nil/actor/detail/comparable.hpp>
+
 #include <nil/actor/ipv4_address.hpp>
 
 namespace nil {
     namespace actor {
 
-        class ipv4_subnet : detail::comparable<ipv4_subnet> {
+        class BOOST_SYMBOL_VISIBLE ipv4_subnet : detail::comparable<ipv4_subnet> {
         public:
             // -- constructors, destructors, and assignment operators --------------------
 
@@ -64,7 +63,7 @@ namespace nil {
         // -- related free functions ---------------------------------------------------
 
         /// @relates ipv4_subnet
-        std::string to_string(ipv4_subnet x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(ipv4_subnet x);
 
     }    // namespace actor
 }    // namespace nil

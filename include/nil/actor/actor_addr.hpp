@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -17,21 +15,21 @@
 #include <functional>
 #include <type_traits>
 
-#include <nil/actor/fwd.hpp>
 #include <nil/actor/abstract_actor.hpp>
 #include <nil/actor/actor_control_block.hpp>
-
 #include <nil/actor/detail/comparable.hpp>
+
+#include <nil/actor/fwd.hpp>
 
 namespace nil {
     namespace actor {
 
         /// Stores the address of typed as well as untyped actors.
-        class actor_addr : detail::comparable<actor_addr>,
-                           detail::comparable<actor_addr, weak_actor_ptr>,
-                           detail::comparable<actor_addr, strong_actor_ptr>,
-                           detail::comparable<actor_addr, abstract_actor *>,
-                           detail::comparable<actor_addr, actor_control_block *> {
+        class BOOST_SYMBOL_VISIBLE actor_addr : detail::comparable<actor_addr>,
+                                                detail::comparable<actor_addr, weak_actor_ptr>,
+                                                detail::comparable<actor_addr, strong_actor_ptr>,
+                                                detail::comparable<actor_addr, abstract_actor *>,
+                                                detail::comparable<actor_addr, actor_control_block *> {
         public:
             // -- friend types that need access to private ctors
 
@@ -40,6 +38,9 @@ namespace nil {
             // allow conversion via actor_cast
             template<class, class, int>
             friend class actor_cast_access;
+
+            // tell actor_cast which semantic this type uses
+            static constexpr bool has_weak_ptr_semantics = true;
 
             actor_addr() = default;
             actor_addr(actor_addr &&) = default;
@@ -130,14 +131,6 @@ namespace nil {
             actor_addr(actor_control_block *);
 
             weak_actor_ptr ptr_;
-        };
-
-        /*!
-         * @brief tell actor_cast which semantic this type uses
-         */
-        template<>
-        struct has_weak_ptr_semantics<actor_addr> {
-            constexpr static const bool value = true;
         };
 
         inline bool operator==(const actor_addr &x, std::nullptr_t) {

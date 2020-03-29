@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/detail/get_mac_addresses.hpp>
@@ -17,19 +15,19 @@
 
 #if defined(ACTOR_MACOS) || defined(ACTOR_BSD) || defined(ACTOR_IOS)
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/sysctl.h>
-#include <net/if.h>
-#include <net/if_dl.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <net/if.h>
+#include <net/if_dl.h>
+#include <netinet/in.h>
 #include <sstream>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/sysctl.h>
+#include <sys/types.h>
 
 #include <iostream>
 
@@ -93,101 +91,98 @@ namespace nil {
 
 #elif defined(ACTOR_LINUX) || defined(ACTOR_ANDROID) || defined(ACTOR_CYGWIN)
 
-#include <vector>
-#include <string>
+#include <algorithm>
 #include <cctype>
+#include <cstring>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <net/if.h>
-#include <cstring>
+#include <sstream>
+#include <stdio.h>
+#include <string>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <iostream>
+#include <vector>
 
-namespace nil {
-    namespace actor {
-        namespace detail {
+namespace nil::actor::detail {
 
-            std::vector<iface_info> get_mac_addresses() {
-                // get a socket handle
-                int socktype = SOCK_DGRAM;
+    std::vector<iface_info> get_mac_addresses() {
+        // get a socket handle
+        int socktype = SOCK_DGRAM;
 #ifdef SOCK_CLOEXEC
-                socktype |= SOCK_CLOEXEC;
+        socktype |= SOCK_CLOEXEC;
 #endif
-                int sck = socket(AF_INET, socktype, 0);
-                if (sck < 0) {
-                    perror("socket");
-                    return {};
-                }
-                auto g = make_scope_guard([&] { close(sck); });
-                // query available interfaces
-                char buf[1024] = {0};
-                ifconf ifc;
-                ifc.ifc_len = sizeof(buf);
-                ifc.ifc_buf = buf;
-                if (ioctl(sck, SIOCGIFCONF, &ifc) < 0) {
-                    perror("ioctl(SIOCGIFCONF)");
-                    return {};
-                }
-                std::vector<iface_info> result;
-                auto ctoi = [](char c) -> unsigned { return static_cast<unsigned char>(c); };
-                // iterate through interfaces
-                auto ifr = ifc.ifc_req;
-                auto num_ifaces = static_cast<size_t>(ifc.ifc_len) / sizeof(ifreq);
-                for (size_t i = 0; i < num_ifaces; ++i) {
-                    auto item = &ifr[i];
-                    // get mac address
-                    if (ioctl(sck, SIOCGIFHWADDR, item) < 0) {
-                        perror("ioctl(SIOCGIFHWADDR)");
-                        return {};
-                    }
-                    std::ostringstream oss;
-                    oss << std::hex;
-                    oss.width(2);
-                    oss << ctoi(item->ifr_hwaddr.sa_data[0]);
-                    for (size_t j = 1; j < 6; ++j) {
-                        oss << ":";
-                        oss.width(2);
-                        oss << ctoi(item->ifr_hwaddr.sa_data[j]);
-                    }
-                    auto addr = oss.str();
-                    if (addr != "00:00:00:00:00:00") {
-                        result.push_back({item->ifr_name, std::move(addr)});
-                    }
-                }
-                return result;
+        int sck = socket(AF_INET, socktype, 0);
+        if (sck < 0) {
+            perror("socket");
+            return {};
+        }
+        auto g = make_scope_guard([&] { close(sck); });
+        // query available interfaces
+        char buf[1024] = {0};
+        ifconf ifc;
+        ifc.ifc_len = sizeof(buf);
+        ifc.ifc_buf = buf;
+        if (ioctl(sck, SIOCGIFCONF, &ifc) < 0) {
+            perror("ioctl(SIOCGIFCONF)");
+            return {};
+        }
+        std::vector<iface_info> result;
+        auto ctoi = [](char c) -> unsigned { return static_cast<unsigned char>(c); };
+        // iterate through interfaces
+        auto ifr = ifc.ifc_req;
+        auto num_ifaces = static_cast<size_t>(ifc.ifc_len) / sizeof(ifreq);
+        for (size_t i = 0; i < num_ifaces; ++i) {
+            auto item = &ifr[i];
+            // get mac address
+            if (ioctl(sck, SIOCGIFHWADDR, item) < 0) {
+                perror("ioctl(SIOCGIFHWADDR)");
+                return {};
             }
+            std::ostringstream oss;
+            oss << std::hex;
+            oss.width(2);
+            oss << ctoi(item->ifr_hwaddr.sa_data[0]);
+            for (size_t j = 1; j < 6; ++j) {
+                oss << ":";
+                oss.width(2);
+                oss << ctoi(item->ifr_hwaddr.sa_data[j]);
+            }
+            auto addr = oss.str();
+            if (addr != "00:00:00:00:00:00") {
+                result.push_back({item->ifr_name, std::move(addr)});
+            }
+        }
+        return result;
+    }
 
-        }    // namespace detail
-    }        // namespace actor
-}    // namespace nil
+}    // namespace nil::actor::detail
 
 #else
 
 // windows
 
-#include <ws2tcpip.h>
-#include <winsock2.h>
-#include <iphlpapi.h>
+// clang-format off
+#  include <ws2tcpip.h>
+#  include <winsock2.h>
+#  include <iphlpapi.h>
+// clang-format on
 
-#include <memory>
-#include <vector>
-#include <string>
+#include <algorithm>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace {
 

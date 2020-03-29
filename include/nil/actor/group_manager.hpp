@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -17,17 +15,18 @@
 #include <thread>
 #include <unordered_map>
 
-#include <nil/actor/fwd.hpp>
-#include <nil/actor/optional.hpp>
-#include <nil/actor/expected.hpp>
-#include <nil/actor/group_module.hpp>
 #include <nil/actor/abstract_group.hpp>
+
 #include <nil/actor/detail/shared_spinlock.hpp>
+#include <nil/actor/expected.hpp>
+#include <nil/actor/fwd.hpp>
+#include <nil/actor/group_module.hpp>
+#include <nil/actor/optional.hpp>
 
 namespace nil {
     namespace actor {
 
-        class group_manager {
+        class BOOST_SYMBOL_VISIBLE group_manager {
         public:
             // -- friends ----------------------------------------------------------------
 
@@ -38,6 +37,10 @@ namespace nil {
             using modules_map = std::unordered_map<std::string, std::unique_ptr<group_module>>;
 
             // -- constructors, destructors, and assignment operators --------------------
+
+            group_manager(const group_manager &) = delete;
+
+            group_manager &operator=(const group_manager &) = delete;
 
             ~group_manager();
 
@@ -70,7 +73,7 @@ namespace nil {
         private:
             // -- constructors, destructors, and assignment operators --------------------
 
-            group_manager(spawner &sys);
+            explicit group_manager(spawner &sys);
 
             // -- member functions required by spawner ------------------------------
 

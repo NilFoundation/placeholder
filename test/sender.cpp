@@ -1,16 +1,14 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2019 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE sender_test
+#define BOOST_TEST_MODULE mixin.sender
 
 #include <nil/actor/mixin/sender.hpp>
 
@@ -25,15 +23,19 @@ using std::chrono::seconds;
 namespace {
 
     behavior testee_impl(event_based_actor *self) {
-        self->set_default_handler(drop);
-        return {[] {
-            // nop
-        }};
+        self->set_default_handler(reflect);
+        return {
+            [] {
+                // nop
+            },
+        };
     }
 
     struct fixture : test_coordinator_fixture<> {
         group grp;
         actor testee;
+
+        std::string hello = "hello world";
 
         fixture() {
             grp = sys.groups().anonymous();
@@ -47,34 +49,50 @@ namespace {
 
 }    // namespace
 
-BOOST_FIXTURE_TEST_SUITE(request_timeout_tests, fixture)
+BOOST_FIXTURE_TEST_SUITE(sender_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(delayed_actor_message_test) {
-    self->delayed_send(testee, seconds(1), "hello world");
-    sched.
-
-        trigger_timeout();
-
-    expect((std::string), from(self).to(testee).with("hello world"));
+BOOST_AUTO_TEST_CASE(delayed_actor_messages_receive_responses) {
+    self->delayed_send(testee, seconds(1), hello);
+    sched.trigger_timeout();
+    expect((std::string), from(self).to(testee).with(hello));
+    expect((std::string), from(testee).to(self).with(hello));
+    self->scheduled_send(testee, self->clock().now() + seconds(1), hello);
+    sched.trigger_timeout();
+    expect((std::string), from(self).to(testee).with(hello));
+    expect((std::string), from(testee).to(self).with(hello));
 }
 
-BOOST_AUTO_TEST_CASE(delayed_group_message_test) {
-    self->delayed_send(grp, seconds(1), "hello world");
+BOOST_AUTO_TEST_CASE(delayed_group_message_receive_responses) {
+    self->delayed_send(grp, seconds(1), hello);
     sched.trigger_timeout();
-
-    expect((std::string), from(self).to(testee).with("hello world"));
+    expect((std::string), from(self).to(testee).with(hello));
+    expect((std::string), from(testee).to(self).with(hello));
+    self->scheduled_send(grp, self->clock().now() + seconds(1), hello);
+    sched.trigger_timeout();
+    expect((std::string), from(self).to(testee).with(hello));
+    expect((std::string), from(testee).to(self).with(hello));
 }
 
-BOOST_AUTO_TEST_CASE(scheduled_actor_message) {
-    self->scheduled_send(testee, self->clock().now() + seconds(1), "hello world");
+BOOST_AUTO_TEST_CASE(anonymous_messages_receive_no_response) {
+    self->anon_send(testee, hello);
+    expect((std::string), to(testee).with(hello));
+    disallow((std::string), from(testee).to(self).with(hello));
+    self->delayed_anon_send(testee, seconds(1), hello);
     sched.trigger_timeout();
-    expect((std::string), from(self).to(testee).with("hello world"));
-}
-
-BOOST_AUTO_TEST_CASE(scheduled_group_message) {
-    self->scheduled_send(grp, self->clock().now() + seconds(1), "hello world");
+    expect((std::string), to(testee).with(hello));
+    disallow((std::string), from(testee).to(self).with(hello));
+    self->scheduled_anon_send(testee, self->clock().now() + seconds(1), hello);
     sched.trigger_timeout();
-    expect((std::string), from(self).to(testee).with("hello world"));
+    expect((std::string), to(testee).with(hello));
+    disallow((std::string), from(testee).to(self).with(hello));
+    self->delayed_anon_send(grp, seconds(1), hello);
+    sched.trigger_timeout();
+    expect((std::string), to(testee).with(hello));
+    disallow((std::string), from(testee).to(self).with(hello));
+    self->scheduled_anon_send(grp, self->clock().now() + seconds(1), hello);
+    sched.trigger_timeout();
+    expect((std::string), to(testee).with(hello));
+    disallow((std::string), from(testee).to(self).with(hello));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

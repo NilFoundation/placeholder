@@ -1,28 +1,26 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <vector>
 #include <functional>
+#include <vector>
 
-#include <nil/actor/locks.hpp>
 #include <nil/actor/actor.hpp>
+
+#include <nil/actor/detail/shared_spinlock.hpp>
+#include <nil/actor/detail/split_join.hpp>
 #include <nil/actor/execution_unit.hpp>
+#include <nil/actor/locks.hpp>
 #include <nil/actor/mailbox_element.hpp>
 #include <nil/actor/monitorable_actor.hpp>
-
-#include <nil/actor/detail/split_join.hpp>
-#include <nil/actor/detail/shared_spinlock.hpp>
 
 namespace nil {
     namespace actor {
@@ -49,7 +47,7 @@ namespace nil {
         /// messages with as little overhead as possible, because the dispatching
         /// runs in the context of the sender.
         /// @experimental
-        class actor_pool : public monitorable_actor {
+        class BOOST_SYMBOL_VISIBLE actor_pool : public monitorable_actor {
         public:
             using uplock = upgrade_lock<detail::shared_spinlock>;
             using actor_vec = std::vector<actor>;
@@ -104,7 +102,7 @@ namespace nil {
 
         private:
             bool filter(upgrade_lock<detail::shared_spinlock> &, const strong_actor_ptr &sender, message_id mid,
-                        message_view &mv, execution_unit *eu);
+                        message &msg, execution_unit *eu);
 
             // call without workers_mtx_ held
             void quit(execution_unit *host);

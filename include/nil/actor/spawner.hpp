@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -26,9 +24,14 @@
 #include <nil/actor/actor_cast.hpp>
 #include <nil/actor/actor_clock.hpp>
 #include <nil/actor/actor_config.hpp>
-#include <nil/actor/actor_marker.hpp>
+#include <nil/actor/actor_profiler.hpp>
 #include <nil/actor/actor_registry.hpp>
+#include <nil/actor/actor_traits.hpp>
 #include <nil/actor/composable_behavior_based_actor.hpp>
+
+#include <nil/actor/detail/init_fun_factory.hpp>
+#include <nil/actor/detail/spawn_fwd.hpp>
+#include <nil/actor/detail/spawnable.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/group_manager.hpp>
 #include <nil/actor/infer_handle.hpp>
@@ -36,102 +39,61 @@
 #include <nil/actor/logger.hpp>
 #include <nil/actor/make_actor.hpp>
 #include <nil/actor/prohibit_top_level_spawn_marker.hpp>
-#include <nil/actor/runtime_settings_map.hpp>
 #include <nil/actor/scoped_execution_unit.hpp>
 #include <nil/actor/spawn_options.hpp>
 #include <nil/actor/string_algorithms.hpp>
-#include <nil/actor/uniform_type_info_map.hpp>
+#include <nil/actor/type_id.hpp>
 
-#include <nil/actor/detail/init_fun_factory.hpp>
-#include <nil/actor/detail/spawn_fwd.hpp>
-#include <nil/actor/detail/spawnable.hpp>
+namespace nil::actor::detail {
+
+    template<class>
+    struct typed_mpi_access;
+
+    template<class... In, class... Out>
+    struct typed_mpi_access<typed_mpi<type_list<In...>, output_tuple<Out...>>> {
+        std::string operator()() const {
+            static_assert(sizeof...(In) > 0, "typed MPI without inputs");
+            static_assert(sizeof...(Out) > 0, "typed MPI without outputs");
+            std::vector<std::string> inputs {type_name_v<In>...};
+            std::vector<std::string> outputs1 {type_name_v<Out>...};
+            std::string result = "nil::actor::replies_to<";
+            result += join(inputs, ",");
+            result += ">::with<";
+            result += join(outputs1, ",");
+            result += ">";
+            return result;
+        }
+    };
+
+    template<class T>
+    std::string get_rtti_from_mpi() {
+        typed_mpi_access<T> f;
+        return f();
+    }
+
+}    // namespace nil::actor::detail
 
 namespace nil {
     namespace actor {
 
-        template<class T>
-        struct mpi_field_access {
-            std::string operator()(const uniform_type_info_map &types) {
-                auto result = types.portable_name(type_nr<T>::value, &typeid(T));
-                if (result == types.default_type_name()) {
-                    result = "<invalid-type[typeid ";
-                    result += typeid(T).name();
-                    result += "]>";
-                }
-                return result;
-            }
-        };
-
-        template<atom_value X>
-        struct mpi_field_access<atom_constant<X>> {
-            std::string operator()(const uniform_type_info_map &) {
-                return to_string(X);
-            }
-        };
-
-        template<>
-        struct mpi_field_access<void> {
-            std::string operator()(const uniform_type_info_map &) {
-                return "void";
-            }
-        };
-        template<class T>
-        std::string get_mpi_field(const uniform_type_info_map &types) {
-            mpi_field_access<T> f;
-            return f(types);
-        }
-
-        template<class T>
-        struct typed_mpi_access;
-
-        template<class... Is, class... Ls>
-        struct typed_mpi_access<typed_mpi<detail::type_list<Is...>, output_tuple<Ls...>>> {
-            std::string operator()(const uniform_type_info_map &types) const {
-                static_assert(sizeof...(Is) > 0, "typed MPI without inputs");
-                static_assert(sizeof...(Ls) > 0, "typed MPI without outputs");
-                std::vector<std::string> inputs {get_mpi_field<Is>(types)...};
-                std::vector<std::string> outputs1 {get_mpi_field<Ls>(types)...};
-                std::string result = "nil::actor::replies_to<";
-                result += join(inputs, ",");
-                result += ">::with<";
-                result += join(outputs1, ",");
-                result += ">";
-                return result;
-            }
-        };
-
-        template<class T>
-        std::string get_rtti_from_mpi(const uniform_type_info_map &types) {
-            typed_mpi_access<T> f;
-            return f(types);
-        }
-
         /// Actor environment including scheduler, registry, and optional components
         /// such as a middleman.
-        class spawner {
+        class BOOST_SYMBOL_VISIBLE spawner {
         public:
             friend class logger;
             friend class io::middleman;
+            friend class net::middleman;
             friend class abstract_actor;
-
-            /// The number of actors implictly spawned by the actor system on startup.
-            static constexpr size_t num_internal_actors = 2;
-
-            /// Returns the ID of an internal actor by its name.
-            /// @pre x in {'SpawnServ', 'ConfigServ', 'StreamServ'}
-            static constexpr size_t internal_actor_id(atom_value x) {
-                return x == atom("SpawnServ") ? 0 : (x == atom("ConfigServ") ? 1 : 2);
-            }
 
             /// Returns the internal actor for dynamic spawn operations.
             const strong_actor_ptr &spawn_serv() const {
-                return internal_actors_[internal_actor_id(atom("SpawnServ"))];
+                return spawn_serv_;
             }
 
             /// Returns the internal actor for storing the runtime configuration
             /// for this actor system.
             const strong_actor_ptr &config_serv() const {
-                return internal_actors_[internal_actor_id(atom("ConfigServ"))];
+                return config_serv_;
             }
 
             spawner() = delete;
@@ -139,9 +101,9 @@ namespace nil {
             spawner &operator=(const spawner &) = delete;
 
             /// An (optional) component of the actor system.
-            class module {
+            class BOOST_SYMBOL_VISIBLE module {
             public:
-                enum id_t { scheduler, middleman, opencl_manager, openssl_manager, num_ids };
+                enum id_t { scheduler, middleman, openssl_manager, network_manager, num_ids };
 
                 virtual ~module();
 
@@ -169,6 +131,22 @@ namespace nil {
 
             using module_array = std::array<module_ptr, module::num_ids>;
 
+            /// An (optional) component of the actor system with networking capabilities.
+            class BOOST_SYMBOL_VISIBLE networking_module : public module {
+            public:
+                ~networking_module() override;
+
+                /// Causes the module to send a `node_down_msg` to `observer` if this system
+                /// loses connection to `node`.
+                virtual void monitor(const node_id &node, const actor_addr &observer) = 0;
+
+                /// Causes the module remove one entry for `observer` from the list of
+                /// actors that receive a `node_down_msg` if this system loses connection to
+                /// `node`. Each call to `monitor` requires one call to `demonitor` in order
+                /// to unsubscribe the `observer` completely.
+                virtual void demonitor(const node_id &node, const actor_addr &observer) = 0;
+            };
+
             /// @warning The system stores a reference to `cfg`, which means the
             ///          config object must outlive the actor system.
             explicit spawner(spawner_config &cfg);
@@ -186,7 +164,7 @@ namespace nil {
             template<class... Ts>
             mpi message_types(detail::type_list<typed_actor<Ts...>>) const {
                 static_assert(sizeof...(Ts) > 0, "empty typed actor handle given");
-                mpi result {get_rtti_from_mpi<Ts>(types())...};
+                mpi result {detail::get_rtti_from_mpi<Ts>()...};
                 return result;
             }
 
@@ -235,9 +213,6 @@ namespace nil {
             /// Returns the system-wide actor registry.
             actor_registry &registry();
 
-            /// Returns the system-wide factory for custom types and actors.
-            const uniform_type_info_map &types() const;
-
             /// Returns a string representation for `err`.
             std::string render(const error &x) const;
 
@@ -251,19 +226,19 @@ namespace nil {
             /// @throws `std::logic_error` if module is not loaded.
             io::middleman &middleman();
 
-            /// Returns `true` if the opencl module is available, `false` otherwise.
-            bool has_opencl_manager() const;
-
-            /// Returns the manager instance from the OpenCL module.
-            /// @throws `std::logic_error` if module is not loaded.
-            opencl::manager &opencl_manager() const;
-
             /// Returns `true` if the openssl module is available, `false` otherwise.
             bool has_openssl_manager() const;
 
             /// Returns the manager instance from the OpenSSL module.
             /// @throws `std::logic_error` if module is not loaded.
             openssl::manager &openssl_manager() const;
+
+            /// Returns `true` if the network module is available, `false` otherwise.
+            bool has_network_manager() const noexcept;
+
+            /// Returns the network manager (middleman) instance.
+            /// @throws `std::logic_error` if module is not loaded.
+            net::middleman &network_manager();
 
             /// Returns a dummy execution unit that forwards
             /// everything to the scheduler.
@@ -277,6 +252,17 @@ namespace nil {
 
             /// Blocks this caller until all actors are done.
             void await_all_actors_done() const;
+
+            /// Send a `node_down_msg` to `observer` if this system loses connection to
+            /// `node`.
+            /// @note Calling this function *n* times causes the system to send
+            ///       `node_down_msg` *n* times to the observer. In order to not receive
+            ///       the messages, the observer must call `demonitor` *n* times.
+            void monitor(const node_id &node, const actor_addr &observer);
+
+            /// Removes `observer` from the list of actors that receive a `node_down_msg`
+            /// if this system loses connection to `node`.
+            void demonitor(const node_id &node, const actor_addr &observer);
 
             /// Called by `spawn` when used to create a class-based actor to
             /// apply automatic conversions to `xs` before spawning the actor.
@@ -377,11 +363,11 @@ namespace nil {
                                                            Ts &&... xs) {
                 using impl = infer_impl_from_fun_t<F>;
                 check_invariants<impl>();
-                static constexpr bool dynamically_typed = is_dynamically_typed<impl>::value;
-                static_assert(dynamically_typed, "only dynamically-typed actors can join groups");
+                using traits = actor_traits<impl>;
+                static_assert(traits::is_dynamically_typed, "only dynamically-typed actors can join groups");
                 static constexpr bool spawnable = detail::spawnable<F, impl, Ts...>();
                 static_assert(spawnable, "cannot spawn function-based actor with given arguments");
-                static constexpr bool enabled = dynamically_typed && spawnable;
+                static constexpr bool enabled = traits::is_dynamically_typed && spawnable;
                 auto irange = make_input_range(first, second);
                 cfg.groups = &irange;
                 return spawn_functor<Os>(detail::bool_token<enabled> {}, cfg, fun, std::forward<Ts>(xs)...);
@@ -447,16 +433,6 @@ namespace nil {
             /// Returns the system-wide clock.
             actor_clock &clock() noexcept;
 
-            /// Returns application-specific, system-wide runtime settings.
-            runtime_settings_map &runtime_settings() {
-                return settings_;
-            }
-
-            /// Returns application-specific, system-wide runtime settings.
-            const runtime_settings_map &runtime_settings() const {
-                return settings_;
-            }
-
             /// Returns the number of detached actors.
             size_t detached_actors() {
                 return detached_.load();
@@ -494,8 +470,47 @@ namespace nil {
                 ACTOR_SET_LOGGER_SYS(this);
                 auto res = make_actor<C>(next_actor_id(), node(), this, cfg, std::forward<Ts>(xs)...);
                 auto ptr = static_cast<C *>(actor_cast<abstract_actor *>(res));
+#ifdef ACTOR_ENABLE_ACTOR_PROFILER
+                profiler_add_actor(*ptr, cfg.parent);
+#endif
                 ptr->launch(cfg.host, has_lazy_init_flag(Os), has_hide_flag(Os));
                 return res;
+            }
+
+            void profiler_add_actor(const local_actor &self, const local_actor *parent) {
+                if (profiler_)
+                    profiler_->add_actor(self, parent);
+            }
+
+            void profiler_remove_actor(const local_actor &self) {
+                if (profiler_)
+                    profiler_->remove_actor(self);
+            }
+
+            void profiler_before_processing(const local_actor &self, const mailbox_element &element) {
+                if (profiler_)
+                    profiler_->before_processing(self, element);
+            }
+
+            void profiler_after_processing(const local_actor &self, invoke_message_result result) {
+                if (profiler_)
+                    profiler_->after_processing(self, result);
+            }
+
+            void profiler_before_sending(const local_actor &self, mailbox_element &element) {
+                if (profiler_)
+                    profiler_->before_sending(self, element);
+            }
+
+            void profiler_before_sending_scheduled(const local_actor &self,
+                                                   nil::actor::actor_clock::time_point timeout,
+                                                   mailbox_element &element) {
+                if (profiler_)
+                    profiler_->before_sending_scheduled(self, timeout, element);
+            }
+
+            tracing_data_factory *tracing_context() const noexcept {
+                return tracing_context_;
             }
 
             /// @endcond
@@ -504,34 +519,30 @@ namespace nil {
             template<class T>
             void check_invariants() {
                 static_assert(!std::is_base_of<prohibit_top_level_spawn_marker, T>::value,
-                              "This actor type cannot be spawned throught an actor system. "
-                              "Probably you have tried to spawn a broker or opencl actor.");
+                              "This actor type cannot be spawned through an actor system. "
+                              "Probably you have tried to spawn a broker.");
             }
 
-            expected<strong_actor_ptr> dyn_spawn_impl(const std::string &name,
-                                                      message &args,
-                                                      execution_unit *ctx,
-                                                      bool check_interface,
-                                                      optional<const mpi &>
-                                                          expected_ifs);
+            expected<strong_actor_ptr> dyn_spawn_impl(const std::string &name, message &args, execution_unit *ctx,
+                                                      bool check_interface, optional<const mpi &> expected_ifs);
 
             /// Sets the internal actor for dynamic spawn operations.
             void spawn_serv(strong_actor_ptr x) {
-                internal_actors_[internal_actor_id(atom("SpawnServ"))] = std::move(x);
+                spawn_serv_ = std::move(x);
             }
 
             /// Sets the internal actor for storing the runtime configuration.
             void config_serv(strong_actor_ptr x) {
-                internal_actors_[internal_actor_id(atom("ConfigServ"))] = std::move(x);
+                config_serv_ = std::move(x);
             }
 
             // -- member variables -------------------------------------------------------
 
+            /// Provides system-wide callbacks for several actor operations.
+            actor_profiler *profiler_;
+
             /// Used to generate ascending actor IDs.
             std::atomic<size_t> ids_;
-
-            /// Stores runtime type information for builtin and user-defined types.
-            uniform_type_info_map types_;
 
             /// Identifies this actor system in a distributed setting.
             node_id node_;
@@ -554,8 +565,11 @@ namespace nil {
             /// Stores whether the system should wait for running actors on shutdown.
             bool await_actors_before_shutdown_;
 
-            /// Stores SpawnServ, ConfigServ, and StreamServ.
-            std::array<strong_actor_ptr, num_internal_actors> internal_actors_;
+            /// Stores config parameters.
+            strong_actor_ptr config_serv_;
+
+            /// Allows fully dynamic spawning of actors.
+            strong_actor_ptr spawn_serv_;
 
             /// Counts the number of detached actors.
             std::atomic<size_t> detached_;
@@ -579,8 +593,8 @@ namespace nil {
             /// Allows waiting on specific values for `logger_dtor_done_`.
             mutable std::condition_variable logger_dtor_cv_;
 
-            /// Stores custom, system-wide key-value pairs.
-            runtime_settings_map settings_;
+            /// Stores the system-wide factory for deserializing tracing data.
+            tracing_data_factory *tracing_context_;
         };
 
     }    // namespace actor

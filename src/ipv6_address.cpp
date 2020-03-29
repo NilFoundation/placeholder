@@ -1,21 +1,23 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/ipv6_address.hpp>
+
+#include <cstring>
 
 #include <nil/actor/detail/network_order.hpp>
 #include <nil/actor/detail/parser/read_ipv6_address.hpp>
 #include <nil/actor/error.hpp>
 #include <nil/actor/ipv4_address.hpp>
+#include <nil/actor/message.hpp>
+#include <nil/actor/parser_state.hpp>
 #include <nil/actor/pec.hpp>
 #include <nil/actor/string_view.hpp>
 
@@ -107,6 +109,12 @@ namespace nil {
             memcpy(bytes_.data(), bytes.data(), bytes.size());
         }
 
+        // -- comparison ---------------------------------------------------------------
+
+        int ipv6_address::compare(ipv6_address other) const noexcept {
+            return memcmp(bytes().data(), other.bytes().data(), num_bytes);
+        }
+
         int ipv6_address::compare(ipv4_address other) const noexcept {
             ipv6_address tmp {other};
             return compare(tmp);
@@ -195,8 +203,8 @@ namespace nil {
 
         error parse(string_view str, ipv6_address &dest) {
             using namespace detail;
-            parser::state<string_view::iterator> res {str.begin(), str.end()};
             ipv6_address_consumer f {dest};
+            string_parser_state res {str.begin(), str.end()};
             parser::read_ipv6_address(res, f);
             if (res.code == pec::success)
                 return none;

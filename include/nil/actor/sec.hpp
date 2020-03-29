@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 // This file is partially included in the manual, do not modify
@@ -16,6 +14,10 @@
 
 #pragma once
 
+#include <cstdint>
+#include <string>
+
+#include <nil/actor/error_category.hpp>
 #include <nil/actor/fwd.hpp>
 
 namespace nil {
@@ -46,7 +48,7 @@ namespace nil {
             unsupported_sys_key,
             /// An actor received an unsupported system message.
             unsupported_sys_message = 10,
-            /// A remote node disconnected during ACTOR handshake.
+            /// A remote node disconnected during CAF handshake.
             disconnect_during_handshake,
             /// Tried to forward a message via BASP to an invalid actor handle.
             cannot_forward_to_invalid_actor,
@@ -56,7 +58,7 @@ namespace nil {
             failed_to_assign_scribe_from_handle,
             /// Middleman could not assign an acceptor handle to a broker.
             failed_to_assign_doorman_from_handle = 15,
-            /// User requested to close port 0 or to close a port not managed by ACTOR.
+            /// User requested to close port 0 or to close a port not managed by CAF.
             cannot_close_invalid_port,
             /// Middleman could not connect to a remote node.
             cannot_connect_to_node,
@@ -74,9 +76,9 @@ namespace nil {
             cannot_spawn_actor_from_arguments,
             /// Serialization failed because there was not enough data to read.
             end_of_stream,
-            /// Serialization failed because no ACTOR context is available.
+            /// Serialization failed because no CAF context is available.
             no_context = 25,
-            /// Serialization failed because ACTOR misses run-time type information.
+            /// Serialization failed because CAF misses run-time type information.
             unknown_type,
             /// Serialization of actors failed because no proxy registry is available.
             no_proxy_registry,
@@ -118,23 +120,31 @@ namespace nil {
             socket_operation_failed = 45,
             /// A resource is temporarily unavailable or would block.
             unavailable_or_would_block,
+            /// Connection refused because of incompatible CAF versions.
+            incompatible_versions,
+            /// Connection refused because of incompatible application IDs.
+            incompatible_application_ids,
+            /// The middleman received a malformed BASP message from another node.
+            malformed_basp_message,
+            /// The middleman closed a connection because it failed to serialize or
+            /// deserialize a payload.
+            serializing_basp_payload_failed,
+            /// The middleman closed a connection to itself or an already connected node.
+            redundant_connection,
             /// Resolving a path on a remote node failed.
             remote_lookup_failed,
+            /// Serialization failed because spawner::tracing_context is null.
+            no_tracing_context,
+            /// No request produced a valid result.
+            all_requests_failed,
         };
 
-        /// @relates sec
-        std::string to_string(sec);
+        BOOST_SYMBOL_VISIBLE std::string to_string(sec);
 
-        /// @relates sec
-        error make_error(sec);
+        template<>
+        struct error_category<sec> {
+            static constexpr uint8_t value = 0;
+        };
 
-        /// @relates sec
-        error make_error(sec, message);
-
-        /// @relates sec
-        template<class T, class... Ts>
-        auto make_error(sec code, T &&x, Ts &&... xs) {
-            return make_error(code, make_message(std::forward<T>(x), std::forward<Ts>(xs)...));
-        }
     }    // namespace actor
 }    // namespace nil

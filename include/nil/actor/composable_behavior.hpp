@@ -1,23 +1,21 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <nil/actor/param.hpp>
+#include <nil/actor/abstract_composable_behavior.hpp>
 #include <nil/actor/behavior.hpp>
+#include <nil/actor/param.hpp>
 #include <nil/actor/replies_to.hpp>
 #include <nil/actor/typed_actor.hpp>
 #include <nil/actor/typed_actor_pointer.hpp>
-#include <nil/actor/abstract_composable_behavior.hpp>
 
 namespace nil {
     namespace actor {
@@ -37,17 +35,9 @@ namespace nil {
 
             virtual result<Ys...> operator()(param_t<Xs>...) = 0;
 
-            // C++14 and later
-#if __cplusplus > 201103L
             auto make_callback() {
-                return [=](param_t<Xs>... xs) { return (*this)(std::move(xs)...); };
+                return [this](param_t<Xs>... xs) { return (*this)(std::move(xs)...); };
             }
-#else
-            // C++11
-            std::function<result<Ys...>(param_t<Xs>...)> make_callback() {
-                return [=](param_t<Xs>... xs) { return (*this)(std::move(xs)...); };
-            }
-#endif
         };
 
         /// Base type for composable actor states.
@@ -74,7 +64,7 @@ namespace nil {
 
             template<class SelfPointer>
             unit_t init_selfptr(SelfPointer x) {
-                BOOST_ASSERT(x != nullptr);
+                ACTOR_ASSERT(x != nullptr);
                 self = x;
                 return unit;
             }
