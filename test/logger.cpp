@@ -31,7 +31,7 @@ using std::string;
         ::nil::actor::logger::render_fun_prefix(oss, e);                                                            \
         auto prefix = oss.str();                                                                             \
         if (prefix != PrefixName)                                                                            \
-            ACTOR_ERROR("rendering the prefix of " << e.pretty_fun << " produced " << prefix << " instead of " \
+            BOOST_ERROR("rendering the prefix of " << e.pretty_fun << " produced " << prefix << " instead of " \
                                                  << PrefixName);                                             \
         else                                                                                                 \
             BOOST_CHECK_EQUAL(prefix, PrefixName);                                                             \
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(rendering) {
     timestamp t0;
     time_t t0_t = 0;
     char t0_buf[50];
-    ACTOR_REQUIRE(strftime(t0_buf, sizeof(t0_buf), "%Y-%m-%dT%H:%M:%S.000", localtime(&t0_t)));
+    BOOST_REQUIRE(strftime(t0_buf, sizeof(t0_buf), "%Y-%m-%dT%H:%M:%S.000", localtime(&t0_t)));
     BOOST_CHECK_EQUAL(render(logger::render_date, t0), t0_buf);
     // Rendering of events.
     logger::event e {

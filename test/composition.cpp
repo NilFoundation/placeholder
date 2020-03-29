@@ -16,6 +16,18 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<typename T>
+            struct print_log_value<nil::actor::intrusive_ptr<T>> {
+                void operator()(std::ostream &, nil::actor::intrusive_ptr<T> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     behavior multiplier(int x) {

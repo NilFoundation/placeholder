@@ -128,7 +128,7 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(wdrr_fixed_multiplexed_queue_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(default_constructed) {
-    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.empty(), true);
 }
 
 BOOST_AUTO_TEST_CASE(new_round) {
@@ -138,19 +138,19 @@ BOOST_AUTO_TEST_CASE(new_round) {
     auto round_result = queue.new_round(2, f);
     BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(f.result, "0:3,0:6,1:1,1:4,2:2,2:5");
-    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
+    BOOST_REQUIRE_EQUAL(queue.empty(), false);
     // Allow f to consume one more item from each queue.
     f.result.clear();
     round_result = queue.new_round(1, f);
     BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(f.result, "0:9,1:7,2:8");
-    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
+    BOOST_REQUIRE_EQUAL(queue.empty(), false);
     // Allow f to consume the remainder, i.e., 12.
     f.result.clear();
     round_result = queue.new_round(1000, f);
     BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(f.result, "0:12");
-    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.empty(), true);
 }
 
 BOOST_AUTO_TEST_CASE(priorities) {
@@ -158,13 +158,13 @@ BOOST_AUTO_TEST_CASE(priorities) {
     fill(queue, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     // Allow f to consume 2 items from the high priority and 1 item otherwise.
     BOOST_CHECK_EQUAL(fetch(1), "0:3,0:6,1:1,2:2");
-    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
+    BOOST_REQUIRE_EQUAL(queue.empty(), false);
     // Drain the high-priority queue with one item left per other queue.
     BOOST_CHECK_EQUAL(fetch(1), "0:9,1:4,2:5");
-    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
+    BOOST_REQUIRE_EQUAL(queue.empty(), false);
     // Drain queue.
     BOOST_CHECK_EQUAL(fetch(1000), "1:7,2:8");
-    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.empty(), true);
 }
 
 BOOST_AUTO_TEST_CASE(peek_all) {

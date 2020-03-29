@@ -81,7 +81,7 @@ BOOST_AUTO_TEST_CASE(global_and_local_redirect) {
             line.pop_back();
         lines.emplace_back(std::move(virtual_file), std::move(line));
     });
-    ACTOR_CHECK(std::is_permutation(lines.begin(), lines.end(), expected.begin()));
+    BOOST_CHECK(std::is_permutation(lines.begin(), lines.end(), expected.begin()));
     self->await_all_other_actors_done();
     BOOST_CHECK_EQUAL(self->mailbox().size(), 0u);
 }

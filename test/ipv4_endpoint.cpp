@@ -29,12 +29,29 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::ipv4_address> {
+                void operator()(std::ostream &, nil::actor::ipv4_address const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv4_endpoint> {
+                void operator()(std::ostream &, nil::actor::ipv4_endpoint const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     ipv4_endpoint operator"" _ep(const char *str, size_t size) {
         ipv4_endpoint result;
         if (auto err = detail::parse(string_view {str, size}, result))
-            BOOST_FAIL("unable to parse input: " << err);
+            BOOST_FAIL("unable to parse input");
         return result;
     }
 
@@ -58,18 +75,18 @@ namespace {
 
 #define CHECK_TO_STRING(addr) BOOST_CHECK_EQUAL(addr, to_string(addr##_ep))
 
-#define CHECK_COMPARISON(addr1, addr2)                  \
-    ACTOR_CHECK_GREATER(addr2##_ep, addr1##_ep);          \
-    ACTOR_CHECK_GREATER_OR_EQUAL(addr2##_ep, addr1##_ep); \
-    ACTOR_CHECK_GREATER_OR_EQUAL(addr1##_ep, addr1##_ep); \
-    ACTOR_CHECK_GREATER_OR_EQUAL(addr2##_ep, addr2##_ep); \
-    BOOST_CHECK_EQUAL(addr1##_ep, addr1##_ep);            \
-    BOOST_CHECK_EQUAL(addr2##_ep, addr2##_ep);            \
-    ACTOR_CHECK_LESS_OR_EQUAL(addr1##_ep, addr2##_ep);    \
-    ACTOR_CHECK_LESS_OR_EQUAL(addr1##_ep, addr1##_ep);    \
-    ACTOR_CHECK_LESS_OR_EQUAL(addr2##_ep, addr2##_ep);    \
-    ACTOR_CHECK_NOT_EQUAL(addr1##_ep, addr2##_ep);        \
-    ACTOR_CHECK_NOT_EQUAL(addr2##_ep, addr1##_ep);
+#define CHECK_COMPARISON(addr1, addr2)         \
+    BOOST_CHECK_GT(addr2##_ep, addr1##_ep);    \
+    BOOST_CHECK_GE(addr2##_ep, addr1##_ep);    \
+    BOOST_CHECK_GE(addr1##_ep, addr1##_ep);    \
+    BOOST_CHECK_GE(addr2##_ep, addr2##_ep);    \
+    BOOST_CHECK_EQUAL(addr1##_ep, addr1##_ep); \
+    BOOST_CHECK_EQUAL(addr2##_ep, addr2##_ep); \
+    BOOST_CHECK_LE(addr1##_ep, addr2##_ep);    \
+    BOOST_CHECK_LE(addr1##_ep, addr1##_ep);    \
+    BOOST_CHECK_LE(addr2##_ep, addr2##_ep);    \
+    BOOST_CHECK_NE(addr1##_ep, addr2##_ep);    \
+    BOOST_CHECK_NE(addr2##_ep, addr1##_ep);
 
 #define CHECK_SERIALIZATION(addr) BOOST_CHECK_EQUAL(addr##_ep, roundtrip(addr##_ep))
 
@@ -77,7 +94,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(ipv4_endpoint_tests, fixture)
 
-ACTOR_TEST(constructing assigning and hash_code) {
+BOOST_AUTO_TEST_CASE(constructing_assigning_and_hash_code) {
     const uint16_t port = 8888;
     auto addr = make_ipv4_address(127, 0, 0, 1);
     ipv4_endpoint ep1(addr, port);
@@ -92,7 +109,7 @@ ACTOR_TEST(constructing assigning and hash_code) {
     BOOST_CHECK_EQUAL(ep1.hash_code(), ep2.hash_code());
 }
 
-BOOST_AUTO_TEST_CASE(to_string) {
+BOOST_AUTO_TEST_CASE(to_string_test) {
     CHECK_TO_STRING("127.0.0.1:8888");
     CHECK_TO_STRING("192.168.178.1:8888");
     CHECK_TO_STRING("255.255.255.1:17");

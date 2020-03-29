@@ -70,7 +70,7 @@ namespace {
 #define SUBTEST(message)              \
     *result = none;                   \
     run();                            \
-    ACTOR_MESSAGE("subtest: " message); \
+    BOOST_TEST_MESSAGE("subtest: " message); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 
 BOOST_FIXTURE_TEST_SUITE(requester_tests, fixture)
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(delegated_request_with_integer_result) {
     BOOST_CHECK_EQUAL(*result, 3);
 }
 
-ACTOR_TEST(requesters support fan_out_request) {
+BOOST_AUTO_TEST_CASE(requesters support fan_out_request) {
     using policy::select_all;
     std::vector<adding_server_type> workers {
         make_server([](int x, int y) { return x + y; }),

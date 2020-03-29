@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(exceptions) {
         auto x = xs.at(10);
         BOOST_FAIL("got an unexpected value: " << x);
     } catch (std::out_of_range &) {
-        ACTOR_MESSAGE("got expected out_of_range exception");
+        BOOST_TEST_MESSAGE("got expected out_of_range exception");
     } catch (...) {
         BOOST_FAIL("got an expected exception");
     }

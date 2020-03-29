@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(default_construction) {
     BOOST_CHECK_EQUAL(x.is_request(), false);
     BOOST_CHECK_EQUAL(x.is_response(), false);
     BOOST_CHECK_EQUAL(x.is_answered(), false);
-    ACTOR_CHECK(x.category() == message_id::normal_message_category);
+    BOOST_CHECK(x.category() == message_id::normal_message_category);
     BOOST_CHECK_EQUAL(x.is_urgent_message(), false);
     BOOST_CHECK_EQUAL(x.is_normal_message(), true);
     BOOST_CHECK_EQUAL(x.is_stream_message(), false);
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(default_construction) {
     BOOST_CHECK_EQUAL(x.is_downstream_message(), false);
     BOOST_CHECK_EQUAL(x, x.response_id());
     BOOST_CHECK_EQUAL(x.request_id().integer_value(), 0u);
-    ACTOR_CHECK(x.integer_value() == message_id::default_async_value);
+    BOOST_CHECK(x.integer_value() == message_id::default_async_value);
 }
 
 BOOST_AUTO_TEST_CASE(make_message_id) {
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(from_integer_value) {
     BOOST_CHECK_EQUAL(x.is_request(), true);
     BOOST_CHECK_EQUAL(x.is_response(), false);
     BOOST_CHECK_EQUAL(x.is_answered(), false);
-    ACTOR_CHECK(x.category() == message_id::normal_message_category);
+    BOOST_CHECK(x.category() == message_id::normal_message_category);
     BOOST_CHECK_EQUAL(x.is_urgent_message(), false);
     BOOST_CHECK_EQUAL(x.is_normal_message(), true);
     BOOST_CHECK_EQUAL(x.is_stream_message(), false);
@@ -55,13 +55,13 @@ BOOST_AUTO_TEST_CASE(from_integer_value) {
     BOOST_CHECK_EQUAL(x.request_id().integer_value(), 42u);
 }
 
-ACTOR_TEST(response ID) {
+BOOST_AUTO_TEST_CASE(response ID) {
     auto x = make_message_id(42).response_id();
     BOOST_CHECK_EQUAL(x.is_async(), false);
     BOOST_CHECK_EQUAL(x.is_request(), false);
     BOOST_CHECK_EQUAL(x.is_response(), true);
     BOOST_CHECK_EQUAL(x.is_answered(), false);
-    ACTOR_CHECK(x.category() == message_id::normal_message_category);
+    BOOST_CHECK(x.category() == message_id::normal_message_category);
     BOOST_CHECK_EQUAL(x.is_urgent_message(), false);
     BOOST_CHECK_EQUAL(x.is_normal_message(), true);
     BOOST_CHECK_EQUAL(x.is_stream_message(), false);
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(request_with_high_priority) {
     BOOST_CHECK_EQUAL(x.is_request(), false);
     BOOST_CHECK_EQUAL(x.is_response(), true);
     BOOST_CHECK_EQUAL(x.is_answered(), false);
-    ACTOR_CHECK(x.category() == message_id::normal_message_category);
+    BOOST_CHECK(x.category() == message_id::normal_message_category);
     BOOST_CHECK_EQUAL(x.is_urgent_message(), false);
     BOOST_CHECK_EQUAL(x.is_normal_message(), true);
     BOOST_CHECK_EQUAL(x.is_stream_message(), false);
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(request_with_high_priority) {
 
 BOOST_AUTO_TEST_CASE(with_category) {
     auto x = make_message_id();
-    ACTOR_CHECK(x.category() == message_id::normal_message_category);
+    BOOST_CHECK(x.category() == message_id::normal_message_category);
     for (auto category : {message_id::urgent_message_category, message_id::downstream_message_category,
                           message_id::upstream_message_category, message_id::normal_message_category}) {
         x = x.with_category(category);

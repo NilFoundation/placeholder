@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(to_string) {
     BOOST_CHECK_EQUAL(to_string(addr(255, 255, 255, 255)), "255.255.255.255");
 }
 
-ACTOR_TEST(from string - valid inputs) {
+BOOST_AUTO_TEST_CASE(from string - valid inputs) {
     auto from_string = [](string_view str) -> expected<ipv4_address> {
         ipv4_address result;
         if (auto err = parse(str, result))
@@ -48,12 +48,12 @@ ACTOR_TEST(from string - valid inputs) {
     BOOST_CHECK_EQUAL(from_string("255.255.255.255"), addr(255, 255, 255, 255));
 }
 
-ACTOR_TEST(from string - invalid inputs) {
+BOOST_AUTO_TEST_CASE(from string - invalid inputs) {
     auto should_fail = [](string_view str) {
         ipv4_address result;
         auto err = parse(str, result);
         if (!err)
-            ACTOR_ERROR("error while parsing " << str << ", expected an error but got: " << to_string(result));
+            BOOST_ERROR("error while parsing " << str << ", expected an error but got: " << to_string(result));
     };
     should_fail("256.12.12.12");
     should_fail("1136.12.12.12");

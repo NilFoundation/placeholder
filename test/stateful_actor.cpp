@@ -109,21 +109,21 @@ BOOST_AUTO_TEST_CASE(stateful_actors_can_be_statically_typed) {
     test_adder(sys.spawn<adder_class>());
 }
 
-ACTOR_TEST(stateful actors without explicit name use the name of the parent) {
+BOOST_AUTO_TEST_CASE(stateful actors without explicit name use the name of the parent) {
     struct state {
         // empty
     };
     test_name<state>("scheduled_actor");
 }
 
-ACTOR_TEST(states with C string names override the default name) {
+BOOST_AUTO_TEST_CASE(states with C string names override the default name) {
     struct state {
         const char *name = "testee";
     };
     test_name<state>("testee");
 }
 
-ACTOR_TEST(states with STL string names override the default name) {
+BOOST_AUTO_TEST_CASE(states with STL string names override the default name) {
     struct state {
         std::string name = "testee2";
     };
@@ -173,13 +173,13 @@ BOOST_AUTO_TEST_CASE(states_optionally_take_the_self_pointer_as_first_argument) 
     using actor_type = stateful_actor<state_type>;
     auto testee = sys.spawn<actor_type>(10);
     auto &state = deref<actor_type>(testee).state;
-    ACTOR_CHECK(state.self == &deref<actor_type>(testee));
+    BOOST_CHECK(state.self == &deref<actor_type>(testee));
     BOOST_CHECK_EQUAL(state.x, 10);
     inject((get_atom), from(self).to(testee).with(get_atom_v));
     expect((std::string), from(testee).to(self).with("testee"s));
 }
 
-ACTOR_TEST(typed actors can use typed_actor_pointer as self pointer) {
+BOOST_AUTO_TEST_CASE(typed actors can use typed_actor_pointer as self pointer) {
     struct state_type {
         using self_pointer = typed_adder_actor::pointer_view;
         self_pointer self;
@@ -195,7 +195,7 @@ ACTOR_TEST(typed actors can use typed_actor_pointer as self pointer) {
     using actor_type = typed_adder_actor::stateful_base<state_type>;
     auto testee = sys.spawn<actor_type>(10);
     auto &state = deref<actor_type>(testee).state;
-    ACTOR_CHECK(state.self == &deref<actor_type>(testee));
+    BOOST_CHECK(state.self == &deref<actor_type>(testee));
     BOOST_CHECK_EQUAL(state.value, 10);
     inject((add_atom, int), from(self).to(testee).with(add_atom_v, 1));
     inject((get_atom), from(self).to(testee).with(get_atom_v));

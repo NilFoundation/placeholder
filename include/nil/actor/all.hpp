@@ -113,7 +113,6 @@
 #include <nil/actor/typed_response_promise.hpp>
 #include <nil/actor/unit.hpp>
 #include <nil/actor/upstream_msg.hpp>
-#include <nil/actor/uuid.hpp>
 
 #include <nil/actor/decorator/sequencer.hpp>
 

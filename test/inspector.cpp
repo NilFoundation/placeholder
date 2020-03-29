@@ -60,80 +60,80 @@ namespace {
     void test_impl(Policy &p) {
         check_impl<Policy> check {p};
         // check primitive types
-        ACTOR_CHECK(check(true));
-        ACTOR_CHECK(check(false));
-        ACTOR_CHECK(check(nl<int8_t>::lowest()));
-        ACTOR_CHECK(check(nl<int8_t>::max()));
-        ACTOR_CHECK(check(nl<uint8_t>::lowest()));
-        ACTOR_CHECK(check(nl<uint8_t>::max()));
-        ACTOR_CHECK(check(nl<int16_t>::lowest()));
-        ACTOR_CHECK(check(nl<int16_t>::max()));
-        ACTOR_CHECK(check(nl<uint16_t>::lowest()));
-        ACTOR_CHECK(check(nl<uint16_t>::max()));
-        ACTOR_CHECK(check(nl<int32_t>::lowest()));
-        ACTOR_CHECK(check(nl<int32_t>::max()));
-        ACTOR_CHECK(check(nl<uint32_t>::lowest()));
-        ACTOR_CHECK(check(nl<uint32_t>::max()));
-        ACTOR_CHECK(check(nl<int64_t>::lowest()));
-        ACTOR_CHECK(check(nl<int64_t>::max()));
-        ACTOR_CHECK(check(nl<uint64_t>::lowest()));
-        ACTOR_CHECK(check(nl<uint64_t>::max()));
-        ACTOR_CHECK(check(nl<float>::lowest()));
-        ACTOR_CHECK(check(nl<float>::max()));
-        ACTOR_CHECK(check(nl<double>::lowest()));
-        ACTOR_CHECK(check(nl<double>::max()));
-        ACTOR_CHECK(check(nl<long double>::lowest()));
-        ACTOR_CHECK(check(nl<long double>::max()));
+        BOOST_CHECK(check(true));
+        BOOST_CHECK(check(false));
+        BOOST_CHECK(check(nl<int8_t>::lowest()));
+        BOOST_CHECK(check(nl<int8_t>::max()));
+        BOOST_CHECK(check(nl<uint8_t>::lowest()));
+        BOOST_CHECK(check(nl<uint8_t>::max()));
+        BOOST_CHECK(check(nl<int16_t>::lowest()));
+        BOOST_CHECK(check(nl<int16_t>::max()));
+        BOOST_CHECK(check(nl<uint16_t>::lowest()));
+        BOOST_CHECK(check(nl<uint16_t>::max()));
+        BOOST_CHECK(check(nl<int32_t>::lowest()));
+        BOOST_CHECK(check(nl<int32_t>::max()));
+        BOOST_CHECK(check(nl<uint32_t>::lowest()));
+        BOOST_CHECK(check(nl<uint32_t>::max()));
+        BOOST_CHECK(check(nl<int64_t>::lowest()));
+        BOOST_CHECK(check(nl<int64_t>::max()));
+        BOOST_CHECK(check(nl<uint64_t>::lowest()));
+        BOOST_CHECK(check(nl<uint64_t>::max()));
+        BOOST_CHECK(check(nl<float>::lowest()));
+        BOOST_CHECK(check(nl<float>::max()));
+        BOOST_CHECK(check(nl<double>::lowest()));
+        BOOST_CHECK(check(nl<double>::max()));
+        BOOST_CHECK(check(nl<long double>::lowest()));
+        BOOST_CHECK(check(nl<long double>::max()));
         // various containers
-        ACTOR_CHECK(check(std::array<int, 3> {{1, 2, 3}}));
-        ACTOR_CHECK(check(std::vector<char> {}));
-        ACTOR_CHECK(check(std::vector<char> {1, 2, 3}));
-        ACTOR_CHECK(check(std::vector<int> {}));
-        ACTOR_CHECK(check(std::vector<int> {1, 2, 3}));
-        ACTOR_CHECK(check(std::list<int> {}));
-        ACTOR_CHECK(check(std::list<int> {1, 2, 3}));
-        ACTOR_CHECK(check(std::set<int> {}));
-        ACTOR_CHECK(check(std::set<int> {1, 2, 3}));
-        ACTOR_CHECK(check(std::unordered_set<int> {}));
-        ACTOR_CHECK(check(std::unordered_set<int> {1, 2, 3}));
-        ACTOR_CHECK(check(std::map<int, int> {}));
-        ACTOR_CHECK(check(std::map<int, int> {{1, 1}, {2, 2}, {3, 3}}));
-        ACTOR_CHECK(check(std::unordered_map<int, int> {}));
-        ACTOR_CHECK(check(std::unordered_map<int, int> {{1, 1}, {2, 2}, {3, 3}}));
+        BOOST_CHECK(check(std::array<int, 3> {{1, 2, 3}}));
+        BOOST_CHECK(check(std::vector<char> {}));
+        BOOST_CHECK(check(std::vector<char> {1, 2, 3}));
+        BOOST_CHECK(check(std::vector<int> {}));
+        BOOST_CHECK(check(std::vector<int> {1, 2, 3}));
+        BOOST_CHECK(check(std::list<int> {}));
+        BOOST_CHECK(check(std::list<int> {1, 2, 3}));
+        BOOST_CHECK(check(std::set<int> {}));
+        BOOST_CHECK(check(std::set<int> {1, 2, 3}));
+        BOOST_CHECK(check(std::unordered_set<int> {}));
+        BOOST_CHECK(check(std::unordered_set<int> {1, 2, 3}));
+        BOOST_CHECK(check(std::map<int, int> {}));
+        BOOST_CHECK(check(std::map<int, int> {{1, 1}, {2, 2}, {3, 3}}));
+        BOOST_CHECK(check(std::unordered_map<int, int> {}));
+        BOOST_CHECK(check(std::unordered_map<int, int> {{1, 1}, {2, 2}, {3, 3}}));
         // user-defined types
-        ACTOR_CHECK(check(dummy_struct {10, "hello"}));
+        BOOST_CHECK(check(dummy_struct {10, "hello"}));
         // optionals
-        ACTOR_CHECK(check(optional<int> {}));
-        ACTOR_CHECK(check(optional<int> {42}));
+        BOOST_CHECK(check(optional<int> {}));
+        BOOST_CHECK(check(optional<int> {42}));
         // strings
-        ACTOR_CHECK(check(std::string {}));
-        ACTOR_CHECK(check(std::string {""}));
-        ACTOR_CHECK(check(std::string {"test"}));
-        ACTOR_CHECK(check(std::u16string {}));
-        ACTOR_CHECK(check(std::u16string {u""}));
-        ACTOR_CHECK(check(std::u16string {u"test"}));
-        ACTOR_CHECK(check(std::u32string {}));
-        ACTOR_CHECK(check(std::u32string {U""}));
-        ACTOR_CHECK(check(std::u32string {U"test"}));
+        BOOST_CHECK(check(std::string {}));
+        BOOST_CHECK(check(std::string {""}));
+        BOOST_CHECK(check(std::string {"test"}));
+        BOOST_CHECK(check(std::u16string {}));
+        BOOST_CHECK(check(std::u16string {u""}));
+        BOOST_CHECK(check(std::u16string {u"test"}));
+        BOOST_CHECK(check(std::u32string {}));
+        BOOST_CHECK(check(std::u32string {U""}));
+        BOOST_CHECK(check(std::u32string {U"test"}));
         // enums
-        ACTOR_CHECK(check(de_foo));
-        ACTOR_CHECK(check(de_bar));
-        ACTOR_CHECK(check(dummy_enum_class::foo));
-        ACTOR_CHECK(check(dummy_enum_class::bar));
+        BOOST_CHECK(check(de_foo));
+        BOOST_CHECK(check(de_bar));
+        BOOST_CHECK(check(dummy_enum_class::foo));
+        BOOST_CHECK(check(dummy_enum_class::bar));
         // empty type
-        ACTOR_CHECK(check(dummy_tag_type {}));
+        BOOST_CHECK(check(dummy_tag_type {}));
         // pair and tuple
-        ACTOR_CHECK(check(std::make_pair(std::string("hello"), 42)));
-        ACTOR_CHECK(check(std::make_pair(std::make_pair(1, 2), 3)));
-        ACTOR_CHECK(check(std::make_pair(std::make_tuple(1, 2), 3)));
-        ACTOR_CHECK(check(std::make_tuple(1, 2, 3, 4)));
-        ACTOR_CHECK(check(std::make_tuple(std::make_tuple(1, 2, 3), 4)));
-        ACTOR_CHECK(check(std::make_tuple(std::make_pair(1, 2), 3, 4)));
+        BOOST_CHECK(check(std::make_pair(std::string("hello"), 42)));
+        BOOST_CHECK(check(std::make_pair(std::make_pair(1, 2), 3)));
+        BOOST_CHECK(check(std::make_pair(std::make_tuple(1, 2), 3)));
+        BOOST_CHECK(check(std::make_tuple(1, 2, 3, 4)));
+        BOOST_CHECK(check(std::make_tuple(std::make_tuple(1, 2, 3), 4)));
+        BOOST_CHECK(check(std::make_tuple(std::make_pair(1, 2), 3, 4)));
         // variant<>
-        ACTOR_CHECK(check(variant<none_t> {}));
-        ACTOR_CHECK(check(variant<none_t, int, std::string> {}));
-        ACTOR_CHECK(check(variant<none_t, int, std::string> {42}));
-        ACTOR_CHECK(check(variant<none_t, int, std::string> {std::string {"foo"}}));
+        BOOST_CHECK(check(variant<none_t> {}));
+        BOOST_CHECK(check(variant<none_t, int, std::string> {}));
+        BOOST_CHECK(check(variant<none_t, int, std::string> {42}));
+        BOOST_CHECK(check(variant<none_t, int, std::string> {std::string {"foo"}}));
     }
 
     struct stringification_inspector_policy {
@@ -148,7 +148,7 @@ namespace {
         // only check for compilation for complex types
         template<class T>
         typename std::enable_if<!std::is_integral<T>::value, bool>::type operator()(T &x) {
-            ACTOR_MESSAGE("f(x) = " << f(x));
+            BOOST_TEST_MESSAGE("f(x) = " << f(x));
             return true;
         }
 

@@ -70,21 +70,21 @@ BOOST_AUTO_TEST_CASE(joining) {
 }
 
 BOOST_AUTO_TEST_CASE(starts_with) {
-    ACTOR_CHECK(starts_with("foobar", "f"));
-    ACTOR_CHECK(starts_with("foobar", "fo"));
-    ACTOR_CHECK(starts_with("foobar", "fooba"));
-    ACTOR_CHECK(starts_with("foobar", "foobar"));
-    ACTOR_CHECK(!starts_with("foobar", "o"));
-    ACTOR_CHECK(!starts_with("foobar", "fa"));
-    ACTOR_CHECK(!starts_with("foobar", "foobaro"));
+    BOOST_CHECK(starts_with("foobar", "f"));
+    BOOST_CHECK(starts_with("foobar", "fo"));
+    BOOST_CHECK(starts_with("foobar", "fooba"));
+    BOOST_CHECK(starts_with("foobar", "foobar"));
+    BOOST_CHECK(!starts_with("foobar", "o"));
+    BOOST_CHECK(!starts_with("foobar", "fa"));
+    BOOST_CHECK(!starts_with("foobar", "foobaro"));
 }
 
 BOOST_AUTO_TEST_CASE(ends_with) {
-    ACTOR_CHECK(ends_with("foobar", "r"));
-    ACTOR_CHECK(ends_with("foobar", "ar"));
-    ACTOR_CHECK(ends_with("foobar", "oobar"));
-    ACTOR_CHECK(ends_with("foobar", "foobar"));
-    ACTOR_CHECK(!ends_with("foobar", "a"));
-    ACTOR_CHECK(!ends_with("foobar", "car"));
-    ACTOR_CHECK(!ends_with("foobar", "afoobar"));
+    BOOST_CHECK(ends_with("foobar", "r"));
+    BOOST_CHECK(ends_with("foobar", "ar"));
+    BOOST_CHECK(ends_with("foobar", "oobar"));
+    BOOST_CHECK(ends_with("foobar", "foobar"));
+    BOOST_CHECK(!ends_with("foobar", "a"));
+    BOOST_CHECK(!ends_with("foobar", "car"));
+    BOOST_CHECK(!ends_with("foobar", "afoobar"));
 }

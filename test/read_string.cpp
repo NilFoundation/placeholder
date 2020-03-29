@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(empty_string) {
     BOOST_CHECK_EQUAL(p("\t \"\" \t\t\t "), ""_s);
 }
 
-ACTOR_TEST(non - empty quoted string) {
+BOOST_AUTO_TEST_CASE(non - empty quoted string) {
     BOOST_CHECK_EQUAL(p(R"("abc")"), "abc"_s);
     BOOST_CHECK_EQUAL(p(R"("a b c")"), "a b c"_s);
     BOOST_CHECK_EQUAL(p(R"(   "abcdefABCDEF"   )"), "abcdefABCDEF"_s);

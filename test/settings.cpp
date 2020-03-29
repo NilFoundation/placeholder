@@ -121,9 +121,9 @@ BOOST_AUTO_TEST_CASE(put) {
     put(x, "logger.console", "none");
     put(x, "one.two.three", "four");
     BOOST_CHECK_EQUAL(x.size(), 3u);
-    ACTOR_CHECK(x.contains("foo"));
-    ACTOR_CHECK(x.contains("logger"));
-    ACTOR_CHECK(x.contains("one"));
+    BOOST_CHECK(x.contains("foo"));
+    BOOST_CHECK(x.contains("logger"));
+    BOOST_CHECK(x.contains("one"));
     BOOST_CHECK_EQUAL(unpack(x, "foo"), "bar"s);
     BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
     BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three"), "four"s);
@@ -136,9 +136,9 @@ BOOST_AUTO_TEST_CASE(put_missing) {
     put_missing(x, "logger.console", "none");
     put_missing(x, "one.two.three", "four");
     BOOST_CHECK_EQUAL(x.size(), 3u);
-    ACTOR_CHECK(x.contains("foo"));
-    ACTOR_CHECK(x.contains("logger"));
-    ACTOR_CHECK(x.contains("one"));
+    BOOST_CHECK(x.contains("foo"));
+    BOOST_CHECK(x.contains("logger"));
+    BOOST_CHECK(x.contains("one"));
     BOOST_CHECK_EQUAL(unpack(x, "foo"), "bar"s);
     BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
     BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three"), "four"s);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(put_missing) {
 
 BOOST_AUTO_TEST_CASE(put_list) {
     put_list(x, "integers").emplace_back(42);
-    ACTOR_CHECK(x.contains("integers"));
+    BOOST_CHECK(x.contains("integers"));
     BOOST_CHECK_EQUAL(unpack(x, "integers"), make_config_value_list(42));
     put_list(x, "foo.bar").emplace_back("str");
     BOOST_CHECK_EQUAL(unpack(x, "foo", "bar"), make_config_value_list("str"));
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(put_list) {
 
 BOOST_AUTO_TEST_CASE(put_dictionary) {
     put_dictionary(x, "logger").emplace("console", "none");
-    ACTOR_CHECK(x.contains("logger"));
+    BOOST_CHECK(x.contains("logger"));
     BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
     put_dictionary(x, "foo.bar").emplace("value", 42);
     BOOST_CHECK_EQUAL(unpack(x, "foo", "bar", "value"), 42);
@@ -166,17 +166,17 @@ BOOST_AUTO_TEST_CASE(put_dictionary) {
     BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three", "four"), "five"s);
 }
 
-ACTOR_TEST(get and get_if) {
+BOOST_AUTO_TEST_CASE(get and get_if) {
     fill();
-    ACTOR_CHECK(get_if(&x, "hello") != nullptr);
-    ACTOR_CHECK(get<std::string>(x, "hello") == "world"s);
-    ACTOR_CHECK(get_if(&x, "logger.console") != nullptr);
-    ACTOR_CHECK(get_if<std::string>(&x, "logger.console") != nullptr);
-    ACTOR_CHECK(get<std::string>(x, "logger.console") == "none"s);
-    ACTOR_CHECK(get_if(&x, "one.two.three") != nullptr);
-    ACTOR_CHECK(get_if<std::string>(&x, "one.two.three") == nullptr);
-    ACTOR_REQUIRE(get_if<int>(&x, "one.two.three") != none);
-    ACTOR_CHECK(get<int>(x, "one.two.three") == 4);
+    BOOST_CHECK(get_if(&x, "hello") != nullptr);
+    BOOST_CHECK(get<std::string>(x, "hello") == "world"s);
+    BOOST_CHECK(get_if(&x, "logger.console") != nullptr);
+    BOOST_CHECK(get_if<std::string>(&x, "logger.console") != nullptr);
+    BOOST_CHECK(get<std::string>(x, "logger.console") == "none"s);
+    BOOST_CHECK(get_if(&x, "one.two.three") != nullptr);
+    BOOST_CHECK(get_if<std::string>(&x, "one.two.three") == nullptr);
+    BOOST_REQUIRE(get_if<int>(&x, "one.two.three") != none);
+    BOOST_CHECK(get<int>(x, "one.two.three") == 4);
 }
 
 BOOST_AUTO_TEST_CASE(get_or) {
@@ -188,8 +188,8 @@ BOOST_AUTO_TEST_CASE(get_or) {
 BOOST_AUTO_TEST_CASE(custom_type) {
     put(x, "my-value.foo", 42);
     put(x, "my-value.bar", 24);
-    ACTOR_REQUIRE(holds_alternative<foobar>(x, "my-value"));
-    ACTOR_REQUIRE(get_if<foobar>(&x, "my-value") != nil::actor::none);
+    BOOST_REQUIRE(holds_alternative<foobar>(x, "my-value"));
+    BOOST_REQUIRE(get_if<foobar>(&x, "my-value") != nil::actor::none);
     auto fb = get<foobar>(x, "my-value");
     BOOST_CHECK_EQUAL(fb.foo, 42);
     BOOST_CHECK_EQUAL(fb.bar, 24);

@@ -237,10 +237,10 @@ namespace {
 
     struct fixture : test_coordinator_fixture<> {
         void test_typed_spawn(server_type ts) {
-            ACTOR_MESSAGE("the server returns false for inequal numbers");
+            BOOST_TEST_MESSAGE("the server returns false for inequal numbers");
             inject((my_request), from(self).to(ts).with(my_request {1, 2}));
             expect((bool), from(ts).to(self).with(false));
-            ACTOR_MESSAGE("the server returns true for equal numbers");
+            BOOST_TEST_MESSAGE("the server returns true for equal numbers");
             inject((my_request), from(self).to(ts).with(my_request {42, 42}));
             expect((bool), from(ts).to(self).with(true));
             BOOST_CHECK_EQUAL(sys.registry().running(), 2u);
@@ -260,14 +260,14 @@ BOOST_FIXTURE_TEST_SUITE(typed_spawn_tests, fixture)
  ******************************************************************************/
 
 BOOST_AUTO_TEST_CASE(typed_spawns) {
-    ACTOR_MESSAGE("run test series with typed_server1");
+    BOOST_TEST_MESSAGE("run test series with typed_server1");
     test_typed_spawn(sys.spawn(typed_server1));
     self->await_all_other_actors_done();
-    ACTOR_MESSAGE("finished test series with `typed_server1`");
-    ACTOR_MESSAGE("run test series with typed_server2");
+    BOOST_TEST_MESSAGE("finished test series with `typed_server1`");
+    BOOST_TEST_MESSAGE("run test series with typed_server2");
     test_typed_spawn(sys.spawn(typed_server2));
     self->await_all_other_actors_done();
-    ACTOR_MESSAGE("finished test series with `typed_server2`");
+    BOOST_TEST_MESSAGE("finished test series with `typed_server2`");
     auto serv3 = self->spawn<typed_server3>("hi there", self);
     run();
     expect((string), from(serv3).to(self).with("hi there"s));
@@ -276,13 +276,13 @@ BOOST_AUTO_TEST_CASE(typed_spawns) {
 
 BOOST_AUTO_TEST_CASE(event_testee_series) {
     auto et = self->spawn<event_testee>();
-    ACTOR_MESSAGE("et->message_types() returns an interface description");
+    BOOST_TEST_MESSAGE("et->message_types() returns an interface description");
     typed_actor<replies_to<get_state_atom>::with<string>> sub_et = et;
     std::set<string> iface {"nil::actor::replies_to<get_state_atom>::with<std::string>",
                             "nil::actor::replies_to<std::string>::with<void>", "nil::actor::replies_to<float>::with<void>",
                             "nil::actor::replies_to<int32_t>::with<int32_t>"};
     BOOST_CHECK_EQUAL(join(sub_et->message_types(), ","), join(iface, ","));
-    ACTOR_MESSAGE("the testee skips messages to drive its internal state machine");
+    BOOST_TEST_MESSAGE("the testee skips messages to drive its internal state machine");
     self->send(et, 1);
     self->send(et, 2);
     self->send(et, 3);
@@ -313,11 +313,11 @@ BOOST_AUTO_TEST_CASE(string_delegator_chain) {
 BOOST_AUTO_TEST_CASE(maybe_string_delegator_chain) {
     ACTOR_LOG_TRACE(ACTOR_ARG(self));
     auto aut = sys.spawn(maybe_string_delegator, sys.spawn(maybe_string_reverter));
-    ACTOR_MESSAGE("send empty string, expect error");
+    BOOST_TEST_MESSAGE("send empty string, expect error");
     inject((string), from(self).to(aut).with(""s));
     run();
     expect((error), to(self).with(sec::invalid_argument));
-    ACTOR_MESSAGE("send abcd string, expect dcba");
+    BOOST_TEST_MESSAGE("send abcd string, expect dcba");
     inject((string), from(self).to(aut).with("abcd"s));
     run();
     expect((ok_atom, string), to(self).with(ok_atom_v, "dcba"s));

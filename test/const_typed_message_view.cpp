@@ -23,15 +23,15 @@ BOOST_FIXTURE_TEST_SUITE(message_tests, test_coordinator_fixture<>)
 BOOST_AUTO_TEST_CASE(const_message_views_never_detach_their_content) {
     auto msg1 = make_message(1, 2, 3, "four");
     auto msg2 = msg1;
-    ACTOR_REQUIRE(msg1.cptr() == msg2.cptr());
-    ACTOR_REQUIRE(msg1.match_elements<int, int, int, std::string>());
+    BOOST_REQUIRE(msg1.cptr() == msg2.cptr());
+    BOOST_REQUIRE(msg1.match_elements<int, int, int, std::string>());
     const_typed_message_view<int, int, int, std::string> view {msg1};
-    ACTOR_REQUIRE(msg1.cptr() == msg2.cptr());
+    BOOST_REQUIRE(msg1.cptr() == msg2.cptr());
 }
 
 BOOST_AUTO_TEST_CASE(const_message_views_allow_access_via_get) {
     auto msg = make_message(1, 2, 3, "four");
-    ACTOR_REQUIRE(msg.match_elements<int, int, int, std::string>());
+    BOOST_REQUIRE(msg.match_elements<int, int, int, std::string>());
     const_typed_message_view<int, int, int, std::string> view {msg};
     BOOST_CHECK_EQUAL(get<0>(view), 1);
     BOOST_CHECK_EQUAL(get<1>(view), 2);

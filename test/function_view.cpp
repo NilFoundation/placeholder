@@ -87,19 +87,19 @@ BOOST_AUTO_TEST_CASE(empty_function_fiew) {
 BOOST_AUTO_TEST_CASE(single_res_function_view) {
     auto f = make_function_view(system.spawn(adder));
     BOOST_CHECK_EQUAL(f(3, 4), 7);
-    ACTOR_CHECK(f != nullptr);
-    ACTOR_CHECK(nullptr != f);
+    BOOST_CHECK(f != nullptr);
+    BOOST_CHECK(nullptr != f);
     function_view<calculator> g;
     g = std::move(f);
-    ACTOR_CHECK(f == nullptr);
-    ACTOR_CHECK(nullptr == f);
-    ACTOR_CHECK(g != nullptr);
-    ACTOR_CHECK(nullptr != g);
+    BOOST_CHECK(f == nullptr);
+    BOOST_CHECK(nullptr == f);
+    BOOST_CHECK(g != nullptr);
+    BOOST_CHECK(nullptr != g);
     BOOST_CHECK_EQUAL(g(10, 20), 30);
     g.assign(system.spawn(multiplier));
     BOOST_CHECK_EQUAL(g(10, 20), 200);
     g.assign(system.spawn(divider));
-    ACTOR_CHECK(!g(1, 0));
+    BOOST_CHECK(!g(1, 0));
     g.assign(system.spawn(divider));
     BOOST_CHECK_EQUAL(g(4, 2), 2);
 }

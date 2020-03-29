@@ -149,7 +149,7 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(actor_profiler_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(profilers_inject_tracing_data_into_asynchronous_messages) {
-    ACTOR_MESSAGE("spawn a foo and a bar");
+    BOOST_TEST_MESSAGE("spawn a foo and a bar");
     auto carl_fun = [](stateful_actor<carl_state> *self) -> behavior {
         return {
             [=](const string &str) {
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(tracing_data_is_serializable) {
     BOOST_CHECK_EQUAL(sink(data), none);
     binary_deserializer source {sys, buf};
     BOOST_CHECK_EQUAL(source(copy), none);
-    ACTOR_REQUIRE_NOT_EQUAL(copy.get(), nullptr);
+    BOOST_REQUIRE_NOT_EQUAL(copy.get(), nullptr);
     BOOST_CHECK_EQUAL(dynamic_cast<dummy_tracing_data &>(*copy).value, "iTrace");
 }
 

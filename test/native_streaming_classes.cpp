@@ -96,7 +96,7 @@ namespace {
         return out.str();
     }
 
-#define TRACE(name, type, ...) ACTOR_MESSAGE(name << " received a " << #type << ": " << collapse_args(__VA_ARGS__));
+#define TRACE(name, type, ...) BOOST_TEST_MESSAGE(name << " received a " << #type << ": " << collapse_args(__VA_ARGS__));
 
     const char *name_of(const strong_actor_ptr &x) {
         ACTOR_ASSERT(x != nullptr);
@@ -206,7 +206,7 @@ namespace {
         }
 
         void start_streaming(entity &ref, int num_messages) {
-            ACTOR_REQUIRE_NOT_EQUAL(num_messages, 0);
+            BOOST_REQUIRE_NOT_EQUAL(num_messages, 0);
             using downstream_manager = broadcast_downstream_manager<int>;
             struct driver final : public stream_source_driver<downstream_manager> {
             public:
@@ -230,7 +230,7 @@ namespace {
             };
             auto mgr = detail::make_stream_source<driver>(this, num_messages);
             auto res = mgr->add_outbound_path(ref.ctrl());
-            ACTOR_MESSAGE(name_ << " starts streaming to " << ref.name() << " on slot " << res.value());
+            BOOST_TEST_MESSAGE(name_ << " starts streaming to " << ref.name() << " on slot " << res.value());
         }
 
         void forward_to(entity &ref) {
@@ -257,7 +257,7 @@ namespace {
             };
             forwarder = detail::make_stream_stage<driver>(this, &data);
             auto res = forwarder->add_outbound_path(ref.ctrl());
-            ACTOR_MESSAGE(name_ << " starts forwarding to " << ref.name() << " on slot " << res.value());
+            BOOST_TEST_MESSAGE(name_ << " starts forwarding to " << ref.name() << " on slot " << res.value());
         }
 
         void operator()(open_stream_msg &hs) {
@@ -281,14 +281,14 @@ namespace {
                 };
                 mgr = detail::make_stream_sink<driver>(this, &data);
             }
-            ACTOR_REQUIRE(hs.msg.match_elements<stream<int>>());
+            BOOST_REQUIRE(hs.msg.match_elements<stream<int>>());
             auto &in = hs.msg.get_as<stream<int>>(0);
             mgr->add_inbound_path(in);
         }
 
         void operator()(stream_slots slots, actor_addr &sender, upstream_msg::ack_open &x) {
             TRACE(name_, ack_open, ACTOR_ARG(slots), ACTOR_ARG2("sender", name_of(x.rebind_to)), ACTOR_ARG(x));
-            ACTOR_REQUIRE_EQUAL(sender, x.rebind_to);
+            BOOST_REQUIRE_EQUAL(sender, x.rebind_to);
             scheduled_actor::handle_upstream_msg(slots, sender, x);
         }
 
@@ -342,7 +342,7 @@ namespace {
         }
 
         void erase_inbound_paths_later(const stream_manager *mgr, error err) override {
-            ACTOR_REQUIRE_EQUAL(err, none);
+            BOOST_REQUIRE_EQUAL(err, none);
             erase_inbound_paths_later(mgr);
         }
 
@@ -376,7 +376,7 @@ namespace {
         }
 
         result_type operator()(normal_async_id, entity::normal_queue &, mailbox_element &x) {
-            ACTOR_REQUIRE(x.content().match_elements<open_stream_msg>());
+            BOOST_REQUIRE(x.content().match_elements<open_stream_msg>());
             self->current_mailbox_element(&x);
             (*self)(x.content().get_mutable_as<open_stream_msg>(0));
             self->current_mailbox_element(nullptr);
@@ -384,7 +384,7 @@ namespace {
         }
 
         result_type operator()(umsg_id, entity::upstream_queue &, mailbox_element &x) {
-            ACTOR_REQUIRE(x.content().match_elements<upstream_msg>());
+            BOOST_REQUIRE(x.content().match_elements<upstream_msg>());
             self->current_mailbox_element(&x);
             auto &um = x.content().get_mutable_as<upstream_msg>(0);
             auto f = detail::make_overload(
@@ -399,7 +399,7 @@ namespace {
 
         result_type operator()(dmsg_id, entity::downstream_queue &qs, stream_slot,
                                policy::downstream_messages::nested_queue_type &q, mailbox_element &x) {
-            ACTOR_REQUIRE(x.content().match_elements<downstream_msg>());
+            BOOST_REQUIRE(x.content().match_elements<downstream_msg>());
             self->current_mailbox_element(&x);
             auto inptr = q.policy().handler.get();
             if (inptr == nullptr)
@@ -409,7 +409,7 @@ namespace {
                 [&](downstream_msg::batch &y) {
                     inptr->handle(y);
                     if (inptr->mgr->done()) {
-                        ACTOR_MESSAGE(self->name() << " is done receiving and closes its manager");
+                        BOOST_TEST_MESSAGE(self->name() << " is done receiving and closes its manager");
                         inptr->mgr->stop();
                     }
                     return intrusive::task_result::resume;
@@ -418,7 +418,7 @@ namespace {
                     TRACE(self->name(), close, ACTOR_ARG(dm.slots));
                     auto slots = dm.slots;
                     auto i = self->stream_managers().find(slots.receiver);
-                    ACTOR_REQUIRE_NOT_EQUAL(i, self->stream_managers().end());
+                    BOOST_REQUIRE_NOT_EQUAL(i, self->stream_managers().end());
                     i->second->handle(inptr, y);
                     q.policy().handler.reset();
                     qs.erase_later(slots.receiver);
@@ -502,9 +502,9 @@ namespace {
             // Check whether all actors cleaned up their state properly.
             entity *xs[] = {&alice, &bob, &carl};
             for (auto x : xs) {
-                ACTOR_CHECK(get<dmsg_id::value>(x->mbox.queues()).queues().empty());
-                ACTOR_CHECK(x->pending_stream_managers().empty());
-                ACTOR_CHECK(x->stream_managers().empty());
+                BOOST_CHECK(get<dmsg_id::value>(x->mbox.queues()).queues().empty());
+                BOOST_CHECK(x->pending_stream_managers().empty());
+                BOOST_CHECK(x->stream_managers().empty());
             }
         }
 
@@ -520,7 +520,7 @@ namespace {
         template<class... Ts>
         void next_cycle(Ts &... xs) {
             entity *es[] = {&xs...};
-            ACTOR_MESSAGE("advance clock by " << tc.credit_interval.count() << "ns");
+            BOOST_TEST_MESSAGE("advance clock by " << tc.credit_interval.count() << "ns");
             sched.clock().current_time += tc.credit_interval;
             for (auto e : es)
                 e->advance_time();
@@ -535,7 +535,7 @@ namespace {
                 while (!std::all_of(std::begin(fs), std::end(fs), mailbox_empty))
                     for (auto &f : fs)
                         f.self->mbox.new_round(1, f);
-                ACTOR_MESSAGE("advance clock by " << tc.step.count() << "ns");
+                BOOST_TEST_MESSAGE("advance clock by " << tc.step.count() << "ns");
                 sched.clock().current_time += tc.step;
                 for (auto e : es)
                     e->advance_time();
@@ -597,16 +597,16 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_2000_items) {
     constexpr size_t num_messages = 2000;
     bob.forward_to(carl);
     alice.start_streaming(bob, num_messages);
-    ACTOR_MESSAGE("loop over alice and bob until bob is congested");
+    BOOST_TEST_MESSAGE("loop over alice and bob until bob is congested");
     loop(alice, bob);
-    ACTOR_CHECK_NOT_EQUAL(bob.data.size(), 0u);
+    BOOST_CHECK_NE(bob.data.size(), 0u);
     BOOST_CHECK_EQUAL(carl.data.size(), 0u);
-    ACTOR_MESSAGE("loop over bob and carl until bob finished sending");
+    BOOST_TEST_MESSAGE("loop over bob and carl until bob finished sending");
     // bob has one batch from alice in its mailbox that bob will read when
     // becoming uncongested again
     loop(bob, carl);
     BOOST_CHECK_EQUAL(bob.data.size(), carl.data.size());
-    ACTOR_MESSAGE("loop over all until done");
+    BOOST_TEST_MESSAGE("loop over all until done");
     loop_until([&] { return done_streaming(); }, alice, bob, carl);
     BOOST_CHECK_EQUAL(bob.data, make_iota(0, num_messages));
     BOOST_CHECK_EQUAL(carl.data, make_iota(0, num_messages));

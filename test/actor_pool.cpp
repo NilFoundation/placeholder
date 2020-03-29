@@ -85,26 +85,26 @@ BOOST_AUTO_TEST_CASE(round_robin_actor_pool) {
                 [&](int32_t res) {
                     BOOST_CHECK_EQUAL(res, i + i);
                     auto sender = actor_cast<strong_actor_ptr>(self->current_sender());
-                    ACTOR_REQUIRE(sender);
+                    BOOST_REQUIRE(sender);
                     workers.push_back(actor_cast<actor>(std::move(sender)));
                 },
                 HANDLE_ERROR);
     }
     BOOST_CHECK_EQUAL(workers.size(), 6u);
-    ACTOR_CHECK(std::unique(workers.begin(), workers.end()) == workers.end());
+    BOOST_CHECK(std::unique(workers.begin(), workers.end()) == workers.end());
     self->request(pool, infinite, sys_atom_v, get_atom_v)
         .receive(
             [&](std::vector<actor> &ws) {
                 std::sort(workers.begin(), workers.end());
                 std::sort(ws.begin(), ws.end());
-                ACTOR_REQUIRE_EQUAL(workers.size(), ws.size());
-                ACTOR_CHECK(std::equal(workers.begin(), workers.end(), ws.begin()));
+                BOOST_REQUIRE_EQUAL(workers.size(), ws.size());
+                BOOST_CHECK(std::equal(workers.begin(), workers.end(), ws.begin()));
             },
             HANDLE_ERROR);
-    ACTOR_MESSAGE("await last worker");
+    BOOST_TEST_MESSAGE("await last worker");
     anon_send_exit(workers.back(), exit_reason::user_shutdown);
     self->wait_for(workers.back());
-    ACTOR_MESSAGE("last worker shut down");
+    BOOST_TEST_MESSAGE("last worker shut down");
     workers.pop_back();
     // poll actor pool up to 10 times or until it removes the failed worker
     bool success = false;
@@ -124,8 +124,8 @@ BOOST_AUTO_TEST_CASE(round_robin_actor_pool) {
                 },
                 HANDLE_ERROR);
     }
-    ACTOR_REQUIRE_EQUAL(success, true);
-    ACTOR_MESSAGE("about to send exit to workers");
+    BOOST_REQUIRE_EQUAL(success, true);
+    BOOST_TEST_MESSAGE("about to send exit to workers");
     self->send_exit(pool, exit_reason::user_shutdown);
     self->wait_for(workers);
 }
@@ -140,9 +140,9 @@ BOOST_AUTO_TEST_CASE(broadcast_actor_pool) {
     std::vector<int> results;
     int i = 0;
     self->receive_for(i, 25)([&](int res) { results.push_back(res); },
-                             after(std::chrono::milliseconds(250)) >> [] { ACTOR_ERROR("didn't receive a result"); });
+                             after(std::chrono::milliseconds(250)) >> [] { BOOST_ERROR("didn't receive a result"); });
     BOOST_CHECK_EQUAL(results.size(), 25u);
-    ACTOR_CHECK(std::all_of(results.begin(), results.end(), [](int res) { return res == 3; }));
+    BOOST_CHECK(std::all_of(results.begin(), results.end(), [](int res) { return res == 3; }));
     self->send_exit(pool, exit_reason::user_shutdown);
 }
 

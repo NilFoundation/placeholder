@@ -87,8 +87,8 @@ namespace {
             string_parser_state res {str.begin(), str.end()};
             detail::parser::read_ini(res, f);
             if ((res.code == pec::success) != expect_success) {
-                ACTOR_MESSAGE("unexpected parser result state: " << res.code);
-                ACTOR_MESSAGE("input remainder: " << std::string(res.i, res.e));
+                BOOST_TEST_MESSAGE("unexpected parser result state: " << res.code);
+                BOOST_TEST_MESSAGE("input remainder: " << std::string(res.i, res.e));
             }
             return std::move(f.log);
         }
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(empty_inis) {
     BOOST_CHECK_EQUAL(parse(";hello\n;world"), make_log());
 }
 
-ACTOR_TEST(section with valid key - value pairs) {
+BOOST_AUTO_TEST_CASE(section with valid key - value pairs) {
     BOOST_CHECK_EQUAL(parse("[foo]"), make_log("key: foo", "{", "}"));
     BOOST_CHECK_EQUAL(parse("  [foo]"), make_log("key: foo", "{", "}"));
     BOOST_CHECK_EQUAL(parse("  [  foo]  "), make_log("key: foo", "{", "}"));
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(invalid_inis) {
     BOOST_CHECK_EQUAL(parse(ini3), ini3_log);
 }
 
-ACTOR_TEST(integer keys are legal in INI syntax) {
+BOOST_AUTO_TEST_CASE(integer keys are legal in INI syntax) {
     static constexpr string_view ini = R"__(
     [foo.bar]
     1 = 10

@@ -44,7 +44,7 @@ namespace {
         auto res = co.parse(arg);
         if (res && holds_alternative<T>(*res)) {
             if (co.check(*res) != none)
-                ACTOR_ERROR("co.parse() produced the wrong type!");
+                BOOST_ERROR("co.parse() produced the wrong type!");
             return get<T>(*res);
         }
         return none;
@@ -112,36 +112,36 @@ BOOST_AUTO_TEST_CASE(type_bool) {
     BOOST_CHECK_EQUAL(read<bool>("1"), none);
 }
 
-ACTOR_TEST(type int8_t) {
+BOOST_AUTO_TEST_CASE(type int8_t) {
     check_integer_options<int8_t>();
 }
 
-ACTOR_TEST(type uint8_t) {
+BOOST_AUTO_TEST_CASE(type uint8_t) {
     check_integer_options<uint8_t>();
 }
 
-ACTOR_TEST(type int16_t) {
+BOOST_AUTO_TEST_CASE(type int16_t) {
     check_integer_options<int16_t>();
 }
 
-ACTOR_TEST(type uint16_t) {
+BOOST_AUTO_TEST_CASE(type uint16_t) {
     check_integer_options<uint16_t>();
 }
 
-ACTOR_TEST(type int32_t) {
+BOOST_AUTO_TEST_CASE(type int32_t) {
     check_integer_options<int32_t>();
 }
 
-ACTOR_TEST(type uint32_t) {
+BOOST_AUTO_TEST_CASE(type uint32_t) {
     check_integer_options<uint32_t>();
 }
 
-ACTOR_TEST(type uint64_t) {
+BOOST_AUTO_TEST_CASE(type uint64_t) {
     BOOST_CHECK_EQUAL(unbox(read<uint64_t>("0")), 0u);
     BOOST_CHECK_EQUAL(read<uint64_t>("-1"), none);
 }
 
-ACTOR_TEST(type int64_t) {
+BOOST_AUTO_TEST_CASE(type int64_t) {
     BOOST_CHECK_EQUAL(unbox(read<int64_t>("-1")), -1);
     BOOST_CHECK_EQUAL(unbox(read<int64_t>("0")), 0);
     BOOST_CHECK_EQUAL(unbox(read<int64_t>("1")), 1);
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(lists) {
     BOOST_CHECK_EQUAL(read<int_list>("[1, 2, 3]"), int_list({1, 2, 3}));
 }
 
-ACTOR_TEST(flat CLI parsing) {
+BOOST_AUTO_TEST_CASE(flat CLI parsing) {
     auto x = make_config_option<std::string>("?foo", "bar,b", "test option");
     BOOST_CHECK_EQUAL(x.category(), "foo");
     BOOST_CHECK_EQUAL(x.long_name(), "bar");
@@ -187,7 +187,7 @@ ACTOR_TEST(flat CLI parsing) {
     BOOST_CHECK_EQUAL(x.has_flat_cli_name(), true);
 }
 
-ACTOR_TEST(flat CLI parsing with nested categories) {
+BOOST_AUTO_TEST_CASE(flat CLI parsing with nested categories) {
     auto x = make_config_option<std::string>("?foo.goo", "bar,b", "test option");
     BOOST_CHECK_EQUAL(x.category(), "foo.goo");
     BOOST_CHECK_EQUAL(x.long_name(), "bar");
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(find_by_long_opt) {
         if (has_opt)
             BOOST_CHECK_EQUAL(res.second, "val2");
         else
-            ACTOR_CHECK(res.second.empty());
+            BOOST_CHECK(res.second.empty());
     };
     // Well formed, find val2.
     check({"--foo=val1", "--bar=val2", "--baz=val3"}, true, true);

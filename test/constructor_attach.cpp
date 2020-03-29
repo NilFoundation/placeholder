@@ -16,6 +16,30 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::error> {
+                void operator()(std::ostream &, nil::actor::error const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::exit_reason> {
+                void operator()(std::ostream &, nil::actor::exit_reason const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::actor_addr> {
+                void operator()(std::ostream &, nil::actor::actor_addr const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     class testee : public event_based_actor {
@@ -31,9 +55,9 @@ namespace {
         }
     };
 
-    class spawner : public event_based_actor {
+    class test_spawner : public event_based_actor {
     public:
-        spawner(actor_config &cfg) : event_based_actor(cfg), downs_(0), testee_(spawn<testee, monitored>(this)) {
+        test_spawner(actor_config &cfg) : event_based_actor(cfg), downs_(0), testee_(spawn<testee, monitored>(this)) {
             set_down_handler([=](down_msg &msg) {
                 BOOST_CHECK_EQUAL(msg.reason, exit_reason::user_shutdown);
                 BOOST_CHECK_EQUAL(msg.source, testee_.address());
@@ -68,5 +92,5 @@ namespace {
 BOOST_AUTO_TEST_CASE(constructor_attach) {
     spawner_config cfg;
     spawner system {cfg};
-    anon_send(system.spawn<spawner>(), delete_atom_v);
+    anon_send(system.spawn<test_spawner>(), delete_atom_v);
 }

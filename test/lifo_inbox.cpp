@@ -89,28 +89,28 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(lifo_inbox_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(default_constructed) {
-    ACTOR_REQUIRE_EQUAL(inbox.empty(), true);
+    BOOST_REQUIRE_EQUAL(inbox.empty(), true);
 }
 
 BOOST_AUTO_TEST_CASE(push_front) {
     fill(inbox, 1, 2, 3);
-    ACTOR_REQUIRE_EQUAL(close_and_fetch(), "321");
-    ACTOR_REQUIRE_EQUAL(inbox.closed(), true);
+    BOOST_REQUIRE_EQUAL(close_and_fetch(), "321");
+    BOOST_REQUIRE_EQUAL(inbox.closed(), true);
 }
 
 BOOST_AUTO_TEST_CASE(push_after_close) {
     inbox.close();
     auto res = inbox.push_front(new inode(0));
-    ACTOR_REQUIRE_EQUAL(res, inbox_result::queue_closed);
+    BOOST_REQUIRE_EQUAL(res, inbox_result::queue_closed);
 }
 
 BOOST_AUTO_TEST_CASE(unblock) {
-    ACTOR_REQUIRE_EQUAL(inbox.try_block(), true);
+    BOOST_REQUIRE_EQUAL(inbox.try_block(), true);
     auto res = inbox.push_front(new inode(1));
-    ACTOR_REQUIRE_EQUAL(res, inbox_result::unblocked_reader);
+    BOOST_REQUIRE_EQUAL(res, inbox_result::unblocked_reader);
     res = inbox.push_front(new inode(2));
-    ACTOR_REQUIRE_EQUAL(res, inbox_result::success);
-    ACTOR_REQUIRE_EQUAL(close_and_fetch(), "21");
+    BOOST_REQUIRE_EQUAL(res, inbox_result::success);
+    BOOST_REQUIRE_EQUAL(close_and_fetch(), "21");
 }
 
 BOOST_AUTO_TEST_CASE(await) {
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(await) {
     std::condition_variable cv;
     std::thread t {[&] { inbox.synchronized_emplace_front(mx, cv, 1); }};
     inbox.synchronized_await(mx, cv);
-    ACTOR_REQUIRE_EQUAL(close_and_fetch(), "1");
+    BOOST_REQUIRE_EQUAL(close_and_fetch(), "1");
     t.join();
 }
 
@@ -128,16 +128,16 @@ BOOST_AUTO_TEST_CASE(timed_await) {
     auto tout = std::chrono::system_clock::now();
     tout += std::chrono::microseconds(1);
     auto res = inbox.synchronized_await(mx, cv, tout);
-    ACTOR_REQUIRE_EQUAL(res, false);
+    BOOST_REQUIRE_EQUAL(res, false);
     fill(inbox, 1);
     res = inbox.synchronized_await(mx, cv, tout);
-    ACTOR_REQUIRE_EQUAL(res, true);
+    BOOST_REQUIRE_EQUAL(res, true);
     BOOST_CHECK_EQUAL(fetch(), "1");
     tout += std::chrono::hours(1000);
     std::thread t {[&] { inbox.synchronized_emplace_front(mx, cv, 2); }};
     res = inbox.synchronized_await(mx, cv, tout);
-    ACTOR_REQUIRE_EQUAL(res, true);
-    ACTOR_REQUIRE_EQUAL(close_and_fetch(), "2");
+    BOOST_REQUIRE_EQUAL(res, true);
+    BOOST_REQUIRE_EQUAL(close_and_fetch(), "2");
     t.join();
 }
 

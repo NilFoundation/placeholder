@@ -19,7 +19,7 @@ using namespace nil::actor;
 BOOST_AUTO_TEST_CASE(default_construction) {
     string_view x;
     string_view y;
-    ACTOR_CHECK(x.empty());
+    BOOST_CHECK(x.empty());
     BOOST_CHECK_EQUAL(x.size(), 0u);
     BOOST_CHECK_EQUAL(x.data(), nullptr);
     BOOST_CHECK_EQUAL(y, y);
@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(cstring_conversion) {
     BOOST_CHECK_EQUAL(x[2], 'c');
     BOOST_CHECK_EQUAL(x, "abc");
     x = "def";
-    ACTOR_CHECK_NOT_EQUAL(x, "abc");
+    BOOST_CHECK_NE(x, "abc");
     BOOST_CHECK_EQUAL(x, "def");
 }
 
@@ -48,13 +48,13 @@ BOOST_AUTO_TEST_CASE(string_conversion) {
 
 BOOST_AUTO_TEST_CASE(substrings) {
     string_view x = "abcdefghi";
-    ACTOR_CHECK(x.remove_prefix(3), "defghi");
-    ACTOR_CHECK(x.remove_suffix(3), "abcdef");
-    ACTOR_CHECK(x.substr(3, 3), "def");
-    ACTOR_CHECK(x.remove_prefix(9), "");
-    ACTOR_CHECK(x.remove_suffix(9), "");
-    ACTOR_CHECK(x.substr(9), "");
-    ACTOR_CHECK(x.substr(0, 0), "");
+    BOOST_CHECK(x.remove_prefix(3), "defghi");
+    BOOST_CHECK(x.remove_suffix(3), "abcdef");
+    BOOST_CHECK(x.substr(3, 3), "def");
+    BOOST_CHECK(x.remove_prefix(9), "");
+    BOOST_CHECK(x.remove_suffix(9), "");
+    BOOST_CHECK(x.substr(9), "");
+    BOOST_CHECK(x.substr(0, 0), "");
 }
 
 BOOST_AUTO_TEST_CASE(compare) {
@@ -63,24 +63,24 @@ BOOST_AUTO_TEST_CASE(compare) {
     string_view y = "bcd";
     string_view z = "cde";
     // x.compare full strings
-    ACTOR_CHECK(x.compare("abc") == 0);
-    ACTOR_CHECK(x.compare(y) < 0);
-    ACTOR_CHECK(x.compare(z) < 0);
+    BOOST_CHECK(x.compare("abc") == 0);
+    BOOST_CHECK(x.compare(y) < 0);
+    BOOST_CHECK(x.compare(z) < 0);
     // y.compare full strings
-    ACTOR_CHECK(y.compare(x) > 0);
-    ACTOR_CHECK(y.compare("bcd") == 0);
-    ACTOR_CHECK(y.compare(z) < 0);
+    BOOST_CHECK(y.compare(x) > 0);
+    BOOST_CHECK(y.compare("bcd") == 0);
+    BOOST_CHECK(y.compare(z) < 0);
     // z.compare full strings
-    ACTOR_CHECK(z.compare(x) > 0);
-    ACTOR_CHECK(z.compare(y) > 0);
-    ACTOR_CHECK(z.compare("cde") == 0);
+    BOOST_CHECK(z.compare(x) > 0);
+    BOOST_CHECK(z.compare(y) > 0);
+    BOOST_CHECK(z.compare("cde") == 0);
     // x.compare substrings
-    ACTOR_CHECK(x.compare(0, 3, "abc") == 0);
-    ACTOR_CHECK(x.compare(1, 2, y, 0, 2) == 0);
-    ACTOR_CHECK(x.compare(2, 1, z, 0, 1) == 0);
-    ACTOR_CHECK(x.compare(2, 1, z, 0, 1) == 0);
+    BOOST_CHECK(x.compare(0, 3, "abc") == 0);
+    BOOST_CHECK(x.compare(1, 2, y, 0, 2) == 0);
+    BOOST_CHECK(x.compare(2, 1, z, 0, 1) == 0);
+    BOOST_CHECK(x.compare(2, 1, z, 0, 1) == 0);
     // make sure substrings aren't equal
-    ACTOR_CHECK(string_view("a/") != string_view("a/b"));
+    BOOST_CHECK(string_view("a/") != string_view("a/b"));
 }
 
 BOOST_AUTO_TEST_CASE(copy) {
@@ -90,11 +90,11 @@ BOOST_AUTO_TEST_CASE(copy) {
     BOOST_CHECK_EQUAL(n, 5u);
     buf[n] = '\0';
     BOOST_CHECK_EQUAL(str, string_view(buf, n));
-    ACTOR_CHECK(strcmp("hello", buf) == 0);
+    BOOST_CHECK(strcmp("hello", buf) == 0);
     n = str.copy(buf, 10, 3);
     buf[n] = '\0';
     BOOST_CHECK_EQUAL(string_view(buf, n), "lo");
-    ACTOR_CHECK(strcmp("lo", buf) == 0);
+    BOOST_CHECK(strcmp("lo", buf) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(find) {

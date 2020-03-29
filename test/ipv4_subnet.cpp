@@ -47,16 +47,16 @@ BOOST_AUTO_TEST_CASE(equality) {
 
 BOOST_AUTO_TEST_CASE(contains) {
     ipv4_subnet local {addr(127, 0, 0, 0), 8};
-    ACTOR_CHECK(local.contains(addr(127, 0, 0, 1)));
-    ACTOR_CHECK(local.contains(addr(127, 1, 2, 3)));
-    ACTOR_CHECK(local.contains(addr(127, 128, 0, 0) / 9));
-    ACTOR_CHECK(local.contains(addr(127, 0, 0, 0) / 8));
-    ACTOR_CHECK(!local.contains(addr(127, 0, 0, 0) / 7));
+    BOOST_CHECK(local.contains(addr(127, 0, 0, 1)));
+    BOOST_CHECK(local.contains(addr(127, 1, 2, 3)));
+    BOOST_CHECK(local.contains(addr(127, 128, 0, 0) / 9));
+    BOOST_CHECK(local.contains(addr(127, 0, 0, 0) / 8));
+    BOOST_CHECK(!local.contains(addr(127, 0, 0, 0) / 7));
 }
 
 BOOST_AUTO_TEST_CASE(ordering) {
     BOOST_CHECK_EQUAL(addr(192, 168, 168, 0) / 24, addr(192, 168, 168, 0) / 24);
-    ACTOR_CHECK_NOT_EQUAL(addr(192, 168, 168, 0) / 25, addr(192, 168, 168, 0) / 24);
-    ACTOR_CHECK_LESS(addr(192, 168, 167, 0) / 24, addr(192, 168, 168, 0) / 24);
-    ACTOR_CHECK_LESS(addr(192, 168, 168, 0) / 24, addr(192, 168, 168, 0) / 25);
+    BOOST_CHECK_NE(addr(192, 168, 168, 0) / 25, addr(192, 168, 168, 0) / 24);
+    BOOST_CHECK_LESS(addr(192, 168, 167, 0) / 24, addr(192, 168, 168, 0) / 24);
+    BOOST_CHECK_LESS(addr(192, 168, 168, 0) / 24, addr(192, 168, 168, 0) / 25);
 }

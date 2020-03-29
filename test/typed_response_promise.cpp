@@ -45,7 +45,7 @@ namespace {
             return {
                 [=](int x) -> foo_promise {
                     auto resp = response(x * 2);
-                    ACTOR_CHECK(!resp.pending());
+                    BOOST_CHECK(!resp.pending());
                     return resp.deliver(x * 4);    // has no effect
                 },
                 [=](get_atom, int x) -> foo_promise {
@@ -69,13 +69,13 @@ namespace {
                     auto &entry = promises2_[next_id_++];
                     entry = make_response_promise<foo2_promise>();
                     // verify move semantics
-                    ACTOR_CHECK(entry.pending());
+                    BOOST_CHECK(entry.pending());
                     foo2_promise tmp(std::move(entry));
-                    ACTOR_CHECK(!entry.pending());
-                    ACTOR_CHECK(tmp.pending());
+                    BOOST_CHECK(!entry.pending());
+                    BOOST_CHECK(tmp.pending());
                     entry = std::move(tmp);
-                    ACTOR_CHECK(entry.pending());
-                    ACTOR_CHECK(!tmp.pending());
+                    BOOST_CHECK(entry.pending());
+                    BOOST_CHECK(!tmp.pending());
                     return entry;
                 },
                 [=](get_atom, double) -> foo3_promise {
@@ -121,9 +121,9 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(typed_spawn_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(typed_response_promise) {
+BOOST_AUTO_TEST_CASE(typed_response_promise_test) {
     typed_response_promise<int> resp;
-    ACTOR_MESSAGE("trigger 'invalid response promise' error");
+    BOOST_TEST_MESSAGE("trigger 'invalid response promise' error");
     resp.deliver(1);    // delivers on an invalid promise has no effect
     auto f = make_function_view(foo);
     BOOST_CHECK_EQUAL(f(get_atom_v, 42), 84);
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(error_response_message) {
     BOOST_CHECK_EQUAL(f(get_atom_v, 3.14), sec::unexpected_message);
     self->send(foo, get_atom_v, 42);
     self->receive([](int x) { BOOST_CHECK_EQUAL(x, 84); },
-                  [](double x) { ACTOR_ERROR("unexpected ordinary response message received: " << x); });
+                  [](double x) { BOOST_ERROR("unexpected ordinary response message received: " << x); });
     self->send(foo, get_atom_v, 3.14);
     self->receive([&](error &err) {
         BOOST_CHECK_EQUAL(err, sec::unexpected_message);

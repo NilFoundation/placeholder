@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(test_serial_reply) {
         }};
     };
     auto master = system.spawn([=](event_based_actor *self) {
-        ACTOR_MESSAGE("ID of master: " << self->id());
+        BOOST_TEST_MESSAGE("ID of master: " << self->id());
         // spawn 5 mirror actors
         auto c0 = self->spawn<linked>(mirror_behavior);
         auto c1 = self->spawn<linked>(mirror_behavior);
@@ -35,17 +35,17 @@ BOOST_AUTO_TEST_CASE(test_serial_reply) {
         auto c4 = self->spawn<linked>(mirror_behavior);
         self->become([=](int) mutable {
             auto rp = self->make_response_promise();
-            ACTOR_MESSAGE("received 'hi there'");
+            BOOST_TEST_MESSAGE("received 'hi there'");
             self->request(c0, infinite, sub0_atom::value).then([=](sub0_atom) mutable {
-                ACTOR_MESSAGE("received 'sub0'");
+                BOOST_TEST_MESSAGE("received 'sub0'");
                 self->request(c1, infinite, sub1_atom::value).then([=](sub1_atom) mutable {
-                    ACTOR_MESSAGE("received 'sub1'");
+                    BOOST_TEST_MESSAGE("received 'sub1'");
                     self->request(c2, infinite, sub2_atom::value).then([=](sub2_atom) mutable {
-                        ACTOR_MESSAGE("received 'sub2'");
+                        BOOST_TEST_MESSAGE("received 'sub2'");
                         self->request(c3, infinite, sub3_atom::value).then([=](sub3_atom) mutable {
-                            ACTOR_MESSAGE("received 'sub3'");
+                            BOOST_TEST_MESSAGE("received 'sub3'");
                             self->request(c4, infinite, sub4_atom::value).then([=](sub4_atom) mutable {
-                                ACTOR_MESSAGE("received 'sub4'");
+                                BOOST_TEST_MESSAGE("received 'sub4'");
                                 rp.deliver(ho_atom::value);
                             });
                         });
@@ -55,9 +55,9 @@ BOOST_AUTO_TEST_CASE(test_serial_reply) {
         });
     });
     scoped_actor self {system};
-    ACTOR_MESSAGE("ID of main: " << self->id());
+    BOOST_TEST_MESSAGE("ID of main: " << self->id());
     self->request(master, infinite, hi_atom::value)
-        .receive([](ho_atom) { ACTOR_MESSAGE("received 'ho'"); },
-                 [&](const error &err) { ACTOR_ERROR("Error: " << self->system().render(err)); });
+        .receive([](ho_atom) { BOOST_TEST_MESSAGE("received 'ho'"); },
+                 [&](const error &err) { BOOST_ERROR("Error: " << self->system().render(err)); });
     ACTOR_REQUIRE(self->mailbox().empty());
 }

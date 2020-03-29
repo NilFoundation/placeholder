@@ -111,13 +111,13 @@
         ACTOR_TRANSITION_IMPL1(target)                                 \
     }
 
-#define ACTOR_ERROR_TRANSITION_IMPL2(error_code, whitelist)            \
+#define BOOST_ERROR_TRANSITION_IMPL2(error_code, whitelist)            \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
         ps.code = error_code;                                        \
         return;                                                      \
     }
 
-#define ACTOR_ERROR_TRANSITION_IMPL1(error_code) \
+#define BOOST_ERROR_TRANSITION_IMPL1(error_code) \
     ps.code = error_code;                      \
     return;
 
@@ -211,7 +211,7 @@
 /// Stops the FSM with reason `error_code` if `predicate` holds for the current
 /// token.
 #define error_transition(...) \
-    BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_ERROR_TRANSITION_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
+    BOOST_PP_CAT(BOOST_PP_OVERLOAD(BOOST_ERROR_TRANSITION_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
 
 // Makes an epsilon transition into another state.
 #define epsilon(...) BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_EPSILON_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
@@ -236,7 +236,7 @@
 
 /// Stops the FSM with reason `error_code` if `predicate` holds for the current
 /// token.
-#define error_transition(...) BOOST_PP_OVERLOAD(ACTOR_ERROR_TRANSITION_IMPL, __VA_ARGS__)(__VA_ARGS__)
+#define error_transition(...) BOOST_PP_OVERLOAD(BOOST_ERROR_TRANSITION_IMPL, __VA_ARGS__)(__VA_ARGS__)
 
 // Makes an epsilon transition into another state.
 #define epsilon(...) BOOST_PP_OVERLOAD(ACTOR_EPSILON_IMPL, __VA_ARGS__)(__VA_ARGS__)

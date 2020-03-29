@@ -35,48 +35,48 @@ namespace {
 BOOST_AUTO_TEST_CASE(empty) {
     optional<int> x;
     optional<int> y;
-    ACTOR_CHECK(x == y);
-    ACTOR_CHECK(!(x != y));
+    BOOST_CHECK(x == y);
+    BOOST_CHECK(!(x != y));
 }
 
 BOOST_AUTO_TEST_CASE(equality) {
     optional<int> x = 42;
     optional<int> y = 7;
-    ACTOR_CHECK(x != y);
-    ACTOR_CHECK(!(x == y));
+    BOOST_CHECK(x != y);
+    BOOST_CHECK(!(x == y));
 }
 
 BOOST_AUTO_TEST_CASE(ordering) {
     optional<int> x = 42;
     optional<int> y = 7;
-    ACTOR_CHECK(x > y);
-    ACTOR_CHECK(x >= y);
-    ACTOR_CHECK(y < x);
-    ACTOR_CHECK(y <= x);
-    ACTOR_CHECK(!(y > x));
-    ACTOR_CHECK(!(y >= x));
-    ACTOR_CHECK(!(x < y));
-    ACTOR_CHECK(!(x <= y));
-    ACTOR_CHECK(x < 4711);
-    ACTOR_CHECK(4711 > x);
-    ACTOR_CHECK(4711 >= x);
-    ACTOR_CHECK(!(x > 4711));
-    ACTOR_CHECK(!(x >= 4711));
-    ACTOR_CHECK(!(4211 < x));
-    ACTOR_CHECK(!(4211 <= x));
+    BOOST_CHECK(x > y);
+    BOOST_CHECK(x >= y);
+    BOOST_CHECK(y < x);
+    BOOST_CHECK(y <= x);
+    BOOST_CHECK(!(y > x));
+    BOOST_CHECK(!(y >= x));
+    BOOST_CHECK(!(x < y));
+    BOOST_CHECK(!(x <= y));
+    BOOST_CHECK(x < 4711);
+    BOOST_CHECK(4711 > x);
+    BOOST_CHECK(4711 >= x);
+    BOOST_CHECK(!(x > 4711));
+    BOOST_CHECK(!(x >= 4711));
+    BOOST_CHECK(!(4211 < x));
+    BOOST_CHECK(!(4211 <= x));
 }
 
 BOOST_AUTO_TEST_CASE(custom_type_none) {
     optional<qwertz> x;
-    ACTOR_CHECK(x == none);
+    BOOST_CHECK(x == none);
 }
 
 BOOST_AUTO_TEST_CASE(custom_type_engaged) {
     qwertz obj {1, 2};
     optional<qwertz> x = obj;
-    ACTOR_CHECK(x != none);
-    ACTOR_CHECK(obj == x);
-    ACTOR_CHECK(x == obj);
-    ACTOR_CHECK(obj == *x);
-    ACTOR_CHECK(*x == obj);
+    BOOST_CHECK(x != none);
+    BOOST_CHECK(obj == x);
+    BOOST_CHECK(x == obj);
+    BOOST_CHECK(obj == *x);
+    BOOST_CHECK(*x == obj);
 }

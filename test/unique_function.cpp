@@ -43,22 +43,22 @@ namespace {
 }    // namespace
 
 #define CHECK_VALID(f)          \
-    ACTOR_CHECK(!f.is_nullptr()); \
-    ACTOR_CHECK(f);               \
-    ACTOR_CHECK(f != nullptr);    \
-    ACTOR_CHECK(nullptr != f);    \
-    ACTOR_CHECK(!(f == nullptr)); \
-    ACTOR_CHECK(!(nullptr == f)); \
-    ACTOR_CHECK(f() == 42)
+    BOOST_CHECK(!f.is_nullptr()); \
+    BOOST_CHECK(f);               \
+    BOOST_CHECK(f != nullptr);    \
+    BOOST_CHECK(nullptr != f);    \
+    BOOST_CHECK(!(f == nullptr)); \
+    BOOST_CHECK(!(nullptr == f)); \
+    BOOST_CHECK(f() == 42)
 
 #define CHECK_INVALID(f)        \
-    ACTOR_CHECK(f.is_nullptr());  \
-    ACTOR_CHECK(!f);              \
-    ACTOR_CHECK(f == nullptr);    \
-    ACTOR_CHECK(nullptr == f);    \
-    ACTOR_CHECK(!(f != nullptr)); \
-    ACTOR_CHECK(!(nullptr != f)); \
-    ACTOR_CHECK(!f.holds_wrapper())
+    BOOST_CHECK(f.is_nullptr());  \
+    BOOST_CHECK(!f);              \
+    BOOST_CHECK(f == nullptr);    \
+    BOOST_CHECK(nullptr == f);    \
+    BOOST_CHECK(!(f != nullptr)); \
+    BOOST_CHECK(!(nullptr != f)); \
+    BOOST_CHECK(!f.holds_wrapper())
 
 BOOST_AUTO_TEST_CASE(default_construction) {
     int_fun f;
@@ -73,14 +73,14 @@ BOOST_AUTO_TEST_CASE(raw_function_pointer_construction) {
 BOOST_AUTO_TEST_CASE(stateless_lambda_construction) {
     int_fun f {[] { return 42; }};
     CHECK_VALID(f);
-    ACTOR_CHECK(!f.holds_wrapper());
+    BOOST_CHECK(!f.holds_wrapper());
 }
 
 BOOST_AUTO_TEST_CASE(stateful_lambda_construction) {
     int i = 42;
     int_fun f {[=] { return i; }};
     CHECK_VALID(f);
-    ACTOR_CHECK(f.holds_wrapper());
+    BOOST_CHECK(f.holds_wrapper());
 }
 
 BOOST_AUTO_TEST_CASE(custom_wrapper_construction) {
@@ -88,10 +88,10 @@ BOOST_AUTO_TEST_CASE(custom_wrapper_construction) {
     {    // lifetime scope of our counting wrapper
         int_fun f {new instance_counting_wrapper(&instances)};
         CHECK_VALID(f);
-        ACTOR_CHECK(f.holds_wrapper());
-        ACTOR_CHECK(instances == 1);
+        BOOST_CHECK(f.holds_wrapper());
+        BOOST_CHECK(instances == 1);
     }
-    ACTOR_CHECK(instances == 0);
+    BOOST_CHECK(instances == 0);
 }
 
 BOOST_AUTO_TEST_CASE(function_move_construction) {
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(function_move_construction) {
     int_fun g {std::move(f)};
     CHECK_INVALID(f);
     CHECK_VALID(g);
-    ACTOR_CHECK(!g.holds_wrapper());
+    BOOST_CHECK(!g.holds_wrapper());
 }
 
 BOOST_AUTO_TEST_CASE(stateful_lambda_move_construction) {
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(stateful_lambda_move_construction) {
     int_fun g {std::move(f)};
     CHECK_INVALID(f);
     CHECK_VALID(g);
-    ACTOR_CHECK(g.holds_wrapper());
+    BOOST_CHECK(g.holds_wrapper());
 }
 
 BOOST_AUTO_TEST_CASE(custom_wrapper_move_construction) {
@@ -118,10 +118,10 @@ BOOST_AUTO_TEST_CASE(custom_wrapper_move_construction) {
         int_fun g {std::move(f)};
         CHECK_INVALID(f);
         CHECK_VALID(g);
-        ACTOR_CHECK(g.holds_wrapper());
-        ACTOR_CHECK(instances == 1);
+        BOOST_CHECK(g.holds_wrapper());
+        BOOST_CHECK(instances == 1);
     }
-    ACTOR_CHECK(instances == 0);
+    BOOST_CHECK(instances == 0);
 }
 
 BOOST_AUTO_TEST_CASE(function_assign) {
@@ -129,14 +129,14 @@ BOOST_AUTO_TEST_CASE(function_assign) {
     int_fun f;
     int_fun g {fourty_two};
     int_fun h {new instance_counting_wrapper(&instances)};
-    ACTOR_CHECK(instances == 1);
+    BOOST_CHECK(instances == 1);
     CHECK_INVALID(f);
     CHECK_VALID(g);
     CHECK_VALID(h);
     f = fourty_two;
     g = fourty_two;
     h = fourty_two;
-    ACTOR_CHECK(instances == 0);
+    BOOST_CHECK(instances == 0);
     CHECK_VALID(f);
     CHECK_VALID(g);
     CHECK_VALID(h);
@@ -147,22 +147,22 @@ BOOST_AUTO_TEST_CASE(move_assign) {
     int_fun f;
     int_fun g {fourty_two};
     int_fun h {new instance_counting_wrapper(&instances)};
-    ACTOR_CHECK(instances == 1);
+    BOOST_CHECK(instances == 1);
     CHECK_INVALID(f);
     CHECK_VALID(g);
     CHECK_VALID(h);
     g = std::move(h);
-    ACTOR_CHECK(instances == 1);
+    BOOST_CHECK(instances == 1);
     CHECK_INVALID(f);
     CHECK_VALID(g);
     CHECK_INVALID(h);
     f = std::move(g);
-    ACTOR_CHECK(instances == 1);
+    BOOST_CHECK(instances == 1);
     CHECK_VALID(f);
     CHECK_INVALID(g);
     CHECK_INVALID(h);
     f = int_fun {};
-    ACTOR_CHECK(instances == 0);
+    BOOST_CHECK(instances == 0);
     CHECK_INVALID(f);
     CHECK_INVALID(g);
     CHECK_INVALID(h);

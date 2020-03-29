@@ -173,11 +173,11 @@ BOOST_AUTO_TEST_CASE(holds_alternative) {
         put(x, "resolution", std::move(resolution));
         return config_value {std::move(x)};
     };
-    ACTOR_CHECK(holds_alternative<my_duration>(make_value(1, "s")));
-    ACTOR_CHECK(holds_alternative<my_duration>(make_value(1, "ms")));
-    ACTOR_CHECK(holds_alternative<my_duration>(make_value(1, "us")));
-    ACTOR_CHECK(holds_alternative<my_duration>(make_value(1, "ns")));
-    ACTOR_CHECK(!holds_alternative<my_duration>(make_value(1, "foo")));
+    BOOST_CHECK(holds_alternative<my_duration>(make_value(1, "s")));
+    BOOST_CHECK(holds_alternative<my_duration>(make_value(1, "ms")));
+    BOOST_CHECK(holds_alternative<my_duration>(make_value(1, "us")));
+    BOOST_CHECK(holds_alternative<my_duration>(make_value(1, "ns")));
+    BOOST_CHECK(!holds_alternative<my_duration>(make_value(1, "foo")));
 }
 
 BOOST_AUTO_TEST_CASE(access_from_dictionary) {
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(access_from_dictionary) {
     put(x, "value.count", 42);
     put(x, "value.resolution", "s");
     auto value = x["value"];
-    ACTOR_REQUIRE(holds_alternative<my_duration>(value));
+    BOOST_REQUIRE(holds_alternative<my_duration>(value));
     BOOST_CHECK_EQUAL(get_if<my_duration>(&value), my_duration::from_s(42));
     BOOST_CHECK_EQUAL(get<my_duration>(value), my_duration::from_s(42));
 }
@@ -208,7 +208,7 @@ max-delay = {
 
 }    // namespace
 
-ACTOR_TEST(adaptor access from actor system config - file input) {
+BOOST_AUTO_TEST_CASE(adaptor access from actor system config - file input) {
     test_config cfg;
     std::istringstream in {config_text};
     if (auto err = cfg.parse(0, nullptr, in))
@@ -216,7 +216,7 @@ ACTOR_TEST(adaptor access from actor system config - file input) {
     BOOST_CHECK_EQUAL(cfg.max_delay, my_duration::from_s(123));
 }
 
-ACTOR_TEST(adaptor access from actor system config - file input and arguments) {
+BOOST_AUTO_TEST_CASE(adaptor access from actor system config - file input and arguments) {
     std::vector<std::string> args {
         "--max-delay={count = 20, resolution = ms}",
     };

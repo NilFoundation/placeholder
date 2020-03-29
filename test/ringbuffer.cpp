@@ -54,18 +54,18 @@ BOOST_AUTO_TEST_CASE(construction) {
 }
 
 BOOST_AUTO_TEST_CASE(push_back) {
-    ACTOR_MESSAGE("add one element");
+    BOOST_TEST_MESSAGE("add one element");
     buf.push_back(42);
     BOOST_CHECK_EQUAL(buf.empty(), false);
     BOOST_CHECK_EQUAL(buf.full(), false);
     BOOST_CHECK_EQUAL(buf.size(), 1u);
     BOOST_CHECK_EQUAL(buf.front(), 42);
-    ACTOR_MESSAGE("remove element");
+    BOOST_TEST_MESSAGE("remove element");
     buf.pop_front();
     BOOST_CHECK_EQUAL(buf.empty(), true);
     BOOST_CHECK_EQUAL(buf.full(), false);
     BOOST_CHECK_EQUAL(buf.size(), 0u);
-    ACTOR_MESSAGE("fill buffer");
+    BOOST_TEST_MESSAGE("fill buffer");
     for (int i = 0; i < static_cast<int>(buf_size - 1); ++i)
         buf.push_back(std::move(i));
     BOOST_CHECK_EQUAL(buf.empty(), false);
@@ -83,19 +83,19 @@ BOOST_AUTO_TEST_CASE(get_all) {
         auto e = buf.get_all(i);
         return vector_type(i, e);
     };
-    ACTOR_MESSAGE("add five element");
+    BOOST_TEST_MESSAGE("add five element");
     for (int i = 0; i < 5; ++i)
         buf.push_back(std::move(i));
     BOOST_CHECK_EQUAL(buf.empty(), false);
     BOOST_CHECK_EQUAL(buf.full(), false);
     BOOST_CHECK_EQUAL(buf.size(), 5u);
     BOOST_CHECK_EQUAL(buf.front(), 0);
-    ACTOR_MESSAGE("drain elements");
+    BOOST_TEST_MESSAGE("drain elements");
     BOOST_CHECK_EQUAL(fetch_all(), vector_type({0, 1, 2, 3, 4}));
     BOOST_CHECK_EQUAL(buf.empty(), true);
     BOOST_CHECK_EQUAL(buf.full(), false);
     BOOST_CHECK_EQUAL(buf.size(), 0u);
-    ACTOR_MESSAGE("add 60 elements (wraps around)");
+    BOOST_TEST_MESSAGE("add 60 elements (wraps around)");
     vector_type expected;
     for (int i = 0; i < 60; ++i) {
         expected.push_back(i);
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(concurrent_access) {
     producers.emplace_back(producer, std::ref(buf), 200, 300);
     auto vec = consumer(buf, 300);
     std::sort(vec.begin(), vec.end());
-    ACTOR_CHECK(std::is_sorted(vec.begin(), vec.end()));
+    BOOST_CHECK(std::is_sorted(vec.begin(), vec.end()));
     BOOST_CHECK_EQUAL(vec.size(), 300u);
     BOOST_CHECK_EQUAL(vec.front(), 0);
     BOOST_CHECK_EQUAL(vec.back(), 299);

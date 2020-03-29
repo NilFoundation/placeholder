@@ -40,7 +40,7 @@ namespace {
     }
 
     void push_from_buf(buf &xs, downstream<int> &out, size_t num) {
-        ACTOR_MESSAGE("push " << num << " messages downstream");
+        BOOST_TEST_MESSAGE("push " << num << " messages downstream");
         auto n = std::min(num, xs.size());
         for (size_t i = 0; i < n; ++i)
             out.push(xs[i]);
@@ -50,7 +50,7 @@ namespace {
     std::function<bool(const buf &)> is_done(scheduled_actor *self) {
         return [=](const buf &xs) {
             if (xs.empty()) {
-                ACTOR_MESSAGE(self->name() << " exhausted its buffer");
+                BOOST_TEST_MESSAGE(self->name() << " exhausted its buffer");
                 return true;
             }
             return false;
@@ -62,9 +62,9 @@ namespace {
         return [=](T &, const error &err) {
             self->state.fin_called += 1;
             if (err == none) {
-                ACTOR_MESSAGE(self->name() << " is done");
+                BOOST_TEST_MESSAGE(self->name() << " is done");
             } else {
-                ACTOR_MESSAGE(self->name() << " aborted with error");
+                BOOST_TEST_MESSAGE(self->name() << " aborted with error");
             }
         };
     }
@@ -241,22 +241,22 @@ BOOST_FIXTURE_TEST_SUITE(local_streaming_tests, fixture)
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_50_items) {
     auto src = sys.spawn(file_reader, 50u);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(src));
-    ACTOR_MESSAGE("start data transmission (a single batch)");
+    BOOST_TEST_MESSAGE("start data transmission (a single batch)");
     expect((downstream_msg::batch), from(src).to(snk));
     tick();
     expect((timeout_msg), from(snk).to(snk));
     expect((timeout_msg), from(src).to(src));
     expect((upstream_msg::ack_batch), from(snk).to(src));
-    ACTOR_MESSAGE("expect close message from src and then result from snk");
+    BOOST_TEST_MESSAGE("expect close message from src and then result from snk");
     expect((downstream_msg::close), from(src).to(snk));
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.x, 1275);
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
 }
@@ -264,22 +264,22 @@ BOOST_AUTO_TEST_CASE(depth_2_pipeline_50_items) {
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_setup2_50_items) {
     auto src = sys.spawn(file_reader, 50u);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(src, "numbers.txt", snk);
     expect((string, actor), from(self).to(src).with("numbers.txt", snk));
     expect((open_stream_msg), from(strong_actor_ptr {nullptr}).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(src));
-    ACTOR_MESSAGE("start data transmission (a single batch)");
+    BOOST_TEST_MESSAGE("start data transmission (a single batch)");
     expect((downstream_msg::batch), from(src).to(snk));
     tick();
     expect((timeout_msg), from(snk).to(snk));
     expect((timeout_msg), from(src).to(src));
     expect((upstream_msg::ack_batch), from(snk).to(src));
-    ACTOR_MESSAGE("expect close message from src and then result from snk");
+    BOOST_TEST_MESSAGE("expect close message from src and then result from snk");
     expect((downstream_msg::close), from(src).to(snk));
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.x, 1275);
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
 }
@@ -287,28 +287,28 @@ BOOST_AUTO_TEST_CASE(depth_2_pipeline_setup2_50_items) {
 BOOST_AUTO_TEST_CASE(delayed_depth_2_pipeline_50_items) {
     auto src = sys.spawn(file_reader, 50u);
     auto snk = sys.spawn(delayed_sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(snk));
     disallow((upstream_msg::ack_open), from(snk).to(src));
     disallow((upstream_msg::forced_drop), from(_).to(src));
-    ACTOR_MESSAGE("send 'ok' to trigger sink to handle open_stream_msg");
+    BOOST_TEST_MESSAGE("send 'ok' to trigger sink to handle open_stream_msg");
     self->send(snk, ok_atom_v);
     expect((ok_atom), from(self).to(snk));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(src));
-    ACTOR_MESSAGE("start data transmission (a single batch)");
+    BOOST_TEST_MESSAGE("start data transmission (a single batch)");
     expect((downstream_msg::batch), from(src).to(snk));
     tick();
     expect((timeout_msg), from(snk).to(snk));
     expect((timeout_msg), from(src).to(src));
     expect((upstream_msg::ack_batch), from(snk).to(src));
-    ACTOR_MESSAGE("expect close message from src and then result from snk");
+    BOOST_TEST_MESSAGE("expect close message from src and then result from snk");
     expect((downstream_msg::close), from(src).to(snk));
     BOOST_CHECK_EQUAL(deref<delayed_sum_up_actor>(snk).state.x, 1275);
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<delayed_sum_up_actor>(snk).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
 }
@@ -316,80 +316,80 @@ BOOST_AUTO_TEST_CASE(delayed_depth_2_pipeline_50_items) {
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_500_items) {
     auto src = sys.spawn(file_reader, 500u);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(src));
-    ACTOR_MESSAGE("start data transmission (loop until src sends 'close')");
+    BOOST_TEST_MESSAGE("start data transmission (loop until src sends 'close')");
     do {
-        ACTOR_MESSAGE("process all batches at the sink");
+        BOOST_TEST_MESSAGE("process all batches at the sink");
         while (received<downstream_msg::batch>(snk)) {
             expect((downstream_msg::batch), from(src).to(snk));
         }
-        ACTOR_MESSAGE("trigger timeouts");
+        BOOST_TEST_MESSAGE("trigger timeouts");
         tick();
         allow((timeout_msg), from(snk).to(snk));
         allow((timeout_msg), from(src).to(src));
-        ACTOR_MESSAGE("process ack_batch in source");
+        BOOST_TEST_MESSAGE("process ack_batch in source");
         expect((upstream_msg::ack_batch), from(snk).to(src));
     } while (!received<downstream_msg::close>(snk));
-    ACTOR_MESSAGE("expect close message from src and then result from snk");
+    BOOST_TEST_MESSAGE("expect close message from src and then result from snk");
     expect((downstream_msg::close), from(src).to(snk));
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.x, 125250);
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
 }
 
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_error_during_handshake) {
-    ACTOR_MESSAGE("streams must abort if a sink fails to initialize its state");
+    BOOST_TEST_MESSAGE("streams must abort if a sink fails to initialize its state");
     auto src = sys.spawn(file_reader, 50u);
     auto snk = sys.spawn(broken_sink);
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((std::string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::forced_drop), from(_).to(src));
     expect((error), from(snk).to(self).with(sec::stream_init_failed));
     run();
-    ACTOR_MESSAGE("verify that the file reader called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that the file reader called its finalizer once");
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
 }
 
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_error_at_source) {
-    ACTOR_MESSAGE("streams must abort if a source fails at runtime");
+    BOOST_TEST_MESSAGE("streams must abort if a source fails at runtime");
     auto src = sys.spawn(file_reader, 500u);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(src));
-    ACTOR_MESSAGE("start data transmission (and abort source)");
+    BOOST_TEST_MESSAGE("start data transmission (and abort source)");
     hard_kill(src);
     expect((downstream_msg::batch), from(src).to(snk));
     expect((downstream_msg::forced_close), from(_).to(snk));
-    ACTOR_MESSAGE("verify that the sink called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that the sink called its finalizer once");
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.fin_called, 1);
 }
 
 BOOST_AUTO_TEST_CASE(depth_2_pipelin_error_at_sink) {
-    ACTOR_MESSAGE("streams must abort if a sink fails at runtime");
+    BOOST_TEST_MESSAGE("streams must abort if a sink fails at runtime");
     auto src = sys.spawn(file_reader, 500u);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(snk));
-    ACTOR_MESSAGE("start data transmission (and abort sink)");
+    BOOST_TEST_MESSAGE("start data transmission (and abort sink)");
     hard_kill(snk);
     expect((upstream_msg::ack_open), from(snk).to(src));
     expect((upstream_msg::forced_drop), from(_).to(src));
-    ACTOR_MESSAGE("verify that the source called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that the source called its finalizer once");
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
 }
 
@@ -403,29 +403,29 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_50_items) {
         allow((timeout_msg), from(stg).to(stg));
         allow((timeout_msg), from(src).to(src));
     };
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(stg));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(stg));
     expect((upstream_msg::ack_open), from(stg).to(src));
-    ACTOR_MESSAGE("start data transmission (a single batch)");
+    BOOST_TEST_MESSAGE("start data transmission (a single batch)");
     expect((downstream_msg::batch), from(src).to(stg));
-    ACTOR_MESSAGE("the stage should delay its first batch since its underfull");
+    BOOST_TEST_MESSAGE("the stage should delay its first batch since its underfull");
     disallow((downstream_msg::batch), from(stg).to(snk));
     next_cycle();
-    ACTOR_MESSAGE("the source shuts down and the stage sends the final batch");
+    BOOST_TEST_MESSAGE("the source shuts down and the stage sends the final batch");
     expect((upstream_msg::ack_batch), from(stg).to(src));
     expect((downstream_msg::close), from(src).to(stg));
     expect((downstream_msg::batch), from(stg).to(snk));
     next_cycle();
-    ACTOR_MESSAGE("the stage shuts down and the sink produces its final result");
+    BOOST_TEST_MESSAGE("the stage shuts down and the sink produces its final result");
     expect((upstream_msg::ack_batch), from(snk).to(stg));
     expect((downstream_msg::close), from(stg).to(snk));
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.x, 625);
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<filter_actor>(stg).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.fin_called, 1);
@@ -436,8 +436,8 @@ BOOST_AUTO_TEST_CASE(depth_4_pipeline_500_items) {
     auto stg1 = sys.spawn(filter);
     auto stg2 = sys.spawn(doubler);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg1) << ACTOR_ARG(stg2) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg1) << ACTOR_ARG(stg2) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg2 * stg1 * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(stg1));
@@ -446,11 +446,11 @@ BOOST_AUTO_TEST_CASE(depth_4_pipeline_500_items) {
     expect((upstream_msg::ack_open), from(snk).to(stg2));
     expect((upstream_msg::ack_open), from(stg2).to(stg1));
     expect((upstream_msg::ack_open), from(stg1).to(src));
-    ACTOR_MESSAGE("start data transmission");
+    BOOST_TEST_MESSAGE("start data transmission");
     run();
-    ACTOR_MESSAGE("check sink result");
+    BOOST_TEST_MESSAGE("check sink result");
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.x, 125000);
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<filter_actor>(stg1).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<doubler_actor>(stg2).state.fin_called, 1);
@@ -461,21 +461,21 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_graceful_shutdown) {
     auto src = sys.spawn(file_reader, 50u);
     auto stg = sys.spawn(filter);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(stg));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(stg));
     expect((upstream_msg::ack_open), from(stg).to(src));
-    ACTOR_MESSAGE("start data transmission (a single batch) and stop the stage");
+    BOOST_TEST_MESSAGE("start data transmission (a single batch) and stop the stage");
     anon_send_exit(stg, exit_reason::user_shutdown);
-    ACTOR_MESSAGE("expect the stage to still transfer pending items to the sink");
+    BOOST_TEST_MESSAGE("expect the stage to still transfer pending items to the sink");
     run();
-    ACTOR_MESSAGE("check sink result");
+    BOOST_TEST_MESSAGE("check sink result");
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.x, 625);
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<file_reader_actor>(src).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<filter_actor>(stg).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.fin_called, 1);
@@ -485,18 +485,18 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_infinite_source) {
     auto src = sys.spawn(infinite_source);
     auto stg = sys.spawn(filter);
     auto snk = sys.spawn(sum_up);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
     expect((open_stream_msg), from(self).to(stg));
     expect((open_stream_msg), from(self).to(snk));
     expect((upstream_msg::ack_open), from(snk).to(stg));
     expect((upstream_msg::ack_open), from(stg).to(src));
-    ACTOR_MESSAGE("send exit to the source and expect the stream to terminate");
+    BOOST_TEST_MESSAGE("send exit to the source and expect the stream to terminate");
     anon_send_exit(src, exit_reason::user_shutdown);
     run();
-    ACTOR_MESSAGE("verify that each actor called its finalizer once");
+    BOOST_TEST_MESSAGE("verify that each actor called its finalizer once");
     BOOST_CHECK_EQUAL(deref<filter_actor>(stg).state.fin_called, 1);
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk).state.fin_called, 1);
 }

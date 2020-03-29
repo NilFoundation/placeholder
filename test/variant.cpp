@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(constructors) {
     BOOST_CHECK_EQUAL(a, 42);
     BOOST_CHECK_EQUAL(b, "bar"s);
     BOOST_CHECK_EQUAL(c, 123);
-    ACTOR_CHECK_NOT_EQUAL(c, "123"s);
+    BOOST_CHECK_NE(c, "123"s);
     BOOST_CHECK_EQUAL(d, uint8_t {252});
 }
 
@@ -146,11 +146,11 @@ BOOST_AUTO_TEST_CASE(n_ary_visit) {
 
 BOOST_AUTO_TEST_CASE(get_if) {
     variant<int, std::string> b = "foo"s;
-    ACTOR_MESSAGE("test get_if directly");
+    BOOST_TEST_MESSAGE("test get_if directly");
     BOOST_CHECK_EQUAL(get_if<int>(&b), nullptr);
-    ACTOR_CHECK_NOT_EQUAL(get_if<std::string>(&b), nullptr);
-    ACTOR_MESSAGE("test get_if via unit test framework");
-    ACTOR_CHECK_NOT_EQUAL(b, 42);
+    BOOST_CHECK_NE(get_if<std::string>(&b), nullptr);
+    BOOST_TEST_MESSAGE("test get_if via unit test framework");
+    BOOST_CHECK_NE(b, 42);
     BOOST_CHECK_EQUAL(b, "foo"s);
 }
 
@@ -158,25 +158,25 @@ BOOST_AUTO_TEST_CASE(less_than) {
     using variant_type = variant<char, int>;
     auto a = variant_type {'x'};
     auto b = variant_type {'y'};
-    ACTOR_CHECK(a < b);
-    ACTOR_CHECK(!(a > b));
-    ACTOR_CHECK(a <= b);
-    ACTOR_CHECK(!(a >= b));
+    BOOST_CHECK(a < b);
+    BOOST_CHECK(!(a > b));
+    BOOST_CHECK(a <= b);
+    BOOST_CHECK(!(a >= b));
     b = 42;
-    ACTOR_CHECK(a < b);
-    ACTOR_CHECK(!(a > b));
-    ACTOR_CHECK(a <= b);
-    ACTOR_CHECK(!(a >= b));
+    BOOST_CHECK(a < b);
+    BOOST_CHECK(!(a > b));
+    BOOST_CHECK(a <= b);
+    BOOST_CHECK(!(a >= b));
     a = 42;
-    ACTOR_CHECK(!(a < b));
-    ACTOR_CHECK(!(a > b));
-    ACTOR_CHECK(a <= b);
-    ACTOR_CHECK(a >= b);
+    BOOST_CHECK(!(a < b));
+    BOOST_CHECK(!(a > b));
+    BOOST_CHECK(a <= b);
+    BOOST_CHECK(a >= b);
     b = 'x';
 }
 
 BOOST_AUTO_TEST_CASE(equality) {
     variant<uint16_t, int> x = 42;
     variant<uint16_t, int> y = uint16_t {42};
-    ACTOR_CHECK_NOT_EQUAL(x, y);
+    BOOST_CHECK_NE(x, y);
 }

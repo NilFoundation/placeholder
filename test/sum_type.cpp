@@ -75,32 +75,32 @@ namespace {
         }
 
         inline T0 &get(std::integral_constant<int, 0>) {
-            ACTOR_REQUIRE_EQUAL(index_, 0);
+            BOOST_REQUIRE_EQUAL(index_, 0);
             return v0;
         }
 
         inline const T0 &get(std::integral_constant<int, 0>) const {
-            ACTOR_REQUIRE_EQUAL(index_, 0);
+            BOOST_REQUIRE_EQUAL(index_, 0);
             return v0;
         }
 
         inline T1 &get(std::integral_constant<int, 1>) {
-            ACTOR_REQUIRE_EQUAL(index_, 1);
+            BOOST_REQUIRE_EQUAL(index_, 1);
             return v1;
         }
 
         inline const T1 &get(std::integral_constant<int, 1>) const {
-            ACTOR_REQUIRE_EQUAL(index_, 1);
+            BOOST_REQUIRE_EQUAL(index_, 1);
             return v1;
         }
 
         inline T2 &get(std::integral_constant<int, 2>) {
-            ACTOR_REQUIRE_EQUAL(index_, 2);
+            BOOST_REQUIRE_EQUAL(index_, 2);
             return v2;
         }
 
         inline const T2 &get(std::integral_constant<int, 2>) const {
-            ACTOR_REQUIRE_EQUAL(index_, 2);
+            BOOST_REQUIRE_EQUAL(index_, 2);
             return v2;
         }
 

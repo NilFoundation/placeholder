@@ -18,19 +18,19 @@ using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(default_constructed_errors_evaluate_to_false) {
     error err;
-    ACTOR_CHECK(!err);
+    BOOST_CHECK(!err);
 }
 
 BOOST_AUTO_TEST_CASE(error_code_zero_is_not_an_error) {
-    ACTOR_CHECK(!error(0, error_category<sec>::value));
-    ACTOR_CHECK(!make_error(sec::none));
-    ACTOR_CHECK(!error {error_code<sec>(sec::none)});
+    BOOST_CHECK(!error(0, error_category<sec>::value));
+    BOOST_CHECK(!make_error(sec::none));
+    BOOST_CHECK(!error {error_code<sec>(sec::none)});
 }
 
 BOOST_AUTO_TEST_CASE(error_codes_that_are_not_zero_are_errors) {
-    ACTOR_CHECK(error(1, error_category<sec>::value));
-    ACTOR_CHECK(make_error(sec::unexpected_message));
-    ACTOR_CHECK(error {error_code<sec>(sec::unexpected_message)});
+    BOOST_CHECK(error(1, error_category<sec>::value));
+    BOOST_CHECK(make_error(sec::unexpected_message));
+    BOOST_CHECK(error {error_code<sec>(sec::unexpected_message)});
 }
 
 BOOST_AUTO_TEST_CASE(errors_convert_enums_to_their_integer_value) {

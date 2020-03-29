@@ -70,17 +70,17 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(task_queue_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(default_constructed) {
-    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
-    ACTOR_REQUIRE_EQUAL(queue.total_task_size(), 0);
-    ACTOR_REQUIRE_EQUAL(queue.peek(), nullptr);
-    ACTOR_REQUIRE_EQUAL(queue.begin(), queue.end());
+    BOOST_REQUIRE_EQUAL(queue.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.total_task_size(), 0);
+    BOOST_REQUIRE_EQUAL(queue.peek(), nullptr);
+    BOOST_REQUIRE_EQUAL(queue.begin(), queue.end());
 }
 
 BOOST_AUTO_TEST_CASE(push_back) {
     queue.emplace_back(1);
     queue.push_back(inode_policy::unique_pointer {new inode(2)});
     queue.push_back(new inode(3));
-    ACTOR_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3]");
+    BOOST_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3]");
 }
 
 BOOST_AUTO_TEST_CASE(lifo_conversion) {
@@ -88,24 +88,24 @@ BOOST_AUTO_TEST_CASE(lifo_conversion) {
     queue.lifo_append(new inode(2));
     queue.lifo_append(new inode(1));
     queue.stop_lifo_append();
-    ACTOR_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3]");
+    BOOST_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3]");
 }
 
 BOOST_AUTO_TEST_CASE(move_construct) {
     fill(queue, 1, 2, 3);
     queue_type q2 = std::move(queue);
-    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
-    ACTOR_REQUIRE_EQUAL(q2.empty(), false);
-    ACTOR_REQUIRE_EQUAL(deep_to_string(q2), "[1, 2, 3]");
+    BOOST_REQUIRE_EQUAL(queue.empty(), true);
+    BOOST_REQUIRE_EQUAL(q2.empty(), false);
+    BOOST_REQUIRE_EQUAL(deep_to_string(q2), "[1, 2, 3]");
 }
 
 BOOST_AUTO_TEST_CASE(move_assign) {
     queue_type q2 {policy};
     fill(q2, 1, 2, 3);
     queue = std::move(q2);
-    ACTOR_REQUIRE_EQUAL(q2.empty(), true);
-    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
-    ACTOR_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3]");
+    BOOST_REQUIRE_EQUAL(q2.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.empty(), false);
+    BOOST_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3]");
 }
 
 BOOST_AUTO_TEST_CASE(append) {
@@ -113,9 +113,9 @@ BOOST_AUTO_TEST_CASE(append) {
     fill(queue, 1, 2, 3);
     fill(q2, 4, 5, 6);
     queue.append(q2);
-    ACTOR_REQUIRE_EQUAL(q2.empty(), true);
-    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
-    ACTOR_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3, 4, 5, 6]");
+    BOOST_REQUIRE_EQUAL(q2.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.empty(), false);
+    BOOST_REQUIRE_EQUAL(deep_to_string(queue), "[1, 2, 3, 4, 5, 6]");
 }
 
 BOOST_AUTO_TEST_CASE(prepend) {
@@ -123,9 +123,9 @@ BOOST_AUTO_TEST_CASE(prepend) {
     fill(queue, 1, 2, 3);
     fill(q2, 4, 5, 6);
     queue.prepend(q2);
-    ACTOR_REQUIRE_EQUAL(q2.empty(), true);
-    ACTOR_REQUIRE_EQUAL(queue.empty(), false);
-    ACTOR_REQUIRE_EQUAL(deep_to_string(queue), "[4, 5, 6, 1, 2, 3]");
+    BOOST_REQUIRE_EQUAL(q2.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.empty(), false);
+    BOOST_REQUIRE_EQUAL(deep_to_string(queue), "[4, 5, 6, 1, 2, 3]");
 }
 
 BOOST_AUTO_TEST_CASE(peek) {
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(task_size) {
     BOOST_CHECK_EQUAL(queue.total_task_size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(to_string) {
+BOOST_AUTO_TEST_CASE(to_string_test) {
     BOOST_CHECK_EQUAL(deep_to_string(queue), "[]");
     fill(queue, 1, 2, 3, 4);
     BOOST_CHECK_EQUAL(deep_to_string(queue), "[1, 2, 3, 4]");

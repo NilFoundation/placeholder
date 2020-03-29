@@ -73,10 +73,10 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(drr_cached_queue_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(default_constructed) {
-    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
-    ACTOR_REQUIRE_EQUAL(queue.deficit(), 0);
-    ACTOR_REQUIRE_EQUAL(queue.total_task_size(), 0);
-    ACTOR_REQUIRE_EQUAL(queue.peek(), nullptr);
+    BOOST_REQUIRE_EQUAL(queue.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
+    BOOST_REQUIRE_EQUAL(queue.total_task_size(), 0);
+    BOOST_REQUIRE_EQUAL(queue.peek(), nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(new_round) {
@@ -118,20 +118,20 @@ BOOST_AUTO_TEST_CASE(skipping) {
         seq += to_string(x);
         return task_result::resume;
     };
-    ACTOR_MESSAGE("make a round on an empty queue");
+    BOOST_TEST_MESSAGE("make a round on an empty queue");
     BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(false));
-    ACTOR_MESSAGE("make a round on a queue with only odd numbers (skip all)");
+    BOOST_TEST_MESSAGE("make a round on a queue with only odd numbers (skip all)");
     fill(queue, 1, 3, 5);
     BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(false));
-    ACTOR_MESSAGE("make a round on a queue with an even number at the front");
+    BOOST_TEST_MESSAGE("make a round on a queue with an even number at the front");
     fill(queue, 2);
     BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "2");
-    ACTOR_MESSAGE("make a round on a queue with an even number in between");
+    BOOST_TEST_MESSAGE("make a round on a queue with an even number in between");
     fill(queue, 7, 9, 4, 11, 13);
     BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "24");
-    ACTOR_MESSAGE("make a round on a queue with an even number at the back");
+    BOOST_TEST_MESSAGE("make a round on a queue with an even number at the back");
     fill(queue, 15, 17, 6);
     BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "246");

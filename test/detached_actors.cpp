@@ -35,12 +35,12 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(detached_actors, fixture)
 
 BOOST_AUTO_TEST_CASE(shutdown) {
-    ACTOR_MESSAGE("does sys shut down after spawning a detached actor?");
+    BOOST_TEST_MESSAGE("does sys shut down after spawning a detached actor?");
     sys.spawn<detached>([] {});
 }
 
 BOOST_AUTO_TEST_CASE(shutdown_with_delayed_send) {
-    ACTOR_MESSAGE(
+    BOOST_TEST_MESSAGE(
         "does sys shut down after spawning a detached actor that used "
         "delayed_send?");
     auto f = [](event_based_actor *self) -> behavior {
@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(shutdown_with_delayed_send) {
 }
 
 BOOST_AUTO_TEST_CASE(shutdown_with_unhandled_delayed_send) {
-    ACTOR_MESSAGE(
+    BOOST_TEST_MESSAGE(
         "does sys shut down after spawning a detached actor that used "
         "delayed_send but didn't bother waiting for it?");
     auto f = [](event_based_actor *self) { self->delayed_send(self, std::chrono::nanoseconds(1), ok_atom_v); };
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(shutdown_with_unhandled_delayed_send) {
 }
 
 BOOST_AUTO_TEST_CASE(shutdown_with_after) {
-    ACTOR_MESSAGE(
+    BOOST_TEST_MESSAGE(
         "does sys shut down after spawning a detached actor that used "
         "after()?");
     auto f = [](event_based_actor *self) -> behavior {
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(shutdown_with_after) {
 }
 
 BOOST_AUTO_TEST_CASE(shutdown_delayed_send_loop) {
-    ACTOR_MESSAGE(
+    BOOST_TEST_MESSAGE(
         "does sys shut down after spawning a detached actor that used "
         "a delayed send loop and was interrupted via exit message?");
     auto f = [](event_based_actor *self) -> behavior {

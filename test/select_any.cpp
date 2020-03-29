@@ -48,12 +48,12 @@ namespace {
 
 #define SUBTEST(message)              \
     run();                            \
-    ACTOR_MESSAGE("subtest: " message); \
+    BOOST_TEST_MESSAGE("subtest: " message); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 
 BOOST_FIXTURE_TEST_SUITE(select_any_tests, fixture)
 
-ACTOR_TEST(select_any picks the first arriving integer) {
+BOOST_AUTO_TEST_CASE(select_any picks the first arriving integer) {
     auto f = [](int x, int y) { return x + y; };
     auto server1 = make_server(f);
     auto server2 = make_server(f);
@@ -81,7 +81,7 @@ ACTOR_TEST(select_any picks the first arriving integer) {
         expect((int, int), from(client).to(server2).with(2, 3));
         expect((int), from(server1).to(client).with(3));
         expect((int), from(server2).to(client).with(5));
-        ACTOR_MESSAGE("request.then picks the first arriving result");
+        BOOST_TEST_MESSAGE("request.then picks the first arriving result");
         BOOST_CHECK_EQUAL(result, 3);
     }
     SUBTEST("request.await") {
@@ -100,12 +100,12 @@ ACTOR_TEST(select_any picks the first arriving integer) {
         // expect((int), from(server1).to(client).with(3));
         // expect((int), from(server2).to(client).with(5));
         run();
-        ACTOR_MESSAGE("request.await froces responses into reverse request order");
+        BOOST_TEST_MESSAGE("request.await froces responses into reverse request order");
         BOOST_CHECK_EQUAL(result, 5);
     }
 }
 
-ACTOR_TEST(select_any calls the error handler at most once) {
+BOOST_AUTO_TEST_CASE(select_any calls the error handler at most once) {
     auto f = [](int, int) -> result<int> { return sec::invalid_argument; };
     auto server1 = make_server(f);
     auto server2 = make_server(f);

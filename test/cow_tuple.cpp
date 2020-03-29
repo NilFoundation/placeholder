@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(move_construction) {
 BOOST_AUTO_TEST_CASE(copy_assignment) {
     cow_tuple<int, int> x {1, 2};
     cow_tuple<int, int> y {3, 4};
-    ACTOR_CHECK_NOT_EQUAL(x, y);
+    BOOST_CHECK_NE(x, y);
     x = y;
     BOOST_CHECK_EQUAL(x, y);
     BOOST_CHECK_EQUAL(x.ptr(), y.ptr());
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(copy_assignment) {
 BOOST_AUTO_TEST_CASE(move_assignment) {
     cow_tuple<int, int> x {1, 2};
     cow_tuple<int, int> y {3, 4};
-    ACTOR_CHECK_NOT_EQUAL(x, y);
+    BOOST_CHECK_NE(x, y);
     x = std::move(y);
     BOOST_CHECK_EQUAL(x, make_tuple(3, 4));
     BOOST_CHECK_EQUAL(x.unique(), true);
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(serialization) {
     BOOST_CHECK_EQUAL(x, y);
     BOOST_CHECK_EQUAL(x.unique(), true);
     BOOST_CHECK_EQUAL(y.unique(), true);
-    ACTOR_CHECK_NOT_EQUAL(x.ptr(), y.ptr());
+    BOOST_CHECK_NE(x.ptr(), y.ptr());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

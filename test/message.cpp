@@ -42,7 +42,7 @@ namespace {
 
 }    // namespace
 
-ACTOR_TEST(messages allow index - based access) {
+BOOST_AUTO_TEST_CASE(messages allow index - based access) {
     auto msg = make_message("abc", uint32_t {10}, 20.0);
     BOOST_CHECK_EQUAL(msg.size(), 3u);
     BOOST_CHECK_EQUAL(msg.types(), (make_type_id_list<std::string, uint32_t, double>()));
@@ -55,7 +55,7 @@ ACTOR_TEST(messages allow index - based access) {
 BOOST_AUTO_TEST_CASE(compare_custom_types) {
     s2 tmp;
     tmp.value[0][1] = 100;
-    ACTOR_CHECK_NOT_EQUAL(to_string(make_message(s2 {})), to_string(make_message(tmp)));
+    BOOST_CHECK_NE(to_string(make_message(s2 {})), to_string(make_message(tmp)));
 }
 
 BOOST_AUTO_TEST_CASE(empty_to_string) {
@@ -88,12 +88,12 @@ BOOST_AUTO_TEST_CASE(integers_to_string) {
       BOOST_CHECK_EQUAL(msg_as_string(ivec{1, 2}, 3, 4, ivec{5, 6, 7}),
                       "([1, 2], 3, 4, [5, 6, 7])");
       auto msg = make_message(ivec{1, 2, 3});
-      ACTOR_MESSAGE("s1: " << type_id_v<s1>);
-      ACTOR_MESSAGE("ivec: " << type_id_v<ivec>);
-      ACTOR_MESSAGE("msg.types: " << msg.types());
-      ACTOR_MESSAGE("msg.types[int]: " << msg.types()[0]);
-      ACTOR_MESSAGE("types #1: " << make_type_id_list<s1>());
-      ACTOR_MESSAGE("types #2: " << make_type_id_list<ivec>());
+      BOOST_TEST_MESSAGE("s1: " << type_id_v<s1>);
+      BOOST_TEST_MESSAGE("ivec: " << type_id_v<ivec>);
+      BOOST_TEST_MESSAGE("msg.types: " << msg.types());
+      BOOST_TEST_MESSAGE("msg.types[int]: " << msg.types()[0]);
+      BOOST_TEST_MESSAGE("types #1: " << make_type_id_list<s1>());
+      BOOST_TEST_MESSAGE("types #2: " << make_type_id_list<ivec>());
       BOOST_CHECK_EQUAL(msg.get_as<ivec>(0), ivec({1, 2, 3}));
       */
 }
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(strings_to_string) {
     auto msg2 = make_message(svec {"one", "two", "three"});
     BOOST_CHECK_EQUAL(to_string(msg2), R"__((["one", "two", "three"]))__");
     auto msg3 = make_message(svec {"one", "two"}, "three", "four", svec {"five", "six", "seven"});
-    ACTOR_CHECK(to_string(msg3) == R"__((["one", "two"], "three", "four", ["five", "six", "seven"]))__");
+    BOOST_CHECK(to_string(msg3) == R"__((["one", "two"], "three", "four", ["five", "six", "seven"]))__");
     auto msg4 = make_message(R"(this is a "test")");
     BOOST_CHECK_EQUAL(to_string(msg4), "(\"this is a \\\"test\\\"\")");
 }
@@ -132,10 +132,10 @@ BOOST_AUTO_TEST_CASE(arrays_to_string) {
     BOOST_CHECK_EQUAL(msg_as_string(s3 {}), "([1, 2, 3, 4])");
 }
 
-ACTOR_TEST(match_elements exposes element types) {
+BOOST_AUTO_TEST_CASE(match_elements exposes element types) {
     auto msg = make_message(put_atom_v, "foo", int64_t {123});
-    ACTOR_CHECK((msg.match_element<put_atom>(0)));
-    ACTOR_CHECK((msg.match_element<string>(1)));
-    ACTOR_CHECK((msg.match_element<int64_t>(2)));
-    ACTOR_CHECK((msg.match_elements<put_atom, string, int64_t>()));
+    BOOST_CHECK((msg.match_element<put_atom>(0)));
+    BOOST_CHECK((msg.match_element<string>(1)));
+    BOOST_CHECK((msg.match_element<int64_t>(2)));
+    BOOST_CHECK((msg.match_elements<put_atom, string, int64_t>()));
 }

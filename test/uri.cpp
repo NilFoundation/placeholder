@@ -209,7 +209,7 @@ namespace {
     bool operator"" _i(const char *cstr, size_t cstr_len) {
         uri result;
         string_view str {cstr, cstr_len};
-        ACTOR_CHECK(!uri::can_parse(str));
+        BOOST_CHECK(!uri::can_parse(str));
         auto err = parse(str, result);
         return err != none;
     }
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(builder_construction) {
 
 #define ROUNDTRIP(str)                  \
     do {                                \
-        ACTOR_CHECK(uri::can_parse(str)); \
+        BOOST_CHECK(uri::can_parse(str)); \
         BOOST_CHECK_EQUAL(str##_u, str);  \
     } while (false)
 
@@ -374,9 +374,9 @@ BOOST_AUTO_TEST_CASE(empty_components) {
 }
 
 BOOST_AUTO_TEST_CASE(invalid_uris) {
-    ACTOR_CHECK("http"_i);
-    ACTOR_CHECK("http://"_i);
-    ACTOR_CHECK("http://foo:66000"_i);
+    BOOST_CHECK("http"_i);
+    BOOST_CHECK("http://"_i);
+    BOOST_CHECK("http://foo:66000"_i);
 }
 
 #define SERIALIZATION_ROUNDTRIP(str) BOOST_CHECK_EQUAL(deserialize(serialize(str##_u)), str)

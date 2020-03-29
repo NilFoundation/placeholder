@@ -50,12 +50,12 @@ namespace {
 
 #define SUBTEST(message)              \
     run();                            \
-    ACTOR_MESSAGE("subtest: " message); \
+    BOOST_TEST_MESSAGE("subtest: " message); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 
 BOOST_FIXTURE_TEST_SUITE(select_all_tests, fixture)
 
-ACTOR_TEST(select_all combines two integer results into one vector) {
+BOOST_AUTO_TEST_CASE(select_all_combines_two_integer_results_into_one_vector) {
     using int_list = std::vector<int>;
     auto f = [](int x, int y) { return x + y; };
     auto server1 = make_server(f);
@@ -104,7 +104,7 @@ ACTOR_TEST(select_all combines two integer results into one vector) {
         expect((int, int), from(client).to(server2).with(2, 3));
         expect((int), from(server1).to(client).with(3));
         expect((int), from(server2).to(client).with(5));
-        ACTOR_MESSAGE("request.then stores results in arrival order");
+        BOOST_TEST_MESSAGE("request.then stores results in arrival order");
         BOOST_CHECK_EQUAL(results, int_list({3, 5}));
     }
     SUBTEST("request.await") {
@@ -123,12 +123,12 @@ ACTOR_TEST(select_all combines two integer results into one vector) {
         // expect((int), from(server1).to(client).with(3));
         // expect((int), from(server2).to(client).with(5));
         run();
-        ACTOR_MESSAGE("request.await froces responses into reverse request order");
+        BOOST_TEST_MESSAGE("request.await froces responses into reverse request order");
         BOOST_CHECK_EQUAL(results, int_list({5, 3}));
     }
 }
 
-ACTOR_TEST(select_all calls the error handler at most once) {
+BOOST_AUTO_TEST_CASE(select_all_calls_the_error_handler_at_most_once) {
     using int_list = std::vector<int>;
     auto f = [](int, int) -> result<int> { return sec::invalid_argument; };
     auto server1 = make_server(f);

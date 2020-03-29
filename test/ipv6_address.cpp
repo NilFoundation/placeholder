@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(constructing) {
 
 BOOST_AUTO_TEST_CASE(comparison) {
     BOOST_CHECK_EQUAL(addr({1, 2, 3}), addr({1, 2, 3}));
-    ACTOR_CHECK_NOT_EQUAL(addr({3, 2, 1}), addr({1, 2, 3}));
+    BOOST_CHECK_NE(addr({3, 2, 1}), addr({1, 2, 3}));
     BOOST_CHECK_EQUAL(addr({}, {0xFFFF, 0x7F00, 0x0001}), make_ipv4_address(127, 0, 0, 1));
 }
 
@@ -70,9 +70,9 @@ BOOST_AUTO_TEST_CASE(from_string) {
         auto err = parse(str, result);
         return err != none;
     };
-    ACTOR_CHECK(invalid("1:2:3:4:5:6:7:8:9"));
-    ACTOR_CHECK(invalid("1:2:3:4::5:6:7:8:9"));
-    ACTOR_CHECK(invalid("1:2:3::4:5:6::7:8:9"));
+    BOOST_CHECK(invalid("1:2:3:4:5:6:7:8:9"));
+    BOOST_CHECK(invalid("1:2:3:4::5:6:7:8:9"));
+    BOOST_CHECK(invalid("1:2:3::4:5:6::7:8:9"));
 }
 
 BOOST_AUTO_TEST_CASE(to_string) {

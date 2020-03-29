@@ -81,13 +81,13 @@ namespace {
 #undef OVERFLOW
 #endif    // OVERFLOW
 
-#define OVERFLOW(type, literal) ACTOR_CHECK(overflow<type>(#literal));
+#define OVERFLOW(type, literal) BOOST_CHECK(overflow<type>(#literal));
 
 #ifdef UNDERFLOW
 #undef UNDERFLOW
 #endif    // UNDERFLOW
 
-#define UNDERFLOW(type, literal) ACTOR_CHECK(underflow<type>(#literal));
+#define UNDERFLOW(type, literal) BOOST_CHECK(underflow<type>(#literal));
 
 BOOST_AUTO_TEST_CASE(read_zeros) {
     ZERO_VALUE(int8_t, 0);

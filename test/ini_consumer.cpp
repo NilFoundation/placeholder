@@ -20,6 +20,30 @@ using std::string;
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::pec> {
+                void operator()(std::ostream &, nil::actor::pec const &) {
+                }
+            };
+
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<template<typename> class V, typename T>
+            struct print_log_value<V<T>> {
+                void operator()(std::ostream &, V<T> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 // List-of-strings.
 using ls = std::vector<std::string>;
 
@@ -84,12 +108,12 @@ BOOST_AUTO_TEST_CASE(ini_consumer) {
     BOOST_CHECK_EQUAL(get<uint16_t>(config, "port"), 4242u);
     BOOST_CHECK_EQUAL(get<ls>(config, "nodes"), ls({"sun", "venus"}));
     BOOST_CHECK_EQUAL(get<string>(config, "logger.file-name"), "foobar.ini");
-    ACTOR_MESSAGE(config);
+    BOOST_TEST_MESSAGE(config);
     BOOST_CHECK_EQUAL(get<timespan>(config, "scheduler.timing"), timespan(2000));
 }
 
 BOOST_AUTO_TEST_CASE(simplified_syntax) {
-    ACTOR_MESSAGE("read test_ini");
+    BOOST_TEST_MESSAGE("read test_ini");
     {
         detail::ini_consumer consumer {options, config};
         string_parser_state res {test_ini.begin(), test_ini.end()};
@@ -97,7 +121,7 @@ BOOST_AUTO_TEST_CASE(simplified_syntax) {
         BOOST_CHECK_EQUAL(res.code, pec::success);
     }
     settings config2;
-    ACTOR_MESSAGE("read test_ini2");
+    BOOST_TEST_MESSAGE("read test_ini2");
     {
         detail::ini_consumer consumer {options, config2};
         string_parser_state res {test_ini2.begin(), test_ini2.end()};

@@ -242,25 +242,25 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(composable_behaviors_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(composition) {
-    ACTOR_MESSAGE("test foo_actor_state");
+    BOOST_TEST_MESSAGE("test foo_actor_state");
     auto f1 = sys.spawn<foo_actor_state>();
     inject((int, int, int), from(self).to(f1).with(1, 2, 4));
     expect((int), from(f1).to(self).with(7));
     inject((double), from(self).to(f1).with(42.0));
     expect((double, double), from(f1).to(self).with(42.0, 42.0));
-    ACTOR_MESSAGE("test composed_behavior<i3_actor_state, d_actor_state>");
+    BOOST_TEST_MESSAGE("test composed_behavior<i3_actor_state, d_actor_state>");
     f1 = sys.spawn<composed_behavior<i3_actor_state, d_actor_state>>();
     inject((int, int, int), from(self).to(f1).with(1, 2, 4));
     expect((int), from(f1).to(self).with(7));
     inject((double), from(self).to(f1).with(42.0));
     expect((double, double), from(f1).to(self).with(42.0, 42.0));
-    ACTOR_MESSAGE("test composed_behavior<i3_actor_state2, d_actor_state>");
+    BOOST_TEST_MESSAGE("test composed_behavior<i3_actor_state2, d_actor_state>");
     f1 = sys.spawn<composed_behavior<i3_actor_state2, d_actor_state>>();
     inject((int, int, int), from(self).to(f1).with(1, 2, 4));
     expect((int), from(f1).to(self).with(8));
     inject((double), from(self).to(f1).with(42.0));
     expect((double, double), from(f1).to(self).with(42.0, 42.0));
-    ACTOR_MESSAGE("test foo_actor_state2");
+    BOOST_TEST_MESSAGE("test foo_actor_state2");
     f1 = sys.spawn<foo_actor_state2>();
     inject((int, int, int), from(self).to(f1).with(1, 2, 4));
     expect((int), from(f1).to(self).with(-5));
@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(param_detaching) {
     put_msg.get_mutable_as<counting_string>(2) = "CAF";
     // Send new put message to dictionary.
     self->send(dict, std::move(put_msg));
-    ACTOR_CHECK(!put_msg);
+    BOOST_CHECK(!put_msg);
     BOOST_CHECK_EQUAL(counting_strings_created.load(), 9);
     BOOST_CHECK_EQUAL(counting_strings_moved.load(), 2);
     BOOST_CHECK_EQUAL(counting_strings_destroyed.load(), 2);
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(param_detaching) {
     BOOST_CHECK_EQUAL(counting_strings_destroyed.load(), 4);
     // Finally, check for original key.
     self->send(dict, std::move(get_msg));
-    ACTOR_CHECK(!get_msg);
+    BOOST_CHECK(!get_msg);
     sched.run();
     self->receive([&](const counting_string &str) {
         // We receive a copy of the value, which is copied out of the map and then
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(streaming) {
     auto &st = deref<sink_actor>(snk).state;
     BOOST_CHECK_EQUAL(st.buf.size(), 50u);
     auto is_even = [](int x) { return x % 2 == 0; };
-    ACTOR_CHECK(std::all_of(st.buf.begin(), st.buf.end(), is_even));
+    BOOST_CHECK(std::all_of(st.buf.begin(), st.buf.end(), is_even));
     anon_send_exit(src, exit_reason::user_shutdown);
     anon_send_exit(stg, exit_reason::user_shutdown);
     anon_send_exit(snk, exit_reason::user_shutdown);

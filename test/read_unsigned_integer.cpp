@@ -66,7 +66,7 @@ namespace {
 #undef OVERFLOW
 #endif    // OVERFLOW
 
-#define OVERFLOW(type, literal) ACTOR_CHECK(overflow<type>(#literal));
+#define OVERFLOW(type, literal) BOOST_CHECK(overflow<type>(#literal));
 
 BOOST_AUTO_TEST_CASE(read_zeros) {
     ZERO_VALUE(uint8_t, 0);

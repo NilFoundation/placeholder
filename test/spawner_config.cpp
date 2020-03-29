@@ -71,43 +71,43 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(spawner_config_tests, fixture)
 
-ACTOR_TEST(parsing - without CLI arguments) {
+BOOST_AUTO_TEST_CASE(parsing - without CLI arguments) {
     auto text = "[foo]\nbar=\"hello\"";
     options("?foo").add<std::string>("bar,b", "some string parameter");
     parse(text);
-    ACTOR_CHECK(cfg.remainder.empty());
+    BOOST_CHECK(cfg.remainder.empty());
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "hello");
 }
 
-ACTOR_TEST(parsing - without CLI cfg.remainder) {
+BOOST_AUTO_TEST_CASE(parsing - without CLI cfg.remainder) {
     auto text = "[foo]\nbar=\"hello\"";
     options("?foo").add<std::string>("bar,b", "some string parameter");
-    ACTOR_MESSAGE("CLI long name");
+    BOOST_TEST_MESSAGE("CLI long name");
     parse(text, {"--foo.bar=test"});
-    ACTOR_CHECK(cfg.remainder.empty());
+    BOOST_CHECK(cfg.remainder.empty());
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "test");
-    ACTOR_MESSAGE("CLI abbreviated long name");
+    BOOST_TEST_MESSAGE("CLI abbreviated long name");
     parse(text, {"--bar=test"});
-    ACTOR_CHECK(cfg.remainder.empty());
+    BOOST_CHECK(cfg.remainder.empty());
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "test");
-    ACTOR_MESSAGE("CLI short name");
+    BOOST_TEST_MESSAGE("CLI short name");
     parse(text, {"-b", "test"});
-    ACTOR_CHECK(cfg.remainder.empty());
+    BOOST_CHECK(cfg.remainder.empty());
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "test");
-    ACTOR_MESSAGE("CLI short name without whitespace");
+    BOOST_TEST_MESSAGE("CLI short name without whitespace");
     parse(text, {"-btest"});
-    ACTOR_CHECK(cfg.remainder.empty());
+    BOOST_CHECK(cfg.remainder.empty());
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "test");
 }
 
-ACTOR_TEST(parsing - with CLI cfg.remainder) {
+BOOST_AUTO_TEST_CASE(parsing - with CLI cfg.remainder) {
     auto text = "[foo]\nbar=\"hello\"";
     options("?foo").add<std::string>("bar,b", "some string parameter");
-    ACTOR_MESSAGE("valid cfg.remainder");
+    BOOST_TEST_MESSAGE("valid cfg.remainder");
     parse(text, {"-b", "test", "hello", "world"});
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "test");
     BOOST_CHECK_EQUAL(cfg.remainder, string_list({"hello", "world"}));
-    ACTOR_MESSAGE("invalid cfg.remainder");
+    BOOST_TEST_MESSAGE("invalid cfg.remainder");
 }
 
 // Checks whether both a synced variable and the corresponding entry in
@@ -220,21 +220,21 @@ BOOST_AUTO_TEST_CASE(basic_and_basic_containers_options) {
     VAR(uri_map);
     VAR(string_map);
     parse(text);
-    ACTOR_MESSAGE("check primitive types");
+    BOOST_TEST_MESSAGE("check primitive types");
     CHECK_SYNCED(some_int, 42);
     CHECK_SYNCED(some_bool, true);
     CHECK_SYNCED(some_double, 1e23);
     CHECK_SYNCED(some_timespan, 123_ms);
     CHECK_SYNCED(some_uri, "foo:bar"_u);
     CHECK_SYNCED(some_string, "string"s);
-    ACTOR_MESSAGE("check list types");
+    BOOST_TEST_MESSAGE("check list types");
     CHECK_SYNCED(some_int_list, int_list({1, 2, 3}));
     CHECK_SYNCED(some_bool_list, bool_list({false, true}));
     CHECK_SYNCED(some_double_list, double_list({1., 2., 3.}));
     CHECK_SYNCED(some_timespan_list, timespan_list({123_ms, 234_ms, 345_ms}));
     CHECK_SYNCED(some_uri_list, uri_list({"foo:a"_u, "foo:b"_u, "foo:c"_u}));
     CHECK_SYNCED(some_string_list, string_list({"a", "b", "c"}));
-    ACTOR_MESSAGE("check dictionary types");
+    BOOST_TEST_MESSAGE("check dictionary types");
     CHECK_SYNCED(some_int_map, int_map({{"a", 1}, {"b", 2}, {"c", 3}}));
     CHECK_SYNCED(some_bool_map, bool_map({{"a", true}, {"b", false}}));
     CHECK_SYNCED(some_double_map, double_map({{"a", 1.}, {"b", 2.}, {"c", 3.}}));

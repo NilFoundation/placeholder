@@ -59,21 +59,21 @@ BOOST_AUTO_TEST_CASE(default_construction) {
 
 BOOST_AUTO_TEST_CASE(iterators) {
     auto xs = make_span(chars);
-    ACTOR_CHECK(std::equal(xs.begin(), xs.end(), chars.begin()));
-    ACTOR_CHECK(std::equal(xs.rbegin(), xs.rend(), rchars.begin()));
+    BOOST_CHECK(std::equal(xs.begin(), xs.end(), chars.begin()));
+    BOOST_CHECK(std::equal(xs.rbegin(), xs.rend(), rchars.begin()));
     auto ys = make_span(shorts);
-    ACTOR_CHECK(std::equal(ys.begin(), ys.end(), shorts.begin()));
-    ACTOR_CHECK(std::equal(ys.rbegin(), ys.rend(), rshorts.begin()));
+    BOOST_CHECK(std::equal(ys.begin(), ys.end(), shorts.begin()));
+    BOOST_CHECK(std::equal(ys.rbegin(), ys.rend(), rshorts.begin()));
 }
 
 BOOST_AUTO_TEST_CASE(subspans) {
     auto xs = make_span(chars);
-    ACTOR_CHECK(equal(xs.first(6), xs));
-    ACTOR_CHECK(equal(xs.last(6), xs));
-    ACTOR_CHECK(equal(xs.subspan(0, 6), xs));
-    ACTOR_CHECK(equal(xs.first(3), i8_list({'a', 'b', 'c'})));
-    ACTOR_CHECK(equal(xs.last(3), i8_list({'d', 'e', 'f'})));
-    ACTOR_CHECK(equal(xs.subspan(2, 2), i8_list({'c', 'd'})));
+    BOOST_CHECK(equal(xs.first(6), xs));
+    BOOST_CHECK(equal(xs.last(6), xs));
+    BOOST_CHECK(equal(xs.subspan(0, 6), xs));
+    BOOST_CHECK(equal(xs.first(3), i8_list({'a', 'b', 'c'})));
+    BOOST_CHECK(equal(xs.last(3), i8_list({'d', 'e', 'f'})));
+    BOOST_CHECK(equal(xs.subspan(2, 2), i8_list({'c', 'd'})));
 }
 
 BOOST_AUTO_TEST_CASE(free_iterator_functions) {
@@ -97,9 +97,9 @@ BOOST_AUTO_TEST_CASE(make_span) {
     auto xs = make_span(chars);
     auto ys = make_span(chars.data(), chars.size());
     auto zs = make_span(chars.data(), chars.data() + chars.size());
-    ACTOR_CHECK(std::equal(xs.begin(), xs.end(), chars.begin()));
-    ACTOR_CHECK(std::equal(ys.begin(), ys.end(), chars.begin()));
-    ACTOR_CHECK(std::equal(zs.begin(), zs.end(), chars.begin()));
+    BOOST_CHECK(std::equal(xs.begin(), xs.end(), chars.begin()));
+    BOOST_CHECK(std::equal(ys.begin(), ys.end(), chars.begin()));
+    BOOST_CHECK(std::equal(zs.begin(), zs.end(), chars.begin()));
     BOOST_CHECK_EQUAL(end(xs), end(ys));
     BOOST_CHECK_EQUAL(end(ys), end(zs));
     BOOST_CHECK_EQUAL(begin(xs), begin(ys));
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(make_span) {
 BOOST_AUTO_TEST_CASE(spans_are_convertible_from_compatible_containers) {
     std::vector<int> xs {1, 2, 3};
     span<const int> ys {xs};
-    ACTOR_CHECK(std::equal(xs.begin(), xs.end(), ys.begin()));
+    BOOST_CHECK(std::equal(xs.begin(), xs.end(), ys.begin()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

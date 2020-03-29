@@ -57,7 +57,7 @@ namespace {
                 // get next element
                 [=](unit_t &, downstream<int32_t> &out, size_t num) {
                     auto &xs = self->state.buf;
-                    ACTOR_MESSAGE("push " << num << " messages downstream");
+                    BOOST_TEST_MESSAGE("push " << num << " messages downstream");
                     auto n = std::min(num, xs.size());
                     for (size_t i = 0; i < n; ++i)
                         out.push(xs[i]);
@@ -66,7 +66,7 @@ namespace {
                 // check whether we reached the end
                 [=](const unit_t &) {
                     if (self->state.buf.empty()) {
-                        ACTOR_MESSAGE(self->name() << " is done");
+                        BOOST_TEST_MESSAGE(self->name() << " is done");
                         return true;
                     }
                     return false;
@@ -91,10 +91,10 @@ namespace {
                         // processing step
                         [](int_ptr &x, int32_t y) { *x += y; },
                         // cleanup
-                        [=](int_ptr &, const error &) { ACTOR_MESSAGE(self->name() << " is done"); });
+                        [=](int_ptr &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); });
                 },
                 [=](join_atom atm, actor src) {
-                    ACTOR_MESSAGE(self->name() << " joins a stream");
+                    BOOST_TEST_MESSAGE(self->name() << " joins a stream");
                     self->send(self * src, atm);
                 }};
     }
@@ -113,10 +113,10 @@ namespace {
             // processing step
             [](unit_t &, downstream<int32_t> &out, int32_t x) { out.push(x); },
             // cleanup
-            [=](unit_t &, const error &) { ACTOR_MESSAGE(self->name() << " is done"); });
+            [=](unit_t &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); });
         return {
             [=](join_atom) {
-                ACTOR_MESSAGE("received 'join' request");
+                BOOST_TEST_MESSAGE("received 'join' request");
                 return self->state.stage->add_outbound_path(std::make_tuple("numbers.txt"));
             },
             [=](const stream<int32_t> &in, std::string &fname) {
@@ -144,12 +144,12 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_fork) {
     auto snk1 = sys.spawn(sum_up);
     auto snk2 = sys.spawn(sum_up);
     auto &st = deref<stream_multiplexer_actor>(stg).state;
-    ACTOR_MESSAGE("connect sinks to the stage (fork)");
+    BOOST_TEST_MESSAGE("connect sinks to the stage (fork)");
     self->send(snk1, join_atom_v, stg);
     self->send(snk2, join_atom_v, stg);
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
-    ACTOR_MESSAGE("connect source to the stage (fork)");
+    BOOST_TEST_MESSAGE("connect source to the stage (fork)");
     self->send(stg * src, "numbers.txt");
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
@@ -168,11 +168,11 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_join) {
     auto stg = sys.spawn(stream_multiplexer);
     auto snk = sys.spawn(sum_up);
     auto &st = deref<stream_multiplexer_actor>(stg).state;
-    ACTOR_MESSAGE("connect sink to the stage");
+    BOOST_TEST_MESSAGE("connect sink to the stage");
     self->send(snk, join_atom_v, stg);
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 1u);
-    ACTOR_MESSAGE("connect sources to the stage (join)");
+    BOOST_TEST_MESSAGE("connect sources to the stage (join)");
     self->send(stg * src1, "numbers.txt");
     self->send(stg * src2, "numbers.txt");
     consume_messages();
@@ -191,35 +191,35 @@ BOOST_AUTO_TEST_CASE(closing_downstreams_before_end_of_stream) {
     auto snk1 = sys.spawn(sum_up);
     auto snk2 = sys.spawn(sum_up);
     auto &st = deref<stream_multiplexer_actor>(stg).state;
-    ACTOR_MESSAGE("connect sinks to the stage (fork)");
+    BOOST_TEST_MESSAGE("connect sinks to the stage (fork)");
     self->send(snk1, join_atom_v, stg);
     self->send(snk2, join_atom_v, stg);
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
-    ACTOR_MESSAGE("connect source to the stage (fork)");
+    BOOST_TEST_MESSAGE("connect source to the stage (fork)");
     self->send(stg * src, "numbers.txt");
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
     BOOST_CHECK_EQUAL(st.stage->inbound_paths().size(), 1u);
-    ACTOR_MESSAGE("do a single round of credit");
+    BOOST_TEST_MESSAGE("do a single round of credit");
     trigger_timeouts();
     consume_messages();
-    ACTOR_MESSAGE("make sure the stream isn't done yet");
-    ACTOR_REQUIRE(!deref<file_reader_actor>(src).state.buf.empty());
+    BOOST_TEST_MESSAGE("make sure the stream isn't done yet");
+    BOOST_REQUIRE(!deref<file_reader_actor>(src).state.buf.empty());
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
     BOOST_CHECK_EQUAL(st.stage->inbound_paths().size(), 1u);
-    ACTOR_MESSAGE("get the next not-yet-buffered integer");
+    BOOST_TEST_MESSAGE("get the next not-yet-buffered integer");
     auto next_pending = deref<file_reader_actor>(src).state.buf.front();
-    ACTOR_REQUIRE_GREATER(next_pending, 0);
+    BOOST_REQUIRE_GREATER(next_pending, 0);
     auto sink1_result = sum(next_pending - 1);
-    ACTOR_MESSAGE("gracefully close sink 1, next pending: " << next_pending);
+    BOOST_TEST_MESSAGE("gracefully close sink 1, next pending: " << next_pending);
     self->send(stg, close_atom_v, 0);
     expect((close_atom, int32_t), from(self).to(stg));
-    ACTOR_MESSAGE("ship remaining elements");
+    BOOST_TEST_MESSAGE("ship remaining elements");
     run();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 1u);
     BOOST_CHECK_EQUAL(st.stage->inbound_paths().size(), 0u);
-    ACTOR_CHECK_LESS(deref<sum_up_actor>(snk1).state.x, sink1_result);
+    BOOST_CHECK_LESS(deref<sum_up_actor>(snk1).state.x, sink1_result);
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk2).state.x, sum(10000));
     self->send_exit(stg, exit_reason::kill);
 }

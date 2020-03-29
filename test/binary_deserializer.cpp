@@ -58,7 +58,7 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(binary_deserializer_tests, fixture)
 
 #define SUBTEST(msg)  \
-    ACTOR_MESSAGE(msg); \
+    BOOST_TEST_MESSAGE(msg); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 
 #define CHECK_EQ(lhs, rhs) BOOST_CHECK_EQUAL(lhs, rhs)

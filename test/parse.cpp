@@ -180,14 +180,14 @@ BOOST_AUTO_TEST_CASE(uris) {
     using uri_list = std::vector<uri>;
     auto x_res = read<uri>("foo:bar");
     if (x_res == none) {
-        ACTOR_ERROR("my:path not recognized as URI");
+        BOOST_ERROR("my:path not recognized as URI");
         return;
     }
     auto x = *x_res;
     BOOST_CHECK_EQUAL(x.scheme(), "foo");
     BOOST_CHECK_EQUAL(x.path(), "bar");
     auto ls = unbox(read<uri_list>("foo:bar, <http://actor-framework.org/doc>"));
-    ACTOR_REQUIRE_EQUAL(ls.size(), 2u);
+    BOOST_REQUIRE_EQUAL(ls.size(), 2u);
     BOOST_CHECK_EQUAL(ls[0].scheme(), "foo");
     BOOST_CHECK_EQUAL(ls[0].path(), "bar");
     BOOST_CHECK_EQUAL(ls[1].scheme(), "http");
@@ -195,37 +195,37 @@ BOOST_AUTO_TEST_CASE(uris) {
     BOOST_CHECK_EQUAL(ls[1].path(), "doc");
 }
 
-ACTOR_TEST(IPv4 address) {
+BOOST_AUTO_TEST_CASE(IPv4 address) {
     BOOST_CHECK_EQUAL(read<ipv4_address>("1.2.3.4"), ipv4_address({1, 2, 3, 4}));
     BOOST_CHECK_EQUAL(read<ipv4_address>("127.0.0.1"), ipv4_address({127, 0, 0, 1}));
     BOOST_CHECK_EQUAL(read<ipv4_address>("256.0.0.1"), pec::integer_overflow);
 }
 
-ACTOR_TEST(IPv4 subnet) {
+BOOST_AUTO_TEST_CASE(IPv4 subnet) {
     BOOST_CHECK_EQUAL(read<ipv4_subnet>("1.2.3.0/24"), ipv4_subnet(ipv4_address({1, 2, 3, 0}), 24));
     BOOST_CHECK_EQUAL(read<ipv4_subnet>("1.2.3.0/33"), pec::integer_overflow);
 }
 
-ACTOR_TEST(IPv4 endpoint) {
+BOOST_AUTO_TEST_CASE(IPv4 endpoint) {
     BOOST_CHECK_EQUAL(read<ipv4_endpoint>("127.0.0.1:0"), ipv4_endpoint(ipv4_address({127, 0, 0, 1}), 0));
     BOOST_CHECK_EQUAL(read<ipv4_endpoint>("127.0.0.1:65535"), ipv4_endpoint(ipv4_address({127, 0, 0, 1}), 65535));
     BOOST_CHECK_EQUAL(read<ipv4_endpoint>("127.0.0.1:65536"), pec::integer_overflow);
 }
 
-ACTOR_TEST(IPv6 address) {
+BOOST_AUTO_TEST_CASE(IPv6 address) {
     BOOST_CHECK_EQUAL(read<ipv6_address>("1.2.3.4"), ipv4_address({1, 2, 3, 4}));
     BOOST_CHECK_EQUAL(read<ipv6_address>("1::"), ipv6_address({{1}, {}}));
     BOOST_CHECK_EQUAL(read<ipv6_address>("::2"), ipv6_address({{}, {2}}));
     BOOST_CHECK_EQUAL(read<ipv6_address>("1::2"), ipv6_address({{1}, {2}}));
 }
 
-ACTOR_TEST(IPv6 subnet) {
+BOOST_AUTO_TEST_CASE(IPv6 subnet) {
     BOOST_CHECK_EQUAL(read<ipv6_subnet>("1.2.3.0/24"), ipv6_subnet(ipv4_address({1, 2, 3, 0}), 24));
     BOOST_CHECK_EQUAL(read<ipv6_subnet>("1::/128"), ipv6_subnet(ipv6_address({1}, {}), 128));
     BOOST_CHECK_EQUAL(read<ipv6_subnet>("1::/129"), pec::integer_overflow);
 }
 
-ACTOR_TEST(IPv6 endpoint) {
+BOOST_AUTO_TEST_CASE(IPv6 endpoint) {
     BOOST_CHECK_EQUAL(read<ipv6_endpoint>("127.0.0.1:0"), ipv6_endpoint(ipv4_address({127, 0, 0, 1}), 0));
     BOOST_CHECK_EQUAL(read<ipv6_endpoint>("127.0.0.1:65535"), ipv6_endpoint(ipv4_address({127, 0, 0, 1}), 65535));
     BOOST_CHECK_EQUAL(read<ipv6_endpoint>("127.0.0.1:65536"), pec::integer_overflow);

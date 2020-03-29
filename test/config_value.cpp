@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(positive_integer) {
     config_value x {4200};
     BOOST_CHECK_EQUAL(holds_alternative<int64_t>(x), true);
     BOOST_CHECK_EQUAL(get<int64_t>(x), 4200);
-    ACTOR_CHECK(get_if<int64_t>(&x) != nullptr);
+    BOOST_CHECK(get_if<int64_t>(&x) != nullptr);
     BOOST_CHECK_EQUAL(holds_alternative<uint64_t>(x), true);
     BOOST_CHECK_EQUAL(get<uint64_t>(x), 4200u);
     BOOST_CHECK_EQUAL(get_if<uint64_t>(&x), uint64_t {4200});
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(negative_integer) {
     config_value x {-1};
     BOOST_CHECK_EQUAL(holds_alternative<int64_t>(x), true);
     BOOST_CHECK_EQUAL(get<int64_t>(x), -1);
-    ACTOR_CHECK(get_if<int64_t>(&x) != nullptr);
+    BOOST_CHECK(get_if<int64_t>(&x) != nullptr);
     BOOST_CHECK_EQUAL(holds_alternative<uint64_t>(x), false);
     BOOST_CHECK_EQUAL(get_if<uint64_t>(&x), none);
     BOOST_CHECK_EQUAL(holds_alternative<int>(x), true);
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(timespan) {
     config_value x {ns500};
     BOOST_CHECK_EQUAL(holds_alternative<timespan>(x), true);
     BOOST_CHECK_EQUAL(get<timespan>(x), ns500);
-    ACTOR_CHECK_NOT_EQUAL(get_if<timespan>(&x), nullptr);
+    BOOST_CHECK_NE(get_if<timespan>(&x), nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(homogeneous_list) {
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(heterogeneous_list) {
     auto xs_value = make_config_value_list(1, "two", 3.0);
     auto &xs = xs_value.as_list();
     BOOST_CHECK_EQUAL(xs_value.type_name(), "list"s);
-    ACTOR_REQUIRE_EQUAL(xs.size(), 3u);
+    BOOST_REQUIRE_EQUAL(xs.size(), 3u);
     BOOST_CHECK_EQUAL(xs[0], 1);
     BOOST_CHECK_EQUAL(xs[1], "two"s);
     BOOST_CHECK_EQUAL(xs[2], 3.0);
@@ -256,8 +256,8 @@ BOOST_AUTO_TEST_CASE(conversion_to_simple_tuple) {
     using tuple_type = std::tuple<size_t, std::string>;
     config_value x {42};
     x.as_list().emplace_back("hello world");
-    ACTOR_REQUIRE(holds_alternative<tuple_type>(x));
-    ACTOR_REQUIRE_NOT_EQUAL(get_if<tuple_type>(&x), none);
+    BOOST_REQUIRE(holds_alternative<tuple_type>(x));
+    BOOST_REQUIRE_NOT_EQUAL(get_if<tuple_type>(&x), none);
     BOOST_CHECK_EQUAL(get<tuple_type>(x), std::make_tuple(size_t {42}, "hello world"s));
 }
 
@@ -266,79 +266,79 @@ BOOST_AUTO_TEST_CASE(conversion_to_nested_tuple) {
     using tuple_type = std::tuple<size_t, inner_tuple_type>;
     config_value x {42};
     x.as_list().emplace_back(make_config_value_list(2, 40));
-    ACTOR_REQUIRE(holds_alternative<tuple_type>(x));
-    ACTOR_REQUIRE_NOT_EQUAL(get_if<tuple_type>(&x), none);
+    BOOST_REQUIRE(holds_alternative<tuple_type>(x));
+    BOOST_REQUIRE_NOT_EQUAL(get_if<tuple_type>(&x), none);
     BOOST_CHECK_EQUAL(get<tuple_type>(x), std::make_tuple(size_t {42}, std::make_tuple(2, 40)));
 }
 
-ACTOR_TEST(conversion to std::vector) {
+BOOST_AUTO_TEST_CASE(conversion to std::vector) {
     using list_type = std::vector<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
-    ACTOR_CHECK(holds_alternative<list_type>(xs));
+    BOOST_CHECK(holds_alternative<list_type>(xs));
     auto ys = get_if<list_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-ACTOR_TEST(conversion to std::list) {
+BOOST_AUTO_TEST_CASE(conversion to std::list) {
     using list_type = std::list<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
-    ACTOR_CHECK(holds_alternative<list_type>(xs));
+    BOOST_CHECK(holds_alternative<list_type>(xs));
     auto ys = get_if<list_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-ACTOR_TEST(conversion to std::set) {
+BOOST_AUTO_TEST_CASE(conversion to std::set) {
     using list_type = std::set<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
-    ACTOR_CHECK(holds_alternative<list_type>(xs));
+    BOOST_CHECK(holds_alternative<list_type>(xs));
     auto ys = get_if<list_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-ACTOR_TEST(conversion to std::unordered_set) {
+BOOST_AUTO_TEST_CASE(conversion to std::unordered_set) {
     using list_type = std::unordered_set<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
-    ACTOR_CHECK(holds_alternative<list_type>(xs));
+    BOOST_CHECK(holds_alternative<list_type>(xs));
     auto ys = get_if<list_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-ACTOR_TEST(conversion to std::map) {
+BOOST_AUTO_TEST_CASE(conversion to std::map) {
     using map_type = std::map<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
-    ACTOR_CHECK(holds_alternative<map_type>(xs));
+    BOOST_CHECK(holds_alternative<map_type>(xs));
     auto ys = get_if<map_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, map_type({{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}}));
 }
 
-ACTOR_TEST(conversion to std::multimap) {
+BOOST_AUTO_TEST_CASE(conversion to std::multimap) {
     using map_type = std::multimap<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
-    ACTOR_CHECK(holds_alternative<map_type>(xs));
+    BOOST_CHECK(holds_alternative<map_type>(xs));
     auto ys = get_if<map_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, map_type({{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}}));
 }
 
-ACTOR_TEST(conversion to std::unordered_map) {
+BOOST_AUTO_TEST_CASE(conversion to std::unordered_map) {
     using map_type = std::unordered_map<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
-    ACTOR_CHECK(holds_alternative<map_type>(xs));
+    BOOST_CHECK(holds_alternative<map_type>(xs));
     auto ys = get_if<map_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, map_type({{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}}));
 }
 
-ACTOR_TEST(conversion to std::unordered_multimap) {
+BOOST_AUTO_TEST_CASE(conversion to std::unordered_multimap) {
     using map_type = std::unordered_multimap<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
-    ACTOR_CHECK(holds_alternative<map_type>(xs));
+    BOOST_CHECK(holds_alternative<map_type>(xs));
     auto ys = get_if<map_type>(&xs);
-    ACTOR_REQUIRE(ys);
+    BOOST_REQUIRE(ys);
     BOOST_CHECK_EQUAL(*ys, map_type({{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}}));
 }

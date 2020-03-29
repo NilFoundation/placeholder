@@ -1,6 +1,6 @@
 include(CMTest)
 
-cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_core)
+cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_actor)
 
 if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
     cm_find_package(Boost REQUIRED COMPONENTS system unit_test_framework)
@@ -14,8 +14,9 @@ macro(define_core_test name)
     cm_test(NAME core_${name}_test SOURCES ${name}.cpp)
 
     target_include_directories(core_${name}_test PRIVATE
-                               "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/include>"
-                               "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
+                               ${CMAKE_CURRENT_SOURCE_DIR}/include
+                               $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                               $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
 
                                ${Boost_INCLUDE_DIRS})
 
@@ -131,7 +132,6 @@ list(APPEND TESTS_NAMES
      broadcast_downstream_manager
      composition
      ini_consumer
-     limited_vector
      uri
      select_all
      dynamic_spawn

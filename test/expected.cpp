@@ -18,15 +18,15 @@
 
 using namespace nil::actor;
 
-#define CHECK(x) ACTOR_CHECK(x);
+#define CHECK(x) BOOST_CHECK(x);
 
 #define CHECK_EQ(x, y) \
-    ACTOR_CHECK(x == y); \
-    ACTOR_CHECK(y == x);
+    BOOST_CHECK(x == y); \
+    BOOST_CHECK(y == x);
 
 #define CHECK_NEQ(x, y) \
-    ACTOR_CHECK(x != y);  \
-    ACTOR_CHECK(y != x);
+    BOOST_CHECK(x != y);  \
+    BOOST_CHECK(y != x);
 
 namespace {
 

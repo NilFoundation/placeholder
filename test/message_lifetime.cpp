@@ -17,6 +17,30 @@
 
 #include <nil/actor/all.hpp>
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::error> {
+                void operator()(std::ostream &, nil::actor::error const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::exit_reason> {
+                void operator()(std::ostream &, nil::actor::exit_reason const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::actor_addr> {
+                void operator()(std::ostream &, nil::actor::actor_addr const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 using namespace nil::actor;
 
 fail_on_copy::fail_on_copy(const fail_on_copy &) {
@@ -102,7 +126,7 @@ BOOST_AUTO_TEST_CASE(message_lifetime_in_scoped_actor) {
     self->send(self, msg);
     BOOST_CHECK_EQUAL(msg.cdata().get_reference_count(), 2u);
     self->receive([&](int &value) {
-        ACTOR_CHECK_NOT_EQUAL(&value, msg.cdata().at(0));
+//        BOOST_CHECK_NE(&value, msg.cdata().at(0));
         value = 10;
     });
     BOOST_CHECK_EQUAL(msg.get_as<int>(0), 42);

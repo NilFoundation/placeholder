@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(construction_and_comparions) {
     int_dict ys {{"foo", 1}, {"bar", 2}};
     BOOST_CHECK_EQUAL(ys.empty(), false);
     BOOST_CHECK_EQUAL(ys.size(), 2u);
-    ACTOR_CHECK_NOT_EQUAL(xs, ys);
+    BOOST_CHECK_NE(xs, ys);
     int_dict zs {ys.begin(), ys.end()};
     BOOST_CHECK_EQUAL(zs.empty(), false);
     BOOST_CHECK_EQUAL(zs.size(), 2u);
@@ -45,23 +45,23 @@ BOOST_AUTO_TEST_CASE(iterators) {
     using vector_type = std::vector<int_dict::value_type>;
     int_dict xs {{"a", 1}, {"b", 2}, {"c", 3}};
     vector_type ys {{"a", 1}, {"b", 2}, {"c", 3}};
-    ACTOR_CHECK(equal(xs.begin(), xs.end(), ys.begin()));
-    ACTOR_CHECK(equal(xs.cbegin(), xs.cend(), ys.cbegin()));
-    ACTOR_CHECK(equal(xs.rbegin(), xs.rend(), ys.rbegin()));
-    ACTOR_CHECK(equal(xs.crbegin(), xs.crend(), ys.crbegin()));
+    BOOST_CHECK(equal(xs.begin(), xs.end(), ys.begin()));
+    BOOST_CHECK(equal(xs.cbegin(), xs.cend(), ys.cbegin()));
+    BOOST_CHECK(equal(xs.rbegin(), xs.rend(), ys.rbegin()));
+    BOOST_CHECK(equal(xs.crbegin(), xs.crend(), ys.crbegin()));
 }
 
 BOOST_AUTO_TEST_CASE(swapping) {
     int_dict xs {{"foo", 1}, {"bar", 2}};
     int_dict ys;
     int_dict zs {{"foo", 1}, {"bar", 2}};
-    ACTOR_CHECK_NOT_EQUAL(xs, ys);
-    ACTOR_CHECK_NOT_EQUAL(ys, zs);
+    BOOST_CHECK_NE(xs, ys);
+    BOOST_CHECK_NE(ys, zs);
     BOOST_CHECK_EQUAL(xs, zs);
     xs.swap(ys);
-    ACTOR_CHECK_NOT_EQUAL(xs, ys);
+    BOOST_CHECK_NE(xs, ys);
     BOOST_CHECK_EQUAL(ys, zs);
-    ACTOR_CHECK_NOT_EQUAL(xs, zs);
+    BOOST_CHECK_NE(xs, zs);
 }
 
 BOOST_AUTO_TEST_CASE(emplacing) {

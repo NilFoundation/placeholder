@@ -99,14 +99,14 @@ BOOST_FIXTURE_TEST_SUITE(atom_tests, fixture)
 BOOST_AUTO_TEST_CASE(make_counted) {
     auto p = make_counted<class0>();
     BOOST_CHECK_EQUAL(class0_instances, 1);
-    ACTOR_CHECK(p->unique());
+    BOOST_CHECK(p->unique());
 }
 
 BOOST_AUTO_TEST_CASE(reset) {
     class0ptr p;
     p.reset(new class0, false);
     BOOST_CHECK_EQUAL(class0_instances, 1);
-    ACTOR_CHECK(p->unique());
+    BOOST_CHECK(p->unique());
 }
 
 BOOST_AUTO_TEST_CASE(get_test_rc) {
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(list) {
     pl.push_back(get_test_ptr());
     pl.push_back(get_test_rc());
     pl.push_back(pl.front()->create());
-    ACTOR_CHECK(pl.front()->unique());
+    BOOST_CHECK(pl.front()->unique());
     BOOST_CHECK_EQUAL(class0_instances, 3);
 }
 

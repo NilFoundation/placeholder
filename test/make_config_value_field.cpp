@@ -120,13 +120,13 @@ namespace {
         void test_foo_field(config_value_field<foobar> &foo_field) {
             foobar x;
             BOOST_CHECK_EQUAL(foo_field.name(), "foo");
-            ACTOR_REQUIRE(foo_field.has_default());
+            BOOST_REQUIRE(foo_field.has_default());
             BOOST_CHECK_EQUAL(foo_field.get(x), config_value(0));
             foo_field.set_default(x);
             BOOST_CHECK_EQUAL(foo_field.get(x), config_value(42));
-            ACTOR_CHECK(!foo_field.valid_input(config_value(1.)));
-            ACTOR_CHECK(!foo_field.valid_input(config_value(-1)));
-            ACTOR_CHECK(!foo_field.set(x, config_value(-1)));
+            BOOST_CHECK(!foo_field.valid_input(config_value(1.)));
+            BOOST_CHECK(!foo_field.valid_input(config_value(-1)));
+            BOOST_CHECK(!foo_field.set(x, config_value(-1)));
             string_view input = "123";
             string_parser_state ps {input.begin(), input.end()};
             foo_field.parse_cli(ps, x);
@@ -192,35 +192,35 @@ BOOST_AUTO_TEST_CASE(getter_and_setter_access) {
     test_foo_field(foo_field);
 }
 
-ACTOR_TEST(object access from dictionary - foobar) {
+BOOST_AUTO_TEST_CASE(object access from dictionary - foobar) {
     settings x;
     put(x, "my-value.bar", "hello");
-    ACTOR_MESSAGE("without foo member");
+    BOOST_TEST_MESSAGE("without foo member");
     {
-        ACTOR_REQUIRE(holds_alternative<foobar>(x, "my-value"));
-        ACTOR_REQUIRE(get_if<foobar>(&x, "my-value") != nil::actor::none);
+        BOOST_REQUIRE(holds_alternative<foobar>(x, "my-value"));
+        BOOST_REQUIRE(get_if<foobar>(&x, "my-value") != nil::actor::none);
         auto fb = get<foobar>(x, "my-value");
         BOOST_CHECK_EQUAL(fb.foo, 123);
         BOOST_CHECK_EQUAL(fb.bar, "hello");
     }
-    ACTOR_MESSAGE("with foo member");
+    BOOST_TEST_MESSAGE("with foo member");
     put(x, "my-value.foo", 42);
     {
-        ACTOR_REQUIRE(holds_alternative<foobar>(x, "my-value"));
-        ACTOR_REQUIRE(get_if<foobar>(&x, "my-value") != nil::actor::none);
+        BOOST_REQUIRE(holds_alternative<foobar>(x, "my-value"));
+        BOOST_REQUIRE(get_if<foobar>(&x, "my-value") != nil::actor::none);
         auto fb = get<foobar>(x, "my-value");
         BOOST_CHECK_EQUAL(fb.foo, 42);
         BOOST_CHECK_EQUAL(fb.bar, "hello");
     }
 }
 
-ACTOR_TEST(object access from dictionary - foobar_foobar) {
+BOOST_AUTO_TEST_CASE(object access from dictionary - foobar_foobar) {
     settings x;
     put(x, "my-value.x.foo", 1);
     put(x, "my-value.x.bar", "hello");
     put(x, "my-value.y.bar", "world");
-    ACTOR_REQUIRE(holds_alternative<foobar_foobar>(x, "my-value"));
-    ACTOR_REQUIRE(get_if<foobar_foobar>(&x, "my-value") != nil::actor::none);
+    BOOST_REQUIRE(holds_alternative<foobar_foobar>(x, "my-value"));
+    BOOST_REQUIRE(get_if<foobar_foobar>(&x, "my-value") != nil::actor::none);
     auto fbfb = get<foobar_foobar>(x, "my-value");
     BOOST_CHECK_EQUAL(fbfb.x.foo, 1);
     BOOST_CHECK_EQUAL(fbfb.x.bar, "hello");
@@ -228,14 +228,14 @@ ACTOR_TEST(object access from dictionary - foobar_foobar) {
     BOOST_CHECK_EQUAL(fbfb.y.bar, "world");
 }
 
-ACTOR_TEST(object access from CLI arguments - foobar) {
+BOOST_AUTO_TEST_CASE(object access from CLI arguments - foobar) {
     opts.add<foobar>("value,v", "some value");
     BOOST_CHECK_EQUAL(read<foobar>({"--value={foo = 1, bar = hello}"}), foobar(1, "hello"));
     BOOST_CHECK_EQUAL(read<foobar>({"-v{bar = \"hello\"}"}), foobar(123, "hello"));
     BOOST_CHECK_EQUAL(read<foobar>({"-v", "{foo = 1, bar =hello ,}"}), foobar(1, "hello"));
 }
 
-ACTOR_TEST(object access from CLI arguments - foobar_foobar) {
+BOOST_AUTO_TEST_CASE(object access from CLI arguments - foobar_foobar) {
     using fbfb = foobar_foobar;
     opts.add<fbfb>("value,v", "some value");
     BOOST_CHECK_EQUAL(read<fbfb>({"-v{x={bar = hello},y={foo=1,bar=world!},}"}), fbfb({123, "hello"}, {1, "world!"}));
@@ -272,7 +272,7 @@ arg2 = {
 
 }    // namespace
 
-ACTOR_TEST(object access from actor system config - file input) {
+BOOST_AUTO_TEST_CASE(object access from actor system config - file input) {
     test_config cfg;
     std::istringstream in {config_text};
     if (auto err = cfg.parse(0, nullptr, in))
@@ -285,7 +285,7 @@ ACTOR_TEST(object access from actor system config - file input) {
     BOOST_CHECK_EQUAL(cfg.fbfb.y.bar, "world");
 }
 
-ACTOR_TEST(object access from actor system config - file input and arguments) {
+BOOST_AUTO_TEST_CASE(object access from actor system config - file input and arguments) {
     std::vector<std::string> args {
         "-2",
         "{y = {bar = CAF, foo = 20}, x = {foo = 10, bar = hello}}",

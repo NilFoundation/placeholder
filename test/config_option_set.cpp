@@ -55,16 +55,16 @@ BOOST_AUTO_TEST_CASE(lookup) {
         .add<float>("test", "opt2,2", "test option 2")
         .add<bool>("test", "flag,fl3", "test flag");
     BOOST_CHECK_EQUAL(opts.size(), 3u);
-    ACTOR_MESSAGE("lookup by long name");
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_long_name_lookup("opt1"), nullptr);
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_long_name_lookup("test.opt2"), nullptr);
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_long_name_lookup("test.flag"), nullptr);
-    ACTOR_MESSAGE("lookup by short name");
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_short_name_lookup('1'), nullptr);
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_short_name_lookup('2'), nullptr);
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_short_name_lookup('f'), nullptr);
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_short_name_lookup('l'), nullptr);
-    ACTOR_CHECK_NOT_EQUAL(opts.cli_short_name_lookup('3'), nullptr);
+    BOOST_TEST_MESSAGE("lookup by long name");
+    BOOST_CHECK_NE(opts.cli_long_name_lookup("opt1"), nullptr);
+    BOOST_CHECK_NE(opts.cli_long_name_lookup("test.opt2"), nullptr);
+    BOOST_CHECK_NE(opts.cli_long_name_lookup("test.flag"), nullptr);
+    BOOST_TEST_MESSAGE("lookup by short name");
+    BOOST_CHECK_NE(opts.cli_short_name_lookup('1'), nullptr);
+    BOOST_CHECK_NE(opts.cli_short_name_lookup('2'), nullptr);
+    BOOST_CHECK_NE(opts.cli_short_name_lookup('f'), nullptr);
+    BOOST_CHECK_NE(opts.cli_short_name_lookup('l'), nullptr);
+    BOOST_CHECK_NE(opts.cli_short_name_lookup('3'), nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(parse_with_ref_syncing) {
@@ -85,25 +85,25 @@ BOOST_AUTO_TEST_CASE(parse_with_ref_syncing) {
     settings cfg;
     vector<string> args {"-i42", "-f", "1e12", "-shello", "--bar.l=[\"hello\", \"world\"]", "-d", "{a=\"a\",b=\"b\"}",
                          "-b"};
-    ACTOR_MESSAGE("parse arguments");
+    BOOST_TEST_MESSAGE("parse arguments");
     auto res = opts.parse(cfg, args);
     BOOST_CHECK_EQUAL(res.first, pec::success);
     if (res.second != args.end())
         BOOST_FAIL("parser stopped at: " << *res.second);
-    ACTOR_MESSAGE("verify referenced values");
+    BOOST_TEST_MESSAGE("verify referenced values");
     BOOST_CHECK_EQUAL(foo_i, 42);
     BOOST_CHECK_EQUAL(foo_f, 1e12);
     BOOST_CHECK_EQUAL(foo_b, true);
     BOOST_CHECK_EQUAL(bar_s, "hello");
     BOOST_CHECK_EQUAL(bar_l, ls({"hello", "world"}));
     BOOST_CHECK_EQUAL(bar_d, ds({{"a", "a"}, {"b", "b"}}));
-    ACTOR_MESSAGE("verify dictionary content");
+    BOOST_TEST_MESSAGE("verify dictionary content");
     BOOST_CHECK_EQUAL(get<int>(cfg, "foo.i"), 42);
 }
 
 BOOST_AUTO_TEST_CASE(string_parameters) {
     opts.add<std::string>("value,v", "some value");
-    ACTOR_MESSAGE("test string option with and without quotes");
+    BOOST_TEST_MESSAGE("test string option with and without quotes");
     BOOST_CHECK_EQUAL(read<std::string>({"--value=\"foo\\tbar\""}), "foo\tbar");
     BOOST_CHECK_EQUAL(read<std::string>({"--value=foobar"}), "foobar");
     BOOST_CHECK_EQUAL(read<std::string>({"-v", "\"foobar\""}), "foobar");
@@ -122,19 +122,19 @@ BOOST_AUTO_TEST_CASE(string_parameters) {
     BOOST_CHECK_EQUAL(read<std::string>({"-v123"}), "123");
 }
 
-ACTOR_TEST(flat CLI options) {
+BOOST_AUTO_TEST_CASE(flat CLI options) {
     key = "foo.bar";
     opts.add<std::string>("?foo", "bar,b", "some value");
-    ACTOR_CHECK(opts.begin()->has_flat_cli_name());
+    BOOST_CHECK(opts.begin()->has_flat_cli_name());
     BOOST_CHECK_EQUAL(read<std::string>({"-b", "foobar"}), "foobar");
     BOOST_CHECK_EQUAL(read<std::string>({"--bar=foobar"}), "foobar");
     BOOST_CHECK_EQUAL(read<std::string>({"--foo.bar=foobar"}), "foobar");
 }
 
-ACTOR_TEST(flat CLI parsing with nested categories) {
+BOOST_AUTO_TEST_CASE(flat CLI parsing with nested categories) {
     key = "foo.goo.bar";
     opts.add<std::string>("?foo.goo", "bar,b", "some value");
-    ACTOR_CHECK(opts.begin()->has_flat_cli_name());
+    BOOST_CHECK(opts.begin()->has_flat_cli_name());
     BOOST_CHECK_EQUAL(read<std::string>({"-b", "foobar"}), "foobar");
     BOOST_CHECK_EQUAL(read<std::string>({"--bar=foobar"}), "foobar");
     BOOST_CHECK_EQUAL(read<std::string>({"--foo.goo.bar=foobar"}), "foobar");

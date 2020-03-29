@@ -117,7 +117,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(read_number_tests, fixture)
 
-ACTOR_TEST(add ascii - unsigned) {
+BOOST_AUTO_TEST_CASE(add ascii - unsigned) {
     using detail::parser::add_ascii;
     auto rd = [](string_view str) -> expected<uint8_t> {
         uint8_t x = 0;
@@ -132,7 +132,7 @@ ACTOR_TEST(add ascii - unsigned) {
         BOOST_CHECK_EQUAL(rd(std::to_string(i)), pec::integer_overflow);
 }
 
-ACTOR_TEST(add ascii - signed) {
+BOOST_AUTO_TEST_CASE(add ascii - signed) {
     auto rd = [](string_view str) -> expected<int8_t> {
         int8_t x = 0;
         for (auto c : str)
@@ -334,7 +334,7 @@ BOOST_AUTO_TEST_CASE(ranges_can_use_signed_integers) {
         BOOST_FAIL("expected expression to produce to an error");        \
     } else {                                                           \
         auto &err = res.error();                                       \
-        ACTOR_CHECK(err.category() == error_category<pec>::value);       \
+        BOOST_CHECK(err.category() == error_category<pec>::value);       \
         BOOST_CHECK_EQUAL(err.code(), static_cast<uint8_t>(enum_value)); \
     }
 

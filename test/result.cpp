@@ -38,7 +38,7 @@ namespace {
 BOOST_AUTO_TEST_CASE(skip) {
     auto x = result<> {skip()};
     BOOST_CHECK_EQUAL(x.flag, rt_skip);
-    ACTOR_CHECK(x.value.empty());
+    BOOST_CHECK(x.value.empty());
 }
 
 BOOST_AUTO_TEST_CASE(value) {
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(expected) {
     x = expected<int> {sec::unexpected_message};
     BOOST_CHECK_EQUAL(x.flag, rt_error);
     BOOST_CHECK_EQUAL(x.err, make_error(sec::unexpected_message));
-    ACTOR_CHECK(x.value.empty());
+    BOOST_CHECK(x.value.empty());
 }
 
 BOOST_AUTO_TEST_CASE(void_specialization) {

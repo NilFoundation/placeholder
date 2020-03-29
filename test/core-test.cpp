@@ -1,4 +1,4 @@
-#define ACTOR_TEST_NO_MAIN
+#define BOOST_AUTO_TEST_CASE_NO_MAIN
 
 #include <nil/actor/test/unit_test_impl.hpp>
 

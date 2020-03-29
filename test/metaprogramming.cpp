@@ -41,30 +41,30 @@ BOOST_AUTO_TEST_CASE(metaprogramming) {
     using std::is_same;
     using l1 = type_list<int, float, std::string>;
     using r1 = tl_reverse<l1>::type;
-    ACTOR_CHECK((is_same<int, tl_at<l1, 0>::type>::value));
-    ACTOR_CHECK((is_same<float, tl_at<l1, 1>::type>::value));
-    ACTOR_CHECK((is_same<std::string, tl_at<l1, 2>::type>::value));
+    BOOST_CHECK((is_same<int, tl_at<l1, 0>::type>::value));
+    BOOST_CHECK((is_same<float, tl_at<l1, 1>::type>::value));
+    BOOST_CHECK((is_same<std::string, tl_at<l1, 2>::type>::value));
     BOOST_CHECK_EQUAL(3u, tl_size<l1>::value);
     BOOST_CHECK_EQUAL(tl_size<r1>::value, tl_size<l1>::value);
-    ACTOR_CHECK((is_same<tl_at<l1, 0>::type, tl_at<r1, 2>::type>::value));
-    ACTOR_CHECK((is_same<tl_at<l1, 1>::type, tl_at<r1, 1>::type>::value));
-    ACTOR_CHECK((is_same<tl_at<l1, 2>::type, tl_at<r1, 0>::type>::value));
+    BOOST_CHECK((is_same<tl_at<l1, 0>::type, tl_at<r1, 2>::type>::value));
+    BOOST_CHECK((is_same<tl_at<l1, 1>::type, tl_at<r1, 1>::type>::value));
+    BOOST_CHECK((is_same<tl_at<l1, 2>::type, tl_at<r1, 0>::type>::value));
     using l2 = tl_concat<type_list<int>, l1>::type;
-    ACTOR_CHECK((is_same<int, tl_head<l2>::type>::value));
-    ACTOR_CHECK((is_same<l1, tl_tail<l2>::type>::value));
+    BOOST_CHECK((is_same<int, tl_head<l2>::type>::value));
+    BOOST_CHECK((is_same<l1, tl_tail<l2>::type>::value));
     BOOST_CHECK_EQUAL((detail::tl_count<l1, is_int>::value), 1u);
     BOOST_CHECK_EQUAL((detail::tl_count<l2, is_int>::value), 2u);
     using il0 = int_list<0, 1, 2, 3, 4, 5>;
     using il1 = int_list<4, 5>;
     using il2 = il_right<il0, 2>::type;
-    ACTOR_CHECK((is_same<il2, il1>::value));
+    BOOST_CHECK((is_same<il2, il1>::value));
     /* test tl_subset_of */ {
         using list_a = type_list<int, float, double>;
         using list_b = type_list<float, int, double, std::string>;
-        ACTOR_CHECK((tl_subset_of<list_a, list_b>::value));
-        ACTOR_CHECK(!(tl_subset_of<list_b, list_a>::value));
-        ACTOR_CHECK((tl_subset_of<list_a, list_a>::value));
-        ACTOR_CHECK((tl_subset_of<list_b, list_b>::value));
+        BOOST_CHECK((tl_subset_of<list_a, list_b>::value));
+        BOOST_CHECK(!(tl_subset_of<list_b, list_a>::value));
+        BOOST_CHECK((tl_subset_of<list_a, list_a>::value));
+        BOOST_CHECK((tl_subset_of<list_b, list_b>::value));
     }
 }
 
@@ -237,14 +237,14 @@ private:
 };
 
 BOOST_AUTO_TEST_CASE(is_comparable) {
-    ACTOR_CHECK((is_comparable<double, std::string>::value) == false);
-    ACTOR_CHECK((is_comparable<foo, foo>::value) == false);
-    ACTOR_CHECK((is_comparable<bar, bar>::value) == true);
-    ACTOR_CHECK((is_comparable<double, bar>::value) == false);
-    ACTOR_CHECK((is_comparable<bar, double>::value) == false);
-    ACTOR_CHECK((is_comparable<baz, baz>::value) == true);
-    ACTOR_CHECK((is_comparable<double, baz>::value) == false);
-    ACTOR_CHECK((is_comparable<baz, double>::value) == false);
-    ACTOR_CHECK((is_comparable<std::string, baz>::value) == false);
-    ACTOR_CHECK((is_comparable<baz, std::string>::value) == false);
+    BOOST_CHECK((is_comparable<double, std::string>::value) == false);
+    BOOST_CHECK((is_comparable<foo, foo>::value) == false);
+    BOOST_CHECK((is_comparable<bar, bar>::value) == true);
+    BOOST_CHECK((is_comparable<double, bar>::value) == false);
+    BOOST_CHECK((is_comparable<bar, double>::value) == false);
+    BOOST_CHECK((is_comparable<baz, baz>::value) == true);
+    BOOST_CHECK((is_comparable<double, baz>::value) == false);
+    BOOST_CHECK((is_comparable<baz, double>::value) == false);
+    BOOST_CHECK((is_comparable<std::string, baz>::value) == false);
+    BOOST_CHECK((is_comparable<baz, std::string>::value) == false);
 }

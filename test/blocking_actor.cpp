@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(timeout_in_scoped_actor) {
     bool timeout_called = false;
     scoped_actor self {system};
     self->receive(after(std::chrono::milliseconds(20)) >> [&] { timeout_called = true; });
-    ACTOR_CHECK(timeout_called);
+    BOOST_CHECK(timeout_called);
 }
 
 // -- scoped_actors using skip -------------------------------------------------
@@ -71,11 +71,11 @@ behavior check_order_behavior_factory(local_actor *, sequence_t::const_iterator 
         auto &seq_it = *seq_it_ptr;
         BOOST_CHECK_EQUAL(i, seq_it->first);
         if (seq_it->second) {
-            ACTOR_MESSAGE("current: " << i << "; awaiting: " << seq_it->first << " SKIPPED");
+            BOOST_TEST_MESSAGE("current: " << i << "; awaiting: " << seq_it->first << " SKIPPED");
             ++seq_it;
             return skip();
         } else {
-            ACTOR_MESSAGE("current: " << i << "; awaiting: " << seq_it->first << " OK");
+            BOOST_TEST_MESSAGE("current: " << i << "; awaiting: " << seq_it->first << " OK");
             ++seq_it;
             return unit;
         }

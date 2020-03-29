@@ -21,7 +21,7 @@
 
 using namespace nil::actor;
 
-ACTOR_TEST(make_typed_behavior automatically deduces its types) {
+BOOST_AUTO_TEST_CASE(make_typed_behavior automatically deduces its types) {
     using handle =
         typed_actor<reacts_to<std::string>, replies_to<int32_t>::with<int32_t>, replies_to<double>::with<double>>;
     auto bhvr =

@@ -38,7 +38,7 @@ namespace {
     template<class T>
     void push(std::deque<T> &xs, downstream<T> &out, size_t num) {
         auto n = std::min(num, xs.size());
-        ACTOR_MESSAGE("push " << n << " messages downstream");
+        BOOST_TEST_MESSAGE("push " << n << " messages downstream");
         for (size_t i = 0; i < n; ++i)
             out.push(xs[i]);
         xs.erase(xs.begin(), xs.begin() + static_cast<ptrdiff_t>(n));
@@ -101,10 +101,10 @@ namespace {
                     // processing step
                     [](intptr &x, int32_t y) { *x += y; },
                     // cleanup and produce result message
-                    [=](intptr &, const error &) { ACTOR_MESSAGE(self->name() << " is done"); });
+                    [=](intptr &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); });
             },
             [=](join_atom, actor src) {
-                ACTOR_MESSAGE(self->name() << " joins a stream");
+                BOOST_TEST_MESSAGE(self->name() << " joins a stream");
                 self->send(self * src, join_atom_v, int32_t {0});
             },
         };
@@ -128,10 +128,10 @@ namespace {
                     // processing step
                     [=](unit_t &, string y) { self->state.strings.emplace_back(std::move(y)); },
                     // cleanup and produce result message
-                    [=](unit_t &, const error &) { ACTOR_MESSAGE(self->name() << " is done"); });
+                    [=](unit_t &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); });
             },
             [=](join_atom, actor src) {
-                ACTOR_MESSAGE(self->name() << " joins a stream");
+                BOOST_TEST_MESSAGE(self->name() << " joins a stream");
                 self->send(self * src, join_atom_v, "dummy");
             },
         };
@@ -164,14 +164,14 @@ namespace {
             using int_vec = std::vector<int>;
             using string_vec = std::vector<string>;
             if (batch.xs.types() == make_type_id_list<int_vec>()) {
-                ACTOR_MESSAGE("handle an integer batch");
+                BOOST_TEST_MESSAGE("handle an integer batch");
                 auto &xs = batch.xs.get_mutable_as<int_vec>(0);
                 auto &buf = out_.get<int_downstream_manager>().buf();
                 buf.insert(buf.end(), xs.begin(), xs.end());
                 return;
             }
             if (batch.xs.types() == make_type_id_list<string_vec>()) {
-                ACTOR_MESSAGE("handle a string batch");
+                BOOST_TEST_MESSAGE("handle a string batch");
                 auto &xs = batch.xs.get_mutable_as<string_vec>(0);
                 auto &buf = out_.get<string_downstream_manager>().buf();
                 buf.insert(buf.end(), xs.begin(), xs.end());
@@ -201,25 +201,25 @@ namespace {
         return {
             [=](join_atom, int32_t) {
                 auto &stg = self->state.stage;
-                ACTOR_MESSAGE("received 'join' request for integers");
+                BOOST_TEST_MESSAGE("received 'join' request for integers");
                 auto result = stg->add_unchecked_outbound_path<int>();
                 stg->out().assign<int_downstream_manager>(result);
                 return result;
             },
             [=](join_atom, std::string) {
                 auto &stg = self->state.stage;
-                ACTOR_MESSAGE("received 'join' request for strings");
+                BOOST_TEST_MESSAGE("received 'join' request for strings");
                 auto result = stg->add_unchecked_outbound_path<string>();
                 stg->out().assign<string_downstream_manager>(result);
                 return result;
             },
             [=](stream<int32_t> in) {
-                ACTOR_MESSAGE("received handshake for integers");
-                ACTOR_MESSAGE(self->current_mailbox_element()->content());
+                BOOST_TEST_MESSAGE("received handshake for integers");
+                BOOST_TEST_MESSAGE(self->current_mailbox_element()->content());
                 return self->state.stage->add_unchecked_inbound_path(in);
             },
             [=](stream<string> in) {
-                ACTOR_MESSAGE("received handshake for strings");
+                BOOST_TEST_MESSAGE("received handshake for strings");
                 return self->state.stage->add_unchecked_inbound_path(in);
             },
         };
@@ -233,20 +233,20 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(fused_downstream_manager_tests, fixture)
 
-ACTOR_TEST_DISABLED(depth_3_pipeline_with_fork) {
+BOOST_AUTO_TEST_CASE_DISABLED(depth_3_pipeline_with_fork) {
     auto src1 = sys.spawn(int_file_reader, 50u);
     auto src2 = sys.spawn(string_file_reader, 50u);
     auto stg = sys.spawn(stream_multiplexer);
     auto snk1 = sys.spawn(sum_up);
     auto snk2 = sys.spawn(collect);
     auto &st = deref<stream_multiplexer_actor>(stg).state;
-    ACTOR_MESSAGE("connect sinks to the fused stage");
+    BOOST_TEST_MESSAGE("connect sinks to the fused stage");
     self->send(snk1, join_atom_v, stg);
     self->send(snk2, join_atom_v, stg);
     sched.run();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
     BOOST_CHECK_EQUAL(st.stage->inbound_paths().size(), 0u);
-    ACTOR_MESSAGE("connect sources to the fused stage");
+    BOOST_TEST_MESSAGE("connect sources to the fused stage");
     self->send(stg * src1, "numbers.txt");
     self->send(stg * src2, "strings.txt");
     sched.run();

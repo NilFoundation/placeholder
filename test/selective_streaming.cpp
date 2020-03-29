@@ -68,7 +68,7 @@ namespace {
                     [=](buf &xs) { xs = make_log(lvl); },
                     // get next element
                     [](buf &xs, downstream<value_type> &out, size_t num) {
-                        ACTOR_MESSAGE("push " << num << " messages downstream");
+                        BOOST_TEST_MESSAGE("push " << num << " messages downstream");
                         auto n = std::min(num, xs.size());
                         for (size_t i = 0; i < n; ++i)
                             out.push(xs[i]);
@@ -77,7 +77,7 @@ namespace {
                     // check whether we reached the end
                     [=](const buf &xs) {
                         if (xs.empty()) {
-                            ACTOR_MESSAGE(self->name() << " is done");
+                            BOOST_TEST_MESSAGE(self->name() << " is done");
                             return true;
                         }
                         return false;
@@ -105,12 +105,12 @@ namespace {
             // processing step
             [](unit_t &, downstream<value_type> &out, value_type x) { out.push(std::move(x)); },
             // cleanup
-            [=](unit_t &, const error &) { ACTOR_MESSAGE(self->name() << " is done"); },
+            [=](unit_t &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); },
             policy::arg<manager_type>::value);
         return {
             [=](join_atom, level lvl) {
                 auto &stg = self->state.stage;
-                ACTOR_MESSAGE("received 'join' request");
+                BOOST_TEST_MESSAGE("received 'join' request");
                 auto result = stg->add_outbound_path();
                 stg->out().set_filter(result, lvl);
                 return result;
@@ -137,7 +137,7 @@ namespace {
                     // processing step
                     [=](unit_t &, value_type x) { self->state.log.emplace_back(std::move(x)); },
                     // cleanup and produce result message
-                    [=](unit_t &, const error &) { ACTOR_MESSAGE(self->name() << " is done"); });
+                    [=](unit_t &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); });
             },
         };
     }
@@ -151,8 +151,8 @@ BOOST_FIXTURE_TEST_SUITE(selective_streaming_tests, test_coordinator_fixture<>)
 BOOST_AUTO_TEST_CASE(select_all) {
     auto src = sys.spawn(log_producer);
     auto snk = sys.spawn(log_consumer);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, level::all);
     run();
     BOOST_CHECK_EQUAL(deref<log_consumer_actor>(snk).state.log, make_log(level::all));
@@ -161,8 +161,8 @@ BOOST_AUTO_TEST_CASE(select_all) {
 BOOST_AUTO_TEST_CASE(select_trace) {
     auto src = sys.spawn(log_producer);
     auto snk = sys.spawn(log_consumer);
-    ACTOR_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
-    ACTOR_MESSAGE("initiate stream handshake");
+    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+    BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, level::trace);
     run();
     BOOST_CHECK_EQUAL(deref<log_consumer_actor>(snk).state.log, make_log(level::trace));

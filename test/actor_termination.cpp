@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(single_multiplexed_request) {
     auto f = [&](event_based_actor *self, actor server) {
         self->request(server, infinite, 42).then([=](int x) {
             ACTOR_LOG_TRACE(ACTOR_ARG(x));
-            ACTOR_REQUIRE_EQUAL(x, 42);
+            BOOST_REQUIRE_EQUAL(x, 42);
         });
     };
     spawn(f, mirror);
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(multiple_multiplexed_requests) {
         for (int i = 0; i < 3; ++i)
             self->request(server, infinite, 42).then([=](int x) {
                 ACTOR_LOG_TRACE(ACTOR_ARG(x));
-                ACTOR_REQUIRE_EQUAL(x, 42);
+                BOOST_REQUIRE_EQUAL(x, 42);
             });
     };
     spawn(f, mirror);
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(multiple_multiplexed_requests) {
 
 BOOST_AUTO_TEST_CASE(single_awaited_request) {
     auto f = [&](event_based_actor *self, actor server) {
-        self->request(server, infinite, 42).await([=](int x) { ACTOR_REQUIRE_EQUAL(x, 42); });
+        self->request(server, infinite, 42).await([=](int x) { BOOST_REQUIRE_EQUAL(x, 42); });
     };
     spawn(f, mirror);
     // run initialization code of testee
@@ -97,8 +97,8 @@ BOOST_AUTO_TEST_CASE(multiple_awaited_requests) {
     auto f = [&](event_based_actor *self, actor server) {
         for (int i = 0; i < 3; ++i)
             self->request(server, infinite, i).await([=](int x) {
-                ACTOR_MESSAGE("received response #" << (i + 1));
-                ACTOR_REQUIRE_EQUAL(x, i);
+                BOOST_TEST_MESSAGE("received response #" << (i + 1));
+                BOOST_REQUIRE_EQUAL(x, i);
             });
     };
     spawn(f, mirror);

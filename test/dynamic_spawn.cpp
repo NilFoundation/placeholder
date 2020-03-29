@@ -77,7 +77,7 @@ namespace {
                 return {
                     after(std::chrono::milliseconds(1)) >>
                         [=] {
-                            ACTOR_MESSAGE("remaining: " << std::to_string(remaining));
+                            BOOST_TEST_MESSAGE("remaining: " << std::to_string(remaining));
                             if (remaining == 1) {
                                 send(parent, ok_atom_v);
                                 quit();
@@ -192,7 +192,7 @@ namespace {
     behavior master(event_based_actor *self) {
         return {
             [=](ok_atom) {
-                ACTOR_MESSAGE("master: received done");
+                BOOST_TEST_MESSAGE("master: received done");
                 self->quit(exit_reason::user_shutdown);
             },
         };
@@ -201,7 +201,7 @@ namespace {
     behavior slave(event_based_actor *self, const actor &master) {
         self->link_to(master);
         self->set_exit_handler([=](exit_msg &msg) {
-            ACTOR_MESSAGE("slave: received exit message");
+            BOOST_TEST_MESSAGE("slave: received exit message");
             self->quit(msg.reason);
         });
         return {
@@ -250,7 +250,7 @@ namespace {
             // destructor of spawner must make sure all
             // destructors of all actors have been run
             BOOST_CHECK_EQUAL(s_actor_instances.load(), 0);
-            ACTOR_MESSAGE("max. # of actor instances: " << s_max_actor_instances.load());
+            BOOST_TEST_MESSAGE("max. # of actor instances: " << s_max_actor_instances.load());
         }
     };
 
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(detached_actors_and_schedulued_actors) {
 
 BOOST_AUTO_TEST_CASE(self_receive_with_zero_timeout) {
     scoped_actor self {system};
-    self->receive([&] { ACTOR_ERROR("Unexpected message"); },
+    self->receive([&] { BOOST_ERROR("Unexpected message"); },
                   after(std::chrono::seconds(0)) >>
                       [] {
                           // mailbox empty
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE(delayed_spawn) {
 BOOST_AUTO_TEST_CASE(spawn_event_testee2_test) {
     scoped_actor self {system};
     spawn_event_testee2(self);
-    self->receive([](ok_atom) { ACTOR_MESSAGE("Received 'ok'"); });
+    self->receive([](ok_atom) { BOOST_TEST_MESSAGE("Received 'ok'"); });
 }
 
 BOOST_AUTO_TEST_CASE(function_spawn) {
@@ -370,7 +370,7 @@ using typed_testee = typed_actor<replies_to<abc_atom>::with<std::string>>;
 
 typed_testee::behavior_type testee() {
     return {[](abc_atom) {
-        ACTOR_MESSAGE("received 'abc'");
+        BOOST_TEST_MESSAGE("received 'abc'");
         return "abc";
     }};
 }
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(constructor_attach) {
         }
 
         void on_exit() override {
-            ACTOR_MESSAGE("spawner::on_exit()");
+            BOOST_TEST_MESSAGE("spawner::on_exit()");
             destroy(testee_);
         }
 
@@ -467,7 +467,7 @@ BOOST_AUTO_TEST_CASE(move_only_argument) {
     BOOST_CHECK_EQUAL(to_string(f(1.f)), "(42)");
 }
 
-ACTOR_TEST(move - only function object) {
+BOOST_AUTO_TEST_CASE(move - only function object) {
     struct move_only_fun {
         move_only_fun() = default;
         move_only_fun(const move_only_fun &) = delete;

@@ -35,12 +35,12 @@ namespace {
         self->delayed_send(self, ms(100), reset_atom_v);
         return {
             [=](reset_atom) {
-                ACTOR_MESSAGE("timer reset");
+                BOOST_TEST_MESSAGE("timer reset");
                 self->state.had_reset = true;
             },
             after(ms(600)) >>
                 [=] {
-                    ACTOR_MESSAGE("timer expired");
+                    BOOST_TEST_MESSAGE("timer expired");
                     ACTOR_REQUIRE(self->state.had_reset);
                     self->quit();
                 },
@@ -52,12 +52,12 @@ namespace {
         delayed_anon_send(self, ms(100), reset_atom_v);
         return {
             [=](reset_atom) {
-                ACTOR_MESSAGE("timer reset");
+                BOOST_TEST_MESSAGE("timer reset");
                 *had_reset = true;
             },
             after(ms(600)) >>
                 [=] {
-                    ACTOR_MESSAGE("timer expired");
+                    BOOST_TEST_MESSAGE("timer expired");
                     ACTOR_REQUIRE(*had_reset);
                     self->quit();
                 },

@@ -113,10 +113,10 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(actor_profiler_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(profilers_record_actor_construction) {
-    ACTOR_MESSAGE("fully initialize CAF, ignore system-internal actors");
+    BOOST_TEST_MESSAGE("fully initialize CAF, ignore system-internal actors");
     run();
     rec.log.clear();
-    ACTOR_MESSAGE("spawn a foo and a bar");
+    BOOST_TEST_MESSAGE("spawn a foo and a bar");
     auto bar = [](stateful_actor<bar_state> *) {};
     auto foo = [bar](stateful_actor<foo_state> *self) { self->spawn(bar); };
     auto foo_actor = sys.spawn(foo);
@@ -132,10 +132,10 @@ BOOST_AUTO_TEST_CASE(profilers_record_actor_construction) {
 }
 
 BOOST_AUTO_TEST_CASE(profilers_record_asynchronous_messaging) {
-    ACTOR_MESSAGE("fully initialize CAF, ignore system-internal actors");
+    BOOST_TEST_MESSAGE("fully initialize CAF, ignore system-internal actors");
     run();
     rec.log.clear();
-    ACTOR_MESSAGE("spawn a foo and a bar");
+    BOOST_TEST_MESSAGE("spawn a foo and a bar");
     auto bar = [](stateful_actor<bar_state> *) -> behavior {
         return {
             [](const std::string &str) {
@@ -168,11 +168,11 @@ BOOST_AUTO_TEST_CASE(profilers_record_asynchronous_messaging) {
                     rec.log);
 }
 
-ACTOR_TEST(profilers record request / response messaging) {
-    ACTOR_MESSAGE("fully initialize CAF, ignore system-internal actors");
+BOOST_AUTO_TEST_CASE(profilers record request / response messaging) {
+    BOOST_TEST_MESSAGE("fully initialize CAF, ignore system-internal actors");
     run();
     rec.log.clear();
-    ACTOR_MESSAGE("spawn a client and a server with one worker");
+    BOOST_TEST_MESSAGE("spawn a client and a server with one worker");
     auto worker = [](stateful_actor<worker_state> *) -> behavior {
         return {
             [](int x, int y) { return x + y; },
@@ -189,7 +189,7 @@ ACTOR_TEST(profilers record request / response messaging) {
     sys.spawn(client, sys.spawn(server, sys.spawn(worker)));
     run();
     for (const auto &line : rec.log) {
-        ACTOR_MESSAGE(line);
+        BOOST_TEST_MESSAGE(line);
     }
     BOOST_CHECK_EQUAL(string_list({
                         "new: worker",

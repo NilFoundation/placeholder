@@ -62,7 +62,7 @@ namespace {
         return out.str();
     }
 
-#define TRACE(name, type, ...) ACTOR_MESSAGE(name << " received a " << #type << ": " << collapse_args(__VA_ARGS__));
+#define TRACE(name, type, ...) BOOST_TEST_MESSAGE(name << " received a " << #type << ": " << collapse_args(__VA_ARGS__));
 
     // -- forward declarations -----------------------------------------------------
 
@@ -209,7 +209,7 @@ namespace {
         }
 
         task_size_type operator()(const dmsg::batch &x) const {
-            ACTOR_REQUIRE_NOT_EQUAL(x.xs.size(), 0u);
+            BOOST_REQUIRE_NOT_EQUAL(x.xs.size(), 0u);
             return x.xs.size();
         }
 
@@ -285,9 +285,9 @@ namespace {
         }
 
         void start_streaming(entity &to, int num_messages) {
-            ACTOR_REQUIRE_NOT_EQUAL(num_messages, 0);
+            BOOST_REQUIRE_NOT_EQUAL(num_messages, 0);
             auto slot = next_slot++;
-            ACTOR_MESSAGE(name << " starts streaming to " << to.name << " on slot " << slot);
+            BOOST_TEST_MESSAGE(name << " starts streaming to " << to.name << " on slot " << slot);
             to.enqueue<handshake>(this, slot);
             auto ptr = std::make_shared<manager>(this, num_messages);
             ptr->output_paths += 1;
@@ -318,7 +318,7 @@ namespace {
             TRACE(name, ack_handshake, ACTOR_ARG(slots), ACTOR_ARG2("sender", sender->name));
             // Get the manager for that stream.
             auto i = pending_managers_.find(slots.receiver);
-            ACTOR_REQUIRE_NOT_EQUAL(i, pending_managers_.end());
+            BOOST_REQUIRE_NOT_EQUAL(i, pending_managers_.end());
             // Create a new queue in the mailbox for incoming traffic.
             // Swap the sender/receiver perspective to generate the ID we are using.
             managers_.emplace(slots, i->second);
@@ -331,7 +331,7 @@ namespace {
             // Get the manager for that stream.
             auto slots = input_slots.invert();
             auto i = managers_.find(input_slots);
-            ACTOR_REQUIRE_NOT_EQUAL(i, managers_.end());
+            BOOST_REQUIRE_NOT_EQUAL(i, managers_.end());
             i->second->push(sender, slots, x.credit);
             if (i->second->done())
                 managers_.erase(i);
@@ -340,11 +340,11 @@ namespace {
         void operator()(entity *sender, stream_slots slots, in *, dmsg::close &) {
             TRACE(name, close, ACTOR_ARG(slots), ACTOR_ARG2("sender", sender->name));
             auto i = managers_.find(slots);
-            ACTOR_REQUIRE_NOT_EQUAL(i, managers_.end());
+            BOOST_REQUIRE_NOT_EQUAL(i, managers_.end());
             i->second->input_paths -= 1;
             get<2>(mbox.queues()).erase_later(slots.receiver);
             if (i->second->done()) {
-                ACTOR_MESSAGE(name << " cleans up path " << deep_to_string(slots));
+                BOOST_TEST_MESSAGE(name << " cleans up path " << deep_to_string(slots));
                 managers_.erase(i);
             }
         }
@@ -366,21 +366,21 @@ namespace {
     };
 
     void manager::push(entity *to, stream_slots slots, int num) {
-        ACTOR_REQUIRE_NOT_EQUAL(num, 0);
+        BOOST_REQUIRE_NOT_EQUAL(num, 0);
         std::vector<int> xs;
         if (x + num > num_messages)
             num = num_messages - x;
         if (num == 0) {
-            ACTOR_MESSAGE(self->name << " is done sending batches");
+            BOOST_TEST_MESSAGE(self->name << " is done sending batches");
             to->enqueue<dmsg>(self, slots, dmsg::close {});
             output_paths -= 1;
             return;
         }
-        ACTOR_MESSAGE(self->name << " pushes " << num << " new items to " << to->name
+        BOOST_TEST_MESSAGE(self->name << " pushes " << num << " new items to " << to->name
                                << " slots = " << deep_to_string(slots));
         for (int i = 0; i < num; ++i)
             xs.emplace_back(x++);
-        ACTOR_REQUIRE_NOT_EQUAL(xs.size(), 0u);
+        BOOST_REQUIRE_NOT_EQUAL(xs.size(), 0u);
         auto emplace_res = to->enqueue<dmsg>(self, slots, dmsg::batch {std::move(xs)});
         BOOST_CHECK_EQUAL(emplace_res, true);
     }
@@ -448,12 +448,12 @@ BOOST_AUTO_TEST_CASE(depth_2_pipeline) {
         alice.mbox.new_round(1, g);
     }
     // Check whether bob and alice cleaned up their state properly.
-    ACTOR_CHECK(get<2>(bob.mbox.queues()).queues().empty());
-    ACTOR_CHECK(get<2>(alice.mbox.queues()).queues().empty());
-    ACTOR_CHECK(bob.pending_managers_.empty());
-    ACTOR_CHECK(alice.pending_managers_.empty());
-    ACTOR_CHECK(bob.managers_.empty());
-    ACTOR_CHECK(alice.managers_.empty());
+    BOOST_CHECK(get<2>(bob.mbox.queues()).queues().empty());
+    BOOST_CHECK(get<2>(alice.mbox.queues()).queues().empty());
+    BOOST_CHECK(bob.pending_managers_.empty());
+    BOOST_CHECK(alice.pending_managers_.empty());
+    BOOST_CHECK(bob.managers_.empty());
+    BOOST_CHECK(alice.managers_.empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

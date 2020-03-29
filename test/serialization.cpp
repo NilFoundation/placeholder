@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(arrays) {
 BOOST_AUTO_TEST_CASE(empty_non_pods) {
     test_empty_non_pod x;
     auto buf = serialize(x);
-    ACTOR_REQUIRE(buf.empty());
+    BOOST_REQUIRE(buf.empty());
     deserialize(buf, x);
 }
 
@@ -249,14 +249,14 @@ BOOST_AUTO_TEST_CASE(messages) {
     auto buf1 = serialize(msg);
     deserialize(buf1, x);
     BOOST_CHECK_EQUAL(to_string(msg), to_string(x));
-    ACTOR_CHECK(is_message(x).equal(i32, i64, ts, te, str, rs));
+    BOOST_CHECK(is_message(x).equal(i32, i64, ts, te, str, rs));
     // serialize fully dynamic message again (do another roundtrip)
     message y;
     auto buf2 = serialize(x);
     BOOST_CHECK_EQUAL(buf1, buf2);
     deserialize(buf2, y);
     BOOST_CHECK_EQUAL(to_string(msg), to_string(y));
-    ACTOR_CHECK(is_message(y).equal(i32, i64, ts, te, str, rs));
+    BOOST_CHECK(is_message(y).equal(i32, i64, ts, te, str, rs));
     BOOST_CHECK_EQUAL(to_string(recursive), to_string(roundtrip(recursive)));
 }
 
@@ -269,8 +269,8 @@ BOOST_AUTO_TEST_CASE(multiple_messages) {
     deserialize(buf, t, m1, m2);
     BOOST_CHECK_EQUAL(std::make_tuple(t, to_string(m1), to_string(m2)),
                     std::make_tuple(te, to_string(m), to_string(msg)));
-    ACTOR_CHECK(is_message(m1).equal(rs, te));
-    ACTOR_CHECK(is_message(m2).equal(i32, i64, ts, te, str, rs));
+    BOOST_CHECK(is_message(m1).equal(rs, te));
+    BOOST_CHECK(is_message(m2).equal(i32, i64, ts, te, str, rs));
 }
 
 BOOST_AUTO_TEST_CASE(long_sequences) {
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(long_sequences) {
 }
 
 BOOST_AUTO_TEST_CASE(non_empty_vector) {
-    ACTOR_MESSAGE("deserializing into a non-empty vector overrides any content");
+    BOOST_TEST_MESSAGE("deserializing into a non-empty vector overrides any content");
     std::vector<int> foo {1, 2, 3};
     std::vector<int> bar {0};
     auto buf = serialize(foo);
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(non_empty_vector) {
 }
 
 BOOST_AUTO_TEST_CASE(variant_with_tree_types) {
-    ACTOR_MESSAGE("deserializing into a non-empty vector overrides any content");
+    BOOST_TEST_MESSAGE("deserializing into a non-empty vector overrides any content");
     using test_variant = variant<int, double, std::string>;
     test_variant x {42};
     BOOST_CHECK_EQUAL(x, roundtrip(x));

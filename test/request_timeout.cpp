@@ -79,7 +79,7 @@ namespace {
         self->request(buddy, milliseconds(100), ping_atom_v)
             .then([=](pong_atom) { BOOST_FAIL("received pong atom"); },
                   [=](const error &err) {
-                      ACTOR_REQUIRE(err == sec::request_timeout);
+                      BOOST_REQUIRE(err == sec::request_timeout);
                       *had_timeout = true;
                   });
         return {};    // dummy value in order to give all 3 variants the same fun sig
@@ -95,7 +95,7 @@ namespace {
             [=](timeout_atom) {
                 self->state.had_first_timeout = true;
                 self->become(after(milliseconds(100)) >> [=] {
-                    ACTOR_CHECK(self->state.had_first_timeout);
+                    BOOST_CHECK(self->state.had_first_timeout);
                     *had_timeout = true;
                     self->quit();
                 });
@@ -113,7 +113,7 @@ namespace {
                 [=] {
                     self->state.had_first_timeout = true;
                     self->become(after(milliseconds(100)) >> [=] {
-                        ACTOR_CHECK(self->state.had_first_timeout);
+                        BOOST_CHECK(self->state.had_first_timeout);
                         *had_timeout = true;
                         self->quit();
                     });
@@ -131,13 +131,13 @@ namespace {
                     self->quit(sec::unexpected_message);
                 },
                 [=](const error &err) {
-                    ACTOR_REQUIRE_EQUAL(err, sec::request_timeout);
+                    BOOST_REQUIRE_EQUAL(err, sec::request_timeout);
                     self->state.had_first_timeout = true;
                 });
         return {
             after(milliseconds(100)) >>
                 [=] {
-                    ACTOR_CHECK(self->state.had_first_timeout);
+                    BOOST_CHECK(self->state.had_first_timeout);
                     *had_timeout = true;
                     self->quit();
                 },
@@ -149,7 +149,7 @@ namespace {
         self->request(pong_actor, milliseconds(100), ping_atom_v)
             .then([=](pong_atom) { BOOST_FAIL("received pong atom"); },
                   [=](const error &err) {
-                      ACTOR_REQUIRE_EQUAL(err, sec::request_timeout);
+                      BOOST_REQUIRE_EQUAL(err, sec::request_timeout);
                       if (!self->state.had_first_timeout)
                           self->state.had_first_timeout = true;
                       else
@@ -158,7 +158,7 @@ namespace {
         self->request(pong_actor, milliseconds(100), ping_atom_v)
             .then([=](pong_atom) { BOOST_FAIL("received pong atom"); },
                   [=](const error &err) {
-                      ACTOR_REQUIRE_EQUAL(err, sec::request_timeout);
+                      BOOST_REQUIRE_EQUAL(err, sec::request_timeout);
                       if (!self->state.had_first_timeout)
                           self->state.had_first_timeout = true;
                       else
@@ -172,7 +172,7 @@ namespace {
         self->request(pong_actor, milliseconds(100), ping_atom_v)
             .await([=](pong_atom) { BOOST_FAIL("received pong atom"); },
                    [=](const error &err) {
-                       ACTOR_REQUIRE_EQUAL(err, sec::request_timeout);
+                       BOOST_REQUIRE_EQUAL(err, sec::request_timeout);
                        if (!self->state.had_first_timeout)
                            self->state.had_first_timeout = true;
                        else
@@ -181,7 +181,7 @@ namespace {
         self->request(pong_actor, milliseconds(100), ping_atom_v)
             .await([=](pong_atom) { BOOST_FAIL("received pong atom"); },
                    [=](const error &err) {
-                       ACTOR_REQUIRE_EQUAL(err, sec::request_timeout);
+                       BOOST_REQUIRE_EQUAL(err, sec::request_timeout);
                        if (!self->state.had_first_timeout)
                            self->state.had_first_timeout = true;
                        else
@@ -195,7 +195,7 @@ namespace {
         self->request(pong_actor, milliseconds(100), ping_atom_v)
             .then([=](pong_atom) { BOOST_FAIL("received pong atom"); },
                   [=](const error &err) {
-                      ACTOR_REQUIRE_EQUAL(err, sec::request_timeout);
+                      BOOST_REQUIRE_EQUAL(err, sec::request_timeout);
                       if (!self->state.had_first_timeout)
                           self->state.had_first_timeout = true;
                       else
@@ -204,7 +204,7 @@ namespace {
         self->request(pong_actor, milliseconds(100), ping_atom_v)
             .await([=](pong_atom) { BOOST_FAIL("received pong atom"); },
                    [=](const error &err) {
-                       ACTOR_REQUIRE_EQUAL(err, sec::request_timeout);
+                       BOOST_REQUIRE_EQUAL(err, sec::request_timeout);
                        if (!self->state.had_first_timeout)
                            self->state.had_first_timeout = true;
                        else
@@ -221,19 +221,19 @@ BOOST_AUTO_TEST_CASE(single_timeout) {
     test_vec fs {{ping_single1, "ping_single1"}, {ping_single2, "ping_single2"}, {ping_single3, "ping_single3"}};
     for (auto f : fs) {
         bool had_timeout = false;
-        ACTOR_MESSAGE("test implementation " << f.second);
+        BOOST_TEST_MESSAGE("test implementation " << f.second);
         auto testee = sys.spawn(f.first, &had_timeout, sys.spawn<lazy_init>(pong));
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 1u);
-        ACTOR_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 1u);
+        BOOST_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
         sched.run_once();
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 1u);
-        ACTOR_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "pong"s);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 1u);
+        BOOST_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "pong"s);
         sched.trigger_timeout();
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 2u);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 2u);
         // now, the timeout message is already dispatched, while pong did
         // not respond to the message yet, i.e., timeout arrives before response
         BOOST_CHECK_EQUAL(sched.run(), 2u);
-        ACTOR_CHECK(had_timeout);
+        BOOST_CHECK(had_timeout);
     }
 }
 
@@ -241,25 +241,25 @@ BOOST_AUTO_TEST_CASE(nested_timeout) {
     test_vec fs {{ping_nested1, "ping_nested1"}, {ping_nested2, "ping_nested2"}, {ping_nested3, "ping_nested3"}};
     for (auto f : fs) {
         bool had_timeout = false;
-        ACTOR_MESSAGE("test implementation " << f.second);
+        BOOST_TEST_MESSAGE("test implementation " << f.second);
         auto testee = sys.spawn(f.first, &had_timeout, sys.spawn<lazy_init>(pong));
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 1u);
-        ACTOR_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 1u);
+        BOOST_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
         sched.run_once();
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 1u);
-        ACTOR_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "pong"s);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 1u);
+        BOOST_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "pong"s);
         sched.trigger_timeout();
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 2u);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 2u);
         // now, the timeout message is already dispatched, while pong did
         // not respond to the message yet, i.e., timeout arrives before response
         sched.run();
         // dispatch second timeout
-        ACTOR_REQUIRE_EQUAL(sched.trigger_timeout(), true);
-        ACTOR_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
-        ACTOR_CHECK(!had_timeout);
-        ACTOR_CHECK(sched.next_job<ping_actor>().state.had_first_timeout);
+        BOOST_REQUIRE_EQUAL(sched.trigger_timeout(), true);
+        BOOST_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
+        BOOST_CHECK(!had_timeout);
+        BOOST_CHECK(sched.next_job<ping_actor>().state.had_first_timeout);
         sched.run();
-        ACTOR_CHECK(had_timeout);
+        BOOST_CHECK(had_timeout);
     }
 }
 
@@ -269,19 +269,19 @@ BOOST_AUTO_TEST_CASE(multiplexed_timeout) {
                  {ping_multiplexed3, "ping_multiplexed3"}};
     for (auto f : fs) {
         bool had_timeout = false;
-        ACTOR_MESSAGE("test implementation " << f.second);
+        BOOST_TEST_MESSAGE("test implementation " << f.second);
         auto testee = sys.spawn(f.first, &had_timeout, sys.spawn<lazy_init>(pong));
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 1u);
-        ACTOR_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 1u);
+        BOOST_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "ping"s);
         sched.run_once();
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 1u);
-        ACTOR_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "pong"s);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 1u);
+        BOOST_REQUIRE_EQUAL(sched.next_job<local_actor>().name(), "pong"s);
         sched.trigger_timeouts();
-        ACTOR_REQUIRE_EQUAL(sched.jobs.size(), 2u);
+        BOOST_REQUIRE_EQUAL(sched.jobs.size(), 2u);
         // now, the timeout message is already dispatched, while pong did
         // not respond to the message yet, i.e., timeout arrives before response
         sched.run();
-        ACTOR_CHECK(had_timeout);
+        BOOST_CHECK(had_timeout);
     }
 }
 

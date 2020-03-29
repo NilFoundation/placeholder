@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(unit_results) {
     };
     for (auto a : as) {
         self->request(aut, infinite, a)
-            .receive([&] { ACTOR_MESSAGE("actor under test correctly replied to " << to_string(a)); },
+            .receive([&] { BOOST_TEST_MESSAGE("actor under test correctly replied to " << to_string(a)); },
                      [&](const error &) { BOOST_FAIL("actor under test failed at input " << to_string(a)); });
     }
 }

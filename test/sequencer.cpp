@@ -53,7 +53,7 @@ namespace {
         static bool exited(const Actor &handle) {
             auto ptr = actor_cast<abstract_actor *>(handle);
             auto dptr = dynamic_cast<monitorable_actor *>(ptr);
-            ACTOR_REQUIRE(dptr != nullptr);
+            BOOST_REQUIRE(dptr != nullptr);
             return dptr->getf(abstract_actor::is_terminated_flag);
         }
 
@@ -79,8 +79,8 @@ BOOST_AUTO_TEST_CASE(identity) {
     BOOST_CHECK_EQUAL(&h->home_system(), &g->home_system());
 
     BOOST_CHECK_EQUAL(h->node(), g->node());
-    ACTOR_CHECK_NOT_EQUAL(h->id(), g->id());
-    ACTOR_CHECK_NOT_EQUAL(h.address(), g.address());
+    BOOST_CHECK_NE(h->id(), g->id());
+    BOOST_CHECK_NE(h.address(), g.address());
     BOOST_CHECK_EQUAL(h->message_types(), g->home_system().message_types(h));
 }
 
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(lifetime_1a) {
     anon_send_exit(g, exit_reason::kill);
     self->wait_for(g);
     auto h = f * g;
-    ACTOR_CHECK(exited(h));
+    BOOST_CHECK(exited(h));
 }
 
 // spawned dead if `f` is already dead upon spawning
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(lifetime_1b) {
     anon_send_exit(f, exit_reason::kill);
     self->wait_for(f);
     auto h = f * g;
-    ACTOR_CHECK(exited(h));
+    BOOST_CHECK(exited(h));
 }
 
 // `f.g` exits when `g` exits
@@ -127,9 +127,9 @@ BOOST_AUTO_TEST_CASE(request_response_promise) {
     auto f = system.spawn(testee);
     auto h = f * g;
     anon_send_exit(h, exit_reason::kill);
-    ACTOR_CHECK(exited(h));
+    BOOST_CHECK(exited(h));
     self->request(h, infinite, 1)
-        .receive([](int) { ACTOR_CHECK(false); },
+        .receive([](int) { BOOST_CHECK(false); },
                  [](error err) { BOOST_CHECK_EQUAL(err.code(), static_cast<uint8_t>(sec::request_receiver_down)); });
 }
 

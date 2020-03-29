@@ -42,13 +42,13 @@ BOOST_AUTO_TEST_CASE(equality) {
 
 BOOST_AUTO_TEST_CASE(contains) {
     auto local = ipv6_address {{0xbebe, 0xbebe}, {}} / 32;
-    ACTOR_CHECK(local.contains(ipv6_address({0xbebe, 0xbebe, 0xbebe}, {})));
-    ACTOR_CHECK(!local.contains(ipv6_address({0xbebe, 0xbebf}, {})));
+    BOOST_CHECK(local.contains(ipv6_address({0xbebe, 0xbebe, 0xbebe}, {})));
+    BOOST_CHECK(!local.contains(ipv6_address({0xbebe, 0xbebf}, {})));
 }
 
 BOOST_AUTO_TEST_CASE(embedding) {
     ipv4_subnet v4_local {make_ipv4_address(127, 0, 0, 1), 8};
     ipv6_subnet local {v4_local};
-    ACTOR_CHECK(local.embeds_v4());
+    BOOST_CHECK(local.embeds_v4());
     BOOST_CHECK_EQUAL(local.prefix_length(), 104u);
 }

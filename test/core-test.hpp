@@ -15,7 +15,7 @@ using float_actor = nil::actor::typed_actor<nil::actor::reacts_to<float>>;
 using int_actor = nil::actor::typed_actor<nil::actor::replies_to<int32_t>::with<int32_t>>;
 
 using foo_actor = nil::actor::typed_actor<nil::actor::replies_to<int32_t, int32_t, int32_t>::with<int32_t>,
-                                   nil::actor::replies_to<double>::with<double, double>>;
+                                          nil::actor::replies_to<double>::with<double, double>>;
 
 // A string that counts how many instances where created. Implemented in
 // composable_behavior.cpp.

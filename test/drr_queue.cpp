@@ -69,28 +69,52 @@ namespace {
 
 }    // namespace
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<typename T>
+            struct print_log_value<nil::actor::intrusive::forward_iterator<T>> {
+                void operator()(std::ostream &, nil::actor::intrusive::forward_iterator<T> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::intrusive::new_round_result> {
+                void operator()(std::ostream &, nil::actor::intrusive::new_round_result const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 BOOST_FIXTURE_TEST_SUITE(drr_queue_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(default_constructed) {
-    ACTOR_REQUIRE_EQUAL(queue.empty(), true);
-    ACTOR_REQUIRE_EQUAL(queue.deficit(), 0);
-    ACTOR_REQUIRE_EQUAL(queue.total_task_size(), 0);
-    ACTOR_REQUIRE_EQUAL(queue.peek(), nullptr);
-    ACTOR_REQUIRE_EQUAL(queue.next(), nullptr);
-    ACTOR_REQUIRE_EQUAL(queue.begin(), queue.end());
+    BOOST_REQUIRE_EQUAL(queue.empty(), true);
+    BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
+    BOOST_REQUIRE_EQUAL(queue.total_task_size(), 0);
+    BOOST_REQUIRE_EQUAL(queue.peek(), nullptr);
+    BOOST_REQUIRE_EQUAL(queue.next(), nullptr);
+    BOOST_REQUIRE_EQUAL(queue.begin(), queue.end());
 }
 
 BOOST_AUTO_TEST_CASE(inc_deficit) {
     // Increasing the deficit does nothing as long as the queue is empty.
     queue.inc_deficit(100);
-    ACTOR_REQUIRE_EQUAL(queue.deficit(), 0);
+    BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
     // Increasing the deficit must work on non-empty queues.
     fill(queue, 1);
     queue.inc_deficit(100);
-    ACTOR_REQUIRE_EQUAL(queue.deficit(), 100);
+    BOOST_REQUIRE_EQUAL(queue.deficit(), 100);
     // Deficit must drop back down to 0 once the queue becomes empty.
     queue.next();
-    ACTOR_REQUIRE_EQUAL(queue.deficit(), 0);
+    BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(new_round) {
@@ -168,12 +192,6 @@ BOOST_AUTO_TEST_CASE(peek_all) {
     BOOST_CHECK_EQUAL(queue_to_string(), "1, 2, 3");
     queue.emplace_back(4);
     BOOST_CHECK_EQUAL(queue_to_string(), "1, 2, 3, 4");
-}
-
-BOOST_AUTO_TEST_CASE(to_string) {
-    BOOST_CHECK_EQUAL(deep_to_string(queue), "[]");
-    fill(queue, 1, 2, 3, 4);
-    BOOST_CHECK_EQUAL(deep_to_string(queue), "[1, 2, 3, 4]");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

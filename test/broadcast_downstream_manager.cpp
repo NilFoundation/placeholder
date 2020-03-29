@@ -25,6 +25,24 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<template<typename> class V, typename T>
+            struct print_log_value<V<T>> {
+                void operator()(std::ostream &, V<T> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     using bcast_manager = broadcast_downstream_manager<int>;
@@ -103,7 +121,7 @@ namespace {
 
         void add_path_to(entity &x, int32_t desired_batch_size) {
             auto ptr = mgr.out().add_path(next_slot++, x.ctrl());
-            ACTOR_REQUIRE(ptr != nullptr);
+            BOOST_REQUIRE(ptr != nullptr);
             ptr->set_desired_batch_size(desired_batch_size);
             ptr->slots.receiver = x.next_slot++;
             paths.emplace_back(ptr);
@@ -112,7 +130,7 @@ namespace {
         size_t credit_for(entity &x) {
             auto pred = [&](outbound_path *ptr) { return ptr->hdl == &x; };
             auto i = std::find_if(paths.begin(), paths.end(), pred);
-            ACTOR_REQUIRE(i != paths.end());
+            BOOST_REQUIRE(i != paths.end());
             return static_cast<size_t>((*i)->open_credit);
         }
 
@@ -193,11 +211,11 @@ namespace {
             auto &mbox = x.mbox;
             std::vector<batch_type> result;
             for (auto &msg : mbox) {
-                ACTOR_REQUIRE(msg.match_elements<downstream_msg>());
+                BOOST_REQUIRE(msg.match_elements<downstream_msg>());
                 auto &dm = msg.get_mutable_as<downstream_msg>(0);
-                ACTOR_REQUIRE(holds_alternative<downstream_msg::batch>(dm.content));
+                BOOST_REQUIRE(holds_alternative<downstream_msg::batch>(dm.content));
                 auto &b = get<downstream_msg::batch>(dm.content);
-                ACTOR_REQUIRE(b.xs.match_elements<batch_type>());
+                BOOST_REQUIRE(b.xs.match_elements<batch_type>());
                 result.emplace_back(std::move(b.xs.get_mutable_as<batch_type>(0)));
             }
             mbox.clear();
@@ -269,9 +287,9 @@ namespace {
     ;                                                                           \
     make_receive_checker([&](fixture::batches_type &xs, bool check_not_empty) { \
         if (!check_not_empty)                                                   \
-            BOOST_CHECK_EQUAL(batches(CONCAT(who, __LINE__)), xs);                \
+            BOOST_CHECK_EQUAL(batches(CONCAT(who, __LINE__)), xs);              \
         else                                                                    \
-            ACTOR_CHECK(!batches(CONCAT(who, __LINE__)).empty());                 \
+            BOOST_CHECK(!batches(CONCAT(who, __LINE__)).empty());               \
     }) <<
 
 #define ENTITY auto &CONCAT(who, __LINE__) =
@@ -297,16 +315,16 @@ namespace {
 #define ELEMENTS                                                                        \
     ;                                                                                   \
     CONCAT(who, __LINE__).new_round(CONCAT(amount, __LINE__), CONCAT(force, __LINE__)); \
-    ACTOR_MESSAGE(CONCAT(who, __LINE__).name() << " tried sending " << CONCAT(amount, __LINE__) << " elements");
+    BOOST_TEST_MESSAGE(CONCAT(who, __LINE__).name() << " tried sending " << CONCAT(amount, __LINE__) << " elements");
 
-#define FOR                                             \
-    struct CONCAT(for_helper_, __LINE__) {              \
-        entity &who;                                    \
-        size_t amount;                                  \
-        void operator<<(entity &x) const {              \
+#define FOR                                               \
+    struct CONCAT(for_helper_, __LINE__) {                \
+        entity &who;                                      \
+        size_t amount;                                    \
+        void operator<<(entity &x) const {                \
             BOOST_CHECK_EQUAL(who.credit_for(x), amount); \
-        }                                               \
-    };                                                  \
+        }                                                 \
+    };                                                    \
     CONCAT(for_helper_, __LINE__) {CONCAT(who, __LINE__), CONCAT(amount, __LINE__)} <<
 
 #define TOTAL BOOST_CHECK_EQUAL(CONCAT(who, __LINE__).mgr.out().total_credit(), CONCAT(amount, __LINE__))
