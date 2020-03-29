@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(closing_downstreams_before_end_of_stream) {
     run();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 1u);
     BOOST_CHECK_EQUAL(st.stage->inbound_paths().size(), 0u);
-    BOOST_CHECK_LESS(deref<sum_up_actor>(snk1).state.x, sink1_result);
+    BOOST_CHECK_LT(deref<sum_up_actor>(snk1).state.x, sink1_result);
     BOOST_CHECK_EQUAL(deref<sum_up_actor>(snk2).state.x, sum(10000));
     self->send_exit(stg, exit_reason::kill);
 }

@@ -18,6 +18,28 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::sec> {
+                void operator()(std::ostream &, nil::actor::sec const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::error> {
+                void operator()(std::ostream &, nil::actor::error const &) {
+                }
+            };
+            template<template<typename...> class T, typename... P>
+            struct print_log_value<T<P...>> {
+                void operator()(std::ostream &, T<P...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     using promise_actor = typed_actor<replies_to<int>::with<int>,

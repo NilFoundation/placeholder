@@ -20,6 +20,24 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::error> {
+                void operator()(std::ostream &, nil::actor::error const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::exit_reason> {
+                void operator()(std::ostream &, nil::actor::exit_reason const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     std::mutex s_mtx;

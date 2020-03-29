@@ -24,6 +24,24 @@ using nil::actor::policy::select_all;
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<template<typename> class P, typename V>
+            struct print_log_value<P<V>> {
+                void operator()(std::ostream &, P<V> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     struct fixture : test_coordinator_fixture<> {
@@ -48,8 +66,8 @@ namespace {
 
 }    // namespace
 
-#define SUBTEST(message)              \
-    run();                            \
+#define SUBTEST(message)                     \
+    run();                                   \
     BOOST_TEST_MESSAGE("subtest: " message); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 

@@ -33,12 +33,12 @@ BOOST_AUTO_TEST_CASE(lists_are_comparable) {
     BOOST_CHECK_EQUAL(xs, ys);
     data_copy[1] = 10;
     BOOST_CHECK_NE(xs, ys);
-    BOOST_CHECK_LESS(xs, ys);
+    BOOST_CHECK_LT(xs, ys);
     BOOST_CHECK_EQUAL(make_type_id_list<add_atom>(), make_type_id_list<add_atom>());
     BOOST_CHECK_NE(make_type_id_list<add_atom>(), make_type_id_list<ok_atom>());
 }
 
-BOOST_AUTO_TEST_CASE(make_type_id_list constructs a list from types) {
+BOOST_AUTO_TEST_CASE(make_type_id_list_constructs_a_list_from_types) {
     auto xs = make_type_id_list<uint8_t, bool, float>();
     BOOST_CHECK_EQUAL(xs.size(), 3u);
     BOOST_CHECK_EQUAL(xs[0], type_id_v<uint8_t>);
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(make_type_id_list constructs a list from types) {
     BOOST_CHECK_EQUAL(xs[2], type_id_v<float>);
 }
 
-BOOST_AUTO_TEST_CASE(type ID lists are convertible to strings) {
+BOOST_AUTO_TEST_CASE(type_id_lists_are_convertible_to_strings) {
     auto xs = make_type_id_list<uint16_t, bool, float>();
     BOOST_CHECK_EQUAL(to_string(xs), "[uint16_t, bool, float]");
 }

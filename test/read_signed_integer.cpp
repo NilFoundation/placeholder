@@ -20,6 +20,18 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename> class O, typename T>
+            struct print_log_value<O<T>> {
+                void operator()(std::ostream &, O<T> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     template<class T>

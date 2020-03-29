@@ -10,16 +10,35 @@
 
 #define BOOST_TEST_MODULE intrusive.task_queue
 
-#include <nil/actor/intrusive/task_queue.hpp>
-
 #include <boost/test/unit_test.hpp>
 
 #include <memory>
 
+#include <nil/actor/deep_to_string.hpp>
+
+#include <nil/actor/intrusive/task_queue.hpp>
 #include <nil/actor/intrusive/singly_linked.hpp>
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<typename T>
+            struct print_log_value<forward_iterator<T>> {
+                void operator()(std::ostream &, forward_iterator<T> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 

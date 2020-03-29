@@ -27,6 +27,23 @@ using std::vector;
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::pec> {
+                void operator()(std::ostream &, nil::actor::pec const &) {
+                }
+            };
+            template<template<typename, typename> class P, typename V, typename A>
+            struct print_log_value<P<V, A>> {
+                void operator()(std::ostream &, P<V, A> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     struct fixture {
@@ -122,7 +139,7 @@ BOOST_AUTO_TEST_CASE(string_parameters) {
     BOOST_CHECK_EQUAL(read<std::string>({"-v123"}), "123");
 }
 
-BOOST_AUTO_TEST_CASE(flat CLI options) {
+BOOST_AUTO_TEST_CASE(flat_cli_options) {
     key = "foo.bar";
     opts.add<std::string>("?foo", "bar,b", "some value");
     BOOST_CHECK(opts.begin()->has_flat_cli_name());
@@ -131,7 +148,7 @@ BOOST_AUTO_TEST_CASE(flat CLI options) {
     BOOST_CHECK_EQUAL(read<std::string>({"--foo.bar=foobar"}), "foobar");
 }
 
-BOOST_AUTO_TEST_CASE(flat CLI parsing with nested categories) {
+BOOST_AUTO_TEST_CASE(flat_cli_parsing_with_nested_categories) {
     key = "foo.goo.bar";
     opts.add<std::string>("?foo.goo", "bar,b", "some value");
     BOOST_CHECK(opts.begin()->has_flat_cli_name());

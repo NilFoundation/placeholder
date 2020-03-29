@@ -57,6 +57,6 @@ BOOST_AUTO_TEST_CASE(contains) {
 BOOST_AUTO_TEST_CASE(ordering) {
     BOOST_CHECK_EQUAL(addr(192, 168, 168, 0) / 24, addr(192, 168, 168, 0) / 24);
     BOOST_CHECK_NE(addr(192, 168, 168, 0) / 25, addr(192, 168, 168, 0) / 24);
-    BOOST_CHECK_LESS(addr(192, 168, 167, 0) / 24, addr(192, 168, 168, 0) / 24);
-    BOOST_CHECK_LESS(addr(192, 168, 168, 0) / 24, addr(192, 168, 168, 0) / 25);
+    BOOST_CHECK_LT(addr(192, 168, 167, 0) / 24, addr(192, 168, 168, 0) / 24);
+    BOOST_CHECK_LT(addr(192, 168, 168, 0) / 24, addr(192, 168, 168, 0) / 25);
 }

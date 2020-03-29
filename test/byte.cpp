@@ -20,6 +20,18 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::byte> {
+                void operator()(std::ostream &, nil::actor::byte const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     byte operator"" _b(const char *str, size_t n) {
@@ -52,7 +64,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(byte_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(to_integer) {
+BOOST_AUTO_TEST_CASE(to_integer_test) {
     BOOST_CHECK_EQUAL(to_integer<int>("0110'1001"_b), 0x69);
 }
 

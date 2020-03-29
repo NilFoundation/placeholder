@@ -23,6 +23,18 @@
 #include <nil/actor/ref_counted.hpp>
 #include <nil/actor/make_counted.hpp>
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class T, typename... P>
+            struct print_log_value<T<P...>> {
+                void operator()(std::ostream &, T<P...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 using namespace nil::actor;
 
 namespace {
@@ -96,20 +108,20 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(atom_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(make_counted) {
+BOOST_AUTO_TEST_CASE(make_counted_test) {
     auto p = make_counted<class0>();
     BOOST_CHECK_EQUAL(class0_instances, 1);
     BOOST_CHECK(p->unique());
 }
 
-BOOST_AUTO_TEST_CASE(reset) {
+BOOST_AUTO_TEST_CASE(reset_test) {
     class0ptr p;
     p.reset(new class0, false);
     BOOST_CHECK_EQUAL(class0_instances, 1);
     BOOST_CHECK(p->unique());
 }
 
-BOOST_AUTO_TEST_CASE(get_test_rc) {
+BOOST_AUTO_TEST_CASE(get_test_rc_test) {
     class0ptr p1;
     p1 = get_test_rc();
     class0ptr p2 = p1;

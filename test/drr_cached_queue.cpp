@@ -10,16 +10,41 @@
 
 #define BOOST_TEST_MODULE intrusive.drr_cached_queue
 
-#include <nil/actor/intrusive/drr_cached_queue.hpp>
-
 #include <boost/test/unit_test.hpp>
 
 #include <memory>
 
+#include <nil/actor/deep_to_string.hpp>
+
+#include <nil/actor/intrusive/drr_cached_queue.hpp>
 #include <nil/actor/intrusive/singly_linked.hpp>
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<typename T>
+            struct print_log_value<forward_iterator<T>> {
+                void operator()(std::ostream &, forward_iterator<T> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<new_round_result> {
+                void operator()(std::ostream &, new_round_result const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
