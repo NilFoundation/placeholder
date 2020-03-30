@@ -10,13 +10,25 @@
 
 #define BOOST_TEST_MODULE result
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/sec.hpp>
 #include <nil/actor/result.hpp>
 
 using namespace std;
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -35,19 +47,19 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(skip) {
+BOOST_AUTO_TEST_CASE(skip_test) {
     auto x = result<> {skip()};
     BOOST_CHECK_EQUAL(x.flag, rt_skip);
     BOOST_CHECK(x.value.empty());
 }
 
-BOOST_AUTO_TEST_CASE(value) {
+BOOST_AUTO_TEST_CASE(value_test) {
     auto x = result<int> {42};
     BOOST_CHECK_EQUAL(x.flag, rt_value);
     BOOST_CHECK_EQUAL(x.value.get_as<int>(0), 42);
 }
 
-BOOST_AUTO_TEST_CASE(expected) {
+BOOST_AUTO_TEST_CASE(expected_test) {
     auto x = result<int> {expected<int> {42}};
     BOOST_CHECK_EQUAL(x.flag, rt_value);
     BOOST_CHECK_EQUAL(x.value.get_as<int>(0), 42);

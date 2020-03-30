@@ -12,13 +12,36 @@
 
 #include <nil/actor/config_option.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/make_config_option.hpp>
 #include <nil/actor/config_value.hpp>
 #include <nil/actor/expected.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<none_t> {
+                void operator()(std::ostream &, none_t const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 using std::string;
 
@@ -112,36 +135,36 @@ BOOST_AUTO_TEST_CASE(type_bool) {
     BOOST_CHECK_EQUAL(read<bool>("1"), none);
 }
 
-BOOST_AUTO_TEST_CASE(type int8_t) {
+BOOST_AUTO_TEST_CASE(type_int8_t) {
     check_integer_options<int8_t>();
 }
 
-BOOST_AUTO_TEST_CASE(type uint8_t) {
+BOOST_AUTO_TEST_CASE(type_uint8_t) {
     check_integer_options<uint8_t>();
 }
 
-BOOST_AUTO_TEST_CASE(type int16_t) {
+BOOST_AUTO_TEST_CASE(type_int16_t) {
     check_integer_options<int16_t>();
 }
 
-BOOST_AUTO_TEST_CASE(type uint16_t) {
+BOOST_AUTO_TEST_CASE(type_uint16_t) {
     check_integer_options<uint16_t>();
 }
 
-BOOST_AUTO_TEST_CASE(type int32_t) {
+BOOST_AUTO_TEST_CASE(type_int32_t) {
     check_integer_options<int32_t>();
 }
 
-BOOST_AUTO_TEST_CASE(type uint32_t) {
+BOOST_AUTO_TEST_CASE(type_uint32_t) {
     check_integer_options<uint32_t>();
 }
 
-BOOST_AUTO_TEST_CASE(type uint64_t) {
+BOOST_AUTO_TEST_CASE(type_uint64_t) {
     BOOST_CHECK_EQUAL(unbox(read<uint64_t>("0")), 0u);
     BOOST_CHECK_EQUAL(read<uint64_t>("-1"), none);
 }
 
-BOOST_AUTO_TEST_CASE(type int64_t) {
+BOOST_AUTO_TEST_CASE(type_int64_t) {
     BOOST_CHECK_EQUAL(unbox(read<int64_t>("-1")), -1);
     BOOST_CHECK_EQUAL(unbox(read<int64_t>("0")), 0);
     BOOST_CHECK_EQUAL(unbox(read<int64_t>("1")), 1);
@@ -178,7 +201,7 @@ BOOST_AUTO_TEST_CASE(lists) {
     BOOST_CHECK_EQUAL(read<int_list>("[1, 2, 3]"), int_list({1, 2, 3}));
 }
 
-BOOST_AUTO_TEST_CASE(flat CLI parsing) {
+BOOST_AUTO_TEST_CASE(flat_cli_parsing) {
     auto x = make_config_option<std::string>("?foo", "bar,b", "test option");
     BOOST_CHECK_EQUAL(x.category(), "foo");
     BOOST_CHECK_EQUAL(x.long_name(), "bar");
@@ -187,7 +210,7 @@ BOOST_AUTO_TEST_CASE(flat CLI parsing) {
     BOOST_CHECK_EQUAL(x.has_flat_cli_name(), true);
 }
 
-BOOST_AUTO_TEST_CASE(flat CLI parsing with nested categories) {
+BOOST_AUTO_TEST_CASE(flat_cli_parsing_with_nested_categories) {
     auto x = make_config_option<std::string>("?foo.goo", "bar,b", "test option");
     BOOST_CHECK_EQUAL(x.category(), "foo.goo");
     BOOST_CHECK_EQUAL(x.long_name(), "bar");

@@ -21,6 +21,24 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}
+
 namespace {
 
     using discarding_server_type = typed_actor<replies_to<int, int>::with<void>>;
@@ -67,9 +85,9 @@ namespace {
 
 #define ERROR_HANDLER [&](error &err) { BOOST_FAIL(sys.render(err)); }
 
-#define SUBTEST(message)              \
-    *result = none;                   \
-    run();                            \
+#define SUBTEST(message)                     \
+    *result = none;                          \
+    run();                                   \
     BOOST_TEST_MESSAGE("subtest: " message); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 
@@ -139,7 +157,7 @@ BOOST_AUTO_TEST_CASE(delegated_request_with_integer_result) {
     BOOST_CHECK_EQUAL(*result, 3);
 }
 
-BOOST_AUTO_TEST_CASE(requesters support fan_out_request) {
+BOOST_AUTO_TEST_CASE(requesters_support_fan_out_request) {
     using policy::select_all;
     std::vector<adding_server_type> workers {
         make_server([](int x, int y) { return x + y; }),

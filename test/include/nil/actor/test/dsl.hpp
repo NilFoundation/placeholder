@@ -290,10 +290,11 @@ bool received(mtl_handle x) {
     return try_extract<T, Ts...>(x) != nil::actor::none;
 }
 
-template<class... Ts>
+template <class... Ts>
 class expect_clause {
 public:
-    expect_clause(nil::actor::scheduler::test_coordinator &sched) : sched_(sched), dest_(nullptr) {
+    explicit expect_clause(nil::actor::scheduler::test_coordinator& sched)
+        : sched_(sched), dest_(nullptr) {
         peek_ = [=] {
             /// The extractor will call BOOST_FAIL on a type mismatch, essentially
             /// performing a type check when ignoring the result.
@@ -301,7 +302,7 @@ public:
         };
     }
 
-    expect_clause(expect_clause &&other) = default;
+    expect_clause(expect_clause&& other) = default;
 
     ~expect_clause() {
         if (peek_ != nullptr) {
@@ -310,43 +311,42 @@ public:
         }
     }
 
-    expect_clause &from(const wildcard &) {
+    expect_clause& from(const wildcard&) {
         return *this;
     }
 
-    template<class Handle>
-    expect_clause &from(const Handle &whom) {
+    template <class Handle>
+    expect_clause& from(const Handle& whom) {
         src_ = nil::actor::actor_cast<nil::actor::strong_actor_ptr>(whom);
         return *this;
     }
 
-    template<class Handle>
-    expect_clause &to(const Handle &whom) {
+    template <class Handle>
+    expect_clause& to(const Handle& whom) {
         BOOST_REQUIRE(sched_.prioritize(whom));
-        dest_ = &sched_.next_job<nil::actor::scheduled_actor>();
-        auto ptr = next_mailbox_element(dest_);
+        dest_ = &sched_.next_job<nil::actor::abstract_actor>();
+        auto ptr = dest_->peek_at_next_mailbox_element();
         BOOST_REQUIRE(ptr != nullptr);
-        if (src_) {
+        if (src_)
             BOOST_REQUIRE_EQUAL(ptr->sender, src_);
-        }
         return *this;
     }
 
-    expect_clause &to(const nil::actor::scoped_actor &whom) {
+    expect_clause& to(const nil::actor::scoped_actor& whom) {
         dest_ = whom.ptr();
         return *this;
     }
 
-    template<class... Us>
-    void with(Us &&... xs) {
+    template <class... Us>
+    void with(Us&&... xs) {
         // TODO: replace this workaround with the make_tuple() line when dropping
         //       support for GCC 4.8.
-        std::tuple<typename std::decay<Us>::type...> tmp {std::forward<Us>(xs)...};
+        std::tuple<typename std::decay<Us>::type...> tmp{std::forward<Us>(xs)...};
         // auto tmp = std::make_tuple(std::forward<Us>(xs)...);
         // TODO: move tmp into lambda when switching to C++14
         peek_ = [=] {
             using namespace nil::actor::detail;
-            elementwise_compare_inspector<decltype(tmp)> inspector {tmp};
+            elementwise_compare_inspector<decltype(tmp)> inspector{tmp};
             auto ys = extract<Ts...>(dest_);
             auto ys_indices = get_indices(ys);
             BOOST_REQUIRE(apply_args(inspector, ys_indices, ys));
@@ -355,18 +355,140 @@ public:
 
 protected:
     void run_once() {
-        auto dptr = dynamic_cast<nil::actor::blocking_actor *>(dest_);
-        if (dptr == nullptr) {
+        auto dptr = dynamic_cast<nil::actor::blocking_actor*>(dest_);
+        if (dptr == nullptr)
             sched_.run_once();
-        } else {
-            dptr->dequeue();
-        }    // Drop message.
+        else
+            dptr->dequeue(); // Drop message.
+    }
+
+    nil::actor::scheduler::test_coordinator& sched_;
+    nil::actor::strong_actor_ptr src_;
+    nil::actor::abstract_actor* dest_;
+    std::function<void()> peek_;
+};
+
+template <>
+class expect_clause<void> {
+public:
+    explicit expect_clause(nil::actor::scheduler::test_coordinator& sched)
+        : sched_(sched), dest_(nullptr) {
+        // nop
+    }
+
+    expect_clause(expect_clause&& other) = default;
+
+    ~expect_clause() {
+        auto ptr = dest_->peek_at_next_mailbox_element();
+        if (ptr == nullptr)
+            BOOST_FAIL("no message found");
+        if (!ptr->content().empty())
+            BOOST_FAIL("non-empty message found: " << to_string(ptr->content()));
+        run_once();
+    }
+
+    expect_clause& from(const wildcard&) {
+        return *this;
+    }
+
+    template <class Handle>
+    expect_clause& from(const Handle& whom) {
+        src_ = nil::actor::actor_cast<nil::actor::strong_actor_ptr>(whom);
+        return *this;
+    }
+
+    template <class Handle>
+    expect_clause& to(const Handle& whom) {
+        BOOST_REQUIRE(sched_.prioritize(whom));
+        dest_ = &sched_.next_job<nil::actor::abstract_actor>();
+        auto ptr = dest_->peek_at_next_mailbox_element();
+        BOOST_REQUIRE(ptr != nullptr);
+        if (src_)
+            BOOST_REQUIRE_EQUAL(ptr->sender, src_);
+        return *this;
+    }
+
+    expect_clause& to(const nil::actor::scoped_actor& whom) {
+        dest_ = whom.ptr();
+        return *this;
+    }
+
+protected:
+    void run_once() {
+        auto dptr = dynamic_cast<nil::actor::blocking_actor*>(dest_);
+        if (dptr == nullptr)
+            sched_.run_once();
+        else
+            dptr->dequeue(); // Drop message.
+    }
+
+    nil::actor::scheduler::test_coordinator& sched_;
+    nil::actor::strong_actor_ptr src_;
+    nil::actor::abstract_actor* dest_;
+};
+
+template<class... Ts>
+class inject_clause {
+public:
+    explicit inject_clause(nil::actor::scheduler::test_coordinator &sched) : sched_(sched), dest_(nullptr) {
+        // nop
+    }
+
+    inject_clause(inject_clause &&other) = default;
+
+    template<class Handle>
+    inject_clause &from(const Handle &whom) {
+        src_ = nil::actor::actor_cast<nil::actor::strong_actor_ptr>(whom);
+        return *this;
+    }
+
+    template<class Handle>
+    inject_clause &to(const Handle &whom) {
+        dest_ = nil::actor::actor_cast<nil::actor::strong_actor_ptr>(whom);
+        return *this;
+    }
+
+    inject_clause &to(const nil::actor::scoped_actor &whom) {
+        dest_ = whom.ptr();
+        return *this;
+    }
+
+    void with(Ts... xs) {
+        if (dest_ == nullptr)
+            BOOST_FAIL("missing .to() in inject() statement");
+        if (src_ == nullptr)
+            nil::actor::anon_send(nil::actor::actor_cast<nil::actor::actor>(dest_), xs...);
+        else
+            nil::actor::send_as(nil::actor::actor_cast<nil::actor::actor>(src_), nil::actor::actor_cast<nil::actor::actor>(dest_), xs...);
+        BOOST_REQUIRE(sched_.prioritize(dest_));
+        auto dest_ptr = &sched_.next_job<nil::actor::abstract_actor>();
+        auto ptr = dest_ptr->peek_at_next_mailbox_element();
+        BOOST_REQUIRE(ptr != nullptr);
+        BOOST_REQUIRE_EQUAL(ptr->sender, src_);
+        // TODO: replace this workaround with the make_tuple() line when dropping
+        //       support for GCC 4.8.
+        std::tuple<Ts...> tmp {std::move(xs)...};
+        using namespace nil::actor::detail;
+        elementwise_compare_inspector<decltype(tmp)> inspector {tmp};
+        auto ys = extract<Ts...>(dest_);
+        auto ys_indices = get_indices(ys);
+        BOOST_REQUIRE(apply_args(inspector, ys_indices, ys));
+        run_once();
+    }
+
+protected:
+    void run_once() {
+        auto ptr = nil::actor::actor_cast<nil::actor::abstract_actor *>(dest_);
+        auto dptr = dynamic_cast<nil::actor::blocking_actor *>(ptr);
+        if (dptr == nullptr)
+            sched_.run_once();
+        else
+            dptr->dequeue();    // Drop message.
     }
 
     nil::actor::scheduler::test_coordinator &sched_;
     nil::actor::strong_actor_ptr src_;
-    nil::actor::local_actor *dest_;
-    std::function<void()> peek_;
+    nil::actor::strong_actor_ptr dest_;
 };
 
 template<class... Ts>
@@ -713,7 +835,7 @@ public:
     template<class T = nil::actor::scheduled_actor, class Handle = nil::actor::actor>
     T &deref(const Handle &hdl) {
         auto ptr = nil::actor::actor_cast<nil::actor::abstract_actor *>(hdl);
-        ACTOR_REQUIRE(ptr != nullptr);
+        BOOST_REQUIRE(ptr != nullptr);
         return dynamic_cast<T &>(*ptr);
     }
 
@@ -784,6 +906,12 @@ T unbox(nil::actor::optional<T> x) {
     do {                                                                  \
         BOOST_TEST_MESSAGE("expect" << #types << "." << #fields);         \
         expect_clause<ACTOR_EXPAND(ACTOR_DSL_LIST types)> {sched}.fields; \
+    } while (false)
+
+#define inject(types, fields)                                             \
+    do {                                                                  \
+        BOOST_TEST_MESSAGE("inject" << #types << "." << #fields);         \
+        inject_clause<ACTOR_EXPAND(ACTOR_DSL_LIST types)> {sched}.fields; \
     } while (false)
 
 /// Convenience macro for defining allow clauses.

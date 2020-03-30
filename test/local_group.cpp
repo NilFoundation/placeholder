@@ -12,7 +12,7 @@
 
 #include <nil/actor/all.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <array>
 #include <chrono>

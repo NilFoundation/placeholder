@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE serialization
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -73,6 +73,35 @@ test_empty_non_pod::~test_empty_non_pod() {
     // nop
 }
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<test_enum> {
+                void operator()(std::ostream &, test_enum const &) {
+                }
+            };
+            template<>
+            struct print_log_value<raw_struct> {
+                void operator()(std::ostream &, raw_struct const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     struct fixture : test_coordinator_fixture<> {
@@ -99,7 +128,7 @@ namespace {
             binary_serializer sink {sys, buf};
             if (auto err = sink(xs...))
                 BOOST_FAIL("serialization failed: " << sys.render(err)
-                                                  << ", data: " << deep_to_string(std::forward_as_tuple(xs...)));
+                                                    << ", data: " << deep_to_string(std::forward_as_tuple(xs...)));
             return buf;
         }
 
@@ -126,7 +155,7 @@ namespace {
             auto tmp = make_message(x);
             deserialize(serialize(tmp), result);
             if (!result.match_elements<T>())
-                BOOST_FAIL("expected: " << x << ", got: " << result);
+                BOOST_FAIL("msg_roundrtip failure");
             return result.get_as<T>(0);
         }
 
@@ -169,13 +198,13 @@ BOOST_FIXTURE_TEST_SUITE(serialization_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(ieee_754_conversion) {
     // check conversion of float
-    float f1 = 3.1415925f;                 // float value
+    float f1 = 3.1415925f;                        // float value
     auto p1 = nil::actor::detail::pack754(f1);    // packet value
     BOOST_CHECK_EQUAL(p1, static_cast<decltype(p1)>(0x40490FDA));
     auto u1 = nil::actor::detail::unpack754(p1);    // unpacked value
     BOOST_CHECK_EQUAL(f1, u1);
     // check conversion of double
-    double f2 = 3.14159265358979311600;    // double value
+    double f2 = 3.14159265358979311600;           // double value
     auto p2 = nil::actor::detail::pack754(f2);    // packet value
     BOOST_CHECK_EQUAL(p2, static_cast<decltype(p2)>(0x400921FB54442D18));
     auto u2 = nil::actor::detail::unpack754(p2);    // unpacked value
@@ -268,7 +297,7 @@ BOOST_AUTO_TEST_CASE(multiple_messages) {
     message m2;
     deserialize(buf, t, m1, m2);
     BOOST_CHECK_EQUAL(std::make_tuple(t, to_string(m1), to_string(m2)),
-                    std::make_tuple(te, to_string(m), to_string(msg)));
+                      std::make_tuple(te, to_string(m), to_string(msg)));
     BOOST_CHECK(is_message(m1).equal(rs, te));
     BOOST_CHECK(is_message(m2).equal(i32, i64, ts, te, str, rs));
 }
@@ -335,12 +364,12 @@ BOOST_AUTO_TEST_CASE(bool_vector_size_63) {
     for (int i = 0; i < 63; ++i)
         xs.push_back(i % 3 == 0);
     BOOST_CHECK_EQUAL(deep_to_string(xs),
-                    "[true, false, false, true, false, false, true, false, false, true, false, "
-                    "false, true, false, false, true, false, false, true, false, false, true, "
-                    "false, false, true, false, false, true, false, false, true, false, false, "
-                    "true, false, false, true, false, false, true, false, false, true, false, "
-                    "false, true, false, false, true, false, false, true, false, false, true, "
-                    "false, false, true, false, false, true, false, false]");
+                      "[true, false, false, true, false, false, true, false, false, true, false, "
+                      "false, true, false, false, true, false, false, true, false, false, true, "
+                      "false, false, true, false, false, true, false, false, true, false, false, "
+                      "true, false, false, true, false, false, true, false, false, true, false, "
+                      "false, true, false, false, true, false, false, true, false, false, true, "
+                      "false, false, true, false, false, true, false, false]");
     BOOST_CHECK_EQUAL(xs, roundtrip(xs));
     BOOST_CHECK_EQUAL(xs, msg_roundtrip(xs));
 }
@@ -350,14 +379,14 @@ BOOST_AUTO_TEST_CASE(bool_vector_size_64) {
     for (int i = 0; i < 64; ++i)
         xs.push_back(i % 5 == 0);
     BOOST_CHECK_EQUAL(deep_to_string(xs),
-                    "[true, false, false, false, false, true, false, false, "
-                    "false, false, true, false, false, false, false, true, "
-                    "false, false, false, false, true, false, false, false, "
-                    "false, true, false, false, false, false, true, false, "
-                    "false, false, false, true, false, false, false, false, "
-                    "true, false, false, false, false, true, false, false, "
-                    "false, false, true, false, false, false, false, true, "
-                    "false, false, false, false, true, false, false, false]");
+                      "[true, false, false, false, false, true, false, false, "
+                      "false, false, true, false, false, false, false, true, "
+                      "false, false, false, false, true, false, false, false, "
+                      "false, true, false, false, false, false, true, false, "
+                      "false, false, false, true, false, false, false, false, "
+                      "true, false, false, false, false, true, false, false, "
+                      "false, false, true, false, false, false, false, true, "
+                      "false, false, false, false, true, false, false, false]");
     BOOST_CHECK_EQUAL(xs, roundtrip(xs));
     BOOST_CHECK_EQUAL(xs, msg_roundtrip(xs));
 }
@@ -367,12 +396,12 @@ BOOST_AUTO_TEST_CASE(bool_vector_size_65) {
     for (int i = 0; i < 65; ++i)
         xs.push_back(!(i % 7 == 0));
     BOOST_CHECK_EQUAL(deep_to_string(xs),
-                    "[false, true, true, true, true, true, true, false, true, true, true, "
-                    "true, true, true, false, true, true, true, true, true, true, false, true, "
-                    "true, true, true, true, true, false, true, true, true, true, true, true, "
-                    "false, true, true, true, true, true, true, false, true, true, true, true, "
-                    "true, true, false, true, true, true, true, true, true, false, true, true, "
-                    "true, true, true, true, false, true]");
+                      "[false, true, true, true, true, true, true, false, true, true, true, "
+                      "true, true, true, false, true, true, true, true, true, true, false, true, "
+                      "true, true, true, true, true, false, true, true, true, true, true, true, "
+                      "false, true, true, true, true, true, true, false, true, true, true, true, "
+                      "true, true, false, true, true, true, true, true, true, false, true, true, "
+                      "true, true, true, true, false, true]");
     BOOST_CHECK_EQUAL(xs, roundtrip(xs));
     BOOST_CHECK_EQUAL(xs, msg_roundtrip(xs));
 }

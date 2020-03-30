@@ -12,7 +12,7 @@
 
 #include <nil/actor/after.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <chrono>
 #include <memory>
@@ -41,7 +41,7 @@ namespace {
             after(ms(600)) >>
                 [=] {
                     BOOST_TEST_MESSAGE("timer expired");
-                    ACTOR_REQUIRE(self->state.had_reset);
+                    BOOST_REQUIRE(self->state.had_reset);
                     self->quit();
                 },
         };
@@ -58,7 +58,7 @@ namespace {
             after(ms(600)) >>
                 [=] {
                     BOOST_TEST_MESSAGE("timer expired");
-                    ACTOR_REQUIRE(*had_reset);
+                    BOOST_REQUIRE(*had_reset);
                     self->quit();
                 },
         };

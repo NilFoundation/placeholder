@@ -12,7 +12,7 @@
 
 #include <nil/actor/ipv6_endpoint.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <cassert>
 #include <vector>
@@ -62,7 +62,7 @@ namespace {
     ipv6_endpoint operator"" _ep(const char *str, size_t size) {
         ipv6_endpoint result;
         if (auto err = detail::parse(string_view {str, size}, result))
-            BOOST_FAIL("unable to parse input: " << err);
+            BOOST_FAIL("unable to parse input:");
         return result;
     }
 

@@ -12,7 +12,7 @@
 
 #include <nil/actor/span.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <algorithm>
 

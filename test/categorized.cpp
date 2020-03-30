@@ -24,7 +24,7 @@
 #include <nil/actor/policy/urgent_messages.hpp>
 #include <nil/actor/unit.hpp>
 
-using namespace caf;
+using namespace nil::actor;
 
 namespace {
 

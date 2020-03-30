@@ -12,13 +12,25 @@
 
 #include <nil/actor/stateful_actor.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/event_based_actor.hpp>
 
 using namespace nil::actor;
 
 using namespace std::string_literals;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -109,21 +121,21 @@ BOOST_AUTO_TEST_CASE(stateful_actors_can_be_statically_typed) {
     test_adder(sys.spawn<adder_class>());
 }
 
-BOOST_AUTO_TEST_CASE(stateful actors without explicit name use the name of the parent) {
+BOOST_AUTO_TEST_CASE(stateful_actors_without_explicit_name_use_the_name_of_the_parent) {
     struct state {
         // empty
     };
     test_name<state>("scheduled_actor");
 }
 
-BOOST_AUTO_TEST_CASE(states with C string names override the default name) {
+BOOST_AUTO_TEST_CASE(states_with_C_string_names_override_the_default_name) {
     struct state {
         const char *name = "testee";
     };
     test_name<state>("testee");
 }
 
-BOOST_AUTO_TEST_CASE(states with STL string names override the default name) {
+BOOST_AUTO_TEST_CASE(states_with_STL_string_names_override_the_default_name) {
     struct state {
         std::string name = "testee2";
     };
@@ -179,7 +191,7 @@ BOOST_AUTO_TEST_CASE(states_optionally_take_the_self_pointer_as_first_argument) 
     expect((std::string), from(testee).to(self).with("testee"s));
 }
 
-BOOST_AUTO_TEST_CASE(typed actors can use typed_actor_pointer as self pointer) {
+BOOST_AUTO_TEST_CASE(typed_actors_can_use_typed_actor_pointer_as_self_pointer) {
     struct state_type {
         using self_pointer = typed_adder_actor::pointer_view;
         self_pointer self;

@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE inspector
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <list>
 #include <map>
@@ -29,6 +29,39 @@
 #include <nil/actor/detail/stringification_inspector.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<dummy_struct> {
+                void operator()(std::ostream &, dummy_struct const &) {
+                }
+            };
+            template<>
+            struct print_log_value<dummy_enum_class> {
+                void operator()(std::ostream &, dummy_enum_class const &) {
+                }
+            };
+            template<>
+            struct print_log_value<dummy_tag_type> {
+                void operator()(std::ostream &, dummy_tag_type const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -188,7 +221,7 @@ namespace {
             byte_buffer result;
             binary_serializer sink {&context, result};
             if (auto err = sink(x))
-                BOOST_FAIL("failed to serialize " << x << ": " << err);
+                BOOST_FAIL("failed to serialize");
             return result;
         }
 
@@ -198,7 +231,7 @@ namespace {
             binary_deserializer source {&context, buf};
             auto y = static_cast<T>(0);
             if (auto err = source(y))
-                BOOST_FAIL("failed to deserialize from buffer: " << err);
+                BOOST_FAIL("failed to deserialize from buffer");
             BOOST_CHECK_EQUAL(x, y);
             return detail::safe_equal(x, y);
         }
@@ -209,7 +242,7 @@ namespace {
             binary_deserializer source {&context, buf};
             T y;
             if (auto err = source(y))
-                BOOST_FAIL("failed to deserialize from buffer: " << err);
+                BOOST_FAIL("failed to deserialize from buffer");
             BOOST_CHECK_EQUAL(x, y);
             return detail::safe_equal(x, y);
         }

@@ -12,7 +12,7 @@
 
 #include <nil/actor/config_value_adaptor.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/config_value_adaptor_access.hpp>
 

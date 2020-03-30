@@ -12,7 +12,7 @@
 
 #include <nil/actor/variant.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <string>
 
@@ -57,7 +57,7 @@ using namespace nil::actor;
     }                                                                \
     template<class Inspector>                                        \
     typename Inspector::result_type inspect(Inspector &f, i##n &x) { \
-        return f(meta::type_name(ACTOR_STR(i##n)), x.x);               \
+        return f(meta::type_name(BOOST_PP_STRINGIZE(i##n)), x.x);    \
     }
 
 #define macro_repeat20(macro)                                                                                     \
@@ -70,29 +70,29 @@ macro_repeat20(i_n)
     using v20 =
         variant<i01, i02, i03, i04, i05, i06, i07, i08, i09, i10, i11, i12, i13, i14, i15, i16, i17, i18, i19, i20>;
 
-#define v20_test(n)                                                                          \
-    x3 = i##n {0x##n};                                                                       \
-    BOOST_CHECK_EQUAL(deep_to_string(x3), ACTOR_STR(i##n) + "("s + std::to_string(0x##n) + ")"); \
-    BOOST_CHECK_EQUAL(v20 {x3}, i##n {0x##n});                                                 \
-    x4 = x3;                                                                                 \
-    BOOST_CHECK_EQUAL(x4, i##n {0x##n});                                                       \
-    BOOST_CHECK_EQUAL(v20 {std::move(x3)}, i##n {0x##n});                                      \
-    BOOST_CHECK_EQUAL(x3, i##n {0});                                                           \
-    x3 = std::move(x4);                                                                      \
-    BOOST_CHECK_EQUAL(x4, i##n {0});                                                           \
-    BOOST_CHECK_EQUAL(x3, i##n {0x##n});                                                       \
-    {                                                                                        \
-        byte_buffer buf;                                                                     \
-        binary_serializer sink {sys.dummy_execution_unit(), buf};                            \
-        if (auto err = sink(x3))                                                             \
-            BOOST_FAIL("failed to serialize data: " << sys.render(err));                       \
-        BOOST_CHECK_EQUAL(x3, i##n {0x##n});                                                   \
-        v20 tmp;                                                                             \
-        binary_deserializer source {sys.dummy_execution_unit(), buf};                        \
-        if (auto err = source(tmp))                                                          \
-            BOOST_FAIL("failed to deserialize data: " << sys.render(err));                     \
-        BOOST_CHECK_EQUAL(tmp, i##n {0x##n});                                                  \
-        BOOST_CHECK_EQUAL(tmp, x3);                                                            \
+#define v20_test(n)                                                                                       \
+    x3 = i##n {0x##n};                                                                                    \
+    BOOST_CHECK_EQUAL(deep_to_string(x3), BOOST_PP_STRINGIZE(i##n) + "("s + std::to_string(0x##n) + ")"); \
+    BOOST_CHECK_EQUAL(v20 {x3}, i##n {0x##n});                                                            \
+    x4 = x3;                                                                                              \
+    BOOST_CHECK_EQUAL(x4, i##n {0x##n});                                                                  \
+    BOOST_CHECK_EQUAL(v20 {std::move(x3)}, i##n {0x##n});                                                 \
+    BOOST_CHECK_EQUAL(x3, i##n {0});                                                                      \
+    x3 = std::move(x4);                                                                                   \
+    BOOST_CHECK_EQUAL(x4, i##n {0});                                                                      \
+    BOOST_CHECK_EQUAL(x3, i##n {0x##n});                                                                  \
+    {                                                                                                     \
+        byte_buffer buf;                                                                                  \
+        binary_serializer sink {sys.dummy_execution_unit(), buf};                                         \
+        if (auto err = sink(x3))                                                                          \
+            BOOST_FAIL("failed to serialize data: " << sys.render(err));                                  \
+        BOOST_CHECK_EQUAL(x3, i##n {0x##n});                                                              \
+        v20 tmp;                                                                                          \
+        binary_deserializer source {sys.dummy_execution_unit(), buf};                                     \
+        if (auto err = source(tmp))                                                                       \
+            BOOST_FAIL("failed to deserialize data: " << sys.render(err));                                \
+        BOOST_CHECK_EQUAL(tmp, i##n {0x##n});                                                             \
+        BOOST_CHECK_EQUAL(tmp, x3);                                                                       \
     }
 
 // copy construction, copy assign, move construction, move assign
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(n_ary_visit) {
     BOOST_CHECK_EQUAL(visit(f, a, b, c), "(42, \"bar\", 123)");
 }
 
-BOOST_AUTO_TEST_CASE(get_if) {
+BOOST_AUTO_TEST_CASE(get_if_test) {
     variant<int, std::string> b = "foo"s;
     BOOST_TEST_MESSAGE("test get_if directly");
     BOOST_CHECK_EQUAL(get_if<int>(&b), nullptr);

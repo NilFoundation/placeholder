@@ -22,6 +22,18 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     struct string_parser_consumer {
@@ -69,7 +81,7 @@ BOOST_AUTO_TEST_CASE(empty_string) {
     BOOST_CHECK_EQUAL(p("\t \"\" \t\t\t "), ""_s);
 }
 
-BOOST_AUTO_TEST_CASE(non - empty quoted string) {
+BOOST_AUTO_TEST_CASE(non_empty_quoted_string) {
     BOOST_CHECK_EQUAL(p(R"("abc")"), "abc"_s);
     BOOST_CHECK_EQUAL(p(R"("a b c")"), "a b c"_s);
     BOOST_CHECK_EQUAL(p(R"(   "abcdefABCDEF"   )"), "abcdefABCDEF"_s);

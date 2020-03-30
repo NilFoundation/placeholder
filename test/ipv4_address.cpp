@@ -12,13 +12,30 @@
 
 #include <nil/actor/ipv4_address.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/detail/network_order.hpp>
 
 using nil::actor::detail::to_network_order;
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::ipv4_address> {
+                void operator()(std::ostream &, nil::actor::ipv4_address const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv4_endpoint> {
+                void operator()(std::ostream &, nil::actor::ipv4_endpoint const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 

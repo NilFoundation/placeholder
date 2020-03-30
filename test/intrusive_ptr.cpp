@@ -12,7 +12,7 @@
 
 #include <nil/actor/intrusive_ptr.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 // this test doesn't verify thread-safety of intrusive_ptr
 // however, it is thread safe since it uses atomic operations only

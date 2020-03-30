@@ -11,13 +11,14 @@
 #define BOOST_TEST_MODULE intrusive.wdrr_dynamic_multiplexed_queue
 
 #include <nil/actor/intrusive/wdrr_dynamic_multiplexed_queue.hpp>
+#include <nil/actor/intrusive/drr_queue.hpp>
+#include <nil/actor/intrusive/singly_linked.hpp>
+
+#include <nil/actor/deep_to_string.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include <memory>
-
-#include <nil/actor/intrusive/drr_queue.hpp>
-#include <nil/actor/intrusive/singly_linked.hpp>
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;

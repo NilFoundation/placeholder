@@ -12,7 +12,7 @@
 
 #include <nil/actor/string_view.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 using namespace nil::actor;
 

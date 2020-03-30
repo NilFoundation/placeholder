@@ -2,7 +2,7 @@
 
 #include <nil/actor/test/unit_test_impl.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 int main(int argc, char **argv) {
     using namespace nil::actor;

@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE selective_streaming
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <memory>
 #include <numeric>

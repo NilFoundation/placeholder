@@ -12,7 +12,7 @@
 
 #include <nil/actor/fused_downstream_manager.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <memory>
 #include <numeric>
@@ -215,7 +215,7 @@ namespace {
             },
             [=](stream<int32_t> in) {
                 BOOST_TEST_MESSAGE("received handshake for integers");
-                BOOST_TEST_MESSAGE(self->current_mailbox_element()->content());
+//                BOOST_TEST_MESSAGE(self->current_mailbox_element()->content());
                 return self->state.stage->add_unchecked_inbound_path(in);
             },
             [=](stream<string> in) {
@@ -233,7 +233,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(fused_downstream_manager_tests, fixture)
 
-BOOST_AUTO_TEST_CASE_DISABLED(depth_3_pipeline_with_fork) {
+BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_fork, *boost::unit_test::disabled()) {
     auto src1 = sys.spawn(int_file_reader, 50u);
     auto src2 = sys.spawn(string_file_reader, 50u);
     auto stg = sys.spawn(stream_multiplexer);

@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE config_value
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <list>
 #include <map>
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(conversion_to_simple_tuple) {
     config_value x {42};
     x.as_list().emplace_back("hello world");
     BOOST_REQUIRE(holds_alternative<tuple_type>(x));
-    BOOST_REQUIRE_NOT_EQUAL(get_if<tuple_type>(&x), none);
+    BOOST_REQUIRE_NE(get_if<tuple_type>(&x), none);
     BOOST_CHECK_EQUAL(get<tuple_type>(x), std::make_tuple(size_t {42}, "hello world"s));
 }
 
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(conversion_to_nested_tuple) {
     config_value x {42};
     x.as_list().emplace_back(make_config_value_list(2, 40));
     BOOST_REQUIRE(holds_alternative<tuple_type>(x));
-    BOOST_REQUIRE_NOT_EQUAL(get_if<tuple_type>(&x), none);
+    BOOST_REQUIRE_NE(get_if<tuple_type>(&x), none);
     BOOST_CHECK_EQUAL(get<tuple_type>(x), std::make_tuple(size_t {42}, std::make_tuple(2, 40)));
 }
 

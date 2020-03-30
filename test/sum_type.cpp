@@ -12,7 +12,7 @@
 
 #include <nil/actor/sum_type.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <new>
 #include <map>

@@ -24,16 +24,36 @@
 
 #include <nil/actor/detail/tick_emitter.hpp>
 
+#include <nil/actor/deep_to_string.hpp>
+#include <nil/actor/timestamp.hpp>
+
+#include <boost/integer/common_factor.hpp>
+
 #include <boost/test/unit_test.hpp>
 
 #include <vector>
 
-#include <nil/actor/detail/gcd.hpp>
-#include <nil/actor/timestamp.hpp>
-
 using std::vector;
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}
 
 using time_point = nil::actor::detail::tick_emitter::time_point;
 
@@ -60,7 +80,7 @@ BOOST_AUTO_TEST_CASE(start_and_stop) {
 }
 
 BOOST_AUTO_TEST_CASE(ticks) {
-    auto cycle = detail::gcd(credit_interval.count(), force_batch_interval.count());
+    auto cycle = boost::integer::gcd(credit_interval.count(), force_batch_interval.count());
     BOOST_CHECK_EQUAL(cycle, 50);
     auto force_batch_frequency = static_cast<size_t>(force_batch_interval.count() / cycle);
     auto credit_frequency = static_cast<size_t>(credit_interval.count() / cycle);

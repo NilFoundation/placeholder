@@ -12,7 +12,7 @@
 
 #include <nil/actor/attach_continuous_stream_stage.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <memory>
 #include <numeric>
@@ -26,6 +26,24 @@
 using std::string;
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -210,7 +228,7 @@ BOOST_AUTO_TEST_CASE(closing_downstreams_before_end_of_stream) {
     BOOST_CHECK_EQUAL(st.stage->inbound_paths().size(), 1u);
     BOOST_TEST_MESSAGE("get the next not-yet-buffered integer");
     auto next_pending = deref<file_reader_actor>(src).state.buf.front();
-    BOOST_REQUIRE_GREATER(next_pending, 0);
+    BOOST_REQUIRE_GT(next_pending, 0);
     auto sink1_result = sum(next_pending - 1);
     BOOST_TEST_MESSAGE("gracefully close sink 1, next pending: " << next_pending);
     self->send(stg, close_atom_v, 0);

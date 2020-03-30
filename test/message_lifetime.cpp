@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE message_lifetime
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <atomic>
 #include <iostream>

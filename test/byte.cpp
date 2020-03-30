@@ -12,7 +12,7 @@
 
 #include <nil/actor/byte.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <cstdint>
 

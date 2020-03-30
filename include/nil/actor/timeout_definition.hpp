@@ -13,6 +13,7 @@
 #include <functional>
 #include <type_traits>
 
+#include <boost/config.hpp>
 
 #include <nil/actor/timespan.hpp>
 

@@ -12,7 +12,7 @@
 
 #include <nil/actor/actor_profiler.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/config.hpp>
 

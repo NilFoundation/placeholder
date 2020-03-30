@@ -12,7 +12,7 @@
 
 #include <nil/actor/actor_clock.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <chrono>
 #include <memory>

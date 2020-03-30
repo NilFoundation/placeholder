@@ -12,7 +12,7 @@
 
 #include <nil/actor/make_config_value_field.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/spawner_config.hpp>
 #include <nil/actor/config_option_set.hpp>
@@ -109,6 +109,36 @@ namespace {
             return singleton.fields();
         }
     };
+}    // namespace
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<pec> {
+                void operator()(std::ostream &, pec const &) {
+                }
+            };
+            template<>
+            struct print_log_value<foobar> {
+                void operator()(std::ostream &, foobar const &) {
+                }
+            };
+            template<>
+            struct print_log_value<foobar_foobar> {
+                void operator()(std::ostream &, foobar_foobar const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
+namespace {
 
     struct fixture {
         get_foo_t get_foo;
@@ -192,7 +222,7 @@ BOOST_AUTO_TEST_CASE(getter_and_setter_access) {
     test_foo_field(foo_field);
 }
 
-BOOST_AUTO_TEST_CASE(object access from dictionary - foobar) {
+BOOST_AUTO_TEST_CASE(object_access_from_dictionary_foobar) {
     settings x;
     put(x, "my-value.bar", "hello");
     BOOST_TEST_MESSAGE("without foo member");
@@ -214,7 +244,7 @@ BOOST_AUTO_TEST_CASE(object access from dictionary - foobar) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(object access from dictionary - foobar_foobar) {
+BOOST_AUTO_TEST_CASE(object_access_from_dictionary_foobar_foobar) {
     settings x;
     put(x, "my-value.x.foo", 1);
     put(x, "my-value.x.bar", "hello");
@@ -228,14 +258,14 @@ BOOST_AUTO_TEST_CASE(object access from dictionary - foobar_foobar) {
     BOOST_CHECK_EQUAL(fbfb.y.bar, "world");
 }
 
-BOOST_AUTO_TEST_CASE(object access from CLI arguments - foobar) {
+BOOST_AUTO_TEST_CASE(object_access_from_cli_arguments_foobar) {
     opts.add<foobar>("value,v", "some value");
     BOOST_CHECK_EQUAL(read<foobar>({"--value={foo = 1, bar = hello}"}), foobar(1, "hello"));
     BOOST_CHECK_EQUAL(read<foobar>({"-v{bar = \"hello\"}"}), foobar(123, "hello"));
     BOOST_CHECK_EQUAL(read<foobar>({"-v", "{foo = 1, bar =hello ,}"}), foobar(1, "hello"));
 }
 
-BOOST_AUTO_TEST_CASE(object access from CLI arguments - foobar_foobar) {
+BOOST_AUTO_TEST_CASE(object_access_from_cli_arguments_foobar_foobar) {
     using fbfb = foobar_foobar;
     opts.add<fbfb>("value,v", "some value");
     BOOST_CHECK_EQUAL(read<fbfb>({"-v{x={bar = hello},y={foo=1,bar=world!},}"}), fbfb({123, "hello"}, {1, "world!"}));
@@ -272,7 +302,7 @@ arg2 = {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(object access from actor system config - file input) {
+BOOST_AUTO_TEST_CASE(object_access_from_actor_system_config_file_input) {
     test_config cfg;
     std::istringstream in {config_text};
     if (auto err = cfg.parse(0, nullptr, in))
@@ -285,7 +315,7 @@ BOOST_AUTO_TEST_CASE(object access from actor system config - file input) {
     BOOST_CHECK_EQUAL(cfg.fbfb.y.bar, "world");
 }
 
-BOOST_AUTO_TEST_CASE(object access from actor system config - file input and arguments) {
+BOOST_AUTO_TEST_CASE(object_access_from_actor_system_config_file_input_and_arguments) {
     std::vector<std::string> args {
         "-2",
         "{y = {bar = CAF, foo = 20}, x = {foo = 10, bar = hello}}",

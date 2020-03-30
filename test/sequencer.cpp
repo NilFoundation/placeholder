@@ -20,6 +20,35 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<node_id> {
+                void operator()(std::ostream &, node_id const &) {
+                }
+            };
+            template<>
+            struct print_log_value<actor_addr> {
+                void operator()(std::ostream &, actor_addr const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     behavior testee(event_based_actor *self) {

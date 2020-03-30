@@ -12,13 +12,55 @@
 
 #include <nil/actor/ipv6_address.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <initializer_list>
 
 #include <nil/actor/ipv4_address.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::ipv4_address> {
+                void operator()(std::ostream &, nil::actor::ipv4_address const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::ipv4_endpoint> {
+                void operator()(std::ostream &, nil::actor::ipv4_endpoint const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::ipv6_address> {
+                void operator()(std::ostream &, nil::actor::ipv6_address const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::ipv6_endpoint> {
+                void operator()(std::ostream &, nil::actor::ipv6_endpoint const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -43,7 +85,7 @@ BOOST_AUTO_TEST_CASE(comparison) {
     BOOST_CHECK_EQUAL(addr({}, {0xFFFF, 0x7F00, 0x0001}), make_ipv4_address(127, 0, 0, 1));
 }
 
-BOOST_AUTO_TEST_CASE(from_string) {
+BOOST_AUTO_TEST_CASE(from_string_test) {
     auto from_string = [](string_view str) {
         ipv6_address result;
         auto err = parse(str, result);
@@ -75,7 +117,7 @@ BOOST_AUTO_TEST_CASE(from_string) {
     BOOST_CHECK(invalid("1:2:3::4:5:6::7:8:9"));
 }
 
-BOOST_AUTO_TEST_CASE(to_string) {
+BOOST_AUTO_TEST_CASE(to_string_test) {
     BOOST_CHECK_EQUAL(to_string(addr({}, {0x01})), "::1");
     BOOST_CHECK_EQUAL(to_string(addr({0x01}, {0x01})), "1::1");
     BOOST_CHECK_EQUAL(to_string(addr({0x01})), "1::");

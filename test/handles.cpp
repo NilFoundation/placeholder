@@ -17,9 +17,39 @@
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/typed_actor.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<actor_addr> {
+                void operator()(std::ostream &, actor_addr const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<actor> {
+                void operator()(std::ostream &, actor const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -162,35 +192,35 @@ BOOST_AUTO_TEST_CASE(identity) {
 
 BOOST_AUTO_TEST_CASE(ordering) {
     // handles in a0 are all equal, i.e., are not in less-than relation
-    BOOST_CHECK_NOT_LESS(a0.wh, a0.wh);
-    BOOST_CHECK_NOT_LESS(a0.wh, a0.dt);
-    BOOST_CHECK_NOT_LESS(a0.wh, a0.st);
-    BOOST_CHECK_NOT_LESS(a0.dt, a0.wh);
-    BOOST_CHECK_NOT_LESS(a0.dt, a0.dt);
-    BOOST_CHECK_NOT_LESS(a0.dt, a0.st);
-    BOOST_CHECK_NOT_LESS(a0.st, a0.wh);
-    BOOST_CHECK_NOT_LESS(a0.st, a0.dt);
-    BOOST_CHECK_NOT_LESS(a0.st, a0.st);
+    BOOST_CHECK_GE(a0.wh, a0.wh);
+    BOOST_CHECK_GE(a0.wh, a0.dt);
+    BOOST_CHECK_GE(a0.wh, a0.st);
+    BOOST_CHECK_GE(a0.dt, a0.wh);
+    BOOST_CHECK_GE(a0.dt, a0.dt);
+    BOOST_CHECK_GE(a0.dt, a0.st);
+    BOOST_CHECK_GE(a0.st, a0.wh);
+    BOOST_CHECK_GE(a0.st, a0.dt);
+    BOOST_CHECK_GE(a0.st, a0.st);
     // handles in a1 are all equal, i.e., are not in less-than relation
-    BOOST_CHECK_NOT_LESS(a1.wh, a1.wh);
-    BOOST_CHECK_NOT_LESS(a1.wh, a1.dt);
-    BOOST_CHECK_NOT_LESS(a1.wh, a1.st);
-    BOOST_CHECK_NOT_LESS(a1.dt, a1.wh);
-    BOOST_CHECK_NOT_LESS(a1.dt, a1.dt);
-    BOOST_CHECK_NOT_LESS(a1.dt, a1.st);
-    BOOST_CHECK_NOT_LESS(a1.st, a1.wh);
-    BOOST_CHECK_NOT_LESS(a1.st, a1.dt);
-    BOOST_CHECK_NOT_LESS(a1.st, a1.st);
+    BOOST_CHECK_GE(a1.wh, a1.wh);
+    BOOST_CHECK_GE(a1.wh, a1.dt);
+    BOOST_CHECK_GE(a1.wh, a1.st);
+    BOOST_CHECK_GE(a1.dt, a1.wh);
+    BOOST_CHECK_GE(a1.dt, a1.dt);
+    BOOST_CHECK_GE(a1.dt, a1.st);
+    BOOST_CHECK_GE(a1.st, a1.wh);
+    BOOST_CHECK_GE(a1.st, a1.dt);
+    BOOST_CHECK_GE(a1.st, a1.st);
     // handles in a2 are all equal, i.e., are not in less-than relation
-    BOOST_CHECK_NOT_LESS(a2.wh, a2.wh);
-    BOOST_CHECK_NOT_LESS(a2.wh, a2.dt);
-    BOOST_CHECK_NOT_LESS(a2.wh, a2.st);
-    BOOST_CHECK_NOT_LESS(a2.dt, a2.wh);
-    BOOST_CHECK_NOT_LESS(a2.dt, a2.dt);
-    BOOST_CHECK_NOT_LESS(a2.dt, a2.st);
-    BOOST_CHECK_NOT_LESS(a2.st, a2.wh);
-    BOOST_CHECK_NOT_LESS(a2.st, a2.dt);
-    BOOST_CHECK_NOT_LESS(a2.st, a2.st);
+    BOOST_CHECK_GE(a2.wh, a2.wh);
+    BOOST_CHECK_GE(a2.wh, a2.dt);
+    BOOST_CHECK_GE(a2.wh, a2.st);
+    BOOST_CHECK_GE(a2.dt, a2.wh);
+    BOOST_CHECK_GE(a2.dt, a2.dt);
+    BOOST_CHECK_GE(a2.dt, a2.st);
+    BOOST_CHECK_GE(a2.st, a2.wh);
+    BOOST_CHECK_GE(a2.st, a2.dt);
+    BOOST_CHECK_GE(a2.st, a2.st);
     // all handles in a0 are less than handles in a1 or a2
     BOOST_CHECK_LT(a0.wh, a1.wh);
     BOOST_CHECK_LT(a0.wh, a1.dt);
@@ -221,34 +251,34 @@ BOOST_AUTO_TEST_CASE(ordering) {
     BOOST_CHECK_LT(a1.st, a2.dt);
     BOOST_CHECK_LT(a1.st, a2.st);
     // all handles in a1 are *not* less than handles in a0
-    BOOST_CHECK_NOT_LESS(a1.wh, a0.wh);
-    BOOST_CHECK_NOT_LESS(a1.wh, a0.dt);
-    BOOST_CHECK_NOT_LESS(a1.wh, a0.st);
-    BOOST_CHECK_NOT_LESS(a1.dt, a0.wh);
-    BOOST_CHECK_NOT_LESS(a1.dt, a0.dt);
-    BOOST_CHECK_NOT_LESS(a1.dt, a0.st);
-    BOOST_CHECK_NOT_LESS(a1.st, a0.wh);
-    BOOST_CHECK_NOT_LESS(a1.st, a0.dt);
-    BOOST_CHECK_NOT_LESS(a1.st, a0.st);
+    BOOST_CHECK_GE(a1.wh, a0.wh);
+    BOOST_CHECK_GE(a1.wh, a0.dt);
+    BOOST_CHECK_GE(a1.wh, a0.st);
+    BOOST_CHECK_GE(a1.dt, a0.wh);
+    BOOST_CHECK_GE(a1.dt, a0.dt);
+    BOOST_CHECK_GE(a1.dt, a0.st);
+    BOOST_CHECK_GE(a1.st, a0.wh);
+    BOOST_CHECK_GE(a1.st, a0.dt);
+    BOOST_CHECK_GE(a1.st, a0.st);
     // all handles in a2 are *not* less than handles in a0 or a1
-    BOOST_CHECK_NOT_LESS(a2.wh, a0.wh);
-    BOOST_CHECK_NOT_LESS(a2.wh, a0.dt);
-    BOOST_CHECK_NOT_LESS(a2.wh, a0.st);
-    BOOST_CHECK_NOT_LESS(a2.dt, a0.wh);
-    BOOST_CHECK_NOT_LESS(a2.dt, a0.dt);
-    BOOST_CHECK_NOT_LESS(a2.dt, a0.st);
-    BOOST_CHECK_NOT_LESS(a2.st, a0.wh);
-    BOOST_CHECK_NOT_LESS(a2.st, a0.dt);
-    BOOST_CHECK_NOT_LESS(a2.st, a0.st);
-    BOOST_CHECK_NOT_LESS(a2.wh, a1.wh);
-    BOOST_CHECK_NOT_LESS(a2.wh, a1.dt);
-    BOOST_CHECK_NOT_LESS(a2.wh, a1.st);
-    BOOST_CHECK_NOT_LESS(a2.dt, a1.wh);
-    BOOST_CHECK_NOT_LESS(a2.dt, a1.dt);
-    BOOST_CHECK_NOT_LESS(a2.dt, a1.st);
-    BOOST_CHECK_NOT_LESS(a2.st, a1.wh);
-    BOOST_CHECK_NOT_LESS(a2.st, a1.dt);
-    BOOST_CHECK_NOT_LESS(a2.st, a1.st);
+    BOOST_CHECK_GE(a2.wh, a0.wh);
+    BOOST_CHECK_GE(a2.wh, a0.dt);
+    BOOST_CHECK_GE(a2.wh, a0.st);
+    BOOST_CHECK_GE(a2.dt, a0.wh);
+    BOOST_CHECK_GE(a2.dt, a0.dt);
+    BOOST_CHECK_GE(a2.dt, a0.st);
+    BOOST_CHECK_GE(a2.st, a0.wh);
+    BOOST_CHECK_GE(a2.st, a0.dt);
+    BOOST_CHECK_GE(a2.st, a0.st);
+    BOOST_CHECK_GE(a2.wh, a1.wh);
+    BOOST_CHECK_GE(a2.wh, a1.dt);
+    BOOST_CHECK_GE(a2.wh, a1.st);
+    BOOST_CHECK_GE(a2.dt, a1.wh);
+    BOOST_CHECK_GE(a2.dt, a1.dt);
+    BOOST_CHECK_GE(a2.dt, a1.st);
+    BOOST_CHECK_GE(a2.st, a1.wh);
+    BOOST_CHECK_GE(a2.st, a1.dt);
+    BOOST_CHECK_GE(a2.st, a1.st);
 }
 
 BOOST_AUTO_TEST_CASE(string_representation) {

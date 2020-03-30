@@ -12,12 +12,24 @@
 
 #include <nil/actor/string_algorithms.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <string>
 #include <vector>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -35,7 +47,7 @@ namespace {
         return result;
     }
 
-    std::string join(str_list vec) {
+    std::string join(const str_list &vec) {
         return nil::actor::join(vec, ",");
     }
 
@@ -69,7 +81,7 @@ BOOST_AUTO_TEST_CASE(joining) {
     BOOST_CHECK_EQUAL(join({"a", "b", "c"}), "a,b,c");
 }
 
-BOOST_AUTO_TEST_CASE(starts_with) {
+BOOST_AUTO_TEST_CASE(starts_with_test) {
     BOOST_CHECK(starts_with("foobar", "f"));
     BOOST_CHECK(starts_with("foobar", "fo"));
     BOOST_CHECK(starts_with("foobar", "fooba"));
@@ -79,7 +91,7 @@ BOOST_AUTO_TEST_CASE(starts_with) {
     BOOST_CHECK(!starts_with("foobar", "foobaro"));
 }
 
-BOOST_AUTO_TEST_CASE(ends_with) {
+BOOST_AUTO_TEST_CASE(ends_with_test) {
     BOOST_CHECK(ends_with("foobar", "r"));
     BOOST_CHECK(ends_with("foobar", "ar"));
     BOOST_CHECK(ends_with("foobar", "oobar"));

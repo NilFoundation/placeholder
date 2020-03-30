@@ -25,6 +25,124 @@ using namespace std::chrono;
 
 namespace {
 
+    struct equality_operator {
+        static constexpr bool default_value = false;
+
+        template<class T,
+                 class U,
+                 detail::enable_if_t<((std::is_floating_point<T>::value && std::is_convertible<U, double>::value) ||
+                                      (std::is_floating_point<U>::value && std::is_convertible<T, double>::value)) &&
+                                         detail::is_comparable<T, U>::value,
+                                     int> = 0>
+        bool operator()(const T &t, const U &u) const {
+            auto x = static_cast<long double>(t);
+            auto y = static_cast<long double>(u);
+            auto max = std::max(std::abs(x), std::abs(y));
+            auto dif = std::abs(x - y);
+            return dif <= max * 1e-5l;
+        }
+
+        template<class T,
+                 class U,
+                 detail::enable_if_t<!((std::is_floating_point<T>::value && std::is_convertible<U, double>::value) ||
+                                       (std::is_floating_point<U>::value && std::is_convertible<T, double>::value)) &&
+                                         detail::is_comparable<T, U>::value,
+                                     int> = 0>
+        bool operator()(const T &x, const U &y) const {
+            return x == y;
+        }
+
+        template<class T, class U, typename std::enable_if<!detail::is_comparable<T, U>::value, int>::type = 0>
+        bool operator()(const T &, const U &) const {
+            return default_value;
+        }
+    };
+
+    struct inequality_operator {
+        static constexpr bool default_value = true;
+
+        template<class T,
+                 class U,
+                 typename std::enable_if<(std::is_floating_point<T>::value || std::is_floating_point<U>::value) &&
+                                             detail::is_comparable<T, U>::value,
+                                         int>::type = 0>
+        bool operator()(const T &x, const U &y) const {
+            equality_operator f;
+            return !f(x, y);
+        }
+
+        template<class T,
+                 class U,
+                 typename std::enable_if<!std::is_floating_point<T>::value && !std::is_floating_point<U>::value &&
+                                             detail::is_comparable<T, U>::value,
+                                         int>::type = 0>
+        bool operator()(const T &x, const U &y) const {
+            return x != y;
+        }
+
+        template<class T, class U, typename std::enable_if<!detail::is_comparable<T, U>::value, int>::type = 0>
+        bool operator()(const T &, const U &) const {
+            return default_value;
+        }
+    };
+
+    template<class F, class T>
+    struct comparison_unbox_helper {
+        const F &f;
+        const T &rhs;
+
+        template<class U>
+        bool operator()(const U &lhs) const {
+            return f(lhs, rhs);
+        }
+    };
+
+    template<class Operator>
+    class comparison {
+    public:
+        // -- default case -----------------------------------------------------------
+
+        template<class T, class U>
+        bool operator()(const T &x, const U &y) const {
+            std::integral_constant<bool, SumType<T>()> lhs_is_sum_type;
+            std::integral_constant<bool, SumType<U>()> rhs_is_sum_type;
+            return cmp(x, y, lhs_is_sum_type, rhs_is_sum_type);
+        }
+
+    private:
+        // -- automagic unboxing of sum types ----------------------------------------
+
+        template<class T, class U>
+        bool cmp(const T &x, const U &y, std::false_type, std::false_type) const {
+            Operator f;
+            return f(x, y);
+        }
+
+        template<class T, class U>
+        bool cmp(const T &x, const U &y, std::true_type, std::false_type) const {
+            Operator f;
+            auto inner_x = nil::actor::get_if<U>(&x);
+            return inner_x ? f(*inner_x, y) : Operator::default_value;
+        }
+
+        template<class T, class U>
+        bool cmp(const T &x, const U &y, std::false_type, std::true_type) const {
+            Operator f;
+            auto inner_y = nil::actor::get_if<T>(&y);
+            return inner_y ? f(x, *inner_y) : Operator::default_value;
+        }
+
+        template<class T, class U>
+        bool cmp(const T &x, const U &y, std::true_type, std::true_type) const {
+            comparison_unbox_helper<comparison, U> f {*this, y};
+            return visit(f, x);
+        }
+    };
+
+    using equal_to = comparison<equality_operator>;
+
+    using not_equal_to = comparison<inequality_operator>;
+
     struct number_or_timespan_parser_consumer {
         variant<int64_t, double, timespan> x;
         template<class T>
@@ -49,7 +167,7 @@ namespace {
         if (x.val.index() != y.val.index())
             return false;
         // Implements a safe equal comparison for double.
-        nil::actor::test::equal_to f;
+        equal_to f;
         using nil::actor::get;
         using nil::actor::holds_alternative;
         if (holds_alternative<pec>(x.val))
@@ -92,6 +210,23 @@ namespace {
     }
 
 }    // namespace
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<res_t> {
+                void operator()(std::ostream &, res_t const &) {
+                }
+            };
+            template<>
+            struct print_log_value<pec> {
+                void operator()(std::ostream &, pec const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 BOOST_FIXTURE_TEST_SUITE(read_number_or_timespan_tests, fixture)
 

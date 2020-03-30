@@ -22,6 +22,18 @@ using nil::actor::policy::select_any;
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     struct fixture : test_coordinator_fixture<> {
@@ -46,14 +58,14 @@ namespace {
 
 }    // namespace
 
-#define SUBTEST(message)              \
-    run();                            \
+#define SUBTEST(message)                     \
+    run();                                   \
     BOOST_TEST_MESSAGE("subtest: " message); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 
 BOOST_FIXTURE_TEST_SUITE(select_any_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(select_any picks the first arriving integer) {
+BOOST_AUTO_TEST_CASE(select_any_picks_the_first_arriving_integer) {
     auto f = [](int x, int y) { return x + y; };
     auto server1 = make_server(f);
     auto server2 = make_server(f);
@@ -105,7 +117,7 @@ BOOST_AUTO_TEST_CASE(select_any picks the first arriving integer) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(select_any calls the error handler at most once) {
+BOOST_AUTO_TEST_CASE(select_any_calls_the_error_handler_at_most_once) {
     auto f = [](int, int) -> result<int> { return sec::invalid_argument; };
     auto server1 = make_server(f);
     auto server2 = make_server(f);

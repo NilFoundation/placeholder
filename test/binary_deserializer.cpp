@@ -12,7 +12,7 @@
 
 #include <nil/actor/binary_serializer.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <cstring>
 #include <vector>
@@ -23,7 +23,34 @@
 #include <nil/actor/byte_buffer.hpp>
 #include <nil/actor/timestamp.hpp>
 
-using namespace caf;
+using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<test_enum> {
+                void operator()(std::ostream &, test_enum const &) {
+                }
+            };
+            template<>
+            struct print_log_value<test_data> {
+                void operator()(std::ostream &, test_data const &) {
+                }
+            };
+            template<>
+            struct print_log_value<node_id> {
+                void operator()(std::ostream &, node_id const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -57,7 +84,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(binary_deserializer_tests, fixture)
 
-#define SUBTEST(msg)  \
+#define SUBTEST(msg)         \
     BOOST_TEST_MESSAGE(msg); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 

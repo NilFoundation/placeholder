@@ -12,7 +12,7 @@
 
 #include <nil/actor/message.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <map>
 #include <numeric>

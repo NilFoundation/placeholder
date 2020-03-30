@@ -15,11 +15,12 @@
 #include <sstream>
 #include <thread>
 
+#include <boost/integer/common_factor.hpp>
+
 #include <nil/actor/config.hpp>
 #include <nil/actor/config_option.hpp>
 #include <nil/actor/config_option_adder.hpp>
 #include <nil/actor/defaults.hpp>
-#include <nil/actor/detail/gcd.hpp>
 #include <nil/actor/detail/ini_consumer.hpp>
 #include <nil/actor/detail/parser/read_ini.hpp>
 #include <nil/actor/detail/parser/read_string.hpp>
@@ -333,8 +334,7 @@ namespace nil {
         }
 
         timespan spawner_config::stream_tick_duration() const noexcept {
-            auto ns_count =
-                nil::actor::detail::gcd(stream_credit_round_interval.count(), stream_max_batch_delay.count());
+            auto ns_count = boost::integer::gcd(stream_credit_round_interval.count(), stream_max_batch_delay.count());
             return timespan {ns_count};
         }
         std::string spawner_config::render(const error &x) {

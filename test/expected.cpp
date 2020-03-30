@@ -12,7 +12,7 @@
 
 #include <nil/actor/expected.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/sec.hpp>
 

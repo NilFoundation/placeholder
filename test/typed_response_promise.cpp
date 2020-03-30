@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE typed_response_promise
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <map>
 

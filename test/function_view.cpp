@@ -12,7 +12,7 @@
 
 #include <nil/actor/function_view.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <string>
 #include <vector>

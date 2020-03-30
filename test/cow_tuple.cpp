@@ -12,13 +12,25 @@
 
 #include <nil/actor/cow_tuple.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 using std::make_tuple;
 using std::string;
 using std::tuple;
 
-using namespace caf;
+using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 BOOST_AUTO_TEST_CASE(default_construction) {
     cow_tuple<string, string> x;
@@ -73,7 +85,7 @@ BOOST_AUTO_TEST_CASE(move_assignment) {
     BOOST_CHECK_EQUAL(y.ptr(), nullptr);
 }
 
-BOOST_AUTO_TEST_CASE(make_cow_tuple) {
+BOOST_AUTO_TEST_CASE(make_cow_tuple_test) {
     cow_tuple<int, int> x {1, 2};
     auto y = make_cow_tuple(1, 2);
     BOOST_CHECK_EQUAL(x, y);
@@ -93,7 +105,7 @@ BOOST_AUTO_TEST_CASE(unsharing) {
     BOOST_CHECK_EQUAL(y.data(), make_tuple("new", "school"));
 }
 
-BOOST_AUTO_TEST_CASE(to_string) {
+BOOST_AUTO_TEST_CASE(to_string_test) {
     auto x = make_cow_tuple(1, string {"abc"});
     BOOST_CHECK_EQUAL(deep_to_string(x), "(1, \"abc\")");
 }

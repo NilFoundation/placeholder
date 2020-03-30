@@ -16,12 +16,13 @@
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/preprocessor/slot/counter.hpp>
 #include <boost/preprocessor/facilities/empty.hpp>
+#include <boost/preprocessor/facilities/overload.hpp>
 #include <boost/preprocessor/facilities/expand.hpp>
 #include <boost/preprocessor/variadic/size.hpp>
 
 #include <nil/actor/config.hpp>
 
-#define ACTOR_FSM_EVAL_MISMATCH_EC                                                  \
+#define ACTOR_FSM_EVAL_MISMATCH_EC                                                \
     if (mismatch_ec == nil::actor::pec::unexpected_character)                     \
         ps.code = ch != '\n' ? mismatch_ec : nil::actor::pec::unexpected_newline; \
     else                                                                          \
@@ -63,7 +64,7 @@
     return;
 
 /// Defines a terminal state in the FSM.
-#define ACTOR_TERM_STATE_IMPL1(name)                        \
+#define ACTOR_TERM_STATE_IMPL1(name)                      \
     }                                                     \
     for (;;) {                                            \
         /* jumps back up here if no transition matches */ \
@@ -74,7 +75,7 @@
 
 /// Defines a terminal state in the FSM that runs `exit_statement` when leaving
 /// the state with code `pec::success` or `pec::trailing_character`.
-#define ACTOR_TERM_STATE_IMPL2(name, exit_statement)        \
+#define ACTOR_TERM_STATE_IMPL2(name, exit_statement)      \
     }                                                     \
     for (;;) {                                            \
         /* jumps back up here if no transition matches */ \
@@ -88,62 +89,62 @@
         e_##name:
 
 #define ACTOR_TRANSITION_IMPL1(target) \
-    ch = ps.next();                  \
+    ch = ps.next();                    \
     goto s_##target;
 
-#define ACTOR_TRANSITION_IMPL2(target, whitelist)                      \
+#define ACTOR_TRANSITION_IMPL2(target, whitelist)                    \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
-        ACTOR_TRANSITION_IMPL1(target)                                 \
+        ACTOR_TRANSITION_IMPL1(target)                               \
     }
 
-#define ACTOR_TRANSITION_IMPL3(target, whitelist, action)              \
+#define ACTOR_TRANSITION_IMPL3(target, whitelist, action)            \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
         action;                                                      \
-        ACTOR_TRANSITION_IMPL1(target)                                 \
+        ACTOR_TRANSITION_IMPL1(target)                               \
     }
 
-#define ACTOR_TRANSITION_IMPL4(target, whitelist, action, error_code)  \
-    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
-        if (!action) {                                               \
-            ps.code = error_code;                                    \
-            return;                                                  \
-        }                                                            \
-        ACTOR_TRANSITION_IMPL1(target)                                 \
+#define ACTOR_TRANSITION_IMPL4(target, whitelist, action, error_code) \
+    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) {  \
+        if (!action) {                                                \
+            ps.code = error_code;                                     \
+            return;                                                   \
+        }                                                             \
+        ACTOR_TRANSITION_IMPL1(target)                                \
     }
 
-#define BOOST_ERROR_TRANSITION_IMPL2(error_code, whitelist)            \
+#define BOOST_ERROR_TRANSITION_IMPL2(error_code, whitelist)          \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
         ps.code = error_code;                                        \
         return;                                                      \
     }
 
 #define BOOST_ERROR_TRANSITION_IMPL1(error_code) \
-    ps.code = error_code;                      \
+    ps.code = error_code;                        \
     return;
 
 #define ACTOR_EPSILON_IMPL1(target) goto s_##target;
 
-#define ACTOR_EPSILON_IMPL2(target, whitelist)                         \
+#define ACTOR_EPSILON_IMPL2(target, whitelist)                       \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
-        ACTOR_EPSILON_IMPL1(target)                                    \
+        ACTOR_EPSILON_IMPL1(target)                                  \
     }
 
-#define ACTOR_EPSILON_IMPL3(target, whitelist, action)                 \
+#define ACTOR_EPSILON_IMPL3(target, whitelist, action)               \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
         action;                                                      \
-        ACTOR_EPSILON_IMPL1(target)                                    \
+        ACTOR_EPSILON_IMPL1(target)                                  \
     }
 
-#define ACTOR_EPSILON_IMPL4(target, whitelist, action, error_code)     \
+#define ACTOR_EPSILON_IMPL4(target, whitelist, action, error_code)   \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
         if (!action) {                                               \
             ps.code = error_code;                                    \
             return;                                                  \
         }                                                            \
-        ACTOR_EPSILON_IMPL1(target)                                    \
+        ACTOR_EPSILON_IMPL1(target)                                  \
     }
 
-#define ACTOR_FSM_TRANSITION_IMPL2(fsm_call, target)     \
+#define ACTOR_FSM_TRANSITION_IMPL2(fsm_call, target)   \
     ps.next();                                         \
     fsm_call;                                          \
     if (ps.code > nil::actor::pec::trailing_character) \
@@ -151,62 +152,64 @@
     ch = ps.current();                                 \
     goto s_##target;
 
-#define ACTOR_FSM_TRANSITION_IMPL3(fsm_call, target, whitelist)        \
+#define ACTOR_FSM_TRANSITION_IMPL3(fsm_call, target, whitelist)      \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
-        ACTOR_FSM_TRANSITION_IMPL2(fsm_call, target)                   \
+        ACTOR_FSM_TRANSITION_IMPL2(fsm_call, target)                 \
     }
 
 #define ACTOR_FSM_TRANSITION_IMPL4(fsm_call, target, whitelist, action) \
-    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) {  \
-        action;                                                       \
+    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) {    \
+        action;                                                         \
         ACTOR_FSM_TRANSITION_IMPL2(fsm_call, target)                    \
     }
 
 #define ACTOR_FSM_TRANSITION_IMPL5(fsm_call, target, whitelist, action, error_code) \
-    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) {              \
-        if (!action) {                                                            \
-            ps.code = error_code;                                                 \
-            return;                                                               \
-        }                                                                         \
+    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) {                \
+        if (!action) {                                                              \
+            ps.code = error_code;                                                   \
+            return;                                                                 \
+        }                                                                           \
         ACTOR_FSM_TRANSITION_IMPL2(fsm_call, target)                                \
     }
 
-#define ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)        \
+#define ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)      \
     fsm_call;                                          \
     if (ps.code > nil::actor::pec::trailing_character) \
         return;                                        \
     ch = ps.current();                                 \
     goto s_##target;
 
-#define ACTOR_FSM_EPSILON_IMPL3(fsm_call, target, whitelist)           \
+#define ACTOR_FSM_EPSILON_IMPL3(fsm_call, target, whitelist)         \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
-        ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)                      \
+        ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)                    \
     }
 
-#define ACTOR_FSM_EPSILON_IMPL4(fsm_call, target, whitelist, action)   \
+#define ACTOR_FSM_EPSILON_IMPL4(fsm_call, target, whitelist, action) \
     if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) { \
         action;                                                      \
-        ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)                      \
+        ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)                    \
     }
 
 #define ACTOR_FSM_EPSILON_IMPL5(fsm_call, target, whitelist, action, error_code) \
-    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) {           \
-        if (!action) {                                                         \
-            ps.code = error_code;                                              \
-            return;                                                            \
-        }                                                                      \
+    if (::nil::actor::detail::parser::in_whitelist(whitelist, ch)) {             \
+        if (!action) {                                                           \
+            ps.code = error_code;                                                \
+            return;                                                              \
+        }                                                                        \
         ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)                                \
     }
 
 #ifdef ACTOR_MSVC
 
 /// Defines a terminal state in the FSM.
-#define term_state(...) BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_TERM_STATE_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
+#define term_state(...) \
+    BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_TERM_STATE_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
 
 /// Transitions to target state if a predicate (optional argument 1) holds for
 /// the current token and executes an action (optional argument 2) before
 /// entering the new state.
-#define transition(...) BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_TRANSITION_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
+#define transition(...) \
+    BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_TRANSITION_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
 
 /// Stops the FSM with reason `error_code` if `predicate` holds for the current
 /// token.

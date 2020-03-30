@@ -12,7 +12,7 @@
 
 #include <nil/actor/all.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 using namespace nil::actor;
 
@@ -59,5 +59,5 @@ BOOST_AUTO_TEST_CASE(test_serial_reply) {
     self->request(master, infinite, hi_atom::value)
         .receive([](ho_atom) { BOOST_TEST_MESSAGE("received 'ho'"); },
                  [&](const error &err) { BOOST_ERROR("Error: " << self->system().render(err)); });
-    ACTOR_REQUIRE(self->mailbox().empty());
+    BOOST_REQUIRE(self->mailbox().empty());
 }

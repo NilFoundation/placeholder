@@ -12,7 +12,7 @@
 
 #include <nil/actor/composable_behavior.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/attach_stream_sink.hpp>
 #include <nil/actor/attach_stream_source.hpp>

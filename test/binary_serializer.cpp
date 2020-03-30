@@ -12,7 +12,7 @@
 
 #include <nil/actor/binary_serializer.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <cstring>
 #include <vector>
@@ -24,6 +24,18 @@
 #include <nil/actor/timestamp.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -57,7 +69,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(binary_serializer_tests, fixture)
 
-#define SUBTEST(msg)  \
+#define SUBTEST(msg)         \
     BOOST_TEST_MESSAGE(msg); \
     for (int subtest_dummy = 0; subtest_dummy < 1; ++subtest_dummy)
 

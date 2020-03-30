@@ -12,12 +12,24 @@
 
 #include <nil/actor/actor_registry.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/binary_deserializer.hpp>
 #include <nil/actor/binary_serializer.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<actor> {
+                void operator()(std::ostream &, actor const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 

@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE or_else
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/all.hpp>
 

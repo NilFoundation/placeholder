@@ -22,16 +22,17 @@
 
 #define BOOST_TEST_MODULE native_streaming_classes
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <memory>
 #include <numeric>
+
+#include <boost/integer/common_factor.hpp>
 
 #include <nil/actor/spawner.hpp>
 #include <nil/actor/spawner_config.hpp>
 #include <nil/actor/broadcast_downstream_manager.hpp>
 #include <nil/actor/buffered_downstream_manager.hpp>
-#include <nil/actor/detail/gcd.hpp>
 #include <nil/actor/detail/overload.hpp>
 #include <nil/actor/detail/stream_sink_impl.hpp>
 #include <nil/actor/detail/stream_source_impl.hpp>
@@ -71,6 +72,39 @@ using std::vector;
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<actor_addr> {
+                void operator()(std::ostream &, actor_addr const &) {
+                }
+            };
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+            template<>
+            struct print_log_value<none_t> {
+                void operator()(std::ostream &, none_t const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     // -- utility ------------------------------------------------------------------
@@ -96,7 +130,8 @@ namespace {
         return out.str();
     }
 
-#define TRACE(name, type, ...) BOOST_TEST_MESSAGE(name << " received a " << #type << ": " << collapse_args(__VA_ARGS__));
+#define TRACE(name, type, ...) \
+    BOOST_TEST_MESSAGE(name << " received a " << #type << ": " << collapse_args(__VA_ARGS__));
 
     const char *name_of(const strong_actor_ptr &x) {
         ACTOR_ASSERT(x != nullptr);
@@ -157,7 +192,7 @@ namespace {
             super(cfg),
             mbox(unit, unit, unit, unit, unit), name_(cstr_name), global_time_(global_time),
             tick_emitter_(global_time == nullptr ? clock_type::now() : *global_time) {
-            auto cycle = detail::gcd(credit_interval.count(), force_batches_interval.count());
+            auto cycle = boost::integer::gcd(credit_interval.count(), force_batches_interval.count());
             ticks_per_force_batches_interval = static_cast<size_t>(force_batches_interval.count() / cycle);
             ticks_per_credit_interval = static_cast<size_t>(credit_interval.count() / cycle);
             tick_emitter_.interval(duration_type {cycle});
@@ -206,7 +241,7 @@ namespace {
         }
 
         void start_streaming(entity &ref, int num_messages) {
-            BOOST_REQUIRE_NOT_EQUAL(num_messages, 0);
+            BOOST_REQUIRE_NE(num_messages, 0);
             using downstream_manager = broadcast_downstream_manager<int>;
             struct driver final : public stream_source_driver<downstream_manager> {
             public:
@@ -418,7 +453,7 @@ namespace {
                     TRACE(self->name(), close, ACTOR_ARG(dm.slots));
                     auto slots = dm.slots;
                     auto i = self->stream_managers().find(slots.receiver);
-                    BOOST_REQUIRE_NOT_EQUAL(i, self->stream_managers().end());
+                    BOOST_REQUIRE_NE(i, self->stream_managers().end());
                     i->second->handle(inptr, y);
                     q.policy().handler.reset();
                     qs.erase_later(slots.receiver);
@@ -485,7 +520,8 @@ namespace {
         }
 
         static spawner_config &init_config(spawner_config &cfg) {
-            if (auto err = cfg.parse(nil::actor::test::engine::argc(), nil::actor::test::engine::argv()))
+            if (auto err = cfg.parse(boost::unit_test::framework::master_test_suite().argc,
+                                     boost::unit_test::framework::master_test_suite().argv))
                 BOOST_FAIL("parsing the config failed: " << to_string(err));
             cfg.set("scheduler.policy", "testing");
             return cfg;

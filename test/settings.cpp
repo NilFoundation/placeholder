@@ -12,7 +12,7 @@
 
 #include <nil/actor/settings.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <string>
 
@@ -116,7 +116,7 @@ namespace nil {
 
 BOOST_FIXTURE_TEST_SUITE(settings_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(put) {
+BOOST_AUTO_TEST_CASE(put_test) {
     put(x, "foo", "bar");
     put(x, "logger.console", "none");
     put(x, "one.two.three", "four");
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(put) {
     BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "trace"s);
 }
 
-BOOST_AUTO_TEST_CASE(put_missing) {
+BOOST_AUTO_TEST_CASE(put_missing_test) {
     put_missing(x, "foo", "bar");
     put_missing(x, "logger.console", "none");
     put_missing(x, "one.two.three", "four");
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(put_missing) {
     BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
 }
 
-BOOST_AUTO_TEST_CASE(put_list) {
+BOOST_AUTO_TEST_CASE(put_list_test) {
     put_list(x, "integers").emplace_back(42);
     BOOST_CHECK(x.contains("integers"));
     BOOST_CHECK_EQUAL(unpack(x, "integers"), make_config_value_list(42));
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(put_list) {
     BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three"), make_config_value_list(4));
 }
 
-BOOST_AUTO_TEST_CASE(put_dictionary) {
+BOOST_AUTO_TEST_CASE(put_dictionary_test) {
     put_dictionary(x, "logger").emplace("console", "none");
     BOOST_CHECK(x.contains("logger"));
     BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
@@ -166,7 +166,7 @@ BOOST_AUTO_TEST_CASE(put_dictionary) {
     BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three", "four"), "five"s);
 }
 
-BOOST_AUTO_TEST_CASE(get and get_if) {
+BOOST_AUTO_TEST_CASE(get_and_get_if_test) {
     fill();
     BOOST_CHECK(get_if(&x, "hello") != nullptr);
     BOOST_CHECK(get<std::string>(x, "hello") == "world"s);
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(get and get_if) {
     BOOST_CHECK(get<int>(x, "one.two.three") == 4);
 }
 
-BOOST_AUTO_TEST_CASE(get_or) {
+BOOST_AUTO_TEST_CASE(get_or_test) {
     fill();
     BOOST_CHECK_EQUAL(get_or(x, "hello", "nobody"), "world"s);
     BOOST_CHECK_EQUAL(get_or(x, "goodbye", "nobody"), "nobody"s);

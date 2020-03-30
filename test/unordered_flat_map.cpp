@@ -40,7 +40,7 @@ using std::vector;
 
 using nil::actor::detail::unordered_flat_map;
 
-using namespace caf;
+using namespace nil::actor;
 
 template<class T>
 using kvp_vec = vector<pair<int, T>>;

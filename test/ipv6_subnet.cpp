@@ -12,9 +12,47 @@
 
 #include <nil/actor/ipv6_subnet.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<nil::actor::ipv4_address> {
+                void operator()(std::ostream &, nil::actor::ipv4_address const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv4_subnet> {
+                void operator()(std::ostream &, nil::actor::ipv4_subnet const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv4_endpoint> {
+                void operator()(std::ostream &, nil::actor::ipv4_endpoint const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::ipv6_address> {
+                void operator()(std::ostream &, nil::actor::ipv6_address const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv6_subnet> {
+                void operator()(std::ostream &, nil::actor::ipv6_subnet const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv6_endpoint> {
+                void operator()(std::ostream &, nil::actor::ipv6_endpoint const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 

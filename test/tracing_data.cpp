@@ -12,7 +12,7 @@
 
 #include <nil/actor/tracing_data.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <vector>
 
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(tracing_data_is_serializable) {
     BOOST_CHECK_EQUAL(sink(data), none);
     binary_deserializer source {sys, buf};
     BOOST_CHECK_EQUAL(source(copy), none);
-    BOOST_REQUIRE_NOT_EQUAL(copy.get(), nullptr);
+    BOOST_REQUIRE_NE(copy.get(), nullptr);
     BOOST_CHECK_EQUAL(dynamic_cast<dummy_tracing_data &>(*copy).value, "iTrace");
 }
 

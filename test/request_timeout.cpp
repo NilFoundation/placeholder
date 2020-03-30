@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE request_timeout
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <chrono>
 
@@ -22,6 +22,23 @@ using std::chrono::milliseconds;
 using std::chrono::seconds;
 
 using namespace std::string_literals;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+            template<>
+            struct print_log_value<sec> {
+                void operator()(std::ostream &, sec const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 

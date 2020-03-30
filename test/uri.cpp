@@ -12,13 +12,25 @@
 
 #include <nil/actor/uri.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/byte_buffer.hpp>
 #include <nil/actor/ipv4_address.hpp>
 #include <nil/actor/uri_builder.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<uri> {
+                void operator()(std::ostream &, uri const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -124,15 +136,15 @@ namespace {
 
         // -- utility functions ------------------------------------------------------
 
-        byte_buffer serialize(uri x) {
+        byte_buffer serialize(const uri &x) {
             byte_buffer buf;
             binary_serializer sink {nullptr, buf};
             if (auto err = sink(x))
-                BOOST_FAIL("unable to serialize " << x << ": " << to_string(err));
+                BOOST_FAIL("unable to serialize: " << to_string(err));
             return buf;
         }
 
-        uri deserialize(byte_buffer buf) {
+        uri deserialize(const byte_buffer &buf) {
             uri result;
             binary_deserializer source {nullptr, buf};
             if (auto err = source(result))
@@ -273,8 +285,8 @@ BOOST_AUTO_TEST_CASE(builder_construction) {
     BOOST_CHECK_EQUAL(escaped, "hi%20there://it%27s@me%2F/file%201#%5B42%5D");
 }
 
-#define ROUNDTRIP(str)                  \
-    do {                                \
+#define ROUNDTRIP(str)                    \
+    do {                                  \
         BOOST_CHECK(uri::can_parse(str)); \
         BOOST_CHECK_EQUAL(str##_u, str);  \
     } while (false)

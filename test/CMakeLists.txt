@@ -52,10 +52,9 @@ list(APPEND TESTS_NAMES
      ipv4_address
      make_config_value_field
      sum_type
-     ripemd_160
      message_id
      ipv6_address
-     read_ini
+#     read_ini
      metaprogramming
      config_option_set
      actor_profiler
@@ -67,10 +66,10 @@ list(APPEND TESTS_NAMES
      serialization
      config_value
      ringbuffer
-     read_bool
+#     read_bool
      logger
      continuous_streaming
-     read_string
+#     read_string
      detached_actors
      message
      native_streaming_classes
@@ -82,17 +81,17 @@ list(APPEND TESTS_NAMES
      constructor_attach
      wdrr_dynamic_multiplexed_queue
      actor_clock
-     read_number
+#     read_number
      unique_function
      requester
      binary_deserializer
      select_any
-     serial_reply
+#     serial_reply
      actor_registry
      fifo_inbox
      custom_exception_handler
      inspector
-     read_floating_point
+#     read_floating_point
      cow_tuple
      config_value_adaptor
      lifo_inbox
@@ -102,7 +101,7 @@ list(APPEND TESTS_NAMES
      meta_object
      fused_downstream_manager
      parse
-     settings
+#     settings
      blocking_actor
      simple_timeout
      mock_streaming_classes
@@ -110,7 +109,7 @@ list(APPEND TESTS_NAMES
      sender
      thread_hook
      typed_behavior
-     read_number_or_timespan
+#     read_number_or_timespan
      binary_serializer
      wdrr_fixed_multiplexed_queue
      typed_message_view
@@ -121,12 +120,12 @@ list(APPEND TESTS_NAMES
      node_id
      typed_spawn
      const_typed_message_view
-     read_unsigned_integer
+#     read_unsigned_integer
      actor_lifetime
      unit
      byte
      string_algorithms
-     read_signed_integer
+#     read_signed_integer
      stateful_actor
      behavior
      broadcast_downstream_manager
@@ -142,7 +141,7 @@ list(APPEND TESTS_NAMES
      dictionary
      message_lifetime
      actor_factory
-     read_timespan
+#     read_timespan
      actor_termination
      spawner_config
      ipv4_endpoint)

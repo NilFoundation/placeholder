@@ -732,6 +732,5 @@ namespace nil {
         typename Inspector::result_type inspect(Inspector &f, config_value &x) {
             return f(meta::type_name("config_value"), x.get_data());
         }
-
     }    // namespace actor
 }    // namespace nil

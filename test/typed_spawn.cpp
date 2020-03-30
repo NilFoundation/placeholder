@@ -15,7 +15,7 @@
 
 #define BOOST_TEST_MODULE typed_spawn
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <nil/actor/string_algorithms.hpp>
 
@@ -27,6 +27,28 @@ using std::string;
 
 using namespace nil::actor;
 using namespace std::string_literals;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+            template<>
+            struct print_log_value<exit_reason> {
+                void operator()(std::ostream &, exit_reason const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -278,9 +300,9 @@ BOOST_AUTO_TEST_CASE(event_testee_series) {
     auto et = self->spawn<event_testee>();
     BOOST_TEST_MESSAGE("et->message_types() returns an interface description");
     typed_actor<replies_to<get_state_atom>::with<string>> sub_et = et;
-    std::set<string> iface {"nil::actor::replies_to<get_state_atom>::with<std::string>",
-                            "nil::actor::replies_to<std::string>::with<void>", "nil::actor::replies_to<float>::with<void>",
-                            "nil::actor::replies_to<int32_t>::with<int32_t>"};
+    std::set<string> iface {
+        "nil::actor::replies_to<get_state_atom>::with<std::string>", "nil::actor::replies_to<std::string>::with<void>",
+        "nil::actor::replies_to<float>::with<void>", "nil::actor::replies_to<int32_t>::with<int32_t>"};
     BOOST_CHECK_EQUAL(join(sub_et->message_types(), ","), join(iface, ","));
     BOOST_TEST_MESSAGE("the testee skips messages to drive its internal state machine");
     self->send(et, 1);

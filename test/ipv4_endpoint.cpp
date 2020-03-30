@@ -12,7 +12,7 @@
 
 #include <nil/actor/ipv4_endpoint.hpp>
 
-#include "core-test.hpp"
+#include "core_test.hpp"
 
 #include <cassert>
 #include <vector>
