@@ -16,6 +16,39 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv4_address> {
+                void operator()(std::ostream &, nil::actor::ipv4_address const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv4_subnet> {
+                void operator()(std::ostream &, nil::actor::ipv4_subnet const &) {
+                }
+            };
+            template<>
+            struct print_log_value<nil::actor::ipv4_endpoint> {
+                void operator()(std::ostream &, nil::actor::ipv4_endpoint const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     const auto addr = make_ipv4_address;

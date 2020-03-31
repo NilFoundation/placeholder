@@ -28,6 +28,24 @@ using namespace nil::actor;
 
 using namespace std::string_literals;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     timespan operator"" _ms(unsigned long long x) {
@@ -71,7 +89,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(spawner_config_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(parsing - without CLI arguments) {
+BOOST_AUTO_TEST_CASE(parsing_without_cli_arguments) {
     auto text = "[foo]\nbar=\"hello\"";
     options("?foo").add<std::string>("bar,b", "some string parameter");
     parse(text);
@@ -79,7 +97,7 @@ BOOST_AUTO_TEST_CASE(parsing - without CLI arguments) {
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "hello");
 }
 
-BOOST_AUTO_TEST_CASE(parsing - without CLI cfg.remainder) {
+BOOST_AUTO_TEST_CASE(parsing_without_cli_cfg_remainder) {
     auto text = "[foo]\nbar=\"hello\"";
     options("?foo").add<std::string>("bar,b", "some string parameter");
     BOOST_TEST_MESSAGE("CLI long name");
@@ -100,7 +118,7 @@ BOOST_AUTO_TEST_CASE(parsing - without CLI cfg.remainder) {
     BOOST_CHECK_EQUAL(get_or(cfg, "foo.bar", ""), "test");
 }
 
-BOOST_AUTO_TEST_CASE(parsing - with CLI cfg.remainder) {
+BOOST_AUTO_TEST_CASE(parsing_with_cli_cfg_remainder) {
     auto text = "[foo]\nbar=\"hello\"";
     options("?foo").add<std::string>("bar,b", "some string parameter");
     BOOST_TEST_MESSAGE("valid cfg.remainder");

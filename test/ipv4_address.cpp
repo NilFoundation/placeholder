@@ -23,6 +23,18 @@ using namespace nil::actor;
 namespace boost {
     namespace test_tools {
         namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
             template<>
             struct print_log_value<nil::actor::ipv4_address> {
                 void operator()(std::ostream &, nil::actor::ipv4_address const &) {
@@ -50,11 +62,11 @@ BOOST_AUTO_TEST_CASE(constructing) {
     BOOST_CHECK_EQUAL(zero.bits(), 0u);
 }
 
-BOOST_AUTO_TEST_CASE(to_string) {
+BOOST_AUTO_TEST_CASE(to_string_test) {
     BOOST_CHECK_EQUAL(to_string(addr(255, 255, 255, 255)), "255.255.255.255");
 }
 
-BOOST_AUTO_TEST_CASE(from string - valid inputs) {
+BOOST_AUTO_TEST_CASE(from_string_valid_inputs) {
     auto from_string = [](string_view str) -> expected<ipv4_address> {
         ipv4_address result;
         if (auto err = parse(str, result))
@@ -65,7 +77,7 @@ BOOST_AUTO_TEST_CASE(from string - valid inputs) {
     BOOST_CHECK_EQUAL(from_string("255.255.255.255"), addr(255, 255, 255, 255));
 }
 
-BOOST_AUTO_TEST_CASE(from string - invalid inputs) {
+BOOST_AUTO_TEST_CASE(from_string_invalid_inputs) {
     auto should_fail = [](string_view str) {
         ipv4_address result;
         auto err = parse(str, result);

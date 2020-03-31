@@ -19,6 +19,30 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<sec> {
+                void operator()(std::ostream &, sec const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     using calculator = typed_actor<replies_to<int, int>::with<int>>;

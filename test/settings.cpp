@@ -124,11 +124,11 @@ BOOST_AUTO_TEST_CASE(put_test) {
     BOOST_CHECK(x.contains("foo"));
     BOOST_CHECK(x.contains("logger"));
     BOOST_CHECK(x.contains("one"));
-    BOOST_CHECK_EQUAL(unpack(x, "foo"), "bar"s);
-    BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
-    BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three"), "four"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "foo")), "bar"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "logger", "console")), "none"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "one", "two", "three")), "four"s);
     put(x, "logger.console", "trace");
-    BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "trace"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "logger", "console")), "trace"s);
 }
 
 BOOST_AUTO_TEST_CASE(put_missing_test) {
@@ -139,11 +139,11 @@ BOOST_AUTO_TEST_CASE(put_missing_test) {
     BOOST_CHECK(x.contains("foo"));
     BOOST_CHECK(x.contains("logger"));
     BOOST_CHECK(x.contains("one"));
-    BOOST_CHECK_EQUAL(unpack(x, "foo"), "bar"s);
-    BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
-    BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three"), "four"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "foo")), "bar"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "logger", "console")), "none"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "one", "two", "three")), "four"s);
     put_missing(x, "logger.console", "trace");
-    BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "logger", "console")), "none"s);
 }
 
 BOOST_AUTO_TEST_CASE(put_list_test) {
@@ -159,11 +159,11 @@ BOOST_AUTO_TEST_CASE(put_list_test) {
 BOOST_AUTO_TEST_CASE(put_dictionary_test) {
     put_dictionary(x, "logger").emplace("console", "none");
     BOOST_CHECK(x.contains("logger"));
-    BOOST_CHECK_EQUAL(unpack(x, "logger", "console"), "none"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "logger", "console")), "none"s);
     put_dictionary(x, "foo.bar").emplace("value", 42);
-    BOOST_CHECK_EQUAL(unpack(x, "foo", "bar", "value"), 42);
+    BOOST_CHECK_EQUAL(get<int>(unpack(x, "foo", "bar", "value")), 42);
     put_dictionary(x, "one.two.three").emplace("four", "five");
-    BOOST_CHECK_EQUAL(unpack(x, "one", "two", "three", "four"), "five"s);
+    BOOST_CHECK_EQUAL(get<std::string>(unpack(x, "one", "two", "three", "four")), "five"s);
 }
 
 BOOST_AUTO_TEST_CASE(get_and_get_if_test) {

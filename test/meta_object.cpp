@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(meta_objects_allow_serialization_of_objects) {
     BOOST_CHECK_EQUAL(i32_wrapper::instances, 1u);
 }
 
-BOOST_AUTO_TEST_CASE(init_global_meta_objects takes care of creating a meta object table) {
+BOOST_AUTO_TEST_CASE(init_global_meta_objects_takes_care_of_creating_a_meta_object_table) {
     auto xs = global_meta_objects();
     BOOST_REQUIRE_EQUAL(xs.size(), nil::actor::id_block::core_test::end);
     BOOST_CHECK_EQUAL(type_name_by_id_v<type_id_v<i32_wrapper>>, "i32_wrapper"s);

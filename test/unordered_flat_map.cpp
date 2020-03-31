@@ -32,8 +32,7 @@ namespace nil::actor::detail {
 
 }    // namespace nil::actor::detail
 
-
-    using std::make_pair;
+using std::make_pair;
 using std::pair;
 using std::string;
 using std::vector;
@@ -41,6 +40,24 @@ using std::vector;
 using nil::actor::detail::unordered_flat_map;
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 template<class T>
 using kvp_vec = vector<pair<int, T>>;

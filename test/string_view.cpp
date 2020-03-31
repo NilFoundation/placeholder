@@ -48,13 +48,17 @@ BOOST_AUTO_TEST_CASE(string_conversion) {
 
 BOOST_AUTO_TEST_CASE(substrings) {
     string_view x = "abcdefghi";
-    BOOST_CHECK(x.remove_prefix(3), "defghi");
-    BOOST_CHECK(x.remove_suffix(3), "abcdef");
-    BOOST_CHECK(x.substr(3, 3), "def");
-    BOOST_CHECK(x.remove_prefix(9), "");
-    BOOST_CHECK(x.remove_suffix(9), "");
-    BOOST_CHECK(x.substr(9), "");
-    BOOST_CHECK(x.substr(0, 0), "");
+    x.remove_prefix(3);
+    BOOST_CHECK_EQUAL(x, "defghi");
+    x.remove_suffix(3);
+    BOOST_CHECK_EQUAL(x, "abcdef");
+    BOOST_CHECK_EQUAL(x.substr(3, 3), "def");
+    x.remove_prefix(9);
+    BOOST_CHECK_EQUAL(x, "");
+    x.remove_prefix(9);
+    BOOST_CHECK_EQUAL(x, "");
+    BOOST_CHECK_EQUAL(x.substr(9), "");
+    BOOST_CHECK_EQUAL(x.substr(0, 0), "");
 }
 
 BOOST_AUTO_TEST_CASE(compare) {

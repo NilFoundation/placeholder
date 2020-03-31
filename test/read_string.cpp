@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include <nil/actor/pec.hpp>
 #include <nil/actor/parser_state.hpp>
 #include <nil/actor/string_view.hpp>
 #include <nil/actor/variant.hpp>
@@ -28,6 +29,11 @@ namespace boost {
             template<template<typename...> class P, typename... T>
             struct print_log_value<P<T...>> {
                 void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<pec> {
+                void operator()(std::ostream &, pec const &) {
                 }
             };
         }    // namespace tt_detail
@@ -72,38 +78,38 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(read_string_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(empty_string) {
-    BOOST_CHECK_EQUAL(p(R"("")"), ""_s);
-    BOOST_CHECK_EQUAL(p(R"( "")"), ""_s);
-    BOOST_CHECK_EQUAL(p(R"(  "")"), ""_s);
-    BOOST_CHECK_EQUAL(p(R"("" )"), ""_s);
-    BOOST_CHECK_EQUAL(p(R"(""  )"), ""_s);
-    BOOST_CHECK_EQUAL(p(R"(  ""  )"), ""_s);
-    BOOST_CHECK_EQUAL(p("\t \"\" \t\t\t "), ""_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"("")")), ""_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"( "")")), ""_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"(  "")")), ""_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"("" )")), ""_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"(""  )")), ""_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"(  ""  )")), ""_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p("\t \"\" \t\t\t ")), ""_s);
 }
 
 BOOST_AUTO_TEST_CASE(non_empty_quoted_string) {
-    BOOST_CHECK_EQUAL(p(R"("abc")"), "abc"_s);
-    BOOST_CHECK_EQUAL(p(R"("a b c")"), "a b c"_s);
-    BOOST_CHECK_EQUAL(p(R"(   "abcdefABCDEF"   )"), "abcdefABCDEF"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"("abc")")), "abc"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"("a b c")")), "a b c"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"(   "abcdefABCDEF"   )")), "abcdefABCDEF"_s);
 }
 
 BOOST_AUTO_TEST_CASE(quoted_string_with_escaped_characters) {
-    BOOST_CHECK_EQUAL(p(R"("a\tb\tc")"), "a\tb\tc"_s);
-    BOOST_CHECK_EQUAL(p(R"("a\nb\r\nc")"), "a\nb\r\nc"_s);
-    BOOST_CHECK_EQUAL(p(R"("a\\b")"), "a\\b"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"("a\tb\tc")")), "a\tb\tc"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"("a\nb\r\nc")")), "a\nb\r\nc"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"("a\\b")")), "a\\b"_s);
 }
 
 BOOST_AUTO_TEST_CASE(unquoted_strings) {
-    BOOST_CHECK_EQUAL(p(R"(foo)"), "foo"_s);
-    BOOST_CHECK_EQUAL(p(R"( foo )"), "foo"_s);
-    BOOST_CHECK_EQUAL(p(R"( 123 )"), "123"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"(foo)")), "foo"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"( foo )")), "foo"_s);
+    BOOST_CHECK_EQUAL(get<std::string>(p(R"( 123 )")), "123"_s);
 }
 
 BOOST_AUTO_TEST_CASE(invalid_strings) {
-    BOOST_CHECK_EQUAL(p(R"("abc)"), pec::unexpected_eof);
-    BOOST_CHECK_EQUAL(p("\"ab\nc\""), pec::unexpected_newline);
-    BOOST_CHECK_EQUAL(p(R"("abc" def)"), pec::trailing_character);
-    BOOST_CHECK_EQUAL(p(R"( 123, )"), pec::trailing_character);
+    BOOST_CHECK_EQUAL(get<pec>(p(R"("abc)")), pec::unexpected_eof);
+    BOOST_CHECK_EQUAL(get<pec>(p("\"ab\nc\"")), pec::unexpected_newline);
+    BOOST_CHECK_EQUAL(get<pec>(p(R"("abc" def)")), pec::trailing_character);
+    BOOST_CHECK_EQUAL(get<pec>(p(R"( 123, )")), pec::trailing_character);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

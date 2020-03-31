@@ -35,9 +35,14 @@ namespace boost {
                 void operator()(std::ostream &, P<T, S> const &) {
                 }
             };
+            template<>
+            struct print_log_value<nil::actor::unit_t> {
+                void operator()(std::ostream &, nil::actor::unit_t const &) {
+                }
+            };
         }    // namespace tt_detail
     }        // namespace test_tools
-}
+}    // namespace boost
 
 namespace {
 
@@ -101,7 +106,7 @@ BOOST_AUTO_TEST_CASE(requests_without_result) {
         run_once();
         expect((int, int), from(client).to(server).with(1, 2));
         expect((void), from(server).to(client));
-        BOOST_CHECK_EQUAL(*result, unit);
+        BOOST_CHECK_EQUAL(get<unit_t>(*result), unit);
     }
     SUBTEST("request.await") {
         auto client = sys.spawn(
@@ -109,13 +114,13 @@ BOOST_AUTO_TEST_CASE(requests_without_result) {
         run_once();
         expect((int, int), from(client).to(server).with(1, 2));
         expect((void), from(server).to(client));
-        BOOST_CHECK_EQUAL(*result, unit);
+        BOOST_CHECK_EQUAL(get<unit_t>(*result), unit);
     }
     SUBTEST("request.receive") {
         auto res_hdl = self->request(server, infinite, 1, 2);
         run();
         res_hdl.receive([&] { *result = unit; }, ERROR_HANDLER);
-        BOOST_CHECK_EQUAL(*result, unit);
+        BOOST_CHECK_EQUAL(get<unit_t>(*result), unit);
     }
 }
 
@@ -127,7 +132,7 @@ BOOST_AUTO_TEST_CASE(requests_with_integer_result) {
         run_once();
         expect((int, int), from(client).to(server).with(1, 2));
         expect((int), from(server).to(client).with(3));
-        BOOST_CHECK_EQUAL(*result, 3);
+        BOOST_CHECK_EQUAL(get<int>(*result), 3);
     }
     SUBTEST("request.await") {
         auto client = sys.spawn(
@@ -135,13 +140,13 @@ BOOST_AUTO_TEST_CASE(requests_with_integer_result) {
         run_once();
         expect((int, int), from(client).to(server).with(1, 2));
         expect((int), from(server).to(client).with(3));
-        BOOST_CHECK_EQUAL(*result, 3);
+        BOOST_CHECK_EQUAL(get<int>(*result), 3);
     }
     SUBTEST("request.receive") {
         auto res_hdl = self->request(server, infinite, 1, 2);
         run();
         res_hdl.receive([&](int x) { *result = x; }, ERROR_HANDLER);
-        BOOST_CHECK_EQUAL(*result, 3);
+        BOOST_CHECK_EQUAL(get<int>(*result), 3);
     }
 }
 
@@ -154,7 +159,7 @@ BOOST_AUTO_TEST_CASE(delegated_request_with_integer_result) {
     expect((int, int), from(client).to(server).with(1, 2));
     expect((int, int), from(client).to(worker).with(1, 2));
     expect((int), from(worker).to(client).with(3));
-    BOOST_CHECK_EQUAL(*result, 3);
+    BOOST_CHECK_EQUAL(get<int>(*result), 3);
 }
 
 BOOST_AUTO_TEST_CASE(requesters_support_fan_out_request) {

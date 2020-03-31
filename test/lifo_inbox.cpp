@@ -11,15 +11,27 @@
 #define BOOST_TEST_MODULE intrusive.lifo_inbox
 
 #include <nil/actor/intrusive/lifo_inbox.hpp>
+#include <nil/actor/intrusive/singly_linked.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include <memory>
-
-#include <nil/actor/intrusive/singly_linked.hpp>
+#include <thread>
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<inbox_result> {
+                void operator()(std::ostream &, inbox_result const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 

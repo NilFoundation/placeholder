@@ -22,7 +22,6 @@
 
 #include <nil/actor/spawner.hpp>
 #include <nil/actor/spawner_config.hpp>
-#include <nil/actor/deep_to_string.hpp>
 #include <nil/actor/detail/bounds_checker.hpp>
 #include <nil/actor/none.hpp>
 #include <nil/actor/pec.hpp>
@@ -34,6 +33,34 @@ using std::string;
 using namespace nil::actor;
 
 using namespace std::string_literals;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<none_t> {
+                void operator()(std::ostream &, none_t const &) {
+                }
+            };
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -115,7 +142,7 @@ BOOST_AUTO_TEST_CASE(negative_integer) {
     BOOST_CHECK_EQUAL(get_if<uint8_t>(&x), none);
 }
 
-BOOST_AUTO_TEST_CASE(timespan) {
+BOOST_AUTO_TEST_CASE(timespan_test) {
     timespan ns500 {500};
     config_value x {ns500};
     BOOST_CHECK_EQUAL(holds_alternative<timespan>(x), true);
@@ -140,9 +167,9 @@ BOOST_AUTO_TEST_CASE(heterogeneous_list) {
     auto &xs = xs_value.as_list();
     BOOST_CHECK_EQUAL(xs_value.type_name(), "list"s);
     BOOST_REQUIRE_EQUAL(xs.size(), 3u);
-    BOOST_CHECK_EQUAL(xs[0], 1);
-    BOOST_CHECK_EQUAL(xs[1], "two"s);
-    BOOST_CHECK_EQUAL(xs[2], 3.0);
+    BOOST_CHECK_EQUAL(get<int>(xs[0]), 1);
+    BOOST_CHECK_EQUAL(get<std::string>(xs[1]), "two"s);
+    BOOST_CHECK_EQUAL(get<float>(xs[2]), 3.0);
 }
 
 BOOST_AUTO_TEST_CASE(convert_to_list) {
@@ -156,7 +183,7 @@ BOOST_AUTO_TEST_CASE(convert_to_list) {
     BOOST_CHECK_EQUAL(to_string(x), "[42]");
 }
 
-BOOST_AUTO_TEST_CASE(append) {
+BOOST_AUTO_TEST_CASE(append_test) {
     config_value x {int64_t {1}};
     BOOST_CHECK_EQUAL(to_string(x), "1");
     x.append(config_value {int64_t {2}});
@@ -220,9 +247,9 @@ BOOST_AUTO_TEST_CASE(successful_parsing) {
         return parsed;
     };
     using di = nil::actor::dictionary<int>;    // Dictionary-of-integers.
-    using ls = std::vector<string>;     // List-of-strings.
-    using li = std::vector<int>;        // List-of-integers.
-    using lli = std::vector<li>;        // List-of-list-of-integers.
+    using ls = std::vector<string>;            // List-of-strings.
+    using li = std::vector<int>;               // List-of-integers.
+    using lli = std::vector<li>;               // List-of-list-of-integers.
     using std::chrono::milliseconds;
     BOOST_CHECK_EQUAL(get<int64_t>(parse("123")), 123);
     BOOST_CHECK_EQUAL(get<int64_t>(parse("+123")), 123);
@@ -271,7 +298,7 @@ BOOST_AUTO_TEST_CASE(conversion_to_nested_tuple) {
     BOOST_CHECK_EQUAL(get<tuple_type>(x), std::make_tuple(size_t {42}, std::make_tuple(2, 40)));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::vector) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_vector) {
     using list_type = std::vector<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
     BOOST_CHECK(holds_alternative<list_type>(xs));
@@ -280,7 +307,7 @@ BOOST_AUTO_TEST_CASE(conversion to std::vector) {
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::list) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_list) {
     using list_type = std::list<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
     BOOST_CHECK(holds_alternative<list_type>(xs));
@@ -289,7 +316,7 @@ BOOST_AUTO_TEST_CASE(conversion to std::list) {
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::set) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_set) {
     using list_type = std::set<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
     BOOST_CHECK(holds_alternative<list_type>(xs));
@@ -298,7 +325,7 @@ BOOST_AUTO_TEST_CASE(conversion to std::set) {
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::unordered_set) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_unordered_set) {
     using list_type = std::unordered_set<int>;
     auto xs = make_config_value_list(1, 2, 3, 4);
     BOOST_CHECK(holds_alternative<list_type>(xs));
@@ -307,7 +334,7 @@ BOOST_AUTO_TEST_CASE(conversion to std::unordered_set) {
     BOOST_CHECK_EQUAL(*ys, list_type({1, 2, 3, 4}));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::map) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_map) {
     using map_type = std::map<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
     BOOST_CHECK(holds_alternative<map_type>(xs));
@@ -316,7 +343,7 @@ BOOST_AUTO_TEST_CASE(conversion to std::map) {
     BOOST_CHECK_EQUAL(*ys, map_type({{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}}));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::multimap) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_multimap) {
     using map_type = std::multimap<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
     BOOST_CHECK(holds_alternative<map_type>(xs));
@@ -325,7 +352,7 @@ BOOST_AUTO_TEST_CASE(conversion to std::multimap) {
     BOOST_CHECK_EQUAL(*ys, map_type({{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}}));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::unordered_map) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_unordered_map) {
     using map_type = std::unordered_map<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
     BOOST_CHECK(holds_alternative<map_type>(xs));
@@ -334,7 +361,7 @@ BOOST_AUTO_TEST_CASE(conversion to std::unordered_map) {
     BOOST_CHECK_EQUAL(*ys, map_type({{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}}));
 }
 
-BOOST_AUTO_TEST_CASE(conversion to std::unordered_multimap) {
+BOOST_AUTO_TEST_CASE(conversion_to_std_unordered_multimap) {
     using map_type = std::unordered_multimap<std::string, int>;
     auto xs = dict().add("a", 1).add("b", 2).add("c", 3).add("d", 4).make_cv();
     BOOST_CHECK(holds_alternative<map_type>(xs));

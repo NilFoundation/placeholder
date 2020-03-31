@@ -16,6 +16,23 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+            template<>
+            struct print_log_value<sec> {
+                void operator()(std::ostream &, sec const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     struct fixture {

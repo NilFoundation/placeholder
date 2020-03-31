@@ -73,27 +73,144 @@ macro_repeat20(i_n)
 #define v20_test(n)                                                                                       \
     x3 = i##n {0x##n};                                                                                    \
     BOOST_CHECK_EQUAL(deep_to_string(x3), BOOST_PP_STRINGIZE(i##n) + "("s + std::to_string(0x##n) + ")"); \
-    BOOST_CHECK_EQUAL(v20 {x3}, i##n {0x##n});                                                            \
+    BOOST_CHECK_EQUAL(get<i##n>(v20 {x3}), i##n {0x##n});                                                 \
     x4 = x3;                                                                                              \
-    BOOST_CHECK_EQUAL(x4, i##n {0x##n});                                                                  \
-    BOOST_CHECK_EQUAL(v20 {std::move(x3)}, i##n {0x##n});                                                 \
-    BOOST_CHECK_EQUAL(x3, i##n {0});                                                                      \
+    BOOST_CHECK_EQUAL(get<i##n>(x4), i##n {0x##n});                                                       \
+    BOOST_CHECK_EQUAL(get<i##n>(v20 {std::move(x3)}), i##n {0x##n});                                      \
+    BOOST_CHECK_EQUAL(get<i##n>(x3), i##n {0});                                                           \
     x3 = std::move(x4);                                                                                   \
-    BOOST_CHECK_EQUAL(x4, i##n {0});                                                                      \
-    BOOST_CHECK_EQUAL(x3, i##n {0x##n});                                                                  \
+    BOOST_CHECK_EQUAL(get<i##n>(x4), i##n {0});                                                           \
+    BOOST_CHECK_EQUAL(get<i##n>(x3), i##n {0x##n});                                                       \
     {                                                                                                     \
         byte_buffer buf;                                                                                  \
         binary_serializer sink {sys.dummy_execution_unit(), buf};                                         \
         if (auto err = sink(x3))                                                                          \
             BOOST_FAIL("failed to serialize data: " << sys.render(err));                                  \
-        BOOST_CHECK_EQUAL(x3, i##n {0x##n});                                                              \
+        BOOST_CHECK_EQUAL(get<i##n>(x3), i##n {0x##n});                                                   \
         v20 tmp;                                                                                          \
         binary_deserializer source {sys.dummy_execution_unit(), buf};                                     \
         if (auto err = source(tmp))                                                                       \
             BOOST_FAIL("failed to deserialize data: " << sys.render(err));                                \
-        BOOST_CHECK_EQUAL(tmp, i##n {0x##n});                                                             \
-        BOOST_CHECK_EQUAL(tmp, x3);                                                                       \
+        BOOST_CHECK_EQUAL(get<i##n>(tmp), i##n {0x##n});                                                  \
+        BOOST_CHECK_EQUAL(get<i##n>(tmp), get<i##n>(x3));                                                 \
     }
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<none_t> {
+                void operator()(std::ostream &, none_t const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i01> {
+                void operator()(std::ostream &, i01 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i02> {
+                void operator()(std::ostream &, i02 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i03> {
+                void operator()(std::ostream &, i03 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i04> {
+                void operator()(std::ostream &, i04 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i05> {
+                void operator()(std::ostream &, i05 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i06> {
+                void operator()(std::ostream &, i06 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i07> {
+                void operator()(std::ostream &, i07 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i08> {
+                void operator()(std::ostream &, i08 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i09> {
+                void operator()(std::ostream &, i09 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i10> {
+                void operator()(std::ostream &, i10 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i11> {
+                void operator()(std::ostream &, i11 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i12> {
+                void operator()(std::ostream &, i12 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i13> {
+                void operator()(std::ostream &, i13 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i14> {
+                void operator()(std::ostream &, i14 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i15> {
+                void operator()(std::ostream &, i15 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i16> {
+                void operator()(std::ostream &, i16 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i17> {
+                void operator()(std::ostream &, i17 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i18> {
+                void operator()(std::ostream &, i18 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i19> {
+                void operator()(std::ostream &, i19 const &) {
+                }
+            };
+            template<>
+            struct print_log_value<i20> {
+                void operator()(std::ostream &, i20 const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 // copy construction, copy assign, move construction, move assign
 // and finally serialization round-trip
@@ -102,11 +219,11 @@ BOOST_AUTO_TEST_CASE(copying_moving_roundtrips) {
     spawner sys {cfg};
     // default construction
     variant<none_t> x1;
-    BOOST_CHECK_EQUAL(x1, none);
+    BOOST_CHECK_EQUAL(get<none_t>(x1), none);
     variant<int, none_t> x2;
-    BOOST_CHECK_EQUAL(x2, 0);
+    BOOST_CHECK_EQUAL(get<int>(x2), 0);
     v20 x3;
-    BOOST_CHECK_EQUAL(x3, i01 {0});
+    BOOST_CHECK_EQUAL(get<i01>(x3), i01 {0});
     v20 x4;
     macro_repeat20(v20_test);
 }
@@ -127,11 +244,11 @@ BOOST_AUTO_TEST_CASE(constructors) {
     variant<float, int, std::string> b {"bar"s};
     variant<int, std::string, double> c {123};
     variant<bool, uint8_t> d {uint8_t {252}};
-    BOOST_CHECK_EQUAL(a, 42);
-    BOOST_CHECK_EQUAL(b, "bar"s);
-    BOOST_CHECK_EQUAL(c, 123);
-    BOOST_CHECK_NE(c, "123"s);
-    BOOST_CHECK_EQUAL(d, uint8_t {252});
+    BOOST_CHECK_EQUAL(get<int>(a), 42);
+    BOOST_CHECK_EQUAL(get<std::string>(b), "bar"s);
+    BOOST_CHECK_EQUAL(get<int>(c), 123);
+    BOOST_CHECK_NE(get<std::string>(c), "123"s);
+    BOOST_CHECK_EQUAL(get<uint8_t>(d), uint8_t {252});
 }
 
 BOOST_AUTO_TEST_CASE(n_ary_visit) {

@@ -634,7 +634,7 @@ public:
                 auto &ys = *res;
                 auto ys_indices = get_indices(ys);
                 if (apply_args(inspector, ys_indices, ys)) {
-                    BOOST_FAIL("received disallowed message: " << ACTOR_ARG(*res));
+                    BOOST_FAIL("received disallowed message");
                 }
             }
         };

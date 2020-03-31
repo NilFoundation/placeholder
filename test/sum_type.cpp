@@ -153,6 +153,24 @@ using namespace nil::actor;
 using std::string;
 using map_type = std::map<int, int>;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     struct stringify_t {
@@ -183,7 +201,7 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(holds_alternative) {
+BOOST_AUTO_TEST_CASE(holds_alternative_test) {
     union_type x;
     BOOST_CHECK_EQUAL(holds_alternative<int>(x), true);
     BOOST_CHECK_EQUAL(holds_alternative<string>(x), false);
@@ -198,7 +216,7 @@ BOOST_AUTO_TEST_CASE(holds_alternative) {
     BOOST_CHECK_EQUAL(holds_alternative<map_type>(x), true);
 }
 
-BOOST_AUTO_TEST_CASE(get) {
+BOOST_AUTO_TEST_CASE(get_test) {
     union_type x;
     BOOST_CHECK_EQUAL(get<int>(x), 0);
     x = 42;
@@ -209,7 +227,7 @@ BOOST_AUTO_TEST_CASE(get) {
     BOOST_CHECK_EQUAL(get<map_type>(x), map_type({{1, 1}, {2, 2}}));
 }
 
-BOOST_AUTO_TEST_CASE(get_if) {
+BOOST_AUTO_TEST_CASE(get_if_test) {
     union_type x;
     BOOST_CHECK_EQUAL(get_if<int>(&x), &get<int>(x));
     BOOST_CHECK_EQUAL(get_if<string>(&x), nullptr);

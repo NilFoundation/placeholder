@@ -42,7 +42,7 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(messages allow index - based access) {
+BOOST_AUTO_TEST_CASE(messages_allow_index_based_access) {
     auto msg = make_message("abc", uint32_t {10}, 20.0);
     BOOST_CHECK_EQUAL(msg.size(), 3u);
     BOOST_CHECK_EQUAL(msg.types(), (make_type_id_list<std::string, uint32_t, double>()));
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(arrays_to_string) {
     BOOST_CHECK_EQUAL(msg_as_string(s3 {}), "([1, 2, 3, 4])");
 }
 
-BOOST_AUTO_TEST_CASE(match_elements exposes element types) {
+BOOST_AUTO_TEST_CASE(match_elements_exposes_element_types) {
     auto msg = make_message(put_atom_v, "foo", int64_t {123});
     BOOST_CHECK((msg.match_element<put_atom>(0)));
     BOOST_CHECK((msg.match_element<string>(1)));

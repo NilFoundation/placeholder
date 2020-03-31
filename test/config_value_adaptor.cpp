@@ -155,6 +155,29 @@ namespace {
 
 }    // namespace
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<my_duration> {
+                void operator()(std::ostream &, my_duration const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace nil {
     namespace actor {
 
@@ -166,7 +189,7 @@ namespace nil {
 
 BOOST_FIXTURE_TEST_SUITE(config_value_adaptor_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(holds_alternative) {
+BOOST_AUTO_TEST_CASE(holds_alternative_test) {
     auto make_value = [](int64_t count, std::string resolution) {
         settings x;
         put(x, "count", count);
@@ -208,7 +231,7 @@ max-delay = {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(adaptor access from actor system config - file input) {
+BOOST_AUTO_TEST_CASE(adaptor_access_from_actor_system_config_file_input) {
     test_config cfg;
     std::istringstream in {config_text};
     if (auto err = cfg.parse(0, nullptr, in))
@@ -216,7 +239,7 @@ BOOST_AUTO_TEST_CASE(adaptor access from actor system config - file input) {
     BOOST_CHECK_EQUAL(cfg.max_delay, my_duration::from_s(123));
 }
 
-BOOST_AUTO_TEST_CASE(adaptor access from actor system config - file input and arguments) {
+BOOST_AUTO_TEST_CASE(adaptor_access_from_actor_system_config_file_input_and_arguments) {
     std::vector<std::string> args {
         "--max-delay={count = 20, resolution = ms}",
     };

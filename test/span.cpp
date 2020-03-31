@@ -18,6 +18,24 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     using i8_list = std::vector<int8_t>;
@@ -84,7 +102,7 @@ BOOST_AUTO_TEST_CASE(free_iterator_functions) {
     BOOST_CHECK_EQUAL(xs.cend(), cend(xs));
 }
 
-BOOST_AUTO_TEST_CASE(as_bytes) {
+BOOST_AUTO_TEST_CASE(as_bytes_test) {
     auto xs = make_span(chars);
     auto ys = make_span(shorts);
     BOOST_CHECK_EQUAL(as_bytes(xs).size(), chars.size());
@@ -93,7 +111,7 @@ BOOST_AUTO_TEST_CASE(as_bytes) {
     BOOST_CHECK_EQUAL(as_writable_bytes(ys).size(), shorts.size() * 2);
 }
 
-BOOST_AUTO_TEST_CASE(make_span) {
+BOOST_AUTO_TEST_CASE(make_span_test) {
     auto xs = make_span(chars);
     auto ys = make_span(chars.data(), chars.size());
     auto zs = make_span(chars.data(), chars.data() + chars.size());

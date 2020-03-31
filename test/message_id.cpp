@@ -16,6 +16,18 @@
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<message_id> {
+                void operator()(std::ostream &, message_id const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 BOOST_AUTO_TEST_CASE(default_construction) {
     message_id x;
     BOOST_CHECK_EQUAL(x.is_async(), true);
@@ -33,7 +45,7 @@ BOOST_AUTO_TEST_CASE(default_construction) {
     BOOST_CHECK(x.integer_value() == message_id::default_async_value);
 }
 
-BOOST_AUTO_TEST_CASE(make_message_id) {
+BOOST_AUTO_TEST_CASE(make_message_id_test) {
     auto x = make_message_id();
     message_id y;
     BOOST_CHECK_EQUAL(x, y);
@@ -55,7 +67,7 @@ BOOST_AUTO_TEST_CASE(from_integer_value) {
     BOOST_CHECK_EQUAL(x.request_id().integer_value(), 42u);
 }
 
-BOOST_AUTO_TEST_CASE(response ID) {
+BOOST_AUTO_TEST_CASE(response_id) {
     auto x = make_message_id(42).response_id();
     BOOST_CHECK_EQUAL(x.is_async(), false);
     BOOST_CHECK_EQUAL(x.is_request(), false);
@@ -85,7 +97,7 @@ BOOST_AUTO_TEST_CASE(request_with_high_priority) {
     BOOST_CHECK_EQUAL(x.request_id().integer_value(), 42u);
 }
 
-BOOST_AUTO_TEST_CASE(with_category) {
+BOOST_AUTO_TEST_CASE(with_category_test) {
     auto x = make_message_id();
     BOOST_CHECK(x.category() == message_id::normal_message_category);
     for (auto category : {message_id::urgent_message_category, message_id::downstream_message_category,

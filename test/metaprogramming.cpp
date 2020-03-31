@@ -236,7 +236,7 @@ private:
     std::string str_;
 };
 
-BOOST_AUTO_TEST_CASE(is_comparable) {
+BOOST_AUTO_TEST_CASE(is_comparable_test) {
     BOOST_CHECK((is_comparable<double, std::string>::value) == false);
     BOOST_CHECK((is_comparable<foo, foo>::value) == false);
     BOOST_CHECK((is_comparable<bar, bar>::value) == true);
