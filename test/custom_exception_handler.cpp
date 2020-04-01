@@ -35,6 +35,7 @@ exception_testee::~exception_testee() {
 }
 
 BOOST_AUTO_TEST_CASE(test_custom_exception_handler) {
+    meta_initializer mi;
     spawner_config cfg;
     spawner system {cfg};
     auto handler = [](std::exception_ptr &eptr) -> error {

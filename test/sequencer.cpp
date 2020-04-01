@@ -14,6 +14,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <nil/actor/test/dsl.hpp>
+
 #include <nil/actor/all.hpp>
 
 #define ERROR_HANDLER [&](error &err) { BOOST_FAIL(system.render(err)); }
@@ -74,7 +76,7 @@ namespace {
     }
 
     struct fixture {
-        fixture() : system(cfg), self(system, true) {
+        fixture() : mi(), system(cfg), self(system, true) {
             // nop
         }
 
@@ -86,6 +88,7 @@ namespace {
             return dptr->getf(abstract_actor::is_terminated_flag);
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         spawner system;
         scoped_actor self;

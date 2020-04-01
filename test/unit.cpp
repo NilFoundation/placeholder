@@ -36,6 +36,7 @@ behavior testee(event_based_actor *self) {
 }
 
 BOOST_AUTO_TEST_CASE(unit_results) {
+    meta_initializer mi;
     spawner_config cfg;
     spawner sys {cfg};
     scoped_actor self {sys};

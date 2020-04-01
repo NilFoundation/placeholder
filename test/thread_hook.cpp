@@ -77,9 +77,10 @@ namespace {
 
     template<class Hook>
     struct fixture {
+        meta_initializer mi;
         config<Hook> cfg;
         spawner sys;
-        fixture() : sys(cfg) {
+        fixture() : mi(), sys(cfg) {
             // nop
         }
     };

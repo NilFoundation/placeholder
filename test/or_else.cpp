@@ -39,10 +39,11 @@ namespace {
     }
 
     struct fixture {
-        fixture() : system(cfg) {
+        fixture() : mi(), system(cfg) {
             // nop
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         spawner system;
 

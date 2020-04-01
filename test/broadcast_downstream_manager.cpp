@@ -171,6 +171,8 @@ namespace {
 
     // Provides the setup with alice, bob, and carl.
     struct fixture {
+        meta_initializer mi;
+
         spawner_config cfg;
 
         spawner sys;
@@ -198,8 +200,8 @@ namespace {
         }
 
         fixture() :
-            sys(cfg), alice_hdl(spawn(sys, 0, "alice")), bob_hdl(spawn(sys, 1, "bob")), carl_hdl(spawn(sys, 2, "carl")),
-            alice(fetch(alice_hdl)), bob(fetch(bob_hdl)), carl(fetch(carl_hdl)) {
+            mi(), sys(cfg), alice_hdl(spawn(sys, 0, "alice")), bob_hdl(spawn(sys, 1, "bob")),
+            carl_hdl(spawn(sys, 2, "carl")), alice(fetch(alice_hdl)), bob(fetch(bob_hdl)), carl(fetch(carl_hdl)) {
             // nop
         }
 

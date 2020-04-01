@@ -25,6 +25,7 @@ using std::endl;
 namespace {
 
     struct fixture {
+        meta_initializer mi;
         spawner_config cfg;
 
         void test_spawn(message args, bool expect_fail = false) {

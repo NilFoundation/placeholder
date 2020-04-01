@@ -84,10 +84,11 @@ namespace {
     };
 
     struct fixture {
-        fixture() : sys(cfg), self(sys, true), a1 {sys.spawn(dt_testee)}, a2 {sys.spawn(st_testee)} {
+        fixture() : mi(), sys(cfg), self(sys, true), a1 {sys.spawn(dt_testee)}, a2 {sys.spawn(st_testee)} {
             // nop
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         spawner sys;
         scoped_actor self;

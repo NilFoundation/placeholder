@@ -34,6 +34,7 @@ namespace {
     }
 
     struct fixture {
+        meta_initializer mi;
         spawner_config config;
         spawner system {config};
         scoped_actor self {system};

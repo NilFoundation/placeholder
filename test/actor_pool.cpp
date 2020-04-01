@@ -61,6 +61,7 @@ namespace {
     };
 
     struct fixture {
+        meta_initializer mi;
         // allows us to check s_dtors after dtor of spawner
         spawner_config cfg;
         union {
@@ -72,7 +73,7 @@ namespace {
 
         std::function<actor()> spawn_worker;
 
-        fixture() {
+        fixture() : mi() {
             new (&system) spawner(cfg);
             new (&context) scoped_execution_unit(&system);
             spawn_worker = [&] { return system.spawn<worker>(); };

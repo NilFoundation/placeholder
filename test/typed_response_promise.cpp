@@ -129,10 +129,11 @@ namespace {
     };
 
     struct fixture {
-        fixture() : system(cfg), self(system, true), foo(system.spawn<promise_actor_impl>()) {
+        fixture() : mi(), system(cfg), self(system, true), foo(system.spawn<promise_actor_impl>()) {
             // nop
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         spawner system;
         scoped_actor self;

@@ -67,6 +67,7 @@ namespace {
     }
 
     struct fixture {
+        meta_initializer mi;
         spawner_config cfg;
         spawner sys {cfg};
 

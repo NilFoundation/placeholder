@@ -215,6 +215,9 @@ namespace boost {
 // copy construction, copy assign, move construction, move assign
 // and finally serialization round-trip
 BOOST_AUTO_TEST_CASE(copying_moving_roundtrips) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     spawner_config cfg;
     spawner sys {cfg};
     // default construction

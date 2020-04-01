@@ -21,11 +21,12 @@ using std::endl;
 namespace {
 
     struct fixture {
+        meta_initializer mi;
         spawner_config cfg;
         spawner sys;
         scoped_actor self;
 
-        fixture() : sys(cfg), self(sys, true) {
+        fixture() : mi(), sys(cfg), self(sys, true) {
             // nop
         }
     };

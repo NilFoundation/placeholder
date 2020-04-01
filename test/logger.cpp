@@ -42,16 +42,16 @@ namespace boost {
 
 using std::string;
 
-#define CHECK_FUN_PREFIX(PrefixName)                                                                         \
-    do {                                                                                                     \
-        auto e = ACTOR_LOG_MAKE_EVENT(0, "caf", ACTOR_LOG_LEVEL_DEBUG, "");                                      \
-        std::ostringstream oss;                                                                              \
-        ::nil::actor::logger::render_fun_prefix(oss, e);                                                            \
-        auto prefix = oss.str();                                                                             \
-        if (prefix != PrefixName)                                                                            \
+#define CHECK_FUN_PREFIX(PrefixName)                                                                           \
+    do {                                                                                                       \
+        auto e = ACTOR_LOG_MAKE_EVENT(0, "caf", ACTOR_LOG_LEVEL_DEBUG, "");                                    \
+        std::ostringstream oss;                                                                                \
+        ::nil::actor::logger::render_fun_prefix(oss, e);                                                       \
+        auto prefix = oss.str();                                                                               \
+        if (prefix != PrefixName)                                                                              \
             BOOST_ERROR("rendering the prefix of " << e.pretty_fun << " produced " << prefix << " instead of " \
-                                                 << PrefixName);                                             \
-        else                                                                                                 \
+                                                   << PrefixName);                                             \
+        else                                                                                                   \
             BOOST_CHECK_EQUAL(prefix, PrefixName);                                                             \
     } while (false)
 
@@ -69,7 +69,7 @@ struct T {};
 namespace {
 
     struct fixture {
-        fixture() {
+        fixture() : mi() {
             cfg.set("scheduler.policy", "testing");
         }
 
@@ -89,6 +89,7 @@ namespace {
             return oss.str();
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         logger::line_format lf;
     };
@@ -185,7 +186,7 @@ BOOST_AUTO_TEST_CASE(rendering) {
     BOOST_CHECK_EQUAL(render(logger::render_date, t0), t0_buf);
     // Rendering of events.
     logger::event e {
-        ACTOR_LOG_LEVEL_WARNING,      42, "unit_test", "void ns::foo::bar()", "bar", "foo.cpp", "hello world",
+        ACTOR_LOG_LEVEL_WARNING,    42, "unit_test", "void ns::foo::bar()", "bar", "foo.cpp", "hello world",
         std::this_thread::get_id(), 0,  t0,
     };
     BOOST_CHECK_EQUAL(render(logger::render_fun_name, e), string_view {"bar"});

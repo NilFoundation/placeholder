@@ -251,6 +251,9 @@ namespace {
 }    // namespace
 
 BOOST_AUTO_TEST_CASE(binary_serialization_inspectors) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     spawner_config cfg;
     spawner sys {cfg};
     scoped_execution_unit context;

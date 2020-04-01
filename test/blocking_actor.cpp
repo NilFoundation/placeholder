@@ -36,11 +36,12 @@ namespace boost {
 namespace {
 
     struct fixture {
+        meta_initializer mi;
         spawner_config cfg;
         spawner system;
         scoped_actor self;
 
-        fixture() : system(cfg), self(system) {
+        fixture() : mi(), system(cfg), self(system) {
             // nop
         }
     };

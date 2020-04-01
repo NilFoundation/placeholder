@@ -126,11 +126,12 @@ namespace {
     struct fixture {
         using sched_t = scheduler::test_coordinator;
 
+        meta_initializer mi;
         config cfg;
         spawner system;
         sched_t &sched;
 
-        fixture() : system(cfg), sched(dynamic_cast<sched_t &>(system.scheduler())) {
+        fixture() : mi(), system(cfg), sched(dynamic_cast<sched_t &>(system.scheduler())) {
             // nop
         }
 
@@ -185,6 +186,7 @@ namespace {
 
 BOOST_AUTO_TEST_CASE(destructor_call) {
     {    // lifetime scope of actor system
+        meta_initializer mi;
         spawner_config cfg;
         spawner system {cfg};
         system.spawn<testee>();

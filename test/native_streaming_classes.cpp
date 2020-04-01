@@ -494,6 +494,8 @@ namespace {
             timespan step = force_batches_interval;
         };
 
+        meta_initializer mi;
+
         timing_config tc;
 
         spawner_config cfg;
@@ -528,7 +530,7 @@ namespace {
         }
 
         fixture() :
-            sys(init_config(cfg)), sched(dynamic_cast<scheduler_type &>(sys.scheduler())),
+            mi(), sys(init_config(cfg)), sched(dynamic_cast<scheduler_type &>(sys.scheduler())),
             alice_hdl(spawn(sys, 0, "alice", tc)), bob_hdl(spawn(sys, 1, "bob", tc)),
             carl_hdl(spawn(sys, 2, "carl", tc)), alice(fetch(alice_hdl)), bob(fetch(bob_hdl)), carl(fetch(carl_hdl)) {
             // nop
