@@ -89,7 +89,7 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(constructor_attach) {
+BOOST_AUTO_TEST_CASE(constructor_attach_test) {
     spawner_config cfg;
     spawner system {cfg};
     anon_send(system.spawn<test_spawner>(), delete_atom_v);
