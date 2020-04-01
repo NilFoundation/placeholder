@@ -98,7 +98,7 @@ list(APPEND TESTS_NAMES
      deep_to_string
      message_builder_element
      error
-     meta_object
+#     meta_object
      fused_downstream_manager
      parse
      settings

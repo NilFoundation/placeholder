@@ -267,8 +267,8 @@ BOOST_AUTO_TEST_CASE(get_if_test) {
     BOOST_CHECK_EQUAL(get_if<int>(&b), nullptr);
     BOOST_CHECK_NE(get_if<std::string>(&b), nullptr);
     BOOST_TEST_MESSAGE("test get_if via unit test framework");
-    BOOST_CHECK_NE(b, 42);
-    BOOST_CHECK_EQUAL(b, "foo"s);
+    BOOST_CHECK_NE(get<int>(b), 42);
+    BOOST_CHECK_EQUAL(get<std::string>(b), "foo"s);
 }
 
 BOOST_AUTO_TEST_CASE(less_than) {

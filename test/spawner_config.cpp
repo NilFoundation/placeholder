@@ -42,6 +42,11 @@ namespace boost {
                 void operator()(std::ostream &, P<T, S> const &) {
                 }
             };
+            template<>
+            struct print_log_value<uri> {
+                void operator()(std::ostream &, uri const &) {
+                }
+            };
         }    // namespace tt_detail
     }        // namespace test_tools
 }    // namespace boost

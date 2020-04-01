@@ -169,7 +169,7 @@ BOOST_FIXTURE_TEST_SUITE(selective_streaming_tests, test_coordinator_fixture<>)
 BOOST_AUTO_TEST_CASE(select_all) {
     auto src = sys.spawn(log_producer);
     auto snk = sys.spawn(log_consumer);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, level::all);
     run();
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(select_all) {
 BOOST_AUTO_TEST_CASE(select_trace) {
     auto src = sys.spawn(log_producer);
     auto snk = sys.spawn(log_consumer);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, level::trace);
     run();

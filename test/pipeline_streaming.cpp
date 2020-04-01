@@ -26,6 +26,24 @@ using std::string;
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     TESTEE_SETUP();
@@ -241,7 +259,7 @@ BOOST_FIXTURE_TEST_SUITE(local_streaming_tests, fixture)
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_50_items) {
     auto src = sys.spawn(file_reader, 50u);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -264,7 +282,7 @@ BOOST_AUTO_TEST_CASE(depth_2_pipeline_50_items) {
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_setup2_50_items) {
     auto src = sys.spawn(file_reader, 50u);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(src, "numbers.txt", snk);
     expect((string, actor), from(self).to(src).with("numbers.txt", snk));
@@ -287,7 +305,7 @@ BOOST_AUTO_TEST_CASE(depth_2_pipeline_setup2_50_items) {
 BOOST_AUTO_TEST_CASE(delayed_depth_2_pipeline_50_items) {
     auto src = sys.spawn(file_reader, 50u);
     auto snk = sys.spawn(delayed_sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -316,7 +334,7 @@ BOOST_AUTO_TEST_CASE(delayed_depth_2_pipeline_50_items) {
 BOOST_AUTO_TEST_CASE(depth_2_pipeline_500_items) {
     auto src = sys.spawn(file_reader, 500u);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -362,7 +380,7 @@ BOOST_AUTO_TEST_CASE(depth_2_pipeline_error_at_source) {
     BOOST_TEST_MESSAGE("streams must abort if a source fails at runtime");
     auto src = sys.spawn(file_reader, 500u);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -380,7 +398,7 @@ BOOST_AUTO_TEST_CASE(depth_2_pipelin_error_at_sink) {
     BOOST_TEST_MESSAGE("streams must abort if a sink fails at runtime");
     auto src = sys.spawn(file_reader, 500u);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -403,7 +421,7 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_50_items) {
         allow((timeout_msg), from(stg).to(stg));
         allow((timeout_msg), from(src).to(src));
     };
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -436,7 +454,7 @@ BOOST_AUTO_TEST_CASE(depth_4_pipeline_500_items) {
     auto stg1 = sys.spawn(filter);
     auto stg2 = sys.spawn(doubler);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg1) << ACTOR_ARG(stg2) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg1) << ACTOR_ARG(stg2) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg2 * stg1 * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -461,7 +479,7 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_graceful_shutdown) {
     auto src = sys.spawn(file_reader, 50u);
     auto stg = sys.spawn(filter);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));
@@ -485,7 +503,7 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_infinite_source) {
     auto src = sys.spawn(infinite_source);
     auto stg = sys.spawn(filter);
     auto snk = sys.spawn(sum_up);
-    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
+//    BOOST_TEST_MESSAGE(ACTOR_ARG(self) << ACTOR_ARG(src) << ACTOR_ARG(stg) << ACTOR_ARG(snk));
     BOOST_TEST_MESSAGE("initiate stream handshake");
     self->send(snk * stg * src, "numbers.txt");
     expect((string), from(self).to(src).with("numbers.txt"));

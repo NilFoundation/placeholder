@@ -58,6 +58,11 @@ namespace boost {
                 void operator()(std::ostream &, error const &) {
                 }
             };
+            template<>
+            struct print_log_value<pec> {
+                void operator()(std::ostream &, pec const &) {
+                }
+            };
         }    // namespace tt_detail
     }        // namespace test_tools
 }    // namespace boost
