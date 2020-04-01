@@ -12,7 +12,7 @@
 
 #include <nil/actor/attach_continuous_stream_stage.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <memory>
 #include <numeric>

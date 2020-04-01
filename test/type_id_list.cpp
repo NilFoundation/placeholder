@@ -12,7 +12,7 @@
 
 #include <nil/actor/type_id_list.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
 

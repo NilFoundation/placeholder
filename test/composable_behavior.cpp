@@ -12,7 +12,7 @@
 
 #include <nil/actor/composable_behavior.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/attach_stream_sink.hpp>
 #include <nil/actor/attach_stream_source.hpp>
@@ -146,48 +146,7 @@ namespace {
             return unit;
         }
     };
-
-    // -- composable behaviors using param<T> arguments ----------------------------
-
-    std::atomic<long> counting_strings_created;
-    std::atomic<long> counting_strings_moved;
-    std::atomic<long> counting_strings_destroyed;
-
 }    // namespace
-
-// counts how many instances where created
-counting_string::counting_string() {
-    ++counting_strings_created;
-}
-
-counting_string::counting_string(const char *cstr) : str_(cstr) {
-    ++counting_strings_created;
-}
-
-counting_string::counting_string(const counting_string &x) : str_(x.str_) {
-    ++counting_strings_created;
-}
-
-counting_string::counting_string(counting_string &&x) : str_(std::move(x.str_)) {
-    ++counting_strings_created;
-    ++counting_strings_moved;
-}
-
-counting_string::~counting_string() {
-    ++counting_strings_destroyed;
-}
-
-bool operator==(const counting_string &x, const counting_string &y) {
-    return x.str() == y.str();
-}
-
-bool operator==(const counting_string &x, const char *y) {
-    return x.str() == y;
-}
-
-std::string to_string(const counting_string &ref) {
-    return ref.str();
-}
 
 namespace std {
 

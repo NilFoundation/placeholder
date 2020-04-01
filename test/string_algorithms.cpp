@@ -12,7 +12,7 @@
 
 #include <nil/actor/string_algorithms.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <string>
 #include <vector>

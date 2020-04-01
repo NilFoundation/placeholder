@@ -17,7 +17,7 @@
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/typed_actor.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
 

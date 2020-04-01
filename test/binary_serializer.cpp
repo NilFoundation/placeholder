@@ -12,7 +12,7 @@
 
 #include <nil/actor/binary_serializer.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <cstring>
 #include <vector>

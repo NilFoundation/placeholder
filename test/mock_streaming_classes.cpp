@@ -24,7 +24,7 @@
 #include <nil/actor/variant.hpp>
 #include <nil/actor/stream_slot.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/intrusive/drr_queue.hpp>
 #include <nil/actor/intrusive/singly_linked.hpp>

@@ -22,7 +22,7 @@
 
 #define BOOST_TEST_MODULE native_streaming_classes
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <memory>
 #include <numeric>

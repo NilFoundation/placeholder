@@ -16,7 +16,7 @@
 
 #include <nil/actor/config.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/config_option_set.hpp>
 #include <nil/actor/detail/move_if_not_ptr.hpp>

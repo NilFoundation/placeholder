@@ -12,7 +12,7 @@
 
 #include <nil/actor/stateful_actor.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/event_based_actor.hpp>
 

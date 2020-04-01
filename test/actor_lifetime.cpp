@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE actor_lifetime
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <atomic>
 #include <condition_variable>

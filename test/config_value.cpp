@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE config_value
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <list>
 #include <map>

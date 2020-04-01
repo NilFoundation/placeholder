@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE message_lifetime
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <atomic>
 #include <iostream>
@@ -42,14 +42,6 @@ namespace boost {
 }    // namespace boost
 
 using namespace nil::actor;
-
-fail_on_copy::fail_on_copy(const fail_on_copy &) {
-    BOOST_FAIL("fail_on_copy: copy constructor called");
-}
-
-fail_on_copy &fail_on_copy::operator=(const fail_on_copy &) {
-    BOOST_FAIL("fail_on_copy: copy assign operator called");
-}
 
 namespace {
 
@@ -126,7 +118,7 @@ BOOST_AUTO_TEST_CASE(message_lifetime_in_scoped_actor) {
     self->send(self, msg);
     BOOST_CHECK_EQUAL(msg.cdata().get_reference_count(), 2u);
     self->receive([&](int &value) {
-//        BOOST_CHECK_NE(&value, msg.cdata().at(0));
+        //        BOOST_CHECK_NE(&value, msg.cdata().at(0));
         value = 10;
     });
     BOOST_CHECK_EQUAL(msg.get_as<int>(0), 42);

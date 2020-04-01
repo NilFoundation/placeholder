@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE serialization
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -54,24 +54,6 @@
 #include <nil/actor/variant.hpp>
 
 using namespace nil::actor;
-
-const char *test_enum_strings[] = {
-    "a",
-    "b",
-    "c",
-};
-
-std::string to_string(test_enum x) {
-    return test_enum_strings[static_cast<uint32_t>(x)];
-}
-
-void test_empty_non_pod::foo() {
-    // nop
-}
-
-test_empty_non_pod::~test_empty_non_pod() {
-    // nop
-}
 
 namespace boost {
     namespace test_tools {

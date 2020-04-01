@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE actor_termination
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/all.hpp>
 

@@ -12,7 +12,7 @@
 
 #include <nil/actor/config_option.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/make_config_option.hpp>
 #include <nil/actor/config_value.hpp>

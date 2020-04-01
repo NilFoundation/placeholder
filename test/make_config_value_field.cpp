@@ -12,7 +12,7 @@
 
 #include <nil/actor/make_config_value_field.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/spawner_config.hpp>
 #include <nil/actor/config_option_set.hpp>

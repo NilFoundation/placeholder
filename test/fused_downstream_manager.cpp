@@ -12,7 +12,7 @@
 
 #include <nil/actor/fused_downstream_manager.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <memory>
 #include <numeric>

@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE typed_response_promise
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <map>
 

@@ -12,7 +12,7 @@
 
 #include <nil/actor/ipv4_address.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/detail/network_order.hpp>
 

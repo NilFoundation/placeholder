@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE result
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/sec.hpp>
 #include <nil/actor/result.hpp>

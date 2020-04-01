@@ -12,7 +12,7 @@
 
 #include <nil/actor/spawner_config.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/actor_registry.hpp>
 #include <nil/actor/all.hpp>

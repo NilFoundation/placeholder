@@ -12,7 +12,7 @@
 
 #include <nil/actor/actor_registry.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/binary_deserializer.hpp>
 #include <nil/actor/binary_serializer.hpp>

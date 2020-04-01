@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE pipeline_streaming
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <memory>
 #include <numeric>
@@ -118,7 +118,7 @@ namespace {
                 BOOST_CHECK_EQUAL(self->mailbox().empty(), true);
                 return attach_stream_source(self, init(buf_size), push_from_buf, is_done(self), fin<buf>(self));
             },
-            [=](string &fname, actor next) {
+            [=](string &fname, const actor& next) {
                 BOOST_CHECK_EQUAL(fname, "numbers.txt");
                 BOOST_CHECK_EQUAL(self->mailbox().empty(), true);
                 attach_stream_source(self, next, init(buf_size), push_from_buf, is_done(self), fin<buf>(self));

@@ -12,7 +12,7 @@
 
 #include <nil/actor/message_id.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
 

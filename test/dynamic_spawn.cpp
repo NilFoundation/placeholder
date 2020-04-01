@@ -12,7 +12,7 @@
 
 #include <nil/actor/spawner.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <atomic>
 #include <chrono>

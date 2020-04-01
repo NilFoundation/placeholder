@@ -12,7 +12,7 @@
 
 #include <nil/actor/logger.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <ctime>
 #include <string>

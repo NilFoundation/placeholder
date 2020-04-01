@@ -12,7 +12,7 @@
 
 #include <nil/actor/actor_pool.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/all.hpp>
 

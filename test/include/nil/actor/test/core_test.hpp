@@ -1,5 +1,4 @@
 #include <nil/actor/fwd.hpp>
-#include <nil/actor/test/dsl.hpp>
 #include <nil/actor/type_id.hpp>
 #include <nil/actor/typed_actor.hpp>
 
@@ -17,19 +16,34 @@ using int_actor = nil::actor::typed_actor<nil::actor::replies_to<int32_t>::with<
 using foo_actor = nil::actor::typed_actor<nil::actor::replies_to<int32_t, int32_t, int32_t>::with<int32_t>,
                                           nil::actor::replies_to<double>::with<double, double>>;
 
+std::atomic<long> counting_strings_created;
+std::atomic<long> counting_strings_moved;
+std::atomic<long> counting_strings_destroyed;
+
 // A string that counts how many instances where created. Implemented in
 // composable_behavior.cpp.
 struct counting_string {
 public:
-    counting_string();
+    counting_string() {
+        ++counting_strings_created;
+    }
 
-    explicit counting_string(const char *cstr);
+    explicit counting_string(const char *cstr) : str_(cstr) {
+        ++counting_strings_created;
+    }
 
-    counting_string(const counting_string &x);
+    counting_string(const counting_string &x) : str_(x.str_) {
+        ++counting_strings_created;
+    }
 
-    counting_string(counting_string &&x);
+    counting_string(counting_string &&x) : str_(std::move(x.str_)) {
+        ++counting_strings_created;
+        ++counting_strings_moved;
+    }
 
-    ~counting_string();
+    ~counting_string() {
+        ++counting_strings_destroyed;
+    }
 
     counting_string &operator=(const char *cstr) {
         str_ = cstr;
@@ -48,6 +62,18 @@ public:
 private:
     std::string str_;
 };
+
+bool operator==(const counting_string &x, const counting_string &y) {
+    return x.str() == y.str();
+}
+
+bool operator==(const counting_string &x, const char *y) {
+    return x.str() == y;
+}
+
+std::string to_string(const counting_string &ref) {
+    return ref.str();
+}
 
 // A simple POD type.
 struct dummy_struct {
@@ -87,9 +113,14 @@ struct fail_on_copy {
 
     fail_on_copy &operator=(fail_on_copy &&) = default;
 
-    fail_on_copy(const fail_on_copy &);
+    fail_on_copy(const fail_on_copy &) {
+        BOOST_FAIL("fail_on_copy: copy constructor called");
+    }
 
-    fail_on_copy &operator=(const fail_on_copy &);
+    fail_on_copy &operator=(const fail_on_copy &) {
+        BOOST_FAIL("fail_on_copy: copy assign operator called");
+        return *this;
+    }
 
     template<class Inspector>
     friend decltype(auto) inspect(Inspector &f, fail_on_copy &x) {
@@ -117,6 +148,8 @@ struct i32_wrapper {
     }
 };
 
+size_t i32_wrapper::instances = 0;
+
 struct i64_wrapper {
     // Initialized in meta_object.cpp.
     static size_t instances;
@@ -136,6 +169,8 @@ struct i64_wrapper {
         return f(x.value);
     }
 };
+
+size_t i64_wrapper::instances = 0;
 
 struct my_request {
     int32_t a;
@@ -209,8 +244,10 @@ struct test_empty_non_pod {
     test_empty_non_pod() = default;
     test_empty_non_pod(const test_empty_non_pod &) = default;
     test_empty_non_pod &operator=(const test_empty_non_pod &) = default;
-    virtual void foo();
-    virtual ~test_empty_non_pod();
+    virtual void foo() {
+    }
+    virtual ~test_empty_non_pod() {
+    }
 };
 
 template<class Inspector>
@@ -224,8 +261,16 @@ enum class test_enum : int32_t {
     c,
 };
 
+const char *test_enum_strings[] = {
+    "a",
+    "b",
+    "c",
+};
+
 // Implemented in serialization.cpp
-std::string to_string(test_enum x);
+std::string to_string(test_enum x) {
+    return test_enum_strings[static_cast<uint32_t>(x)];
+}
 
 // Used in serializer.cpp and deserializer.cpp
 struct test_data {

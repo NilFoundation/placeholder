@@ -10,7 +10,7 @@
 
 #define BOOST_TEST_MODULE request_timeout
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <chrono>
 

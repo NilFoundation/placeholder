@@ -12,7 +12,7 @@
 
 #include <nil/actor/ipv6_address.hpp>
 
-#include "core_test.hpp"
+#include <nil/actor/test/dsl.hpp>
 
 #include <initializer_list>
 
