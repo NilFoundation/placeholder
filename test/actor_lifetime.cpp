@@ -13,7 +13,6 @@
 #include <nil/actor/test/dsl.hpp>
 
 #include <atomic>
-#include <condition_variable>
 #include <mutex>
 
 #include <nil/actor/all.hpp>
@@ -24,14 +23,14 @@ namespace boost {
     namespace test_tools {
         namespace tt_detail {
             template<>
-            struct print_log_value<nil::actor::error> {
-                void operator()(std::ostream &, nil::actor::error const &) {
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
                 }
             };
 
             template<>
-            struct print_log_value<nil::actor::exit_reason> {
-                void operator()(std::ostream &, nil::actor::exit_reason const &) {
+            struct print_log_value<exit_reason> {
+                void operator()(std::ostream &, exit_reason const &) {
                 }
             };
         }    // namespace tt_detail

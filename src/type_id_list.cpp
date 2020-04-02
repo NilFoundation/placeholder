@@ -12,22 +12,18 @@
 
 #include <nil/actor/detail/meta_object.hpp>
 
-namespace nil {
-    namespace actor {
-
-        std::string to_string(type_id_list xs) {
-            if (!xs || xs.size() == 0)
-                return "[]";
-            std::string result;
-            result += '[';
-            result += detail::global_meta_object(xs[0])->type_name;
-            for (size_t index = 1; index < xs.size(); ++index) {
-                result += ", ";
-                result += detail::global_meta_object(xs[index])->type_name;
-            }
-            result += ']';
-            return result;
+namespace nil::actor {
+    std::string to_string(type_id_list xs) {
+        if (!xs || xs.empty())
+            return "[]";
+        std::string result;
+        result += '[';
+        result += detail::global_meta_object(xs[0])->type_name;
+        for (size_t index = 1; index < xs.size(); ++index) {
+            result += ", ";
+            result += detail::global_meta_object(xs[index])->type_name;
         }
-
-    }    // namespace actor
-}    // namespace nil
+        result += ']';
+        return result;
+    }
+}    // namespace nil::actor
