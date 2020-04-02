@@ -50,6 +50,7 @@ BOOST_AUTO_TEST_CASE(substrings) {
     string_view x = "abcdefghi";
     x.remove_prefix(3);
     BOOST_CHECK_EQUAL(x, "defghi");
+    x = "abcdefghi";
     x.remove_suffix(3);
     BOOST_CHECK_EQUAL(x, "abcdef");
     BOOST_CHECK_EQUAL(x.substr(3, 3), "def");
