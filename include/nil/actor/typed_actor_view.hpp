@@ -1,27 +1,28 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <nil/actor/scheduled_actor.hpp>
-
-#include <nil/actor/mixin/sender.hpp>
+#include <nil/actor/actor_traits.hpp>
+#include <nil/actor/config.hpp>
 #include <nil/actor/mixin/requester.hpp>
+#include <nil/actor/mixin/sender.hpp>
+#include <nil/actor/scheduled_actor.hpp>
+#include <nil/actor/timespan.hpp>
+#include <nil/actor/typed_actor_view_base.hpp>
 
 namespace nil {
     namespace actor {
 
-        struct typed_actor_view_base {};
-
+        /// Decorates a pointer to a @ref scheduled_actor with a statically typed actor
+        /// interface.
         template<class... Sigs>
         class typed_actor_view
             : public extend<typed_actor_view_base, typed_actor_view<Sigs...>>::template with<mixin::sender,
@@ -30,37 +31,133 @@ namespace nil {
             /// Stores the template parameter pack.
             using signatures = detail::type_list<Sigs...>;
 
-            typed_actor_view(scheduled_actor *ptr) : self_(ptr) {
+            using pointer = scheduled_actor *;
+
+            explicit typed_actor_view(scheduled_actor *ptr) : self_(ptr) {
                 // nop
             }
 
-            typed_actor_view &operator=(scheduled_actor *ptr) {
-                self_ = ptr;
-                return *this;
-            }
+            // -- spawn functions --------------------------------------------------------
 
-            /****************************************************************************
-             *                           spawn actors                                   *
-             ****************************************************************************/
-
+            /// @copydoc local_actor::spawn
             template<class T, spawn_options Os = no_spawn_options, class... Ts>
             typename infer_handle_from_class<T>::type spawn(Ts &&... xs) {
                 return self_->spawn<T, Os>(std::forward<Ts>(xs)...);
             }
 
+            /// @copydoc local_actor::spawn
             template<class T, spawn_options Os = no_spawn_options>
             infer_handle_from_state_t<T> spawn() {
                 return self_->spawn<T, Os>();
             }
 
+            /// @copydoc local_actor::spawn
             template<spawn_options Os = no_spawn_options, class F, class... Ts>
             typename infer_handle_from_fun<F>::type spawn(F fun, Ts &&... xs) {
                 return self_->spawn<Os>(std::move(fun), std::forward<Ts>(xs)...);
             }
 
-            /****************************************************************************
-             *                      miscellaneous actor operations                      *
-             ****************************************************************************/
+            // -- state modifiers --------------------------------------------------------
+
+            /// @copydoc scheduled_actor::quit
+            void quit(error x = error {}) {
+                self_->quit(std::move(x));
+            }
+
+            // -- properties -------------------------------------------------------------
+
+            /// @copydoc scheduled_actor::mailbox
+            auto &mailbox() noexcept {
+                return self_->mailbox();
+            }
+
+            // -- event handlers ---------------------------------------------------------
+
+            /// @copydoc scheduled_actor::set_default_handler
+            template<class Fun>
+            void set_default_handler(Fun &&fun) {
+                self_->set_default_handler(std::forward<Fun>(fun));
+            }
+
+            /// @copydoc scheduled_actor::set_error_handler
+            template<class Fun>
+            void set_error_handler(Fun &&fun) {
+                self_->set_error_handler(std::forward<Fun>(fun));
+            }
+
+            /// @copydoc scheduled_actor::set_down_handler
+            template<class Fun>
+            void set_down_handler(Fun &&fun) {
+                self_->set_down_handler(std::forward<Fun>(fun));
+            }
+
+            /// @copydoc scheduled_actor::set_node_down_handler
+            template<class Fun>
+            void set_node_down_handler(Fun &&fun) {
+                self_->set_node_down_handler(std::forward<Fun>(fun));
+            }
+
+            /// @copydoc scheduled_actor::set_exit_handler
+            template<class Fun>
+            void set_exit_handler(Fun &&fun) {
+                self_->set_exit_handler(std::forward<Fun>(fun));
+            }
+
+#ifndef ACTOR_NO_EXCEPTIONS
+
+            /// @copydoc scheduled_actor::set_exception_handler
+            template<class Fun>
+            void set_exception_handler(Fun &&fun) {
+                self_->set_exception_handler(std::forward<Fun>(fun));
+            }
+
+#endif    // ACTOR_NO_EXCEPTIONS
+
+            // -- linking and monitoring -------------------------------------------------
+
+            /// @copydoc monitorable_actor::link_to
+            template<class ActorHandle>
+            void link_to(const ActorHandle &x) {
+                self_->link_to(x);
+            }
+
+            /// @copydoc monitorable_actor::unlink_from
+            template<class ActorHandle>
+            void unlink_from(const ActorHandle &x) {
+                self_->unlink_from(x);
+            }
+
+            /// @copydoc local_actor::monitor
+            void monitor(const node_id &node) {
+                self_->monitor(node);
+            }
+
+            /// @copydoc local_actor::monitor
+            template<message_priority P = message_priority::normal, class Handle>
+            void monitor(const Handle &whom) {
+                self_->monitor(whom);
+            }
+
+            /// @copydoc local_actor::demonitor
+            void demonitor(const node_id &node) {
+                self_->demonitor(node);
+            }
+
+            /// @copydoc local_actor::demonitor
+            template<class Handle>
+            void demonitor(const Handle &whom) {
+                self_->demonitor(whom);
+            }
+
+            // -- sending asynchronous messages ------------------------------------------
+
+            /// @copydoc local_actor::send_exit
+            template<class ActorHandle>
+            void send_exit(const ActorHandle &whom, error reason) {
+                self_->send_exit(whom, std::move(reason));
+            }
+
+            // -- miscellaneous actor operations -----------------------------------------
 
             execution_unit *context() const {
                 return self_->context();
@@ -83,14 +180,12 @@ namespace nil {
                 return self_->make_response_promise<Ts...>();
             }
 
-            template<message_priority P = message_priority::normal, class Handle = actor>
-            void monitor(const Handle &x) {
-                self_->monitor<P>(x);
+            message_id new_request_id(message_priority mp) {
+                return self_->new_request_id(mp);
             }
 
-            template<class T>
-            void demonitor(const T &x) {
-                self_->demonitor(x);
+            void request_response_timeout(timespan d, message_id mid) {
+                return self_->request_response_timeout(d, mid);
             }
 
             response_promise make_response_promise() {
@@ -103,31 +198,71 @@ namespace nil {
                 return self_->response(std::forward<Ts>(xs)...);
             }
 
+            template<class... Ts>
+            void eq_impl(Ts &&... xs) {
+                self_->eq_impl(std::forward<Ts>(xs)...);
+            }
+
+            void add_awaited_response_handler(message_id response_id, behavior bhvr) {
+                return self_->add_awaited_response_handler(response_id, std::move(bhvr));
+            }
+
+            void add_multiplexed_response_handler(message_id response_id, behavior bhvr) {
+                return self_->add_multiplexed_response_handler(response_id, std::move(bhvr));
+            }
+
+            template<class Handle, class... Ts>
+            auto delegate(const Handle &dest, Ts &&... xs) {
+                return self_->delegate(dest, std::forward<Ts>(xs)...);
+            }
+
             /// Returns a pointer to the sender of the current message.
             /// @pre `current_mailbox_element() != nullptr`
-            inline strong_actor_ptr &current_sender() {
+            strong_actor_ptr &current_sender() {
                 return self_->current_sender();
             }
 
             /// Returns a pointer to the currently processed mailbox element.
-            inline mailbox_element *current_mailbox_element() {
+            mailbox_element *current_mailbox_element() {
                 return self_->current_mailbox_element();
             }
 
             /// @private
-            actor_control_block *ctrl() const {
+            actor_control_block *ctrl() const noexcept {
                 ACTOR_ASSERT(self_ != nullptr);
                 return actor_control_block::from(self_);
                 ;
             }
 
             /// @private
-            scheduled_actor *internal_ptr() const {
+            scheduled_actor *internal_ptr() const noexcept {
+                return self_;
+            }
+
+            /// @private
+            void reset(scheduled_actor *ptr) {
+                self_ = ptr;
+            }
+
+            operator scheduled_actor *() const noexcept {
                 return self_;
             }
 
         private:
             scheduled_actor *self_;
+        };
+
+        template<class... Sigs>
+        struct actor_traits<typed_actor_view<Sigs...>> {
+            static constexpr bool is_dynamically_typed = false;
+
+            static constexpr bool is_statically_typed = true;
+
+            static constexpr bool is_blocking = false;
+
+            static constexpr bool is_non_blocking = true;
+
+            static constexpr bool is_incomplete = false;
         };
 
     }    // namespace actor

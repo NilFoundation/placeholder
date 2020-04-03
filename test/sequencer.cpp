@@ -1,45 +1,82 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE sequencer_test
+#define BOOST_TEST_MODULE decorator.sequencer
+
+#include <nil/actor/decorator/sequencer.hpp>
 
 #include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <nil/actor/config.hpp>
+
+#include <nil/actor/test/dsl.hpp>
+
 #include <nil/actor/all.hpp>
 
 #define ERROR_HANDLER [&](error &err) { BOOST_FAIL(system.render(err)); }
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<node_id> {
+                void operator()(std::ostream &, node_id const &) {
+                }
+            };
+            template<>
+            struct print_log_value<actor_addr> {
+                void operator()(std::ostream &, actor_addr const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     behavior testee(event_based_actor *self) {
-        return {[](int v) { return 2 * v; }, [=] { self->quit(); }};
+        return {
+            [](int v) { return 2 * v; },
+            [=] { self->quit(); },
+        };
     }
 
     using first_stage = typed_actor<replies_to<int>::with<double, double>>;
     using second_stage = typed_actor<replies_to<double, double>::with<double>>;
 
     first_stage::behavior_type typed_first_stage() {
-        return [](int i) { return std::make_tuple(i * 2.0, i * 4.0); };
+        return {
+            [](int i) { return std::make_tuple(i * 2.0, i * 4.0); },
+        };
     }
 
     second_stage::behavior_type typed_second_stage() {
-        return [](double x, double y) { return x * y; };
+        return {
+            [](double x, double y) { return x * y; },
+        };
     }
 
     struct fixture {
-        fixture() : system(cfg), self(system, true) {
+        fixture() : mi(), system(cfg), self(system, true) {
             // nop
         }
 
@@ -51,6 +88,7 @@ namespace {
             return dptr->getf(abstract_actor::is_terminated_flag);
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         spawner system;
         scoped_actor self;
@@ -60,7 +98,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(sequencer_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(identity_test) {
+BOOST_AUTO_TEST_CASE(identity) {
     spawner_config cfg_g;
     spawner system_of_g {cfg_g};
     spawner_config cfg_f;
@@ -71,14 +109,15 @@ BOOST_AUTO_TEST_CASE(identity_test) {
     auto h = f * g;
     BOOST_CHECK_EQUAL(system_of_g.registry().running(), 1u);
     BOOST_CHECK_EQUAL(&h->home_system(), &g->home_system());
-    BOOST_CHECK(h->node() == g->node());
+
+    BOOST_CHECK_EQUAL(h->node(), g->node());
     BOOST_CHECK_NE(h->id(), g->id());
-    BOOST_CHECK(h.address() != g.address());
-    BOOST_CHECK(h->message_types() == g->home_system().message_types(h));
+    BOOST_CHECK_NE(h.address(), g.address());
+    BOOST_CHECK_EQUAL(h->message_types(), g->home_system().message_types(h));
 }
 
 // spawned dead if `g` is already dead upon spawning
-BOOST_AUTO_TEST_CASE(lifetime_1a_test) {
+BOOST_AUTO_TEST_CASE(lifetime_1a) {
     auto g = system.spawn(testee);
     auto f = system.spawn(testee);
     anon_send_exit(g, exit_reason::kill);
@@ -88,7 +127,7 @@ BOOST_AUTO_TEST_CASE(lifetime_1a_test) {
 }
 
 // spawned dead if `f` is already dead upon spawning
-BOOST_AUTO_TEST_CASE(lifetime_1b_test) {
+BOOST_AUTO_TEST_CASE(lifetime_1b) {
     auto g = system.spawn(testee);
     auto f = system.spawn(testee);
     anon_send_exit(f, exit_reason::kill);
@@ -98,7 +137,7 @@ BOOST_AUTO_TEST_CASE(lifetime_1b_test) {
 }
 
 // `f.g` exits when `g` exits
-BOOST_AUTO_TEST_CASE(lifetime_2a_test) {
+BOOST_AUTO_TEST_CASE(lifetime_2a) {
     auto g = system.spawn(testee);
     auto f = system.spawn(testee);
     auto h = f * g;
@@ -107,7 +146,7 @@ BOOST_AUTO_TEST_CASE(lifetime_2a_test) {
 }
 
 // `f.g` exits when `f` exits
-BOOST_AUTO_TEST_CASE(lifetime_2b_test) {
+BOOST_AUTO_TEST_CASE(lifetime_2b) {
     auto g = system.spawn(testee);
     auto f = system.spawn(testee);
     auto h = f * g;
@@ -115,7 +154,7 @@ BOOST_AUTO_TEST_CASE(lifetime_2b_test) {
     anon_send(f, message {});
 }
 
-BOOST_AUTO_TEST_CASE(request_response_promise_test) {
+BOOST_AUTO_TEST_CASE(request_response_promise) {
     auto g = system.spawn(testee);
     auto f = system.spawn(testee);
     auto h = f * g;
@@ -127,7 +166,7 @@ BOOST_AUTO_TEST_CASE(request_response_promise_test) {
 }
 
 // single composition of distinct actors
-BOOST_AUTO_TEST_CASE(dot_composition_1_test) {
+BOOST_AUTO_TEST_CASE(dot_composition_1) {
     auto first = system.spawn(typed_first_stage);
     auto second = system.spawn(typed_second_stage);
     auto first_then_second = second * first;
@@ -136,7 +175,7 @@ BOOST_AUTO_TEST_CASE(dot_composition_1_test) {
 }
 
 // multiple self composition
-BOOST_AUTO_TEST_CASE(dot_composition_2_test) {
+BOOST_AUTO_TEST_CASE(dot_composition_2) {
     auto dbl_actor = system.spawn(testee);
     auto dbl_x4_actor = dbl_actor * dbl_actor * dbl_actor * dbl_actor;
     self->request(dbl_x4_actor, infinite, 1).receive([](int v) { BOOST_CHECK_EQUAL(v, 16); }, ERROR_HANDLER);

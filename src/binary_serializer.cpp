@@ -1,16 +1,16 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#include <nil/actor/serialization/binary_serializer.hpp>
+#include <nil/actor/binary_serializer.hpp>
+
+#include <iomanip>
 
 #include <nil/actor/spawner.hpp>
 #include <nil/actor/detail/ieee_754.hpp>
@@ -18,6 +18,7 @@
 
 namespace nil {
     namespace actor {
+
         namespace {
 
             template<class T>
@@ -40,10 +41,8 @@ namespace nil {
             write_pos_ += num_bytes;
         }
 
-        error_code<sec> binary_serializer::begin_object(uint16_t nr, string_view name) {
-            apply(nr);
-            if (nr == 0)
-                apply(name);
+        error_code<sec> binary_serializer::begin_object(type_id_t type) {
+            apply(type);
             return none;
         }
 
@@ -91,12 +90,16 @@ namespace nil {
             ACTOR_ASSERT(write_pos_ <= buf_.size());
         }
 
-        void binary_serializer::apply(uint8_t x) {
+        void binary_serializer::apply(byte x) {
             if (write_pos_ == buf_.size())
                 buf_.emplace_back(x);
             else
                 buf_[write_pos_] = x;
             ++write_pos_;
+        }
+
+        void binary_serializer::apply(uint8_t x) {
+            apply(static_cast<byte>(x));
         }
 
         void binary_serializer::apply(uint16_t x) {
@@ -222,5 +225,6 @@ namespace nil {
             }
             end_sequence();
         }
+
     }    // namespace actor
 }    // namespace nil

@@ -1,18 +1,16 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2017 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 // This test simulates a complex multiplexing over multiple layers of WDRR
 // scheduled queues. The goal is to reduce the complex mailbox management of
-// ACTOR to its bare bones in order to test whether the multiplexing of stream
+// CAF to its bare bones in order to test whether the multiplexing of stream
 // traffic and asynchronous messages works as intended.
 //
 // The setup is a fixed WDRR queue with three nestes queues. The first nested
@@ -22,25 +20,43 @@
 // We mock just enough of an actor to use the streaming classes and put them to
 // work in a pipeline with 2 or 3 stages.
 
-#define BOOST_TEST_MODULE native_streaming_classes_test
+#define BOOST_TEST_MODULE native_streaming_classes
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include <nil/actor/test/dsl.hpp>
+
 #include <memory>
 #include <numeric>
 
-#include <boost/integer/common_factor_rt.hpp>
+#include <boost/integer/common_factor.hpp>
 
 #include <nil/actor/spawner.hpp>
 #include <nil/actor/spawner_config.hpp>
 #include <nil/actor/broadcast_downstream_manager.hpp>
 #include <nil/actor/buffered_downstream_manager.hpp>
+#include <nil/actor/detail/overload.hpp>
+#include <nil/actor/detail/stream_sink_impl.hpp>
+#include <nil/actor/detail/stream_source_impl.hpp>
+#include <nil/actor/detail/stream_stage_impl.hpp>
+#include <nil/actor/detail/tick_emitter.hpp>
 #include <nil/actor/downstream_manager.hpp>
 #include <nil/actor/downstream_msg.hpp>
 #include <nil/actor/inbound_path.hpp>
+#include <nil/actor/intrusive/drr_queue.hpp>
+#include <nil/actor/intrusive/singly_linked.hpp>
+#include <nil/actor/intrusive/task_result.hpp>
+#include <nil/actor/intrusive/wdrr_dynamic_multiplexed_queue.hpp>
+#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
 #include <nil/actor/mailbox_element.hpp>
+#include <nil/actor/mixin/sender.hpp>
 #include <nil/actor/no_stages.hpp>
 #include <nil/actor/outbound_path.hpp>
+#include <nil/actor/policy/arg.hpp>
+#include <nil/actor/policy/categorized.hpp>
+#include <nil/actor/policy/downstream_messages.hpp>
+#include <nil/actor/policy/normal_messages.hpp>
+#include <nil/actor/policy/upstream_messages.hpp>
+#include <nil/actor/policy/urgent_messages.hpp>
+#include <nil/actor/scheduled_actor.hpp>
 #include <nil/actor/send.hpp>
 #include <nil/actor/stream_manager.hpp>
 #include <nil/actor/stream_sink_driver.hpp>
@@ -51,33 +67,43 @@
 #include <nil/actor/upstream_msg.hpp>
 #include <nil/actor/variant.hpp>
 
-#include <nil/actor/scheduler/test_coordinator.hpp>
-
-#include <nil/actor/policy/arg.hpp>
-#include <nil/actor/policy/categorized.hpp>
-#include <nil/actor/policy/downstream_messages.hpp>
-#include <nil/actor/policy/normal_messages.hpp>
-#include <nil/actor/policy/upstream_messages.hpp>
-#include <nil/actor/policy/urgent_messages.hpp>
-
-#include <nil/actor/mixin/sender.hpp>
-
-#include <nil/actor/intrusive/drr_queue.hpp>
-#include <nil/actor/intrusive/singly_linked.hpp>
-#include <nil/actor/intrusive/task_result.hpp>
-#include <nil/actor/intrusive/wdrr_dynamic_multiplexed_queue.hpp>
-#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
-
-#include <nil/actor/detail/overload.hpp>
-#include <nil/actor/detail/stream_sink_impl.hpp>
-#include <nil/actor/detail/stream_source_impl.hpp>
-#include <nil/actor/detail/stream_stage_impl.hpp>
-#include <nil/actor/detail/tick_emitter.hpp>
-
 using std::vector;
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<actor_addr> {
+                void operator()(std::ostream &, actor_addr const &) {
+                }
+            };
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+            template<>
+            struct print_log_value<none_t> {
+                void operator()(std::ostream &, none_t const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -85,14 +111,12 @@ namespace {
 
     struct print_with_comma_t {
         bool first = true;
-
         template<class T>
         std::ostream &operator()(std::ostream &out, const T &x) {
-            if (!first) {
+            if (!first)
                 out << ", ";
-            } else {
+            else
                 first = false;
-            }
             return out << deep_to_string(x);
         }
     };
@@ -121,16 +145,18 @@ namespace {
 
     // -- queues -------------------------------------------------------------------
 
-    using default_queue = drr_queue<policy::normal_messages>;
+    using mboxqueue = scheduled_actor::mailbox_policy::queue_type;
 
-    using dmsg_queue = wdrr_dynamic_multiplexed_queue<policy::downstream_messages>;
+    template<size_t Value>
+    using uint_constant = std::integral_constant<size_t, Value>;
 
-    using umsg_queue = drr_queue<policy::upstream_messages>;
+    using urgent_async_id = uint_constant<scheduled_actor::urgent_queue_index>;
 
-    using urgent_queue = drr_queue<policy::urgent_messages>;
+    using normal_async_id = uint_constant<scheduled_actor::normal_queue_index>;
 
-    using mboxqueue =
-        wdrr_fixed_multiplexed_queue<policy::categorized, default_queue, umsg_queue, dmsg_queue, urgent_queue>;
+    using umsg_id = uint_constant<scheduled_actor::upstream_queue_index>;
+
+    using dmsg_id = uint_constant<scheduled_actor::downstream_queue_index>;
 
     // -- entity and mailbox visitor -----------------------------------------------
 
@@ -153,7 +179,7 @@ namespace {
         /// The type of a single tick.
         using time_point = clock_type::time_point;
 
-        /// Difference between two points in time.
+        /// A time interval in the resolution of the actor clock.
         using duration_type = time_point::duration;
 
         /// The type of a single tick.
@@ -219,15 +245,14 @@ namespace {
             using downstream_manager = broadcast_downstream_manager<int>;
             struct driver final : public stream_source_driver<downstream_manager> {
             public:
-                driver(int sentinel) : x_(0), sentinel_(sentinel) {
+                driver(int32_t sentinel) : x_(0), sentinel_(sentinel) {
                     // nop
                 }
 
-                void pull(downstream<int> &out, size_t hint) override {
+                void pull(downstream<int32_t> &out, size_t hint) override {
                     auto y = std::min(sentinel_, x_ + static_cast<int>(hint));
-                    while (x_ < y) {
+                    while (x_ < y)
                         out.push(x_++);
-                    }
                 }
 
                 bool done() const noexcept override {
@@ -235,8 +260,8 @@ namespace {
                 }
 
             private:
-                int x_;
-                int sentinel_;
+                int32_t x_;
+                int32_t sentinel_;
             };
             auto mgr = detail::make_stream_source<driver>(this, num_messages);
             auto res = mgr->add_outbound_path(ref.ctrl());
@@ -247,9 +272,9 @@ namespace {
             using downstream_manager = broadcast_downstream_manager<int>;
             struct driver final : public stream_stage_driver<int, downstream_manager> {
             public:
-                using super = stream_stage_driver<int, downstream_manager>;
+                using super = stream_stage_driver<int32_t, downstream_manager>;
 
-                driver(downstream_manager &out, vector<int> *log) : super(out), log_(log) {
+                driver(downstream_manager &out, vector<int32_t> *log) : super(out), log_(log) {
                     // nop
                 }
 
@@ -298,7 +323,7 @@ namespace {
 
         void operator()(stream_slots slots, actor_addr &sender, upstream_msg::ack_open &x) {
             TRACE(name_, ack_open, ACTOR_ARG(slots), ACTOR_ARG2("sender", name_of(x.rebind_to)), ACTOR_ARG(x));
-            BOOST_REQUIRE(sender == x.rebind_to);
+            BOOST_REQUIRE_EQUAL(sender, x.rebind_to);
             scheduled_actor::handle_upstream_msg(slots, sender, x);
         }
 
@@ -309,21 +334,19 @@ namespace {
 
         void advance_time() {
             auto cycle = std::chrono::milliseconds(100);
-            auto desired_batch_complexity = std::chrono::microseconds(50);
             auto f = [&](tick_type x) {
                 if (x % ticks_per_force_batches_interval == 0) {
                     // Force batches on all output paths.
-                    for (auto &kvp : stream_managers()) {
+                    for (auto &kvp : stream_managers())
                         kvp.second->out().force_emit_batches();
-                    }
                 }
                 if (x % ticks_per_credit_interval == 0) {
                     // Fill credit on each input path up to 30.
-                    auto &qs = get<2>(mbox.queues()).queues();
+                    auto &qs = get<dmsg_id::value>(mbox.queues()).queues();
                     for (auto &kvp : qs) {
                         auto inptr = kvp.second.policy().handler.get();
-                        auto bs = static_cast<int32_t>(kvp.second.total_task_size());
-                        inptr->emit_ack_batch(this, bs, 30, now(), cycle, desired_batch_complexity);
+                        auto tts = static_cast<int32_t>(kvp.second.total_task_size());
+                        inptr->emit_ack_batch(this, tts, now(), cycle);
                     }
                 }
             };
@@ -331,32 +354,30 @@ namespace {
         }
 
         inbound_path *make_inbound_path(stream_manager_ptr mgr, stream_slots slots, strong_actor_ptr sender,
-                                        rtti_pair rtti) override {
+                                        type_id_t input_type) override {
             using policy_type = policy::downstream_messages::nested;
-            auto res = get<2>(mbox.queues()).queues().emplace(slots.receiver, policy_type {nullptr});
-            if (!res.second) {
+            auto res = get<dmsg_id::value>(mbox.queues()).queues().emplace(slots.receiver, policy_type {nullptr});
+            if (!res.second)
                 return nullptr;
-            }
-            auto path = new inbound_path(std::move(mgr), slots, std::move(sender), rtti);
+            auto path = new inbound_path(std::move(mgr), slots, std::move(sender), input_type);
             res.first->second.policy().handler.reset(path);
             return path;
         }
 
         void erase_inbound_path_later(stream_slot slot) override {
-            get<2>(mbox.queues()).erase_later(slot);
+            get<dmsg_id::value>(mbox.queues()).erase_later(slot);
         }
 
         void erase_inbound_paths_later(const stream_manager *mgr) override {
-            for (auto &kvp : get<2>(mbox.queues()).queues()) {
+            for (auto &kvp : get<dmsg_id::value>(mbox.queues()).queues()) {
                 auto &path = kvp.second.policy().handler;
-                if (path != nullptr && path->mgr == mgr) {
+                if (path != nullptr && path->mgr == mgr)
                     erase_inbound_path_later(kvp.first);
-                }
             }
         }
 
         void erase_inbound_paths_later(const stream_manager *mgr, error err) override {
-            BOOST_REQUIRE(err == none);
+            BOOST_REQUIRE_EQUAL(err, none);
             erase_inbound_paths_later(mgr);
         }
 
@@ -380,33 +401,25 @@ namespace {
     struct msg_visitor {
         // -- member types -----------------------------------------------------------
 
-        using is_default_async = std::integral_constant<size_t, 0>;
-
-        using is_umsg = std::integral_constant<size_t, 1>;
-
-        using is_dmsg = std::integral_constant<size_t, 2>;
-
-        using is_urgent_async = std::integral_constant<size_t, 3>;
-
         using result_type = intrusive::task_result;
 
         // -- operator() overloads ---------------------------------------------------
 
-        result_type operator()(is_default_async, default_queue &, mailbox_element &x) {
-            BOOST_REQUIRE_EQUAL(x.content().type_token(), make_type_token<open_stream_msg>());
+        result_type operator()(urgent_async_id, entity::urgent_queue &, mailbox_element &) {
+            BOOST_FAIL("unexpected function call");
+            return intrusive::task_result::stop;
+        }
+
+        result_type operator()(normal_async_id, entity::normal_queue &, mailbox_element &x) {
+            BOOST_REQUIRE(x.content().match_elements<open_stream_msg>());
             self->current_mailbox_element(&x);
             (*self)(x.content().get_mutable_as<open_stream_msg>(0));
             self->current_mailbox_element(nullptr);
             return intrusive::task_result::resume;
         }
 
-        result_type operator()(is_urgent_async, urgent_queue &, mailbox_element &) {
-            BOOST_FAIL("unexpected function call");
-            return intrusive::task_result::stop;
-        }
-
-        result_type operator()(is_umsg, umsg_queue &, mailbox_element &x) {
-            BOOST_REQUIRE(x.content().type_token() == make_type_token<upstream_msg>());
+        result_type operator()(umsg_id, entity::upstream_queue &, mailbox_element &x) {
+            BOOST_REQUIRE(x.content().match_elements<upstream_msg>());
             self->current_mailbox_element(&x);
             auto &um = x.content().get_mutable_as<upstream_msg>(0);
             auto f = detail::make_overload(
@@ -419,14 +432,13 @@ namespace {
             return intrusive::task_result::resume;
         }
 
-        result_type operator()(is_dmsg, dmsg_queue &qs, stream_slot, policy::downstream_messages::nested_queue_type &q,
-                               mailbox_element &x) {
-            BOOST_REQUIRE(x.content().type_token() == make_type_token<downstream_msg>());
+        result_type operator()(dmsg_id, entity::downstream_queue &qs, stream_slot,
+                               policy::downstream_messages::nested_queue_type &q, mailbox_element &x) {
+            BOOST_REQUIRE(x.content().match_elements<downstream_msg>());
             self->current_mailbox_element(&x);
             auto inptr = q.policy().handler.get();
-            if (inptr == nullptr) {
+            if (inptr == nullptr)
                 return intrusive::task_result::stop;
-            }
             auto &dm = x.content().get_mutable_as<downstream_msg>(0);
             auto f = detail::make_overload(
                 [&](downstream_msg::batch &y) {
@@ -441,7 +453,7 @@ namespace {
                     TRACE(self->name(), close, ACTOR_ARG(dm.slots));
                     auto slots = dm.slots;
                     auto i = self->stream_managers().find(slots.receiver);
-                    BOOST_REQUIRE(i != self->stream_managers().end());
+                    BOOST_REQUIRE_NE(i, self->stream_managers().end());
                     i->second->handle(inptr, y);
                     q.policy().handler.reset();
                     qs.erase_later(slots.receiver);
@@ -482,6 +494,8 @@ namespace {
             timespan step = force_batches_interval;
         };
 
+        meta_initializer mi;
+
         timing_config tc;
 
         spawner_config cfg;
@@ -507,24 +521,26 @@ namespace {
             return *static_cast<entity *>(actor_cast<abstract_actor *>(hdl));
         }
 
-        static inline spawner_config &config(spawner_config &cfg) {
-            cfg.scheduler_policy = nil::actor::atom("testing");
+        static spawner_config &init_config(spawner_config &cfg) {
+            if (auto err = cfg.parse(boost::unit_test::framework::master_test_suite().argc,
+                                     boost::unit_test::framework::master_test_suite().argv))
+                BOOST_FAIL("parsing the config failed: " << to_string(err));
+            cfg.set("scheduler.policy", "testing");
             return cfg;
         }
 
         fixture() :
-            sys(config(cfg)), sched(dynamic_cast<scheduler_type &>(sys.scheduler())),
+            mi(), sys(init_config(cfg)), sched(dynamic_cast<scheduler_type &>(sys.scheduler())),
             alice_hdl(spawn(sys, 0, "alice", tc)), bob_hdl(spawn(sys, 1, "bob", tc)),
             carl_hdl(spawn(sys, 2, "carl", tc)), alice(fetch(alice_hdl)), bob(fetch(bob_hdl)), carl(fetch(carl_hdl)) {
-            // Configure the clock to measure each batch item with 1us.
-            sched.clock().time_per_unit.emplace(atom("batch"), timespan {1000});
+            // nop
         }
 
         ~fixture() {
             // Check whether all actors cleaned up their state properly.
             entity *xs[] = {&alice, &bob, &carl};
             for (auto x : xs) {
-                BOOST_CHECK(get<2>(x->mbox.queues()).queues().empty());
+                BOOST_CHECK(get<dmsg_id::value>(x->mbox.queues()).queues().empty());
                 BOOST_CHECK(x->pending_stream_managers().empty());
                 BOOST_CHECK(x->stream_managers().empty());
             }
@@ -534,11 +550,9 @@ namespace {
         void loop(Ts &... xs) {
             msg_visitor fs[] = {{&xs}...};
             auto mailbox_empty = [](msg_visitor &x) { return x.self->mbox.empty(); };
-            while (!std::all_of(std::begin(fs), std::end(fs), mailbox_empty)) {
-                for (auto &f : fs) {
+            while (!std::all_of(std::begin(fs), std::end(fs), mailbox_empty))
+                for (auto &f : fs)
                     f.self->mbox.new_round(1, f);
-                }
-            }
         }
 
         template<class... Ts>
@@ -546,9 +560,8 @@ namespace {
             entity *es[] = {&xs...};
             BOOST_TEST_MESSAGE("advance clock by " << tc.credit_interval.count() << "ns");
             sched.clock().current_time += tc.credit_interval;
-            for (auto e : es) {
+            for (auto e : es)
                 e->advance_time();
-            }
         }
 
         template<class F, class... Ts>
@@ -557,16 +570,13 @@ namespace {
             msg_visitor fs[] = {{&xs}...};
             auto mailbox_empty = [](msg_visitor &x) { return x.self->mbox.empty(); };
             do {
-                while (!std::all_of(std::begin(fs), std::end(fs), mailbox_empty)) {
-                    for (auto &f : fs) {
+                while (!std::all_of(std::begin(fs), std::end(fs), mailbox_empty))
+                    for (auto &f : fs)
                         f.self->mbox.new_round(1, f);
-                    }
-                }
                 BOOST_TEST_MESSAGE("advance clock by " << tc.step.count() << "ns");
                 sched.clock().current_time += tc.step;
-                for (auto e : es) {
+                for (auto e : es)
                     e->advance_time();
-                }
             } while (!pred());
         }
 
@@ -590,24 +600,24 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(native_streaming_classes_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(depth_2_pipeline_30_items_test) {
+BOOST_AUTO_TEST_CASE(depth_2_pipeline_30_items) {
     alice.start_streaming(bob, 30);
     loop(alice, bob);
     next_cycle(alice, bob);    // emit first ack_batch
     loop(alice, bob);
     next_cycle(alice, bob);    // to emit final ack_batch
     loop(alice, bob);
-    BOOST_CHECK(bob.data == make_iota(0, 30));
+    BOOST_CHECK_EQUAL(bob.data, make_iota(0, 30));
 }
 
-BOOST_AUTO_TEST_CASE(depth_2_pipeline_2000_items_test) {
+BOOST_AUTO_TEST_CASE(depth_2_pipeline_2000_items) {
     constexpr size_t num_messages = 2000;
     alice.start_streaming(bob, num_messages);
     loop_until([&] { return done_streaming(); }, alice, bob);
-    BOOST_CHECK(bob.data == make_iota(0, num_messages));
+    BOOST_CHECK_EQUAL(bob.data, make_iota(0, num_messages));
 }
 
-BOOST_AUTO_TEST_CASE(depth_3_pipeline_30_items_test) {
+BOOST_AUTO_TEST_CASE(depth_3_pipeline_30_items) {
     bob.forward_to(carl);
     alice.start_streaming(bob, 30);
     loop(alice, bob, carl);
@@ -617,11 +627,11 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_30_items_test) {
     loop(alice, bob, carl);
     next_cycle(alice, bob, carl);    // emit final ack_batch
     loop(alice, bob, carl);
-    BOOST_CHECK(bob.data == make_iota(0, 30));
-    BOOST_CHECK(carl.data == make_iota(0, 30));
+    BOOST_CHECK_EQUAL(bob.data, make_iota(0, 30));
+    BOOST_CHECK_EQUAL(carl.data, make_iota(0, 30));
 }
 
-BOOST_AUTO_TEST_CASE(depth_3_pipeline_2000_items_test) {
+BOOST_AUTO_TEST_CASE(depth_3_pipeline_2000_items) {
     constexpr size_t num_messages = 2000;
     bob.forward_to(carl);
     alice.start_streaming(bob, num_messages);
@@ -636,8 +646,8 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_2000_items_test) {
     BOOST_CHECK_EQUAL(bob.data.size(), carl.data.size());
     BOOST_TEST_MESSAGE("loop over all until done");
     loop_until([&] { return done_streaming(); }, alice, bob, carl);
-    BOOST_CHECK(bob.data == make_iota(0, num_messages));
-    BOOST_CHECK(carl.data == make_iota(0, num_messages));
+    BOOST_CHECK_EQUAL(bob.data, make_iota(0, num_messages));
+    BOOST_CHECK_EQUAL(carl.data, make_iota(0, num_messages));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,22 +1,18 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
-// this suite tests whether actors terminate as expect in several use cases
-#define BOOST_TEST_MODULE thread_hook_test
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#define BOOST_TEST_MODULE thread_hook
 
-#include <nil/actor/config.hpp>
 #include <nil/actor/all.hpp>
+
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
 
@@ -75,23 +71,23 @@ namespace {
     struct config : spawner_config {
         config() {
             add_thread_hook<Hook>();
-            this->logger_verbosity = atom("quiet");
+            set("logger.verbosity", "quiet");
         }
     };
 
     template<class Hook>
     struct fixture {
+        meta_initializer mi;
         config<Hook> cfg;
         spawner sys;
-
-        fixture() : sys(cfg) {
+        fixture() : mi(), sys(cfg) {
             // nop
         }
     };
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(counting_no_system_test) {
+BOOST_AUTO_TEST_CASE(counting_no_system) {
     assumed_init_calls = 0;
     spawner_config cfg;
     cfg.add_thread_hook<counting_thread_hook>();
@@ -99,7 +95,7 @@ BOOST_AUTO_TEST_CASE(counting_no_system_test) {
 
 BOOST_FIXTURE_TEST_SUITE(dummy_hook, fixture<dummy_thread_hook>)
 
-BOOST_AUTO_TEST_CASE(counting_no_args_test) {
+BOOST_AUTO_TEST_CASE(counting_no_args) {
     // nop
 }
 
@@ -107,23 +103,23 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(counting_hook, fixture<counting_thread_hook>)
 
-BOOST_AUTO_TEST_CASE(counting_system_without_actor_test) {
+BOOST_AUTO_TEST_CASE(counting_system_without_actor) {
     assumed_init_calls = 1;
-    assumed_thread_count = cfg.scheduler_max_threads + 2;    // actor.clock thread
+    assumed_thread_count = get_or(cfg, "scheduler.max-threads",
+                                  defaults::scheduler::max_threads) + 1;    // caf.clock
     auto &sched = sys.scheduler();
-    if (sched.detaches_utility_actors()) {
+    if (sched.detaches_utility_actors())
         assumed_thread_count += sched.num_utility_actors();
-    }
 }
 
-BOOST_AUTO_TEST_CASE(counting_system_with_actor_test) {
+BOOST_AUTO_TEST_CASE(counting_system_with_actor) {
     assumed_init_calls = 1;
-    assumed_thread_count = cfg.scheduler_max_threads + 3;    // actor.clock thread plus
-    // detached actor
+    assumed_thread_count = get_or(cfg, "scheduler.max-threads",
+                                  defaults::scheduler::max_threads) +
+                           2;    // caf.clock and detached actor
     auto &sched = sys.scheduler();
-    if (sched.detaches_utility_actors()) {
+    if (sched.detaches_utility_actors())
         assumed_thread_count += sched.num_utility_actors();
-    }
     sys.spawn<detached>([] {});
     sys.spawn([] {});
 }

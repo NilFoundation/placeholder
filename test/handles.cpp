@@ -1,27 +1,55 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 // This unit test checks guarantees regarding ordering and equality for actor
 // handles, i.e., actor_addr, actor, and typed_actor<...>.
 
-#include <nil/actor/config.hpp>
+#define BOOST_TEST_MODULE handles
 
-#define BOOST_TEST_MODULE handles_test
+#include <nil/actor/actor.hpp>
+#include <nil/actor/actor_addr.hpp>
+#include <nil/actor/typed_actor.hpp>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <nil/actor/all.hpp>
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<actor_addr> {
+                void operator()(std::ostream &, actor_addr const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<actor> {
+                void operator()(std::ostream &, actor const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -44,7 +72,7 @@ namespace {
         actor_addr wh;
         // Dynamically typed handle to the actor.
         actor dt;
-        // Staically typed handle to the actor.
+        // Statically typed handle to the actor.
         testee_actor st;
 
         handle_set() = default;
@@ -56,10 +84,11 @@ namespace {
     };
 
     struct fixture {
-        fixture() : sys(cfg), self(sys, true), a1 {sys.spawn(dt_testee)}, a2 {sys.spawn(st_testee)} {
+        fixture() : mi(), sys(cfg), self(sys, true), a1 {sys.spawn(dt_testee)}, a2 {sys.spawn(st_testee)} {
             // nop
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         spawner sys;
         scoped_actor self;
@@ -72,200 +101,200 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(handle_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(identity_test) {
+BOOST_AUTO_TEST_CASE(identity) {
     // all handles in a0 are equal
-    BOOST_CHECK(a0.wh == a0.wh);
-    BOOST_CHECK(a0.wh == a0.dt);
-    BOOST_CHECK(a0.wh == a0.st);
-    BOOST_CHECK(a0.dt == a0.wh);
-    BOOST_CHECK(a0.dt == a0.dt);
-    BOOST_CHECK(a0.dt == a0.st);
-    BOOST_CHECK(a0.st == a0.wh);
-    BOOST_CHECK(a0.st == a0.dt);
-    BOOST_CHECK(a0.st == a0.st);
-    // all hand a1 ar == equal
-    BOOST_CHECK(a1.wh == a1.wh);
-    BOOST_CHECK(a1.wh == a1.dt);
-    BOOST_CHECK(a1.wh == a1.st);
-    BOOST_CHECK(a1.dt == a1.wh);
-    BOOST_CHECK(a1.dt == a1.dt);
-    BOOST_CHECK(a1.dt == a1.st);
-    BOOST_CHECK(a1.st == a1.wh);
-    BOOST_CHECK(a1.st == a1.dt);
-    BOOST_CHECK(a1.st == a1.st);
-    // all hand a2 ar == equal
-    BOOST_CHECK(a2.wh == a2.wh);
-    BOOST_CHECK(a2.wh == a2.dt);
-    BOOST_CHECK(a2.wh == a2.st);
-    BOOST_CHECK(a2.dt == a2.wh);
-    BOOST_CHECK(a2.dt == a2.dt);
-    BOOST_CHECK(a2.dt == a2.st);
-    BOOST_CHECK(a2.st == a2.wh);
-    BOOST_CHECK(a2.st == a2.dt);
-    BOOST_CHECK(a2.st == a2.st);
+    BOOST_CHECK_EQUAL(a0.wh, a0.wh);
+    BOOST_CHECK_EQUAL(a0.wh, a0.dt);
+    BOOST_CHECK_EQUAL(a0.wh, a0.st);
+    BOOST_CHECK_EQUAL(a0.dt, a0.wh);
+    BOOST_CHECK_EQUAL(a0.dt, a0.dt);
+    BOOST_CHECK_EQUAL(a0.dt, a0.st);
+    BOOST_CHECK_EQUAL(a0.st, a0.wh);
+    BOOST_CHECK_EQUAL(a0.st, a0.dt);
+    BOOST_CHECK_EQUAL(a0.st, a0.st);
+    // all handles in a1 are equal
+    BOOST_CHECK_EQUAL(a1.wh, a1.wh);
+    BOOST_CHECK_EQUAL(a1.wh, a1.dt);
+    BOOST_CHECK_EQUAL(a1.wh, a1.st);
+    BOOST_CHECK_EQUAL(a1.dt, a1.wh);
+    BOOST_CHECK_EQUAL(a1.dt, a1.dt);
+    BOOST_CHECK_EQUAL(a1.dt, a1.st);
+    BOOST_CHECK_EQUAL(a1.st, a1.wh);
+    BOOST_CHECK_EQUAL(a1.st, a1.dt);
+    BOOST_CHECK_EQUAL(a1.st, a1.st);
+    // all handles in a2 are equal
+    BOOST_CHECK_EQUAL(a2.wh, a2.wh);
+    BOOST_CHECK_EQUAL(a2.wh, a2.dt);
+    BOOST_CHECK_EQUAL(a2.wh, a2.st);
+    BOOST_CHECK_EQUAL(a2.dt, a2.wh);
+    BOOST_CHECK_EQUAL(a2.dt, a2.dt);
+    BOOST_CHECK_EQUAL(a2.dt, a2.st);
+    BOOST_CHECK_EQUAL(a2.st, a2.wh);
+    BOOST_CHECK_EQUAL(a2.st, a2.dt);
+    BOOST_CHECK_EQUAL(a2.st, a2.st);
     // all handles in a0 are *not* equal to any handle in a1 or a2
-    BOOST_CHECK(a0.wh != a1.wh);
-    BOOST_CHECK(a0.wh != a1.dt);
-    BOOST_CHECK(a0.wh != a1.st);
-    BOOST_CHECK(a0.dt != a1.wh);
-    BOOST_CHECK(a0.dt != a1.dt);
-    BOOST_CHECK(a0.dt != a1.st);
-    BOOST_CHECK(a0.st != a1.wh);
-    BOOST_CHECK(a0.st != a1.dt);
-    BOOST_CHECK(a0.st != a1.st);
-    BOOST_CHECK(a0.wh != a2.wh);
-    BOOST_CHECK(a0.wh != a2.dt);
-    BOOST_CHECK(a0.wh != a2.st);
-    BOOST_CHECK(a0.dt != a2.wh);
-    BOOST_CHECK(a0.dt != a2.dt);
-    BOOST_CHECK(a0.dt != a2.st);
-    BOOST_CHECK(a0.st != a2.wh);
-    BOOST_CHECK(a0.st != a2.dt);
-    BOOST_CHECK(a0.st != a2.st);
-    // all hand in a1 !=are *not* equal to any handle in a0 or a2
-    BOOST_CHECK(a1.wh != a0.wh);
-    BOOST_CHECK(a1.wh != a0.dt);
-    BOOST_CHECK(a1.wh != a0.st);
-    BOOST_CHECK(a1.dt != a0.wh);
-    BOOST_CHECK(a1.dt != a0.dt);
-    BOOST_CHECK(a1.dt != a0.st);
-    BOOST_CHECK(a1.st != a0.wh);
-    BOOST_CHECK(a1.st != a0.dt);
-    BOOST_CHECK(a1.st != a0.st);
-    BOOST_CHECK(a1.wh != a2.wh);
-    BOOST_CHECK(a1.wh != a2.dt);
-    BOOST_CHECK(a1.wh != a2.st);
-    BOOST_CHECK(a1.dt != a2.wh);
-    BOOST_CHECK(a1.dt != a2.dt);
-    BOOST_CHECK(a1.dt != a2.st);
-    BOOST_CHECK(a1.st != a2.wh);
-    BOOST_CHECK(a1.st != a2.dt);
-    BOOST_CHECK(a1.st != a2.st);
-    // all hand in a2 !=are *not* equal to any handle in a0 or a1
-    BOOST_CHECK(a2.wh != a0.wh);
-    BOOST_CHECK(a2.wh != a0.dt);
-    BOOST_CHECK(a2.wh != a0.st);
-    BOOST_CHECK(a2.dt != a0.wh);
-    BOOST_CHECK(a2.dt != a0.dt);
-    BOOST_CHECK(a2.dt != a0.st);
-    BOOST_CHECK(a2.st != a0.wh);
-    BOOST_CHECK(a2.st != a0.dt);
-    BOOST_CHECK(a2.st != a0.st);
-    BOOST_CHECK(a2.wh != a1.wh);
-    BOOST_CHECK(a2.wh != a1.dt);
-    BOOST_CHECK(a2.wh != a1.st);
-    BOOST_CHECK(a2.dt != a1.wh);
-    BOOST_CHECK(a2.dt != a1.dt);
-    BOOST_CHECK(a2.dt != a1.st);
-    BOOST_CHECK(a2.st != a1.wh);
-    BOOST_CHECK(a2.st != a1.dt);
-    BOOST_CHECK(a2.st != a1.st);
+    BOOST_CHECK_NE(a0.wh, a1.wh);
+    BOOST_CHECK_NE(a0.wh, a1.dt);
+    BOOST_CHECK_NE(a0.wh, a1.st);
+    BOOST_CHECK_NE(a0.dt, a1.wh);
+    BOOST_CHECK_NE(a0.dt, a1.dt);
+    BOOST_CHECK_NE(a0.dt, a1.st);
+    BOOST_CHECK_NE(a0.st, a1.wh);
+    BOOST_CHECK_NE(a0.st, a1.dt);
+    BOOST_CHECK_NE(a0.st, a1.st);
+    BOOST_CHECK_NE(a0.wh, a2.wh);
+    BOOST_CHECK_NE(a0.wh, a2.dt);
+    BOOST_CHECK_NE(a0.wh, a2.st);
+    BOOST_CHECK_NE(a0.dt, a2.wh);
+    BOOST_CHECK_NE(a0.dt, a2.dt);
+    BOOST_CHECK_NE(a0.dt, a2.st);
+    BOOST_CHECK_NE(a0.st, a2.wh);
+    BOOST_CHECK_NE(a0.st, a2.dt);
+    BOOST_CHECK_NE(a0.st, a2.st);
+    // all handles in a1 are *not* equal to any handle in a0 or a2
+    BOOST_CHECK_NE(a1.wh, a0.wh);
+    BOOST_CHECK_NE(a1.wh, a0.dt);
+    BOOST_CHECK_NE(a1.wh, a0.st);
+    BOOST_CHECK_NE(a1.dt, a0.wh);
+    BOOST_CHECK_NE(a1.dt, a0.dt);
+    BOOST_CHECK_NE(a1.dt, a0.st);
+    BOOST_CHECK_NE(a1.st, a0.wh);
+    BOOST_CHECK_NE(a1.st, a0.dt);
+    BOOST_CHECK_NE(a1.st, a0.st);
+    BOOST_CHECK_NE(a1.wh, a2.wh);
+    BOOST_CHECK_NE(a1.wh, a2.dt);
+    BOOST_CHECK_NE(a1.wh, a2.st);
+    BOOST_CHECK_NE(a1.dt, a2.wh);
+    BOOST_CHECK_NE(a1.dt, a2.dt);
+    BOOST_CHECK_NE(a1.dt, a2.st);
+    BOOST_CHECK_NE(a1.st, a2.wh);
+    BOOST_CHECK_NE(a1.st, a2.dt);
+    BOOST_CHECK_NE(a1.st, a2.st);
+    // all handles in a2 are *not* equal to any handle in a0 or a1
+    BOOST_CHECK_NE(a2.wh, a0.wh);
+    BOOST_CHECK_NE(a2.wh, a0.dt);
+    BOOST_CHECK_NE(a2.wh, a0.st);
+    BOOST_CHECK_NE(a2.dt, a0.wh);
+    BOOST_CHECK_NE(a2.dt, a0.dt);
+    BOOST_CHECK_NE(a2.dt, a0.st);
+    BOOST_CHECK_NE(a2.st, a0.wh);
+    BOOST_CHECK_NE(a2.st, a0.dt);
+    BOOST_CHECK_NE(a2.st, a0.st);
+    BOOST_CHECK_NE(a2.wh, a1.wh);
+    BOOST_CHECK_NE(a2.wh, a1.dt);
+    BOOST_CHECK_NE(a2.wh, a1.st);
+    BOOST_CHECK_NE(a2.dt, a1.wh);
+    BOOST_CHECK_NE(a2.dt, a1.dt);
+    BOOST_CHECK_NE(a2.dt, a1.st);
+    BOOST_CHECK_NE(a2.st, a1.wh);
+    BOOST_CHECK_NE(a2.st, a1.dt);
+    BOOST_CHECK_NE(a2.st, a1.st);
 }
 
-BOOST_AUTO_TEST_CASE(ordering_test) {
+BOOST_AUTO_TEST_CASE(ordering) {
     // handles in a0 are all equal, i.e., are not in less-than relation
-    BOOST_CHECK(a0.wh >= a0.wh);
-    BOOST_CHECK(a0.wh >= a0.dt);
-    BOOST_CHECK(a0.wh >= a0.st);
-    BOOST_CHECK(a0.dt >= a0.wh);
-    BOOST_CHECK(a0.dt >= a0.dt);
-    BOOST_CHECK(a0.dt >= a0.st);
-    BOOST_CHECK(a0.st >= a0.wh);
-    BOOST_CHECK(a0.st >= a0.dt);
-    BOOST_CHECK(a0.st >= a0.st);
-    // handles a1 are >=all equal, i.e., are not in less-than relation
-    BOOST_CHECK(a1.wh >= a1.wh);
-    BOOST_CHECK(a1.wh >= a1.dt);
-    BOOST_CHECK(a1.wh >= a1.st);
-    BOOST_CHECK(a1.dt >= a1.wh);
-    BOOST_CHECK(a1.dt >= a1.dt);
-    BOOST_CHECK(a1.dt >= a1.st);
-    BOOST_CHECK(a1.st >= a1.wh);
-    BOOST_CHECK(a1.st >= a1.dt);
-    BOOST_CHECK(a1.st >= a1.st);
-    // handles a2 are >=all equal, i.e., are not in less-than relation
-    BOOST_CHECK(a2.wh >= a2.wh);
-    BOOST_CHECK(a2.wh >= a2.dt);
-    BOOST_CHECK(a2.wh >= a2.st);
-    BOOST_CHECK(a2.dt >= a2.wh);
-    BOOST_CHECK(a2.dt >= a2.dt);
-    BOOST_CHECK(a2.dt >= a2.st);
-    BOOST_CHECK(a2.st >= a2.wh);
-    BOOST_CHECK(a2.st >= a2.dt);
-    BOOST_CHECK(a2.st >= a2.st);
+    BOOST_CHECK_GE(a0.wh, a0.wh);
+    BOOST_CHECK_GE(a0.wh, a0.dt);
+    BOOST_CHECK_GE(a0.wh, a0.st);
+    BOOST_CHECK_GE(a0.dt, a0.wh);
+    BOOST_CHECK_GE(a0.dt, a0.dt);
+    BOOST_CHECK_GE(a0.dt, a0.st);
+    BOOST_CHECK_GE(a0.st, a0.wh);
+    BOOST_CHECK_GE(a0.st, a0.dt);
+    BOOST_CHECK_GE(a0.st, a0.st);
+    // handles in a1 are all equal, i.e., are not in less-than relation
+    BOOST_CHECK_GE(a1.wh, a1.wh);
+    BOOST_CHECK_GE(a1.wh, a1.dt);
+    BOOST_CHECK_GE(a1.wh, a1.st);
+    BOOST_CHECK_GE(a1.dt, a1.wh);
+    BOOST_CHECK_GE(a1.dt, a1.dt);
+    BOOST_CHECK_GE(a1.dt, a1.st);
+    BOOST_CHECK_GE(a1.st, a1.wh);
+    BOOST_CHECK_GE(a1.st, a1.dt);
+    BOOST_CHECK_GE(a1.st, a1.st);
+    // handles in a2 are all equal, i.e., are not in less-than relation
+    BOOST_CHECK_GE(a2.wh, a2.wh);
+    BOOST_CHECK_GE(a2.wh, a2.dt);
+    BOOST_CHECK_GE(a2.wh, a2.st);
+    BOOST_CHECK_GE(a2.dt, a2.wh);
+    BOOST_CHECK_GE(a2.dt, a2.dt);
+    BOOST_CHECK_GE(a2.dt, a2.st);
+    BOOST_CHECK_GE(a2.st, a2.wh);
+    BOOST_CHECK_GE(a2.st, a2.dt);
+    BOOST_CHECK_GE(a2.st, a2.st);
     // all handles in a0 are less than handles in a1 or a2
-    BOOST_CHECK(a0.wh < a1.wh);
-    BOOST_CHECK(a0.wh < a1.dt);
-    BOOST_CHECK(a0.wh < a1.st);
-    BOOST_CHECK(a0.dt < a1.wh);
-    BOOST_CHECK(a0.dt < a1.dt);
-    BOOST_CHECK(a0.dt < a1.st);
-    BOOST_CHECK(a0.st < a1.wh);
-    BOOST_CHECK(a0.st < a1.dt);
-    BOOST_CHECK(a0.st < a1.st);
-    BOOST_CHECK(a0.wh < a2.wh);
-    BOOST_CHECK(a0.wh < a2.dt);
-    BOOST_CHECK(a0.wh < a2.st);
-    BOOST_CHECK(a0.dt < a2.wh);
-    BOOST_CHECK(a0.dt < a2.dt);
-    BOOST_CHECK(a0.dt < a2.st);
-    BOOST_CHECK(a0.st < a2.wh);
-    BOOST_CHECK(a0.st < a2.dt);
-    BOOST_CHECK(a0.st < a2.st);
-    // all hand in a1 <are less than handles in a2
-    BOOST_CHECK(a1.wh < a2.wh);
-    BOOST_CHECK(a1.wh < a2.dt);
-    BOOST_CHECK(a1.wh < a2.st);
-    BOOST_CHECK(a1.dt < a2.wh);
-    BOOST_CHECK(a1.dt < a2.dt);
-    BOOST_CHECK(a1.dt < a2.st);
-    BOOST_CHECK(a1.st < a2.wh);
-    BOOST_CHECK(a1.st < a2.dt);
-    BOOST_CHECK(a1.st < a2.st);
-    // all handles in a1are *not* less than handles in a0
-    BOOST_CHECK(a1.wh >= a0.wh);
-    BOOST_CHECK(a1.wh >= a0.dt);
-    BOOST_CHECK(a1.wh >= a0.st);
-    BOOST_CHECK(a1.dt >= a0.wh);
-    BOOST_CHECK(a1.dt >= a0.dt);
-    BOOST_CHECK(a1.dt >= a0.st);
-    BOOST_CHECK(a1.st >= a0.wh);
-    BOOST_CHECK(a1.st >= a0.dt);
-    BOOST_CHECK(a1.st >= a0.st);
-    // all hand in a2 >=are *not* less than handles in a0 or a1
-    BOOST_CHECK(a2.wh >= a0.wh);
-    BOOST_CHECK(a2.wh >= a0.dt);
-    BOOST_CHECK(a2.wh >= a0.st);
-    BOOST_CHECK(a2.dt >= a0.wh);
-    BOOST_CHECK(a2.dt >= a0.dt);
-    BOOST_CHECK(a2.dt >= a0.st);
-    BOOST_CHECK(a2.st >= a0.wh);
-    BOOST_CHECK(a2.st >= a0.dt);
-    BOOST_CHECK(a2.st >= a0.st);
-    BOOST_CHECK(a2.wh >= a1.wh);
-    BOOST_CHECK(a2.wh >= a1.dt);
-    BOOST_CHECK(a2.wh >= a1.st);
-    BOOST_CHECK(a2.dt >= a1.wh);
-    BOOST_CHECK(a2.dt >= a1.dt);
-    BOOST_CHECK(a2.dt >= a1.st);
-    BOOST_CHECK(a2.st >= a1.wh);
-    BOOST_CHECK(a2.st >= a1.dt);
-    BOOST_CHECK(a2.st >= a1.st);
+    BOOST_CHECK_LT(a0.wh, a1.wh);
+    BOOST_CHECK_LT(a0.wh, a1.dt);
+    BOOST_CHECK_LT(a0.wh, a1.st);
+    BOOST_CHECK_LT(a0.dt, a1.wh);
+    BOOST_CHECK_LT(a0.dt, a1.dt);
+    BOOST_CHECK_LT(a0.dt, a1.st);
+    BOOST_CHECK_LT(a0.st, a1.wh);
+    BOOST_CHECK_LT(a0.st, a1.dt);
+    BOOST_CHECK_LT(a0.st, a1.st);
+    BOOST_CHECK_LT(a0.wh, a2.wh);
+    BOOST_CHECK_LT(a0.wh, a2.dt);
+    BOOST_CHECK_LT(a0.wh, a2.st);
+    BOOST_CHECK_LT(a0.dt, a2.wh);
+    BOOST_CHECK_LT(a0.dt, a2.dt);
+    BOOST_CHECK_LT(a0.dt, a2.st);
+    BOOST_CHECK_LT(a0.st, a2.wh);
+    BOOST_CHECK_LT(a0.st, a2.dt);
+    BOOST_CHECK_LT(a0.st, a2.st);
+    // all handles in a1 are less than handles in a2
+    BOOST_CHECK_LT(a1.wh, a2.wh);
+    BOOST_CHECK_LT(a1.wh, a2.dt);
+    BOOST_CHECK_LT(a1.wh, a2.st);
+    BOOST_CHECK_LT(a1.dt, a2.wh);
+    BOOST_CHECK_LT(a1.dt, a2.dt);
+    BOOST_CHECK_LT(a1.dt, a2.st);
+    BOOST_CHECK_LT(a1.st, a2.wh);
+    BOOST_CHECK_LT(a1.st, a2.dt);
+    BOOST_CHECK_LT(a1.st, a2.st);
+    // all handles in a1 are *not* less than handles in a0
+    BOOST_CHECK_GE(a1.wh, a0.wh);
+    BOOST_CHECK_GE(a1.wh, a0.dt);
+    BOOST_CHECK_GE(a1.wh, a0.st);
+    BOOST_CHECK_GE(a1.dt, a0.wh);
+    BOOST_CHECK_GE(a1.dt, a0.dt);
+    BOOST_CHECK_GE(a1.dt, a0.st);
+    BOOST_CHECK_GE(a1.st, a0.wh);
+    BOOST_CHECK_GE(a1.st, a0.dt);
+    BOOST_CHECK_GE(a1.st, a0.st);
+    // all handles in a2 are *not* less than handles in a0 or a1
+    BOOST_CHECK_GE(a2.wh, a0.wh);
+    BOOST_CHECK_GE(a2.wh, a0.dt);
+    BOOST_CHECK_GE(a2.wh, a0.st);
+    BOOST_CHECK_GE(a2.dt, a0.wh);
+    BOOST_CHECK_GE(a2.dt, a0.dt);
+    BOOST_CHECK_GE(a2.dt, a0.st);
+    BOOST_CHECK_GE(a2.st, a0.wh);
+    BOOST_CHECK_GE(a2.st, a0.dt);
+    BOOST_CHECK_GE(a2.st, a0.st);
+    BOOST_CHECK_GE(a2.wh, a1.wh);
+    BOOST_CHECK_GE(a2.wh, a1.dt);
+    BOOST_CHECK_GE(a2.wh, a1.st);
+    BOOST_CHECK_GE(a2.dt, a1.wh);
+    BOOST_CHECK_GE(a2.dt, a1.dt);
+    BOOST_CHECK_GE(a2.dt, a1.st);
+    BOOST_CHECK_GE(a2.st, a1.wh);
+    BOOST_CHECK_GE(a2.st, a1.dt);
+    BOOST_CHECK_GE(a2.st, a1.st);
 }
 
-BOOST_AUTO_TEST_CASE(string_representation_test) {
+BOOST_AUTO_TEST_CASE(string_representation) {
     auto s1 = a0.wh;
     auto s2 = a0.dt;
     auto s3 = a0.st;
-    BOOST_CHECK(s1 == s2);
-    BOOST_CHECK(s2 == s3);
+    BOOST_CHECK_EQUAL(s1, s2);
+    BOOST_CHECK_EQUAL(s2, s3);
 }
 
-BOOST_AUTO_TEST_CASE(mpi_string_representation_test) {
+BOOST_AUTO_TEST_CASE(mpi_string_representation) {
     BOOST_CHECK(sys.message_types(a0.dt).empty());
-    std::set<std::string> st_expected {"nil::actor::replies_to<@i32>::with<@i32>"};
-    BOOST_CHECK(st_expected == sys.message_types(a0.st));
-    BOOST_CHECK(st_expected == sys.message_types<testee_actor>());
+    std::set<std::string> st_expected {"nil::actor::replies_to<int32_t>::with<int32_t>"};
+    BOOST_CHECK_EQUAL(st_expected, sys.message_types(a0.st));
+    BOOST_CHECK_EQUAL(st_expected, sys.message_types<testee_actor>());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

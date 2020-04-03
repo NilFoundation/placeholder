@@ -1,21 +1,19 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/actor_ostream.hpp>
 
-#include <nil/actor/send.hpp>
-#include <nil/actor/scoped_actor.hpp>
 #include <nil/actor/abstract_actor.hpp>
 #include <nil/actor/default_attachable.hpp>
+#include <nil/actor/scoped_actor.hpp>
+#include <nil/actor/send.hpp>
 
 #include <nil/actor/scheduler/abstract_coordinator.hpp>
 
@@ -33,13 +31,13 @@ namespace nil {
         }
 
         actor_ostream &actor_ostream::write(std::string arg) {
-            printer_->enqueue(
-                make_mailbox_element(nullptr, make_message_id(), {}, add_atom::value, self_, std::move(arg)), nullptr);
+            printer_->enqueue(make_mailbox_element(nullptr, make_message_id(), {}, add_atom_v, self_, std::move(arg)),
+                              nullptr);
             return *this;
         }
 
         actor_ostream &actor_ostream::flush() {
-            printer_->enqueue(make_mailbox_element(nullptr, make_message_id(), {}, flush_atom::value, self_), nullptr);
+            printer_->enqueue(make_mailbox_element(nullptr, make_message_id(), {}, flush_atom_v, self_), nullptr);
             return *this;
         }
 
@@ -47,16 +45,15 @@ namespace nil {
             if (self == nullptr)
                 return;
             auto pr = self->home_system().scheduler().printer();
-            pr->enqueue(make_mailbox_element(nullptr, make_message_id(), {}, redirect_atom::value, self->id(),
-                                             std::move(fn), flags),
-                        nullptr);
+            pr->enqueue(
+                make_mailbox_element(nullptr, make_message_id(), {}, redirect_atom_v, self->id(), std::move(fn), flags),
+                nullptr);
         }
 
         void actor_ostream::redirect_all(spawner &sys, std::string fn, int flags) {
             auto pr = sys.scheduler().printer();
-            pr->enqueue(
-                make_mailbox_element(nullptr, make_message_id(), {}, redirect_atom::value, std::move(fn), flags),
-                nullptr);
+            pr->enqueue(make_mailbox_element(nullptr, make_message_id(), {}, redirect_atom_v, std::move(fn), flags),
+                        nullptr);
         }
 
         void actor_ostream::init(abstract_actor *self) {

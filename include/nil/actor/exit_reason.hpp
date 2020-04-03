@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 // This file is partially included in the manual, do not modify
@@ -16,7 +14,12 @@
 
 #pragma once
 
-#include <nil/actor/error.hpp>
+#include <cstdint>
+#include <string>
+
+#include <boost/config.hpp>
+
+#include <nil/actor/error_category.hpp>
 
 namespace nil {
     namespace actor {
@@ -44,10 +47,12 @@ namespace nil {
         };
 
         /// Returns a string representation of given exit reason.
-        std::string to_string(exit_reason x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(exit_reason);
 
-        /// @relates exit_reason
-        error make_error(exit_reason);
+        template<>
+        struct error_category<exit_reason> {
+            static constexpr uint8_t value = 3;
+        };
 
     }    // namespace actor
 }    // namespace nil

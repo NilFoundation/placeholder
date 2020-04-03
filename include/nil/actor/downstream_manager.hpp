@@ -1,19 +1,18 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <memory>
 #include <vector>
+
 
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/stream_slot.hpp>
@@ -26,7 +25,7 @@ namespace nil {
         /// output and is responsible for the dispatching policy (broadcasting, for
         /// example). The default implementation terminates the stream and never
         /// accepts any pahts.
-        class downstream_manager {
+        class BOOST_SYMBOL_VISIBLE downstream_manager {
         public:
             // -- member types -----------------------------------------------------------
 
@@ -43,13 +42,13 @@ namespace nil {
             using unique_path_ptr = std::unique_ptr<path_type>;
 
             /// Function object for iterating over all paths.
-            struct path_visitor {
+            struct BOOST_SYMBOL_VISIBLE path_visitor {
                 virtual ~path_visitor();
                 virtual void operator()(outbound_path &x) = 0;
             };
 
             /// Predicate object for paths.
-            struct path_predicate {
+            struct BOOST_SYMBOL_VISIBLE path_predicate {
                 virtual ~path_predicate();
                 virtual bool operator()(const outbound_path &x) const noexcept = 0;
             };
@@ -60,6 +59,10 @@ namespace nil {
             // -- constructors, destructors, and assignment operators --------------------
 
             explicit downstream_manager(stream_manager *parent);
+
+            downstream_manager(const downstream_manager &) = delete;
+
+            downstream_manager &operator=(const downstream_manager &) = delete;
 
             virtual ~downstream_manager();
 

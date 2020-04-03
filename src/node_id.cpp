@@ -1,38 +1,39 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/node_id.hpp>
 
-#include <cstdio>
 #include <cstring>
+#include <ctype.h>
 #include <iterator>
-#include <sstream>
-
-#include <nil/crypto3/codec/algorithm/encode.hpp>
-#include <nil/crypto3/codec/hex.hpp>
+#include <random>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/ripemd.hpp>
 
+#include <nil/actor/binary_deserializer.hpp>
+#include <nil/actor/binary_serializer.hpp>
 #include <nil/actor/config.hpp>
-#include <nil/actor/serialization/deserializer.hpp>
+#include <nil/actor/deserializer.hpp>
+#include <nil/actor/detail/append_hex.hpp>
 #include <nil/actor/detail/get_mac_addresses.hpp>
 #include <nil/actor/detail/get_process_id.hpp>
 #include <nil/actor/detail/get_root_uuid.hpp>
+#include <nil/actor/detail/parse.hpp>
 #include <nil/actor/detail/parser/ascii_to_int.hpp>
+#include <nil/actor/expected.hpp>
 #include <nil/actor/logger.hpp>
 #include <nil/actor/make_counted.hpp>
+#include <nil/actor/parser_state.hpp>
 #include <nil/actor/sec.hpp>
-#include <nil/actor/serialization/serializer.hpp>
+#include <nil/actor/serializer.hpp>
 #include <nil/actor/string_algorithms.hpp>
 
 using namespace nil::crypto3;
@@ -65,17 +66,47 @@ namespace nil {
             macs.reserve(ifs.size());
             for (auto &i : ifs)
                 macs.emplace_back(std::move(i.second));
-            auto hd_serial_and_mac_addr = join(macs, "") + detail::get_root_uuid();
-            host_id_type hid = hash::hash<hash::ripemd160>(hd_serial_and_mac_addr);
-            // This hack enables multiple actor systems in a single process by overriding
-            // the last byte in the node ID with the actor system "ID".
-            hid.back() = system_id.fetch_add(1);
+            auto seeded_hd_serial_and_mac_addr = join(macs, "") + detail::get_root_uuid();
+            // By adding 8 random ASCII characters, we make sure to assign a new (random)
+            // ID to a node every time we start it. Otherwise, we might run into issues
+            // where a restarted node produces identical actor IDs than the node it
+            // replaces. Especially when running nodes in a container, because then the
+            // process ID is most likely the same.
+            std::random_device rd;
+            std::minstd_rand gen {rd()};
+            std::uniform_int_distribution<> dis(33, 126);
+            for (int i = 0; i < 8; ++i)
+                seeded_hd_serial_and_mac_addr += static_cast<char>(dis(gen));
+            // One final tweak: we add another character that makes sure two actor systems
+            // in the same process won't have the same node ID - even if the user
+            // manipulates the system to always produce the same seed for its randomness.
+            auto sys_seed = static_cast<char>(system_id.fetch_add(1) + 33);
+            seeded_hd_serial_and_mac_addr += sys_seed;
+            host_id_type hid = hash::hash<hash::ripemd<160>>(seeded_hd_serial_and_mac_addr);
             return make_node_id(detail::get_process_id(), hid);
         }
 
         bool node_id::default_data::valid(const host_id_type &x) noexcept {
             auto is_zero = [](uint8_t x) { return x == 0; };
             return !std::all_of(x.begin(), x.end(), is_zero);
+        }
+
+        bool node_id::default_data::can_parse(string_view str) noexcept {
+            // Our format is "<20-byte-hex>#<pid>". With 2 characters per byte, this means
+            // a valid node ID has at least 42 characters.
+            if (str.size() < 42)
+                return false;
+            string_parser_state ps {str.begin(), str.end()};
+            for (size_t i = 0; i < 40; ++i)
+                if (!ps.consume_strict_if(isxdigit))
+                    return false;
+            if (!ps.consume_strict('#'))
+                return false;
+            // We don't care for the value, but we invoke the actual number parser to make
+            // sure the value is in bounds.
+            uint32_t dummy;
+            detail::parse(ps, dummy);
+            return ps.code == pec::success;
         }
 
         bool node_id::default_data::valid() const noexcept {
@@ -85,11 +116,12 @@ namespace nil {
         size_t node_id::default_data::hash_code() const noexcept {
             // XOR the first few bytes from the node ID and the process ID.
             auto x = static_cast<size_t>(pid_);
-            auto y = *reinterpret_cast<const size_t *>(host_.data());
+            size_t y;
+            memcpy(&y, host_.data(), sizeof(size_t));
             return x ^ y;
         }
 
-        atom_value node_id::default_data::implementation_id() const noexcept {
+        uint8_t node_id::default_data::implementation_id() const noexcept {
             return class_id;
         }
 
@@ -98,7 +130,7 @@ namespace nil {
                 return 0;
             auto other_id = other.implementation_id();
             if (class_id != other_id)
-                return nil::actor::compare(class_id, other_id);
+                return class_id < other_id ? -1 : 1;
             auto &x = static_cast<const default_data &>(other);
             if (pid_ != x.pid_)
                 return pid_ < x.pid_ ? -1 : 1;
@@ -110,8 +142,9 @@ namespace nil {
                 dst += "invalid-node";
                 return;
             }
-            std::string host_hex = crypto3::encode<crypto3::codec::hex<>>(host_);
-            dst += host_hex + '#' + std::to_string(pid_);
+            detail::append_hex(dst, host_);
+            dst += '#';
+            dst += std::to_string(pid_);
         }
 
         error node_id::default_data::serialize(serializer &sink) const {
@@ -143,7 +176,7 @@ namespace nil {
             return f(value_);
         }
 
-        atom_value node_id::uri_data::implementation_id() const noexcept {
+        uint8_t node_id::uri_data::implementation_id() const noexcept {
             return class_id;
         }
 
@@ -152,7 +185,7 @@ namespace nil {
                 return 0;
             auto other_id = other.implementation_id();
             if (class_id != other_id)
-                return nil::actor::compare(class_id, other_id);
+                return class_id < other_id ? -1 : 1;
             return value_.compare(static_cast<const uri_data &>(other).value_);
         }
 
@@ -209,27 +242,32 @@ namespace nil {
             data_.swap(x.data_);
         }
 
+        bool node_id::can_parse(string_view str) noexcept {
+            return default_data::can_parse(str) || uri::can_parse(str);
+        }
+
         namespace {
 
             template<class Serializer>
-            typename Serializer::result_type serialize_data(Serializer &sink, const intrusive_ptr<node_id::data> &ptr) {
+            auto serialize_data(Serializer &sink, const intrusive_ptr<node_id::data> &ptr) {
                 if (ptr && ptr->valid()) {
                     if (auto err = sink(ptr->implementation_id()))
                         return err;
                     return ptr->serialize(sink);
                 }
-                return sink(atom(""));
+                uint8_t zero = 0;
+                return sink(zero);
             }
 
             template<class Deserializer>
-            typename Deserializer::result_type deserialize_data(Deserializer &source,
-                                                                intrusive_ptr<node_id::data> &ptr) {
-                auto impl = static_cast<atom_value>(0);
+            auto deserialize_data(Deserializer &source, intrusive_ptr<node_id::data> &ptr) {
+                using result_type = typename Deserializer::result_type;
+                uint8_t impl = 0;
                 if (auto err = source(impl))
                     return err;
-                if (impl == atom("")) {
+                if (impl == 0) {
                     ptr.reset();
-                    return none;
+                    return result_type {};
                 }
                 if (impl == node_id::default_data::class_id) {
                     if (ptr == nullptr || ptr->implementation_id() != node_id::default_data::class_id)
@@ -240,7 +278,7 @@ namespace nil {
                         ptr = make_counted<node_id::uri_data>();
                     return ptr->deserialize(source);
                 }
-                return sec::unknown_type;
+                return result_type {sec::unknown_type};
             }
 
         }    // namespace
@@ -284,7 +322,7 @@ namespace nil {
             return node_id {std::move(ptr)};
         }
 
-        optional<node_id> make_node_id(uint32_t process_id, const std::string &host_hash) {
+        optional<node_id> make_node_id(uint32_t process_id, string_view host_hash) {
             using node_data = node_id::default_data;
             if (host_hash.size() != node_data::host_id_size * 2)
                 return none;
@@ -303,5 +341,29 @@ namespace nil {
                 return none;
             return make_node_id(process_id, host_id);
         }
+
+        error parse(string_view str, node_id &dest) {
+            if (node_id::default_data::can_parse(str)) {
+                ACTOR_ASSERT(str.size() >= 42);
+                auto host_hash = str.substr(0, 40);
+                auto pid_str = str.substr(41);
+                uint32_t pid_val = 0;
+                if (auto err = detail::parse(pid_str, pid_val))
+                    return err;
+                if (auto nid = make_node_id(pid_val, host_hash)) {
+                    dest = std::move(*nid);
+                    return none;
+                }
+                ACTOR_LOG_ERROR("make_node_id failed after can_parse returned true");
+                return sec::invalid_argument;
+            }
+            if (auto nid_uri = make_uri(str)) {
+                dest = make_node_id(std::move(*nid_uri));
+                return none;
+            } else {
+                return std::move(nid_uri.error());
+            }
+        }
+
     }    // namespace actor
 }    // namespace nil

@@ -1,32 +1,47 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blocking_actor_test
+#define BOOST_TEST_MODULE blocking_actor
 
-#include <boost/test/unit_test.hpp>
+#include <nil/actor/blocking_actor.hpp>
 
-#include <nil/actor/all.hpp>
-#include <nil/actor/config.hpp>
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<error> {
+                void operator()(std::ostream &, error const &) {
+                }
+            };
+            template<>
+            struct print_log_value<sec> {
+                void operator()(std::ostream &, sec const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
     struct fixture {
+        meta_initializer mi;
         spawner_config cfg;
         spawner system;
         scoped_actor self;
 
-        fixture() : system(cfg), self(system) {
+        fixture() : mi(), system(cfg), self(system) {
             // nop
         }
     };
@@ -35,23 +50,23 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(blocking_actor_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(catch_all_test) {
+BOOST_AUTO_TEST_CASE(catch_all) {
     self->send(self, 42);
     self->receive([](float) { BOOST_FAIL("received unexpected float"); },
-                  others >> [](message_view &x) -> result<message> {
-                      BOOST_CHECK_EQUAL(to_string(x.content()), "(42)");
+                  others >> [](message &msg) -> result<message> {
+                      BOOST_CHECK_EQUAL(to_string(msg), "(42)");
                       return sec::unexpected_message;
                   });
-    self->receive([](const error &err) { BOOST_CHECK(err == sec::unexpected_message); });
+    self->receive([](const error &err) { BOOST_CHECK_EQUAL(err, sec::unexpected_message); });
 }
 
-BOOST_AUTO_TEST_CASE(behavior_ref_test) {
+BOOST_AUTO_TEST_CASE(behavior_ref) {
     behavior bhvr {[](int i) { BOOST_CHECK_EQUAL(i, 42); }};
     self->send(self, 42);
     self->receive(bhvr);
 }
 
-BOOST_AUTO_TEST_CASE(timeout_in_scoped_actor_test) {
+BOOST_AUTO_TEST_CASE(timeout_in_scoped_actor) {
     bool timeout_called = false;
     scoped_actor self {system};
     self->receive(after(std::chrono::milliseconds(20)) >> [&] { timeout_called = true; });
@@ -119,7 +134,7 @@ void check_order_scoped_actor(const check_order_t &corder) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(skip_message_test) {
+BOOST_AUTO_TEST_CASE(skip_message) {
     check_order_t a = {{0, 1, 2, 3},    // recv_order = 0,1,2,3
                        {{0, false}, {1, false}, {2, false}, {3, false}}};
     check_order_t b = {{3, 2, 1, 0},    // recv_order = 0,1,2,3

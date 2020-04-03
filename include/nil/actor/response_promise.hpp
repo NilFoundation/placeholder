@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,11 +13,13 @@
 #include <vector>
 
 #include <nil/actor/actor.hpp>
-#include <nil/actor/message.hpp>
 #include <nil/actor/actor_addr.hpp>
+#include <nil/actor/actor_cast.hpp>
+#include <nil/actor/check_typed_input.hpp>
+
+#include <nil/actor/message.hpp>
 #include <nil/actor/message_id.hpp>
 #include <nil/actor/response_type.hpp>
-#include <nil/actor/check_typed_input.hpp>
 
 namespace nil {
     namespace actor {
@@ -27,7 +27,7 @@ namespace nil {
         /// A response promise can be used to deliver a uniquely identifiable
         /// response message from the server (i.e. receiver of the request)
         /// to the client (i.e. the sender of the request).
-        class response_promise {
+        class BOOST_SYMBOL_VISIBLE response_promise {
         public:
             using forwarding_stack = std::vector<strong_actor_ptr>;
 
@@ -47,16 +47,19 @@ namespace nil {
 
             /// Satisfies the promise by sending a non-error response message.
             template<class T, class... Ts>
-            typename std::enable_if<((sizeof...(Ts) > 0) || (!std::is_convertible<T, error>::value &&
-                                                             !std::is_same<detail::decay_t<T>, unit_t>::value)) &&
-                                    !detail::is_expected<detail::decay_t<T>>::value>::type
+            detail::enable_if_t<((sizeof...(Ts) > 0) || (!std::is_convertible<T, error>::value &&
+                                                         !std::is_same<detail::decay_t<T>, unit_t>::value)) &&
+                                !detail::is_expected<detail::decay_t<T>>::value>
                 deliver(T &&x, Ts &&... xs) {
                 using ts = detail::type_list<detail::decay_t<T>, detail::decay_t<Ts>...>;
                 static_assert(!detail::tl_exists<ts, detail::is_result>::value,
                               "it is not possible to deliver objects of type result<T>");
                 static_assert(!detail::tl_exists<ts, detail::is_expected>::value,
                               "mixing expected<T> with regular values is not supported");
-                return deliver_impl(make_message(std::forward<T>(x), std::forward<Ts>(xs)...));
+                if constexpr (sizeof...(Ts) == 0 && std::is_same<message, std::decay_t<T>>::value)
+                    return deliver_impl(std::forward<T>(x));
+                else
+                    return deliver_impl(make_message(std::forward<T>(x), std::forward<Ts>(xs)...));
             }
 
             template<class T>
@@ -76,12 +79,13 @@ namespace nil {
                     detail::type_list<typename detail::implicit_conversions<typename std::decay<Ts>::type>::type...>;
                 static_assert(response_type_unbox<signatures_of_t<Handle>, token>::valid,
                               "receiver does not accept given message");
-                if (dest) {
-                    auto mid = P == message_priority::high ? id_.with_high_priority() : id_;
-                    dest->enqueue(
-                        make_mailbox_element(std::move(source_), mid, std::move(stages_), std::forward<Ts>(xs)...),
-                        context());
-                }
+                // TODO: use `if constexpr` when switching to C++17
+                if (P == message_priority::high)
+                    id_ = id_.with_high_priority();
+                if constexpr (std::is_same<detail::type_list<message>, detail::type_list<std::decay_t<Ts>...>>::value)
+                    delegate_impl(actor_cast<abstract_actor *>(dest), std::forward<Ts>(xs)...);
+                else
+                    delegate_impl(actor_cast<abstract_actor *>(dest), make_message(std::forward<Ts>(xs)...));
                 return {};
             }
 
@@ -96,35 +100,40 @@ namespace nil {
             bool async() const;
 
             /// Queries whether this promise is a valid promise that is not satisfied yet.
-            inline bool pending() const {
+            bool pending() const {
                 return source_ != nullptr || !stages_.empty();
             }
 
             /// Returns the source of the corresponding request.
-            inline const strong_actor_ptr &source() const {
+            const strong_actor_ptr &source() const {
                 return source_;
             }
 
             /// Returns the remaining stages for the corresponding request.
-            inline const forwarding_stack &stages() const {
+            const forwarding_stack &stages() const {
                 return stages_;
             }
 
             /// Returns the actor that will receive the response, i.e.,
             /// `stages().front()` if `!stages().empty()` or `source()` otherwise.
-            inline strong_actor_ptr next() const {
+            strong_actor_ptr next() const {
                 return stages_.empty() ? source_ : stages_.front();
             }
 
             /// Returns the message ID of the corresponding request.
-            inline message_id id() const {
+            message_id id() const {
                 return id_;
             }
 
         private:
+            /// Returns a downcasted version of `self_`.
+            local_actor *self_dptr() const;
+
             execution_unit *context();
 
             void deliver_impl(message msg);
+
+            void delegate_impl(abstract_actor *receiver, message msg);
 
             strong_actor_ptr self_;
             strong_actor_ptr source_;

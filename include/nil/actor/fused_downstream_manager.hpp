@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -64,7 +62,7 @@ namespace nil {
 
                 template<class T, class... Ts>
                 downstream_manager *operator()(const message &msg, T &x, Ts &... xs) {
-                    if (msg.match_element<stream<typename T::value_type>>(0))
+                    if (msg.size() > 1 && msg.type_at(0) == type_id_v<stream<typename T::value_type>>)
                         return &x;
                     return (*this)(msg, xs...);
                 }
@@ -107,7 +105,7 @@ namespace nil {
             /// Unique pointer to an outbound path.
             using typename super::unique_path_ptr;
 
-            // Lists all tempate parameters `[T, Ts...]`;
+            // Lists all template parameters `[T, Ts...]`;
             using param_list = detail::type_list<T, Ts...>;
 
             /// State held for each slot.
@@ -201,6 +199,8 @@ namespace nil {
                     return nullptr;
                 return i->second.ptr;
             }
+
+            using downstream_manager::close;
 
             void close() override {
                 ACTOR_LOG_TRACE(ACTOR_ARG(paths_));

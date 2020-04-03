@@ -1,24 +1,22 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <array>
-#include <string>
 #include <cstdint>
 #include <functional>
+#include <string>
 
-#include <nil/actor/atom.hpp>
 #include <nil/actor/detail/comparable.hpp>
+
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/intrusive_ptr.hpp>
 #include <nil/actor/none.hpp>
@@ -28,13 +26,13 @@
 namespace nil {
     namespace actor {
 
-        /// A node ID is an opaque value for representing ACTOR instances in the network.
-        class node_id {
+        /// A node ID is an opaque value for representing CAF instances in the network.
+        class BOOST_SYMBOL_VISIBLE node_id {
         public:
             // -- member types -----------------------------------------------------------
 
             // A reference counted, implementation-specific implementation of a node ID.
-            class data : public ref_counted {
+            class BOOST_SYMBOL_VISIBLE data : public ref_counted {
             public:
                 ~data() override;
 
@@ -42,7 +40,7 @@ namespace nil {
 
                 virtual size_t hash_code() const noexcept = 0;
 
-                virtual atom_value implementation_id() const noexcept = 0;
+                virtual uint8_t implementation_id() const noexcept = 0;
 
                 virtual int compare(const data &other) const noexcept = 0;
 
@@ -58,7 +56,7 @@ namespace nil {
             };
 
             // A technology-agnostic node identifier with process ID and hash value.
-            class default_data final : public data {
+            class BOOST_SYMBOL_VISIBLE default_data final : public data {
             public:
                 // -- constants ------------------------------------------------------------
 
@@ -66,7 +64,7 @@ namespace nil {
                 static constexpr size_t host_id_size = 20;
 
                 /// Identifies this data implementation type.
-                static constexpr atom_value class_id = atom("default");
+                static constexpr uint8_t class_id = 1;
 
                 // -- member types ---------------------------------------------------------
 
@@ -98,13 +96,15 @@ namespace nil {
 
                 static bool valid(const host_id_type &x) noexcept;
 
+                static bool can_parse(string_view str) noexcept;
+
                 // -- interface implementation ---------------------------------------------
 
                 bool valid() const noexcept override;
 
                 size_t hash_code() const noexcept override;
 
-                atom_value implementation_id() const noexcept override;
+                uint8_t implementation_id() const noexcept override;
 
                 int compare(const data &other) const noexcept override;
 
@@ -127,12 +127,12 @@ namespace nil {
             };
 
             // A technology-agnostic node identifier using an URI.
-            class uri_data final : public data {
+            class BOOST_SYMBOL_VISIBLE uri_data final : public data {
             public:
                 // -- constants ------------------------------------------------------------
 
                 /// Identifies this data implementation type.
-                static constexpr atom_value class_id = atom("uri");
+                static constexpr uint8_t class_id = 2;
 
                 // -- constructors, destructors, and assignment operators ------------------
 
@@ -152,7 +152,7 @@ namespace nil {
 
                 size_t hash_code() const noexcept override;
 
-                atom_value implementation_id() const noexcept override;
+                uint8_t implementation_id() const noexcept override;
 
                 int compare(const data &other) const noexcept override;
 
@@ -224,17 +224,30 @@ namespace nil {
 
             /// @endcond
 
-            friend error inspect(serializer &sink, node_id &x);
+            /// Returns whether `parse` would produce a valid node ID.
+            static bool can_parse(string_view str) noexcept;
 
-            friend error_code<sec> inspect(binary_serializer &sink, node_id &x);
+            /// @relates node_id
+            friend BOOST_SYMBOL_VISIBLE error inspect(serializer &sink, node_id &x);
 
-            friend error inspect(deserializer &source, node_id &x);
+            /// @relates node_id
+            friend BOOST_SYMBOL_VISIBLE error_code<sec> inspect(binary_serializer &sink, node_id &x);
 
-            friend error_code<sec> inspect(binary_deserializer &source, node_id &x);
+            /// @relates node_id
+            friend BOOST_SYMBOL_VISIBLE error inspect(deserializer &source, node_id &x);
+
+            /// @relates node_id
+            friend BOOST_SYMBOL_VISIBLE error_code<sec> inspect(binary_deserializer &source, node_id &x);
 
         private:
             intrusive_ptr<data> data_;
         };
+
+        /// Returns whether `x` contains an URI.
+        /// @relates node_id
+        inline bool wraps_uri(const node_id &x) noexcept {
+            return x && x->implementation_id() == node_id::uri_data::class_id;
+        }
 
         /// @relates node_id
         inline bool operator==(const node_id &x, const node_id &y) noexcept {
@@ -288,27 +301,31 @@ namespace nil {
 
         /// Appends `x` in human-readable string representation to `str`.
         /// @relates node_id
-        void append_to_string(std::string &str, const node_id &x);
+        BOOST_SYMBOL_VISIBLE void append_to_string(std::string &str, const node_id &x);
 
         /// Converts `x` into a human-readable string representation.
         /// @relates node_id
-        std::string to_string(const node_id &x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(const node_id &x);
 
         /// Creates a node ID from the URI `from`.
         /// @relates node_id
-        node_id make_node_id(uri from);
+        BOOST_SYMBOL_VISIBLE node_id make_node_id(uri from);
 
         /// Creates a node ID from `process_id` and `host_id`.
         /// @param process_id System-wide unique process identifier.
-        /// @param host_id Unique hash value representing a single ACTOR node.
+        /// @param host_id Unique hash value representing a single CAF node.
         /// @relates node_id
-        node_id make_node_id(uint32_t process_id, const node_id::default_data::host_id_type &host_id);
+        BOOST_SYMBOL_VISIBLE node_id make_node_id(uint32_t process_id,
+                                                  const node_id::default_data::host_id_type &host_id);
 
         /// Creates a node ID from `process_id` and `host_hash`.
         /// @param process_id System-wide unique process identifier.
         /// @param host_hash Unique node ID as hexadecimal string representation.
         /// @relates node_id
-        optional<node_id> make_node_id(uint32_t process_id, const std::string &host_hash);
+        BOOST_SYMBOL_VISIBLE optional<node_id> make_node_id(uint32_t process_id, string_view host_hash);
+
+        /// @relates node_id
+        BOOST_SYMBOL_VISIBLE error parse(string_view str, node_id &dest);
 
     }    // namespace actor
 }    // namespace nil

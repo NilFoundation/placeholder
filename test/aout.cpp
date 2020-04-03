@@ -1,24 +1,22 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE aout_test
+#define BOOST_TEST_MODULE aout
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/all.hpp>
-#include <nil/actor/config.hpp>
 
 using namespace nil::actor;
+
+using std::endl;
 
 namespace {
 
@@ -29,20 +27,21 @@ namespace {
     constexpr const char *chattier_line = "hello there, fellow friend!:)";
 
     void chatty_actor(event_based_actor *self) {
-        aout(self) << chatty_line << std::endl;
+        aout(self) << chatty_line << endl;
     }
 
     void chattier_actor(event_based_actor *self, const std::string &fn) {
-        aout(self) << chatty_line << std::endl;
+        aout(self) << chatty_line << endl;
         actor_ostream::redirect(self, fn);
-        aout(self) << chattier_line << std::endl;
+        aout(self) << chattier_line << endl;
     }
 
     struct fixture {
-        fixture() : system(cfg) {
+        fixture() : mi(), system(cfg) {
             // nop
         }
 
+        meta_initializer mi;
         spawner_config cfg;
         spawner system;
         scoped_actor self {system, true};
@@ -52,15 +51,14 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(adapter_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(redirect_aout_globally_test) {
+BOOST_AUTO_TEST_CASE(redirect_aout_globally) {
     self->join(system.groups().get_local(global_redirect));
     actor_ostream::redirect_all(system, global_redirect);
     system.spawn(chatty_actor);
     self->receive([](const std::string &virtual_file, std::string &line) {
         // drop trailing '\n'
-        if (!line.empty()) {
+        if (!line.empty())
             line.pop_back();
-        }
         BOOST_CHECK_EQUAL(virtual_file, ":test");
         BOOST_CHECK_EQUAL(line, chatty_line);
     });
@@ -68,7 +66,7 @@ BOOST_AUTO_TEST_CASE(redirect_aout_globally_test) {
     BOOST_CHECK_EQUAL(self->mailbox().size(), 0u);
 }
 
-BOOST_AUTO_TEST_CASE(global_and_local_redirect_test) {
+BOOST_AUTO_TEST_CASE(global_and_local_redirect) {
     self->join(system.groups().get_local(global_redirect));
     self->join(system.groups().get_local(local_redirect));
     actor_ostream::redirect_all(system, global_redirect);
@@ -80,9 +78,8 @@ BOOST_AUTO_TEST_CASE(global_and_local_redirect_test) {
     int i = 0;
     self->receive_for(i, 3)([&](std::string &virtual_file, std::string &line) {
         // drop trailing '\n'
-        if (!line.empty()) {
+        if (!line.empty())
             line.pop_back();
-        }
         lines.emplace_back(std::move(virtual_file), std::move(line));
     });
     BOOST_CHECK(std::is_permutation(lines.begin(), lines.end(), expected.begin()));

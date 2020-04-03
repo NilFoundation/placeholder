@@ -1,24 +1,22 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2017 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE drr_queue_test
+#define BOOST_TEST_MODULE intrusive.drr_queue
 
-#include <memory>
+#include <nil/actor/intrusive/drr_queue.hpp>
 
 #include <boost/test/unit_test.hpp>
 
-#include <nil/actor/deep_to_string.hpp>
+#include <memory>
+
 #include <nil/actor/intrusive/singly_linked.hpp>
-#include <nil/actor/intrusive/drr_queue.hpp>
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
@@ -27,7 +25,6 @@ namespace {
 
     struct inode : singly_linked<inode> {
         int value;
-
         inode(int x = 0) : value(x) {
             // nop
         }
@@ -72,18 +69,42 @@ namespace {
 
 }    // namespace
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<typename T>
+            struct print_log_value<nil::actor::intrusive::forward_iterator<T>> {
+                void operator()(std::ostream &, nil::actor::intrusive::forward_iterator<T> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<nil::actor::intrusive::new_round_result> {
+                void operator()(std::ostream &, nil::actor::intrusive::new_round_result const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 BOOST_FIXTURE_TEST_SUITE(drr_queue_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(default_constructed_test) {
+BOOST_AUTO_TEST_CASE(default_constructed) {
     BOOST_REQUIRE_EQUAL(queue.empty(), true);
     BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
     BOOST_REQUIRE_EQUAL(queue.total_task_size(), 0);
     BOOST_REQUIRE_EQUAL(queue.peek(), nullptr);
     BOOST_REQUIRE_EQUAL(queue.next(), nullptr);
-    BOOST_REQUIRE(queue.begin() == queue.end());
+    BOOST_REQUIRE_EQUAL(queue.begin(), queue.end());
 }
 
-BOOST_AUTO_TEST_CASE(inc_deficit_test) {
+BOOST_AUTO_TEST_CASE(inc_deficit) {
     // Increasing the deficit does nothing as long as the queue is empty.
     queue.inc_deficit(100);
     BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
@@ -96,7 +117,7 @@ BOOST_AUTO_TEST_CASE(inc_deficit_test) {
     BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(new_round_test) {
+BOOST_AUTO_TEST_CASE(new_round) {
     std::string seq;
     fill(queue, 1, 2, 3, 4, 5, 6);
     auto f = [&](inode &x) {
@@ -105,27 +126,27 @@ BOOST_AUTO_TEST_CASE(new_round_test) {
     };
     // Allow f to consume 1, 2, and 3 with a leftover deficit of 1.
     auto round_result = queue.new_round(7, f);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "123");
     BOOST_CHECK_EQUAL(queue.deficit(), 1);
     // Allow f to consume 4 and 5 with a leftover deficit of 0.
     round_result = queue.new_round(8, f);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "12345");
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
     // Allow f to consume 6 with a leftover deficit of 0 (queue is empty).
     round_result = queue.new_round(1000, f);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "123456");
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
     // new_round on an empty queue does nothing.
     round_result = queue.new_round(1000, f);
-    BOOST_CHECK(round_result == make_new_round_result(false));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(false));
     BOOST_CHECK_EQUAL(seq, "123456");
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(next_test) {
+BOOST_AUTO_TEST_CASE(next) {
     std::string seq;
     fill(queue, 1, 2, 3, 4, 5, 6);
     auto f = [&](inode &x) {
@@ -151,13 +172,12 @@ BOOST_AUTO_TEST_CASE(next_test) {
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(peek_all_test) {
+BOOST_AUTO_TEST_CASE(peek_all) {
     auto queue_to_string = [&] {
         std::string str;
         auto peek_fun = [&](const inode &x) {
-            if (!str.empty()) {
+            if (!str.empty())
                 str += ", ";
-            }
             str += std::to_string(x.value);
         };
         queue.peek_all(peek_fun);
@@ -172,12 +192,6 @@ BOOST_AUTO_TEST_CASE(peek_all_test) {
     BOOST_CHECK_EQUAL(queue_to_string(), "1, 2, 3");
     queue.emplace_back(4);
     BOOST_CHECK_EQUAL(queue_to_string(), "1, 2, 3, 4");
-}
-
-BOOST_AUTO_TEST_CASE(to_string_test) {
-    BOOST_CHECK_EQUAL(deep_to_string(queue), "[]");
-    fill(queue, 1, 2, 3, 4);
-    BOOST_CHECK_EQUAL(deep_to_string(queue), "[1, 2, 3, 4]");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,108 +1,76 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <cstdint>
-#include <map>
 #include <memory>
-#include <tuple>
 #include <vector>
 
-#include <nil/actor/detail/is_one_of.hpp>
-#include <nil/actor/detail/is_primitive_config_value.hpp>
-
-#include <nil/actor/timespan.hpp>
-
-namespace boost {
-    template<typename T>
-    class intrusive_ptr;
-}
+#include <boost/config.hpp>
 
 namespace nil {
     namespace actor {
 
-        // -- 1 param templates --------------------------------------------------------
+        // clang-format off
 
-        template<class>
-        class behavior_type_of;
-        template<class>
-        class dictionary;
-        template<class>
-        class downstream;
-        template<class>
-        class expected;
-        template<class>
-        class intrusive_cow_ptr;
-        template<typename T>
-        using intrusive_ptr = boost::intrusive_ptr<T>;
-        template<class>
-        class optional;
-        template<class>
-        class param;
-        template<class>
-        class error_code;
-        template<class>
-        class span;
-        template<class>
-        class stream;
-        template<class>
-        class stream_sink;
-        template<class>
-        class stream_source;
-        template<class>
-        class trivial_match_case;
-        template<class>
-        class weak_intrusive_ptr;
+// -- 1 param templates --------------------------------------------------------
 
-        template<class>
-        struct timeout_definition;
+template <class> class behavior_type_of;
+template <class> class dictionary;
+template <class> class downstream;
+template <class> class error_code;
+template <class> class expected;
+template <class> class intrusive_cow_ptr;
+template <class> class intrusive_ptr;
+template <class> class optional;
+template <class> class param;
+template <class> class span;
+template <class> class stream;
+template <class> class stream_sink;
+template <class> class stream_source;
+template <class> class weak_intrusive_ptr;
 
-        // -- 2 param templates --------------------------------------------------------
+template <class> struct timeout_definition;
+template <class> struct type_id;
 
-        template<class, class>
-        class stream_stage;
+template <uint16_t> struct type_by_id;
+template <uint16_t> struct type_name_by_id;
 
-        // -- 3 param templates --------------------------------------------------------
+// -- 2 param templates --------------------------------------------------------
 
-        template<class, class, int>
-        class actor_cast_access;
+template <class, class> class stream_stage;
 
-        template<class, class, class>
-        class broadcast_downstream_manager;
+template <class Iterator, class Sentinel = Iterator> struct parser_state;
 
-        // -- variadic templates -------------------------------------------------------
+// -- 3 param templates --------------------------------------------------------
 
-        template<class...>
-        class cow_tuple;
-        template<class...>
-        class delegated;
-        template<class...>
-        class result;
-        template<class...>
-        class typed_actor;
-        template<class...>
-        class typed_actor_pointer;
-        template<class...>
-        class typed_event_based_actor;
-        template<class...>
-        class typed_response_promise;
-        template<class...>
-        class variant;
+template <class, class, int> class actor_cast_access;
 
-        // -- variadic templates with fixed arguments ----------------------------------
-        //
-        template<class, class...>
-        class output_stream;
+template <class, class, class> class broadcast_downstream_manager;
+
+// -- variadic templates -------------------------------------------------------
+
+template <class...> class const_typed_message_view;
+template <class...> class cow_tuple;
+template <class...> class delegated;
+template <class...> class result;
+template <class...> class typed_actor;
+template <class...> class typed_actor_pointer;
+template <class...> class typed_actor_view;
+template <class...> class typed_event_based_actor;
+template <class...> class typed_message_view;
+template <class...> class typed_response_promise;
+template <class...> class variant;
+
+        // clang-format on
 
         // -- classes ------------------------------------------------------------------
 
@@ -115,6 +83,7 @@ namespace nil {
         class actor_config;
         class actor_control_block;
         class actor_pool;
+        class actor_profiler;
         class actor_proxy;
         class actor_registry;
         class spawner;
@@ -130,7 +99,6 @@ namespace nil {
         class deserializer;
         class downstream_manager;
         class downstream_manager_base;
-        class duration;
         class error;
         class event_based_actor;
         class execution_unit;
@@ -162,11 +130,13 @@ namespace nil {
         class serializer;
         class stream_manager;
         class string_view;
-        class type_erased_tuple;
-        class type_erased_value;
-        class uniform_type_info_map;
+        class tracing_data;
+        class tracing_data_factory;
+        class type_id_list;
+        class type_id_list_builder;
         class uri;
         class uri_builder;
+        class uuid;
 
         // -- templates with default parameters ----------------------------------------
 
@@ -175,45 +145,52 @@ namespace nil {
 
         // -- structs ------------------------------------------------------------------
 
-        struct unit_t;
-        struct exit_msg;
         struct down_msg;
-        struct timeout_msg;
-        struct stream_slots;
-        struct upstream_msg;
-        struct group_down_msg;
         struct downstream_msg;
-        struct open_stream_msg;
-        struct invalid_actor_t;
-        struct invalid_actor_addr_t;
+        struct exit_msg;
+        struct group_down_msg;
         struct illegal_message_element;
+        struct invalid_actor_addr_t;
+        struct invalid_actor_t;
+        struct node_down_msg;
+        struct open_stream_msg;
         struct prohibit_top_level_spawn_marker;
+        struct stream_slots;
+        struct timeout_msg;
+        struct unit_t;
+        struct upstream_msg;
 
         // -- free template functions --------------------------------------------------
 
+        template<class T>
+        config_option make_config_option(string_view category, string_view name, string_view description);
+
+        template<class T>
+        config_option make_config_option(T &storage, string_view category, string_view name, string_view description);
+
         // -- enums --------------------------------------------------------------------
 
-        enum class atom_value : uint64_t;
-        typedef std::uint8_t byte;
+        enum class byte : uint8_t;
+        enum class pec : uint8_t;
         enum class sec : uint8_t;
         enum class stream_priority;
+        enum class invoke_message_result;
 
         // -- aliases ------------------------------------------------------------------
 
         using actor_id = uint64_t;
+        using byte_buffer = std::vector<byte>;
         using ip_address = ipv6_address;
         using ip_endpoint = ipv6_endpoint;
         using ip_subnet = ipv6_subnet;
         using settings = dictionary<config_value>;
         using stream_slot = uint16_t;
+        using type_id_t = uint16_t;
 
         // -- functions ----------------------------------------------------------------
 
         /// @relates spawner_config
-        const settings &content(const spawner_config &);
-
-        template<class T, class... Ts>
-        message make_message(T &&x, Ts &&... xs);
+        BOOST_SYMBOL_VISIBLE const settings &content(const spawner_config &);
 
         // -- intrusive containers -----------------------------------------------------
 
@@ -247,13 +224,13 @@ namespace nil {
 
         }    // namespace io
 
-        // -- OpenCL classes -----------------------------------------------------------
+        // -- networking classes -------------------------------------------------------
 
-        namespace opencl {
+        namespace net {
 
-            class manager;
+            class middleman;
 
-        }    // namespace opencl
+        }    // namespace net
 
         // -- scheduler classes --------------------------------------------------------
 
@@ -278,9 +255,10 @@ namespace nil {
         namespace detail {
 
             template<class>
-            class type_erased_value_impl;
-            template<class>
             class stream_distribution_tree;
+
+            template<class...>
+            class param_message_view;
 
             class abstract_worker;
             class abstract_worker_hub;
@@ -291,14 +269,16 @@ namespace nil {
             class private_thread;
             class uri_impl;
 
+            struct meta_object;
+
             // enable intrusive_ptr<uri_impl> with forward declaration only
-            void intrusive_ptr_add_ref(const uri_impl *);
-            void intrusive_ptr_release(const uri_impl *);
+            BOOST_SYMBOL_VISIBLE void intrusive_ptr_add_ref(const uri_impl *);
+            BOOST_SYMBOL_VISIBLE void intrusive_ptr_release(const uri_impl *);
 
             // enable intrusive_cow_ptr<dynamic_message_data> with forward declaration only
-            void intrusive_ptr_add_ref(const dynamic_message_data *);
-            void intrusive_ptr_release(const dynamic_message_data *);
-            dynamic_message_data *intrusive_cow_ptr_unshare(dynamic_message_data *&);
+            BOOST_SYMBOL_VISIBLE void intrusive_ptr_add_ref(const dynamic_message_data *);
+            BOOST_SYMBOL_VISIBLE void intrusive_ptr_release(const dynamic_message_data *);
+            BOOST_SYMBOL_VISIBLE dynamic_message_data *intrusive_cow_ptr_unshare(dynamic_message_data *&);
 
         }    // namespace detail
 
@@ -313,8 +293,8 @@ namespace nil {
 
         // -- unique pointer aliases ---------------------------------------------------
 
-        using type_erased_value_ptr = std::unique_ptr<type_erased_value>;
-        using mailbox_element_ptr = std::unique_ptr<mailbox_element, detail::disposer>;
+        using mailbox_element_ptr = std::unique_ptr<mailbox_element>;
+        using tracing_data_ptr = std::unique_ptr<tracing_data>;
 
     }    // namespace actor
 }    // namespace nil

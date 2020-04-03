@@ -1,23 +1,21 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <type_traits>
 
-#include <nil/actor/fwd.hpp>
-#include <nil/actor/param.hpp>
 #include <nil/actor/expected.hpp>
+#include <nil/actor/fwd.hpp>
 #include <nil/actor/optional.hpp>
+#include <nil/actor/param.hpp>
 #include <nil/actor/replies_to.hpp>
 
 #include <nil/actor/detail/implicit_conversions.hpp>
@@ -74,13 +72,6 @@ namespace nil {
             template<class Y, class... Xs>
             struct dmi<expected<Y>(Xs...)> : dmi<Y(Xs...)> {};
 
-            // case #5: function returning an output_stream<>
-            template<class Y, class... Ys, class P, class... Xs>
-            struct dmi<output_stream<Y, std::tuple<Ys...>, P>(Xs...)> : dmi<Y(Xs...)> {
-                using type = typed_mpi<type_list<typename param_decay<Xs>::type...>,
-                                       output_tuple<stream<Y>, strip_and_convert_t<Ys>...>>;
-            };
-
             // -- dmfou = deduce_mpi_function_object_unboxing
 
             template<class T, bool isClass = std::is_class<T>::value>
@@ -107,9 +98,6 @@ namespace nil {
             struct dmfou<timeout_definition<T>, true> {
                 using type = timeout_definition<T>;
             };
-
-            template<class T>
-            struct dmfou<trivial_match_case<T>, true> : dmfou<T> {};
 
         }    // namespace detail
 

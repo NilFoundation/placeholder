@@ -1,44 +1,70 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE inspector_test
+#define BOOST_TEST_MODULE inspector
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include <nil/actor/test/dsl.hpp>
 
-#include <set>
-#include <map>
 #include <list>
-#include <vector>
+#include <map>
+#include <set>
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-#include <nil/actor/config.hpp>
-
-#include <nil/actor/atom.hpp>
 #include <nil/actor/spawner.hpp>
-#include <nil/actor/type_erased_value.hpp>
 #include <nil/actor/spawner_config.hpp>
-#include <nil/actor/make_type_erased_value.hpp>
-
-#include <nil/actor/serialization/binary_serializer.hpp>
-#include <nil/actor/serialization/binary_deserializer.hpp>
-
+#include <nil/actor/binary_deserializer.hpp>
+#include <nil/actor/binary_serializer.hpp>
+#include <nil/actor/byte_buffer.hpp>
+#include <nil/actor/detail/meta_object.hpp>
 #include <nil/actor/detail/stringification_inspector.hpp>
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<dummy_struct> {
+                void operator()(std::ostream &, dummy_struct const &) {
+                }
+            };
+            template<>
+            struct print_log_value<dummy_enum_class> {
+                void operator()(std::ostream &, dummy_enum_class const &) {
+                }
+            };
+            template<>
+            struct print_log_value<dummy_tag_type> {
+                void operator()(std::ostream &, dummy_tag_type const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
+
     template<class T>
     class inspector_adapter_base {
     public:
@@ -62,37 +88,6 @@ namespace {
 
     template<class T>
     using nl = std::numeric_limits<T>;
-
-    // an empty type
-    struct dummy_tag_type {};
-
-    constexpr bool operator==(dummy_tag_type, dummy_tag_type) {
-        return true;
-    }
-
-    // a POD type
-    struct dummy_struct {
-        int a;
-        std::string b;
-    };
-
-    bool operator==(const dummy_struct &x, const dummy_struct &y) {
-        return x.a == y.a && x.b == y.b;
-    }
-
-    template<class Inspector>
-    typename Inspector::result_type inspect(Inspector &f, dummy_struct &x) {
-        return f(meta::type_name("dummy_struct"), x.a, x.b);
-    }
-
-    // two different styles of enums
-    enum dummy_enum { de_foo, de_bar };
-
-    enum dummy_enum_class : short { foo, bar };
-
-    std::string to_string(dummy_enum_class x) {
-        return x == dummy_enum_class::foo ? "foo" : "bar";
-    }
 
     template<class Policy>
     void test_impl(Policy &p) {
@@ -122,9 +117,6 @@ namespace {
         BOOST_CHECK(check(nl<double>::max()));
         BOOST_CHECK(check(nl<long double>::lowest()));
         BOOST_CHECK(check(nl<long double>::max()));
-        // atoms
-        BOOST_CHECK(check(atom("")));
-        BOOST_CHECK(check(atom("0123456789")));
         // various containers
         BOOST_CHECK(check(std::array<int, 3> {{1, 2, 3}}));
         BOOST_CHECK(check(std::vector<char> {}));
@@ -177,9 +169,6 @@ namespace {
         BOOST_CHECK(check(variant<none_t, int, std::string> {std::string {"foo"}}));
     }
 
-}    // namespace
-
-namespace {
     struct stringification_inspector_policy {
         template<class T>
         std::string f(T &x) {
@@ -208,16 +197,11 @@ namespace {
             BOOST_CHECK_EQUAL(f(x), std::string {x ? "true" : "false"});
             return true;
         }
-
-        // check result for atoms
-        bool operator()(atom_value &x) {
-            BOOST_CHECK_EQUAL(f(x), "'" + to_string(x) + "'");
-            return true;
-        }
     };
+
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(stringification_inspector_test) {
+BOOST_AUTO_TEST_CASE(stringification_inspector) {
     stringification_inspector_policy p;
     test_impl(p);
 }
@@ -237,38 +221,40 @@ namespace {
             byte_buffer result;
             binary_serializer sink {&context, result};
             if (auto err = sink(x))
-                BOOST_FAIL("failed to serialize: " << to_string(err));
+                BOOST_FAIL("failed to serialize");
             return result;
         }
 
         template<class T>
-        typename std::enable_if<is_integral_or_enum<T>::value, bool>::type operator()(T &x) {
+        detail::enable_if_t<is_integral_or_enum<T>::value, bool> operator()(T &x) {
             auto buf = to_buf(x);
             binary_deserializer source {&context, buf};
             auto y = static_cast<T>(0);
             if (auto err = source(y))
-                BOOST_FAIL("failed to deserialize from buffer: " << to_string(err));
-            BOOST_CHECK(x == y);
+                BOOST_FAIL("failed to deserialize from buffer");
+            BOOST_CHECK_EQUAL(x, y);
             return detail::safe_equal(x, y);
         }
 
         template<class T>
-        typename std::enable_if<!is_integral_or_enum<T>::value, bool>::type operator()(T &x) {
+        detail::enable_if_t<!is_integral_or_enum<T>::value, bool> operator()(T &x) {
             auto buf = to_buf(x);
             binary_deserializer source {&context, buf};
             T y;
             if (auto err = source(y))
-                BOOST_FAIL("failed to deserialize from buffer: " << to_string(err));
-            BOOST_CHECK(x == y);
+                BOOST_FAIL("failed to deserialize from buffer");
+            BOOST_CHECK_EQUAL(x, y);
             return detail::safe_equal(x, y);
         }
     };
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(binary_serialization_inspectors_test) {
+BOOST_AUTO_TEST_CASE(binary_serialization_inspectors) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     spawner_config cfg;
-    cfg.add_message_type<dummy_struct>("dummy_struct");
     spawner sys {cfg};
     scoped_execution_unit context;
     binary_serialization_policy p {context};

@@ -1,19 +1,18 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <nil/actor/actor.hpp>
 #include <nil/actor/deep_to_string.hpp>
+
 #include <nil/actor/typed_actor_pointer.hpp>
 
 namespace nil {
@@ -24,7 +23,7 @@ namespace nil {
         /// when explicitly forced to flush its buffer. The stream will convert *any*
         /// operation to a message received by a printer actor. This actor is a sequence
         /// point that ensures output appears never interleaved.
-        class actor_ostream {
+        class BOOST_SYMBOL_VISIBLE actor_ostream {
         public:
             using fun_type = actor_ostream &(*)(actor_ostream &);
 
@@ -69,7 +68,7 @@ namespace nil {
             }
 
             /// Writes `to_string(arg)` to the buffer allocated for the calling actor,
-            /// calling either `std::to_string` or `actor::to_string` depending on
+            /// calling either `std::to_string` or `nil::actor::to_string` depending on
             /// the argument.
             template<class T>
             inline actor_ostream &operator<<(const T &arg) {
@@ -89,10 +88,10 @@ namespace nil {
         };
 
         /// Convenience factory function for creating an actor output stream.
-        actor_ostream aout(local_actor *self);
+        BOOST_SYMBOL_VISIBLE actor_ostream aout(local_actor *self);
 
-        /// Convenience factory function for creating an actor output stream.
-        actor_ostream aout(scoped_actor &self);
+        // Convenience factory function for creating an actor output stream.
+        BOOST_SYMBOL_VISIBLE actor_ostream aout(scoped_actor &self);
 
         /// Convenience factory function for creating an actor output stream.
         template<class... Sigs>
@@ -105,6 +104,6 @@ namespace nil {
 
 namespace std {
     // provide convenience overlaods for aout; implemented in logging.cpp
-    nil::actor::actor_ostream &endl(nil::actor::actor_ostream &o);
-    nil::actor::actor_ostream &flush(nil::actor::actor_ostream &o);
+    BOOST_SYMBOL_VISIBLE nil::actor::actor_ostream &endl(nil::actor::actor_ostream &o);
+    BOOST_SYMBOL_VISIBLE nil::actor::actor_ostream &flush(nil::actor::actor_ostream &o);
 }    // namespace std

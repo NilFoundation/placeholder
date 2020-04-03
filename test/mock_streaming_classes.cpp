@@ -1,33 +1,30 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2017 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 // This test simulates a complex multiplexing over multiple layers of WDRR
 // scheduled queues. The goal is to reduce the complex mailbox management of
-// ACTOR to its bare bones in order to test whether the multiplexing of stream
+// CAF to its bare bones in order to test whether the multiplexing of stream
 // traffic and asynchronous messages works as intended.
 //
 // The setup is a fixed WDRR queue with three nestes queues. The first nested
 // queue stores asynchronous messages, the second one upstream messages, and
 // the last queue is a dynamic WDRR queue storing downstream messages.
 
-#define BOOST_TEST_MODULE mock_streaming_classes_test
-
-#include <boost/test/unit_test.hpp>
+#define BOOST_TEST_MODULE mock_streaming_classes
 
 #include <memory>
 
 #include <nil/actor/variant.hpp>
 #include <nil/actor/stream_slot.hpp>
-#include <nil/actor/logger.hpp>
+
+#include <nil/actor/test/dsl.hpp>
 
 #include <nil/actor/intrusive/drr_queue.hpp>
 #include <nil/actor/intrusive/singly_linked.hpp>
@@ -40,20 +37,30 @@
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     // -- utility ------------------------------------------------------------------
 
     struct print_with_comma_t {
         bool first = true;
-
         template<class T>
         std::ostream &operator()(std::ostream &out, const T &x) {
-            if (!first) {
+            if (!first)
                 out << ", ";
-            } else {
+            else
                 first = false;
-            }
             return out << deep_to_string(x);
         }
     };
@@ -164,7 +171,6 @@ namespace {
 
     struct in {
         manager_ptr mgr;
-
         in(manager_ptr ptr) : mgr(std::move(ptr)) {
             // nop
         }
@@ -198,11 +204,9 @@ namespace {
 
     struct umsg_queue_policy : policy_base {
         manager *mgr;
-
         umsg_queue_policy(manager *ptr) : mgr(ptr) {
             // nop
         }
-
         task_size_type task_size(const msg &) {
             return 1;
         }
@@ -287,7 +291,6 @@ namespace {
     struct entity {
         mbox_queue mbox;
         const char *name;
-
         entity(const char *cstr_name) :
             mbox(mbox_policy {}, handshake_queue_policy {}, umsg_queue_policy {nullptr}, dmsg_queue_policy {}),
             name(cstr_name) {
@@ -328,7 +331,7 @@ namespace {
             TRACE(name, ack_handshake, ACTOR_ARG(slots), ACTOR_ARG2("sender", sender->name));
             // Get the manager for that stream.
             auto i = pending_managers_.find(slots.receiver);
-            BOOST_REQUIRE(i != pending_managers_.end());
+            BOOST_REQUIRE_NE(i, pending_managers_.end());
             // Create a new queue in the mailbox for incoming traffic.
             // Swap the sender/receiver perspective to generate the ID we are using.
             managers_.emplace(slots, i->second);
@@ -341,17 +344,16 @@ namespace {
             // Get the manager for that stream.
             auto slots = input_slots.invert();
             auto i = managers_.find(input_slots);
-            BOOST_REQUIRE(i != managers_.end());
+            BOOST_REQUIRE_NE(i, managers_.end());
             i->second->push(sender, slots, x.credit);
-            if (i->second->done()) {
+            if (i->second->done())
                 managers_.erase(i);
-            }
         }
 
         void operator()(entity *sender, stream_slots slots, in *, dmsg::close &) {
             TRACE(name, close, ACTOR_ARG(slots), ACTOR_ARG2("sender", sender->name));
             auto i = managers_.find(slots);
-            BOOST_REQUIRE(i != managers_.end());
+            BOOST_REQUIRE_NE(i, managers_.end());
             i->second->input_paths -= 1;
             get<2>(mbox.queues()).erase_later(slots.receiver);
             if (i->second->done()) {
@@ -379,9 +381,8 @@ namespace {
     void manager::push(entity *to, stream_slots slots, int num) {
         BOOST_REQUIRE_NE(num, 0);
         std::vector<int> xs;
-        if (x + num > num_messages) {
+        if (x + num > num_messages)
             num = num_messages - x;
-        }
         if (num == 0) {
             BOOST_TEST_MESSAGE(self->name << " is done sending batches");
             to->enqueue<dmsg>(self, slots, dmsg::close {});
@@ -390,9 +391,8 @@ namespace {
         }
         BOOST_TEST_MESSAGE(self->name << " pushes " << num << " new items to " << to->name
                                       << " slots = " << deep_to_string(slots));
-        for (int i = 0; i < num; ++i) {
+        for (int i = 0; i < num; ++i)
             xs.emplace_back(x++);
-        }
         BOOST_REQUIRE_NE(xs.size(), 0u);
         auto emplace_res = to->enqueue<dmsg>(self, slots, dmsg::batch {std::move(xs)});
         BOOST_CHECK_EQUAL(emplace_res, true);
@@ -409,12 +409,10 @@ namespace {
         using is_umsg = std::integral_constant<size_t, 1>;
         using is_dmsg = std::integral_constant<size_t, 2>;
         using result_type = intrusive::task_result;
-
         result_type operator()(is_handshake, handshake_queue &, msg &x) {
             (*self)(x.sender, get<handshake>(x.content));
             return intrusive::task_result::resume;
         }
-
         result_type operator()(is_umsg, umsg_queue &, msg &x) {
             auto sender = x.sender;
             auto &um = get<umsg>(x.content);
@@ -426,7 +424,6 @@ namespace {
             visit(f, um.content);
             return intrusive::task_result::resume;
         }
-
         result_type operator()(is_dmsg, dmsg_queue &, stream_slot, inner_dmsg_queue &q, msg &x) {
             auto inptr = q.policy().handler.get();
             auto dm = get<dmsg>(x.content);
@@ -442,7 +439,6 @@ namespace {
     struct fixture {
         entity alice {"alice"};
         entity bob {"bob"};
-
         fixture() {
             /// Make sure to test whether the slot IDs are properly handled.
             alice.next_slot = 123;
@@ -456,7 +452,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(mock_streaming_classes_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(depth_2_pipeline_test) {
+BOOST_AUTO_TEST_CASE(depth_2_pipeline) {
     alice.start_streaming(bob, 30);
     msg_visitor f {&bob};
     msg_visitor g {&alice};

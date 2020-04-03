@@ -1,11 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2019 Dominik Charousset
-// Copyright (c) 2019 Nil Foundation AG
-// Copyright (c) 2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -203,21 +203,28 @@ namespace nil {
             return {reinterpret_cast<byte *>(xs.data()), xs.size_bytes()};
         }
 
-        /// Convenience function to make using `actor::span` more convenient without the
+        /// Convenience function to make using `nil::actor::span` more convenient without the
         /// deduction guides.
         template<class T>
         auto make_span(T &xs) -> span<detail::remove_reference_t<decltype(xs[0])>> {
             return {xs.data(), xs.size()};
         }
 
-        /// Convenience function to make using `actor::span` more convenient without the
+        /// Convenience function to make using `nil::actor::span` more convenient without the
+        /// deduction guides.
+        template<class T, size_t N>
+        span<T> make_span(T (&xs)[N]) {
+            return {xs, N};
+        }
+
+        /// Convenience function to make using `nil::actor::span` more convenient without the
         /// deduction guides.
         template<class T>
         span<T> make_span(T *first, size_t size) {
             return {first, size};
         }
 
-        /// Convenience function to make using `actor::span` more convenient without the
+        /// Convenience function to make using `nil::actor::span` more convenient without the
         /// deduction guides.
         template<class T>
         span<T> make_span(T *first, T *last) {

@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,6 +13,7 @@
 #include <atomic>
 
 #include <nil/actor/config.hpp>
+
 #include <nil/actor/error.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/intrusive_ptr.hpp>
@@ -35,7 +34,7 @@ namespace nil {
         /// example, linking two actors automatically creates a cycle when using
         /// strong reference counts only.
         ///
-        /// When allocating a new actor, ACTOR will always embed the user-defined
+        /// When allocating a new actor, CAF will always embed the user-defined
         /// actor in an `actor_storage` with the control block prefixing the
         /// actual actor type, as shown below.
         ///
@@ -55,12 +54,12 @@ namespace nil {
         /// Actors start with a strong reference count of 1. This count is transferred
         /// to the first `actor` or `typed_actor` handle used to store the actor.
         /// Actors will also start with a weak reference count of 1. This count
-        /// is decremented once the strong reference count drops to 0.
+        /// is decremenated once the strong reference count drops to 0.
         ///
         /// The data block is destructed by calling the destructor of `T` when the
         /// last strong reference expires. The storage itself is destroyed when
         /// the last weak reference expires.
-        class actor_control_block {
+        class BOOST_SYMBOL_VISIBLE actor_control_block {
         public:
             using data_destructor = void (*)(abstract_actor *);
             using block_destructor = void (*)(actor_control_block *);
@@ -126,7 +125,7 @@ namespace nil {
         };
 
         /// @relates actor_control_block
-        bool intrusive_ptr_upgrade_weak(actor_control_block *x);
+        BOOST_SYMBOL_VISIBLE bool intrusive_ptr_upgrade_weak(actor_control_block *x);
 
         /// @relates actor_control_block
         inline void intrusive_ptr_add_weak_ref(actor_control_block *x) {
@@ -134,7 +133,7 @@ namespace nil {
         }
 
         /// @relates actor_control_block
-        void intrusive_ptr_release_weak(actor_control_block *x);
+        BOOST_SYMBOL_VISIBLE void intrusive_ptr_release_weak(actor_control_block *x);
 
         /// @relates actor_control_block
         inline void intrusive_ptr_add_ref(actor_control_block *x) {
@@ -142,35 +141,31 @@ namespace nil {
         }
 
         /// @relates actor_control_block
-        void intrusive_ptr_release(actor_control_block *x);
+        BOOST_SYMBOL_VISIBLE void intrusive_ptr_release(actor_control_block *x);
 
-        /// @relates abstract_actor
         /// @relates actor_control_block
         using strong_actor_ptr = intrusive_ptr<actor_control_block>;
 
-        /// @relates strong_actor_ptr
-        bool operator==(const strong_actor_ptr &, const abstract_actor *);
+        BOOST_SYMBOL_VISIBLE bool operator==(const strong_actor_ptr &, const abstract_actor *);
 
-        /// @relates strong_actor_ptr
-        bool operator==(const abstract_actor *, const strong_actor_ptr &);
+        BOOST_SYMBOL_VISIBLE bool operator==(const abstract_actor *, const strong_actor_ptr &);
 
-        /// @relates strong_actor_ptr
         inline bool operator!=(const strong_actor_ptr &x, const abstract_actor *y) {
             return !(x == y);
         }
 
-        /// @relates strong_actor_ptr
         inline bool operator!=(const abstract_actor *x, const strong_actor_ptr &y) {
             return !(x == y);
         }
 
-        /// @relates abstract_actor
         /// @relates actor_control_block
         using weak_actor_ptr = weak_intrusive_ptr<actor_control_block>;
 
-        error_code<sec> load_actor(strong_actor_ptr &storage, execution_unit *, actor_id aid, const node_id &nid);
+        BOOST_SYMBOL_VISIBLE error_code<sec> load_actor(strong_actor_ptr &storage, execution_unit *, actor_id aid,
+                                                        const node_id &nid);
 
-        error_code<sec> save_actor(strong_actor_ptr &storage, execution_unit *, actor_id aid, const node_id &nid);
+        BOOST_SYMBOL_VISIBLE error_code<sec> save_actor(strong_actor_ptr &storage, execution_unit *, actor_id aid,
+                                                        const node_id &nid);
 
         template<class Inspector>
         auto context_of(Inspector *f) -> decltype(f->context()) {
@@ -181,13 +176,13 @@ namespace nil {
             return nullptr;
         }
 
-        std::string to_string(const strong_actor_ptr &x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(const strong_actor_ptr &x);
 
-        void append_to_string(std::string &x, const strong_actor_ptr &y);
+        BOOST_SYMBOL_VISIBLE void append_to_string(std::string &x, const strong_actor_ptr &y);
 
-        std::string to_string(const weak_actor_ptr &x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(const weak_actor_ptr &x);
 
-        void append_to_string(std::string &x, const weak_actor_ptr &y);
+        BOOST_SYMBOL_VISIBLE void append_to_string(std::string &x, const weak_actor_ptr &y);
 
         template<class Inspector>
         typename Inspector::result_type inspect(Inspector &f, strong_actor_ptr &x) {

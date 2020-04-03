@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -130,7 +128,7 @@ namespace nil {
 
             // -- sanity checks ----------------------------------------------------------
 
-            static_assert(sizeof...(Ts) <= 20, "Too many template arguments given.");
+            static_assert(sizeof...(Ts) <= 30, "Too many template arguments given.");
 
             static_assert(sizeof...(Ts) > 0, "No template argument given.");
 
@@ -260,6 +258,16 @@ namespace nil {
                         ACTOR_VARIANT_CASE(17);
                         ACTOR_VARIANT_CASE(18);
                         ACTOR_VARIANT_CASE(19);
+                        ACTOR_VARIANT_CASE(20);
+                        ACTOR_VARIANT_CASE(21);
+                        ACTOR_VARIANT_CASE(22);
+                        ACTOR_VARIANT_CASE(23);
+                        ACTOR_VARIANT_CASE(24);
+                        ACTOR_VARIANT_CASE(25);
+                        ACTOR_VARIANT_CASE(26);
+                        ACTOR_VARIANT_CASE(27);
+                        ACTOR_VARIANT_CASE(28);
+                        ACTOR_VARIANT_CASE(29);
                 }
             }
 
@@ -452,6 +460,16 @@ namespace nil {
                     ACTOR_VARIANT_ASSIGN_CASE(17);
                     ACTOR_VARIANT_ASSIGN_CASE(18);
                     ACTOR_VARIANT_ASSIGN_CASE(19);
+                    ACTOR_VARIANT_ASSIGN_CASE(20);
+                    ACTOR_VARIANT_ASSIGN_CASE(21);
+                    ACTOR_VARIANT_ASSIGN_CASE(22);
+                    ACTOR_VARIANT_ASSIGN_CASE(23);
+                    ACTOR_VARIANT_ASSIGN_CASE(24);
+                    ACTOR_VARIANT_ASSIGN_CASE(25);
+                    ACTOR_VARIANT_ASSIGN_CASE(26);
+                    ACTOR_VARIANT_ASSIGN_CASE(27);
+                    ACTOR_VARIANT_ASSIGN_CASE(28);
+                    ACTOR_VARIANT_ASSIGN_CASE(29);
             }
         }
 

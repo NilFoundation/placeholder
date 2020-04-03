@@ -1,19 +1,16 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE metaprogramming_test
+#define BOOST_TEST_MODULE metaprogramming
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include <nil/actor/test/dsl.hpp>
 
 #include <string>
 #include <cstdint>
@@ -21,7 +18,6 @@
 #include <type_traits>
 
 #include <nil/actor/all.hpp>
-#include <nil/actor/config.hpp>
 
 #include <nil/actor/detail/int_list.hpp>
 #include <nil/actor/detail/type_list.hpp>
@@ -41,7 +37,7 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(metaprogramming_test) {
+BOOST_AUTO_TEST_CASE(metaprogramming) {
     using std::is_same;
     using l1 = type_list<int, float, std::string>;
     using r1 = tl_reverse<l1>::type;
@@ -152,7 +148,7 @@ namespace std {
 
 }    // namespace std
 
-BOOST_AUTO_TEST_CASE(typed_behavior_assignment_test) {
+BOOST_AUTO_TEST_CASE(typed_behavior_assignment) {
     using bh1 = typed_beh<replies_to<int>::with<double>, replies_to<double, double>::with<int, int>>;
     // compatible handlers resulting in perfect match
     auto f1 = [=](int) { return 0.; };
@@ -225,38 +221,9 @@ BOOST_AUTO_TEST_CASE(typed_behavior_assignment_test) {
     BOOST_CHECK_EQUAL(bi_pair(false, -1), tb_assign<bh2>(h0, h1, h2, h3, h4, h5, h6, h7, h8));
 }
 
-BOOST_AUTO_TEST_CASE(composed_types_test) {
-    // message type for test message #1
-    auto msg_1 = tk<type_list<int>>();
-    // message type for test message #1
-    auto msg_2 = tk<type_list<double>>();
-    // interface type a
-    auto if_a = tk<type_list<replies_to<int>::with<double>, replies_to<double, double>::with<int, int>>>();
-    // interface type b
-    auto if_b = tk<type_list<replies_to<double>::with<std::string>>>();
-    // interface type c
-    auto if_c = tk<type_list<replies_to<int>::with_stream<double>>>();
-    // interface type b . a
-    auto if_ba = tk<typed_actor<replies_to<int>::with<std::string>>>();
-    // interface type b . c
-    auto if_bc = tk<typed_actor<replies_to<int>::with_stream<std::string>>>();
-    BOOST_TEST_MESSAGE("check whether actors return the correct types");
-    auto nil = tk<none_t>();
-    auto dbl = tk<type_list<double>>();
-    // auto dbl_stream = tk<output_stream<double>>();
-    BOOST_CHECK_EQUAL(res(if_a, msg_1), dbl);
-    BOOST_CHECK_EQUAL(res(if_a, msg_2), nil);
-    // BOOST_CHECK_EQUAL(res(if_c, msg_1), dbl_stream);
-    BOOST_TEST_MESSAGE("check types of actor compositions");
-    BOOST_CHECK_EQUAL(dot_op(if_b, if_a), if_ba);
-    BOOST_CHECK_EQUAL(dot_op(if_b, if_c), if_bc);
-}
-
 struct foo {};
 struct bar {};
-
 bool operator==(const bar &, const bar &);
-
 class baz {
 public:
     baz() = default;

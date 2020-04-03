@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -16,7 +14,7 @@
 #include <vector>
 
 #include <nil/actor/detail/comparable.hpp>
-#include <nil/actor/detail/parser/state.hpp>
+
 #include <nil/actor/detail/unordered_flat_map.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/intrusive_ptr.hpp>
@@ -28,7 +26,7 @@ namespace nil {
     namespace actor {
 
         /// A URI according to RFC 3986.
-        class uri : detail::comparable<uri>, detail::comparable<uri, string_view> {
+        class BOOST_SYMBOL_VISIBLE uri : detail::comparable<uri>, detail::comparable<uri, string_view> {
         public:
             // -- member types -----------------------------------------------------------
 
@@ -115,13 +113,18 @@ namespace nil {
 
             int compare(string_view x) const noexcept;
 
+            // -- parsing ----------------------------------------------------------------
+
+            /// Returns whether `parse` would produce a valid URI.
+            static bool can_parse(string_view str) noexcept;
+
             // -- friend functions -------------------------------------------------------
 
-            friend error inspect(nil::actor::serializer &dst, uri &x);
+            friend BOOST_SYMBOL_VISIBLE error inspect(nil::actor::serializer &dst, uri &x);
 
-            friend error_code<sec> inspect(nil::actor::binary_serializer &dst, uri &x);
+            friend BOOST_SYMBOL_VISIBLE error_code<sec> inspect(nil::actor::binary_serializer &dst, uri &x);
 
-            friend error inspect(nil::actor::deserializer &src, uri &x);
+            friend BOOST_SYMBOL_VISIBLE error inspect(nil::actor::deserializer &src, uri &x);
 
             friend error_code<sec> inspect(nil::actor::binary_deserializer &src, uri &x);
 
@@ -137,16 +140,16 @@ namespace nil {
         }
 
         /// @relates uri
-        std::string to_string(const uri &x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(const uri &x);
 
         /// @relates uri
-        std::string to_string(const uri::authority_type &x);
+        BOOST_SYMBOL_VISIBLE std::string to_string(const uri::authority_type &x);
 
         /// @relates uri
-        error parse(string_view str, uri &dest);
+        BOOST_SYMBOL_VISIBLE error parse(string_view str, uri &dest);
 
         /// @relates uri
-        expected<uri> make_uri(string_view str);
+        BOOST_SYMBOL_VISIBLE expected<uri> make_uri(string_view str);
 
     }    // namespace actor
 }    // namespace nil

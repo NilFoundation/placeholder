@@ -1,18 +1,18 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2017 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE mailbox_element_test
+#define BOOST_TEST_MODULE mailbox_element
 
-#include <boost/test/unit_test.hpp>
+#include <nil/actor/mailbox_element.hpp>
+
+#include <nil/actor/test/dsl.hpp>
 
 #include <string>
 #include <tuple>
@@ -27,19 +27,36 @@ using std::vector;
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+            template<>
+            struct print_log_value<none_t> {
+                void operator()(std::ostream &, none_t const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     template<class... Ts>
-    optional<tuple<Ts...>> fetch(const type_erased_tuple &x) {
-        if (!x.match_elements<Ts...>()) {
-            return none;
-        }
-        return x.get_as_tuple<Ts...>();
-    }
-
-    template<class... Ts>
     optional<tuple<Ts...>> fetch(const message &x) {
-        return fetch<Ts...>(x.content());
+        if (auto view = make_const_typed_message_view<Ts...>(x))
+            return to_tuple(view);
+        return none;
     }
 
     template<class... Ts>
@@ -49,38 +66,23 @@ namespace {
 
 }    // namespace
 
-BOOST_AUTO_TEST_CASE(empty_message_test) {
+BOOST_AUTO_TEST_CASE(empty_message) {
     auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, make_message());
     BOOST_CHECK(m1->mid.is_async());
     BOOST_CHECK(m1->mid.category() == message_id::normal_message_category);
     BOOST_CHECK(m1->content().empty());
 }
 
-BOOST_AUTO_TEST_CASE(non_empty_message_test) {
+BOOST_AUTO_TEST_CASE(non_empty_message) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, make_message(1, 2, 3));
     BOOST_CHECK(m1->mid.is_async());
     BOOST_CHECK(m1->mid.category() == message_id::normal_message_category);
     BOOST_CHECK(!m1->content().empty());
-    BOOST_CHECK((fetch<int, int>(*m1)) == none);
-    BOOST_CHECK((fetch<int, int, int>(*m1)) == make_tuple(1, 2, 3));
-}
-
-BOOST_AUTO_TEST_CASE(message_roundtrip_test) {
-    auto msg = make_message(1, 2, 3);
-    auto msg_ptr = msg.cvals().get();
-    auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, std::move(msg));
-    auto msg2 = m1->move_content_to_message();
-    BOOST_CHECK_EQUAL(msg2.cvals().get(), msg_ptr);
-}
-
-BOOST_AUTO_TEST_CASE(message_roundtrip_with_copy_test) {
-    auto msg = make_message(1, 2, 3);
-    auto msg_ptr = msg.cvals().get();
-    auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, std::move(msg));
-    auto msg2 = m1->copy_content_to_message();
-    auto msg3 = m1->move_content_to_message();
-    BOOST_CHECK_EQUAL(msg2.cvals().get(), msg_ptr);
-    BOOST_CHECK_EQUAL(msg3.cvals().get(), msg_ptr);
+    BOOST_CHECK_EQUAL((fetch<int, int>(*m1)), none);
+    BOOST_CHECK_EQUAL((fetch<int, int, int>(*m1)), make_tuple(1, 2, 3));
 }
 
 BOOST_AUTO_TEST_CASE(tuple_test) {
@@ -88,50 +90,32 @@ BOOST_AUTO_TEST_CASE(tuple_test) {
     BOOST_CHECK(m1->mid.is_async());
     BOOST_CHECK(m1->mid.category() == message_id::normal_message_category);
     BOOST_CHECK(!m1->content().empty());
-    BOOST_CHECK((fetch<int, int>(*m1)) == none);
-    BOOST_CHECK((fetch<int, int, int>(*m1)) == make_tuple(1, 2, 3));
+    BOOST_CHECK_EQUAL((fetch<int, int>(*m1)), none);
+    BOOST_CHECK_EQUAL((fetch<int, int, int>(*m1)), make_tuple(1, 2, 3));
 }
 
-BOOST_AUTO_TEST_CASE(move_tuple_test) {
-    auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, "hello", "world");
-    using strings = tuple<string, string>;
-    BOOST_CHECK((fetch<string, string>(*m1)) == strings("hello", "world"));
-    auto msg = m1->move_content_to_message();
-    BOOST_CHECK((fetch<string, string>(msg)) == strings("hello", "world"));
-    BOOST_CHECK((fetch<string, string>(*m1)) == strings("", ""));
-}
-
-BOOST_AUTO_TEST_CASE(copy_tuple_test) {
-    auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, "hello", "world");
-    using strings = tuple<string, string>;
-    BOOST_CHECK((fetch<string, string>(*m1)) == strings("hello", "world"));
-    auto msg = m1->copy_content_to_message();
-    BOOST_CHECK((fetch<string, string>(msg)) == strings("hello", "world"));
-    BOOST_CHECK((fetch<string, string>(*m1)) == strings("hello", "world"));
-}
-
-BOOST_AUTO_TEST_CASE(high_priority_test) {
+BOOST_AUTO_TEST_CASE(high_priority) {
     auto m1 = make_mailbox_element(nullptr, make_message_id(message_priority::high), no_stages, 42);
     BOOST_CHECK(m1->mid.category() == message_id::urgent_message_category);
 }
 
-BOOST_AUTO_TEST_CASE(upstream_msg_static_test) {
+BOOST_AUTO_TEST_CASE(upstream_msg_static) {
     auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, make<upstream_msg::drop>({0, 0}, nullptr));
     BOOST_CHECK(m1->mid.category() == message_id::upstream_message_category);
 }
 
-BOOST_AUTO_TEST_CASE(upstream_msg_dynamic_test) {
+BOOST_AUTO_TEST_CASE(upstream_msg_dynamic) {
     auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages,
                                    make_message(make<upstream_msg::drop>({0, 0}, nullptr)));
     BOOST_CHECK(m1->mid.category() == message_id::upstream_message_category);
 }
 
-BOOST_AUTO_TEST_CASE(downstream_msg_static_test) {
+BOOST_AUTO_TEST_CASE(downstream_msg_static) {
     auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, make<downstream_msg::close>({0, 0}, nullptr));
     BOOST_CHECK(m1->mid.category() == message_id::downstream_message_category);
 }
 
-BOOST_AUTO_TEST_CASE(downstream_msg_dynamic_test) {
+BOOST_AUTO_TEST_CASE(downstream_msg_dynamic) {
     auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages,
                                    make_message(make<downstream_msg::close>({0, 0}, nullptr)));
     BOOST_CHECK(m1->mid.category() == message_id::downstream_message_category);

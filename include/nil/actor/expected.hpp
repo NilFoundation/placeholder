@@ -1,26 +1,25 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <nil/actor/config.hpp>
 
-#include <new>
 #include <memory>
+#include <new>
 #include <ostream>
 #include <type_traits>
 
 #include <nil/actor/deep_to_string.hpp>
 #include <nil/actor/error.hpp>
+#include <nil/actor/error_category.hpp>
 #include <nil/actor/unifyn.hpp>
 #include <nil/actor/unit.hpp>
 
@@ -83,8 +82,8 @@ namespace nil {
                 construct(other);
             }
 
-            template<class Code, class E = enable_if_has_make_error_t<Code>>
-            expected(Code code) : engaged_(false) {
+            template<class Enum, uint8_t Category = error_category<Enum>::value>
+            expected(Enum code) : engaged_(false) {
                 new (std::addressof(error_)) nil::actor::error(make_error(code));
             }
 
@@ -158,8 +157,8 @@ namespace nil {
                 return *this;
             }
 
-            template<class Code>
-            enable_if_has_make_error_t<Code, expected &> operator=(Code code) {
+            template<class Enum, uint8_t Category = error_category<Enum>::value>
+            expected &operator=(Enum code) {
                 return *this = make_error(code);
             }
 
@@ -298,14 +297,14 @@ namespace nil {
         }
 
         /// @relates expected
-        template<class T, class E>
-        enable_if_has_make_error_t<E, bool> operator==(const expected<T> &x, E y) {
+        template<class T, class Enum, uint8_t = error_category<Enum>::value>
+        bool operator==(const expected<T> &x, Enum y) {
             return x == make_error(y);
         }
 
         /// @relates expected
-        template<class T, class E>
-        enable_if_has_make_error_t<E, bool> operator==(E x, const expected<T> &y) {
+        template<class Enum, class T, uint8_t = error_category<Enum>::value>
+        bool operator==(Enum x, const expected<T> &y) {
             return y == make_error(x);
         }
 
@@ -340,14 +339,14 @@ namespace nil {
         }
 
         /// @relates expected
-        template<class T, class E>
-        enable_if_has_make_error_t<E, bool> operator!=(const expected<T> &x, E y) {
+        template<class T, class Enum, uint8_t = error_category<Enum>::value>
+        bool operator!=(const expected<T> &x, Enum y) {
             return !(x == y);
         }
 
         /// @relates expected
-        template<class T, class E>
-        enable_if_has_make_error_t<E, bool> operator!=(E x, const expected<T> &y) {
+        template<class T, class Enum, uint8_t = error_category<Enum>::value>
+        bool operator!=(Enum x, const expected<T> &y) {
             return !(x == y);
         }
 
@@ -378,8 +377,8 @@ namespace nil {
                 // nop
             }
 
-            template<class Code, class E = enable_if_has_make_error_t<Code>>
-            expected(Code code) : error_(make_error(code)) {
+            template<class Enum, uint8_t = error_category<Enum>::value>
+            expected(Enum code) : error_(code) {
                 // nop
             }
 

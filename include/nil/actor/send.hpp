@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -34,15 +32,15 @@ namespace nil {
         template<message_priority P = message_priority::normal, class Source = actor, class Dest = actor, class... Ts>
         void send_as(const Source &src, const Dest &dest, Ts &&... xs) {
             static_assert(sizeof...(Ts) > 0, "no message to send");
-            using token = detail::type_list<typename detail::strip_and_convert<Ts>::type...>;
+            using token = detail::type_list<detail::strip_and_convert_t<Ts>...>;
             static_assert(!statically_typed<Source>() || statically_typed<Dest>(),
                           "statically typed actors can only send() to other "
                           "statically typed actors; use anon_send() or request() when "
                           "communicating with dynamically typed actors");
-            static_assert(response_type_unbox<typename signatures_of<Dest>::type, token>::valid,
+            static_assert(response_type_unbox<signatures_of_t<Dest>, token>::valid,
                           "receiver does not accept given message");
             // TODO: this only checks one way, we should check for loops
-            static_assert(is_void_response<response_type_unbox_t<typename signatures_of<Dest>::type, token>>::value ||
+            static_assert(is_void_response<response_type_unbox_t<signatures_of_t<Dest>, token>>::value ||
                               response_type_unbox<signatures_of_t<Source>,
                                                   response_type_unbox_t<signatures_of_t<Dest>, token>>::valid,
                           "this actor does not accept the response message");
@@ -81,8 +79,8 @@ namespace nil {
         template<message_priority P = message_priority::normal, class Dest = actor, class... Ts>
         void anon_send(const Dest &dest, Ts &&... xs) {
             static_assert(sizeof...(Ts) > 0, "no message to send");
-            using token = detail::type_list<typename detail::strip_and_convert<Ts>::type...>;
-            static_assert(response_type_unbox<typename signatures_of<Dest>::type, token>::valid,
+            using token = detail::type_list<detail::strip_and_convert_t<Ts>...>;
+            static_assert(response_type_unbox<signatures_of_t<Dest>, token>::valid,
                           "receiver does not accept given message");
             if (dest)
                 dest->eq_impl(make_message_id(P), nullptr, nullptr, std::forward<Ts>(xs)...);
@@ -90,11 +88,13 @@ namespace nil {
 
         template<message_priority P = message_priority::normal, class Dest = actor, class Rep = int,
                  class Period = std::ratio<1>, class... Ts>
-        typename std::enable_if<!std::is_same<Dest, group>::value>::type
+        detail::enable_if_t<!std::is_same<Dest, group>::value>
             delayed_anon_send(const Dest &dest, std::chrono::duration<Rep, Period> rtime, Ts &&... xs) {
             static_assert(sizeof...(Ts) > 0, "no message to send");
-            using token =
-                detail::type_list<typename detail::implicit_conversions<typename std::decay<Ts>::type>::type...>;
+            static_assert((detail::sendable<Ts> && ...),
+                          "at least one type has no ID, "
+                          "did you forgot to announce it via ACTOR_ADD_TYPE_ID?");
+            using token = detail::type_list<detail::strip_and_convert_t<Ts>...>;
             static_assert(response_type_unbox<signatures_of_t<Dest>, token>::valid,
                           "receiver does not accept given message");
             if (dest) {
@@ -137,5 +137,6 @@ namespace nil {
             if (ptr)
                 anon_send_exit(ptr, reason);
         }
+
     }    // namespace actor
 }    // namespace nil

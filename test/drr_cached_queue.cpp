@@ -1,34 +1,55 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2011-2017 Dominik Charousset
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE drr_cached_queue_test
-
-#include <memory>
+#define BOOST_TEST_MODULE intrusive.drr_cached_queue
 
 #include <boost/test/unit_test.hpp>
 
+#include <memory>
+
 #include <nil/actor/deep_to_string.hpp>
 
-#include <nil/actor/intrusive/singly_linked.hpp>
 #include <nil/actor/intrusive/drr_cached_queue.hpp>
+#include <nil/actor/intrusive/singly_linked.hpp>
 
 using namespace nil::actor;
 using namespace nil::actor::intrusive;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename, typename> class P, typename K, typename V>
+            struct print_log_value<P<K, V>> {
+                void operator()(std::ostream &, P<K, V> const &) {
+                }
+            };
+
+            template<typename T>
+            struct print_log_value<forward_iterator<T>> {
+                void operator()(std::ostream &, forward_iterator<T> const &) {
+                }
+            };
+
+            template<>
+            struct print_log_value<new_round_result> {
+                void operator()(std::ostream &, new_round_result const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
     struct inode : singly_linked<inode> {
         int value;
-
         inode(int x = 0) : value(x) {
             // nop
         }
@@ -76,75 +97,72 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(drr_cached_queue_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(default_constructed_test) {
+BOOST_AUTO_TEST_CASE(default_constructed) {
     BOOST_REQUIRE_EQUAL(queue.empty(), true);
     BOOST_REQUIRE_EQUAL(queue.deficit(), 0);
     BOOST_REQUIRE_EQUAL(queue.total_task_size(), 0);
     BOOST_REQUIRE_EQUAL(queue.peek(), nullptr);
 }
 
-BOOST_AUTO_TEST_CASE(new_round_test) {
+BOOST_AUTO_TEST_CASE(new_round) {
     // Define a function object for consuming even numbers.
     std::string fseq;
     auto f = [&](inode &x) -> task_result {
-        if ((x.value & 0x01) == 1) {
+        if ((x.value & 0x01) == 1)
             return task_result::skip;
-        }
         fseq += to_string(x);
         return task_result::resume;
     };
     // Define a function object for consuming odd numbers.
     std::string gseq;
     auto g = [&](inode &x) -> task_result {
-        if ((x.value & 0x01) == 0) {
+        if ((x.value & 0x01) == 0)
             return task_result::skip;
-        }
         gseq += to_string(x);
         return task_result::resume;
     };
     fill(queue, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     // Allow f to consume 2, 4, and 6.
     auto round_result = queue.new_round(3, f);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(fseq, "246");
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
     // Allow g to consume 1, 3, 5, and 7.
     round_result = queue.new_round(4, g);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(gseq, "1357");
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(skipping_test) {
+BOOST_AUTO_TEST_CASE(skipping) {
     // Define a function object for consuming even numbers.
     std::string seq;
     auto f = [&](inode &x) -> task_result {
-        if ((x.value & 0x01) == 1) {
+        if ((x.value & 0x01) == 1)
             return task_result::skip;
-        }
         seq += to_string(x);
         return task_result::resume;
     };
     BOOST_TEST_MESSAGE("make a round on an empty queue");
-    BOOST_CHECK(queue.new_round(10, f) == make_new_round_result(false));
+    BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(false));
     BOOST_TEST_MESSAGE("make a round on a queue with only odd numbers (skip all)");
     fill(queue, 1, 3, 5);
-    BOOST_CHECK(queue.new_round(10, f) == make_new_round_result(false));
+    BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(false));
     BOOST_TEST_MESSAGE("make a round on a queue with an even number at the front");
     fill(queue, 2);
-    BOOST_CHECK(queue.new_round(10, f) == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "2");
     BOOST_TEST_MESSAGE("make a round on a queue with an even number in between");
     fill(queue, 7, 9, 4, 11, 13);
-    BOOST_CHECK(queue.new_round(10, f) == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "24");
     BOOST_TEST_MESSAGE("make a round on a queue with an even number at the back");
     fill(queue, 15, 17, 6);
-    BOOST_CHECK(queue.new_round(10, f) == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(queue.new_round(10, f), make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "246");
 }
 
-BOOST_AUTO_TEST_CASE(take_front_test) {
+BOOST_AUTO_TEST_CASE(take_front) {
     std::string seq;
     fill(queue, 1, 2, 3, 4, 5, 6);
     auto f = [&](inode &x) {
@@ -166,7 +184,7 @@ BOOST_AUTO_TEST_CASE(take_front_test) {
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(alternating_consumer_test) {
+BOOST_AUTO_TEST_CASE(alternating_consumer) {
     using fun_type = std::function<task_result(inode &)>;
     fun_type f;
     fun_type g;
@@ -174,18 +192,16 @@ BOOST_AUTO_TEST_CASE(alternating_consumer_test) {
     // Define a function object for consuming even numbers.
     std::string seq;
     f = [&](inode &x) -> task_result {
-        if ((x.value & 0x01) == 1) {
+        if ((x.value & 0x01) == 1)
             return task_result::skip;
-        }
         seq += to_string(x);
         selected = &g;
         return task_result::resume;
     };
     // Define a function object for consuming odd numbers.
     g = [&](inode &x) -> task_result {
-        if ((x.value & 0x01) == 0) {
+        if ((x.value & 0x01) == 0)
             return task_result::skip;
-        }
         seq += to_string(x);
         selected = &f;
         return task_result::resume;
@@ -196,19 +212,18 @@ BOOST_AUTO_TEST_CASE(alternating_consumer_test) {
     // sequences and no odd value to read after 7 is available.
     fill(queue, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     auto round_result = queue.new_round(1000, h);
-    BOOST_CHECK(round_result == make_new_round_result(true));
+    BOOST_CHECK_EQUAL(round_result, make_new_round_result(true));
     BOOST_CHECK_EQUAL(seq, "21436587");
     BOOST_CHECK_EQUAL(queue.deficit(), 0);
     BOOST_CHECK_EQUAL(deep_to_string(queue.cache()), "[9]");
 }
 
-BOOST_AUTO_TEST_CASE(peek_all_test) {
+BOOST_AUTO_TEST_CASE(peek_all) {
     auto queue_to_string = [&] {
         std::string str;
         auto peek_fun = [&](const inode &x) {
-            if (!str.empty()) {
+            if (!str.empty())
                 str += ", ";
-            }
             str += std::to_string(x.value);
         };
         queue.peek_all(peek_fun);
@@ -225,7 +240,7 @@ BOOST_AUTO_TEST_CASE(peek_all_test) {
     BOOST_CHECK_EQUAL(queue_to_string(), "1, 2, 3");
 }
 
-BOOST_AUTO_TEST_CASE(to_string_test) {
+BOOST_AUTO_TEST_CASE(to_string) {
     BOOST_CHECK_EQUAL(deep_to_string(queue), "[]");
     fill(queue, 3, 4);
     BOOST_CHECK_EQUAL(deep_to_string(queue), "[3, 4]");

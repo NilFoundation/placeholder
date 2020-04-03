@@ -1,37 +1,22 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE serial_reply_test
+#define BOOST_TEST_MODULE serial_reply
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <nil/actor/config.hpp>
 #include <nil/actor/all.hpp>
+
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
 
-namespace {
-
-    using hi_atom = atom_constant<atom("hi")>;
-    using ho_atom = atom_constant<atom("ho")>;
-    using sub0_atom = atom_constant<atom("sub0")>;
-    using sub1_atom = atom_constant<atom("sub1")>;
-    using sub2_atom = atom_constant<atom("sub2")>;
-    using sub3_atom = atom_constant<atom("sub3")>;
-    using sub4_atom = atom_constant<atom("sub4")>;
-
-}    // namespace
-
-BOOST_AUTO_TEST_CASE(test_serial_reply_test) {
+BOOST_AUTO_TEST_CASE(test_serial_reply) {
     spawner_config cfg;
     spawner system {cfg};
     auto mirror_behavior = [=](event_based_actor *self) -> behavior {
@@ -48,7 +33,7 @@ BOOST_AUTO_TEST_CASE(test_serial_reply_test) {
         auto c2 = self->spawn<linked>(mirror_behavior);
         auto c3 = self->spawn<linked>(mirror_behavior);
         auto c4 = self->spawn<linked>(mirror_behavior);
-        self->become([=](hi_atom) mutable {
+        self->become([=](int) mutable {
             auto rp = self->make_response_promise();
             BOOST_TEST_MESSAGE("received 'hi there'");
             self->request(c0, infinite, sub0_atom::value).then([=](sub0_atom) mutable {
@@ -74,5 +59,5 @@ BOOST_AUTO_TEST_CASE(test_serial_reply_test) {
     self->request(master, infinite, hi_atom::value)
         .receive([](ho_atom) { BOOST_TEST_MESSAGE("received 'ho'"); },
                  [&](const error &err) { BOOST_ERROR("Error: " << self->system().render(err)); });
-    BOOST_REQUIRE(self->mailbox().size() == 0);
+    BOOST_REQUIRE(self->mailbox().empty());
 }

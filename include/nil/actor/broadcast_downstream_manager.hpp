@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,13 +13,12 @@
 #include <algorithm>
 
 #include <nil/actor/buffered_downstream_manager.hpp>
-#include <nil/actor/outbound_path.hpp>
-#include <nil/actor/raise_error.hpp>
-
 #include <nil/actor/detail/algorithms.hpp>
 #include <nil/actor/detail/path_state.hpp>
 #include <nil/actor/detail/select_all.hpp>
 #include <nil/actor/detail/unordered_flat_map.hpp>
+#include <nil/actor/outbound_path.hpp>
+#include <nil/actor/raise_error.hpp>
 
 namespace nil {
     namespace actor {
@@ -158,7 +155,7 @@ namespace nil {
                 ACTOR_LOG_TRACE(ACTOR_ARG(ptr));
                 // Make sure state_map_ and paths_ are always equally sorted, otherwise
                 // we'll run into UB when calling `zip_foreach`.
-                BOOST_ASSERT(state_map_.size() == this->paths_.size());
+                ACTOR_ASSERT(state_map_.size() == this->paths_.size());
                 auto slot = ptr->slots.sender;
                 // Append to the regular path map.
                 if (!super::insert_path(std::move(ptr))) {
@@ -208,7 +205,7 @@ namespace nil {
 
         protected:
             void about_to_erase(outbound_path *ptr, bool silent, error *reason) override {
-                BOOST_ASSERT(ptr != nullptr);
+                ACTOR_ASSERT(ptr != nullptr);
                 ACTOR_LOG_TRACE(ACTOR_ARG2("slot", ptr->slots.sender) << ACTOR_ARG(silent) << ACTOR_ARG(reason));
                 state_map_.erase(ptr->slots.sender);
                 super::about_to_erase(ptr, silent, reason);
@@ -216,7 +213,7 @@ namespace nil {
 
         private:
             void emit_batches_impl(bool force_underfull) {
-                BOOST_ASSERT(this->paths_.size() <= state_map_.size());
+                ACTOR_ASSERT(this->paths_.size() <= state_map_.size());
                 if (this->paths_.empty())
                     return;
                 // Calculate the chunk size, i.e., how many more items we can put to our

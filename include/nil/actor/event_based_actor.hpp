@@ -1,32 +1,29 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <type_traits>
 
-#include <nil/actor/fwd.hpp>
+#include <nil/actor/actor_traits.hpp>
+
 #include <nil/actor/extend.hpp>
+#include <nil/actor/fwd.hpp>
 #include <nil/actor/local_actor.hpp>
-#include <nil/actor/actor_marker.hpp>
+#include <nil/actor/logger.hpp>
+#include <nil/actor/mixin/behavior_changer.hpp>
+#include <nil/actor/mixin/requester.hpp>
+#include <nil/actor/mixin/sender.hpp>
+#include <nil/actor/mixin/subscriber.hpp>
 #include <nil/actor/response_handle.hpp>
 #include <nil/actor/scheduled_actor.hpp>
-
-#include <nil/actor/mixin/sender.hpp>
-#include <nil/actor/mixin/requester.hpp>
-#include <nil/actor/mixin/subscriber.hpp>
-#include <nil/actor/mixin/behavior_changer.hpp>
-
-#include <nil/actor/logger.hpp>
 
 namespace nil {
     namespace actor {
@@ -40,10 +37,15 @@ namespace nil {
         /// A cooperatively scheduled, event-based actor implementation. This is the
         /// recommended base class for user-defined actors.
         /// @extends scheduled_actor
-        class event_based_actor
-            : public extend<scheduled_actor, event_based_actor>::with<mixin::sender, mixin::requester,
-                                                                      mixin::subscriber, mixin::behavior_changer>,
-              public dynamically_typed_actor_base {
+        class BOOST_SYMBOL_VISIBLE event_based_actor
+            // clang-format off
+  : public extend<scheduled_actor, event_based_actor>::
+           with<mixin::sender,
+                mixin::requester,
+                mixin::subscriber,
+                mixin::behavior_changer>,
+    public dynamically_typed_actor_base {
+            // clang-format on
         public:
             // -- member types -----------------------------------------------------------
 

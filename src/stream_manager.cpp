@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/stream_manager.hpp>
@@ -26,7 +24,6 @@
 #include <nil/actor/response_promise.hpp>
 #include <nil/actor/scheduled_actor.hpp>
 #include <nil/actor/sec.hpp>
-#include <nil/actor/type_nr.hpp>
 
 namespace nil {
     namespace actor {
@@ -108,15 +105,21 @@ namespace nil {
         }
 
         void stream_manager::handle(stream_slots slots, upstream_msg::drop &) {
+            ACTOR_LOG_TRACE(ACTOR_ARG(slots));
             out().close(slots.receiver);
         }
 
         void stream_manager::handle(stream_slots slots, upstream_msg::forced_drop &x) {
+            ACTOR_LOG_TRACE(ACTOR_ARG(slots) << ACTOR_ARG(x));
             if (out().remove_path(slots.receiver, x.reason, true))
                 stop(std::move(x.reason));
         }
 
         void stream_manager::stop(error reason) {
+            ACTOR_LOG_TRACE(ACTOR_ARG(reason));
+            if (getf(is_stopped_flag))
+                return;
+            flags_ = is_stopped_flag;
             if (reason)
                 out().abort(reason);
             else
@@ -127,8 +130,7 @@ namespace nil {
 
         void stream_manager::shutdown() {
             ACTOR_LOG_TRACE("");
-            // Mark as shutting down and reset other flags.
-            if (shutting_down())
+            if (!running())
                 return;
             flags_ = is_shutting_down_flag;
             ACTOR_LOG_DEBUG("emit shutdown messages on" << inbound_paths_.size() << "inbound paths;"
@@ -144,7 +146,6 @@ namespace nil {
             if (!inbound_paths_.empty()) {
                 auto now = self_->clock().now();
                 auto &cfg = self_->system().config();
-                auto bc = cfg.stream_desired_batch_complexity;
                 auto interval = cfg.stream_credit_round_interval;
                 auto &qs = self_->get_downstream_queue().queues();
                 // Iterate all queues for inbound traffic.
@@ -152,8 +153,8 @@ namespace nil {
                     auto inptr = kvp.second.policy().handler.get();
                     // Ignore inbound paths of other managers.
                     if (inptr->mgr.get() == this) {
-                        auto bs = static_cast<int32_t>(kvp.second.total_task_size());
-                        inptr->emit_ack_batch(self_, bs, out().max_capacity(), now, interval, bc);
+                        auto tts = static_cast<int32_t>(kvp.second.total_task_size());
+                        inptr->emit_ack_batch(self_, tts, now, interval);
                     }
                 }
             }
@@ -203,7 +204,7 @@ namespace nil {
         void stream_manager::deregister_input_path(inbound_path *ptr) noexcept {
             ACTOR_ASSERT(ptr != nullptr);
             ACTOR_LOG_TRACE(ACTOR_ARG2("path", *ptr));
-            ACTOR_ASSERT(inbound_paths_.size() > 0);
+            ACTOR_ASSERT(!inbound_paths_.empty());
             using std::swap;
             if (ptr != inbound_paths_.back()) {
                 auto i = std::find(inbound_paths_.begin(), inbound_paths_.end(), ptr);
@@ -267,7 +268,7 @@ namespace nil {
             return add_unchecked_outbound_path_impl(rp, std::move(handshake));
         }
 
-        stream_slot stream_manager::add_unchecked_inbound_path_impl(rtti_pair rtti) {
+        stream_slot stream_manager::add_unchecked_inbound_path_impl(type_id_t input_type) {
             ACTOR_LOG_TRACE("");
             auto x = self_->current_mailbox_element();
             if (x == nullptr || !x->content().match_elements<open_stream_msg>()) {
@@ -291,7 +292,7 @@ namespace nil {
             }
             auto slot = assign_next_slot();
             stream_slots path_id {osm.slot, slot};
-            auto ptr = self_->make_inbound_path(this, path_id, std::move(osm.prev_stage), rtti);
+            auto ptr = self_->make_inbound_path(this, path_id, std::move(osm.prev_stage), input_type);
             ACTOR_ASSERT(ptr != nullptr);
             ptr->emit_ack_open(self_, actor_cast<actor_addr>(osm.original_stage));
             return slot;

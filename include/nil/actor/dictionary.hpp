@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt or
-// http://opensource.org/licenses/BSD-3-Clause
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,8 +13,10 @@
 #include <algorithm>
 #include <iterator>
 #include <map>
+#include <ostream>
 #include <string>
 
+#include <nil/actor/deep_to_string.hpp>
 #include <nil/actor/string_view.hpp>
 
 namespace nil {
@@ -319,6 +319,14 @@ namespace nil {
             map_type xs_;
         };
 
+        // -- free functions -----------------------------------------------------------
+
+        // @relates dictionary
+        template<class T>
+        std::string to_string(const dictionary<T> &xs) {
+            return deep_to_string(xs.container());
+        }
+
         // -- operators ----------------------------------------------------------------
 
         // @relates dictionary
@@ -355,6 +363,12 @@ namespace nil {
         template<class T>
         bool operator>=(const dictionary<T> &xs, const dictionary<T> &ys) {
             return xs.container() >= ys.container();
+        }
+
+        // @relates dictionary
+        template<class T>
+        std::ostream &operator<<(std::ostream &out, const dictionary<T> &xs) {
+            return out << to_string(xs);
         }
 
     }    // namespace actor

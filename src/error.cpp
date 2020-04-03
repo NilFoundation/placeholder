@@ -1,22 +1,21 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/error.hpp>
 
+#include <nil/actor/spawner_config.hpp>
 #include <nil/actor/config.hpp>
-#include <nil/actor/message.hpp>
-#include <nil/actor/serialization/serializer.hpp>
-#include <nil/actor/serialization/deserializer.hpp>
 #include <nil/actor/deep_to_string.hpp>
+#include <nil/actor/deserializer.hpp>
+#include <nil/actor/message.hpp>
+#include <nil/actor/serializer.hpp>
 
 namespace nil {
     namespace actor {
@@ -25,7 +24,7 @@ namespace nil {
 
         struct error::data {
             uint8_t code;
-            atom_value category;
+            uint8_t category;
             message context;
         };
 
@@ -68,11 +67,11 @@ namespace nil {
             return *this;
         }
 
-        error::error(uint8_t x, atom_value y) : data_(x != 0 ? new data {x, y, none} : nullptr) {
+        error::error(uint8_t x, uint8_t y) : data_(x != 0 ? new data {x, y, message {}} : nullptr) {
             // nop
         }
 
-        error::error(uint8_t x, atom_value y, message z) : data_(x != 0 ? new data {x, y, std::move(z)} : nullptr) {
+        error::error(uint8_t x, uint8_t y, message z) : data_(x != 0 ? new data {x, y, std::move(z)} : nullptr) {
             // nop
         }
 
@@ -87,7 +86,7 @@ namespace nil {
             return data_->code;
         }
 
-        atom_value error::category() const noexcept {
+        uint8_t error::category() const noexcept {
             ACTOR_ASSERT(data_ != nullptr);
             return data_->category;
         }
@@ -99,26 +98,26 @@ namespace nil {
 
         int error::compare(const error &x) const noexcept {
             uint8_t x_code;
-            atom_value x_category;
+            uint8_t x_category;
             if (x) {
                 x_code = x.data_->code;
                 x_category = x.data_->category;
             } else {
                 x_code = 0;
-                x_category = atom("");
+                x_category = 0;
             }
             return compare(x_code, x_category);
         }
 
-        int error::compare(uint8_t x, atom_value y) const noexcept {
+        int error::compare(uint8_t x, uint8_t y) const noexcept {
             uint8_t mx;
-            atom_value my;
+            uint8_t my;
             if (data_ != nullptr) {
                 mx = data_->code;
                 my = data_->category;
             } else {
                 mx = 0;
-                my = atom("");
+                my = 0;
             }
             // all errors with default value are considered no error -> equal
             if (mx == x && x == 0)
@@ -151,7 +150,7 @@ namespace nil {
             return data_->code;
         }
 
-        atom_value &error::category_ref() noexcept {
+        uint8_t &error::category_ref() noexcept {
             ACTOR_ASSERT(data_ != nullptr);
             return data_->category;
         }
@@ -162,10 +161,7 @@ namespace nil {
         }
 
         std::string to_string(const error &x) {
-            if (!x)
-                return "none";
-            return deep_to_string(meta::type_name("error"), x.code(), x.category(), meta::omittable_if_empty(),
-                                  x.context());
+            return spawner_config::render(x);
         }
 
     }    // namespace actor

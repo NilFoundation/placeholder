@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -19,6 +17,10 @@
 
 namespace nil {
     namespace actor {
+
+        /// @defgroup SumType Sum Types
+        /// Opt-in sum type concept for `variant`-style types.
+        /// @{
 
         /// Concept for checking whether `T` supports the sum type API by specializing
         /// `sum_type_access`.
@@ -53,7 +55,6 @@ namespace nil {
 
         /// Returns a reference to the value of a sum type.
         /// @pre `holds_alternative<T>(x)`
-        /// @relates SumType
         template<class T, class U, class Trait = sum_type_access<U>>
         auto get(U &x) -> decltype(Trait::get(x, make_sum_type_token<Trait, T>())) {
             return Trait::get(x, make_sum_type_token<Trait, T>());
@@ -61,7 +62,6 @@ namespace nil {
 
         /// Returns a reference to the value of a sum type.
         /// @pre `holds_alternative<T>(x)`
-        /// @relates SumType
         template<class T, class U, class Trait = sum_type_access<U>>
         auto get(const U &x) -> decltype(Trait::get(x, make_sum_type_token<Trait, T>())) {
             return Trait::get(x, make_sum_type_token<Trait, T>());
@@ -69,7 +69,6 @@ namespace nil {
 
         /// Returns a pointer to the value of a sum type if it is of type `T`,
         /// `nullptr` otherwise.
-        /// @relates SumType
         template<class T, class U, class Trait = sum_type_access<U>>
         auto get_if(U *x) -> decltype(Trait::get_if(x, make_sum_type_token<Trait, T>())) {
             return Trait::get_if(x, make_sum_type_token<Trait, T>());
@@ -77,14 +76,12 @@ namespace nil {
 
         /// Returns a pointer to the value of a sum type if it is of type `T`,
         /// `nullptr` otherwise.
-        /// @relates SumType
         template<class T, class U, class Trait = sum_type_access<U>>
         auto get_if(const U *x) -> decltype(Trait::get_if(x, make_sum_type_token<Trait, T>())) {
             return Trait::get_if(x, make_sum_type_token<Trait, T>());
         }
 
         /// Returns whether a sum type has a value of type `T`.
-        /// @relates SumType
         template<class T, class U>
         bool holds_alternative(const U &x) {
             using namespace detail;
@@ -139,12 +136,13 @@ namespace nil {
         };
 
         /// Applies the values of any number of sum types to the visitor.
-        /// @relates SumType
         template<class Visitor, class T, class... Ts, class Result = sum_type_visit_result_t<Visitor, T, Ts...>>
-        typename std::enable_if<SumTypes<T, Ts...>(), Result>::type visit(Visitor &&f, T &&x, Ts &&... xs) {
+        detail::enable_if_t<SumTypes<T, Ts...>(), Result> visit(Visitor &&f, T &&x, Ts &&... xs) {
             return visit_impl<Result, sizeof...(Ts) + 1>::apply(std::forward<Visitor>(f), std::forward<T>(x),
                                                                 std::forward<Ts>(xs)...);
         }
+
+        /// @}
 
     }    // namespace actor
 }    // namespace nil

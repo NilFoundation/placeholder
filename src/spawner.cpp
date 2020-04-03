@@ -1,34 +1,32 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/spawner.hpp>
 
-#include <memory>
 #include <unordered_set>
 
+#include <nil/actor/actor.hpp>
 #include <nil/actor/spawner_config.hpp>
+#include <nil/actor/defaults.hpp>
+#include <nil/actor/detail/meta_object.hpp>
 #include <nil/actor/event_based_actor.hpp>
-#include <nil/actor/raise_error.hpp>
-#include <nil/actor/raw_event_based_actor.hpp>
-#include <nil/actor/send.hpp>
-#include <nil/actor/to_string.hpp>
-
 #include <nil/actor/policy/work_sharing.hpp>
 #include <nil/actor/policy/work_stealing.hpp>
-
+#include <nil/actor/raise_error.hpp>
+#include <nil/actor/raw_event_based_actor.hpp>
+#include <nil/actor/scheduler/abstract_coordinator.hpp>
 #include <nil/actor/scheduler/coordinator.hpp>
 #include <nil/actor/scheduler/test_coordinator.hpp>
-#include <nil/actor/scheduler/abstract_coordinator.hpp>
-#include <nil/actor/scheduler/profiled_coordinator.hpp>
+#include <nil/actor/send.hpp>
+#include <nil/actor/stateful_actor.hpp>
+#include <nil/actor/to_string.hpp>
 
 namespace nil {
     namespace actor {
@@ -66,69 +64,71 @@ namespace nil {
                     if (ptr)
                         unsubscribe_all(actor_cast<actor>(std::move(ptr)));
                 });
-                return {// set a key/value pair
-                        [=](put_atom, const std::string &key, message &msg) {
-                            ACTOR_LOG_TRACE(ACTOR_ARG(key) << ACTOR_ARG(msg));
-                            if (key == "*")
-                                return;
-                            auto &vp = self->state.data[key];
-                            vp.first = std::move(msg);
-                            for (auto &subscriber_ptr : vp.second) {
-                                // we never put a nullptr in our map
-                                auto subscriber = actor_cast<actor>(subscriber_ptr);
-                                if (subscriber != self->current_sender())
-                                    self->send(subscriber, update_atom::value, key, vp.first);
-                            }
-                            // also iterate all subscribers for '*'
-                            for (auto &subscriber : self->state.data[wildcard].second)
-                                if (subscriber != self->current_sender())
-                                    self->send(actor_cast<actor>(subscriber), update_atom::value, key, vp.first);
-                        },
-                        // get a key/value pair
-                        [=](get_atom, std::string &key) -> message {
-                            ACTOR_LOG_TRACE(ACTOR_ARG(key));
-                            if (key == wildcard) {
-                                std::vector<std::pair<std::string, message>> msgs;
-                                for (auto &kvp : self->state.data)
-                                    if (kvp.first != "*")
-                                        msgs.emplace_back(kvp.first, kvp.second.first);
-                                return make_message(std::move(msgs));
-                            }
-                            auto i = self->state.data.find(key);
-                            return make_message(std::move(key),
-                                                i != self->state.data.end() ? i->second.first : make_message());
-                        },
-                        // subscribe to a key
-                        [=](subscribe_atom, const std::string &key) {
-                            auto subscriber = actor_cast<strong_actor_ptr>(self->current_sender());
-                            ACTOR_LOG_TRACE(ACTOR_ARG(key) << ACTOR_ARG(subscriber));
-                            if (!subscriber)
-                                return;
-                            self->state.data[key].second.insert(subscriber);
-                            auto &subscribers = self->state.subscribers;
-                            auto i = subscribers.find(subscriber);
-                            if (i != subscribers.end()) {
-                                i->second.insert(key);
-                            } else {
-                                self->monitor(subscriber);
-                                subscribers.emplace(subscriber, kvstate::topic_set {key});
-                            }
-                        },
-                        // unsubscribe from a key
-                        [=](unsubscribe_atom, const std::string &key) {
-                            auto subscriber = actor_cast<strong_actor_ptr>(self->current_sender());
-                            if (!subscriber)
-                                return;
-                            ACTOR_LOG_TRACE(ACTOR_ARG(key) << ACTOR_ARG(subscriber));
-                            if (key == wildcard) {
-                                unsubscribe_all(actor_cast<actor>(std::move(subscriber)));
-                                return;
-                            }
-                            self->state.subscribers[subscriber].erase(key);
-                            self->state.data[key].second.erase(subscriber);
-                        },
-                        // get a 'named' actor from local registry
-                        [=](get_atom, atom_value name) { return self->home_system().registry().get(name); }};
+                return {
+                    // set a key/value pair
+                    [=](put_atom, const std::string &key, message &msg) {
+                        ACTOR_LOG_TRACE(ACTOR_ARG(key) << ACTOR_ARG(msg));
+                        if (key == "*")
+                            return;
+                        auto &vp = self->state.data[key];
+                        vp.first = std::move(msg);
+                        for (auto &subscriber_ptr : vp.second) {
+                            // we never put a nullptr in our map
+                            auto subscriber = actor_cast<actor>(subscriber_ptr);
+                            if (subscriber != self->current_sender())
+                                self->send(subscriber, update_atom_v, key, vp.first);
+                        }
+                        // also iterate all subscribers for '*'
+                        for (auto &subscriber : self->state.data[wildcard].second)
+                            if (subscriber != self->current_sender())
+                                self->send(actor_cast<actor>(subscriber), update_atom_v, key, vp.first);
+                    },
+                    // get a key/value pair
+                    [=](get_atom, std::string &key) -> message {
+                        ACTOR_LOG_TRACE(ACTOR_ARG(key));
+                        if (key == wildcard) {
+                            std::vector<std::pair<std::string, message>> msgs;
+                            for (auto &kvp : self->state.data)
+                                if (kvp.first != "*")
+                                    msgs.emplace_back(kvp.first, kvp.second.first);
+                            return make_message(std::move(msgs));
+                        }
+                        auto i = self->state.data.find(key);
+                        return make_message(std::move(key),
+                                            i != self->state.data.end() ? i->second.first : make_message());
+                    },
+                    // subscribe to a key
+                    [=](subscribe_atom, const std::string &key) {
+                        auto subscriber = actor_cast<strong_actor_ptr>(self->current_sender());
+                        ACTOR_LOG_TRACE(ACTOR_ARG(key) << ACTOR_ARG(subscriber));
+                        if (!subscriber)
+                            return;
+                        self->state.data[key].second.insert(subscriber);
+                        auto &subscribers = self->state.subscribers;
+                        auto i = subscribers.find(subscriber);
+                        if (i != subscribers.end()) {
+                            i->second.insert(key);
+                        } else {
+                            self->monitor(subscriber);
+                            subscribers.emplace(subscriber, kvstate::topic_set {key});
+                        }
+                    },
+                    // unsubscribe from a key
+                    [=](unsubscribe_atom, const std::string &key) {
+                        auto subscriber = actor_cast<strong_actor_ptr>(self->current_sender());
+                        if (!subscriber)
+                            return;
+                        ACTOR_LOG_TRACE(ACTOR_ARG(key) << ACTOR_ARG(subscriber));
+                        if (key == wildcard) {
+                            unsubscribe_all(actor_cast<actor>(std::move(subscriber)));
+                            return;
+                        }
+                        self->state.subscribers[subscriber].erase(key);
+                        self->state.data[key].second.erase(subscriber);
+                    },
+                    // get a 'named' actor from local registry
+                    [=](get_atom, const std::string &name) { return self->home_system().registry().get(name); },
+                };
             }
 
             // -- spawn server -------------------------------------------------------------
@@ -145,11 +145,14 @@ namespace nil {
 
             behavior spawn_serv_impl(stateful_actor<spawn_serv_state> *self) {
                 ACTOR_LOG_TRACE("");
-                return {[=](spawn_atom, const std::string &name, message &args,
-                            spawner::mpi &xs) -> expected<strong_actor_ptr> {
-                    ACTOR_LOG_TRACE(ACTOR_ARG(name) << ACTOR_ARG(args));
-                    return self->system().spawn<strong_actor_ptr>(name, std::move(args), self->context(), true, &xs);
-                }};
+                return {
+                    [=](spawn_atom, const std::string &name, message &args,
+                        spawner::mpi &xs) -> expected<strong_actor_ptr> {
+                        ACTOR_LOG_TRACE(ACTOR_ARG(name) << ACTOR_ARG(args));
+                        return self->system().spawn<strong_actor_ptr>(name, std::move(args), self->context(), true,
+                                                                      &xs);
+                    },
+                };
             }
 
             // -- stream server ------------------------------------------------------------
@@ -190,19 +193,23 @@ namespace nil {
                     return "Scheduler";
                 case middleman:
                     return "Middleman";
-                case opencl_manager:
-                    return "OpenCL Manager";
                 case openssl_manager:
                     return "OpenSSL Manager";
+                case network_manager:
+                    return "Network Manager";
                 default:
                     return "???";
             }
         }
 
+        spawner::networking_module::~networking_module() {
+            // nop
+        }
+
         spawner::spawner(spawner_config &cfg) :
-            ids_(0), types_(*this), logger_(new nil::actor::logger(*this), false), registry_(*this), groups_(*this),
-            dummy_execution_unit_(this), await_actors_before_shutdown_(true), detached_(0), cfg_(cfg),
-            logger_dtor_done_(false) {
+            profiler_(cfg.profiler), ids_(0), logger_(new nil::actor::logger(*this), false), registry_(*this),
+            groups_(*this), dummy_execution_unit_(this), await_actors_before_shutdown_(true), detached_(0), cfg_(cfg),
+            logger_dtor_done_(false), tracing_context_(cfg.tracing_context) {
             ACTOR_SET_LOGGER_SYS(this);
             for (auto &hook : cfg.thread_hooks_)
                 hook->init(*this);
@@ -210,73 +217,72 @@ namespace nil {
                 auto mod_ptr = f(*this);
                 modules_[mod_ptr->id()].reset(mod_ptr);
             }
+            // Make sure meta objects are loaded.
+            auto gmos = detail::global_meta_objects();
+            if (gmos.size() < id_block::core_module::end || gmos[id_block::core_module::begin].type_name == nullptr) {
+                ACTOR_CRITICAL(
+                    "spawner created without calling "
+                    "nil::actor::init_global_meta_objects<>() before");
+            }
+            if (modules_[module::middleman] != nullptr) {
+                if (gmos.size() < detail::io_module_end || gmos[detail::io_module_begin].type_name == nullptr) {
+                    ACTOR_CRITICAL(
+                        "I/O module loaded without calling "
+                        "nil::actor::io::middleman::init_global_meta_objects() before");
+                }
+            }
+            // Make sure we have a scheduler up and running.
             auto &sched = modules_[module::scheduler];
             using namespace scheduler;
             using policy::work_sharing;
             using policy::work_stealing;
             using share = coordinator<work_sharing>;
             using steal = coordinator<work_stealing>;
-            using profiled_share = profiled_coordinator<policy::profiled<work_sharing>>;
-            using profiled_steal = profiled_coordinator<policy::profiled<work_stealing>>;
-            // set scheduler only if not explicitly loaded by user
             if (!sched) {
                 enum sched_conf {
                     stealing = 0x0001,
                     sharing = 0x0002,
                     testing = 0x0003,
-                    profiled = 0x0100,
-                    profiled_stealing = 0x0101,
-                    profiled_sharing = 0x0102
                 };
                 sched_conf sc = stealing;
                 namespace sr = defaults::scheduler;
-                auto sr_policy = cfg.scheduler_policy;
-                if (sr_policy == atom("sharing"))
+                auto sr_policy = get_or(cfg, "scheduler.policy", sr::policy);
+                if (sr_policy == "sharing")
                     sc = sharing;
-                else if (sr_policy == atom("testing"))
+                else if (sr_policy == "testing")
                     sc = testing;
-                else if (sr_policy != atom("stealing"))
+                else if (sr_policy != "stealing")
                     std::cerr << "[WARNING] " << deep_to_string(sr_policy)
                               << " is an unrecognized scheduler pollicy, "
                                  "falling back to 'stealing' (i.e. work-stealing)"
                               << std::endl;
-                if (cfg.scheduler_enable_profiling)
-                    sc = static_cast<sched_conf>(sc | profiled);
                 switch (sc) {
                     default:    // any invalid configuration falls back to work stealing
-                        sched = std::make_unique<steal>(*this);
+                        sched.reset(new steal(*this));
                         break;
                     case sharing:
-                        sched = std::make_unique<share>(*this);
-                        break;
-                    case profiled_stealing:
-                        sched = std::make_unique<profiled_steal>(*this);
-                        break;
-                    case profiled_sharing:
-                        sched = std::make_unique<profiled_share>(*this);
+                        sched.reset(new share(*this));
                         break;
                     case testing:
-                        sched = std::make_unique<test_coordinator>(*this);
+                        sched.reset(new test_coordinator(*this));
                 }
             }
-            // initialize state for each module and give each module the opportunity
-            // to influence the system configuration, e.g., by adding more types
+            // Initialize state for each module and give each module the opportunity to
+            // adapt the system configuration.
             logger_->init(cfg);
             ACTOR_SET_LOGGER_SYS(this);
-            for (auto &mod : modules_) {
-                if (mod) {
+            for (auto &mod : modules_)
+                if (mod)
                     mod->init(cfg);
-                }
-            }
             groups_.init(cfg);
-            // spawn config and spawn servers (lazily to not access the scheduler yet)
+            // Spawn config and spawn servers (lazily to not access the scheduler yet).
             static constexpr auto Flags = hidden + lazy_init;
             spawn_serv(actor_cast<strong_actor_ptr>(spawn<Flags>(spawn_serv_impl)));
             config_serv(actor_cast<strong_actor_ptr>(spawn<Flags>(config_serv_impl)));
-            // fire up remaining modules
+            // Start all modules.
             registry_.start();
-            registry_.put(atom("SpawnServ"), spawn_serv());
-            registry_.put(atom("ConfigServ"), config_serv());
+            registry_.put("SpawnServ", spawn_serv());
+            registry_.put("ConfigServ", config_serv());
             for (auto &mod : modules_)
                 if (mod)
                     mod->start();
@@ -291,13 +297,14 @@ namespace nil {
                 if (await_actors_before_shutdown_)
                     await_all_actors_done();
                 // shutdown internal actors
-                for (auto &x : internal_actors_) {
+                auto drop = [&](auto &x) {
                     anon_send_exit(x, exit_reason::user_shutdown);
                     x = nullptr;
-                }
-                registry_.erase(atom("SpawnServ"));
-                registry_.erase(atom("ConfigServ"));
-                registry_.erase(atom("StreamServ"));
+                };
+                drop(spawn_serv_);
+                drop(config_serv_);
+                registry_.erase("SpawnServ");
+                registry_.erase("ConfigServ");
                 // group module is the first one, relies on MM
                 groups_.stop();
                 // stop modules in reverse order
@@ -327,7 +334,7 @@ namespace nil {
         /// Returns the scheduler instance.
         scheduler::abstract_coordinator &spawner::scheduler() {
             using ptr = scheduler::abstract_coordinator *;
-            return *dynamic_cast<ptr>(modules_[module::scheduler].get());
+            return *static_cast<ptr>(modules_[module::scheduler].get());
         }
 
         nil::actor::logger &spawner::logger() {
@@ -338,17 +345,13 @@ namespace nil {
             return registry_;
         }
 
-        const uniform_type_info_map &spawner::types() const {
-            return types_;
-        }
-
         std::string spawner::render(const error &x) const {
             if (!x)
                 return to_string(x);
             auto &xs = config().error_renderers;
             auto i = xs.find(x.category());
             if (i != xs.end())
-                return i->second(x.code(), x.category(), x.context());
+                return i->second(x.code(), x.context());
             return to_string(x);
         }
 
@@ -367,17 +370,6 @@ namespace nil {
             return *reinterpret_cast<io::middleman *>(clptr->subtype_ptr());
         }
 
-        bool spawner::has_opencl_manager() const {
-            return modules_[module::opencl_manager] != nullptr;
-        }
-
-        opencl::manager &spawner::opencl_manager() const {
-            auto &clptr = modules_[module::opencl_manager];
-            if (!clptr)
-                ACTOR_RAISE_ERROR("cannot access opencl manager: module not loaded");
-            return *reinterpret_cast<opencl::manager *>(clptr->subtype_ptr());
-        }
-
         bool spawner::has_openssl_manager() const {
             return modules_[module::openssl_manager] != nullptr;
         }
@@ -387,6 +379,17 @@ namespace nil {
             if (!clptr)
                 ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
             return *reinterpret_cast<openssl::manager *>(clptr->subtype_ptr());
+        }
+
+        bool spawner::has_network_manager() const noexcept {
+            return modules_[module::network_manager] != nullptr;
+        }
+
+        net::middleman &spawner::network_manager() {
+            auto &clptr = modules_[module::network_manager];
+            if (!clptr)
+                ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
+            return *reinterpret_cast<net::middleman *>(clptr->subtype_ptr());
         }
 
         scoped_execution_unit *spawner::dummy_execution_unit() {
@@ -403,6 +406,24 @@ namespace nil {
 
         void spawner::await_all_actors_done() const {
             registry_.await_running_count_equal(0);
+        }
+
+        void spawner::monitor(const node_id &node, const actor_addr &observer) {
+            // TODO: Currently does not work with other modules, in particular caf_net.
+            auto mm = modules_[module::middleman].get();
+            if (mm == nullptr)
+                return;
+            auto mm_dptr = static_cast<networking_module *>(mm);
+            mm_dptr->monitor(node, observer);
+        }
+
+        void spawner::demonitor(const node_id &node, const actor_addr &observer) {
+            // TODO: Currently does not work with other modules, in particular caf_net.
+            auto mm = modules_[module::middleman].get();
+            if (mm == nullptr)
+                return;
+            auto mm_dptr = static_cast<networking_module *>(mm);
+            mm_dptr->demonitor(node, observer);
         }
 
         actor_clock &spawner::clock() noexcept {
@@ -435,10 +456,10 @@ namespace nil {
                 hook->thread_terminates();
         }
 
-        expected<strong_actor_ptr> spawner::dyn_spawn_impl(const std::string &name, message &args, execution_unit *ctx,
-                                                           bool check_interface, optional<const mpi &> expected_ifs) {
-            ACTOR_LOG_TRACE(ACTOR_ARG(name)
-                            << ACTOR_ARG(args) << ACTOR_ARG(check_interface) << ACTOR_ARG(expected_ifs));
+        expected<strong_actor_ptr> spawner::dyn_spawn_impl(const std::string &name, message &args,
+                                                                execution_unit *ctx, bool check_interface,
+                                                                optional<const mpi &> expected_ifs) {
+            ACTOR_LOG_TRACE(ACTOR_ARG(name) << ACTOR_ARG(args) << ACTOR_ARG(check_interface) << ACTOR_ARG(expected_ifs));
             if (name.empty())
                 return sec::invalid_argument;
             auto &fs = cfg_.actor_factories;

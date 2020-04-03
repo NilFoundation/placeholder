@@ -1,11 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2019 Dominik Charousset
-// Copyright (c) 2019 Nil Foundation AG
-// Copyright (c) 2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -23,8 +23,9 @@ namespace nil {
         template<class Enum>
         class error_code {
         public:
-            typedef Enum enum_type;
-            typedef typename std::underlying_type<enum_type>::type underlying_type;
+            using enum_type = Enum;
+
+            using underlying_type = std::underlying_type_t<enum_type>;
 
             constexpr error_code() noexcept : value_(static_cast<Enum>(0)) {
                 // nop
@@ -64,5 +65,6 @@ namespace nil {
         auto to_string(error_code<Enum> x) -> decltype(to_string(x.value())) {
             return to_string(x.value());
         }
+
     }    // namespace actor
 }    // namespace nil

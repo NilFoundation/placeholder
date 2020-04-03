@@ -1,11 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2019 Dominik Charousset
-// Copyright (c) 2019 Nil Foundation AG
-// Copyright (c) 2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -16,7 +16,8 @@
 #include <nil/actor/config.hpp>
 #include <nil/actor/detail/parser/add_ascii.hpp>
 #include <nil/actor/detail/parser/chars.hpp>
-#include <nil/actor/detail/parser/state.hpp>
+#include <nil/actor/detail/parser/is_char.hpp>
+#include <nil/actor/detail/parser/is_digit.hpp>
 #include <nil/actor/detail/parser/sub_ascii.hpp>
 #include <nil/actor/detail/scope_guard.hpp>
 #include <nil/actor/pec.hpp>
@@ -25,27 +26,24 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil {
-    namespace actor {
-        namespace detail {
-            namespace parser {
+namespace nil::actor::detail::parser {
 
-                /// Reads a number, i.e., on success produces either an `int64_t` or a
-                /// `double`.
-                template<class Iterator, class Sentinel, class Consumer>
-                void read_unsigned_integer(state<Iterator, Sentinel> &ps, Consumer &&consumer) {
-                    using consumer_type = typename std::decay<Consumer>::type;
-                    using value_type = typename consumer_type::value_type;
-                    static_assert(std::is_integral<value_type>::value && std::is_unsigned<value_type>::value,
-                                  "expected an unsigned integer type");
-                    value_type result = 0;
-                    // Computes the result on success.
-                    auto g = nil::actor::detail::make_scope_guard([&] {
-                        if (ps.code <= pec::trailing_character) {
-                            consumer.value(std::move(result));
-                        }
-                    });
-                    // clang-format off
+    /// Reads a number, i.e., on success produces either an `int64_t` or a
+    /// `double`.
+    template<class State, class Consumer>
+    void read_unsigned_integer(State &ps, Consumer &&consumer) {
+        using consumer_type = typename std::decay<Consumer>::type;
+        using value_type = typename consumer_type::value_type;
+        static_assert(std::is_integral<value_type>::value && std::is_unsigned<value_type>::value,
+                      "expected an unsigned integer type");
+        value_type result = 0;
+        // Computes the result on success.
+        auto g = nil::actor::detail::make_scope_guard([&] {
+            if (ps.code <= pec::trailing_character) {
+                consumer.value(std::move(result));
+            }
+        });
+        // clang-format off
   // Definition of our parser FSM.
   start();
   state(init) {
@@ -93,13 +91,10 @@ namespace nil {
                pec::integer_overflow)
   }
   fin();
-                    // clang-format on
-                }
+        // clang-format on
+    }
 
-            }    // namespace parser
-        }        // namespace detail
-    }            // namespace actor
-}    // namespace nil
+}    // namespace nil::actor::detail::parser
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

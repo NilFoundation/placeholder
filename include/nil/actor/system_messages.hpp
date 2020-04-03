@@ -1,28 +1,25 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <vector>
 #include <cstdint>
 #include <type_traits>
+#include <vector>
 
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/deep_to_string.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/group.hpp>
-#include <nil/actor/stream_slot.hpp>
-
 #include <nil/actor/meta/type_name.hpp>
+#include <nil/actor/stream_slot.hpp>
 
 namespace nil {
     namespace actor {
@@ -37,6 +34,11 @@ namespace nil {
             /// The exit reason of the terminated actor.
             error reason;
         };
+
+        /// @relates exit_msg
+        inline bool operator==(const exit_msg &x, const exit_msg &y) noexcept {
+            return x.source == y.source && x.reason == y.reason;
+        }
 
         /// @relates exit_msg
         template<class Inspector>
@@ -81,11 +83,37 @@ namespace nil {
             return f(meta::type_name("group_down_msg"), x.source);
         }
 
+        /// Sent to all actors monitoring a node when CAF loses connection to it.
+        struct node_down_msg {
+            /// The disconnected node.
+            node_id node;
+
+            /// The cause for the disconnection. No error (a default-constructed error
+            /// object) indicates an ordinary shutdown.
+            error reason;
+        };
+
+        /// @relates node_down_msg
+        inline bool operator==(const node_down_msg &x, const node_down_msg &y) noexcept {
+            return x.node == y.node && x.reason == y.reason;
+        }
+
+        /// @relates node_down_msg
+        inline bool operator!=(const node_down_msg &x, const node_down_msg &y) noexcept {
+            return !(x == y);
+        }
+
+        /// @relates node_down_msg
+        template<class Inspector>
+        typename Inspector::result_type inspect(Inspector &f, node_down_msg &x) {
+            return f(meta::type_name("node_down_msg"), x.node, x.reason);
+        }
+
         /// Signalizes a timeout event.
         /// @note This message is handled implicitly by the runtime system.
         struct timeout_msg {
-            /// Type of the timeout (either `receive_atom` or `cycle_atom`).
-            atom_value type;
+            /// Type of the timeout (usually either "receive" or "cycle").
+            std::string type;
             /// Actor-specific timeout ID.
             uint64_t timeout_id;
         };
@@ -120,5 +148,6 @@ namespace nil {
         typename Inspector::result_type inspect(Inspector &f, open_stream_msg &x) {
             return f(meta::type_name("open_stream_msg"), x.slot, x.msg, x.prev_stage, x.original_stage, x.priority);
         }
+
     }    // namespace actor
 }    // namespace nil

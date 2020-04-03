@@ -1,88 +1,83 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
+
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/scheduler/abstract_coordinator.hpp>
 
-namespace nil {
-    namespace actor {
-        namespace policy {
+namespace nil::actor::policy {
 
-            /// This concept class describes a policy for worker
-            /// and coordinator of the scheduler.
-            class scheduler_policy {
-            public:
-                /// Policy-specific data fields for the coordinator.
-                struct coordinator_data {
-                    explicit coordinator_data(scheduler::abstract_coordinator *);
-                };
+    /// This concept class describes a policy for worker
+    /// and coordinator of the scheduler.
+    class BOOST_SYMBOL_VISIBLE scheduler_policy {
+    public:
+        /// Policy-specific data fields for the coordinator.
+        struct coordinator_data {
+            explicit coordinator_data(scheduler::abstract_coordinator *);
+        };
 
-                /// Policy-specific data fields for the worker.
-                struct worker_data {
-                    explicit worker_data(scheduler::abstract_coordinator *);
-                };
+        /// Policy-specific data fields for the worker.
+        struct worker_data {
+            explicit worker_data(scheduler::abstract_coordinator *);
+        };
 
-                /// Enqueues a new job to coordinator.
-                template<class Coordinator>
-                void central_enqueue(Coordinator *self, resumable *job);
+        /// Enqueues a new job to coordinator.
+        template<class Coordinator>
+        void central_enqueue(Coordinator *self, resumable *job);
 
-                /// Enqueues a new job to the worker's queue from an
-                /// external source, i.e., from any other thread.
-                template<class Worker>
-                void external_enqueue(Worker *self, resumable *job);
+        /// Enqueues a new job to the worker's queue from an
+        /// external source, i.e., from any other thread.
+        template<class Worker>
+        void external_enqueue(Worker *self, resumable *job);
 
-                /// Enqueues a new job to the worker's queue from an
-                /// internal source, i.e., from the same thread.
-                template<class Worker>
-                void internal_enqueue(Worker *self, resumable *job);
+        /// Enqueues a new job to the worker's queue from an
+        /// internal source, i.e., from the same thread.
+        template<class Worker>
+        void internal_enqueue(Worker *self, resumable *job);
 
-                /// Called whenever resumable returned for reason `resumable::resume_later`.
-                template<class Worker>
-                void resume_job_later(Worker *self, resumable *job);
+        /// Called whenever resumable returned for reason `resumable::resume_later`.
+        template<class Worker>
+        void resume_job_later(Worker *self, resumable *job);
 
-                /// Blocks until a job could be dequeued.
-                /// Called by the worker itself to acquire a new job.
-                template<class Worker>
-                resumable *dequeue(Worker *self);
+        /// Blocks until a job could be dequeued.
+        /// Called by the worker itself to acquire a new job.
+        template<class Worker>
+        resumable *dequeue(Worker *self);
 
-                /// Performs cleanup action before a shutdown takes place.
-                template<class Worker>
-                void before_shutdown(Worker *self);
+        /// Performs cleanup action before a shutdown takes place.
+        template<class Worker>
+        void before_shutdown(Worker *self);
 
-                /// Called immediately before resuming an actor.
-                template<class Worker>
-                void before_resume(Worker *self, resumable *job);
+        /// Called immediately before resuming an actor.
+        template<class Worker>
+        void before_resume(Worker *self, resumable *job);
 
-                /// Called whenever an actor has been resumed. This function can
-                /// prepare some fields before the next resume operation takes place
-                /// or perform cleanup actions between to actor runs.
-                template<class Worker>
-                void after_resume(Worker *self, resumable *job);
+        /// Called whenever an actor has been resumed. This function can
+        /// prepare some fields before the next resume operation takes place
+        /// or perform cleanup actions between to actor runs.
+        template<class Worker>
+        void after_resume(Worker *self, resumable *job);
 
-                /// Called whenever an actor has completed a job.
-                template<class Worker>
-                void after_completion(Worker *self, resumable *job);
+        /// Called whenever an actor has completed a job.
+        template<class Worker>
+        void after_completion(Worker *self, resumable *job);
 
-                /// Applies given functor to all resumables attached to a worker.
-                template<class Worker, typename UnaryFunction>
-                void foreach_resumable(Worker *self, UnaryFunction f);
+        /// Applies given functor to all resumables attached to a worker.
+        template<class Worker, typename UnaryFunction>
+        void foreach_resumable(Worker *self, UnaryFunction f);
 
-                /// Applies given functor to all resumables attached to the coordinator.
-                template<class Coordinator, typename UnaryFunction>
-                void foreach_central_resumable(Coordinator *self, UnaryFunction f);
-            };
+        /// Applies given functor to all resumables attached to the coordinator.
+        template<class Coordinator, typename UnaryFunction>
+        void foreach_central_resumable(Coordinator *self, UnaryFunction f);
+    };
 
-        }    // namespace policy
-    }        // namespace actor
-}    // namespace nil
+}    // namespace nil::actor::policy

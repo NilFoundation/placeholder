@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -19,12 +17,16 @@
 
 #include <nil/actor/byte_address.hpp>
 #include <nil/actor/detail/comparable.hpp>
+
 #include <nil/actor/fwd.hpp>
+#include <nil/actor/ipv4_address.hpp>
 
 namespace nil {
     namespace actor {
 
-        class ipv6_address : public byte_address<ipv6_address>, detail::comparable<ipv6_address, ipv4_address> {
+        class BOOST_SYMBOL_VISIBLE ipv6_address : public byte_address<ipv6_address>,
+                                                  detail::comparable<ipv6_address>,
+                                                  detail::comparable<ipv6_address, ipv4_address> {
         public:
             // -- constants --------------------------------------------------------------
 
@@ -58,7 +60,9 @@ namespace nil {
 
             // -- comparison -------------------------------------------------------------
 
-            using super::compare;
+            /// Returns a negative number if `*this < other`, zero if `*this == other`
+            /// and a positive number if `*this > other`.
+            int compare(ipv6_address other) const noexcept;
 
             /// Returns a negative number if `*this < other`, zero if `*this == other`
             /// and a positive number if `*this > other`.
@@ -108,7 +112,7 @@ namespace nil {
                 return f(x.bytes_);
             }
 
-            friend std::string to_string(ipv6_address x);
+            friend BOOST_SYMBOL_VISIBLE std::string to_string(ipv6_address x);
 
         private:
             // -- member variables -------------------------------------------------------
@@ -121,7 +125,7 @@ namespace nil {
             };
         };
 
-        error parse(string_view str, ipv6_address &dest);
+        BOOST_SYMBOL_VISIBLE error parse(string_view str, ipv6_address &dest);
 
     }    // namespace actor
 }    // namespace nil

@@ -1,51 +1,69 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE continuous_streaming_test
+#define BOOST_TEST_MODULE continuous_streaming
+
+#include <nil/actor/attach_continuous_stream_stage.hpp>
+
+#include <nil/actor/test/dsl.hpp>
 
 #include <memory>
 #include <numeric>
 
-#include <nil/actor/test/dsl.hpp>
-
 #include <nil/actor/spawner.hpp>
 #include <nil/actor/spawner_config.hpp>
+#include <nil/actor/attach_stream_sink.hpp>
 #include <nil/actor/event_based_actor.hpp>
 #include <nil/actor/stateful_actor.hpp>
-
-#include <nil/actor/spawner_config.hpp>
 
 using std::string;
 
 using namespace nil::actor;
 
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<template<typename...> class P, typename... T>
+            struct print_log_value<P<T...>> {
+                void operator()(std::ostream &, P<T...> const &) {
+                }
+            };
+
+            template<template<typename, std::size_t> class P, typename T, std::size_t S>
+            struct print_log_value<P<T, S>> {
+                void operator()(std::ostream &, P<T, S> const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
+
 namespace {
 
     /// Returns the sum of natural numbers up until `n`, i.e., 1 + 2 + ... + n.
-    int sum(int n) {
+    int32_t sum(int32_t n) {
         return (n * (n + 1)) / 2;
     }
 
     TESTEE_SETUP();
 
     TESTEE_STATE(file_reader) {
-        std::vector<int> buf;
+        std::vector<int32_t> buf;
     };
 
     VARARGS_TESTEE(file_reader, size_t buf_size) {
-        return {[=](string &fname) -> output_stream<int, string> {
+        return {[=](string &fname) -> result<stream<int32_t>, string> {
             BOOST_CHECK_EQUAL(fname, "numbers.txt");
             BOOST_CHECK_EQUAL(self->mailbox().empty(), true);
-            return self->make_source(
+            return attach_stream_source(
+                self,
                 // forward file name in handshake to next stage
                 std::forward_as_tuple(std::move(fname)),
                 // initialize state
@@ -55,13 +73,12 @@ namespace {
                     std::iota(xs.begin(), xs.end(), 1);
                 },
                 // get next element
-                [=](unit_t &, downstream<int> &out, size_t num) {
+                [=](unit_t &, downstream<int32_t> &out, size_t num) {
                     auto &xs = self->state.buf;
                     BOOST_TEST_MESSAGE("push " << num << " messages downstream");
                     auto n = std::min(num, xs.size());
-                    for (size_t i = 0; i < n; ++i) {
+                    for (size_t i = 0; i < n; ++i)
                         out.push(xs[i]);
-                    }
                     xs.erase(xs.begin(), xs.begin() + static_cast<ptrdiff_t>(n));
                 },
                 // check whether we reached the end
@@ -76,20 +93,21 @@ namespace {
     }
 
     TESTEE_STATE(sum_up) {
-        int x = 0;
+        int32_t x = 0;
     };
 
     TESTEE(sum_up) {
-        return {[=](stream<int> &in, const string &fname) {
+        return {[=](stream<int32_t> &in, const string &fname) {
                     BOOST_CHECK_EQUAL(fname, "numbers.txt");
-                    using int_ptr = int *;
-                    return self->make_sink(
+                    using int_ptr = int32_t *;
+                    return attach_stream_sink(
+                        self,
                         // input stream
                         in,
                         // initialize state
                         [=](int_ptr &x) { x = &self->state.x; },
                         // processing step
-                        [](int_ptr &x, int y) { *x += y; },
+                        [](int_ptr &x, int32_t y) { *x += y; },
                         // cleanup
                         [=](int_ptr &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); });
                 },
@@ -100,17 +118,18 @@ namespace {
     }
 
     TESTEE_STATE(stream_multiplexer) {
-        stream_stage_ptr<int, broadcast_downstream_manager<int>> stage;
+        stream_stage_ptr<int32_t, broadcast_downstream_manager<int32_t>> stage;
     };
 
     TESTEE(stream_multiplexer) {
-        self->state.stage = self->make_continuous_stage(
+        self->state.stage = attach_continuous_stream_stage(
+            self,
             // initialize state
             [](unit_t &) {
                 // nop
             },
             // processing step
-            [](unit_t &, downstream<int> &out, int x) { out.push(x); },
+            [](unit_t &, downstream<int32_t> &out, int32_t x) { out.push(x); },
             // cleanup
             [=](unit_t &, const error &) { BOOST_TEST_MESSAGE(self->name() << " is done"); });
         return {
@@ -118,11 +137,11 @@ namespace {
                 BOOST_TEST_MESSAGE("received 'join' request");
                 return self->state.stage->add_outbound_path(std::make_tuple("numbers.txt"));
             },
-            [=](const stream<int> &in, std::string &fname) {
+            [=](const stream<int32_t> &in, std::string &fname) {
                 BOOST_CHECK_EQUAL(fname, "numbers.txt");
                 return self->state.stage->add_inbound_path(in);
             },
-            [=](close_atom, int sink_index) {
+            [=](close_atom, int32_t sink_index) {
                 auto &out = self->state.stage->out();
                 out.close(out.path_slots().at(static_cast<size_t>(sink_index)));
             },
@@ -137,15 +156,15 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(local_streaming_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_fork_test) {
+BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_fork) {
     auto src = sys.spawn(file_reader, 50u);
     auto stg = sys.spawn(stream_multiplexer);
     auto snk1 = sys.spawn(sum_up);
     auto snk2 = sys.spawn(sum_up);
     auto &st = deref<stream_multiplexer_actor>(stg).state;
     BOOST_TEST_MESSAGE("connect sinks to the stage (fork)");
-    self->send(snk1, join_atom::value, stg);
-    self->send(snk2, join_atom::value, stg);
+    self->send(snk1, join_atom_v, stg);
+    self->send(snk2, join_atom_v, stg);
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
     BOOST_TEST_MESSAGE("connect source to the stage (fork)");
@@ -161,14 +180,14 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_fork_test) {
     self->send_exit(stg, exit_reason::kill);
 }
 
-BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_join_test) {
+BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_join) {
     auto src1 = sys.spawn(file_reader, 50u);
     auto src2 = sys.spawn(file_reader, 50u);
     auto stg = sys.spawn(stream_multiplexer);
     auto snk = sys.spawn(sum_up);
     auto &st = deref<stream_multiplexer_actor>(stg).state;
     BOOST_TEST_MESSAGE("connect sink to the stage");
-    self->send(snk, join_atom::value, stg);
+    self->send(snk, join_atom_v, stg);
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 1u);
     BOOST_TEST_MESSAGE("connect sources to the stage (join)");
@@ -184,15 +203,15 @@ BOOST_AUTO_TEST_CASE(depth_3_pipeline_with_join_test) {
     self->send_exit(stg, exit_reason::kill);
 }
 
-BOOST_AUTO_TEST_CASE(closing_downstreams_before_end_of_stream_test) {
+BOOST_AUTO_TEST_CASE(closing_downstreams_before_end_of_stream) {
     auto src = sys.spawn(file_reader, 10000u);
     auto stg = sys.spawn(stream_multiplexer);
     auto snk1 = sys.spawn(sum_up);
     auto snk2 = sys.spawn(sum_up);
     auto &st = deref<stream_multiplexer_actor>(stg).state;
     BOOST_TEST_MESSAGE("connect sinks to the stage (fork)");
-    self->send(snk1, join_atom::value, stg);
-    self->send(snk2, join_atom::value, stg);
+    self->send(snk1, join_atom_v, stg);
+    self->send(snk2, join_atom_v, stg);
     consume_messages();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 2u);
     BOOST_TEST_MESSAGE("connect source to the stage (fork)");
@@ -212,8 +231,8 @@ BOOST_AUTO_TEST_CASE(closing_downstreams_before_end_of_stream_test) {
     BOOST_REQUIRE_GT(next_pending, 0);
     auto sink1_result = sum(next_pending - 1);
     BOOST_TEST_MESSAGE("gracefully close sink 1, next pending: " << next_pending);
-    self->send(stg, close_atom::value, 0);
-    expect((atom_value, int), from(self).to(stg));
+    self->send(stg, close_atom_v, 0);
+    expect((close_atom, int32_t), from(self).to(stg));
     BOOST_TEST_MESSAGE("ship remaining elements");
     run();
     BOOST_CHECK_EQUAL(st.stage->out().num_paths(), 1u);

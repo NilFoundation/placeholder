@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -18,7 +16,6 @@
 
 #include <nil/actor/config.hpp>
 #include <nil/actor/detail/parser/read_signed_integer.hpp>
-#include <nil/actor/detail/parser/state.hpp>
 #include <nil/actor/detail/scope_guard.hpp>
 #include <nil/actor/optional.hpp>
 #include <nil/actor/pec.hpp>
@@ -28,31 +25,28 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil {
-    namespace actor {
-        namespace detail {
-            namespace parser {
+namespace nil::actor::detail::parser {
 
-                /// Reads a timespan.
-                template<class Iterator, class Sentinel, class Consumer>
-                void read_timespan(state<Iterator, Sentinel> &ps, Consumer &&consumer, optional<int64_t> num = none) {
-                    using namespace std::chrono;
-                    struct interim_consumer {
-                        using value_type = int64_t;
+    /// Reads a timespan.
+    template<class State, class Consumer>
+    void read_timespan(State &ps, Consumer &&consumer, optional<int64_t> num = none) {
+        using namespace std::chrono;
+        struct interim_consumer {
+            using value_type = int64_t;
 
-                        void value(value_type y) {
-                            x = y;
-                        }
+            void value(value_type y) {
+                x = y;
+            }
 
-                        value_type x = 0;
-                    };
-                    interim_consumer ic;
-                    timespan result;
-                    auto g = make_scope_guard([&] {
-                        if (ps.code <= pec::trailing_character)
-                            consumer.value(std::move(result));
-                    });
-                    // clang-format off
+            value_type x = 0;
+        };
+        interim_consumer ic;
+        timespan result;
+        auto g = make_scope_guard([&] {
+            if (ps.code <= pec::trailing_character)
+                consumer.value(std::move(result));
+        });
+        // clang-format off
   start();
   state(init) {
     epsilon_if(num, has_integer, any_char, ic.x = *num)
@@ -82,13 +76,10 @@ namespace nil {
     // nop
   }
   fin();
-                    // clang-format on
-                }
+        // clang-format on
+    }
 
-            }    // namespace parser
-        }        // namespace detail
-    }            // namespace actor
-}    // namespace nil
+}    // namespace nil::actor::detail::parser
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

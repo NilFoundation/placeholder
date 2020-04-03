@@ -1,34 +1,22 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE string_view_test
+#define BOOST_TEST_MODULE string_view
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-
-#include <nil/actor/config.hpp>
 #include <nil/actor/string_view.hpp>
+
+#include <nil/actor/test/dsl.hpp>
 
 using namespace nil::actor;
 
-namespace {
-
-    struct fixture {};
-
-}    // namespace
-
-BOOST_FIXTURE_TEST_SUITE(string_view_tests, fixture)
-
-BOOST_AUTO_TEST_CASE(default_construction_test) {
+BOOST_AUTO_TEST_CASE(default_construction) {
     string_view x;
     string_view y;
     BOOST_CHECK(x.empty());
@@ -37,7 +25,7 @@ BOOST_AUTO_TEST_CASE(default_construction_test) {
     BOOST_CHECK_EQUAL(y, y);
 }
 
-BOOST_AUTO_TEST_CASE(cstring_conversion_test) {
+BOOST_AUTO_TEST_CASE(cstring_conversion) {
     string_view x = "abc";
     BOOST_CHECK_EQUAL(x.size(), 3u);
     BOOST_CHECK_EQUAL(x[0], 'a');
@@ -49,7 +37,7 @@ BOOST_AUTO_TEST_CASE(cstring_conversion_test) {
     BOOST_CHECK_EQUAL(x, "def");
 }
 
-BOOST_AUTO_TEST_CASE(string_conversion_test) {
+BOOST_AUTO_TEST_CASE(string_conversion) {
     std::string x = "abc";
     string_view y;
     y = x;
@@ -58,7 +46,23 @@ BOOST_AUTO_TEST_CASE(string_conversion_test) {
     f(x);
 }
 
-BOOST_AUTO_TEST_CASE(compare_test) {
+BOOST_AUTO_TEST_CASE(substrings) {
+    string_view x = "abcdefghi";
+    x.remove_prefix(3);
+    BOOST_CHECK_EQUAL(x, "defghi");
+    x = "abcdefghi";
+    x.remove_suffix(3);
+    BOOST_CHECK_EQUAL(x, "abcdef");
+    BOOST_CHECK_EQUAL(x.substr(3, 3), "def");
+    x.remove_prefix(9);
+    BOOST_CHECK_EQUAL(x, "");
+    x.remove_prefix(9);
+    BOOST_CHECK_EQUAL(x, "");
+    BOOST_CHECK_EQUAL(x.substr(9), "");
+    BOOST_CHECK_EQUAL(x.substr(0, 0), "");
+}
+
+BOOST_AUTO_TEST_CASE(compare) {
     // testees
     string_view x = "abc";
     string_view y = "bcd";
@@ -84,7 +88,7 @@ BOOST_AUTO_TEST_CASE(compare_test) {
     BOOST_CHECK(string_view("a/") != string_view("a/b"));
 }
 
-BOOST_AUTO_TEST_CASE(copy_test) {
+BOOST_AUTO_TEST_CASE(copy) {
     char buf[10];
     string_view str = "hello";
     auto n = str.copy(buf, str.size());
@@ -98,7 +102,7 @@ BOOST_AUTO_TEST_CASE(copy_test) {
     BOOST_CHECK(strcmp("lo", buf) == 0);
 }
 
-BOOST_AUTO_TEST_CASE(find_test) {
+BOOST_AUTO_TEST_CASE(find) {
     // Check whether string_view behaves exactly like std::string.
     string_view x = "abcdef";
     std::string y = "abcdef";
@@ -115,7 +119,7 @@ BOOST_AUTO_TEST_CASE(find_test) {
     BOOST_CHECK_EQUAL(x.find("bc", 2, 2), y.find("bc", 2, 2));
 }
 
-BOOST_AUTO_TEST_CASE(rfind_test) {
+BOOST_AUTO_TEST_CASE(rfind) {
     // Check whether string_view behaves exactly like std::string.
     string_view x = "abccba";
     std::string y = "abccba";
@@ -132,7 +136,7 @@ BOOST_AUTO_TEST_CASE(rfind_test) {
     BOOST_CHECK_EQUAL(x.rfind("bc", 2, 2), y.rfind("bc", 2, 2));
 }
 
-BOOST_AUTO_TEST_CASE(find_first_of_test) {
+BOOST_AUTO_TEST_CASE(find_first_of) {
     // Check whether string_view behaves exactly like std::string.
     string_view x = "abcdef";
     std::string y = "abcdef";
@@ -149,7 +153,7 @@ BOOST_AUTO_TEST_CASE(find_first_of_test) {
     BOOST_CHECK_EQUAL(x.find_first_of("bc", 2, 2), y.find_first_of("bc", 2, 2));
 }
 
-BOOST_AUTO_TEST_CASE(find_last_of_test) {
+BOOST_AUTO_TEST_CASE(find_last_of) {
     // Check whether string_view behaves exactly like std::string.
     string_view x = "abcdef";
     std::string y = "abcdef";
@@ -166,7 +170,7 @@ BOOST_AUTO_TEST_CASE(find_last_of_test) {
     BOOST_CHECK_EQUAL(x.find_last_of("bc", 2, 2), y.find_last_of("bc", 2, 2));
 }
 
-BOOST_AUTO_TEST_CASE(find_first_not_of_test) {
+BOOST_AUTO_TEST_CASE(find_first_not_of) {
     // Check whether string_view behaves exactly like std::string.
     string_view x = "abcdef";
     std::string y = "abcdef";
@@ -183,7 +187,7 @@ BOOST_AUTO_TEST_CASE(find_first_not_of_test) {
     BOOST_CHECK_EQUAL(x.find_first_not_of("bc", 2, 2), y.find_first_not_of("bc", 2, 2));
 }
 
-BOOST_AUTO_TEST_CASE(find_last_not_of_test) {
+BOOST_AUTO_TEST_CASE(find_last_not_of) {
     // Check whether string_view behaves exactly like std::string.
     string_view x = "abcdef";
     std::string y = "abcdef";
@@ -199,5 +203,3 @@ BOOST_AUTO_TEST_CASE(find_last_not_of_test) {
     BOOST_CHECK_EQUAL(x.find_last_not_of("bc", 0, 1), y.find_last_not_of("bc", 0, 1));
     BOOST_CHECK_EQUAL(x.find_last_not_of("bc", 2, 2), y.find_last_not_of("bc", 2, 2));
 }
-
-BOOST_AUTO_TEST_SUITE_END()

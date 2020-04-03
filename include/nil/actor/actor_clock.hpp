@@ -1,18 +1,17 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
 #include <chrono>
+#include <string>
 
 #include <nil/actor/fwd.hpp>
 
@@ -20,7 +19,7 @@ namespace nil {
     namespace actor {
 
         /// A monotonic clock for scheduling timeouts and delayed messages.
-        class actor_clock {
+        class BOOST_SYMBOL_VISIBLE actor_clock {
         public:
             // -- member types -----------------------------------------------------------
 
@@ -30,7 +29,7 @@ namespace nil {
             /// Discrete point in time.
             using time_point = typename clock_type::time_point;
 
-            /// Difference between two points in time.
+            /// Time interval.
             using duration_type = typename clock_type::duration;
 
             // -- constructors, destructors, and assignment operators --------------------
@@ -42,24 +41,18 @@ namespace nil {
             /// Returns the current wall-clock time.
             virtual time_point now() const noexcept;
 
-            /// Returns the difference between `t0` and `t1`, allowing the clock to
-            /// return an arbitrary value depending on the measurement that took place
-            /// and the units measured.
-            virtual duration_type difference(atom_value measurement, long units, time_point t0, time_point t1) const
-                noexcept;
-
             /// Schedules a `timeout_msg` for `self` at time point `t`, overriding any
             /// previous receive timeout.
-            virtual void set_ordinary_timeout(time_point t, abstract_actor *self, atom_value type, uint64_t id) = 0;
+            virtual void set_ordinary_timeout(time_point t, abstract_actor *self, std::string type, uint64_t id) = 0;
 
             /// Schedules a `timeout_msg` for `self` at time point `t`.
-            virtual void set_multi_timeout(time_point t, abstract_actor *self, atom_value type, uint64_t id) = 0;
+            virtual void set_multi_timeout(time_point t, abstract_actor *self, std::string type, uint64_t id) = 0;
 
             /// Schedules a `sec::request_timeout` for `self` at time point `t`.
             virtual void set_request_timeout(time_point t, abstract_actor *self, message_id id) = 0;
 
             /// Cancels a pending receive timeout.
-            virtual void cancel_ordinary_timeout(abstract_actor *self, atom_value type) = 0;
+            virtual void cancel_ordinary_timeout(abstract_actor *self, std::string type) = 0;
 
             /// Cancels the pending request timeout for `id`.
             virtual void cancel_request_timeout(abstract_actor *self, message_id id) = 0;

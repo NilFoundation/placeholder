@@ -1,29 +1,36 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE uri_test
+#define BOOST_TEST_MODULE uri
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
+#include <nil/actor/uri.hpp>
 
-#include <nil/actor/config.hpp>
 #include <nil/actor/test/dsl.hpp>
 
+#include <nil/actor/byte_buffer.hpp>
 #include <nil/actor/ipv4_address.hpp>
-#include <nil/actor/uri.hpp>
 #include <nil/actor/uri_builder.hpp>
-#include <nil/actor/error_code.hpp>
 
 using namespace nil::actor;
+
+namespace boost {
+    namespace test_tools {
+        namespace tt_detail {
+            template<>
+            struct print_log_value<uri> {
+                void operator()(std::ostream &, uri const &) {
+                }
+            };
+        }    // namespace tt_detail
+    }        // namespace test_tools
+}    // namespace boost
 
 namespace {
 
@@ -52,17 +59,15 @@ namespace {
 
         template<class... Ts>
         uri_str_builder &add(const authority_separator_t &, const Ts &... xs) {
-            if (res.back() == ':') {
+            if (res.back() == ':')
                 return add("//", xs...);
-            }
             return add(xs...);
         }
 
         template<class... Ts>
         uri_str_builder &add(const path_separator_t &, const Ts &... xs) {
-            if (res.back() != ':') {
+            if (res.back() != ':')
                 return add("/", xs...);
-            }
             return add(xs...);
         }
 
@@ -70,7 +75,7 @@ namespace {
             return add(authority_separator, str, '@');
         }
 
-        uri_str_builder &host(const std::string &str) {
+        uri_str_builder &host(std::string str) {
             return add(authority_separator, str);
         }
 
@@ -82,14 +87,13 @@ namespace {
             return add(':', std::to_string(value));
         }
 
-        uri_str_builder &path(const std::string &str) {
+        uri_str_builder &path(std::string str) {
             return add(path_separator, str);
         }
 
         uri_str_builder &query(uri::query_map map) {
-            if (map.empty()) {
+            if (map.empty())
                 return *this;
-            }
             auto print_kvp = [&](const uri::query_map::value_type &kvp) {
                 res += kvp.first;
                 res += '=';
@@ -105,7 +109,7 @@ namespace {
             return *this;
         }
 
-        uri_str_builder &fragment(const std::string &str) {
+        uri_str_builder &fragment(std::string str) {
             return add('#', str);
         }
 
@@ -118,37 +122,32 @@ namespace {
     };
 
     struct fixture {
-        // -- member types
-        // -----------------------------------------------------------
-
-        using buffer = std::vector<char>;
-
-        // -- constructors, destructors, and assignment operators
-        // --------------------
+        // -- constructors, destructors, and assignment operators --------------------
 
         fixture() {
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
             http.scheme("http");
         }
 
-        // -- member variables
-        // -------------------------------------------------------
+        // -- member variables -------------------------------------------------------
 
         uri_builder http;
 
         uri_str_builder http_str;
 
-        // -- utility functions
-        // ------------------------------------------------------
+        // -- utility functions ------------------------------------------------------
 
-        byte_buffer serialize(uri x) {
+        byte_buffer serialize(const uri &x) {
             byte_buffer buf;
             binary_serializer sink {nullptr, buf};
             if (auto err = sink(x))
-                BOOST_FAIL("unable to serialize " << to_string(x) << ": " << to_string(err));
+                BOOST_FAIL("unable to serialize: " << to_string(err));
             return buf;
         }
 
-        uri deserialize(byte_buffer buf) {
+        uri deserialize(const byte_buffer &buf) {
             uri result;
             binary_deserializer source {nullptr, buf};
             if (auto err = source(result))
@@ -217,15 +216,15 @@ namespace {
         uri result;
         string_view str {cstr, cstr_len};
         auto err = parse(str, result);
-        if (err) {
+        if (err)
             BOOST_FAIL("error while parsing " << str << ": " << to_string(err));
-        }
         return result;
     }
 
     bool operator"" _i(const char *cstr, size_t cstr_len) {
         uri result;
         string_view str {cstr, cstr_len};
+        BOOST_CHECK(!uri::can_parse(str));
         auto err = parse(str, result);
         return err != none;
     }
@@ -234,18 +233,18 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(uri_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(constructing_test) {
+BOOST_AUTO_TEST_CASE(constructing) {
     uri x;
     BOOST_CHECK_EQUAL(x.empty(), true);
     BOOST_CHECK_EQUAL(x.str(), "");
 }
 
-#define BUILD(components) BOOST_CHECK(*(http << components) == *(http_str << components))
+#define BUILD(components) BOOST_CHECK_EQUAL(*(http << components), *(http_str << components))
 
-BOOST_AUTO_TEST_CASE(builder_construction_test) {
+BOOST_AUTO_TEST_CASE(builder_construction) {
     auto minimal = *(http << file);
     BOOST_CHECK_EQUAL(minimal.empty(), false);
-    BOOST_CHECK(minimal == "http:file");
+    BOOST_CHECK_EQUAL(minimal, "http:file");
     // all combinations of components
     BUILD(file);
     BUILD(file << kvp);
@@ -286,14 +285,20 @@ BOOST_AUTO_TEST_CASE(builder_construction_test) {
     // percent encoding
     auto escaped =
         uri_builder {}.scheme("hi there").userinfo("it's").host("me/").path("file 1").fragment("[42]").make();
-    BOOST_CHECK(escaped == "hi%20there://it%27s@me%2F/file%201#%5B42%5D");
+    BOOST_CHECK_EQUAL(escaped, "hi%20there://it%27s@me%2F/file%201#%5B42%5D");
 }
 
-#define ROUNDTRIP(str) BOOST_CHECK(str##_u == str)
+#define ROUNDTRIP(str)                    \
+    do {                                  \
+        BOOST_CHECK(uri::can_parse(str)); \
+        BOOST_CHECK_EQUAL(str##_u, str);  \
+    } while (false)
 
-BOOST_AUTO_TEST_CASE(from_string_test) {
+BOOST_AUTO_TEST_CASE(from_string) {
     // all combinations of components
     ROUNDTRIP("http:file");
+    ROUNDTRIP("http:foo-bar");
+    ROUNDTRIP("http:foo:bar");
     ROUNDTRIP("http:file?a=1&b=2");
     ROUNDTRIP("http:file#42");
     ROUNDTRIP("http:file?a=1&b=2#42");
@@ -364,32 +369,34 @@ BOOST_AUTO_TEST_CASE(from_string_test) {
     ROUNDTRIP("http://me@[::1]:80/file?a=1&b=2#42");
     // percent encoding
     ROUNDTRIP("hi%20there://it%27s@me%21/file%201#%5B42%5D");
+    ROUNDTRIP("file://localhost/tmp/test/test.{%3A04d}.exr");
 }
 
 #undef ROUNDTRIP
 
-BOOST_AUTO_TEST_CASE(empty_components_test) {
-    BOOST_CHECK("foo:/"_u == "foo:/");
-    BOOST_CHECK("foo:/#"_u == "foo:/");
-    BOOST_CHECK("foo:/?"_u == "foo:/");
-    BOOST_CHECK("foo:/?#"_u == "foo:/");
-    BOOST_CHECK("foo:bar#"_u == "foo:bar");
-    BOOST_CHECK("foo:bar?"_u == "foo:bar");
-    BOOST_CHECK("foo:bar?#"_u == "foo:bar");
-    BOOST_CHECK("foo://bar#"_u == "foo://bar");
-    BOOST_CHECK("foo://bar?"_u == "foo://bar");
-    BOOST_CHECK("foo://bar?#"_u == "foo://bar");
+BOOST_AUTO_TEST_CASE(empty_components) {
+    BOOST_CHECK_EQUAL("foo:/"_u, "foo:/");
+    BOOST_CHECK_EQUAL("foo:///"_u, "foo:/");
+    BOOST_CHECK_EQUAL("foo:/#"_u, "foo:/");
+    BOOST_CHECK_EQUAL("foo:/?"_u, "foo:/");
+    BOOST_CHECK_EQUAL("foo:/?#"_u, "foo:/");
+    BOOST_CHECK_EQUAL("foo:bar#"_u, "foo:bar");
+    BOOST_CHECK_EQUAL("foo:bar?"_u, "foo:bar");
+    BOOST_CHECK_EQUAL("foo:bar?#"_u, "foo:bar");
+    BOOST_CHECK_EQUAL("foo://bar#"_u, "foo://bar");
+    BOOST_CHECK_EQUAL("foo://bar?"_u, "foo://bar");
+    BOOST_CHECK_EQUAL("foo://bar?#"_u, "foo://bar");
 }
 
-BOOST_AUTO_TEST_CASE(invalid_uris_test) {
+BOOST_AUTO_TEST_CASE(invalid_uris) {
     BOOST_CHECK("http"_i);
     BOOST_CHECK("http://"_i);
     BOOST_CHECK("http://foo:66000"_i);
 }
 
-#define SERIALIZATION_ROUNDTRIP(str) BOOST_CHECK(deserialize(serialize(str##_u)) == str)
+#define SERIALIZATION_ROUNDTRIP(str) BOOST_CHECK_EQUAL(deserialize(serialize(str##_u)), str)
 
-BOOST_AUTO_TEST_CASE(serialization_test) {
+BOOST_AUTO_TEST_CASE(serialization) {
     // all combinations of components
     SERIALIZATION_ROUNDTRIP("http:file");
     SERIALIZATION_ROUNDTRIP("http:file?a=1&b=2");

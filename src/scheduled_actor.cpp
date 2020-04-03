@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/scheduled_actor.hpp>
@@ -24,29 +22,31 @@
 #include <nil/actor/detail/private_thread.hpp>
 #include <nil/actor/detail/sync_request_bouncer.hpp>
 
+using namespace std::string_literals;
+
 namespace nil {
     namespace actor {
 
         // -- related free functions ---------------------------------------------------
 
-        result<message> reflect(scheduled_actor *, message_view &x) {
-            return x.move_content_to_message();
+        result<message> reflect(scheduled_actor *, message &msg) {
+            return std::move(msg);
         }
 
-        result<message> reflect_and_quit(scheduled_actor *ptr, message_view &x) {
+        result<message> reflect_and_quit(scheduled_actor *ptr, message &msg) {
             error err = exit_reason::normal;
             scheduled_actor::default_error_handler(ptr, err);
-            return reflect(ptr, x);
+            return reflect(ptr, msg);
         }
 
-        result<message> print_and_drop(scheduled_actor *ptr, message_view &x) {
-            ACTOR_LOG_WARNING("unexpected message" << ACTOR_ARG(x.content()));
+        result<message> print_and_drop(scheduled_actor *ptr, message &msg) {
+            ACTOR_LOG_WARNING("unexpected message:" << msg);
             aout(ptr) << "*** unexpected message [id: " << ptr->id() << ", name: " << ptr->name()
-                      << "]: " << x.content().stringify() << std::endl;
+                      << "]: " << to_string(msg) << std::endl;
             return sec::unexpected_message;
         }
 
-        result<message> drop(scheduled_actor *, message_view &) {
+        result<message> drop(scheduled_actor *, message &) {
             return sec::unexpected_message;
         }
 
@@ -59,7 +59,7 @@ namespace nil {
                 // nop
             }
 
-            result<message> drop_after_quit(scheduled_actor *self, message_view &) {
+            result<message> drop_after_quit(scheduled_actor *self, message &) {
                 if (self->current_message_id().is_request())
                     return make_error(sec::request_receiver_down);
                 return make_message();
@@ -75,6 +75,11 @@ namespace nil {
 
         void scheduled_actor::default_down_handler(scheduled_actor *ptr, down_msg &x) {
             aout(ptr) << "*** unhandled down message [id: " << ptr->id() << ", name: " << ptr->name()
+                      << "]: " << to_string(x) << std::endl;
+        }
+
+        void scheduled_actor::default_node_down_handler(scheduled_actor *ptr, node_down_msg &x) {
+            aout(ptr) << "*** unhandled node down message [id: " << ptr->id() << ", name: " << ptr->name()
                       << "]: " << to_string(x) << std::endl;
         }
 
@@ -104,7 +109,7 @@ namespace nil {
         scheduled_actor::scheduled_actor(actor_config &cfg) :
             super(cfg), mailbox_(unit, unit, unit, unit, unit), timeout_id_(0), default_handler_(print_and_drop),
             error_handler_(default_error_handler), down_handler_(default_down_handler),
-            exit_handler_(default_exit_handler), private_thread_(nullptr)
+            node_down_handler_(default_node_down_handler), exit_handler_(default_exit_handler), private_thread_(nullptr)
 #ifndef ACTOR_NO_EXCEPTIONS
             ,
             exception_handler_(default_exception_handler)
@@ -263,12 +268,14 @@ namespace nil {
 
         intrusive::task_result scheduled_actor::mailbox_visitor::operator()(size_t, upstream_queue &,
                                                                             mailbox_element &x) {
-            ACTOR_ASSERT(x.content().type_token() == make_type_token<upstream_msg>());
+            ACTOR_ASSERT(x.content().match_elements<upstream_msg>());
             self->current_mailbox_element(&x);
             ACTOR_LOG_RECEIVE_EVENT((&x));
+            ACTOR_BEFORE_PROCESSING(self, x);
             auto &um = x.content().get_mutable_as<upstream_msg>(0);
             upstream_msg_visitor f {self, um};
             visit(f, um.content);
+            ACTOR_AFTER_PROCESSING(self, invoke_message_result::consumed);
             return ++handled_msgs < max_throughput ? intrusive::task_result::resume : intrusive::task_result::stop_all;
         }
 
@@ -283,6 +290,7 @@ namespace nil {
 
                 template<class T>
                 intrusive::task_result operator()(T &x) {
+                    ACTOR_LOG_TRACE(ACTOR_ARG(x));
                     auto &inptr = q_ref.policy().handler;
                     if (inptr == nullptr)
                         return intrusive::task_result::stop;
@@ -300,6 +308,7 @@ namespace nil {
                         qs_ref.erase_later(dm.slots.receiver);
                         selfptr->erase_stream_manager(dm.slots.receiver);
                         if (mgr->done()) {
+                            ACTOR_LOG_DEBUG("path is done receiving and closes its manager");
                             selfptr->erase_stream_manager(mgr);
                             mgr->stop();
                         }
@@ -323,10 +332,12 @@ namespace nil {
             ACTOR_LOG_TRACE(ACTOR_ARG(x) << ACTOR_ARG(handled_msgs));
             self->current_mailbox_element(&x);
             ACTOR_LOG_RECEIVE_EVENT((&x));
-            ACTOR_ASSERT(x.content().type_token() == make_type_token<downstream_msg>());
+            ACTOR_BEFORE_PROCESSING(self, x);
+            ACTOR_ASSERT(x.content().match_elements<downstream_msg>());
             auto &dm = x.content().get_mutable_as<downstream_msg>(0);
             downstream_msg_visitor f {self, qs, q, dm};
             auto res = visit(f, dm.content);
+            ACTOR_AFTER_PROCESSING(self, invoke_message_result::consumed);
             return ++handled_msgs < max_throughput ? res : intrusive::task_result::stop_all;
         }
 
@@ -431,7 +442,7 @@ namespace nil {
             for (auto i = managers.begin(); i != e; ++i) {
                 auto &mgr = *i;
                 mgr->shutdown();
-                // Managers can become done after calling quit if they were continous.
+                // Managers can become done after calling quit if they were continuous.
                 if (mgr->done()) {
                     mgr->stop();
                     erase_stream_manager(mgr);
@@ -444,27 +455,27 @@ namespace nil {
         uint64_t scheduled_actor::set_receive_timeout(actor_clock::time_point x) {
             ACTOR_LOG_TRACE(x);
             setf(has_timeout_flag);
-            return set_timeout(receive_atom::value, x);
+            return set_timeout("receive", x);
         }
 
         uint64_t scheduled_actor::set_receive_timeout() {
             ACTOR_LOG_TRACE("");
             if (bhvr_stack_.empty())
                 return 0;
-            auto d = bhvr_stack_.back().timeout();
-            if (!d.valid()) {
+            auto timeout = bhvr_stack_.back().timeout();
+            if (timeout == infinite) {
                 unsetf(has_timeout_flag);
                 return 0;
             }
-            if (d.is_zero()) {
+            if (timeout == timespan {0}) {
                 // immediately enqueue timeout message if duration == 0s
                 auto id = ++timeout_id_;
-                auto type = receive_atom::value;
+                auto type = "receive"s;
                 eq_impl(make_message_id(), nullptr, context(), timeout_msg {type, id});
                 return id;
             }
             auto t = clock().now();
-            t += d;
+            t += timeout;
             return set_receive_timeout(t);
         }
 
@@ -496,19 +507,19 @@ namespace nil {
                 return 0;
             }
             // Delegate call.
-            return set_timeout(stream_atom::value, x);
+            return set_timeout("stream", x);
         }
 
         // -- message processing -------------------------------------------------------
 
         void scheduled_actor::add_awaited_response_handler(message_id response_id, behavior bhvr) {
-            if (bhvr.timeout().valid())
+            if (bhvr.timeout() != infinite)
                 request_response_timeout(bhvr.timeout(), response_id);
             awaited_responses_.emplace_front(response_id, std::move(bhvr));
         }
 
         void scheduled_actor::add_multiplexed_response_handler(message_id response_id, behavior bhvr) {
-            if (bhvr.timeout().valid())
+            if (bhvr.timeout() != infinite)
                 request_response_timeout(bhvr.timeout(), response_id);
             multiplexed_responses_.emplace(response_id, std::move(bhvr));
         }
@@ -516,174 +527,182 @@ namespace nil {
         scheduled_actor::message_category scheduled_actor::categorize(mailbox_element &x) {
             ACTOR_LOG_TRACE(ACTOR_ARG(x));
             auto &content = x.content();
-            switch (content.type_token()) {
-                case make_type_token<atom_value, atom_value, std::string>():
-                    if (content.get_as<atom_value>(0) == sys_atom::value &&
-                        content.get_as<atom_value>(1) == get_atom::value) {
-                        auto rp = make_response_promise();
-                        if (!rp.pending()) {
-                            ACTOR_LOG_WARNING("received anonymous ('get', 'sys', $key) message");
-                            return message_category::internal;
-                        }
-                        auto &what = content.get_as<std::string>(2);
-                        if (what == "info") {
-                            ACTOR_LOG_DEBUG("reply to 'info' message");
-                            rp.deliver(ok_atom::value, std::move(what), strong_actor_ptr {ctrl()}, name());
-                        } else {
-                            rp.deliver(make_error(sec::unsupported_sys_key));
-                        }
-                        return message_category::internal;
-                    }
-                    return message_category::ordinary;
-                case make_type_token<timeout_msg>(): {
-                    ACTOR_ASSERT(x.mid.is_async());
-                    auto &tm = content.get_as<timeout_msg>(0);
-                    auto tid = tm.timeout_id;
-                    if (tm.type == receive_atom::value) {
-                        ACTOR_LOG_DEBUG("handle ordinary timeout message");
-                        if (is_active_receive_timeout(tid) && !bhvr_stack_.empty())
-                            bhvr_stack_.back().handle_timeout();
-                    } else {
-                        ACTOR_ASSERT(tm.type == atom("stream"));
-                        ACTOR_LOG_DEBUG("handle stream timeout message");
-                        set_stream_timeout(advance_streams(clock().now()));
-                    }
+            if (content.match_elements<sys_atom, get_atom, std::string>()) {
+                auto rp = make_response_promise();
+                if (!rp.pending()) {
+                    ACTOR_LOG_WARNING("received anonymous ('get', 'sys', $key) message");
                     return message_category::internal;
                 }
-                case make_type_token<exit_msg>(): {
-                    auto em = content.move_if_unshared<exit_msg>(0);
-                    // make sure to get rid of attachables if they're no longer needed
-                    unlink_from(em.source);
-                    // exit_reason::kill is always fatal and also aborts streams.
-                    if (em.reason == exit_reason::kill) {
-                        quit(std::move(em.reason));
-                        std::vector<stream_manager_ptr> xs;
-                        for (auto &kvp : stream_managers_)
-                            xs.emplace_back(kvp.second);
-                        for (auto &kvp : pending_stream_managers_)
-                            xs.emplace_back(kvp.second);
-                        std::sort(xs.begin(), xs.end());
-                        auto last = std::unique(xs.begin(), xs.end());
-                        std::for_each(xs.begin(), last, [&](stream_manager_ptr &mgr) { mgr->stop(exit_reason::kill); });
-                        stream_managers_.clear();
-                        pending_stream_managers_.clear();
-                    } else {
-                        call_handler(exit_handler_, this, em);
-                    }
-                    return message_category::internal;
+                auto &what = content.get_as<std::string>(2);
+                if (what == "info") {
+                    ACTOR_LOG_DEBUG("reply to 'info' message");
+                    rp.deliver(ok_atom_v, std::move(what), strong_actor_ptr {ctrl()}, name());
+                } else {
+                    rp.deliver(make_error(sec::unsupported_sys_key));
                 }
-                case make_type_token<down_msg>(): {
-                    auto dm = content.move_if_unshared<down_msg>(0);
-                    call_handler(down_handler_, this, dm);
-                    return message_category::internal;
-                }
-                case make_type_token<error>(): {
-                    auto err = content.move_if_unshared<error>(0);
-                    call_handler(error_handler_, this, err);
-                    return message_category::internal;
-                }
-                case make_type_token<open_stream_msg>(): {
-                    return handle_open_stream_msg(x) != im_skipped ? message_category::internal :
-                                                                     message_category::skipped;
-                }
-                default:
-                    return message_category::ordinary;
+                return message_category::internal;
             }
+            if (content.match_elements<timeout_msg>()) {
+                ACTOR_ASSERT(x.mid.is_async());
+                auto &tm = content.get_as<timeout_msg>(0);
+                auto tid = tm.timeout_id;
+                if (tm.type == "receive") {
+                    ACTOR_LOG_DEBUG("handle ordinary timeout message");
+                    if (is_active_receive_timeout(tid) && !bhvr_stack_.empty())
+                        bhvr_stack_.back().handle_timeout();
+                } else {
+                    ACTOR_ASSERT(tm.type == "stream");
+                    ACTOR_LOG_DEBUG("handle stream timeout message");
+                    set_stream_timeout(advance_streams(clock().now()));
+                }
+                return message_category::internal;
+            }
+            if (auto view = make_typed_message_view<exit_msg>(content)) {
+                auto &em = get<0>(view);
+                // make sure to get rid of attachables if they're no longer needed
+                unlink_from(em.source);
+                // exit_reason::kill is always fatal and also aborts streams.
+                if (em.reason == exit_reason::kill) {
+                    quit(std::move(em.reason));
+                    std::vector<stream_manager_ptr> xs;
+                    for (auto &kvp : stream_managers_)
+                        xs.emplace_back(kvp.second);
+                    for (auto &kvp : pending_stream_managers_)
+                        xs.emplace_back(kvp.second);
+                    std::sort(xs.begin(), xs.end());
+                    auto last = std::unique(xs.begin(), xs.end());
+                    std::for_each(xs.begin(), last, [&](stream_manager_ptr &mgr) { mgr->stop(exit_reason::kill); });
+                    stream_managers_.clear();
+                    pending_stream_managers_.clear();
+                } else {
+                    call_handler(exit_handler_, this, em);
+                }
+                return message_category::internal;
+            }
+            if (auto view = make_typed_message_view<down_msg>(content)) {
+                auto &dm = get<0>(view);
+                call_handler(down_handler_, this, dm);
+                return message_category::internal;
+            }
+            if (auto view = make_typed_message_view<node_down_msg>(content)) {
+                auto &dm = get<0>(view);
+                call_handler(node_down_handler_, this, dm);
+                return message_category::internal;
+            }
+            if (auto view = make_typed_message_view<error>(content)) {
+                auto &err = get<0>(view);
+                call_handler(error_handler_, this, err);
+                return message_category::internal;
+            }
+            if (content.match_elements<open_stream_msg>()) {
+                return handle_open_stream_msg(x) != invoke_message_result::skipped ? message_category::internal :
+                                                                                     message_category::skipped;
+            }
+            return message_category::ordinary;
         }
 
         invoke_message_result scheduled_actor::consume(mailbox_element &x) {
             ACTOR_LOG_TRACE(ACTOR_ARG(x));
             current_element_ = &x;
             ACTOR_LOG_RECEIVE_EVENT(current_element_);
-            // Helper function for dispatching a message to a response handler.
-            using ptr_t = scheduled_actor *;
-            using fun_t = bool (*)(ptr_t, behavior &, mailbox_element &);
-            auto ordinary_invoke = [](ptr_t, behavior &f, mailbox_element &in) -> bool {
-                return f(in.content()) != none;
-            };
-            auto select_invoke_fun = [&]() -> fun_t { return ordinary_invoke; };
-            // Short-circuit awaited responses.
-            if (!awaited_responses_.empty()) {
-                auto invoke = select_invoke_fun();
-                auto &pr = awaited_responses_.front();
-                // skip all messages until we receive the currently awaited response
-                if (x.mid != pr.first)
-                    return im_skipped;
-                auto f = std::move(pr.second);
-                awaited_responses_.pop_front();
-                if (!invoke(this, f, x)) {
-                    // try again with error if first attempt failed
-                    auto msg = make_message(make_error(sec::unexpected_response, x.move_content_to_message()));
-                    f(msg);
+            ACTOR_BEFORE_PROCESSING(this, x);
+            // Wrap the actual body for the function.
+            auto body = [this, &x] {
+                // Helper function for dispatching a message to a response handler.
+                using ptr_t = scheduled_actor *;
+                using fun_t = bool (*)(ptr_t, behavior &, mailbox_element &);
+                auto ordinary_invoke = [](ptr_t, behavior &f, mailbox_element &in) -> bool {
+                    return f(in.content()) != none;
+                };
+                auto select_invoke_fun = [&]() -> fun_t { return ordinary_invoke; };
+                // Short-circuit awaited responses.
+                if (!awaited_responses_.empty()) {
+                    auto invoke = select_invoke_fun();
+                    auto &pr = awaited_responses_.front();
+                    // skip all messages until we receive the currently awaited response
+                    if (x.mid != pr.first)
+                        return invoke_message_result::skipped;
+                    auto f = std::move(pr.second);
+                    awaited_responses_.pop_front();
+                    if (!invoke(this, f, x)) {
+                        // try again with error if first attempt failed
+                        auto msg = make_message(make_error(sec::unexpected_response, std::move(x.payload)));
+                        f(msg);
+                    }
+                    return invoke_message_result::consumed;
                 }
-                return im_success;
-            }
-            // Handle multiplexed responses.
-            if (x.mid.is_response()) {
-                auto invoke = select_invoke_fun();
-                auto mrh = multiplexed_responses_.find(x.mid);
-                // neither awaited nor multiplexed, probably an expired timeout
-                if (mrh == multiplexed_responses_.end())
-                    return im_dropped;
-                auto bhvr = std::move(mrh->second);
-                multiplexed_responses_.erase(mrh);
-                if (!invoke(this, bhvr, x)) {
-                    // try again with error if first attempt failed
-                    auto msg = make_message(make_error(sec::unexpected_response, x.move_content_to_message()));
-                    bhvr(msg);
+                // Handle multiplexed responses.
+                if (x.mid.is_response()) {
+                    auto invoke = select_invoke_fun();
+                    auto mrh = multiplexed_responses_.find(x.mid);
+                    // neither awaited nor multiplexed, probably an expired timeout
+                    if (mrh == multiplexed_responses_.end())
+                        return invoke_message_result::dropped;
+                    auto bhvr = std::move(mrh->second);
+                    multiplexed_responses_.erase(mrh);
+                    if (!invoke(this, bhvr, x)) {
+                        ACTOR_LOG_DEBUG("got unexpected_response, invoke unexpected_response");
+                        auto msg = make_message(make_error(sec::unexpected_response, std::move(x.payload)));
+                        bhvr(msg);
+                    }
+                    return invoke_message_result::consumed;
                 }
-                return im_success;
-            }
-            // Dispatch on the content of x.
-            switch (categorize(x)) {
-                case message_category::skipped:
-                    return im_skipped;
-                case message_category::internal:
-                    ACTOR_LOG_DEBUG("handled system message");
-                    return im_success;
-                case message_category::ordinary: {
-                    detail::default_invoke_result_visitor<scheduled_actor> visitor {this};
-                    bool skipped = false;
-                    auto had_timeout = getf(has_timeout_flag);
-                    if (had_timeout)
-                        unsetf(has_timeout_flag);
-                    // restore timeout at scope exit if message was skipped
-                    auto timeout_guard = detail::make_scope_guard([&] {
-                        if (skipped && had_timeout)
-                            setf(has_timeout_flag);
-                    });
-                    auto call_default_handler = [&] {
-                        auto sres = call_handler(default_handler_, this, x);
-                        switch (sres.flag) {
+                // Dispatch on the content of x.
+                switch (categorize(x)) {
+                    case message_category::skipped:
+                        return invoke_message_result::skipped;
+                    case message_category::internal:
+                        ACTOR_LOG_DEBUG("handled system message");
+                        return invoke_message_result::consumed;
+                    case message_category::ordinary: {
+                        detail::default_invoke_result_visitor<scheduled_actor> visitor {this};
+                        bool skipped = false;
+                        auto had_timeout = getf(has_timeout_flag);
+                        if (had_timeout)
+                            unsetf(has_timeout_flag);
+                        // restore timeout at scope exit if message was skipped
+                        auto timeout_guard = detail::make_scope_guard([&] {
+                            if (skipped && had_timeout)
+                                setf(has_timeout_flag);
+                        });
+                        auto call_default_handler = [&] {
+                            auto sres = call_handler(default_handler_, this, x.payload);
+                            switch (sres.flag) {
+                                default:
+                                    break;
+                                case rt_error:
+                                case rt_value:
+                                    visitor.visit(sres);
+                                    break;
+                                case rt_skip:
+                                    skipped = true;
+                            }
+                        };
+                        if (bhvr_stack_.empty()) {
+                            call_default_handler();
+                            return !skipped ? invoke_message_result::consumed : invoke_message_result::skipped;
+                        }
+                        auto &bhvr = bhvr_stack_.back();
+                        switch (bhvr(visitor, x.content())) {
                             default:
                                 break;
-                            case rt_error:
-                            case rt_value:
-                                visitor.visit(sres);
-                                break;
-                            case rt_skip:
+                            case match_result::skip:
                                 skipped = true;
+                                break;
+                            case match_result::no_match:
+                                call_default_handler();
                         }
-                    };
-                    if (bhvr_stack_.empty()) {
-                        call_default_handler();
-                        return !skipped ? im_success : im_skipped;
+                        return !skipped ? invoke_message_result::consumed : invoke_message_result::skipped;
                     }
-                    auto &bhvr = bhvr_stack_.back();
-                    switch (bhvr(visitor, x.content())) {
-                        default:
-                            break;
-                        case match_case::skip:
-                            skipped = true;
-                            break;
-                        case match_case::no_match:
-                            call_default_handler();
-                    }
-                    return !skipped ? im_success : im_skipped;
                 }
-            }
-            // Unreachable.
-            ACTOR_CRITICAL("invalid message type");
+                // Unreachable.
+                ACTOR_CRITICAL("invalid message type");
+            };
+            // Post-process the returned value from the function body.
+            auto result = body();
+            ACTOR_AFTER_PROCESSING(this, result);
+            ACTOR_LOG_SKIP_OR_FINALIZE_EVENT(result);
+            return result;
         }
 
         /// Tries to consume `x`.
@@ -691,7 +710,7 @@ namespace nil {
             switch (consume(*x)) {
                 default:
                     break;
-                case im_skipped:
+                case invoke_message_result::skipped:
                     push_to_cache(std::move(x));
             }
         }
@@ -741,31 +760,37 @@ namespace nil {
         auto scheduled_actor::reactivate(mailbox_element &x) -> activation_result {
             ACTOR_LOG_TRACE(ACTOR_ARG(x));
 #ifndef ACTOR_NO_EXCEPTIONS
+            auto handle_exception = [&](std::exception_ptr eptr) {
+                auto err = call_handler(exception_handler_, this, eptr);
+                if (x.mid.is_request()) {
+                    auto rp = make_response_promise();
+                    rp.deliver(err);
+                }
+                quit(std::move(err));
+            };
             try {
 #endif    // ACTOR_NO_EXCEPTIONS
                 switch (consume(x)) {
-                    case im_dropped:
+                    case invoke_message_result::dropped:
                         return activation_result::dropped;
-                    case im_success:
+                    case invoke_message_result::consumed:
                         bhvr_stack_.cleanup();
                         if (finalize()) {
                             ACTOR_LOG_DEBUG("actor finalized");
                             return activation_result::terminated;
                         }
                         return activation_result::success;
-                    case im_skipped:
+                    case invoke_message_result::skipped:
                         return activation_result::skipped;
                 }
 #ifndef ACTOR_NO_EXCEPTIONS
             } catch (std::exception &e) {
                 ACTOR_LOG_INFO("actor died because of an exception, what: " << e.what());
                 static_cast<void>(e);    // keep compiler happy when not logging
-                auto eptr = std::current_exception();
-                quit(call_handler(exception_handler_, this, eptr));
+                handle_exception(std::current_exception());
             } catch (...) {
                 ACTOR_LOG_INFO("actor died because of an unknown exception");
-                auto eptr = std::current_exception();
-                quit(call_handler(exception_handler_, this, eptr));
+                handle_exception(std::current_exception());
             }
             finalize();
             return activation_result::terminated;
@@ -792,6 +817,21 @@ namespace nil {
             // Repeated calls always return `true` but have no side effects.
             if (getf(is_cleaned_up_flag))
                 return true;
+            // TODO: This is a workaround for issue #1011. Iterating over all stream
+            //       managers here and dropping them as needed prevents the
+            //       never-terminating part, but it still means that "dead" stream manager
+            //       can accumulate over time since we only run this O(n) path if the
+            //       actor is shutting down.
+            if (!has_behavior() && !stream_managers_.empty()) {
+                for (auto i = stream_managers_.begin(); i != stream_managers_.end();) {
+                    if (i->second->done())
+                        i = stream_managers_.erase(i);
+                    else
+                        ++i;
+                    if (stream_managers_.empty())
+                        stream_ticks_.stop();
+                }
+            }
             // An actor is considered alive as long as it has a behavior and didn't set
             // the terminated flag.
             if (alive())
@@ -840,14 +880,14 @@ namespace nil {
         inbound_path *scheduled_actor::make_inbound_path(stream_manager_ptr mgr,
                                                          stream_slots slots,
                                                          strong_actor_ptr sender,
-                                                         rtti_pair rtti) {
+                                                         type_id_t input_type) {
             static constexpr size_t queue_index = downstream_queue_index;
             using policy_type = policy::downstream_messages::nested;
             auto &qs = get<queue_index>(mailbox_.queue().queues()).queues();
             auto res = qs.emplace(slots.receiver, policy_type {nullptr});
             if (!res.second)
                 return nullptr;
-            auto path = new inbound_path(std::move(mgr), slots, std::move(sender), rtti);
+            auto path = new inbound_path(std::move(mgr), slots, std::move(sender), input_type);
             res.first->second.policy().handler.reset(path);
             return path;
         }
@@ -920,11 +960,11 @@ namespace nil {
             ptr->handle(slots, x);
         }
 
-        uint64_t scheduled_actor::set_timeout(atom_value type, actor_clock::time_point x) {
+        uint64_t scheduled_actor::set_timeout(std::string type, actor_clock::time_point x) {
             ACTOR_LOG_TRACE(ACTOR_ARG(type) << ACTOR_ARG(x));
             auto id = ++timeout_id_;
             ACTOR_LOG_DEBUG("set timeout:" << ACTOR_ARG(type) << ACTOR_ARG(x));
-            clock().set_ordinary_timeout(x, this, type, id);
+            clock().set_ordinary_timeout(x, this, std::move(type), id);
             return id;
         }
 
@@ -1013,7 +1053,7 @@ namespace nil {
 
         invoke_message_result scheduled_actor::handle_open_stream_msg(mailbox_element &x) {
             ACTOR_LOG_TRACE(ACTOR_ARG(x));
-            // Fetches a stream manger from a behavior.
+            // Fetches a stream manager from a behavior.
             struct visitor : detail::invoke_result_visitor {
                 void operator()() override {
                     // nop
@@ -1044,15 +1084,15 @@ namespace nil {
             };
             // Utility for invoking the default handler.
             auto fallback = [&] {
-                auto sres = call_handler(default_handler_, this, x);
+                auto sres = call_handler(default_handler_, this, x.payload);
                 switch (sres.flag) {
                     default:
                         ACTOR_LOG_DEBUG("default handler was called for open_stream_msg:" << osm.msg);
                         fail(sec::stream_init_failed, "dropped open_stream_msg (no match)");
-                        return im_dropped;
+                        return invoke_message_result::dropped;
                     case rt_skip:
                         ACTOR_LOG_DEBUG("default handler skipped open_stream_msg:" << osm.msg);
-                        return im_skipped;
+                        return invoke_message_result::skipped;
                 }
             };
             // Invoke behavior and dispatch on the result.
@@ -1061,15 +1101,15 @@ namespace nil {
                 return fallback();
             auto res = (bs.back())(f, osm.msg);
             switch (res) {
-                case match_case::result::no_match:
+                case match_result::no_match:
                     ACTOR_LOG_DEBUG("no match in behavior, fall back to default handler");
                     return fallback();
-                case match_case::result::match: {
-                    return im_success;
+                case match_result::match: {
+                    return invoke_message_result::consumed;
                 }
                 default:
                     ACTOR_LOG_DEBUG("behavior skipped open_stream_msg:" << osm.msg);
-                    return im_skipped;    // nop
+                    return invoke_message_result::skipped;    // nop
             }
         }
 
@@ -1091,12 +1131,13 @@ namespace nil {
                 ACTOR_LOG_DEBUG("new credit round");
                 auto cycle = stream_ticks_.interval();
                 cycle *= static_cast<decltype(cycle)::rep>(credit_round_ticks_);
-                auto bc = home_system().config().stream_desired_batch_complexity;
                 auto &qs = get_downstream_queue().queues();
                 for (auto &kvp : qs) {
                     auto inptr = kvp.second.policy().handler.get();
-                    auto bs = static_cast<int32_t>(kvp.second.total_task_size());
-                    inptr->emit_ack_batch(this, bs, inptr->mgr->out().max_capacity(), now, cycle, bc);
+                    if (inptr != nullptr) {
+                        auto tts = static_cast<int32_t>(kvp.second.total_task_size());
+                        inptr->emit_ack_batch(this, tts, now, cycle);
+                    }
                 }
             }
             return stream_ticks_.next_timeout(now, {max_batch_delay_ticks_, credit_round_ticks_});

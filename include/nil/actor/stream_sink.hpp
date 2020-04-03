@@ -1,14 +1,20 @@
-//---------------------------------------------------------------------------//
-// Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
-//
-// Distributed under the terms and conditions of the BSD 3-Clause License or
-// (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
-//---------------------------------------------------------------------------//
+/******************************************************************************
+ *                       ____    _    _____                                   *
+ *                      / ___|  / \  |  ___|    C++                           *
+ *                     | |     / _ \ | |_       Actor                         *
+ *                     | |___ / ___ \|  _|      Framework                     *
+ *                      \____/_/   \_|_|                                      *
+ *                                                                            *
+ * Copyright 2011-2018 Dominik Charousset                                     *
+ *                                                                            *
+ * Distributed under the terms and conditions of the BSD 3-Clause License or  *
+ * (at your option) under the terms and conditions of the Boost Software      *
+ * License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.       *
+ *                                                                            *
+ * If you did not receive a copy of the license files, see                    *
+ * http://opensink.org/licenses/BSD-3-Clause and                            *
+ * http://www.boost.org/LICENSE_1_0.txt.                                      *
+ ******************************************************************************/
 
 #pragma once
 
@@ -19,9 +25,7 @@
 #include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/inbound_path.hpp>
 #include <nil/actor/intrusive_ptr.hpp>
-#include <nil/actor/rtti_pair.hpp>
 #include <nil/actor/stream_manager.hpp>
-#include <nil/actor/type_nr.hpp>
 
 namespace nil {
     namespace actor {
@@ -59,8 +63,7 @@ namespace nil {
 
             /// Creates a new input path to the current sender.
             inbound_stream_slot<input_type> add_inbound_path(const stream<input_type> &) {
-                auto rtti = make_rtti_pair<input_type>();
-                return {this->add_unchecked_inbound_path_impl(rtti)};
+                return {this->add_unchecked_inbound_path_impl(type_id_v<input_type>)};
             }
 
         private:

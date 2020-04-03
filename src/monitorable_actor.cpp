@@ -1,24 +1,23 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/monitorable_actor.hpp>
 
-#include <nil/actor/sec.hpp>
-#include <nil/actor/logger.hpp>
 #include <nil/actor/actor_cast.hpp>
 #include <nil/actor/spawner.hpp>
-#include <nil/actor/message_handler.hpp>
-#include <nil/actor/system_messages.hpp>
 #include <nil/actor/default_attachable.hpp>
+#include <nil/actor/logger.hpp>
+#include <nil/actor/message_handler.hpp>
+#include <nil/actor/sec.hpp>
+#include <nil/actor/system_messages.hpp>
+#include <nil/actor/typed_message_view.hpp>
 
 #include <nil/actor/detail/sync_request_bouncer.hpp>
 
@@ -56,6 +55,8 @@ namespace nil {
         }
 
         void monitorable_actor::unlink_from(const actor_addr &x) {
+            ACTOR_LOG_TRACE(ACTOR_ARG(x));
+            ACTOR_ASSERT(x != nullptr);
             auto ptr = actor_cast<strong_actor_ptr>(x);
             if (ptr != nullptr) {
                 if (ptr->get() != this)
@@ -90,7 +91,7 @@ namespace nil {
             // tell printer to purge its state for us if we ever used aout()
             if (getf(abstract_actor::has_used_aout_flag)) {
                 auto pr = home_system().scheduler().printer();
-                pr->enqueue(make_mailbox_element(nullptr, make_message_id(), {}, delete_atom::value, id()), nullptr);
+                pr->enqueue(make_mailbox_element(nullptr, make_message_id(), {}, delete_atom_v, id()), nullptr);
             }
             return true;
         }
@@ -204,27 +205,32 @@ namespace nil {
 
         bool monitorable_actor::handle_system_message(mailbox_element &x, execution_unit *ctx, bool trap_exit) {
             auto &msg = x.content();
-            if (!trap_exit && msg.size() == 1 && msg.match_element<exit_msg>(0)) {
-                // exits for non-normal exit reasons
-                auto &em = msg.get_mutable_as<exit_msg>(0);
-                if (em.reason)
-                    cleanup(std::move(em.reason), ctx);
-                return true;
+            if (!trap_exit) {
+                if (auto view = make_typed_message_view<exit_msg>(msg)) {
+                    // exits for non-normal exit reasons
+                    auto &em = get<0>(view);
+                    if (em.reason)
+                        cleanup(std::move(em.reason), ctx);
+                    return true;
+                }
             }
             if (msg.size() > 1 && msg.match_element<sys_atom>(0)) {
                 if (!x.sender)
                     return true;
                 error err;
                 mailbox_element_ptr res;
-                msg.apply([&](sys_atom, get_atom, std::string &what) {
-                    ACTOR_LOG_TRACE(ACTOR_ARG(what));
-                    if (what != "info") {
-                        err = sec::unsupported_sys_key;
-                        return;
-                    }
-                    res = make_mailbox_element(ctrl(), x.mid.response_id(), {}, ok_atom::value, std::move(what),
-                                               strong_actor_ptr {ctrl()}, name());
-                });
+                message_handler f {
+                    [&](sys_atom, get_atom, std::string &what) {
+                        ACTOR_LOG_TRACE(ACTOR_ARG(what));
+                        if (what != "info") {
+                            err = sec::unsupported_sys_key;
+                            return;
+                        }
+                        res = make_mailbox_element(ctrl(), x.mid.response_id(), {}, ok_atom_v, std::move(what),
+                                                   strong_actor_ptr {ctrl()}, name());
+                    },
+                };
+                f(msg);
                 if (!res && !err)
                     err = sec::unsupported_sys_message;
                 if (err && x.mid.is_request())

@@ -1,39 +1,37 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <set>
-#include <mutex>
 #include <atomic>
-#include <memory>
-#include <string>
-#include <vector>
 #include <cstdint>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
 #include <type_traits>
+#include <vector>
 
-#include <nil/actor/fwd.hpp>
-#include <nil/actor/node_id.hpp>
-#include <nil/actor/attachable.hpp>
-#include <nil/actor/message_id.hpp>
-#include <nil/actor/exit_reason.hpp>
-#include <nil/actor/intrusive_ptr.hpp>
-#include <nil/actor/execution_unit.hpp>
-#include <nil/actor/mailbox_element.hpp>
 #include <nil/actor/abstract_channel.hpp>
+#include <nil/actor/attachable.hpp>
 
 #include <nil/actor/detail/disposer.hpp>
-#include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/detail/functor_attachable.hpp>
+#include <nil/actor/detail/type_traits.hpp>
+#include <nil/actor/execution_unit.hpp>
+#include <nil/actor/exit_reason.hpp>
+#include <nil/actor/fwd.hpp>
+#include <nil/actor/intrusive_ptr.hpp>
+#include <nil/actor/mailbox_element.hpp>
+#include <nil/actor/message_id.hpp>
+#include <nil/actor/node_id.hpp>
 
 namespace nil {
     namespace actor {
@@ -46,7 +44,7 @@ namespace nil {
         constexpr actor_id invalid_actor_id = 0;
 
         /// Base class for all actor implementations.
-        class abstract_actor : public abstract_channel {
+        class BOOST_SYMBOL_VISIBLE abstract_actor : public abstract_channel {
         public:
             // allow placement new (only)
             inline void *operator new(std::size_t, void *ptr) {
@@ -217,5 +215,6 @@ namespace nil {
             abstract_actor(const abstract_actor &) = delete;
             abstract_actor &operator=(const abstract_actor &) = delete;
         };
+
     }    // namespace actor
 }    // namespace nil

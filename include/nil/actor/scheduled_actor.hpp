@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -23,13 +21,28 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include <nil/actor/actor_marker.hpp>
+#include <nil/actor/actor_traits.hpp>
 #include <nil/actor/broadcast_downstream_manager.hpp>
 #include <nil/actor/default_downstream_manager.hpp>
+#include <nil/actor/detail/behavior_stack.hpp>
+
+#include <nil/actor/detail/stream_sink_driver_impl.hpp>
+#include <nil/actor/detail/stream_sink_impl.hpp>
+#include <nil/actor/detail/stream_source_driver_impl.hpp>
+#include <nil/actor/detail/stream_source_impl.hpp>
+#include <nil/actor/detail/stream_stage_driver_impl.hpp>
+#include <nil/actor/detail/stream_stage_impl.hpp>
+#include <nil/actor/detail/tick_emitter.hpp>
+#include <nil/actor/detail/unordered_flat_map.hpp>
 #include <nil/actor/error.hpp>
 #include <nil/actor/extend.hpp>
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/inbound_path.hpp>
+#include <nil/actor/intrusive/drr_cached_queue.hpp>
+#include <nil/actor/intrusive/drr_queue.hpp>
+#include <nil/actor/intrusive/fifo_inbox.hpp>
+#include <nil/actor/intrusive/wdrr_dynamic_multiplexed_queue.hpp>
+#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
 #include <nil/actor/invoke_message_result.hpp>
 #include <nil/actor/is_actor_handle.hpp>
 #include <nil/actor/local_actor.hpp>
@@ -37,8 +50,16 @@
 #include <nil/actor/make_sink_result.hpp>
 #include <nil/actor/make_source_result.hpp>
 #include <nil/actor/make_stage_result.hpp>
+#include <nil/actor/mixin/behavior_changer.hpp>
+#include <nil/actor/mixin/requester.hpp>
+#include <nil/actor/mixin/sender.hpp>
 #include <nil/actor/no_stages.hpp>
-#include <nil/actor/output_stream.hpp>
+#include <nil/actor/policy/arg.hpp>
+#include <nil/actor/policy/categorized.hpp>
+#include <nil/actor/policy/downstream_messages.hpp>
+#include <nil/actor/policy/normal_messages.hpp>
+#include <nil/actor/policy/upstream_messages.hpp>
+#include <nil/actor/policy/urgent_messages.hpp>
 #include <nil/actor/response_handle.hpp>
 #include <nil/actor/scheduled_actor.hpp>
 #include <nil/actor/sec.hpp>
@@ -49,34 +70,6 @@
 #include <nil/actor/stream_stage_trait.hpp>
 #include <nil/actor/to_string.hpp>
 
-#include <nil/actor/policy/arg.hpp>
-#include <nil/actor/policy/categorized.hpp>
-#include <nil/actor/policy/downstream_messages.hpp>
-#include <nil/actor/policy/normal_messages.hpp>
-#include <nil/actor/policy/upstream_messages.hpp>
-#include <nil/actor/policy/urgent_messages.hpp>
-
-#include <nil/actor/detail/behavior_stack.hpp>
-#include <nil/actor/detail/stream_sink_driver_impl.hpp>
-#include <nil/actor/detail/stream_sink_impl.hpp>
-#include <nil/actor/detail/stream_source_driver_impl.hpp>
-#include <nil/actor/detail/stream_source_impl.hpp>
-#include <nil/actor/detail/stream_stage_driver_impl.hpp>
-#include <nil/actor/detail/stream_stage_driver_impl.hpp>
-#include <nil/actor/detail/stream_stage_impl.hpp>
-#include <nil/actor/detail/tick_emitter.hpp>
-#include <nil/actor/detail/unordered_flat_map.hpp>
-
-#include <nil/actor/intrusive/drr_cached_queue.hpp>
-#include <nil/actor/intrusive/drr_queue.hpp>
-#include <nil/actor/intrusive/fifo_inbox.hpp>
-#include <nil/actor/intrusive/wdrr_dynamic_multiplexed_queue.hpp>
-#include <nil/actor/intrusive/wdrr_fixed_multiplexed_queue.hpp>
-
-#include <nil/actor/mixin/behavior_changer.hpp>
-#include <nil/actor/mixin/requester.hpp>
-#include <nil/actor/mixin/sender.hpp>
-
 namespace nil {
     namespace actor {
 
@@ -84,25 +77,26 @@ namespace nil {
 
         /// @relates scheduled_actor
         /// Default handler function that sends the message back to the sender.
-        result<message> reflect(scheduled_actor *, message_view &);
+        BOOST_SYMBOL_VISIBLE result<message> reflect(scheduled_actor *, message &);
 
         /// @relates scheduled_actor
         /// Default handler function that sends
         /// the message back to the sender and then quits.
-        result<message> reflect_and_quit(scheduled_actor *, message_view &);
+        BOOST_SYMBOL_VISIBLE result<message> reflect_and_quit(scheduled_actor *, message &);
 
         /// @relates scheduled_actor
         /// Default handler function that prints messages
         /// message via `aout` and drops them afterwards.
-        result<message> print_and_drop(scheduled_actor *, message_view &);
+        BOOST_SYMBOL_VISIBLE result<message> print_and_drop(scheduled_actor *, message &);
 
         /// @relates scheduled_actor
         /// Default handler function that simply drops messages.
-        result<message> drop(scheduled_actor *, message_view &);
+        BOOST_SYMBOL_VISIBLE result<message> drop(scheduled_actor *, message &);
 
         /// A cooperatively scheduled, event-based actor implementation.
-        /// @extends local_actor
-        class scheduled_actor : public local_actor, public resumable {
+        class BOOST_SYMBOL_VISIBLE scheduled_actor : public local_actor,
+                                                     public resumable,
+                                                     public non_blocking_actor_base {
         public:
             // -- nested enums -----------------------------------------------------------
 
@@ -187,13 +181,16 @@ namespace nil {
             using pointer = scheduled_actor *;
 
             /// Function object for handling unmatched messages.
-            using default_handler = std::function<result<message>(pointer, message_view &)>;
+            using default_handler = std::function<result<message>(pointer, message &)>;
 
             /// Function object for handling error messages.
             using error_handler = std::function<void(pointer, error &)>;
 
             /// Function object for handling down messages.
             using down_handler = std::function<void(pointer, down_msg &)>;
+
+            /// Function object for handling node down messages.
+            using node_down_handler = std::function<void(pointer, node_down_msg &)>;
 
             /// Function object for handling exit messages.
             using exit_handler = std::function<void(pointer, exit_msg &)>;
@@ -233,6 +230,8 @@ namespace nil {
 
             static void default_down_handler(pointer ptr, down_msg &x);
 
+            static void default_node_down_handler(pointer ptr, node_down_msg &x);
+
             static void default_exit_handler(pointer ptr, exit_msg &x);
 
 #ifndef ACTOR_NO_EXCEPTIONS
@@ -242,6 +241,14 @@ namespace nil {
             // -- constructors and destructors -------------------------------------------
 
             explicit scheduled_actor(actor_config &cfg);
+
+            scheduled_actor(scheduled_actor &&) = delete;
+
+            scheduled_actor(const scheduled_actor &) = delete;
+
+            scheduled_actor &operator=(scheduled_actor &&) = delete;
+
+            scheduled_actor &operator=(const scheduled_actor &) = delete;
 
             ~scheduled_actor() override;
 
@@ -279,23 +286,16 @@ namespace nil {
 
             // -- state modifiers --------------------------------------------------------
 
-            /// Finishes execution of this actor after any currently running
-            /// message handler is done.
-            /// This member function clears the behavior stack of the running actor
-            /// and invokes `on_exit()`. The actors does not finish execution
-            /// if the implementation of `on_exit()` sets a new behavior.
-            /// When setting a new behavior in `on_exit()`, one has to make sure
-            /// to not produce an infinite recursion.
+            /// Finishes execution of this actor after any currently running message
+            /// handler is done. This member function clears the behavior stack of the
+            /// running actor and invokes `on_exit()`. The actors does not finish
+            /// execution if the implementation of `on_exit()` sets a new behavior. When
+            /// setting a new behavior in `on_exit()`, one has to make sure to not produce
+            /// an infinite recursion.
             ///
-            /// If `on_exit()` did not set a new behavior, the actor sends an
-            /// exit message to all of its linked actors, sets its state to exited
-            /// and finishes execution.
-            ///
-            /// In case this actor uses the blocking API, this member function unwinds
-            /// the stack by throwing an `actor_exited` exception.
-            /// @warning This member function throws immediately in thread-based actors
-            ///          that do not use the behavior stack, i.e., actors that use
-            ///          blocking API calls such as {@link receive()}.
+            /// If `on_exit()` did not set a new behavior, the actor sends an exit message
+            /// to all of its linked actors, sets its state to exited and finishes
+            /// execution.
             void quit(error x = error {});
 
             // -- properties -------------------------------------------------------------
@@ -327,10 +327,9 @@ namespace nil {
 
             /// Sets a custom handler for unexpected messages.
             template<class F>
-            typename std::enable_if<
-                std::is_convertible<F, std::function<result<message>(type_erased_tuple &)>>::value>::type
+            typename std::enable_if<std::is_convertible<F, std::function<result<message>(message &)>>::value>::type
                 set_default_handler(F fun) {
-                default_handler_ = [=](scheduled_actor *, const type_erased_tuple &xs) { return fun(xs); };
+                default_handler_ = [=](scheduled_actor *, message &xs) { return fun(xs); };
             }
 
             /// Sets a custom handler for error messages.
@@ -359,6 +358,20 @@ namespace nil {
             template<class T>
             auto set_down_handler(T fun) -> decltype(fun(std::declval<down_msg &>())) {
                 set_down_handler([fun](scheduled_actor *, down_msg &x) { fun(x); });
+            }
+
+            /// Sets a custom handler for node down messages.
+            void set_node_down_handler(node_down_handler fun) {
+                if (fun)
+                    node_down_handler_ = std::move(fun);
+                else
+                    node_down_handler_ = default_node_down_handler;
+            }
+
+            /// Sets a custom handler for down messages.
+            template<class T>
+            auto set_node_down_handler(T fun) -> decltype(fun(std::declval<node_down_msg &>())) {
+                set_node_down_handler([fun](scheduled_actor *, node_down_msg &x) { fun(x); });
             }
 
             /// Sets a custom handler for error messages.
@@ -396,16 +409,9 @@ namespace nil {
 
             // -- stream management ------------------------------------------------------
 
-            /// Creates a new stream source by instantiating the default source
-            /// implementation with `Driver`.
-            /// @param xs User-defined handshake payload.
-            /// @param init Function object for initializing the state of the source.
-            /// @param pull Generator function object for producing downstream messages.
-            /// @param done Predicate returning `true` when generator is done.
-            /// @param fin Cleanup handler.
-            /// @returns The allocated `stream_manager` and the output slot.
             template<class Driver, class... Ts, class Init, class Pull, class Done, class Finalize = unit_t>
-            make_source_result_t<typename Driver::downstream_manager_type, Ts...>
+            [[deprecated("use attach_stream_source instead")]] make_source_result_t<
+                typename Driver::downstream_manager_type, Ts...>
                 make_source(std::tuple<Ts...> xs, Init init, Pull pull, Done done, Finalize fin = {}) {
                 using detail::make_stream_source;
                 auto mgr =
@@ -414,19 +420,12 @@ namespace nil {
                 return {slot, std::move(mgr)};
             }
 
-            /// Creates a new stream source from given arguments.
-            /// @param xs User-defined handshake payload.
-            /// @param init Function object for initializing the state of the source.
-            /// @param pull Generator function object for producing downstream messages.
-            /// @param done Predicate returning `true` when generator is done.
-            /// @param fin Cleanup handler.
-            /// @returns The allocated `stream_manager` and the output slot.
             template<
                 class... Ts, class Init, class Pull, class Done, class Finalize = unit_t,
                 class DownstreamManager = broadcast_downstream_manager<typename stream_source_trait_t<Pull>::output>>
-            make_source_result_t<DownstreamManager, Ts...> make_source(std::tuple<Ts...> xs, Init init, Pull pull,
-                                                                       Done done, Finalize fin = {},
-                                                                       policy::arg<DownstreamManager> = {}) {
+            [[deprecated("use attach_stream_source instead")]] make_source_result_t<DownstreamManager, Ts...>
+                make_source(std::tuple<Ts...> xs, Init init, Pull pull, Done done, Finalize fin = {},
+                            policy::arg<DownstreamManager> = {}) {
                 using driver = detail::stream_source_driver_impl<DownstreamManager, Pull, Done, Finalize>;
                 return make_source<driver>(std::move(xs), std::move(init), std::move(pull), std::move(done),
                                            std::move(fin));
@@ -435,18 +434,18 @@ namespace nil {
             template<class Init, class Pull, class Done, class Finalize = unit_t,
                      class DownstreamManager = default_downstream_manager_t<Pull>,
                      class Trait = stream_source_trait_t<Pull>>
-            typename std::enable_if<!is_actor_handle<Init>::value && Trait::valid,
-                                    make_source_result_t<DownstreamManager>>::type
+            [[deprecated("use attach_stream_source instead")]] detail::enable_if_t<
+                !is_actor_handle<Init>::value && Trait::valid, make_source_result_t<DownstreamManager>>
                 make_source(Init init, Pull pull, Done done, Finalize finalize = {},
                             policy::arg<DownstreamManager> token = {}) {
                 return make_source(std::make_tuple(), init, pull, done, finalize, token);
             }
 
-            /// Creates a new stream source and adds `dest` as first outbound path to it.
             template<class ActorHandle, class... Ts, class Init, class Pull, class Done, class Finalize = unit_t,
                      class DownstreamManager = default_downstream_manager_t<Pull>,
                      class Trait = stream_source_trait_t<Pull>>
-            typename std::enable_if<is_actor_handle<ActorHandle>::value, make_source_result_t<DownstreamManager>>::type
+            [[deprecated("use attach_stream_source instead")]] detail::enable_if_t<
+                is_actor_handle<ActorHandle>::value, make_source_result_t<DownstreamManager>>
                 make_source(const ActorHandle &dest, std::tuple<Ts...> xs, Init init, Pull pull, Done done,
                             Finalize fin = {}, policy::arg<DownstreamManager> = {}) {
                 // TODO: type checking of dest
@@ -457,24 +456,20 @@ namespace nil {
                 return {slot, std::move(mgr)};
             }
 
-            /// Creates a new stream source and adds `dest` as first outbound path to it.
             template<class ActorHandle, class Init, class Pull, class Done, class Finalize = unit_t,
                      class DownstreamManager = default_downstream_manager_t<Pull>,
                      class Trait = stream_source_trait_t<Pull>>
-            typename std::enable_if<is_actor_handle<ActorHandle>::value && Trait::valid,
-                                    make_source_result_t<DownstreamManager>>::type
+            [[deprecated("use attach_stream_source instead")]] detail::enable_if_t<
+                is_actor_handle<ActorHandle>::value && Trait::valid, make_source_result_t<DownstreamManager>>
                 make_source(const ActorHandle &dest, Init init, Pull pull, Done done, Finalize fin = {},
                             policy::arg<DownstreamManager> token = {}) {
                 return make_source(dest, std::make_tuple(), std::move(init), std::move(pull), std::move(done),
                                    std::move(fin), token);
             }
 
-            /// Creates a new continuous stream source by instantiating the default
-            /// source implementation with `Driver. `The returned manager is not
-            /// connected to any slot and thus not stored by the actor automatically.
             template<class Driver, class Init, class Pull, class Done, class Finalize = unit_t>
-            typename Driver::source_ptr_type make_continuous_source(Init init, Pull pull, Done done,
-                                                                    Finalize fin = {}) {
+            [[deprecated("use attach_continuous_stream_source instead")]] auto
+                make_continuous_source(Init init, Pull pull, Done done, Finalize fin = {}) {
                 using detail::make_stream_source;
                 auto mgr =
                     make_stream_source<Driver>(this, std::move(init), std::move(pull), std::move(done), std::move(fin));
@@ -482,36 +477,35 @@ namespace nil {
                 return mgr;
             }
 
-            /// Creates a new continuous stream source by instantiating the default
-            /// source implementation with `Driver. `The returned manager is not
-            /// connected to any slot and thus not stored by the actor automatically.
             template<
                 class Init, class Pull, class Done, class Finalize = unit_t,
                 class DownstreamManager = broadcast_downstream_manager<typename stream_source_trait_t<Pull>::output>>
-            stream_source_ptr<DownstreamManager> make_continuous_source(Init init, Pull pull, Done done,
-                                                                        Finalize fin = {},
-                                                                        policy::arg<DownstreamManager> = {}) {
+            [[deprecated("use attach_continuous_stream_source instead")]] auto
+                make_continuous_source(Init init, Pull pull, Done done, Finalize fin = {},
+                                       policy::arg<DownstreamManager> = {}) {
                 using driver = detail::stream_source_driver_impl<DownstreamManager, Pull, Done, Finalize>;
                 return make_continuous_source<driver>(std::move(init), std::move(pull), std::move(done),
                                                       std::move(fin));
             }
 
             template<class Driver, class... Ts>
-            make_sink_result<typename Driver::input_type> make_sink(const stream<typename Driver::input_type> &src,
-                                                                    Ts &&... xs) {
+            [[deprecated("use attach_stream_sink instead")]] make_sink_result<typename Driver::input_type>
+                make_sink(const stream<typename Driver::input_type> &src, Ts &&... xs) {
                 auto mgr = detail::make_stream_sink<Driver>(this, std::forward<Ts>(xs)...);
                 auto slot = mgr->add_inbound_path(src);
                 return {slot, std::move(mgr)};
             }
 
             template<class In, class Init, class Fun, class Finalize = unit_t, class Trait = stream_sink_trait_t<Fun>>
-            make_sink_result<In> make_sink(const stream<In> &in, Init init, Fun fun, Finalize fin = {}) {
+            [[deprecated("use attach_stream_sink instead")]] make_sink_result<In>
+                make_sink(const stream<In> &in, Init init, Fun fun, Finalize fin = {}) {
                 using driver = detail::stream_sink_driver_impl<In, Fun, Finalize>;
                 return make_sink<driver>(in, std::move(init), std::move(fun), std::move(fin));
             }
 
             template<class Driver, class In, class... Ts, class... Us>
-            make_stage_result_t<In, typename Driver::downstream_manager_type, Ts...>
+            [[deprecated("use attach_stream_stage instead")]] make_stage_result_t<
+                In, typename Driver::downstream_manager_type, Ts...>
                 make_stage(const stream<In> &src, std::tuple<Ts...> xs, Us &&... ys) {
                 using detail::make_stream_stage;
                 auto mgr = make_stream_stage<Driver>(this, std::forward<Us>(ys)...);
@@ -523,12 +517,12 @@ namespace nil {
             template<class In, class... Ts, class Init, class Fun, class Finalize = unit_t,
                      class DownstreamManager = default_downstream_manager_t<Fun>,
                      class Trait = stream_stage_trait_t<Fun>>
-            make_stage_result_t<In, DownstreamManager, Ts...> make_stage(const stream<In> &in, std::tuple<Ts...> xs,
-                                                                         Init init, Fun fun, Finalize fin = {},
-                                                                         policy::arg<DownstreamManager> token = {}) {
+            [[deprecated("use attach_stream_stage instead")]] make_stage_result_t<In, DownstreamManager, Ts...>
+                make_stage(const stream<In> &in, std::tuple<Ts...> xs, Init init, Fun fun, Finalize fin = {},
+                           policy::arg<DownstreamManager> token = {}) {
                 ACTOR_IGNORE_UNUSED(token);
                 ACTOR_ASSERT(current_mailbox_element() != nullptr);
-                ACTOR_ASSERT(current_mailbox_element()->content().match_elements<open_stream_msg>());
+                ACTOR_ASSERT(current_mailbox_element()->content().types() == make_type_id_list<open_stream_msg>());
                 using output_type = typename stream_stage_trait_t<Fun>::output;
                 using state_type = typename stream_stage_trait_t<Fun>::state;
                 static_assert(
@@ -546,17 +540,14 @@ namespace nil {
             template<class In, class Init, class Fun, class Finalize = unit_t,
                      class DownstreamManager = default_downstream_manager_t<Fun>,
                      class Trait = stream_stage_trait_t<Fun>>
-            make_stage_result_t<In, DownstreamManager> make_stage(const stream<In> &in, Init init, Fun fun,
-                                                                  Finalize fin = {},
-                                                                  policy::arg<DownstreamManager> token = {}) {
+            [[deprecated("use attach_stream_stage instead")]] make_stage_result_t<In, DownstreamManager>
+                make_stage(const stream<In> &in, Init init, Fun fun, Finalize fin = {},
+                           policy::arg<DownstreamManager> token = {}) {
                 return make_stage(in, std::make_tuple(), std::move(init), std::move(fun), std::move(fin), token);
             }
 
-            /// Returns a stream manager (implementing a continuous stage) without in- or
-            /// outbound path. The returned manager is not connected to any slot and thus
-            /// not stored by the actor automatically.
             template<class Driver, class... Ts>
-            typename Driver::stage_ptr_type make_continuous_stage(Ts &&... xs) {
+            [[deprecated("use attach_continuous_stream_stage instead")]] auto make_continuous_stage(Ts &&... xs) {
                 auto ptr = detail::make_stream_stage<Driver>(this, std::forward<Ts>(xs)...);
                 ptr->continuous(true);
                 return ptr;
@@ -564,7 +555,7 @@ namespace nil {
 
             template<class Init, class Fun, class Cleanup, class DownstreamManager = default_downstream_manager_t<Fun>,
                      class Trait = stream_stage_trait_t<Fun>>
-            stream_stage_ptr<typename Trait::input, DownstreamManager>
+            [[deprecated("use attach_continuous_stream_stage instead")]] auto
                 make_continuous_stage(Init init, Fun fun, Cleanup cleanup, policy::arg<DownstreamManager> token = {}) {
                 ACTOR_IGNORE_UNUSED(token);
                 using input_type = typename Trait::input;
@@ -672,7 +663,7 @@ namespace nil {
 
             /// Creates a new path for incoming stream traffic from `sender`.
             virtual inbound_path *make_inbound_path(stream_manager_ptr mgr, stream_slots slots, strong_actor_ptr sender,
-                                                    rtti_pair rtti);
+                                                    type_id_t rtti);
 
             /// Silently closes incoming stream traffic on `slot`.
             virtual void erase_inbound_path_later(stream_slot slot);
@@ -756,10 +747,14 @@ namespace nil {
                     swap(g, f);
             }
 
+            void call_error_handler(error &err) {
+                call_handler(error_handler_, this, err);
+            }
+
             // -- timeout management -----------------------------------------------------
 
             /// Requests a new timeout and returns its ID.
-            uint64_t set_timeout(atom_value type, actor_clock::time_point x);
+            uint64_t set_timeout(std::string type, actor_clock::time_point x);
 
             // -- stream processing ------------------------------------------------------
 
@@ -838,6 +833,9 @@ namespace nil {
 
             /// Customization point for setting a default `down_msg` callback.
             down_handler down_handler_;
+
+            /// Customization point for setting a default `down_msg` callback.
+            node_down_handler node_down_handler_;
 
             /// Customization point for setting a default `exit_msg` callback.
             exit_handler exit_handler_;

@@ -1,13 +1,11 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
@@ -15,13 +13,10 @@
 namespace nil {
     namespace actor {
 
-/// @addtogroup ActorCreation
-/// @{
+        /// @addtogroup ActorCreation
+        /// @{
 
-/// Stores options passed to the `spawn` function family.
-#ifdef ACTOR_DOCUMENTATION
-        class spawn_options {};
-#else
+        /// Stores options passed to the `spawn` function family.
         enum class spawn_options : int {
             no_flags = 0x00,
             link_flag = 0x01,
@@ -31,12 +26,10 @@ namespace nil {
             priority_aware_flag = 0x20,
             lazy_init_flag = 0x40
         };
-#endif
 
         /// Concatenates two {@link spawn_options}.
-        /// @relates spawn_options
-        constexpr spawn_options operator+(const spawn_options &lhs, const spawn_options &rhs) {
-            return static_cast<spawn_options>(static_cast<int>(lhs) | static_cast<int>(rhs));
+        constexpr spawn_options operator+(spawn_options x, spawn_options y) {
+            return static_cast<spawn_options>(static_cast<int>(x) | static_cast<int>(y));
         }
 
         /// Denotes default settings.
@@ -60,44 +53,37 @@ namespace nil {
         /// initialization until a message arrives.
         constexpr spawn_options lazy_init = spawn_options::lazy_init_flag;
 
-        /// Checks wheter `haystack` contains `needle`.
-        /// @relates spawn_options
+        /// Checks whether `haystack` contains `needle`.
         constexpr bool has_spawn_option(spawn_options haystack, spawn_options needle) {
             return (static_cast<int>(haystack) & static_cast<int>(needle)) != 0;
         }
 
-        /// Checks wheter the {@link detached} flag is set in `opts`.
-        /// @relates spawn_options
+        /// Checks whether the {@link detached} flag is set in `opts`.
         constexpr bool has_detach_flag(spawn_options opts) {
             return has_spawn_option(opts, detached);
         }
 
-        /// Checks wheter the {@link priority_aware} flag is set in `opts`.
-        /// @relates spawn_options
+        /// Checks whether the {@link priority_aware} flag is set in `opts`.
         constexpr bool has_priority_aware_flag(spawn_options) {
             return true;
         }
 
-        /// Checks wheter the {@link hidden} flag is set in `opts`.
-        /// @relates spawn_options
+        /// Checks whether the {@link hidden} flag is set in `opts`.
         constexpr bool has_hide_flag(spawn_options opts) {
             return has_spawn_option(opts, hidden);
         }
 
-        /// Checks wheter the {@link linked} flag is set in `opts`.
-        /// @relates spawn_options
+        /// Checks whether the {@link linked} flag is set in `opts`.
         constexpr bool has_link_flag(spawn_options opts) {
             return has_spawn_option(opts, linked);
         }
 
-        /// Checks wheter the {@link monitored} flag is set in `opts`.
-        /// @relates spawn_options
+        /// Checks whether the {@link monitored} flag is set in `opts`.
         constexpr bool has_monitor_flag(spawn_options opts) {
             return has_spawn_option(opts, monitored);
         }
 
-        /// Checks wheter the {@link lazy_init} flag is set in `opts`.
-        /// @relates spawn_options
+        /// Checks whether the {@link lazy_init} flag is set in `opts`.
         constexpr bool has_lazy_init_flag(spawn_options opts) {
             return has_spawn_option(opts, lazy_init);
         }

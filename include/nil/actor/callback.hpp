@@ -1,19 +1,17 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2018 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt for Boost License or
-// http://opensource.org/licenses/BSD-3-Clause for BSD 3-Clause License
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <nil/actor/error.hpp>
 #include <nil/actor/config.hpp>
+#include <nil/actor/error.hpp>
 
 #include <nil/actor/detail/type_traits.hpp>
 
@@ -40,7 +38,7 @@ namespace nil {
             virtual Result operator()(Ts...) = 0;
         };
 
-        /// Utility class for wrapping a function object of type `Base`.
+        /// Utility class for wrapping a function object of type `F`.
         template<class F, class Signature>
         class callback_impl;
 
@@ -63,13 +61,14 @@ namespace nil {
             F f_;
         };
 
-        /// Creates a callback from a lambda expression.
+        /// Creates a ::callback from the function object `fun`.
         /// @relates callback
         template<class F>
         auto make_callback(F fun) {
             using signature = typename detail::get_callable_trait<F>::fun_sig;
             return callback_impl<F, signature> {std::move(fun)};
         }
+
     }    // namespace actor
 }    // namespace nil
 

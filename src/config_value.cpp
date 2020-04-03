@@ -1,21 +1,25 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2011-2017 Dominik Charousset
-// Copyright (c) 2018-2019 Nil Foundation AG
-// Copyright (c) 2018-2019 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2017-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // Distributed under the terms and conditions of the BSD 3-Clause License or
 // (at your option) under the terms and conditions of the Boost Software
-// License 1.0. See accompanying file LICENSE_1_0.txt or copy at
-// http://www.boost.org/LICENSE_1_0.txt
+// License 1.0. See accompanying files LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt.
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/config_value.hpp>
 
 #include <ostream>
 
+#include <nil/actor/deep_to_string.hpp>
+#include <nil/actor/detail/ini_consumer.hpp>
+#include <nil/actor/detail/parser/read_ini.hpp>
 #include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/expected.hpp>
+#include <nil/actor/parser_state.hpp>
 #include <nil/actor/pec.hpp>
+#include <nil/actor/string_view.hpp>
 
 namespace nil {
     namespace actor {
@@ -23,7 +27,7 @@ namespace nil {
         namespace {
 
             const char *type_names[] {
-                "integer", "boolean", "real", "atom", "timespan", "uri", "string", "list", "dictionary",
+                "integer", "boolean", "real", "timespan", "uri", "string", "list", "dictionary",
             };
 
         }    // namespace
@@ -32,6 +36,43 @@ namespace nil {
 
         config_value::~config_value() {
             // nop
+        }
+
+        // -- parsing ------------------------------------------------------------------
+
+        expected<config_value> config_value::parse(string_view::iterator first, string_view::iterator last) {
+            using namespace detail;
+            auto i = first;
+            // Sanity check.
+            if (i == last)
+                return make_error(pec::unexpected_eof);
+            // Skip to beginning of the argument.
+            while (isspace(*i))
+                if (++i == last)
+                    return make_error(pec::unexpected_eof);
+            // Dispatch to parser.
+            detail::ini_value_consumer f;
+            string_parser_state res {i, last};
+            parser::read_ini_value(res, f);
+            if (res.code == pec::success)
+                return std::move(f.result);
+            // Assume an unescaped string unless the first character clearly indicates
+            // otherwise.
+            switch (*i) {
+                case '[':
+                case '{':
+                case '"':
+                case '\'':
+                    return make_error(res.code);
+                default:
+                    if (isdigit(*i))
+                        return make_error(res.code);
+                    return config_value {std::string {first, last}};
+            }
+        }
+
+        expected<config_value> config_value::parse(string_view str) {
+            return parse(str.begin(), str.end());
         }
 
         // -- properties ---------------------------------------------------------------
