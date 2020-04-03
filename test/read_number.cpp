@@ -10,12 +10,13 @@
 
 #define BOOST_TEST_MODULE detail.parser.read_number
 
-#include <nil/actor/detail/parser/read_number.hpp>
-
 #include <boost/test/unit_test.hpp>
+
+#include <nil/actor/test/core_test.hpp>
 
 #include <string>
 
+#include <nil/actor/detail/parser/read_number.hpp>
 #include <nil/actor/detail/parser/add_ascii.hpp>
 #include <nil/actor/detail/parser/sub_ascii.hpp>
 
@@ -24,6 +25,8 @@
 #include <nil/actor/pec.hpp>
 #include <nil/actor/string_view.hpp>
 #include <nil/actor/variant.hpp>
+#include <nil/actor/config_value.hpp>
+#include <nil/actor/init_global_meta_objects.hpp>
 
 using namespace nil::actor;
 
@@ -480,6 +483,9 @@ BOOST_AUTO_TEST_CASE(ranges_can_use_signed_integers) {
     }
 
 BOOST_AUTO_TEST_CASE(the_parser_rejects_invalid_step_values) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     CHECK_ERR("-2..+2..-2", pec::invalid_range_expression);
     CHECK_ERR("+2..-2..+2", pec::invalid_range_expression);
 }

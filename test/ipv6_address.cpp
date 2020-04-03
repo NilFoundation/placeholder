@@ -86,6 +86,9 @@ BOOST_AUTO_TEST_CASE(comparison) {
 }
 
 BOOST_AUTO_TEST_CASE(from_string_test) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto from_string = [](string_view str) {
         ipv6_address result;
         auto err = parse(str, result);

@@ -67,7 +67,12 @@ namespace {
 
     using mailbox_type = intrusive::fifo_inbox<mailbox_policy>;
 
-    struct fixture {};
+    struct fixture {
+        fixture() {
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+        }
+    };
 
     struct consumer {
         std::vector<int> ints;
@@ -91,7 +96,7 @@ namespace {
 
 BOOST_FIXTURE_TEST_SUITE(categorized_tests, fixture)
 
-BOOST_AUTO_TEST_CASE(priorities) {
+BOOST_AUTO_TEST_CASE(priorities_test) {
     mailbox_type mbox {unit, unit, unit, unit, unit};
     mbox.push_back(make_mailbox_element(nullptr, make_message_id(), {}, 123));
     mbox.push_back(make_mailbox_element(nullptr, make_message_id(message_priority::high), {}, 456));

@@ -90,6 +90,9 @@ namespace {
 }    // namespace
 
 BOOST_AUTO_TEST_CASE(constructor_attach_test) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     spawner_config cfg;
     spawner system {cfg};
     anon_send(system.spawn<test_spawner>(), delete_atom_v);

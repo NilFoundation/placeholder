@@ -74,6 +74,9 @@ BOOST_AUTO_TEST_CASE(empty_message) {
 }
 
 BOOST_AUTO_TEST_CASE(non_empty_message) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto m1 = make_mailbox_element(nullptr, make_message_id(), no_stages, make_message(1, 2, 3));
     BOOST_CHECK(m1->mid.is_async());
     BOOST_CHECK(m1->mid.category() == message_id::normal_message_category);

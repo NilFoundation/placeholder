@@ -46,7 +46,7 @@ list(APPEND TESTS_NAMES
      sequencer
      string_view
      categorized
-     tracing_data
+#     tracing_data
      composable_behavior
      ipv6_subnet
      ipv4_address
@@ -57,7 +57,7 @@ list(APPEND TESTS_NAMES
      read_ini
      metaprogramming
      config_option_set
-     actor_profiler
+#     actor_profiler
      aout
      optional
      type_id_list_builder
@@ -99,7 +99,7 @@ list(APPEND TESTS_NAMES
      message_builder_element
      error
 #     meta_object
-     fused_downstream_manager
+#     fused_downstream_manager
      parse
      settings
      blocking_actor

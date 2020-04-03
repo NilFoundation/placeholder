@@ -47,6 +47,9 @@ BOOST_AUTO_TEST_CASE(make_type_id_list_constructs_a_list_from_types) {
 }
 
 BOOST_AUTO_TEST_CASE(type_id_lists_are_convertible_to_strings) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto xs = make_type_id_list<uint16_t, bool, float>();
     BOOST_CHECK_EQUAL(to_string(xs), "[uint16_t, bool, float]");
 }

@@ -54,6 +54,9 @@ BOOST_AUTO_TEST_CASE(skip_test) {
 }
 
 BOOST_AUTO_TEST_CASE(value_test) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto x = result<int> {42};
     BOOST_CHECK_EQUAL(x.flag, rt_value);
     BOOST_CHECK_EQUAL(x.value.get_as<int>(0), 42);

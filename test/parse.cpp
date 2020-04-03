@@ -131,6 +131,9 @@ BOOST_AUTO_TEST_CASE(valid_signed_integers) {
 }
 
 BOOST_AUTO_TEST_CASE(invalid_signed_integers) {
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     CHECK_INVALID(int8_t, "--1", pec::unexpected_character);
     CHECK_INVALID(int8_t, "++1", pec::unexpected_character);
     CHECK_INVALID(int8_t, "-129", pec::integer_underflow);

@@ -78,11 +78,15 @@ BOOST_AUTO_TEST_CASE(from_string_valid_inputs) {
 }
 
 BOOST_AUTO_TEST_CASE(from_string_invalid_inputs) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto should_fail = [](string_view str) {
         ipv4_address result;
         auto err = parse(str, result);
-        if (!err)
+        if (!err) {
             BOOST_ERROR("error while parsing " << str << ", expected an error but got: " << to_string(result));
+        }
     };
     should_fail("256.12.12.12");
     should_fail("1136.12.12.12");

@@ -19,6 +19,9 @@
 using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(message_views_detach_their_content) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto msg1 = make_message(1, 2, 3, "four");
     auto msg2 = msg1;
     BOOST_REQUIRE(msg1.cptr() == msg2.cptr());

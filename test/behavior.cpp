@@ -68,6 +68,10 @@ namespace {
     };
 
     struct fixture {
+        fixture() {
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+        }
         message m1 = make_message(1);
         message m2 = make_message(1, 2);
         message m3 = make_message(1, 2, 3);

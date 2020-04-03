@@ -125,6 +125,9 @@ namespace {
         // -- constructors, destructors, and assignment operators --------------------
 
         fixture() {
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+            nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
             http.scheme("http");
         }
 

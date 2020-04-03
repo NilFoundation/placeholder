@@ -129,6 +129,9 @@ BOOST_AUTO_TEST_CASE(copy_assignment) {
 }
 
 BOOST_AUTO_TEST_CASE(type_bool) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     BOOST_CHECK_EQUAL(read<bool>("true"), true);
     BOOST_CHECK_EQUAL(read<bool>("false"), false);
     BOOST_CHECK_EQUAL(read<bool>("0"), none);

@@ -43,6 +43,9 @@ namespace {
 }    // namespace
 
 BOOST_AUTO_TEST_CASE(messages_allow_index_based_access) {
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_test>();
+    nil::actor::init_global_meta_objects<nil::actor::id_block::core_module>();
+
     auto msg = make_message("abc", uint32_t {10}, 20.0);
     BOOST_CHECK_EQUAL(msg.size(), 3u);
     BOOST_CHECK_EQUAL(msg.types(), (make_type_id_list<std::string, uint32_t, double>()));
