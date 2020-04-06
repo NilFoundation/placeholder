@@ -82,7 +82,7 @@ namespace nil {
         public:
             friend class logger;
             friend class io::middleman;
-            friend class net::middleman;
+            friend class network::middleman;
             friend class abstract_actor;
 
             /// Returns the internal actor for dynamic spawn operations.
@@ -238,7 +238,7 @@ namespace nil {
 
             /// Returns the network manager (middleman) instance.
             /// @throws `std::logic_error` if module is not loaded.
-            net::middleman &network_manager();
+            network::middleman &network_manager();
 
             /// Returns a dummy execution unit that forwards
             /// everything to the scheduler.

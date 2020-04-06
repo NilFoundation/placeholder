@@ -385,11 +385,11 @@ namespace nil {
             return modules_[module::network_manager] != nullptr;
         }
 
-        net::middleman &spawner::network_manager() {
+        network::middleman &spawner::network_manager() {
             auto &clptr = modules_[module::network_manager];
             if (!clptr)
                 ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
-            return *reinterpret_cast<net::middleman *>(clptr->subtype_ptr());
+            return *reinterpret_cast<network::middleman *>(clptr->subtype_ptr());
         }
 
         scoped_execution_unit *spawner::dummy_execution_unit() {

@@ -226,11 +226,11 @@ template <class...> class variant;
 
         // -- networking classes -------------------------------------------------------
 
-        namespace net {
+        namespace network {
 
             class middleman;
 
-        }    // namespace net
+        }    // namespace network
 
         // -- scheduler classes --------------------------------------------------------
 
