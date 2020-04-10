@@ -13,8 +13,8 @@ include(CMConfig)
 include(CMDeploy)
 include(CMSetupVersion)
 
-if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "mtl"))
-    cm_workspace(mtl)
+if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
+    cm_workspace(actor)
 endif()
 
 macro(cm_find_package NAME)
@@ -25,9 +25,9 @@ macro(cm_find_package NAME)
     endif()
 endmacro()
 
-cm_project(actor WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES C CXX)
+cm_project(core WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES C CXX)
 
-cm_setup_version(VERSION 0.16.0)
+cm_setup_version(VERSION 0.18.0)
 
 if(NOT Boost_FOUND)
     cm_find_package(Boost COMPONENTS chrono program_options random system thread)
@@ -220,8 +220,6 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PUBLIC
                       crypto3::block
                       crypto3::codec
                       crypto3::hash
-
-                      marshalling
 
                       ${Boost_LIBRARIES})
 
