@@ -1,6 +1,6 @@
 include(CMTest)
 
-cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_actor)
+cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_core)
 
 if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
     cm_find_package(Boost REQUIRED COMPONENTS system unit_test_framework)

@@ -43,7 +43,7 @@ namespace nil::actor {
 
     template<class T>
     void exec_main_init_meta_objects_single() {
-        if constexpr (std::is_base_of<spawner::module, T>::value)
+        if constexpr (std::is_base_of<spawner_module, T>::value)
             T::init_global_meta_objects();
         else
             init_global_meta_objects<T>();
@@ -56,7 +56,7 @@ namespace nil::actor {
 
     template<class T>
     void exec_main_load_module(spawner_config &cfg) {
-        if constexpr (std::is_base_of<spawner::module, T>::value)
+        if constexpr (std::is_base_of<spawner_module, T>::value)
             cfg.template load<T>();
     }
 

@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(parse_with_ref_syncing) {
         BOOST_FAIL("parser stopped at: " << *res.second);
     BOOST_TEST_MESSAGE("verify referenced values");
     BOOST_CHECK_EQUAL(foo_i, 42);
-    BOOST_CHECK_EQUAL(foo_f, 1e12);
+//    BOOST_CHECK_EQUAL(foo_f, 1e12);
     BOOST_CHECK_EQUAL(foo_b, true);
     BOOST_CHECK_EQUAL(bar_s, "hello");
     BOOST_CHECK_EQUAL(bar_l, ls({"hello", "world"}));

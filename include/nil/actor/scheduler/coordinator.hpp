@@ -46,7 +46,7 @@ namespace nil::actor::scheduler {
             return data_;
         }
 
-        static spawner::module *make(spawner &sys, detail::type_list<>) {
+        static spawner_module *make(spawner &sys, detail::type_list<>) {
             return new coordinator(sys);
         }
 

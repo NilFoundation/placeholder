@@ -183,29 +183,6 @@ namespace nil {
 
         }    // namespace
 
-        spawner::module::~module() {
-            // nop
-        }
-
-        const char *spawner::module::name() const noexcept {
-            switch (id()) {
-                case scheduler:
-                    return "Scheduler";
-                case middleman:
-                    return "Middleman";
-                case openssl_manager:
-                    return "OpenSSL Manager";
-                case network_manager:
-                    return "Network Manager";
-                default:
-                    return "???";
-            }
-        }
-
-        spawner::networking_module::~networking_module() {
-            // nop
-        }
-
         spawner::spawner(spawner_config &cfg) :
             profiler_(cfg.profiler), ids_(0), logger_(new nil::actor::logger(*this), false), registry_(*this),
             groups_(*this), dummy_execution_unit_(this), await_actors_before_shutdown_(true), detached_(0), cfg_(cfg),
@@ -224,7 +201,7 @@ namespace nil {
                     "spawner created without calling "
                     "nil::actor::init_global_meta_objects<>() before");
             }
-            if (modules_[module::middleman] != nullptr) {
+            if (modules_[spawner_module::middleman] != nullptr) {
                 if (gmos.size() < detail::io_module_end || gmos[detail::io_module_begin].type_name == nullptr) {
                     ACTOR_CRITICAL(
                         "I/O module loaded without calling "
@@ -232,7 +209,7 @@ namespace nil {
                 }
             }
             // Make sure we have a scheduler up and running.
-            auto &sched = modules_[module::scheduler];
+            auto &sched = modules_[spawner_module::scheduler];
             using namespace scheduler;
             using policy::work_sharing;
             using policy::work_stealing;
@@ -334,7 +311,7 @@ namespace nil {
         /// Returns the scheduler instance.
         scheduler::abstract_coordinator &spawner::scheduler() {
             using ptr = scheduler::abstract_coordinator *;
-            return *static_cast<ptr>(modules_[module::scheduler].get());
+            return *static_cast<ptr>(modules_[spawner_module::scheduler].get());
         }
 
         nil::actor::logger &spawner::logger() {
@@ -360,33 +337,33 @@ namespace nil {
         }
 
         bool spawner::has_middleman() const {
-            return modules_[module::middleman] != nullptr;
+            return modules_[spawner_module::middleman] != nullptr;
         }
 
         io::middleman &spawner::middleman() {
-            auto &clptr = modules_[module::middleman];
+            auto &clptr = modules_[spawner_module::middleman];
             if (!clptr)
                 ACTOR_RAISE_ERROR("cannot access middleman: module not loaded");
             return *reinterpret_cast<io::middleman *>(clptr->subtype_ptr());
         }
 
         bool spawner::has_openssl_manager() const {
-            return modules_[module::openssl_manager] != nullptr;
+            return modules_[spawner_module::openssl_manager] != nullptr;
         }
 
         openssl::manager &spawner::openssl_manager() const {
-            auto &clptr = modules_[module::openssl_manager];
+            auto &clptr = modules_[spawner_module::openssl_manager];
             if (!clptr)
                 ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
             return *reinterpret_cast<openssl::manager *>(clptr->subtype_ptr());
         }
 
         bool spawner::has_network_manager() const noexcept {
-            return modules_[module::network_manager] != nullptr;
+            return modules_[spawner_module::network_manager] != nullptr;
         }
 
         network::middleman &spawner::network_manager() {
-            auto &clptr = modules_[module::network_manager];
+            auto &clptr = modules_[spawner_module::network_manager];
             if (!clptr)
                 ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
             return *reinterpret_cast<network::middleman *>(clptr->subtype_ptr());
@@ -410,7 +387,7 @@ namespace nil {
 
         void spawner::monitor(const node_id &node, const actor_addr &observer) {
             // TODO: Currently does not work with other modules, in particular caf_net.
-            auto mm = modules_[module::middleman].get();
+            auto mm = modules_[spawner_module::middleman].get();
             if (mm == nullptr)
                 return;
             auto mm_dptr = static_cast<networking_module *>(mm);
@@ -419,7 +396,7 @@ namespace nil {
 
         void spawner::demonitor(const node_id &node, const actor_addr &observer) {
             // TODO: Currently does not work with other modules, in particular caf_net.
-            auto mm = modules_[module::middleman].get();
+            auto mm = modules_[spawner_module::middleman].get();
             if (mm == nullptr)
                 return;
             auto mm_dptr = static_cast<networking_module *>(mm);
@@ -456,10 +433,10 @@ namespace nil {
                 hook->thread_terminates();
         }
 
-        expected<strong_actor_ptr> spawner::dyn_spawn_impl(const std::string &name, message &args,
-                                                                execution_unit *ctx, bool check_interface,
-                                                                optional<const mpi &> expected_ifs) {
-            ACTOR_LOG_TRACE(ACTOR_ARG(name) << ACTOR_ARG(args) << ACTOR_ARG(check_interface) << ACTOR_ARG(expected_ifs));
+        expected<strong_actor_ptr> spawner::dyn_spawn_impl(const std::string &name, message &args, execution_unit *ctx,
+                                                           bool check_interface, optional<const mpi &> expected_ifs) {
+            ACTOR_LOG_TRACE(ACTOR_ARG(name)
+                            << ACTOR_ARG(args) << ACTOR_ARG(check_interface) << ACTOR_ARG(expected_ifs));
             if (name.empty())
                 return sec::invalid_argument;
             auto &fs = cfg_.actor_factories;

@@ -29,7 +29,7 @@ namespace nil::actor::scheduler {
     /// the central printer instance for {@link aout}. It also forwards
     /// sends from detached workers or non-actor threads to randomly
     /// chosen workers.
-    class BOOST_SYMBOL_VISIBLE abstract_coordinator : public spawner::module {
+    class BOOST_SYMBOL_VISIBLE abstract_coordinator : public spawner_module {
     public:
         enum utility_actor_id : size_t { printer_id, max_id };
 

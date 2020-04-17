@@ -75,6 +75,63 @@ namespace nil::actor::detail {
 
 namespace nil::actor {
 
+    class BOOST_SYMBOL_VISIBLE spawner_module {
+    public:
+        enum id_t { scheduler, middleman, openssl_manager, network_manager, num_ids };
+
+        virtual ~spawner_module() {
+        }
+
+        /// Returns the human-redable name of the module.
+        const char *name() const noexcept {
+            switch (id()) {
+                case scheduler:
+                    return "Scheduler";
+                case middleman:
+                    return "Middleman";
+                case openssl_manager:
+                    return "OpenSSL Manager";
+                case network_manager:
+                    return "Network Manager";
+                default:
+                    return "???";
+            }
+        }
+
+        /// Starts any background threads needed by the module.
+        virtual void start() = 0;
+
+        /// Stops all background threads of the module.
+        virtual void stop() = 0;
+
+        /// Allows the module to change the
+        /// configuration of the actor system during startup.
+        virtual void init(spawner_config &) = 0;
+
+        /// Returns the identifier of this module.
+        virtual id_t id() const = 0;
+
+        /// Returns a pointer to the subtype.
+        virtual void *subtype_ptr() = 0;
+    };
+
+    /// An (optional) component of the actor system with networking capabilities.
+    class BOOST_SYMBOL_VISIBLE networking_module : public spawner_module {
+    public:
+        ~networking_module() override {
+        }
+
+        /// Causes the module to send a `node_down_msg` to `observer` if this system
+        /// loses connection to `node`.
+        virtual void monitor(const node_id &node, const actor_addr &observer) = 0;
+
+        /// Causes the module remove one entry for `observer` from the list of
+        /// actors that receive a `node_down_msg` if this system loses connection to
+        /// `node`. Each call to `monitor` requires one call to `demonitor` in order
+        /// to unsubscribe the `observer` completely.
+        virtual void demonitor(const node_id &node, const actor_addr &observer) = 0;
+    };
+
     /// Actor environment including scheduler, registry, and optional components
     /// such as a middleman.
     class BOOST_SYMBOL_VISIBLE spawner {
@@ -99,52 +156,9 @@ namespace nil::actor {
         spawner(const spawner &) = delete;
         spawner &operator=(const spawner &) = delete;
 
-        /// An (optional) component of the actor system.
-        class BOOST_SYMBOL_VISIBLE module {
-        public:
-            enum id_t { scheduler, middleman, openssl_manager, network_manager, num_ids };
+        using module_ptr = std::unique_ptr<spawner_module>;
 
-            virtual ~module();
-
-            /// Returns the human-redable name of the module.
-            const char *name() const noexcept;
-
-            /// Starts any background threads needed by the module.
-            virtual void start() = 0;
-
-            /// Stops all background threads of the module.
-            virtual void stop() = 0;
-
-            /// Allows the module to change the
-            /// configuration of the actor system during startup.
-            virtual void init(spawner_config &) = 0;
-
-            /// Returns the identifier of this module.
-            virtual id_t id() const = 0;
-
-            /// Returns a pointer to the subtype.
-            virtual void *subtype_ptr() = 0;
-        };
-
-        using module_ptr = std::unique_ptr<module>;
-
-        using module_array = std::array<module_ptr, module::num_ids>;
-
-        /// An (optional) component of the actor system with networking capabilities.
-        class BOOST_SYMBOL_VISIBLE networking_module : public module {
-        public:
-            ~networking_module() override;
-
-            /// Causes the module to send a `node_down_msg` to `observer` if this system
-            /// loses connection to `node`.
-            virtual void monitor(const node_id &node, const actor_addr &observer) = 0;
-
-            /// Causes the module remove one entry for `observer` from the list of
-            /// actors that receive a `node_down_msg` if this system loses connection to
-            /// `node`. Each call to `monitor` requires one call to `demonitor` in order
-            /// to unsubscribe the `observer` completely.
-            virtual void demonitor(const node_id &node, const actor_addr &observer) = 0;
-        };
+        using module_array = std::array<module_ptr, spawner_module::num_ids>;
 
         /// @warning The system stores a reference to `cfg`, which means the
         ///          config object must outlive the actor system.
@@ -595,5 +609,4 @@ namespace nil::actor {
         /// Stores the system-wide factory for deserializing tracing data.
         tracing_data_factory *tracing_context_;
     };
-
 }    // namespace nil::actor

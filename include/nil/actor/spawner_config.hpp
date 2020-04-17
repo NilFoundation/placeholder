@@ -52,7 +52,7 @@ namespace nil {
             template<class K, class V>
             using hash_map = std::unordered_map<K, V>;
 
-            using module_factory = std::function<spawner::module *(spawner &)>;
+            using module_factory = std::function<spawner_module *(spawner &)>;
 
             using module_factory_vector = std::vector<module_factory>;
 
@@ -172,7 +172,7 @@ namespace nil {
             /// Loads module `T` with optional template parameters `Ts...`.
             template<class T, class... Ts>
             spawner_config &load() {
-                module_factories.push_back([](spawner &sys) -> spawner::module * {
+                module_factories.push_back([](spawner &sys) -> spawner_module * {
                     return T::make(sys, detail::type_list<Ts...> {});
                 });
                 return *this;

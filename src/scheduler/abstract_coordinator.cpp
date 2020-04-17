@@ -240,8 +240,8 @@ namespace nil::actor::scheduler {
         num_workers_ = get_or(cfg, "scheduler.max-threads", sr::max_threads);
     }
 
-    spawner::module::id_t abstract_coordinator::id() const {
-        return module::scheduler;
+    spawner_module::id_t abstract_coordinator::id() const {
+        return spawner_module::scheduler;
     }
 
     void *abstract_coordinator::subtype_ptr() {
