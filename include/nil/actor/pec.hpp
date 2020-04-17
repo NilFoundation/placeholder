@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <string>
 
-
 #include <nil/actor/error_category.hpp>
 #include <nil/actor/fwd.hpp>
 

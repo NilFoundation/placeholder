@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <string>
 
-
 #include <nil/actor/timespan.hpp>
 
 namespace nil {

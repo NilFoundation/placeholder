@@ -13,7 +13,6 @@
 #include <atomic>
 #include <cstddef>
 
-
 #include <nil/actor/memory_managed.hpp>
 
 namespace nil {

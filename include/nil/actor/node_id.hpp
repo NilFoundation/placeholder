@@ -26,7 +26,7 @@
 namespace nil {
     namespace actor {
 
-        /// A node ID is an opaque value for representing CAF instances in the network.
+        /// A node ID is an opaque value for representing spawner instances in the network.
         class BOOST_SYMBOL_VISIBLE node_id {
         public:
             // -- member types -----------------------------------------------------------

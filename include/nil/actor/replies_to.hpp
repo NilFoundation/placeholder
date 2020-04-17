@@ -12,7 +12,6 @@
 
 #include <string>
 
-
 #include <nil/actor/detail/type_list.hpp>
 
 namespace nil {
