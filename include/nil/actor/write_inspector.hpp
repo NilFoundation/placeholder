@@ -23,7 +23,7 @@
 #include <nil/actor/meta/load_callback.hpp>
 #include <nil/actor/unifyn.hpp>
 
-#define ACTOR_WRITE_INSPECTOR_TRY(statement)                          \
+#define ACTOR_WRITE_INSPECTOR_TRY(statement)                        \
     if constexpr (std::is_same<decltype(statement), void>::value) { \
         statement;                                                  \
     } else {                                                        \
@@ -33,98 +33,96 @@
         }                                                           \
     }
 
-namespace nil {
-    namespace actor {
+namespace nil::actor {
 
-        /// Injects an `operator()` that dispatches to `Subtype::apply`. The `Subtype`
-        /// shall overload `apply` for:
-        /// - all fixed-size integer types from `<cstdint>`
-        /// - floating point numbers
-        /// - enum types
-        /// - `std::string`, `std::u16string`, and `std::u32string`
-        template<class Subtype>
-        class write_inspector {
-        public:
-            static constexpr bool reads_state = false;
+    /// Injects an `operator()` that dispatches to `Subtype::apply`. The `Subtype`
+    /// shall overload `apply` for:
+    /// - all fixed-size integer types from `<cstdint>`
+    /// - floating point numbers
+    /// - enum types
+    /// - `std::string`, `std::u16string`, and `std::u32string`
+    template<class Subtype>
+    class write_inspector {
+    public:
+        static constexpr bool reads_state = false;
 
-            static constexpr bool writes_state = true;
+        static constexpr bool writes_state = true;
 
-            template<class... Ts>
-            [[nodiscard]] auto operator()(Ts &&... xs) {
-                static_assert(((std::is_lvalue_reference<Ts>::value || meta::is_annotation_v<Ts>)    //
-                               &&...));
-                typename Subtype::result_type result;
-                static_cast<void>((try_apply(result, xs) && ...));
-                return result;
+        template<class... Ts>
+        [[nodiscard]] auto operator()(Ts &&... xs) {
+            static_assert(((std::is_lvalue_reference<Ts>::value || meta::is_annotation_v<Ts>)    //
+                           &&...));
+            typename Subtype::result_type result;
+            static_cast<void>((try_apply(result, xs) && ...));
+            return result;
+        }
+
+    private:
+        template<class Tuple, size_t... Is>
+        static auto apply_tuple(Subtype &dref, Tuple &xs, std::index_sequence<Is...>) {
+            return dref(std::get<Is>(xs)...);
+        }
+
+        template<class T, size_t... Is>
+        static auto apply_array(Subtype &dref, T *xs, std::index_sequence<Is...>) {
+            return dref(xs[Is]...);
+        }
+
+        template<class R, class T>
+        std::enable_if_t<meta::is_annotation_v<T>, bool> try_apply(R &result, T &x) {
+            if constexpr (meta::is_load_callback_v<T>) {
+                ACTOR_WRITE_INSPECTOR_TRY(x.fun())
             }
+            return true;
+        }
 
-        private:
-            template<class Tuple, size_t... Is>
-            static auto apply_tuple(Subtype &dref, Tuple &xs, std::index_sequence<Is...>) {
-                return dref(std::get<Is>(xs)...);
-            }
-
-            template<class T, size_t... Is>
-            static auto apply_array(Subtype &dref, T *xs, std::index_sequence<Is...>) {
-                return dref(xs[Is]...);
-            }
-
-            template<class R, class T>
-            std::enable_if_t<meta::is_annotation_v<T>, bool> try_apply(R &result, T &x) {
-                if constexpr (meta::is_load_callback_v<T>) {
-                    ACTOR_WRITE_INSPECTOR_TRY(x.fun())
+        template<class R, class T>
+        std::enable_if_t<!meta::is_annotation_v<T>, bool> try_apply(R &result, T &x) {
+            Subtype &dref = *static_cast<Subtype *>(this);
+            if constexpr (std::is_empty<T>::value || is_allowed_unsafe_message_type_v<T>) {
+                // skip element
+            } else if constexpr (std::is_integral<T>::value) {
+                using squashed_type = detail::squashed_int_t<T>;
+                auto &squashed_x = reinterpret_cast<squashed_type &>(x);
+                ACTOR_WRITE_INSPECTOR_TRY(dref.apply(squashed_x))
+            } else if constexpr (detail::can_apply_v<Subtype, decltype(x)>) {
+                ACTOR_WRITE_INSPECTOR_TRY(dref.apply(x))
+            } else if constexpr (std::is_array<T>::value) {
+                std::make_index_sequence<std::extent<T>::value> seq;
+                ACTOR_WRITE_INSPECTOR_TRY(apply_array(dref, x, seq))
+            } else if constexpr (detail::is_stl_tuple_type_v<T>) {
+                std::make_index_sequence<std::tuple_size<T>::value> seq;
+                ACTOR_WRITE_INSPECTOR_TRY(apply_tuple(dref, x, seq))
+            } else if constexpr (detail::is_map_like_v<T>) {
+                x.clear();
+                size_t size = 0;
+                ACTOR_WRITE_INSPECTOR_TRY(dref.begin_sequence(size))
+                for (size_t i = 0; i < size; ++i) {
+                    auto key = typename T::key_type {};
+                    auto val = typename T::mapped_type {};
+                    ACTOR_WRITE_INSPECTOR_TRY(dref(key, val))
+                    x.emplace(std::move(key), std::move(val));
                 }
-                return true;
-            }
-
-            template<class R, class T>
-            std::enable_if_t<!meta::is_annotation_v<T>, bool> try_apply(R &result, T &x) {
-                Subtype &dref = *static_cast<Subtype *>(this);
-                if constexpr (std::is_empty<T>::value || is_allowed_unsafe_message_type_v<T>) {
-                    // skip element
-                } else if constexpr (std::is_integral<T>::value) {
-                    using squashed_type = detail::squashed_int_t<T>;
-                    auto &squashed_x = reinterpret_cast<squashed_type &>(x);
-                    ACTOR_WRITE_INSPECTOR_TRY(dref.apply(squashed_x))
-                } else if constexpr (detail::can_apply_v<Subtype, decltype(x)>) {
-                    ACTOR_WRITE_INSPECTOR_TRY(dref.apply(x))
-                } else if constexpr (std::is_array<T>::value) {
-                    std::make_index_sequence<std::extent<T>::value> seq;
-                    ACTOR_WRITE_INSPECTOR_TRY(apply_array(dref, x, seq))
-                } else if constexpr (detail::is_stl_tuple_type_v<T>) {
-                    std::make_index_sequence<std::tuple_size<T>::value> seq;
-                    ACTOR_WRITE_INSPECTOR_TRY(apply_tuple(dref, x, seq))
-                } else if constexpr (detail::is_map_like_v<T>) {
-                    x.clear();
-                    size_t size = 0;
-                    ACTOR_WRITE_INSPECTOR_TRY(dref.begin_sequence(size))
-                    for (size_t i = 0; i < size; ++i) {
-                        auto key = typename T::key_type {};
-                        auto val = typename T::mapped_type {};
-                        ACTOR_WRITE_INSPECTOR_TRY(dref(key, val))
-                        x.emplace(std::move(key), std::move(val));
-                    }
-                    ACTOR_WRITE_INSPECTOR_TRY(dref.end_sequence())
-                } else if constexpr (detail::is_list_like_v<T>) {
-                    x.clear();
-                    size_t size = 0;
-                    ACTOR_WRITE_INSPECTOR_TRY(dref.begin_sequence(size))
-                    for (size_t i = 0; i < size; ++i) {
-                        auto tmp = typename T::value_type {};
-                        ACTOR_WRITE_INSPECTOR_TRY(dref(tmp))
-                        x.insert(x.end(), std::move(tmp));
-                    }
-                    ACTOR_WRITE_INSPECTOR_TRY(dref.end_sequence())
-                } else {
-                    static_assert(detail::is_inspectable<Subtype, T>::value);
-                    using nil::actor::detail::inspect;
-                    ACTOR_WRITE_INSPECTOR_TRY(inspect(dref, x));
+                ACTOR_WRITE_INSPECTOR_TRY(dref.end_sequence())
+            } else if constexpr (detail::is_list_like_v<T>) {
+                x.clear();
+                size_t size = 0;
+                ACTOR_WRITE_INSPECTOR_TRY(dref.begin_sequence(size))
+                for (size_t i = 0; i < size; ++i) {
+                    auto tmp = typename T::value_type {};
+                    ACTOR_WRITE_INSPECTOR_TRY(dref(tmp))
+                    x.insert(x.end(), std::move(tmp));
                 }
-                return true;
+                ACTOR_WRITE_INSPECTOR_TRY(dref.end_sequence())
+            } else {
+                static_assert(detail::is_inspectable<Subtype, T>::value);
+                using nil::actor::detail::inspect;
+                ACTOR_WRITE_INSPECTOR_TRY(inspect(dref, x));
             }
-        };
+            return true;
+        }
+    };
 
-    }    // namespace actor
-}    // namespace nil
+}    // namespace nil::actor
 
 #undef ACTOR_WRITE_INSPECTOR_TRY

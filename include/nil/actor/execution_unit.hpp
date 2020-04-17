@@ -58,6 +58,5 @@ namespace nil {
             spawner *system_ = nullptr;
             proxy_registry *proxies_ = nullptr;
         };
-
     }    // namespace actor
 }    // namespace nil

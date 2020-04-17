@@ -12,8 +12,6 @@
 
 #include <nil/actor/fwd.hpp>
 
-
-
 namespace nil {
     namespace actor {
 
