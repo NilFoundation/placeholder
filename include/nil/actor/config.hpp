@@ -27,18 +27,18 @@
 //   - denotes the amount of logging, ranging from error messages only (0)
 //     to complete traces (4)
 
-/// Denotes version of CAF in the format {MAJOR}{MINOR}{PATCH},
+/// Denotes version of =nil; Actor in the format {MAJOR}{MINOR}{PATCH},
 /// whereas each number is a two-digit decimal number without
 /// leading zeros (e.g. 900 is version 0.9.0).
 #define ACTOR_VERSION 1800
 
-/// Defined to the major version number of CAF.
+/// Defined to the major version number of =nil; Actor.
 #define ACTOR_MAJOR_VERSION (ACTOR_VERSION / 10000)
 
-/// Defined to the minor version number of CAF.
+/// Defined to the minor version number of =nil; Actor.
 #define ACTOR_MINOR_VERSION ((ACTOR_VERSION / 100) % 100)
 
-/// Defined to the patch version number of CAF.
+/// Defined to the patch version number of =nil; Actor.
 #define ACTOR_PATCH_VERSION (ACTOR_VERSION % 100)
 
 // This compiler-specific block defines:

@@ -26,7 +26,7 @@
 namespace nil {
     namespace actor {
 
-        /// Interfaces between a user-defined type and CAF config values by going
+        /// Interfaces between a user-defined type and =nil; Actor config values by going
         /// through intermediate values.
         template<class... Ts>
         class config_value_adaptor {

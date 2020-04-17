@@ -79,21 +79,21 @@ namespace nil {
         template<class T>
         constexpr const char *type_name_v = type_name<T>::value;
 
-        /// The first type ID not reserved by CAF and its modules.
+        /// The first type ID not reserved by =nil; Actor and its modules.
         constexpr type_id_t first_custom_type_id = 200;
 
     }    // namespace actor
 }    // namespace nil
 
-/// Starts a code block for registering custom types to CAF. Stores the first ID
+/// Starts a code block for registering custom types to =nil; Actor. Stores the first ID
 /// for the project as `nil::actor::id_block::${project_name}_first_type_id`. Usually,
 /// users should use `nil::actor::first_custom_type_id` as `first_id`. However, this
 /// mechanism also enables projects to append IDs to a block of another project.
 /// If two projects are developed separately to avoid dependencies, they only
 /// need to define sufficiently large offsets to guarantee collision-free IDs.
-/// CAF supports gaps in the ID space.
+/// =nil; Actor supports gaps in the ID space.
 ///
-/// @note CAF reserves all names with the suffix `_module`. For example, core
+/// @note =nil; Actor reserves all names with the suffix `_module`. For example, core
 ///       module uses the project name `core_module`.
 #define ACTOR_BEGIN_TYPE_ID_BLOCK(project_name, first_id)                        \
     namespace nil::actor::id_block {                                           \
@@ -191,7 +191,7 @@ namespace nil {
 #define ACTOR_ADD_ATOM(...) BOOST_PP_OVERLOAD(ACTOR_ADD_ATOM_, __VA_ARGS__)(__VA_ARGS__)
 #endif
 
-/// Finalizes a code block for registering custom types to CAF. Defines a struct
+/// Finalizes a code block for registering custom types to =nil; Actor. Defines a struct
 /// `nil::actor::type_id::${project_name}` with two static members `begin` and `end`.
 /// The former stores the first assigned type ID. The latter stores the last
 /// assigned type ID + 1.
@@ -229,7 +229,7 @@ ACTOR_ADD_TYPE_ID(core_module, (std::u16string))
 ACTOR_ADD_TYPE_ID(core_module, (std::u32string))
 ACTOR_ADD_TYPE_ID(core_module, (std::set<std::string>))
 
-// -- CAF types
+// -- =nil; Actor types
 
 ACTOR_ADD_TYPE_ID(core_module, (nil::actor::actor))
 ACTOR_ADD_TYPE_ID(core_module, (nil::actor::actor_addr))

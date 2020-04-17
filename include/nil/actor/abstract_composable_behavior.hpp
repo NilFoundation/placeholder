@@ -17,7 +17,7 @@
 namespace nil {
     namespace actor {
 
-        /// Marker type that allows CAF to spawn actors from composable states.
+        /// Marker type that allows =nil; Actor to spawn actors from composable states.
         class BOOST_SYMBOL_VISIBLE abstract_composable_behavior {
         public:
             virtual ~abstract_composable_behavior();

@@ -113,7 +113,7 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(actor_profiler_tests, fixture)
 
 BOOST_AUTO_TEST_CASE(profilers_record_actor_construction) {
-    BOOST_TEST_MESSAGE("fully initialize CAF, ignore system-internal actors");
+    BOOST_TEST_MESSAGE("fully initialize =nil; Actor, ignore system-internal actors");
     run();
     rec.log.clear();
     BOOST_TEST_MESSAGE("spawn a foo and a bar");
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(profilers_record_actor_construction) {
 }
 
 BOOST_AUTO_TEST_CASE(profilers_record_asynchronous_messaging) {
-    BOOST_TEST_MESSAGE("fully initialize CAF, ignore system-internal actors");
+    BOOST_TEST_MESSAGE("fully initialize =nil; Actor, ignore system-internal actors");
     run();
     rec.log.clear();
     BOOST_TEST_MESSAGE("spawn a foo and a bar");
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(profilers_record_asynchronous_messaging) {
 }
 
 BOOST_AUTO_TEST_CASE(profilers record request / response messaging) {
-    BOOST_TEST_MESSAGE("fully initialize CAF, ignore system-internal actors");
+    BOOST_TEST_MESSAGE("fully initialize =nil; Actor, ignore system-internal actors");
     run();
     rec.log.clear();
     BOOST_TEST_MESSAGE("spawn a client and a server with one worker");

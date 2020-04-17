@@ -10,7 +10,7 @@
 
 // This test simulates a complex multiplexing over multiple layers of WDRR
 // scheduled queues. The goal is to reduce the complex mailbox management of
-// CAF to its bare bones in order to test whether the multiplexing of stream
+// =nil; Actor to its bare bones in order to test whether the multiplexing of stream
 // traffic and asynchronous messages works as intended.
 //
 // The setup is a fixed WDRR queue with three nestes queues. The first nested

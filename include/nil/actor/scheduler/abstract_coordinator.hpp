@@ -95,5 +95,4 @@ namespace nil::actor::scheduler {
         /// Reference to the host system.
         spawner &system_;
     };
-
 }    // namespace nil::actor::scheduler

@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(node_ids_are_convertible_from_string) {
 BOOST_AUTO_TEST_CASE(node_ids_are_not_convertible_from_malformed_strings) {
     // not URIs
     CHECK_PARSE_FAIL("foobar");
-    CHECK_PARSE_FAIL("CAF#1");
+    CHECK_PARSE_FAIL("=nil; Actor#1");
     // uint32_t overflow on the process ID
     CHECK_PARSE_FAIL("0102030405060708090A0B0C0D0E0F1011121314#42949672950");
 }

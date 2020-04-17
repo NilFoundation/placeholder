@@ -48,7 +48,7 @@ namespace nil {
             unsupported_sys_key,
             /// An actor received an unsupported system message.
             unsupported_sys_message = 10,
-            /// A remote node disconnected during CAF handshake.
+            /// A remote node disconnected during =nil; Actor handshake.
             disconnect_during_handshake,
             /// Tried to forward a message via BASP to an invalid actor handle.
             cannot_forward_to_invalid_actor,
@@ -58,7 +58,7 @@ namespace nil {
             failed_to_assign_scribe_from_handle,
             /// Middleman could not assign an acceptor handle to a broker.
             failed_to_assign_doorman_from_handle = 15,
-            /// User requested to close port 0 or to close a port not managed by CAF.
+            /// User requested to close port 0 or to close a port not managed by =nil; Actor.
             cannot_close_invalid_port,
             /// Middleman could not connect to a remote node.
             cannot_connect_to_node,
@@ -76,9 +76,9 @@ namespace nil {
             cannot_spawn_actor_from_arguments,
             /// Serialization failed because there was not enough data to read.
             end_of_stream,
-            /// Serialization failed because no CAF context is available.
+            /// Serialization failed because no =nil; Actor context is available.
             no_context = 25,
-            /// Serialization failed because CAF misses run-time type information.
+            /// Serialization failed because =nil; Actor misses run-time type information.
             unknown_type,
             /// Serialization of actors failed because no proxy registry is available.
             no_proxy_registry,
@@ -120,7 +120,7 @@ namespace nil {
             socket_operation_failed = 45,
             /// A resource is temporarily unavailable or would block.
             unavailable_or_would_block,
-            /// Connection refused because of incompatible CAF versions.
+            /// Connection refused because of incompatible =nil; Actor versions.
             incompatible_versions,
             /// Connection refused because of incompatible application IDs.
             incompatible_application_ids,

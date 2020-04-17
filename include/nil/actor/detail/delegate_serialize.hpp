@@ -15,10 +15,10 @@
 // - allow to switch out this header with the actual boost header in boost.actor
 //
 // Differences in semantics are:
-// - CAF does *not* respect class versions
-// - the `unsigned int` argument is always 0 and ignored by CAF
+// - =nil; Actor does *not* respect class versions
+// - the `unsigned int` argument is always 0 and ignored by =nil; Actor
 //
-// Since CAF requires all runtime instances to have the same types
+// Since =nil; Actor requires all runtime instances to have the same types
 // announced, different class versions in a single actor system would
 // cause inconsistencies that are not recoverable.
 
@@ -42,7 +42,7 @@ namespace nil::actor::detail {
         serialize(proc, x, y);
     }
 
-    // Calls `serialize(...)` without the unused version argument, which CAF
+    // Calls `serialize(...)` without the unused version argument, which =nil; Actor
     // ignores anyway.
 
     template<class Processor, class U>

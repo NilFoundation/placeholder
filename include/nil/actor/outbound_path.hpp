@@ -146,7 +146,7 @@ namespace nil {
             /// Ideal batch size. Configured by the sink.
             int32_t desired_batch_size;
 
-            /// ID of the first unacknowledged batch. Note that CAF uses accumulative
+            /// ID of the first unacknowledged batch. Note that =nil; Actor uses accumulative
             /// ACKs, i.e., receiving an ACK with a higher ID is not an error.
             int64_t next_ack_id;
 

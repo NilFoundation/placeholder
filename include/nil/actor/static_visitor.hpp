@@ -12,11 +12,9 @@
 
 namespace nil {
     namespace actor {
-
         template<class Result = void>
         struct static_visitor {
             using result_type = Result;
         };
-
     }    // namespace actor
 }    // namespace nil

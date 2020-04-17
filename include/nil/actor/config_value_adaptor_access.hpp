@@ -22,7 +22,7 @@ namespace nil {
 
         /// Enables user-defined types in config files and on the CLI by converting
         /// them to and from tuples. Wraps a `config_value_object_access` in order to
-        /// allow CAF to interact with the underlying tuple.
+        /// allow =nil; Actor to interact with the underlying tuple.
         ///
         /// ~~
         /// struct trait {

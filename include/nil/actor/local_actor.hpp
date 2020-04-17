@@ -45,358 +45,356 @@
 #include <nil/actor/typed_actor.hpp>
 #include <nil/actor/typed_response_promise.hpp>
 
-namespace nil {
-    namespace actor {
+namespace nil::actor {
 
-        /// Base class for actors running on this node, either
-        /// living in an own thread or cooperatively scheduled.
-        class BOOST_SYMBOL_VISIBLE local_actor : public monitorable_actor {
-        public:
-            // -- member types -----------------------------------------------------------
+    /// Base class for actors running on this node, either
+    /// living in an own thread or cooperatively scheduled.
+    class BOOST_SYMBOL_VISIBLE local_actor : public monitorable_actor {
+    public:
+        // -- member types -----------------------------------------------------------
 
-            /// Defines a monotonic clock suitable for measuring intervals.
-            using clock_type = std::chrono::steady_clock;
+        /// Defines a monotonic clock suitable for measuring intervals.
+        using clock_type = std::chrono::steady_clock;
 
-            // -- constructors, destructors, and assignment operators --------------------
+        // -- constructors, destructors, and assignment operators --------------------
 
-            local_actor(actor_config &cfg);
+        local_actor(actor_config &cfg);
 
-            ~local_actor() override;
+        ~local_actor() override;
 
-            void on_destroy() override;
+        void on_destroy() override;
 
-            // -- pure virtual modifiers -------------------------------------------------
+        // -- pure virtual modifiers -------------------------------------------------
 
-            virtual void launch(execution_unit *eu, bool lazy, bool hide) = 0;
+        virtual void launch(execution_unit *eu, bool lazy, bool hide) = 0;
 
-            // -- time -------------------------------------------------------------------
+        // -- time -------------------------------------------------------------------
 
-            /// Returns the current time.
-            clock_type::time_point now() const noexcept;
+        /// Returns the current time.
+        clock_type::time_point now() const noexcept;
 
-            // -- timeout management -----------------------------------------------------
+        // -- timeout management -----------------------------------------------------
 
-            /// Requests a new timeout for `mid`.
-            /// @pre `mid.is_request()`
-            void request_response_timeout(timespan d, message_id mid);
+        /// Requests a new timeout for `mid`.
+        /// @pre `mid.is_request()`
+        void request_response_timeout(timespan d, message_id mid);
 
-            // -- spawn functions --------------------------------------------------------
+        // -- spawn functions --------------------------------------------------------
 
-            template<class T, spawn_options Os = no_spawn_options, class... Ts>
-            infer_handle_from_class_t<T> spawn(Ts &&... xs) {
-                actor_config cfg {context(), this};
-                return eval_opts(Os, system().spawn_class<T, make_unbound(Os)>(cfg, std::forward<Ts>(xs)...));
-            }
+        template<class T, spawn_options Os = no_spawn_options, class... Ts>
+        infer_handle_from_class_t<T> spawn(Ts &&... xs) {
+            actor_config cfg {context(), this};
+            return eval_opts(Os, system().spawn_class<T, make_unbound(Os)>(cfg, std::forward<Ts>(xs)...));
+        }
 
-            template<class T, spawn_options Os = no_spawn_options>
-            infer_handle_from_state_t<T> spawn() {
-                using impl = composable_behavior_based_actor<T>;
-                actor_config cfg {context(), this};
-                return eval_opts(Os, system().spawn_class<impl, make_unbound(Os)>(cfg));
-            }
+        template<class T, spawn_options Os = no_spawn_options>
+        infer_handle_from_state_t<T> spawn() {
+            using impl = composable_behavior_based_actor<T>;
+            actor_config cfg {context(), this};
+            return eval_opts(Os, system().spawn_class<impl, make_unbound(Os)>(cfg));
+        }
 
-            template<spawn_options Os = no_spawn_options, class F, class... Ts>
-            infer_handle_from_fun_t<F> spawn(F fun, Ts &&... xs) {
-                using impl = infer_impl_from_fun_t<F>;
-                static constexpr bool spawnable = detail::spawnable<F, impl, Ts...>();
-                static_assert(spawnable, "cannot spawn function-based actor with given arguments");
-                actor_config cfg {context(), this};
-                static constexpr spawn_options unbound = make_unbound(Os);
-                detail::bool_token<spawnable> enabled;
-                return eval_opts(Os, system().spawn_functor<unbound>(enabled, cfg, fun, std::forward<Ts>(xs)...));
-            }
+        template<spawn_options Os = no_spawn_options, class F, class... Ts>
+        infer_handle_from_fun_t<F> spawn(F fun, Ts &&... xs) {
+            using impl = infer_impl_from_fun_t<F>;
+            static constexpr bool spawnable = detail::spawnable<F, impl, Ts...>();
+            static_assert(spawnable, "cannot spawn function-based actor with given arguments");
+            actor_config cfg {context(), this};
+            static constexpr spawn_options unbound = make_unbound(Os);
+            detail::bool_token<spawnable> enabled;
+            return eval_opts(Os, system().spawn_functor<unbound>(enabled, cfg, fun, std::forward<Ts>(xs)...));
+        }
 
-            template<class T, spawn_options Os = no_spawn_options, class Groups, class... Ts>
-            actor spawn_in_groups(const Groups &gs, Ts &&... xs) {
-                actor_config cfg {context(), this};
-                return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, gs.begin(), gs.end(),
-                                                                                         std::forward<Ts>(xs)...));
-            }
+        template<class T, spawn_options Os = no_spawn_options, class Groups, class... Ts>
+        actor spawn_in_groups(const Groups &gs, Ts &&... xs) {
+            actor_config cfg {context(), this};
+            return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, gs.begin(), gs.end(),
+                                                                                     std::forward<Ts>(xs)...));
+        }
 
-            template<class T, spawn_options Os = no_spawn_options, class... Ts>
-            actor spawn_in_groups(std::initializer_list<group> gs, Ts &&... xs) {
-                actor_config cfg {context(), this};
-                return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, gs.begin(), gs.end(),
-                                                                                         std::forward<Ts>(xs)...));
-            }
+        template<class T, spawn_options Os = no_spawn_options, class... Ts>
+        actor spawn_in_groups(std::initializer_list<group> gs, Ts &&... xs) {
+            actor_config cfg {context(), this};
+            return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, gs.begin(), gs.end(),
+                                                                                     std::forward<Ts>(xs)...));
+        }
 
-            template<class T, spawn_options Os = no_spawn_options, class... Ts>
-            actor spawn_in_group(const group &grp, Ts &&... xs) {
-                actor_config cfg {context(), this};
-                auto first = &grp;
-                return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, first, first + 1,
-                                                                                         std::forward<Ts>(xs)...));
-            }
+        template<class T, spawn_options Os = no_spawn_options, class... Ts>
+        actor spawn_in_group(const group &grp, Ts &&... xs) {
+            actor_config cfg {context(), this};
+            auto first = &grp;
+            return eval_opts(Os, system().spawn_class_in_groups<T, make_unbound(Os)>(cfg, first, first + 1,
+                                                                                     std::forward<Ts>(xs)...));
+        }
 
-            template<spawn_options Os = no_spawn_options, class Groups, class F, class... Ts>
-            actor spawn_in_groups(const Groups &gs, F fun, Ts &&... xs) {
-                actor_config cfg {context(), this};
-                return eval_opts(Os, system().spawn_fun_in_groups<make_unbound(Os)>(cfg, gs.begin(), gs.end(), fun,
-                                                                                    std::forward<Ts>(xs)...));
-            }
-
-            template<spawn_options Os = no_spawn_options, class F, class... Ts>
-            actor spawn_in_groups(std::initializer_list<group> gs, F fun, Ts &&... xs) {
-                actor_config cfg {context(), this};
-                return eval_opts(Os, system().spawn_fun_in_groups<make_unbound(Os)>(cfg, gs.begin(), gs.end(), fun,
-                                                                                    std::forward<Ts>(xs)...));
-            }
-
-            template<spawn_options Os = no_spawn_options, class F, class... Ts>
-            actor spawn_in_group(const group &grp, F fun, Ts &&... xs) {
-                actor_config cfg {context(), this};
-                auto first = &grp;
-                return eval_opts(Os,
-                                 system().spawn_fun_in_groups<make_unbound(Os)>(cfg, first, first + 1, fun,
+        template<spawn_options Os = no_spawn_options, class Groups, class F, class... Ts>
+        actor spawn_in_groups(const Groups &gs, F fun, Ts &&... xs) {
+            actor_config cfg {context(), this};
+            return eval_opts(Os, system().spawn_fun_in_groups<make_unbound(Os)>(cfg, gs.begin(), gs.end(), fun,
                                                                                 std::forward<Ts>(xs)...));
-            }
+        }
 
-            // -- sending asynchronous messages ------------------------------------------
+        template<spawn_options Os = no_spawn_options, class F, class... Ts>
+        actor spawn_in_groups(std::initializer_list<group> gs, F fun, Ts &&... xs) {
+            actor_config cfg {context(), this};
+            return eval_opts(Os, system().spawn_fun_in_groups<make_unbound(Os)>(cfg, gs.begin(), gs.end(), fun,
+                                                                                std::forward<Ts>(xs)...));
+        }
 
-            /// Sends an exit message to `whom`.
-            void send_exit(const actor_addr &whom, error reason);
+        template<spawn_options Os = no_spawn_options, class F, class... Ts>
+        actor spawn_in_group(const group &grp, F fun, Ts &&... xs) {
+            actor_config cfg {context(), this};
+            auto first = &grp;
+            return eval_opts(
+                Os,
+                system().spawn_fun_in_groups<make_unbound(Os)>(cfg, first, first + 1, fun, std::forward<Ts>(xs)...));
+        }
 
-            /// Sends an exit message to `whom`.
-            void send_exit(const strong_actor_ptr &whom, error reason);
+        // -- sending asynchronous messages ------------------------------------------
 
-            /// Sends an exit message to `whom`.
-            template<class ActorHandle>
-            void send_exit(const ActorHandle &whom, error reason) {
-                if (whom)
-                    whom->eq_impl(make_message_id(), ctrl(), context(), exit_msg {address(), std::move(reason)});
-            }
+        /// Sends an exit message to `whom`.
+        void send_exit(const actor_addr &whom, error reason);
 
-            // -- miscellaneous actor operations -----------------------------------------
+        /// Sends an exit message to `whom`.
+        void send_exit(const strong_actor_ptr &whom, error reason);
 
-            /// Returns the execution unit currently used by this actor.
-            inline execution_unit *context() const {
-                return context_;
-            }
+        /// Sends an exit message to `whom`.
+        template<class ActorHandle>
+        void send_exit(const ActorHandle &whom, error reason) {
+            if (whom)
+                whom->eq_impl(make_message_id(), ctrl(), context(), exit_msg {address(), std::move(reason)});
+        }
 
-            /// Sets the execution unit for this actor.
-            inline void context(execution_unit *x) {
-                context_ = x;
-            }
+        // -- miscellaneous actor operations -----------------------------------------
 
-            /// Returns the hosting actor system.
-            inline spawner &system() const {
-                return home_system();
-            }
+        /// Returns the execution unit currently used by this actor.
+        inline execution_unit *context() const {
+            return context_;
+        }
 
-            /// Returns the config of the hosting actor system.
-            inline const spawner_config &config() const {
-                return system().config();
-            }
+        /// Sets the execution unit for this actor.
+        inline void context(execution_unit *x) {
+            context_ = x;
+        }
 
-            /// Returns the clock of the actor system.
-            inline actor_clock &clock() const {
-                return home_system().clock();
-            }
+        /// Returns the hosting actor system.
+        inline spawner &system() const {
+            return home_system();
+        }
 
-            /// @cond PRIVATE
+        /// Returns the config of the hosting actor system.
+        inline const spawner_config &config() const {
+            return system().config();
+        }
 
-            void monitor(abstract_actor *ptr, message_priority prio);
+        /// Returns the clock of the actor system.
+        inline actor_clock &clock() const {
+            return home_system().clock();
+        }
 
-            /// @endcond
+        /// @cond PRIVATE
 
-            /// Returns a pointer to the sender of the current message.
-            /// @pre `current_mailbox_element() != nullptr`
-            inline strong_actor_ptr &current_sender() {
-                ACTOR_ASSERT(current_element_);
-                return current_element_->sender;
-            }
+        void monitor(abstract_actor *ptr, message_priority prio);
 
-            /// Returns the ID of the current message.
-            inline message_id current_message_id() {
-                ACTOR_ASSERT(current_element_);
-                return current_element_->mid;
-            }
+        /// @endcond
 
-            /// Returns the ID of the current message and marks the ID stored in the
-            /// current mailbox element as answered.
-            inline message_id take_current_message_id() {
-                ACTOR_ASSERT(current_element_);
-                auto result = current_element_->mid;
-                current_element_->mid.mark_as_answered();
+        /// Returns a pointer to the sender of the current message.
+        /// @pre `current_mailbox_element() != nullptr`
+        inline strong_actor_ptr &current_sender() {
+            ACTOR_ASSERT(current_element_);
+            return current_element_->sender;
+        }
+
+        /// Returns the ID of the current message.
+        inline message_id current_message_id() {
+            ACTOR_ASSERT(current_element_);
+            return current_element_->mid;
+        }
+
+        /// Returns the ID of the current message and marks the ID stored in the
+        /// current mailbox element as answered.
+        inline message_id take_current_message_id() {
+            ACTOR_ASSERT(current_element_);
+            auto result = current_element_->mid;
+            current_element_->mid.mark_as_answered();
+            return result;
+        }
+
+        /// Marks the current message ID as answered.
+        inline void drop_current_message_id() {
+            ACTOR_ASSERT(current_element_);
+            current_element_->mid.mark_as_answered();
+        }
+
+        /// Returns a pointer to the next stage from the forwarding path of the
+        /// current message or `nullptr` if the path is empty.
+        inline strong_actor_ptr current_next_stage() {
+            ACTOR_ASSERT(current_element_);
+            auto &stages = current_element_->stages;
+            if (!stages.empty())
+                return stages.back();
+            return nullptr;
+        }
+
+        /// Returns a pointer to the next stage from the forwarding path of the
+        /// current message and removes it from the path. Returns `nullptr` if the
+        /// path is empty.
+        inline strong_actor_ptr take_current_next_stage() {
+            ACTOR_ASSERT(current_element_);
+            auto &stages = current_element_->stages;
+            if (!stages.empty()) {
+                auto result = stages.back();
+                stages.pop_back();
                 return result;
             }
+            return nullptr;
+        }
 
-            /// Marks the current message ID as answered.
-            inline void drop_current_message_id() {
-                ACTOR_ASSERT(current_element_);
-                current_element_->mid.mark_as_answered();
-            }
+        /// Returns the forwarding stack from the current mailbox element.
+        const mailbox_element::forwarding_stack &current_forwarding_stack() {
+            ACTOR_ASSERT(current_element_);
+            return current_element_->stages;
+        }
 
-            /// Returns a pointer to the next stage from the forwarding path of the
-            /// current message or `nullptr` if the path is empty.
-            inline strong_actor_ptr current_next_stage() {
-                ACTOR_ASSERT(current_element_);
-                auto &stages = current_element_->stages;
-                if (!stages.empty())
-                    return stages.back();
-                return nullptr;
-            }
+        /// Moves the forwarding stack from the current mailbox element.
+        mailbox_element::forwarding_stack take_current_forwarding_stack() {
+            ACTOR_ASSERT(current_element_);
+            return std::move(current_element_->stages);
+        }
 
-            /// Returns a pointer to the next stage from the forwarding path of the
-            /// current message and removes it from the path. Returns `nullptr` if the
-            /// path is empty.
-            inline strong_actor_ptr take_current_next_stage() {
-                ACTOR_ASSERT(current_element_);
-                auto &stages = current_element_->stages;
-                if (!stages.empty()) {
-                    auto result = stages.back();
-                    stages.pop_back();
-                    return result;
-                }
-                return nullptr;
-            }
+        /// Returns a pointer to the currently processed mailbox element.
+        inline mailbox_element *current_mailbox_element() {
+            return current_element_;
+        }
 
-            /// Returns the forwarding stack from the current mailbox element.
-            const mailbox_element::forwarding_stack &current_forwarding_stack() {
-                ACTOR_ASSERT(current_element_);
-                return current_element_->stages;
-            }
+        /// Returns a pointer to the currently processed mailbox element.
+        /// @private
+        inline void current_mailbox_element(mailbox_element *ptr) {
+            current_element_ = ptr;
+        }
 
-            /// Moves the forwarding stack from the current mailbox element.
-            mailbox_element::forwarding_stack take_current_forwarding_stack() {
-                ACTOR_ASSERT(current_element_);
-                return std::move(current_element_->stages);
-            }
+        /// Adds a unidirectional `monitor` to `node`.
+        /// @note Each call to `monitor` creates a new, independent monitor.
+        void monitor(const node_id &node);
 
-            /// Returns a pointer to the currently processed mailbox element.
-            inline mailbox_element *current_mailbox_element() {
-                return current_element_;
-            }
+        /// Adds a unidirectional `monitor` to `whom`.
+        /// @note Each call to `monitor` creates a new, independent monitor.
+        template<message_priority P = message_priority::normal, class Handle>
+        void monitor(const Handle &whom) {
+            monitor(actor_cast<abstract_actor *>(whom), P);
+        }
 
-            /// Returns a pointer to the currently processed mailbox element.
-            /// @private
-            inline void current_mailbox_element(mailbox_element *ptr) {
-                current_element_ = ptr;
-            }
+        /// Removes a monitor from `whom`.
+        void demonitor(const actor_addr &whom);
 
-            /// Adds a unidirectional `monitor` to `node`.
-            /// @note Each call to `monitor` creates a new, independent monitor.
-            void monitor(const node_id &node);
+        /// Removes a monitor from `node`.
+        void demonitor(const node_id &node);
 
-            /// Adds a unidirectional `monitor` to `whom`.
-            /// @note Each call to `monitor` creates a new, independent monitor.
-            template<message_priority P = message_priority::normal, class Handle>
-            void monitor(const Handle &whom) {
-                monitor(actor_cast<abstract_actor *>(whom), P);
-            }
+        /// Removes a monitor from `whom`.
+        template<class Handle>
+        void demonitor(const Handle &whom) {
+            demonitor(whom.address());
+        }
 
-            /// Removes a monitor from `whom`.
-            void demonitor(const actor_addr &whom);
+        /// Can be overridden to perform cleanup code after an actor
+        /// finished execution.
+        virtual void on_exit();
 
-            /// Removes a monitor from `node`.
-            void demonitor(const node_id &node);
+        /// Creates a `typed_response_promise` to respond to a request later on.
+        /// `make_response_promise<typed_response_promise<int, int>>()`
+        /// is equivalent to `make_response_promise<int, int>()`.
+        template<class... Ts>
+        typename detail::make_response_promise_helper<Ts...>::type make_response_promise() {
+            if (current_element_ == nullptr || current_element_->mid.is_answered())
+                return {};
+            return {this->ctrl(), *current_element_};
+        }
 
-            /// Removes a monitor from `whom`.
-            template<class Handle>
-            void demonitor(const Handle &whom) {
-                demonitor(whom.address());
-            }
+        /// Creates a `response_promise` to respond to a request later on.
+        inline response_promise make_response_promise() {
+            return make_response_promise<response_promise>();
+        }
 
-            /// Can be overridden to perform cleanup code after an actor
-            /// finished execution.
-            virtual void on_exit();
+        /// Creates a `typed_response_promise` and responds immediately.
+        /// Return type is deduced from arguments.
+        /// Return value is implicitly convertible to untyped response promise.
+        template<class... Ts,
+                 class R = typename detail::make_response_promise_helper<typename std::decay<Ts>::type...>::type>
+        R response(Ts &&... xs) {
+            auto promise = make_response_promise<R>();
+            promise.deliver(std::forward<Ts>(xs)...);
+            return promise;
+        }
 
-            /// Creates a `typed_response_promise` to respond to a request later on.
-            /// `make_response_promise<typed_response_promise<int, int>>()`
-            /// is equivalent to `make_response_promise<int, int>()`.
-            template<class... Ts>
-            typename detail::make_response_promise_helper<Ts...>::type make_response_promise() {
-                if (current_element_ == nullptr || current_element_->mid.is_answered())
-                    return {};
-                return {this->ctrl(), *current_element_};
-            }
+        const char *name() const override;
 
-            /// Creates a `response_promise` to respond to a request later on.
-            inline response_promise make_response_promise() {
-                return make_response_promise<response_promise>();
-            }
+        /// Serializes the state of this actor to `sink`. This function is
+        /// only called if this actor has set the `is_serializable` flag.
+        /// The default implementation throws a `std::logic_error`.
+        virtual error save_state(serializer &sink, unsigned int version);
 
-            /// Creates a `typed_response_promise` and responds immediately.
-            /// Return type is deduced from arguments.
-            /// Return value is implicitly convertible to untyped response promise.
-            template<class... Ts,
-                     class R = typename detail::make_response_promise_helper<typename std::decay<Ts>::type...>::type>
-            R response(Ts &&... xs) {
-                auto promise = make_response_promise<R>();
-                promise.deliver(std::forward<Ts>(xs)...);
-                return promise;
-            }
+        /// Deserializes the state of this actor from `source`. This function is
+        /// only called if this actor has set the `is_serializable` flag.
+        /// The default implementation throws a `std::logic_error`.
+        virtual error load_state(deserializer &source, unsigned int version);
 
-            const char *name() const override;
+        /// Returns the currently defined fail state. If this reason is not
+        /// `none` then the actor will terminate with this error after executing
+        /// the current message handler.
+        inline const error &fail_state() const {
+            return fail_state_;
+        }
 
-            /// Serializes the state of this actor to `sink`. This function is
-            /// only called if this actor has set the `is_serializable` flag.
-            /// The default implementation throws a `std::logic_error`.
-            virtual error save_state(serializer &sink, unsigned int version);
+        // -- here be dragons: end of public interface -------------------------------
 
-            /// Deserializes the state of this actor from `source`. This function is
-            /// only called if this actor has set the `is_serializable` flag.
-            /// The default implementation throws a `std::logic_error`.
-            virtual error load_state(deserializer &source, unsigned int version);
+        /// @cond PRIVATE
 
-            /// Returns the currently defined fail state. If this reason is not
-            /// `none` then the actor will terminate with this error after executing
-            /// the current message handler.
-            inline const error &fail_state() const {
-                return fail_state_;
-            }
+        template<class ActorHandle>
+        inline ActorHandle eval_opts(spawn_options opts, ActorHandle res) {
+            if (has_monitor_flag(opts))
+                monitor(res->address());
+            if (has_link_flag(opts))
+                link_to(res->address());
+            return res;
+        }
 
-            // -- here be dragons: end of public interface -------------------------------
+        // returns 0 if last_dequeued() is an asynchronous or sync request message,
+        // a response id generated from the request id otherwise
+        inline message_id get_response_id() const {
+            auto mid = current_element_->mid;
+            return (mid.is_request()) ? mid.response_id() : message_id();
+        }
 
-            /// @cond PRIVATE
+        template<message_priority P = message_priority::normal, class Handle = actor, class... Ts>
+        typename response_type<typename Handle::signatures,
+                               detail::implicit_conversions_t<typename std::decay<Ts>::type>...>::delegated_type
+            delegate(const Handle &dest, Ts &&... xs) {
+            auto rp = make_response_promise();
+            return rp.template delegate<P>(dest, std::forward<Ts>(xs)...);
+        }
 
-            template<class ActorHandle>
-            inline ActorHandle eval_opts(spawn_options opts, ActorHandle res) {
-                if (has_monitor_flag(opts))
-                    monitor(res->address());
-                if (has_link_flag(opts))
-                    link_to(res->address());
-                return res;
-            }
+        virtual void initialize();
 
-            // returns 0 if last_dequeued() is an asynchronous or sync request message,
-            // a response id generated from the request id otherwise
-            inline message_id get_response_id() const {
-                auto mid = current_element_->mid;
-                return (mid.is_request()) ? mid.response_id() : message_id();
-            }
+        bool cleanup(error &&fail_state, execution_unit *host) override;
 
-            template<message_priority P = message_priority::normal, class Handle = actor, class... Ts>
-            typename response_type<typename Handle::signatures,
-                                   detail::implicit_conversions_t<typename std::decay<Ts>::type>...>::delegated_type
-                delegate(const Handle &dest, Ts &&... xs) {
-                auto rp = make_response_promise();
-                return rp.template delegate<P>(dest, std::forward<Ts>(xs)...);
-            }
+        message_id new_request_id(message_priority mp);
 
-            virtual void initialize();
+        /// @endcond
 
-            bool cleanup(error &&fail_state, execution_unit *host) override;
+    protected:
+        // -- member variables -------------------------------------------------------
 
-            message_id new_request_id(message_priority mp);
+        // identifies the execution unit this actor is currently executed by
+        execution_unit *context_;
 
-            /// @endcond
+        // pointer to the sender of the currently processed message
+        mailbox_element *current_element_;
 
-        protected:
-            // -- member variables -------------------------------------------------------
+        // last used request ID
+        message_id last_request_id_;
 
-            // identifies the execution unit this actor is currently executed by
-            execution_unit *context_;
+        /// Factory function for returning initial behavior in function-based actors.
+        detail::unique_function<behavior(local_actor *)> initial_behavior_fac_;
+    };
 
-            // pointer to the sender of the currently processed message
-            mailbox_element *current_element_;
-
-            // last used request ID
-            message_id last_request_id_;
-
-            /// Factory function for returning initial behavior in function-based actors.
-            detail::unique_function<behavior(local_actor *)> initial_behavior_fac_;
-        };
-
-    }    // namespace actor
-}    // namespace nil
+}    // namespace nil::actor

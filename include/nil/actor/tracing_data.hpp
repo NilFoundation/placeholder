@@ -19,8 +19,8 @@ namespace nil {
     namespace actor {
 
         /// Marker interface for application-specific tracing data. This interface
-        /// enables users to inject application-specific instrumentation into CAF's
-        /// messaging layer. CAF provides no default implementation for this
+        /// enables users to inject application-specific instrumentation into =nil; Actor's
+        /// messaging layer. =nil; Actor provides no default implementation for this
         /// customization point.
         class BOOST_SYMBOL_VISIBLE tracing_data {
         public:

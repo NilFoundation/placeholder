@@ -67,7 +67,7 @@ namespace nil::actor::detail {
 
     BOOST_SYMBOL_VISIBLE void parse(string_parser_state &ps, double &x);
 
-    // -- CAF types ----------------------------------------------------------------
+    // -- =nil; Actor types ----------------------------------------------------------------
 
     BOOST_SYMBOL_VISIBLE void parse(string_parser_state &ps, timespan &x);
 

@@ -313,7 +313,7 @@ namespace nil {
 
         /// Creates a node ID from `process_id` and `host_id`.
         /// @param process_id System-wide unique process identifier.
-        /// @param host_id Unique hash value representing a single CAF node.
+        /// @param host_id Unique hash value representing a single =nil; Actor node.
         /// @relates node_id
         BOOST_SYMBOL_VISIBLE node_id make_node_id(uint32_t process_id,
                                                   const node_id::default_data::host_id_type &host_id);

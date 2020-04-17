@@ -42,7 +42,7 @@ namespace {
 BOOST_FIXTURE_TEST_SUITE(actor_registry_tests, test_coordinator_fixture<>)
 
 BOOST_AUTO_TEST_CASE(erase) {
-    // CAF registers a few actors by itself.
+    // =nil; Actor registers a few actors by itself.
     auto baseline = sys.registry().named_actors().size();
     sys.registry().put("foo", sys.spawn(dummy));
     BOOST_CHECK_EQUAL(sys.registry().named_actors().size(), baseline + 1u);

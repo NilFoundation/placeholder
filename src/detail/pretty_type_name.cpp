@@ -27,7 +27,7 @@ namespace nil::actor::detail {
         replace_all(class_name, "::", ".");
         replace_all(class_name, "(anonymous namespace)", "ANON");
         replace_all(class_name, ".__1.", ".");    // gets rid of weird Clang-lib names
-        // hide CAF magic in logs
+        // hide =nil; Actor magic in logs
         auto strip_magic = [&](const char *prefix_begin, const char *prefix_end) {
             auto last = class_name.end();
             auto i = std::search(class_name.begin(), last, prefix_begin, prefix_end);

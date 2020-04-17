@@ -36,7 +36,7 @@ namespace nil {
                 void (*store)(void *, const config_value &);
 
                 /// Tries to extract a value from the given location. Exists for backward
-                /// compatibility only and will get removed with CAF 0.17.
+                /// compatibility only and will get removed with =nil; Actor 0.17.
                 config_value (*get)(const void *);
 
                 /// Tries to parse an input string. Stores and returns the parsed value on
@@ -103,7 +103,7 @@ namespace nil {
             expected<config_value> parse(string_view input) const;
 
             /// @private
-            // TODO: remove with CAF 0.17
+            // TODO: remove with =nil; Actor 0.17
             optional<config_value> get() const;
 
         private:

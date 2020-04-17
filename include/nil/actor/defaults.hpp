@@ -18,7 +18,7 @@
 #include <nil/actor/string_view.hpp>
 #include <nil/actor/timestamp.hpp>
 
-// -- hard-coded default values for various CAF options ------------------------
+// -- hard-coded default values for various =nil; Actor options ------------------------
 
 namespace nil::actor::defaults {
 

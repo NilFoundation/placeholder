@@ -26,7 +26,7 @@ namespace nil {
         /// Callbacks are used as "type-safe function objects" wherever an interface
         /// requires dynamic dispatching. The alternative would be to store the lambda
         /// in a `std::function`, which adds another layer of indirection and
-        /// requires a heap allocation. With the callback implementation of CAF,
+        /// requires a heap allocation. With the callback implementation of =nil; Actor,
         /// the object remains on the stack and does not cause more overhead
         /// than necessary.
         template<class Signature>

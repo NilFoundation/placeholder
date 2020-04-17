@@ -55,7 +55,7 @@ namespace nil {
         ///
         /// The C++ standard library uses category singletons and virtual dispatching
         /// to correlate error codes to descriptive strings. However, singletons are
-        /// a poor choice when it comes to serialization. CAF uses atoms for
+        /// a poor choice when it comes to serialization. =nil; Actor uses atoms for
         /// categories instead and requires users to register custom error categories
         /// to the actor system. This makes the actor system the natural instance for
         /// rendering error messages via `spawner::render(const error&)`.

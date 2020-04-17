@@ -206,7 +206,7 @@ namespace nil {
             /// and instead return from `main` immediately.
             bool cli_helptext_printed;
 
-            /// Stores CLI arguments that were not consumed by CAF.
+            /// Stores CLI arguments that were not consumed by =nil; Actor.
             string_list remainder;
 
             // -- caf-run parameters -----------------------------------------------------
@@ -255,12 +255,12 @@ namespace nil {
 
             /// Provides system-wide callbacks for several actor operations.
             /// @experimental
-            /// @note Has no effect unless building CAF with ACTOR_ENABLE_ACTOR_PROFILER.
+            /// @note Has no effect unless building =nil; Actor with ACTOR_ENABLE_ACTOR_PROFILER.
             actor_profiler *profiler = nullptr;
 
-            /// Enables CAF to deserialize application-specific tracing information.
+            /// Enables =nil; Actor to deserialize application-specific tracing information.
             /// @experimental
-            /// @note Has no effect unless building CAF with ACTOR_ENABLE_ACTOR_PROFILER.
+            /// @note Has no effect unless building =nil; Actor with ACTOR_ENABLE_ACTOR_PROFILER.
             tracing_data_factory *tracing_context = nullptr;
 
             // -- rendering of user-defined types ----------------------------------------
@@ -292,13 +292,13 @@ namespace nil {
 
             // -- config file parsing ----------------------------------------------------
 
-            /// Tries to open `filename` and parses its content as CAF config file.
+            /// Tries to open `filename` and parses its content as =nil; Actor config file.
             /// @param filename Relative or absolute path to the config file.
             /// @returns A ::settings dictionary with the parsed content of `filename` on
             ///          success, an ::error otherwise.
             static expected<settings> parse_config_file(const char *filename);
 
-            /// Tries to open `filename` and parses its content as CAF config file. Also
+            /// Tries to open `filename` and parses its content as =nil; Actor config file. Also
             /// type-checks user-defined parameters in `opts`.
             /// @param filename Relative or absolute path to the config file.
             /// @param opts User-defined config options for type checking.
@@ -306,7 +306,7 @@ namespace nil {
             ///          success, an ::error otherwise.
             static expected<settings> parse_config_file(const char *filename, const config_option_set &opts);
 
-            /// Tries to open `filename`, parses its content as CAF config file and
+            /// Tries to open `filename`, parses its content as =nil; Actor config file and
             /// stores all entries in `result` (overrides conflicting entries). Also
             /// type-checks user-defined parameters in `opts`.
             /// @param filename Relative or absolute path to the config file.
@@ -317,24 +317,24 @@ namespace nil {
             ///          parser otherwise.
             static error parse_config_file(const char *filename, const config_option_set &opts, settings &result);
 
-            /// Parses the content of `source` using CAF's config format.
-            /// @param source Character sequence in CAF's config format.
+            /// Parses the content of `source` using =nil; Actor's config format.
+            /// @param source Character sequence in =nil; Actor's config format.
             /// @returns A ::settings dictionary with the parsed content of `source` on
             ///          success, an ::error otherwise.
             static expected<settings> parse_config(std::istream &source);
 
-            /// Parses the content of `source` using CAF's config format. Also
+            /// Parses the content of `source` using =nil; Actor's config format. Also
             /// type-checks user-defined parameters in `opts`.
-            /// @param source Character sequence in CAF's config format.
+            /// @param source Character sequence in =nil; Actor's config format.
             /// @param opts User-defined config options for type checking.
             /// @returns A ::settings dictionary with the parsed content of `source` on
             ///          success, an ::error otherwise.
             static expected<settings> parse_config(std::istream &source, const config_option_set &opts);
 
-            /// Parses the content of `source` using CAF's config format and stores all
+            /// Parses the content of `source` using =nil; Actor's config format and stores all
             /// entries in `result` (overrides conflicting entries). Also type-checks
             /// user-defined parameters in `opts`.
-            /// @param source Character sequence in CAF's config format.
+            /// @param source Character sequence in =nil; Actor's config format.
             /// @param opts User-defined config options for type checking.
             /// @param result Storage for parsed entries. Note that `result` will contain
             ///               partial results if this function returns an error.

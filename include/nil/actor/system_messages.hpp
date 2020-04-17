@@ -83,7 +83,7 @@ namespace nil {
             return f(meta::type_name("group_down_msg"), x.source);
         }
 
-        /// Sent to all actors monitoring a node when CAF loses connection to it.
+        /// Sent to all actors monitoring a node when =nil; Actor loses connection to it.
         struct node_down_msg {
             /// The disconnected node.
             node_id node;

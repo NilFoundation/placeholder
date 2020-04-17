@@ -126,7 +126,7 @@
 #include <nil/actor/scheduler/test_coordinator.hpp>
 
 ///
-/// @mainpage CAF
+/// @mainpage =nil; Actor
 ///
 /// @section Intro Introduction
 ///
@@ -146,7 +146,7 @@
 /// The {@link math_actor.cpp Math Actor Example} shows the usage
 /// of {@link receive_loop} and {@link nil::actor::arg_match arg_match}.
 /// The {@link dining_philosophers.cpp Dining Philosophers Example}
-/// introduces event-based actors covers various features of CAF.
+/// introduces event-based actors covers various features of =nil; Actor.
 ///
 /// @namespace caf
 /// Root namespace of libcaf.
@@ -171,18 +171,18 @@
 ///
 /// @defgroup MessageHandling Message Handling
 ///
-/// This is the beating heart of CAF, since actor programming is
+/// This is the beating heart of =nil; Actor, since actor programming is
 /// a message oriented programming paradigm.
 ///
-/// A message in CAF is a n-tuple of values (with size >= 1).
+/// A message in =nil; Actor is a n-tuple of values (with size >= 1).
 /// You can use almost every type in a messages as long as it is announced,
-/// i.e., known by the type system of CAF.
+/// i.e., known by the type system of =nil; Actor.
 ///
 /// @defgroup BlockingAPI Blocking API
 ///
 /// Blocking functions to receive messages.
 ///
-/// The blocking API of CAF is intended to be used for migrating
+/// The blocking API of =nil; Actor is intended to be used for migrating
 /// previously threaded applications. When writing new code, you should
 /// consider the nonblocking API based on `become` and `unbecome` first.
 ///

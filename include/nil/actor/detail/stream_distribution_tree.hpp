@@ -26,7 +26,7 @@ namespace nil::actor::detail {
     /// policy of the tree enables subscriptions to different chunks of the whole
     /// stream (substreams).
     ///
-    /// The tree uses two CAF streams between each pair of peers for transmitting
+    /// The tree uses two =nil; Actor streams between each pair of peers for transmitting
     /// data. This automatically adds backpressure to the system, i.e., no peer can
     /// overwhelm others.
     ///

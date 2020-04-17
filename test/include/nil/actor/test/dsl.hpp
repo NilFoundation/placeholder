@@ -137,7 +137,7 @@ private:
 
 // -- unified access to all actor handles in ACTOR -------------------------------
 
-/// Reduces any of CAF's handle types to an `abstract_actor` pointer.
+/// Reduces any of =nil; Actor's handle types to an `abstract_actor` pointer.
 class mtl_handle : nil::actor::detail::comparable<mtl_handle>,
                    nil::actor::detail::comparable<mtl_handle, std::nullptr_t> {
 public:

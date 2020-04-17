@@ -14,7 +14,7 @@
 
 namespace nil::actor::meta {
 
-    /// Type tag for all meta annotations in CAF.
+    /// Type tag for all meta annotations in =nil; Actor.
     struct annotation {
         constexpr annotation() {
             // nop

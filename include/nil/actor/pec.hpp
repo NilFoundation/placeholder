@@ -20,7 +20,7 @@ namespace nil {
     namespace actor {
 
         /// PEC stands for "Parser Error Code". This enum contains error codes used by
-        /// various CAF parsers.
+        /// various =nil; Actor parsers.
         enum class pec : uint8_t {
             /// Not-an-error.
             success = 0,

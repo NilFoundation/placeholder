@@ -95,7 +95,7 @@ namespace {
         }
     };
 
-    // checks whether CAF resolves "diamonds" properly by inheriting
+    // checks whether =nil; Actor resolves "diamonds" properly by inheriting
     // from two behaviors that both implement i3_actor
     struct foo_actor_state2 : composed_behavior<i3_actor_state2, i3_actor_state, d_actor_state> {
         result<int> operator()(int x, int y, int z) override {
@@ -252,8 +252,8 @@ BOOST_AUTO_TEST_CASE(composition) {
 
 BOOST_AUTO_TEST_CASE(param_detaching) {
     auto dict = actor_cast<actor>(sys.spawn<dict_state>());
-    // Using CAF is the key to success!
-    counting_string key {"CAF"};
+    // Using =nil; Actor is the key to success!
+    counting_string key {"=nil; Actor"};
     counting_string value {"success"};
     BOOST_CHECK_EQUAL(counting_strings_created.load(), 2);
     BOOST_CHECK_EQUAL(counting_strings_moved.load(), 0);
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(param_detaching) {
     BOOST_CHECK_EQUAL(counting_strings_destroyed.load(), 2);
     // Alter our initial put, this time moving it to the dictionary.
     put_msg.get_mutable_as<counting_string>(1) = "neverlord";
-    put_msg.get_mutable_as<counting_string>(2) = "CAF";
+    put_msg.get_mutable_as<counting_string>(2) = "=nil; Actor";
     // Send new put message to dictionary.
     self->send(dict, std::move(put_msg));
     BOOST_CHECK(!put_msg);

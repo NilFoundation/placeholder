@@ -15,92 +15,90 @@
 
 #include <nil/actor/typed_actor_pointer.hpp>
 
-namespace nil {
-    namespace actor {
+namespace nil::actor {
 
-        /// Provides support for thread-safe output operations on character streams. The
-        /// stream operates on a per-actor basis and will print only complete lines or
-        /// when explicitly forced to flush its buffer. The stream will convert *any*
-        /// operation to a message received by a printer actor. This actor is a sequence
-        /// point that ensures output appears never interleaved.
-        class BOOST_SYMBOL_VISIBLE actor_ostream {
-        public:
-            using fun_type = actor_ostream &(*)(actor_ostream &);
+    /// Provides support for thread-safe output operations on character streams. The
+    /// stream operates on a per-actor basis and will print only complete lines or
+    /// when explicitly forced to flush its buffer. The stream will convert *any*
+    /// operation to a message received by a printer actor. This actor is a sequence
+    /// point that ensures output appears never interleaved.
+    class BOOST_SYMBOL_VISIBLE actor_ostream {
+    public:
+        using fun_type = actor_ostream &(*)(actor_ostream &);
 
-            actor_ostream(actor_ostream &&) = default;
-            actor_ostream(const actor_ostream &) = default;
-            actor_ostream &operator=(actor_ostream &&) = default;
-            actor_ostream &operator=(const actor_ostream &) = default;
+        actor_ostream(actor_ostream &&) = default;
+        actor_ostream(const actor_ostream &) = default;
+        actor_ostream &operator=(actor_ostream &&) = default;
+        actor_ostream &operator=(const actor_ostream &) = default;
 
-            /// Open redirection file in append mode.
-            static constexpr int append = 0x01;
+        /// Open redirection file in append mode.
+        static constexpr int append = 0x01;
 
-            explicit actor_ostream(local_actor *self);
+        explicit actor_ostream(local_actor *self);
 
-            explicit actor_ostream(scoped_actor &self);
+        explicit actor_ostream(scoped_actor &self);
 
-            template<class... Sigs>
-            explicit actor_ostream(const typed_actor_pointer<Sigs...> &ptr) : actor_ostream(ptr.internal_ptr()) {
-                // nop
-            }
-
-            /// Writes `arg` to the buffer allocated for the calling actor.
-            actor_ostream &write(std::string arg);
-
-            /// Flushes the buffer allocated for the calling actor.
-            actor_ostream &flush();
-
-            /// Redirects all further output from `self` to `file_name`.
-            static void redirect(abstract_actor *self, std::string fn, int flags = 0);
-
-            /// Redirects all further output from any actor that did not
-            /// redirect its output to `fname`.
-            static void redirect_all(spawner &sys, std::string fn, int flags = 0);
-
-            /// Writes `arg` to the buffer allocated for the calling actor.
-            inline actor_ostream &operator<<(const char *arg) {
-                return write(arg);
-            }
-
-            /// Writes `arg` to the buffer allocated for the calling actor.
-            inline actor_ostream &operator<<(std::string arg) {
-                return write(std::move(arg));
-            }
-
-            /// Writes `to_string(arg)` to the buffer allocated for the calling actor,
-            /// calling either `std::to_string` or `nil::actor::to_string` depending on
-            /// the argument.
-            template<class T>
-            inline actor_ostream &operator<<(const T &arg) {
-                return write(deep_to_string(arg));
-            }
-
-            /// Apply `f` to `*this`.
-            inline actor_ostream &operator<<(actor_ostream::fun_type f) {
-                return f(*this);
-            }
-
-        private:
-            void init(abstract_actor *);
-
-            actor_id self_;
-            actor printer_;
-        };
-
-        /// Convenience factory function for creating an actor output stream.
-        BOOST_SYMBOL_VISIBLE actor_ostream aout(local_actor *self);
-
-        // Convenience factory function for creating an actor output stream.
-        BOOST_SYMBOL_VISIBLE actor_ostream aout(scoped_actor &self);
-
-        /// Convenience factory function for creating an actor output stream.
         template<class... Sigs>
-        actor_ostream aout(const typed_actor_pointer<Sigs...> &ptr) {
-            return actor_ostream {ptr};
+        explicit actor_ostream(const typed_actor_pointer<Sigs...> &ptr) : actor_ostream(ptr.internal_ptr()) {
+            // nop
         }
 
-    }    // namespace actor
-}    // namespace nil
+        /// Writes `arg` to the buffer allocated for the calling actor.
+        actor_ostream &write(std::string arg);
+
+        /// Flushes the buffer allocated for the calling actor.
+        actor_ostream &flush();
+
+        /// Redirects all further output from `self` to `file_name`.
+        static void redirect(abstract_actor *self, std::string fn, int flags = 0);
+
+        /// Redirects all further output from any actor that did not
+        /// redirect its output to `fname`.
+        static void redirect_all(spawner &sys, std::string fn, int flags = 0);
+
+        /// Writes `arg` to the buffer allocated for the calling actor.
+        inline actor_ostream &operator<<(const char *arg) {
+            return write(arg);
+        }
+
+        /// Writes `arg` to the buffer allocated for the calling actor.
+        inline actor_ostream &operator<<(std::string arg) {
+            return write(std::move(arg));
+        }
+
+        /// Writes `to_string(arg)` to the buffer allocated for the calling actor,
+        /// calling either `std::to_string` or `nil::actor::to_string` depending on
+        /// the argument.
+        template<class T>
+        inline actor_ostream &operator<<(const T &arg) {
+            return write(deep_to_string(arg));
+        }
+
+        /// Apply `f` to `*this`.
+        inline actor_ostream &operator<<(actor_ostream::fun_type f) {
+            return f(*this);
+        }
+
+    private:
+        void init(abstract_actor *);
+
+        actor_id self_;
+        actor printer_;
+    };
+
+    /// Convenience factory function for creating an actor output stream.
+    BOOST_SYMBOL_VISIBLE actor_ostream aout(local_actor *self);
+
+    // Convenience factory function for creating an actor output stream.
+    BOOST_SYMBOL_VISIBLE actor_ostream aout(scoped_actor &self);
+
+    /// Convenience factory function for creating an actor output stream.
+    template<class... Sigs>
+    actor_ostream aout(const typed_actor_pointer<Sigs...> &ptr) {
+        return actor_ostream {ptr};
+    }
+
+}    // namespace nil::actor
 
 namespace std {
     // provide convenience overlaods for aout; implemented in logging.cpp

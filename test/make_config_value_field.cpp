@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(object_access_from_actor_system_config_file_input) {
 BOOST_AUTO_TEST_CASE(object_access_from_actor_system_config_file_input_and_arguments) {
     std::vector<std::string> args {
         "-2",
-        "{y = {bar = CAF, foo = 20}, x = {foo = 10, bar = hello}}",
+        "{y = {bar = =nil; Actor, foo = 20}, x = {foo = 10, bar = hello}}",
     };
     test_config cfg;
     std::istringstream in {config_text};
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(object_access_from_actor_system_config_file_input_and_argum
     BOOST_CHECK_EQUAL(cfg.fbfb.x.foo, 10);
     BOOST_CHECK_EQUAL(cfg.fbfb.y.foo, 20);
     BOOST_CHECK_EQUAL(cfg.fbfb.x.bar, "hello");
-    BOOST_CHECK_EQUAL(cfg.fbfb.y.bar, "CAF");
+    BOOST_CHECK_EQUAL(cfg.fbfb.y.bar, "=nil; Actor");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

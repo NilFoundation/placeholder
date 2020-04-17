@@ -77,7 +77,7 @@ namespace nil::actor {
 
     class BOOST_SYMBOL_VISIBLE spawner_module {
     public:
-        enum id_t { scheduler, middleman, openssl_manager, network_manager, num_ids };
+        enum id_t { scheduler, middleman, openssl_manager, opencl_manager, network_manager, num_ids };
 
         virtual ~spawner_module() {
         }
@@ -91,6 +91,8 @@ namespace nil::actor {
                     return "Middleman";
                 case openssl_manager:
                     return "OpenSSL Manager";
+                case opencl_manager:
+                    return "OpenCL Manager";
                 case network_manager:
                     return "Network Manager";
                 default:
@@ -474,9 +476,9 @@ namespace nil::actor {
         infer_handle_from_class_t<C> spawn_impl(actor_config &cfg, Ts &&... xs) {
             static_assert(is_unbound(Os), "top-level spawns cannot have monitor or link flag");
             // TODO: use `if constexpr` when switching to C++17
-            if (has_detach_flag(Os) || std::is_base_of<blocking_actor, C>::value)
+            if constexpr (has_detach_flag(Os) || std::is_base_of<blocking_actor, C>::value)
                 cfg.flags |= abstract_actor::is_detached_flag;
-            if (has_hide_flag(Os))
+            if constexpr (has_hide_flag(Os))
                 cfg.flags |= abstract_actor::is_hidden_flag;
             if (cfg.host == nullptr)
                 cfg.host = dummy_execution_unit();
@@ -491,34 +493,34 @@ namespace nil::actor {
         }
 
         void profiler_add_actor(const local_actor &self, const local_actor *parent) {
-            if (profiler_)
+            if (profiler_ != nullptr)
                 profiler_->add_actor(self, parent);
         }
 
         void profiler_remove_actor(const local_actor &self) {
-            if (profiler_)
+            if (profiler_ != nullptr)
                 profiler_->remove_actor(self);
         }
 
         void profiler_before_processing(const local_actor &self, const mailbox_element &element) {
-            if (profiler_)
+            if (profiler_ != nullptr)
                 profiler_->before_processing(self, element);
         }
 
         void profiler_after_processing(const local_actor &self, invoke_message_result result) {
-            if (profiler_)
+            if (profiler_ != nullptr)
                 profiler_->after_processing(self, result);
         }
 
         void profiler_before_sending(const local_actor &self, mailbox_element &element) {
-            if (profiler_)
+            if (profiler_ != nullptr)
                 profiler_->before_sending(self, element);
         }
 
         void profiler_before_sending_scheduled(const local_actor &self,
                                                nil::actor::actor_clock::time_point timeout,
                                                mailbox_element &element) {
-            if (profiler_)
+            if (profiler_ != nullptr)
                 profiler_->before_sending_scheduled(self, timeout, element);
         }
 
