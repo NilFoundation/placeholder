@@ -333,21 +333,6 @@ namespace nil::actor {
         return groups_;
     }
 
-    bool spawner::has_middleman() const {
-        return modules_[spawner_module::middleman] != nullptr;
-    }
-
-    bool spawner::has_openssl_manager() const {
-        return modules_[spawner_module::openssl_manager] != nullptr;
-    }
-
-    openssl::manager &spawner::openssl_manager() const {
-        const auto &clptr = modules_[spawner_module::openssl_manager];
-        if (!clptr)
-            ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
-        return *reinterpret_cast<openssl::manager *>(clptr->subtype_ptr());
-    }
-
     scoped_execution_unit *spawner::dummy_execution_unit() {
         return &dummy_execution_unit_;
     }

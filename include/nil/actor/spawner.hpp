@@ -234,16 +234,6 @@ namespace nil::actor {
         /// Returns the system-wide group manager.
         group_manager &groups();
 
-        /// Returns `true` if the I/O module is available, `false` otherwise.
-        bool has_middleman() const;
-
-        /// Returns `true` if the openssl module is available, `false` otherwise.
-        bool has_openssl_manager() const;
-
-        /// Returns the manager instance from the OpenSSL module.
-        /// @throws `std::logic_error` if module is not loaded.
-        openssl::manager &openssl_manager() const;
-
         /// Returns a dummy execution unit that forwards
         /// everything to the scheduler.
         scoped_execution_unit *dummy_execution_unit();

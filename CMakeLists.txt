@@ -75,7 +75,6 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/decorator/sequencer.cpp
 
     src/default_attachable.cpp
-    src/defaults.cpp
     src/deserializer.cpp
 
     src/detail/abstract_worker.cpp

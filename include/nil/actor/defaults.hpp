@@ -20,68 +20,91 @@
 
 // -- hard-coded default values for various =nil; Actor options ------------------------
 
-namespace nil::actor::defaults {
+namespace nil {
+    namespace actor {
+        namespace defaults {
+            namespace detail {
+                namespace {
 
-    namespace stream {
+                    static constexpr nil::actor::string_view default_log_level =
+#if ACTOR_LOG_LEVEL == ACTOR_LOG_LEVEL_TRACE
+                        "trace";
+#elif ACTOR_LOG_LEVEL == ACTOR_LOG_LEVEL_DEBUG
+                        "debug";
+#elif ACTOR_LOG_LEVEL == ACTOR_LOG_LEVEL_INFO
+                        "info";
+#elif ACTOR_LOG_LEVEL == ACTOR_LOG_LEVEL_WARNING
+                        "warning";
+#elif ACTOR_LOG_LEVEL == ACTOR_LOG_LEVEL_ERROR
+                        "error";
+#else
+                        "quiet";
+#endif
 
-        extern BOOST_SYMBOL_VISIBLE const timespan desired_batch_complexity;
-        extern BOOST_SYMBOL_VISIBLE const timespan max_batch_delay;
-        extern BOOST_SYMBOL_VISIBLE const timespan credit_round_interval;
-        extern BOOST_SYMBOL_VISIBLE const string_view credit_policy;
+                    using us_t = std::chrono::microseconds;
 
-        namespace size_policy {
+                    constexpr nil::actor::timespan us(us_t::rep x) {
+                        return std::chrono::duration_cast<nil::actor::timespan>(us_t {x});
+                    }
 
-            extern BOOST_SYMBOL_VISIBLE const int32_t bytes_per_batch;
-            extern BOOST_SYMBOL_VISIBLE const int32_t buffer_capacity;
+                    using ms_t = std::chrono::milliseconds;
 
-        }    // namespace size_policy
+                    constexpr nil::actor::timespan ms(ms_t::rep x) {
+                        return std::chrono::duration_cast<nil::actor::timespan>(ms_t {x});
+                    }
 
-    }    // namespace stream
+                }    // namespace
+            }        // namespace detail
 
-    namespace scheduler {
+            namespace stream {
+                BOOST_SYMBOL_VISIBLE static const timespan desired_batch_complexity = detail::us(50);
+                BOOST_SYMBOL_VISIBLE static const timespan max_batch_delay = detail::ms(5);
+                BOOST_SYMBOL_VISIBLE static const timespan credit_round_interval = detail::ms(10);
+                BOOST_SYMBOL_VISIBLE static const string_view credit_policy = "complexity";
 
-        extern BOOST_SYMBOL_VISIBLE const string_view policy;
-        extern BOOST_SYMBOL_VISIBLE string_view profiling_output_file;
-        extern BOOST_SYMBOL_VISIBLE const size_t max_threads;
-        extern BOOST_SYMBOL_VISIBLE const size_t max_throughput;
-        extern BOOST_SYMBOL_VISIBLE const timespan profiling_resolution;
+                namespace size_policy {
 
-    }    // namespace scheduler
+                    BOOST_SYMBOL_VISIBLE static const int32_t bytes_per_batch = 2048;         // 2 KB
+                    BOOST_SYMBOL_VISIBLE static const int32_t buffer_capacity = 64 * 1024;    // 64 KB
 
-    namespace work_stealing {
+                }    // namespace size_policy
 
-        extern BOOST_SYMBOL_VISIBLE const size_t aggressive_poll_attempts;
-        extern BOOST_SYMBOL_VISIBLE const size_t aggressive_steal_interval;
-        extern BOOST_SYMBOL_VISIBLE const size_t moderate_poll_attempts;
-        extern BOOST_SYMBOL_VISIBLE const size_t moderate_steal_interval;
-        extern BOOST_SYMBOL_VISIBLE const timespan moderate_sleep_duration;
-        extern BOOST_SYMBOL_VISIBLE const size_t relaxed_steal_interval;
-        extern BOOST_SYMBOL_VISIBLE const timespan relaxed_sleep_duration;
+            }    // namespace stream
 
-    }    // namespace work_stealing
+            namespace scheduler {
 
-    namespace logger {
+                BOOST_SYMBOL_VISIBLE static const string_view policy = "stealing";
+                BOOST_SYMBOL_VISIBLE static string_view profiling_output_file = "";
+                BOOST_SYMBOL_VISIBLE static const size_t max_threads =
+                    std::max(std::thread::hardware_concurrency(), 4u);
+                BOOST_SYMBOL_VISIBLE static const size_t max_throughput = std::numeric_limits<size_t>::max();
+                BOOST_SYMBOL_VISIBLE static const timespan profiling_resolution = detail::ms(100);
 
-        extern BOOST_SYMBOL_VISIBLE string_view component_filter;
-        extern BOOST_SYMBOL_VISIBLE const string_view console;
-        extern BOOST_SYMBOL_VISIBLE string_view console_format;
-        extern BOOST_SYMBOL_VISIBLE const string_view console_verbosity;
-        extern BOOST_SYMBOL_VISIBLE string_view file_format;
-        extern BOOST_SYMBOL_VISIBLE string_view file_name;
-        extern BOOST_SYMBOL_VISIBLE const string_view file_verbosity;
+            }    // namespace scheduler
 
-    }    // namespace logger
+            namespace work_stealing {
 
-    namespace middleman {
+                BOOST_SYMBOL_VISIBLE static const size_t aggressive_poll_attempts = 100;
+                BOOST_SYMBOL_VISIBLE static const size_t aggressive_steal_interval = 10;
+                BOOST_SYMBOL_VISIBLE static const size_t moderate_poll_attempts = 500;
+                BOOST_SYMBOL_VISIBLE static const size_t moderate_steal_interval = 5;
+                BOOST_SYMBOL_VISIBLE static const timespan moderate_sleep_duration = detail::us(50);
+                BOOST_SYMBOL_VISIBLE static const size_t relaxed_steal_interval = 1;
+                BOOST_SYMBOL_VISIBLE static const timespan relaxed_sleep_duration = detail::ms(10);
 
-        extern BOOST_SYMBOL_VISIBLE std::vector<std::string> app_identifiers;
-        extern BOOST_SYMBOL_VISIBLE const string_view network_backend;
-        extern BOOST_SYMBOL_VISIBLE const size_t max_consecutive_reads;
-        extern BOOST_SYMBOL_VISIBLE const size_t heartbeat_interval;
-        extern BOOST_SYMBOL_VISIBLE const size_t cached_udp_buffers;
-        extern BOOST_SYMBOL_VISIBLE const size_t max_pending_msgs;
-        extern BOOST_SYMBOL_VISIBLE const size_t workers;
+            }    // namespace work_stealing
 
-    }    // namespace middleman
+            namespace logger {
 
-}    // namespace nil::actor::defaults
+                BOOST_SYMBOL_VISIBLE static string_view component_filter = "";
+                BOOST_SYMBOL_VISIBLE static const string_view console = "none";
+                BOOST_SYMBOL_VISIBLE static string_view console_format = "%m";
+                BOOST_SYMBOL_VISIBLE static const string_view console_verbosity = detail::default_log_level;
+                BOOST_SYMBOL_VISIBLE static string_view file_format = "%r %c %p %a %t %C %M %F:%L %m%n";
+                BOOST_SYMBOL_VISIBLE static string_view file_name = "actor_log_[PID]_[TIMESTAMP]_[NODE].log";
+                BOOST_SYMBOL_VISIBLE static const string_view file_verbosity = detail::default_log_level;
+
+            }    // namespace logger
+        }        // namespace defaults
+    }            // namespace actor
+}    // namespace nil
