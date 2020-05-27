@@ -237,23 +237,12 @@ namespace nil::actor {
         /// Returns `true` if the I/O module is available, `false` otherwise.
         bool has_middleman() const;
 
-        /// Returns the middleman instance from the I/O module.
-        /// @throws `std::logic_error` if module is not loaded.
-        io::middleman &middleman();
-
         /// Returns `true` if the openssl module is available, `false` otherwise.
         bool has_openssl_manager() const;
 
         /// Returns the manager instance from the OpenSSL module.
         /// @throws `std::logic_error` if module is not loaded.
         openssl::manager &openssl_manager() const;
-
-        /// Returns `true` if the network module is available, `false` otherwise.
-        bool has_network_manager() const noexcept;
-
-        /// Returns the network manager (middleman) instance.
-        /// @throws `std::logic_error` if module is not loaded.
-        network::middleman &network_manager();
 
         /// Returns a dummy execution unit that forwards
         /// everything to the scheduler.

@@ -337,13 +337,6 @@ namespace nil::actor {
         return modules_[spawner_module::middleman] != nullptr;
     }
 
-    io::middleman &spawner::middleman() {
-        auto &clptr = modules_[spawner_module::middleman];
-        if (!clptr)
-            ACTOR_RAISE_ERROR("cannot access middleman: module not loaded");
-        return *reinterpret_cast<io::middleman *>(clptr->subtype_ptr());
-    }
-
     bool spawner::has_openssl_manager() const {
         return modules_[spawner_module::openssl_manager] != nullptr;
     }
@@ -353,17 +346,6 @@ namespace nil::actor {
         if (!clptr)
             ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
         return *reinterpret_cast<openssl::manager *>(clptr->subtype_ptr());
-    }
-
-    bool spawner::has_network_manager() const noexcept {
-        return modules_[spawner_module::network_manager] != nullptr;
-    }
-
-    network::middleman &spawner::network_manager() {
-        auto &clptr = modules_[spawner_module::network_manager];
-        if (!clptr)
-            ACTOR_RAISE_ERROR("cannot access openssl manager: module not loaded");
-        return *reinterpret_cast<network::middleman *>(clptr->subtype_ptr());
     }
 
     scoped_execution_unit *spawner::dummy_execution_unit() {
