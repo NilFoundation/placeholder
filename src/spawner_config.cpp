@@ -150,13 +150,6 @@ namespace nil {
             put_missing(logger_group, "console-verbosity", defaults::logger::console_verbosity);
             put_missing(logger_group, "component-blacklist", std::vector<std::string> {});
             put_missing(logger_group, "inline-output", false);
-            // -- middleman parameters
-            auto &middleman_group = result["middleman"].as_dictionary();
-            put_missing(middleman_group, "app-identifiers", defaults::middleman::app_identifiers);
-            put_missing(middleman_group, "enable-automatic-connections", false);
-            put_missing(middleman_group, "max-consecutive-reads", defaults::middleman::max_consecutive_reads);
-            put_missing(middleman_group, "heartbeat-interval", defaults::middleman::heartbeat_interval);
-            put_missing(middleman_group, "workers", defaults::middleman::workers);
             // -- openssl parameters
             auto &openssl_group = result["openssl"].as_dictionary();
             put_missing(openssl_group, "certificate", std::string {});
@@ -314,11 +307,6 @@ namespace nil {
         }
 
         spawner_config &spawner_config::set_impl(string_view name, config_value value) {
-            if (name == "middleman.app-identifier") {
-                // TODO: Print a warning with 0.18 and remove this code with 0.19.
-                value.convert_to_list();
-                return set_impl("middleman.app-identifiers", std::move(value));
-            }
             auto opt = custom_options_.qualified_name_lookup(name);
             if (opt == nullptr) {
                 std::cerr << "*** failed to set config parameter " << name << ": invalid name" << std::endl;
