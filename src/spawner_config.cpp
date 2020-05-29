@@ -202,7 +202,7 @@ namespace nil {
                 }
             };
 
-            struct ini_sentinel {};
+            struct ini_sentinel { };
 
             bool operator!=(ini_iter iter, ini_sentinel) {
                 return !iter.ini->fail();
