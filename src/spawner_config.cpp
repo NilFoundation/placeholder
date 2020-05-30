@@ -87,16 +87,6 @@ namespace nil {
                 .add<std::string>("console-verbosity", "console output verbosity")
                 .add<std::vector<std::string>>("component-blacklist", "excluded components for logging")
                 .add<bool>("inline-output", "disable logger thread (for testing only!)");
-            opt_group {custom_options_, "middleman"}
-                .add<std::string>("network-backend", "either 'default' or 'asio' (if available)")
-                .add<std::vector<string>>("app-identifiers", "valid application identifiers of this node")
-                .add<string>("app-identifier", "DEPRECATED: use app-identifiers instead")
-                .add<bool>("enable-automatic-connections", "enables automatic connection management")
-                .add<size_t>("max-consecutive-reads", "max. number of consecutive reads per broker")
-                .add<timespan>("heartbeat-interval", "interval of heartbeat messages")
-                .add<bool>("attach-utility-actors", "schedule utility actors instead of dedicating threads")
-                .add<bool>("manual-multiplexing", "disables background activity of the multiplexer")
-                .add<size_t>("workers", "number of deserialization workers");
             opt_group(custom_options_, "openssl")
                 .add<string>(openssl_certificate, "certificate", "path to the PEM-formatted certificate file")
                 .add<string>(openssl_key, "key", "path to the private key file for this node")
