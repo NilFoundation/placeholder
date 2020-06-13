@@ -44,34 +44,38 @@
 #include <nil/actor/string_algorithms.hpp>
 #include <nil/actor/type_id.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class>
-    struct typed_mpi_access;
+            template<class>
+            struct typed_mpi_access;
 
-    template<class... In, class... Out>
-    struct typed_mpi_access<typed_mpi<type_list<In...>, output_tuple<Out...>>> {
-        std::string operator()() const {
-            static_assert(sizeof...(In) > 0, "typed MPI without inputs");
-            static_assert(sizeof...(Out) > 0, "typed MPI without outputs");
-            std::vector<std::string> inputs {type_name_v<In>...};
-            std::vector<std::string> outputs1 {type_name_v<Out>...};
-            std::string result = "nil::actor::replies_to<";
-            result += join(inputs, ",");
-            result += ">::with<";
-            result += join(outputs1, ",");
-            result += ">";
-            return result;
-        }
-    };
+            template<class... In, class... Out>
+            struct typed_mpi_access<typed_mpi<type_list<In...>, output_tuple<Out...>>> {
+                std::string operator()() const {
+                    static_assert(sizeof...(In) > 0, "typed MPI without inputs");
+                    static_assert(sizeof...(Out) > 0, "typed MPI without outputs");
+                    std::vector<std::string> inputs {type_name_v<In>...};
+                    std::vector<std::string> outputs1 {type_name_v<Out>...};
+                    std::string result = "nil::actor::replies_to<";
+                    result += join(inputs, ",");
+                    result += ">::with<";
+                    result += join(outputs1, ",");
+                    result += ">";
+                    return result;
+                }
+            };
 
-    template<class T>
-    std::string get_rtti_from_mpi() {
-        typed_mpi_access<T> f;
-        return f();
-    }
+            template<class T>
+            std::string get_rtti_from_mpi() {
+                typed_mpi_access<T> f;
+                return f();
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil
 
 namespace nil {
     namespace actor {
