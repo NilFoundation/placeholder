@@ -44,6 +44,11 @@
 #include <nil/actor/string_algorithms.hpp>
 #include <nil/actor/type_id.hpp>
 
+#include <nil/module/nameable.hpp>
+#include <nil/module/identifiable.hpp>
+#include <nil/module/configurable.hpp>
+#include <nil/module/initializable.hpp>
+
 namespace nil {
     namespace actor {
         namespace detail {
@@ -80,29 +85,17 @@ namespace nil {
 namespace nil {
     namespace actor {
 
-        class BOOST_SYMBOL_VISIBLE spawner_module {
+        template<typename ConfigurationType, typename OptionsType>
+        class BOOST_SYMBOL_VISIBLE spawner_module : public module::identifiable<uint32_t>,
+                                                    public module::nameable<const char *>,
+                                                    public module::configurable<ConfigurationType, OptionsType>,
+                                                    public module::initializable {
         public:
-            enum id_t { scheduler, middleman, openssl_manager, opencl_manager, network_manager, num_ids };
-
             virtual ~spawner_module() {
             }
 
             /// Returns the human-redable name of the module.
             const char *name() const noexcept {
-                switch (id()) {
-                    case scheduler:
-                        return "Scheduler";
-                    case middleman:
-                        return "Middleman";
-                    case openssl_manager:
-                        return "OpenSSL Manager";
-                    case opencl_manager:
-                        return "OpenCL Manager";
-                    case network_manager:
-                        return "Network Manager";
-                    default:
-                        return "???";
-                }
             }
 
             /// Starts any background threads needed by the module.
