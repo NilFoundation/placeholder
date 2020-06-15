@@ -95,8 +95,7 @@ namespace nil {
             }
 
             /// Returns the human-redable name of the module.
-            const char *name() const noexcept {
-            }
+            virtual const char *name() const = 0;
 
             /// Starts any background threads needed by the module.
             virtual void start() = 0;
