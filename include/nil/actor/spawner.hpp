@@ -122,7 +122,7 @@ namespace nil {
         template<typename ConfigurationType, typename OptionsType>
         class BOOST_SYMBOL_VISIBLE networking_module : public spawner_module<ConfigurationType, OptionsType> {
         public:
-            virtual ~networking_module() override {
+            virtual ~networking_module() {
             }
 
             /// Causes the module to send a `node_down_msg` to `observer` if this system
