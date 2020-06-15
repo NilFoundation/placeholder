@@ -86,27 +86,30 @@ namespace nil {
     namespace actor {
 
         template<typename ConfigurationType, typename OptionsType>
-        class BOOST_SYMBOL_VISIBLE spawner_module : public module::identifiable<uint32_t>,
-                                                    public module::nameable<const char *>,
-                                                    public module::configurable<ConfigurationType, OptionsType>,
-                                                    public module::initializable {
-        public:
+        struct BOOST_SYMBOL_VISIBLE spawner_module : public module::identifiable<uint32_t>,
+                                                     public module::nameable<const char *>,
+                                                     public module::configurable<ConfigurationType, OptionsType>,
+                                                     public module::initializable {
+            typedef ConfigurationType configuration_type;
+            typedef OptionsType options_type;
+
             virtual ~spawner_module() {
             }
 
             /// Returns the human-redable name of the module.
-            const char *name() const noexcept {
-            }
+            virtual const char *name() const override = 0;
 
             /// Starts any background threads needed by the module.
-            virtual void start() = 0;
+            virtual void startup() override = 0;
 
             /// Stops all background threads of the module.
-            virtual void stop() = 0;
+            virtual void shutdown() override = 0;
 
             /// Allows the module to change the
             /// configuration of the actor system during startup.
-            virtual void init(spawner_config &) = 0;
+            virtual void initialize(ConfigurationType &cfg) override = 0;
+
+            virtual void set_options(ConfigurationType &cfg, ConfigurationType &c) override = 0;
 
             /// Returns the identifier of this module.
             virtual id_t id() const = 0;
@@ -116,9 +119,10 @@ namespace nil {
         };
 
         /// An (optional) component of the actor system with networking capabilities.
-        class BOOST_SYMBOL_VISIBLE networking_module : public spawner_module {
+        template<typename ConfigurationType, typename OptionsType>
+        class BOOST_SYMBOL_VISIBLE networking_module : public spawner_module<ConfigurationType, OptionsType> {
         public:
-            ~networking_module() override {
+            virtual ~networking_module() override {
             }
 
             /// Causes the module to send a `node_down_msg` to `observer` if this system

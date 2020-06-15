@@ -63,7 +63,7 @@ namespace nil::actor::scheduler {
         return clock_;
     }
 
-    void test_coordinator::start() {
+    void test_coordinator::startup() {
         ACTOR_LOG_TRACE("");
         dummy_worker worker {this};
         actor_config cfg {&worker};
@@ -71,7 +71,7 @@ namespace nil::actor::scheduler {
         utility_actors_[printer_id] = make_actor<dummy_printer, actor>(sys.next_actor_id(), sys.node(), &sys, cfg);
     }
 
-    void test_coordinator::stop() {
+    void test_coordinator::shutdown() {
         ACTOR_LOG_TRACE("");
         while (run() > 0)
             trigger_timeouts();

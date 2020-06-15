@@ -166,7 +166,7 @@ namespace nil::actor::scheduler {
 
         void init(spawner_config &cfg) override {
             namespace sr = defaults::scheduler;
-            super::init(cfg);
+            super::initialize(cfg);
             auto fname = get_or(cfg, "scheduler.profiling-output-file", sr::profiling_output_file);
             file_.open(fname);
             if (!file_)
@@ -178,7 +178,7 @@ namespace nil::actor::scheduler {
 
         void start() override {
             clock_start_ = clock_type::now().time_since_epoch();
-            super::start();
+            super::startup();
             worker_states_.resize(this->num_workers());
             using std::setw;
             file_.flags(std::ios::left);
@@ -194,7 +194,7 @@ namespace nil::actor::scheduler {
 
         void stop() override {
             ACTOR_LOG_TRACE("");
-            super::stop();
+            super::shutdown();
             auto now = clock_type::now().time_since_epoch();
             auto wallclock = system_start_ + (now - clock_start_);
             for (size_t i = 0; i < worker_states_.size(); ++i) {
