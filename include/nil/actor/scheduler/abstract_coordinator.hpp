@@ -67,9 +67,9 @@ namespace nil {
                 /// Returns `true` if this scheduler detaches its utility actors.
                 virtual bool detaches_utility_actors() const;
 
-                void start() override;
+                void startup() override;
 
-                void init(spawner_config &cfg) override;
+                void initialize(spawner_config &cfg) override;
 
                 id_t id() const override {
                     return 0x00;

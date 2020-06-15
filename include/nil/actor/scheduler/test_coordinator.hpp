@@ -153,9 +153,9 @@ namespace nil::actor::scheduler {
         detail::test_actor_clock &clock() noexcept override;
 
     protected:
-        void start() override;
+        void startup() override;
 
-        void stop() override;
+        void shutdown() override;
 
         void enqueue(resumable *ptr) override;
 

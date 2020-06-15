@@ -51,7 +51,7 @@ namespace nil::actor::scheduler {
         }
 
     protected:
-        void start() override {
+        void startup() override {
             // Create initial state for all workers.
             typename worker_type::policy_data init {this};
             // Prepare workers vector.
@@ -73,10 +73,10 @@ namespace nil::actor::scheduler {
                 system().thread_terminates();
             }};
             // Run remaining startup code.
-            super::start();
+            super::startup();
         }
 
-        void stop() override {
+        void shutdown() override {
             // shutdown workers
             class shutdown_helper : public resumable, public ref_counted {
             public:

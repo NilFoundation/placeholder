@@ -8,6 +8,8 @@ endif()
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
 
+                       module
+
                        ${Boost_LIBRARIES})
 
 macro(define_core_test name)

@@ -227,14 +227,14 @@ namespace nil::actor::scheduler {
         return true;
     }
 
-    void abstract_coordinator::start() {
+    void abstract_coordinator::startup() {
         ACTOR_LOG_TRACE("");
         // launch utility actors
         static constexpr auto fs = hidden + detached;
         utility_actors_[printer_id] = system_.spawn<printer_actor, fs>();
     }
 
-    void abstract_coordinator::init(spawner_config &cfg) {
+    void abstract_coordinator::initialize(spawner_config &cfg) {
         namespace sr = defaults::scheduler;
         max_throughput_ = get_or(cfg, "scheduler.max-throughput", sr::max_throughput);
         num_workers_ = get_or(cfg, "scheduler.max-threads", sr::max_threads);
