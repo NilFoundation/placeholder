@@ -245,9 +245,11 @@ namespace nil::actor {
         // adapt the system configuration.
         logger_->init(cfg);
         ACTOR_SET_LOGGER_SYS(this);
-        for (auto &mod : modules_)
-            if (mod)
-                mod->init(cfg);
+        for (auto &mod : modules_) {
+            if (mod) {
+                mod->inititalize(cfg);
+            }
+        }
         groups_.init(cfg);
         // Spawn config and spawn servers (lazily to not access the scheduler yet).
         static constexpr auto Flags = hidden + lazy_init;
@@ -257,9 +259,11 @@ namespace nil::actor {
         registry_.start();
         registry_.put("SpawnServ", spawn_serv());
         registry_.put("ConfigServ", config_serv());
-        for (auto &mod : modules_)
-            if (mod)
-                mod->start();
+        for (auto &mod : modules_) {
+            if (mod) {
+                mod->startup();
+            }
+        }
         groups_.start();
         logger_->start();
     }
@@ -286,7 +290,7 @@ namespace nil::actor {
                 auto &ptr = *i;
                 if (ptr != nullptr) {
                     ACTOR_LOG_DEBUG("stop module" << ptr->name());
-                    ptr->stop();
+                    ptr->shutdown();
                 }
             }
             await_detached_threads();

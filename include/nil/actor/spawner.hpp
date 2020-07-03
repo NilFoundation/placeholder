@@ -85,19 +85,14 @@ namespace nil {
 namespace nil {
     namespace actor {
 
-        template<typename ConfigurationType, typename OptionsType>
         struct BOOST_SYMBOL_VISIBLE spawner_module : public module::identifiable<uint32_t>,
                                                      public module::nameable<const char *>,
-                                                     public module::configurable<ConfigurationType, OptionsType>,
                                                      public module::initializable {
-            typedef ConfigurationType configuration_type;
-            typedef OptionsType options_type;
-
             virtual ~spawner_module() {
             }
 
             /// Returns the human-redable name of the module.
-            virtual const char *name() const override = 0;
+            virtual name_type name() const override = 0;
 
             /// Starts any background threads needed by the module.
             virtual void startup() override = 0;
@@ -105,22 +100,15 @@ namespace nil {
             /// Stops all background threads of the module.
             virtual void shutdown() override = 0;
 
-            /// Allows the module to change the
-            /// configuration of the actor system during startup.
-            virtual void initialize(ConfigurationType &cfg) override = 0;
-
-            virtual void set_options(ConfigurationType &cfg, ConfigurationType &c) override = 0;
-
             /// Returns the identifier of this module.
-            virtual id_t id() const = 0;
+            virtual id_type id() const override = 0;
 
             /// Returns a pointer to the subtype.
             virtual void *subtype_ptr() = 0;
         };
 
         /// An (optional) component of the actor system with networking capabilities.
-        template<typename ConfigurationType, typename OptionsType>
-        class BOOST_SYMBOL_VISIBLE networking_module : public spawner_module<ConfigurationType, OptionsType> {
+        class BOOST_SYMBOL_VISIBLE networking_module : public spawner_module {
         public:
             virtual ~networking_module() {
             }
@@ -162,7 +150,7 @@ namespace nil {
 
             using module_ptr = std::unique_ptr<spawner_module>;
 
-            using module_array = std::array<module_ptr, spawner_module::num_ids>;
+            using module_array = std::vector<module_ptr>;
 
             /// @warning The system stores a reference to `cfg`, which means the
             ///          config object must outlive the actor system.

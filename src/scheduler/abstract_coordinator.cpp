@@ -234,10 +234,9 @@ namespace nil::actor::scheduler {
         utility_actors_[printer_id] = system_.spawn<printer_actor, fs>();
     }
 
-    void abstract_coordinator::initialize(spawner_config &cfg) {
-        namespace sr = defaults::scheduler;
-        max_throughput_ = get_or(cfg, "scheduler.max-throughput", sr::max_throughput);
-        num_workers_ = get_or(cfg, "scheduler.max-threads", sr::max_threads);
+    void abstract_coordinator::initialize(scheduler_config &cfg) {
+        max_throughput_ = cfg.max_throughput;
+        num_workers_ = cfg.max_threads;
     }
 
     void *abstract_coordinator::subtype_ptr() {
@@ -271,16 +270,16 @@ namespace nil::actor::scheduler {
         switch (ptr->subtype()) {
             case resumable::scheduled_actor:
             case resumable::io_actor: {
-                auto dptr = static_cast<scheduled_actor *>(ptr);
+                scheduled_actor *dptr = static_cast<scheduled_actor *>(ptr);
                 dummy_unit dummy {dptr};
                 dptr->cleanup(make_error(exit_reason::user_shutdown), &dummy);
                 while (!dummy.resumables.empty()) {
-                    auto sub = dummy.resumables.back();
+                    resumable *sub = dummy.resumables.back();
                     dummy.resumables.pop_back();
                     switch (sub->subtype()) {
                         case resumable::scheduled_actor:
                         case resumable::io_actor: {
-                            auto dsub = static_cast<scheduled_actor *>(sub);
+                            scheduled_actor *dsub = static_cast<scheduled_actor *>(sub);
                             dsub->cleanup(make_error(exit_reason::user_shutdown), &dummy);
                             break;
                         }

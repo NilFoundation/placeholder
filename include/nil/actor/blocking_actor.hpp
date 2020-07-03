@@ -53,14 +53,9 @@ namespace nil {
         /// receive rather than a behavior-stack based message processing.
         /// @extends local_actor
         class BOOST_SYMBOL_VISIBLE blocking_actor
-            // clang-format off
-  : public extend<local_actor, blocking_actor>::
-           with<mixin::requester,
-                mixin::sender,
-                mixin::subscriber>,
-    public dynamically_typed_actor_base,
-    public blocking_actor_base {
-            // clang-format on
+            : public extend<local_actor, blocking_actor>::with<mixin::requester, mixin::sender, mixin::subscriber>,
+              public dynamically_typed_actor_base,
+              public blocking_actor_base {
         public:
             // -- nested and member types ------------------------------------------------
 
@@ -231,7 +226,7 @@ namespace nil {
 
             // -- overridden functions of local_actor ------------------------------------
 
-            const char *name() const override;
+            virtual const char *name() const override;
 
             void launch(execution_unit *eu, bool lazy, bool hide) override;
 

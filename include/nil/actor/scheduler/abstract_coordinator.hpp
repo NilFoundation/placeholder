@@ -18,6 +18,7 @@
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/actor_cast.hpp>
 #include <nil/actor/actor_clock.hpp>
+#include <nil/actor/defaults.hpp>
 #include <nil/actor/spawner.hpp>
 
 #include <nil/actor/fwd.hpp>
@@ -26,13 +27,28 @@
 namespace nil {
     namespace actor {
         namespace scheduler {
+            struct scheduler_config {
+                string_view policy = defaults::scheduler::policy;
+                string_view profiling_output_file = defaults::scheduler::profiling_output_file;
+                size_t max_threads = defaults::scheduler::max_threads;
+                size_t max_throughput = defaults::scheduler::max_throughput;
+                timespan profiling_resolution = defaults::scheduler::profiling_resolution;
+            };
 
             /// A coordinator creates the workers, manages delayed sends and
             /// the central printer instance for {@link aout}. It also forwards
             /// sends from detached workers or non-actor threads to randomly
             /// chosen workers.
-            class BOOST_SYMBOL_VISIBLE abstract_coordinator : public spawner_module {
+            class BOOST_SYMBOL_VISIBLE abstract_coordinator
+                : public spawner_module,
+                  public module::configurable<scheduler_config, scheduler_config> {
+
+                typedef module::configurable<scheduler_config, scheduler_config> policy_type;
+
             public:
+                typedef typename policy_type::configuration_type configuration_type;
+                typedef typename policy_type::options_types options_type;
+
                 enum utility_actor_id : size_t { printer_id, max_id };
 
                 explicit abstract_coordinator(spawner &sys);
@@ -69,7 +85,20 @@ namespace nil {
 
                 void startup() override;
 
-                void initialize(spawner_config &cfg) override;
+                void initialize(scheduler_config &cfg) override;
+
+                virtual name_type name() const override {
+                    return nullptr;
+                }
+                virtual void shutdown() override {
+                }
+                virtual void set_options(scheduler_config &cfg) const override {
+                }
+                virtual state_type state() const override {
+                    return initialized;
+                }
+                virtual void handle_sighup() override {
+                }
 
                 id_t id() const override {
                     return 0x00;
