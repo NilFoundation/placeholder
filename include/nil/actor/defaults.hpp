@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cstddef>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <nil/actor/string_view.hpp>
