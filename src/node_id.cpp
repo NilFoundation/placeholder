@@ -11,7 +11,7 @@
 #include <nil/actor/node_id.hpp>
 
 #include <cstring>
-#include <ctype.h>
+#include <cctype>
 #include <iterator>
 #include <random>
 
@@ -131,7 +131,7 @@ namespace nil {
             auto other_id = other.implementation_id();
             if (class_id != other_id)
                 return class_id < other_id ? -1 : 1;
-            auto &x = static_cast<const default_data &>(other);
+            const default_data &x = static_cast<const default_data &>(other);
             if (pid_ != x.pid_)
                 return pid_ < x.pid_ ? -1 : 1;
             return memcmp(host_.data(), x.host_.data(), host_.size());
@@ -265,11 +265,10 @@ namespace nil {
                 uint8_t impl = 0;
                 if (auto err = source(impl))
                     return err;
-                if (impl == 0) {
+                if (!impl) {
                     ptr.reset();
                     return result_type {};
-                }
-                if (impl == node_id::default_data::class_id) {
+                } else if (impl == node_id::default_data::class_id) {
                     if (ptr == nullptr || ptr->implementation_id() != node_id::default_data::class_id)
                         ptr = make_counted<node_id::default_data>();
                     return ptr->deserialize(source);
@@ -328,7 +327,7 @@ namespace nil {
                 return none;
             detail::parser::ascii_to_int<16, uint8_t> xvalue;
             node_data::host_id_type host_id;
-            auto in = host_hash.begin();
+            const auto *in = host_hash.begin();
             for (auto &byte : host_id) {
                 if (!isxdigit(*in))
                     return none;
