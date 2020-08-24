@@ -82,7 +82,7 @@ namespace nil {
             // manipulates the system to always produce the same seed for its randomness.
             auto sys_seed = static_cast<char>(system_id.fetch_add(1) + 33);
             seeded_hd_serial_and_mac_addr += sys_seed;
-            host_id_type hid = hash::hash<hash::ripemd<160>>(seeded_hd_serial_and_mac_addr);
+            host_id_type hid = hash<hashes::ripemd<160>>(seeded_hd_serial_and_mac_addr);
             return make_node_id(detail::get_process_id(), hid);
         }
 
