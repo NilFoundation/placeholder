@@ -97,7 +97,7 @@ namespace nil {
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <network/if.h>
+#include <net/if.h>
 #include <sstream>
 #include <stdio.h>
 #include <string>
