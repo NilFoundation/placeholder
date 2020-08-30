@@ -11,13 +11,13 @@
 #include <nil/actor/detail/get_root_uuid.hpp>
 #include <nil/actor/config.hpp>
 
-#ifndef ACTOR_MACOS    // not needed on Mac OS X
+#ifndef BOOST_OS_MACOS_AVAILABLE    // not needed on Mac OS X
 namespace {
     constexpr char uuid_format[] = "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF";
 }    // namespace
-#endif    // ACTOR_MACOS
+#endif    // BOOST_OS_MACOS_AVAILABLE
 
-#if defined(ACTOR_MACOS)
+#if defined(BOOST_OS_MACOS_AVAILABLE)
 
 namespace {
 
@@ -54,7 +54,7 @@ namespace nil {
     }        // namespace actor
 }    // namespace nil
 
-#elif defined(ACTOR_LINUX) || defined(ACTOR_BSD) || defined(ACTOR_CYGWIN)
+#elif defined(BOOST_OS_LINUX_AVAILABLE) || defined(BOOST_OS_BSD_AVAILABLE) || defined(BOOST_OS_CYGWIN)
 
 #include <algorithm>
 #include <fstream>
@@ -132,7 +132,7 @@ namespace nil::actor::detail {
 
 }    // namespace nil::actor::detail
 
-#elif defined(ACTOR_WINDOWS)
+#elif defined(BOOST_OS_WINDOWS_AVAILABLE)
 
 #include <algorithm>
 #include <iostream>
@@ -200,7 +200,7 @@ namespace nil {
     }        // namespace actor
 }    // namespace nil
 
-#elif defined(ACTOR_IOS) || defined(ACTOR_ANDROID)
+#elif defined(BOOST_OS_IOS_AVAILABLE) || defined(BOOST_PLAT_ANDROID)
 
 // return a randomly-generated UUID on mobile devices
 
@@ -227,4 +227,4 @@ namespace nil {
     }        // namespace actor
 }    // namespace nil
 
-#endif    // ACTOR_WINDOWS
+#endif    // BOOST_OS_WINDOWS_AVAILABLE

@@ -12,13 +12,13 @@
 
 #include <nil/actor/config.hpp>
 
-#ifndef ACTOR_WINDOWS
+#ifndef BOOST_OS_WINDOWS_AVAILABLE
 #include <pthread.h>
-#endif    // ACTOR_WINDOWS
+#endif    // BOOST_OS_WINDOWS_AVAILABLE
 
-#if defined(ACTOR_LINUX)
+#if defined(BOOST_OS_LINUX_AVAILABLE)
 #include <sys/prctl.h>
-#elif defined(ACTOR_BSD)
+#elif defined(BOOST_OS_BSD_AVAILABLE)
 #include <pthread_np.h>
 #endif    // defined(...)
 
@@ -29,19 +29,19 @@ namespace nil::actor::detail {
 
     void set_thread_name(const char *name) {
         ACTOR_IGNORE_UNUSED(name);
-#ifdef ACTOR_WINDOWS
+#ifdef BOOST_OS_WINDOWS_AVAILABLE
         // nop
-#else    // ACTOR_WINDOWS
+#else    // BOOST_OS_WINDOWS_AVAILABLE
         static_assert(std::is_same<std::thread::native_handle_type, pthread_t>::value,
                       "std::thread not based on pthread_t");
-#if defined(ACTOR_MACOS)
+#if defined(BOOST_OS_MACOS_AVAILABLE)
         pthread_setname_np(name);
-#elif defined(ACTOR_LINUX)
+#elif defined(BOOST_OS_LINUX_AVAILABLE)
         prctl(PR_SET_NAME, name, 0, 0, 0);
-#elif defined(ACTOR_BSD)
+#elif defined(BOOST_OS_BSD_AVAILABLE)
         pthread_set_name_np(pthread_self(), name);
 #endif    // defined(...)
-#endif    // ACTOR_WINDOWS
+#endif    // BOOST_OS_WINDOWS_AVAILABLE
     }
 
 }    // namespace nil::actor::detail

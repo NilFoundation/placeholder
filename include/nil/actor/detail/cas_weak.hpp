@@ -18,7 +18,8 @@ namespace nil::actor::detail {
 
     template<class T>
     bool cas_weak(std::atomic<T> *obj, T *expected, T desired) {
-#if (defined(ACTOR_CLANG) && ACTOR_COMPILER_VERSION < 30401) || (defined(ACTOR_GCC) && ACTOR_COMPILER_VERSION < 40803)
+#if (defined(BOOST_COMP_CLANG_AVAILABLE) && ACTOR_COMPILER_VERSION < 30401) || \
+    (defined(BOOST_COMP_GNUC_AVAILABLE) && ACTOR_COMPILER_VERSION < 40803)
         return std::atomic_compare_exchange_strong(obj, expected, desired);
 #else
         return std::atomic_compare_exchange_weak(obj, expected, desired);

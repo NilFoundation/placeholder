@@ -12,7 +12,7 @@
 
 #include <nil/actor/config.hpp>
 
-#ifdef ACTOR_WINDOWS
+#ifdef BOOST_OS_WINDOWS_AVAILABLE
 #include <windows.h>
 #else
 #include <sys/types.h>
@@ -22,7 +22,7 @@
 namespace nil::actor::detail {
 
     unsigned get_process_id() {
-#ifdef ACTOR_WINDOWS
+#ifdef BOOST_OS_WINDOWS_AVAILABLE
         return GetCurrentProcessId();
 #else
         return static_cast<unsigned>(getpid());

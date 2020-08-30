@@ -12,7 +12,7 @@
 
 #include <nil/actor/config.hpp>
 
-#if defined(ACTOR_LINUX) || defined(ACTOR_MACOS)
+#if defined(BOOST_OS_LINUX_AVAILABLE) || defined(BOOST_OS_MACOS_AVAILABLE)
 #include <cxxabi.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -49,7 +49,7 @@ namespace nil::actor::detail {
     }
 
     void prettify_type_name(std::string &class_name, const char *c_class_name) {
-#if defined(ACTOR_LINUX) || defined(ACTOR_MACOS)
+#if defined(BOOST_OS_LINUX_AVAILABLE) || defined(BOOST_OS_MACOS_AVAILABLE)
         int stat = 0;
         std::unique_ptr<char, decltype(free) *> real_class_name {nullptr, free};
         auto tmp = abi::__cxa_demangle(c_class_name, nullptr, nullptr, &stat);

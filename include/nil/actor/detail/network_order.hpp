@@ -14,7 +14,7 @@
 
 namespace nil::actor::detail {
 
-#ifdef ACTOR_MSVC    // we assume Windows is always little endian
+#ifdef BOOST_COMP_MSVC_AVAILABLE    // we assume Windows is always little endian
 
     inline uint16_t to_network_order(uint16_t value) {
         return _byteswap_ushort(value);

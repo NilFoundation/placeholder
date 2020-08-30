@@ -185,7 +185,7 @@ namespace nil {
     }                                                                               \
     ACTOR_ADD_TYPE_ID(project_name, (atom_namespace::atom_name))
 
-#ifdef ACTOR_MSVC
+#if defined(BOOST_COMP_MSVC_AVAILABLE)
 #define ACTOR_ADD_ATOM(...) BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_ADD_ATOM_, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
 #else
 #define ACTOR_ADD_ATOM(...) BOOST_PP_OVERLOAD(ACTOR_ADD_ATOM_, __VA_ARGS__)(__VA_ARGS__)
