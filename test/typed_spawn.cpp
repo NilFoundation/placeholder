@@ -11,7 +11,7 @@
 #include <nil/actor/config.hpp>
 
 // exclude this suite; seems to be too much to swallow for MSVC
-#ifndef ACTOR_WINDOWS
+#ifndef BOOST_OS_WINDOWS_AVAILABLE
 
 #define BOOST_TEST_MODULE typed_spawn
 
@@ -386,4 +386,4 @@ BOOST_AUTO_TEST_CASE(check_signature) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-#endif    // ACTOR_WINDOWS
+#endif    // BOOST_OS_WINDOWS_AVAILABLE

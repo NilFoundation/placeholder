@@ -18,7 +18,7 @@
 #include <string>
 #include <type_traits>
 
-#include <boost/config.hpp>
+#include <nil/actor/config.hpp>
 
 #include <nil/actor/detail/comparable.hpp>
 
@@ -86,7 +86,7 @@ namespace nil {
                 // nop
             }
 
-#ifdef ACTOR_GCC
+#if defined(BOOST_COMP_GNUC_AVAILABLE) && !defined(BOOST_COMP_CLANG_AVAILABLE)
             constexpr string_view(const char *cstr) noexcept : data_(cstr), size_(strlen(cstr)) {
                 // nop
             }

@@ -19,7 +19,7 @@
 #include <nil/actor/actor_control_block.hpp>
 #include <nil/actor/config.hpp>
 
-#ifdef ACTOR_GCC
+#ifdef BOOST_COMP_GNUC_AVAILABLE
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-offsetof"
 #endif
@@ -44,7 +44,7 @@ namespace nil {
 // Clang in combination with libc++ on Linux complains about offsetof:
 //     error: 'actor_storage' does not refer to a value
 // Until we have found a reliable solution, we disable this safety check.
-#if !(defined(ACTOR_CLANG) && defined(ACTOR_LINUX))
+#if !(defined(BOOST_COMP_CLANG_AVAILABLE) && defined(BOOST_OS_LINUX_AVAILABLE))
                 // 2) make sure reinterpret cast of the control block to the storage works
                 static_assert(offsetof(actor_storage, ctrl) == 0, "control block is not at the start of the storage");
                 // 3) make sure we can obtain a data pointer by jumping one cache line
@@ -88,6 +88,6 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-#ifdef ACTOR_GCC
+#ifdef BOOST_COMP_GNUC_AVAILABLE
 #pragma GCC diagnostic pop
 #endif

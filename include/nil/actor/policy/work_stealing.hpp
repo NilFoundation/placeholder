@@ -143,7 +143,7 @@ namespace nil::actor::policy {
                             return job;
                     }
                     if (strategies[k].sleep_duration.count() > 0) {
-#ifdef ACTOR_MSVC
+#ifdef BOOST_COMP_MSVC_AVAILABLE
                         // Windows cannot sleep less than 1000 us, so timeout is converted to
                         // 0 inside sleep_for(), but Sleep(0) is dangerous so replace it with
                         // yield()
