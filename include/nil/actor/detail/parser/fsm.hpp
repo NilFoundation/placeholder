@@ -199,7 +199,7 @@
         ACTOR_FSM_EPSILON_IMPL2(fsm_call, target)                                \
     }
 
-#ifdef ACTOR_MSVC
+#ifdef BOOST_COMP_MSVC_AVAILABLE
 
 /// Defines a terminal state in the FSM.
 #define term_state(...) \
@@ -227,7 +227,7 @@
 #define fsm_epsilon(...) \
     BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_FSM_EPSILON_IMPL, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
 
-#else    // ACTOR_MSVC
+#else    // BOOST_COMP_MSVC_AVAILABLE
 
 /// Defines a terminal state in the FSM.
 #define term_state(...) BOOST_PP_OVERLOAD(ACTOR_TERM_STATE_IMPL, __VA_ARGS__)(__VA_ARGS__)
@@ -250,7 +250,7 @@
 /// Makes an epsilon transition into another FSM, resuming at state `target`.
 #define fsm_epsilon(...) BOOST_PP_OVERLOAD(ACTOR_FSM_EPSILON_IMPL, __VA_ARGS__)(__VA_ARGS__)
 
-#endif    // ACTOR_MSVC
+#endif    // BOOST_COMP_MSVC_AVAILABLE
 
 /// Enables a transition into another state if the `statement` is true.
 #define transition_if(statement, ...) \

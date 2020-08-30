@@ -18,7 +18,7 @@
 #include <thread>
 
 // GCC hack
-#if defined(ACTOR_GCC) && !defined(_GLIBCXX_USE_SCHED_YIELD)
+#if defined(BOOST_COMP_GNUC_AVAILABLE) && !defined(_GLIBCXX_USE_SCHED_YIELD)
 #include <time.h>
 namespace std {
     namespace this_thread {
@@ -35,7 +35,7 @@ namespace std {
 #endif
 
 // another GCC hack
-#if defined(ACTOR_GCC) && !defined(_GLIBCXX_USE_NANOSLEEP)
+#if defined(BOOST_COMP_GNUC_AVAILABLE) && !defined(_GLIBCXX_USE_NANOSLEEP)
 #include <time.h>
 namespace std {
     namespace this_thread {

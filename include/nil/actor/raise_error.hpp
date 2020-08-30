@@ -49,17 +49,17 @@ namespace nil::actor::detail {
 
 #endif    // ACTOR_NO_EXCEPTIONS
 
-#ifdef ACTOR_MSVC
+#ifdef BOOST_COMP_MSVC_AVAILABLE
 
 /// Throws an exception if `ACTOR_NO_EXCEPTIONS` is undefined, otherwise calls
 /// abort() after printing a given message.
 #define ACTOR_RAISE_ERROR(...) \
     BOOST_PP_CAT(BOOST_PP_OVERLOAD(ACTOR_RAISE_ERROR_IMPL_, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
 
-#else    // ACTOR_MSVC
+#else    // BOOST_COMP_MSVC_AVAILABLE
 
 /// Throws an exception if `ACTOR_NO_EXCEPTIONS` is undefined, otherwise calls
 /// abort() after printing a given message.
 #define ACTOR_RAISE_ERROR(...) BOOST_PP_OVERLOAD(ACTOR_RAISE_ERROR_IMPL_, __VA_ARGS__)(__VA_ARGS__)
 
-#endif    // ACTOR_MSVC
+#endif    // BOOST_COMP_MSVC_AVAILABLE

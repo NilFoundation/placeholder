@@ -21,10 +21,10 @@
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/type_id_list.hpp>
 
-#ifdef ACTOR_CLANG
+#ifdef BOOST_COMP_CLANG_AVAILABLE
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc99-extensions"
-#elif defined(ACTOR_MSVC)
+#elif defined(BOOST_COMP_MSVC_AVAILABLE)
 #pragma warning(push)
 #pragma warning(disable : 4200)
 #endif
@@ -146,7 +146,7 @@ namespace nil::actor::detail {
 }    // namespace nil::actor::detail
 
 
-#ifdef ACTOR_CLANG
+#ifdef BOOST_COMP_CLANG_AVAILABLE
 #pragma clang diagnostic pop
 #elif defined(MSVC)
 #pragma warning(pop)

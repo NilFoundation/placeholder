@@ -13,7 +13,7 @@
 #include <nil/actor/config.hpp>
 #include <nil/actor/detail/scope_guard.hpp>
 
-#if defined(ACTOR_MACOS) || defined(ACTOR_BSD) || defined(ACTOR_IOS)
+#if defined(BOOST_OS_MACOS_AVAILABLE) || defined(BOOST_OS_BSD_AVAILABLE) || defined(BOOST_OS_IOS_AVAILABLE)
 
 #include <arpa/inet.h>
 #include <cerrno>
@@ -89,7 +89,7 @@ namespace nil {
     }        // namespace actor
 }    // namespace nil
 
-#elif defined(ACTOR_LINUX) || defined(ACTOR_ANDROID) || defined(ACTOR_CYGWIN)
+#elif defined(BOOST_OS_LINUX_AVAILABLE) || defined(BOOST_PLAT_ANDROID) || defined(BOOST_OS_CYGWIN)
 
 #include <algorithm>
 #include <cctype>

@@ -12,9 +12,9 @@
 
 #include <nil/actor/config.hpp>
 
-#if defined(ACTOR_MACOS) || defined(ACTOR_IOS)
+#if defined(BOOST_OS_MACOS_AVAILABLE) || defined(BOOST_OS_IOS_AVAILABLE)
 #include <mach/mach.h>
-#elif defined(ACTOR_WINDOWS)
+#elif defined(BOOST_OS_WINDOWS_AVAILABLE)
 #include <psapi.h>
 #include <windows.h>
 #else
@@ -51,11 +51,11 @@ namespace nil::actor::scheduler {
 
         class measurement {
         public:
-#if defined(ACTOR_MACOS) || defined(ACTOR_IOS)
+#if defined(BOOST_OS_MACOS_AVAILABLE) || defined(BOOST_OS_IOS_AVAILABLE)
             static usec to_usec(const ::time_value_t &tv) {
                 return std::chrono::seconds(tv.seconds) + usec(tv.microseconds);
             }
-#elif defined(ACTOR_WINDOWS)
+#elif defined(BOOST_OS_WINDOWS_AVAILABLE)
             static usec to_usec(FILETIME const &ft) {
                 ULARGE_INTEGER time;
                 time.LowPart = ft.dwLowDateTime;
@@ -73,7 +73,7 @@ namespace nil::actor::scheduler {
                 auto now = clock_type::now().time_since_epoch();
                 measurement m;
                 m.runtime = std::chrono::duration_cast<usec>(now);
-#if defined(ACTOR_MACOS) || defined(ACTOR_IOS)
+#if defined(BOOST_OS_MACOS_AVAILABLE) || defined(BOOST_OS_IOS_AVAILABLE)
                 auto tself = ::mach_thread_self();
                 ::thread_basic_info info;
                 auto count = THREAD_BASIC_INFO_COUNT;
@@ -83,7 +83,7 @@ namespace nil::actor::scheduler {
                     m.sys = to_usec(info.system_time);
                 }
                 ::mach_port_deallocate(mach_task_self(), tself);
-#elif defined(ACTOR_WINDOWS)
+#elif defined(BOOST_OS_WINDOWS_AVAILABLE)
                 FILETIME creation_time, exit_time, kernel_time, user_time;
                 PROCESS_MEMORY_COUNTERS pmc;
 
@@ -94,7 +94,7 @@ namespace nil::actor::scheduler {
                 m.mem = pmc.PeakWorkingSetSize / 1024;
                 m.usr = to_usec(user_time);
                 m.sys = to_usec(kernel_time);
-#elif defined(ACTOR_CYGWIN)
+#elif defined(BOOST_OS_CYGWIN)
                 // TODO - decide what to do here instead of zeros
                 m.usr = usec::zero();
                 m.sys = usec::zero();

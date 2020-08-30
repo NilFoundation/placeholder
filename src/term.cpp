@@ -14,7 +14,7 @@
 
 #include <nil/actor/config.hpp>
 
-#ifdef ACTOR_WINDOWS
+#ifdef BOOST_OS_WINDOWS_AVAILABLE
 #include <io.h>
 #include <windows.h>
 #else
@@ -27,7 +27,7 @@ namespace nil {
 
         namespace {
 
-#ifdef ACTOR_WINDOWS
+#ifdef BOOST_OS_WINDOWS_AVAILABLE
 
             // windows terminals do no support bold fonts
 

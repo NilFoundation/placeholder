@@ -381,15 +381,15 @@ namespace nil {
 
 // -- utility macros -----------------------------------------------------------
 
-#ifdef ACTOR_MSVC
+#ifdef BOOST_COMP_MSVC_AVAILABLE
 /// Expands to a string representation of the current function name that
 /// includes the full function name and its signature.
 #define ACTOR_PRETTY_FUN __FUNCSIG__
-#else    // ACTOR_MSVC
+#else    // BOOST_COMP_MSVC_AVAILABLE
 /// Expands to a string representation of the current function name that
 /// includes the full function name and its signature.
 #define ACTOR_PRETTY_FUN __PRETTY_FUNCTION__
-#endif    // ACTOR_MSVC
+#endif    // BOOST_COMP_MSVC_AVAILABLE
 
 /// Concatenates `a` and `b` to a single preprocessor token.
 #define ACTOR_CAT(a, b) a##b
