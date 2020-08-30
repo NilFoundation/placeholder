@@ -149,16 +149,16 @@ namespace nil {
         using infer_handle_from_state_t = typename infer_handle_from_state<T>::type;
 
         template<class T>
-        struct is_handle : std::false_type {};
+        struct is_handle : std::false_type { };
 
         template<>
-        struct is_handle<actor> : std::true_type {};
+        struct is_handle<actor> : std::true_type { };
 
         template<>
-        struct is_handle<strong_actor_ptr> : std::true_type {};
+        struct is_handle<strong_actor_ptr> : std::true_type { };
 
         template<class... Ts>
-        struct is_handle<typed_actor<Ts...>> : std::true_type {};
+        struct is_handle<typed_actor<Ts...>> : std::true_type { };
 
     }    // namespace actor
 }    // namespace nil

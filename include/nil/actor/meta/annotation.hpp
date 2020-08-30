@@ -12,30 +12,34 @@
 
 #include <type_traits>
 
-namespace nil::actor::meta {
+namespace nil {
+    namespace actor {
+        namespace meta {
 
-    /// Type tag for all meta annotations in =nil; Actor.
-    struct annotation {
-        constexpr annotation() {
-            // nop
-        }
-    };
+            /// Type tag for all meta annotations in =nil; Actor.
+            struct annotation {
+                constexpr annotation() {
+                    // nop
+                }
+            };
 
-    template<class T>
-    struct is_annotation {
-        static constexpr bool value = std::is_base_of<annotation, T>::value;
-    };
+            template<class T>
+            struct is_annotation {
+                static constexpr bool value = std::is_base_of<annotation, T>::value;
+            };
 
-    template<class T>
-    struct is_annotation<T &> : is_annotation<T> {};
+            template<class T>
+            struct is_annotation<T &> : is_annotation<T> { };
 
-    template<class T>
-    struct is_annotation<const T &> : is_annotation<T> {};
+            template<class T>
+            struct is_annotation<const T &> : is_annotation<T> { };
 
-    template<class T>
-    struct is_annotation<T &&> : is_annotation<T> {};
+            template<class T>
+            struct is_annotation<T &&> : is_annotation<T> { };
 
-    template<class T>
-    constexpr bool is_annotation_v = is_annotation<T>::value;
+            template<class T>
+            constexpr bool is_annotation_v = is_annotation<T>::value;
 
-}    // namespace nil::actor::meta
+        }    // namespace meta
+    }        // namespace actor
+}    // namespace nil

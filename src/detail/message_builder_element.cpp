@@ -10,10 +10,14 @@
 
 #include <nil/actor/detail/message_builder_element.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    message_builder_element::~message_builder_element() {
-        // nop
-    }
+            message_builder_element::~message_builder_element() {
+                // nop
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

@@ -10,10 +10,14 @@
 
 #include <nil/actor/policy/unprofiled.hpp>
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    unprofiled::~unprofiled() {
-        // nop
-    }
+            unprofiled::~unprofiled() {
+                // nop
+            }
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

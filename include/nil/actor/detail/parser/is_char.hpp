@@ -10,19 +10,25 @@
 
 #pragma once
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Returns whether `c` equals `C`.
-    template<char C>
-    bool is_char(char c) {
-        return c == C;
-    }
+                /// Returns whether `c` equals `C`.
+                template<char C>
+                bool is_char(char c) {
+                    return c == C;
+                }
 
-    /// Returns whether `c` equals `C` (case insensitive).
-    template<char C>
-    bool is_ichar(char c) {
-        static_assert(C >= 'a' && C <= 'z', "Expected a-z (lowercase).");
-        return c == C || c == (C - 32);
-    }
+                /// Returns whether `c` equals `C` (case insensitive).
+                template<char C>
+                bool is_ichar(char c) {
+                    static_assert(C >= 'a' && C <= 'z', "Expected a-z (lowercase).");
+                    return c == C || c == (C - 32);
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil

@@ -17,30 +17,34 @@
 
 #define CONFIG(str_name, var_name) get_or(p->config(), "work-stealing." str_name, defaults::work_stealing::var_name)
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    work_stealing::~work_stealing() {
-        // nop
-    }
+            work_stealing::~work_stealing() {
+                // nop
+            }
 
-    work_stealing::worker_data::worker_data(scheduler::abstract_coordinator *p) :
-        rengine(std::random_device {}()),
-        // no need to worry about wrap-around; if `p->num_workers() < 2`,
-        // `uniform` will not be used anyway
-        uniform(0, p->num_workers() - 2), strategies {{{CONFIG("aggressive-poll-attempts", aggressive_poll_attempts), 1,
-                                                        CONFIG("aggressive-steal-interval", aggressive_steal_interval),
-                                                        timespan {0}},
-                                                       {CONFIG("moderate-poll-attempts", moderate_poll_attempts), 1,
-                                                        CONFIG("moderate-steal-interval", moderate_steal_interval),
-                                                        CONFIG("moderate-sleep-duration", moderate_sleep_duration)},
-                                                       {1, 0, CONFIG("relaxed-steal-interval", relaxed_steal_interval),
-                                                        CONFIG("relaxed-sleep-duration", relaxed_sleep_duration)}}} {
-        // nop
-    }
+            work_stealing::worker_data::worker_data(scheduler::abstract_coordinator *p) :
+                rengine(std::random_device {}()),
+                // no need to worry about wrap-around; if `p->num_workers() < 2`,
+                // `uniform` will not be used anyway
+                uniform(0, p->num_workers() - 2),
+                strategies {{{CONFIG("aggressive-poll-attempts", aggressive_poll_attempts), 1,
+                              CONFIG("aggressive-steal-interval", aggressive_steal_interval), timespan {0}},
+                             {CONFIG("moderate-poll-attempts", moderate_poll_attempts), 1,
+                              CONFIG("moderate-steal-interval", moderate_steal_interval),
+                              CONFIG("moderate-sleep-duration", moderate_sleep_duration)},
+                             {1, 0, CONFIG("relaxed-steal-interval", relaxed_steal_interval),
+                              CONFIG("relaxed-sleep-duration", relaxed_sleep_duration)}}} {
+                // nop
+            }
 
-    work_stealing::worker_data::worker_data(const worker_data &other) :
-        rengine(std::random_device {}()), uniform(other.uniform), strategies(other.strategies) {
-        // nop
-    }
+            work_stealing::worker_data::worker_data(const worker_data &other) :
+                rengine(std::random_device {}()), uniform(other.uniform), strategies(other.strategies) {
+                // nop
+            }
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

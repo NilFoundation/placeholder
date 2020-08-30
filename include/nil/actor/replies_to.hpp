@@ -23,10 +23,10 @@ namespace nil {
         /// @endcond
 
         template<class...>
-        struct output_tuple {};
+        struct output_tuple { };
 
         template<class Input, class Output>
-        struct typed_mpi {};
+        struct typed_mpi { };
 
         template<class... Is>
         struct replies_to {

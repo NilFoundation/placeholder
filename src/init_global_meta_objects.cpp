@@ -28,11 +28,14 @@
 #include <nil/actor/upstream_msg.hpp>
 #include <nil/actor/uri.hpp>
 
-namespace nil::actor::core {
+namespace nil {
+    namespace actor {
+        namespace core {
 
-    void init_global_meta_objects() {
-        nil::actor::init_global_meta_objects<id_block::core_module>();
-    }
+            void init_global_meta_objects() {
+                nil::actor::init_global_meta_objects<id_block::core_module>();
+            }
 
-}    // namespace nil::actor::core
-
+        }    // namespace core
+    }        // namespace actor
+}    // namespace nil

@@ -187,7 +187,7 @@ struct IUnknown;
 #ifndef ACTOR_ENABLE_RUNTIME_CHECKS
 #define ACTOR_ASSERT(unused) static_cast<void>(0)
 #elif defined(BOOST_OS_WINDOWS_AVAILABLE) || defined(BOOST_OS_BSD_AVAILABLE)
-#define ACTOR_ASSERT(stmt)                                                       \
+#define ACTOR_ASSERT(stmt)                                                     \
     if (static_cast<bool>(stmt) == false) {                                    \
         printf("%s:%u: requirement failed '%s'\n", __FILE__, __LINE__, #stmt); \
         ::abort();                                                             \
@@ -195,7 +195,7 @@ struct IUnknown;
     static_cast<void>(0)
 #else    // defined(BOOST_OS_LINUX_AVAILABLE) || defined(BOOST_OS_MACOS_AVAILABLE)
 #include <execinfo.h>
-#define ACTOR_ASSERT(stmt)                                                       \
+#define ACTOR_ASSERT(stmt)                                                     \
     if (static_cast<bool>(stmt) == false) {                                    \
         printf("%s:%u: requirement failed '%s'\n", __FILE__, __LINE__, #stmt); \
         void *array[20];                                                       \
@@ -209,7 +209,7 @@ struct IUnknown;
 // Convenience macros.
 #define ACTOR_IGNORE_UNUSED(x) static_cast<void>(x)
 
-#define ACTOR_CRITICAL(error)                                                                  \
+#define ACTOR_CRITICAL(error)                                                                \
     do {                                                                                     \
         fprintf(stderr, "[FATAL] %s:%u: critical error: '%s'\n", __FILE__, __LINE__, error); \
         ::abort();                                                                           \

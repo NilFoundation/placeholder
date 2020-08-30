@@ -19,21 +19,25 @@
 
 #include <nil/actor/detail/sync_request_bouncer.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    sync_request_bouncer::sync_request_bouncer(error r) : rsn(std::move(r)) {
-        // nop
-    }
+            sync_request_bouncer::sync_request_bouncer(error r) : rsn(std::move(r)) {
+                // nop
+            }
 
-    void sync_request_bouncer::operator()(const strong_actor_ptr &sender, const message_id &mid) const {
-        if (sender && mid.is_request())
-            sender->enqueue(nullptr, mid.response_id(), make_message(make_error(sec::request_receiver_down)),
-                            // TODO: this breaks out of the execution unit
-                            nullptr);
-    }
+            void sync_request_bouncer::operator()(const strong_actor_ptr &sender, const message_id &mid) const {
+                if (sender && mid.is_request())
+                    sender->enqueue(nullptr, mid.response_id(), make_message(make_error(sec::request_receiver_down)),
+                                    // TODO: this breaks out of the execution unit
+                                    nullptr);
+            }
 
-    void sync_request_bouncer::operator()(const mailbox_element &e) const {
-        (*this)(e.sender, e.mid);
-    }
+            void sync_request_bouncer::operator()(const mailbox_element &e) const {
+                (*this)(e.sender, e.mid);
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

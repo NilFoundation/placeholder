@@ -18,189 +18,193 @@
 #include <nil/actor/dictionary.hpp>
 #include <nil/actor/settings.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class ini_consumer;
-    class ini_list_consumer;
-    class ini_map_consumer;
+            class ini_consumer;
+            class ini_list_consumer;
+            class ini_map_consumer;
 
-    class BOOST_SYMBOL_VISIBLE abstract_ini_consumer {
-    public:
-        // -- constructors, destructors, and assignment operators --------------------
+            class BOOST_SYMBOL_VISIBLE abstract_ini_consumer {
+            public:
+                // -- constructors, destructors, and assignment operators --------------------
 
-        explicit abstract_ini_consumer(abstract_ini_consumer *parent = nullptr);
+                explicit abstract_ini_consumer(abstract_ini_consumer *parent = nullptr);
 
-        abstract_ini_consumer(const abstract_ini_consumer &) = delete;
+                abstract_ini_consumer(const abstract_ini_consumer &) = delete;
 
-        abstract_ini_consumer &operator=(const abstract_ini_consumer &) = delete;
+                abstract_ini_consumer &operator=(const abstract_ini_consumer &) = delete;
 
-        virtual ~abstract_ini_consumer();
+                virtual ~abstract_ini_consumer();
 
-        // -- properties -------------------------------------------------------------
+                // -- properties -------------------------------------------------------------
 
-        virtual void value_impl(config_value &&x) = 0;
+                virtual void value_impl(config_value &&x) = 0;
 
-        template<class T>
-        void value(T &&x) {
-            value_impl(config_value {std::forward<T>(x)});
-        }
+                template<class T>
+                void value(T &&x) {
+                    value_impl(config_value {std::forward<T>(x)});
+                }
 
-        inline abstract_ini_consumer *parent() {
-            return parent_;
-        }
+                inline abstract_ini_consumer *parent() {
+                    return parent_;
+                }
 
-        ini_map_consumer begin_map();
+                ini_map_consumer begin_map();
 
-        ini_list_consumer begin_list();
+                ini_list_consumer begin_list();
 
-    protected:
-        // -- member variables -------------------------------------------------------
+            protected:
+                // -- member variables -------------------------------------------------------
 
-        abstract_ini_consumer *parent_;
-    };
+                abstract_ini_consumer *parent_;
+            };
 
-    class BOOST_SYMBOL_VISIBLE ini_map_consumer : public abstract_ini_consumer {
-    public:
-        // -- member types -----------------------------------------------------------
+            class BOOST_SYMBOL_VISIBLE ini_map_consumer : public abstract_ini_consumer {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using super = abstract_ini_consumer;
+                using super = abstract_ini_consumer;
 
-        using map_type = config_value::dictionary;
+                using map_type = config_value::dictionary;
 
-        using iterator = map_type::iterator;
+                using iterator = map_type::iterator;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        ini_map_consumer(abstract_ini_consumer *ptr);
+                ini_map_consumer(abstract_ini_consumer *ptr);
 
-        ini_map_consumer(ini_map_consumer &&other);
+                ini_map_consumer(ini_map_consumer &&other);
 
-        ~ini_map_consumer() override;
+                ~ini_map_consumer() override;
 
-        // -- properties -------------------------------------------------------------
+                // -- properties -------------------------------------------------------------
 
-        void end_map();
+                void end_map();
 
-        void key(std::string name);
+                void key(std::string name);
 
-        void value_impl(config_value &&x) override;
+                void value_impl(config_value &&x) override;
 
-    private:
-        // -- member variables -------------------------------------------------------
+            private:
+                // -- member variables -------------------------------------------------------
 
-        map_type xs_;
-        iterator i_;
-    };
+                map_type xs_;
+                iterator i_;
+            };
 
-    class BOOST_SYMBOL_VISIBLE ini_list_consumer : public abstract_ini_consumer {
-    public:
-        // -- member types -----------------------------------------------------------
+            class BOOST_SYMBOL_VISIBLE ini_list_consumer : public abstract_ini_consumer {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using super = abstract_ini_consumer;
+                using super = abstract_ini_consumer;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        ini_list_consumer(abstract_ini_consumer *ptr);
+                ini_list_consumer(abstract_ini_consumer *ptr);
 
-        ini_list_consumer(ini_list_consumer &&other);
+                ini_list_consumer(ini_list_consumer &&other);
 
-        // -- properties -------------------------------------------------------------
+                // -- properties -------------------------------------------------------------
 
-        void end_list();
+                void end_list();
 
-        void value_impl(config_value &&x) override;
+                void value_impl(config_value &&x) override;
 
-    private:
-        // -- member variables -------------------------------------------------------
+            private:
+                // -- member variables -------------------------------------------------------
 
-        config_value::list xs_;
-    };
+                config_value::list xs_;
+            };
 
-    /// Consumes a single value from an INI parser.
-    class BOOST_SYMBOL_VISIBLE ini_value_consumer : public abstract_ini_consumer {
-    public:
-        // -- member types -----------------------------------------------------------
+            /// Consumes a single value from an INI parser.
+            class BOOST_SYMBOL_VISIBLE ini_value_consumer : public abstract_ini_consumer {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using super = abstract_ini_consumer;
+                using super = abstract_ini_consumer;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        explicit ini_value_consumer(abstract_ini_consumer *parent = nullptr);
+                explicit ini_value_consumer(abstract_ini_consumer *parent = nullptr);
 
-        // -- properties -------------------------------------------------------------
+                // -- properties -------------------------------------------------------------
 
-        void value_impl(config_value &&x) override;
+                void value_impl(config_value &&x) override;
 
-        // -- member variables -------------------------------------------------------
+                // -- member variables -------------------------------------------------------
 
-        config_value result;
-    };
+                config_value result;
+            };
 
-    /// Consumes a config category.
-    class BOOST_SYMBOL_VISIBLE ini_category_consumer : public abstract_ini_consumer {
-    public:
-        // -- member types -----------------------------------------------------------
+            /// Consumes a config category.
+            class BOOST_SYMBOL_VISIBLE ini_category_consumer : public abstract_ini_consumer {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using super = abstract_ini_consumer;
+                using super = abstract_ini_consumer;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        ini_category_consumer(ini_consumer *parent, std::string category);
+                ini_category_consumer(ini_consumer *parent, std::string category);
 
-        ini_category_consumer(ini_category_consumer &&);
+                ini_category_consumer(ini_category_consumer &&);
 
-        // -- properties -------------------------------------------------------------
+                // -- properties -------------------------------------------------------------
 
-        void end_map();
+                void end_map();
 
-        void key(std::string name);
+                void key(std::string name);
 
-        void value_impl(config_value &&x) override;
+                void value_impl(config_value &&x) override;
 
-    private:
-        // -- properties -------------------------------------------------------------
+            private:
+                // -- properties -------------------------------------------------------------
 
-        ini_consumer *dparent();
+                ini_consumer *dparent();
 
-        // -- member variables -------------------------------------------------------
+                // -- member variables -------------------------------------------------------
 
-        std::string category_;
-        config_value::dictionary xs_;
-        std::string current_key;
-    };
+                std::string category_;
+                config_value::dictionary xs_;
+                std::string current_key;
+            };
 
-    /// Consumes a series of dictionaries forming a application configuration.
-    class BOOST_SYMBOL_VISIBLE ini_consumer : public abstract_ini_consumer {
-    public:
-        // -- friends ----------------------------------------------------------------
+            /// Consumes a series of dictionaries forming a application configuration.
+            class BOOST_SYMBOL_VISIBLE ini_consumer : public abstract_ini_consumer {
+            public:
+                // -- friends ----------------------------------------------------------------
 
-        friend class ini_category_consumer;
+                friend class ini_category_consumer;
 
-        // -- member types -----------------------------------------------------------
+                // -- member types -----------------------------------------------------------
 
-        using super = abstract_ini_consumer;
+                using super = abstract_ini_consumer;
 
-        using config_map = dictionary<config_value::dictionary>;
+                using config_map = dictionary<config_value::dictionary>;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        ini_consumer(const config_option_set &options, settings &cfg);
+                ini_consumer(const config_option_set &options, settings &cfg);
 
-        // -- properties -------------------------------------------------------------
+                // -- properties -------------------------------------------------------------
 
-        ini_category_consumer begin_map();
+                ini_category_consumer begin_map();
 
-        void key(std::string name);
+                void key(std::string name);
 
-        void value_impl(config_value &&x) override;
+                void value_impl(config_value &&x) override;
 
-    private:
-        // -- member variables -------------------------------------------------------
+            private:
+                // -- member variables -------------------------------------------------------
 
-        const config_option_set &options_;
-        settings &cfg_;
-        std::string current_key_;
-        std::vector<error> warnings_;
-    };
+                const config_option_set &options_;
+                settings &cfg_;
+                std::string current_key_;
+                std::vector<error> warnings_;
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

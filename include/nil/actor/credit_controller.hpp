@@ -12,7 +12,6 @@
 
 #include <cstdint>
 
-
 #include <nil/actor/downstream_msg.hpp>
 #include <nil/actor/fwd.hpp>
 

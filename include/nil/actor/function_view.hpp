@@ -14,7 +14,6 @@
 #include <new>
 #include <utility>
 
-
 #include <nil/actor/expected.hpp>
 #include <nil/actor/response_type.hpp>
 #include <nil/actor/scoped_actor.hpp>

@@ -86,7 +86,8 @@ namespace nil {
             /// size `desired_batch_size`. Does nothing for pending paths.
             template<class T>
             void emit_batches(local_actor *self, std::vector<T> &cache, bool force_underfull) {
-                ACTOR_LOG_TRACE(ACTOR_ARG(slots) << ACTOR_ARG(open_credit) << ACTOR_ARG(cache) << ACTOR_ARG(force_underfull));
+                ACTOR_LOG_TRACE(ACTOR_ARG(slots)
+                                << ACTOR_ARG(open_credit) << ACTOR_ARG(cache) << ACTOR_ARG(force_underfull));
                 if (pending())
                     return;
                 ACTOR_ASSERT(open_credit >= 0);

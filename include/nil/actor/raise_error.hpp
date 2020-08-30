@@ -21,11 +21,14 @@
 #include <stdexcept>
 #endif
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    BOOST_SYMBOL_VISIBLE void log_cstring_error(const char *cstring);
-
-}
+            BOOST_SYMBOL_VISIBLE void log_cstring_error(const char *cstring);
+        }
+    }    // namespace actor
+}    // namespace nil
 
 #ifdef ACTOR_NO_EXCEPTIONS
 

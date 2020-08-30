@@ -14,7 +14,6 @@
 #include <string>
 #include <tuple>
 
-
 #include <nil/actor/meta/type_name.hpp>
 
 namespace nil {

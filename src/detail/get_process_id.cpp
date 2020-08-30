@@ -19,14 +19,18 @@
 #include <unistd.h>
 #endif
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    unsigned get_process_id() {
+            unsigned get_process_id() {
 #ifdef BOOST_OS_WINDOWS_AVAILABLE
-        return GetCurrentProcessId();
+                return GetCurrentProcessId();
 #else
-        return static_cast<unsigned>(getpid());
+                return static_cast<unsigned>(getpid());
 #endif
-    }
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

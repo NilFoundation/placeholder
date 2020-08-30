@@ -13,34 +13,38 @@
 #include <nil/actor/message.hpp>
 #include <nil/actor/param.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class... Ts>
-    class param_message_view {
-    public:
-        explicit param_message_view(const message &msg) noexcept : ptr_(msg.cptr()) {
-            // nop
-        }
+            template<class... Ts>
+            class param_message_view {
+            public:
+                explicit param_message_view(const message &msg) noexcept : ptr_(msg.cptr()) {
+                    // nop
+                }
 
-        param_message_view() = delete;
+                param_message_view() = delete;
 
-        param_message_view(const param_message_view &) noexcept = default;
+                param_message_view(const param_message_view &) noexcept = default;
 
-        param_message_view &operator=(const param_message_view &) noexcept = default;
+                param_message_view &operator=(const param_message_view &) noexcept = default;
 
-        const detail::message_data *operator->() const noexcept {
-            return ptr_;
-        }
+                const detail::message_data *operator->() const noexcept {
+                    return ptr_;
+                }
 
-    private:
-        const detail::message_data *ptr_;
-    };
+            private:
+                const detail::message_data *ptr_;
+            };
 
-    template<size_t Index, class... Ts>
-    auto get(const param_message_view<Ts...> &xs) {
-        static_assert(Index < sizeof...(Ts));
-        using type = nil::actor::detail::tl_at_t<nil::actor::detail::type_list<Ts...>, Index>;
-        return param<type> {xs->storage() + detail::offset_at<Index, Ts...>, !xs->unique()};
-    }
+            template<size_t Index, class... Ts>
+            auto get(const param_message_view<Ts...> &xs) {
+                static_assert(Index < sizeof...(Ts));
+                using type = nil::actor::detail::tl_at_t<nil::actor::detail::type_list<Ts...>, Index>;
+                return param<type> {xs->storage() + detail::offset_at<Index, Ts...>, !xs->unique()};
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

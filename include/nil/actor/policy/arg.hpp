@@ -10,16 +10,20 @@
 
 #pragma once
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    /// Provides a wrapper to pass policy types as values to functions.
-    template<class... Ts>
-    struct arg {
-    public:
-        static const arg value;
-    };
+            /// Provides a wrapper to pass policy types as values to functions.
+            template<class... Ts>
+            struct arg {
+            public:
+                static const arg value;
+            };
 
-    template<class... Ts>
-    const arg<Ts...> arg<Ts...>::value = arg<Ts...> {};
+            template<class... Ts>
+            const arg<Ts...> arg<Ts...>::value = arg<Ts...> {};
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

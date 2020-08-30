@@ -52,8 +52,8 @@ namespace nil {
             using uplock = upgrade_lock<detail::shared_spinlock>;
             using actor_vec = std::vector<actor>;
             using factory = std::function<actor()>;
-            using policy = std::function<void(spawner &, uplock &, const actor_vec &, mailbox_element_ptr &,
-                                              execution_unit *)>;
+            using policy =
+                std::function<void(spawner &, uplock &, const actor_vec &, mailbox_element_ptr &, execution_unit *)>;
 
             /// Returns a simple round robin dispatching policy.
             static policy round_robin();

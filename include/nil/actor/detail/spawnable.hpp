@@ -15,13 +15,17 @@
 #include <nil/actor/detail/type_traits.hpp>
 #include <nil/actor/infer_handle.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// Returns whether the function object `F` is spawnable from the actor
-    /// implementation `Impl` with arguments of type `Ts...`.
-    template<class F, class Impl, class... Ts>
-    constexpr bool spawnable() {
-        return is_callable_with<F, Ts...>::value || is_callable_with<F, Impl *, Ts...>::value;
-    }
+            /// Returns whether the function object `F` is spawnable from the actor
+            /// implementation `Impl` with arguments of type `Ts...`.
+            template<class F, class Impl, class... Ts>
+            constexpr bool spawnable() {
+                return is_callable_with<F, Ts...>::value || is_callable_with<F, Impl *, Ts...>::value;
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

@@ -12,11 +12,15 @@
 
 #include <memory>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class T, class... Ts>
-    std::unique_ptr<T> make_unique(Ts &&... xs) {
-        return std::unique_ptr<T> {new T(std::forward<Ts>(xs)...)};
-    }
+            template<class T, class... Ts>
+            std::unique_ptr<T> make_unique(Ts &&... xs) {
+                return std::unique_ptr<T> {new T(std::forward<Ts>(xs)...)};
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

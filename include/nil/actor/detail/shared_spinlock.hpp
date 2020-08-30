@@ -15,28 +15,32 @@
 
 #include <boost/config.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// A spinlock implementation providing shared and exclusive locking.
-    class BOOST_SYMBOL_VISIBLE shared_spinlock {
-    public:
-        shared_spinlock();
+            /// A spinlock implementation providing shared and exclusive locking.
+            class BOOST_SYMBOL_VISIBLE shared_spinlock {
+            public:
+                shared_spinlock();
 
-        void lock();
-        void unlock();
-        bool try_lock();
+                void lock();
+                void unlock();
+                bool try_lock();
 
-        void lock_shared();
-        void unlock_shared();
-        bool try_lock_shared();
+                void lock_shared();
+                void unlock_shared();
+                bool try_lock_shared();
 
-        void lock_upgrade();
-        void unlock_upgrade();
-        void unlock_upgrade_and_lock();
-        void unlock_and_lock_upgrade();
+                void lock_upgrade();
+                void unlock_upgrade();
+                void unlock_upgrade_and_lock();
+                void unlock_and_lock_upgrade();
 
-    private:
-        std::atomic<long> flag_;
-    };
+            private:
+                std::atomic<long> flag_;
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

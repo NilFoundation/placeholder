@@ -18,115 +18,119 @@
 #include <nil/actor/timeout_definition.hpp>
 #include <nil/actor/timespan.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class BOOST_SYMBOL_VISIBLE blocking_behavior {
-    public:
-        behavior &nested;
+            class BOOST_SYMBOL_VISIBLE blocking_behavior {
+            public:
+                behavior &nested;
 
-        blocking_behavior(behavior &x);
-        blocking_behavior(blocking_behavior &&) = default;
+                blocking_behavior(behavior &x);
+                blocking_behavior(blocking_behavior &&) = default;
 
-        virtual ~blocking_behavior();
+                virtual ~blocking_behavior();
 
-        virtual result<message> fallback(message &);
+                virtual result<message> fallback(message &);
 
-        virtual timespan timeout();
+                virtual timespan timeout();
 
-        virtual void handle_timeout();
-    };
+                virtual void handle_timeout();
+            };
 
-    template<class F>
-    class blocking_behavior_v2 : public blocking_behavior {
-    public:
-        catch_all<F> f;
+            template<class F>
+            class blocking_behavior_v2 : public blocking_behavior {
+            public:
+                catch_all<F> f;
 
-        blocking_behavior_v2(behavior &x, catch_all<F> y) : blocking_behavior(x), f(std::move(y)) {
-            // nop
-        }
+                blocking_behavior_v2(behavior &x, catch_all<F> y) : blocking_behavior(x), f(std::move(y)) {
+                    // nop
+                }
 
-        blocking_behavior_v2(blocking_behavior_v2 &&) = default;
+                blocking_behavior_v2(blocking_behavior_v2 &&) = default;
 
-        result<message> fallback(message &x) override {
-            return f.handler(x);
-        }
-    };
+                result<message> fallback(message &x) override {
+                    return f.handler(x);
+                }
+            };
 
-    template<class F>
-    class blocking_behavior_v3 : public blocking_behavior {
-    public:
-        timeout_definition<F> f;
+            template<class F>
+            class blocking_behavior_v3 : public blocking_behavior {
+            public:
+                timeout_definition<F> f;
 
-        blocking_behavior_v3(behavior &x, timeout_definition<F> y) : blocking_behavior(x), f(std::move(y)) {
-            // nop
-        }
+                blocking_behavior_v3(behavior &x, timeout_definition<F> y) : blocking_behavior(x), f(std::move(y)) {
+                    // nop
+                }
 
-        blocking_behavior_v3(blocking_behavior_v3 &&) = default;
+                blocking_behavior_v3(blocking_behavior_v3 &&) = default;
 
-        timespan timeout() override {
-            return f.timeout;
-        }
+                timespan timeout() override {
+                    return f.timeout;
+                }
 
-        void handle_timeout() override {
-            f.handler();
-        }
-    };
+                void handle_timeout() override {
+                    f.handler();
+                }
+            };
 
-    template<class F1, class F2>
-    class blocking_behavior_v4 : public blocking_behavior {
-    public:
-        catch_all<F1> f1;
-        timeout_definition<F2> f2;
+            template<class F1, class F2>
+            class blocking_behavior_v4 : public blocking_behavior {
+            public:
+                catch_all<F1> f1;
+                timeout_definition<F2> f2;
 
-        blocking_behavior_v4(behavior &x, catch_all<F1> y, timeout_definition<F2> z) :
-            blocking_behavior(x), f1(std::move(y)), f2(std::move(z)) {
-            // nop
-        }
+                blocking_behavior_v4(behavior &x, catch_all<F1> y, timeout_definition<F2> z) :
+                    blocking_behavior(x), f1(std::move(y)), f2(std::move(z)) {
+                    // nop
+                }
 
-        blocking_behavior_v4(blocking_behavior_v4 &&) = default;
+                blocking_behavior_v4(blocking_behavior_v4 &&) = default;
 
-        result<message> fallback(message &x) override {
-            return f1.handler(x);
-        }
+                result<message> fallback(message &x) override {
+                    return f1.handler(x);
+                }
 
-        timespan timeout() override {
-            return f2.timeout;
-        }
+                timespan timeout() override {
+                    return f2.timeout;
+                }
 
-        void handle_timeout() override {
-            f2.handler();
-        }
-    };
+                void handle_timeout() override {
+                    f2.handler();
+                }
+            };
 
-    struct make_blocking_behavior_t {
-        constexpr make_blocking_behavior_t() {
-            // nop
-        }
+            struct make_blocking_behavior_t {
+                constexpr make_blocking_behavior_t() {
+                    // nop
+                }
 
-        inline blocking_behavior operator()(behavior *x) const {
-            ACTOR_ASSERT(x != nullptr);
-            return {*x};
-        }
+                inline blocking_behavior operator()(behavior *x) const {
+                    ACTOR_ASSERT(x != nullptr);
+                    return {*x};
+                }
 
-        template<class F>
-        blocking_behavior_v2<F> operator()(behavior *x, catch_all<F> y) const {
-            ACTOR_ASSERT(x != nullptr);
-            return {*x, std::move(y)};
-        }
+                template<class F>
+                blocking_behavior_v2<F> operator()(behavior *x, catch_all<F> y) const {
+                    ACTOR_ASSERT(x != nullptr);
+                    return {*x, std::move(y)};
+                }
 
-        template<class F>
-        blocking_behavior_v3<F> operator()(behavior *x, timeout_definition<F> y) const {
-            ACTOR_ASSERT(x != nullptr);
-            return {*x, std::move(y)};
-        }
+                template<class F>
+                blocking_behavior_v3<F> operator()(behavior *x, timeout_definition<F> y) const {
+                    ACTOR_ASSERT(x != nullptr);
+                    return {*x, std::move(y)};
+                }
 
-        template<class F1, class F2>
-        blocking_behavior_v4<F1, F2> operator()(behavior *x, catch_all<F1> y, timeout_definition<F2> z) const {
-            ACTOR_ASSERT(x != nullptr);
-            return {*x, std::move(y), std::move(z)};
-        }
-    };
+                template<class F1, class F2>
+                blocking_behavior_v4<F1, F2> operator()(behavior *x, catch_all<F1> y, timeout_definition<F2> z) const {
+                    ACTOR_ASSERT(x != nullptr);
+                    return {*x, std::move(y), std::move(z)};
+                }
+            };
 
-    constexpr make_blocking_behavior_t make_blocking_behavior = make_blocking_behavior_t {};
+            constexpr make_blocking_behavior_t make_blocking_behavior = make_blocking_behavior_t {};
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

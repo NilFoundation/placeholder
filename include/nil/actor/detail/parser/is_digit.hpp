@@ -10,30 +10,36 @@
 
 #pragma once
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Returns whether `c` is a valid digit for a given base.
-    template<int Base>
-    bool is_digit(char c);
+                /// Returns whether `c` is a valid digit for a given base.
+                template<int Base>
+                bool is_digit(char c);
 
-    template<>
-    inline bool is_digit<2>(char c) {
-        return c == '0' || c == '1';
-    }
+                template<>
+                inline bool is_digit<2>(char c) {
+                    return c == '0' || c == '1';
+                }
 
-    template<>
-    inline bool is_digit<8>(char c) {
-        return c >= '0' && c <= '7';
-    }
+                template<>
+                inline bool is_digit<8>(char c) {
+                    return c >= '0' && c <= '7';
+                }
 
-    template<>
-    inline bool is_digit<10>(char c) {
-        return c >= '0' && c <= '9';
-    }
+                template<>
+                inline bool is_digit<10>(char c) {
+                    return c >= '0' && c <= '9';
+                }
 
-    template<>
-    inline bool is_digit<16>(char c) {
-        return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
-    }
+                template<>
+                inline bool is_digit<16>(char c) {
+                    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil

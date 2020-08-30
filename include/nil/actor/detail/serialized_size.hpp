@@ -13,78 +13,82 @@
 #include <nil/actor/error.hpp>
 #include <nil/actor/serializer.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class serialized_size_inspector final : public serializer {
-    public:
-        using super = serializer;
+            class serialized_size_inspector final : public serializer {
+            public:
+                using super = serializer;
 
-        using super::super;
+                using super::super;
 
-        size_t result() const noexcept {
-            return result_;
-        }
+                size_t result() const noexcept {
+                    return result_;
+                }
 
-        result_type begin_object(type_id_t) override;
+                result_type begin_object(type_id_t) override;
 
-        result_type end_object() override;
+                result_type end_object() override;
 
-        result_type begin_sequence(size_t num) override;
+                result_type begin_sequence(size_t num) override;
 
-        result_type end_sequence() override;
+                result_type end_sequence() override;
 
-        result_type apply(bool x) override;
+                result_type apply(bool x) override;
 
-        result_type apply(int8_t x) override;
+                result_type apply(int8_t x) override;
 
-        result_type apply(uint8_t x) override;
+                result_type apply(uint8_t x) override;
 
-        result_type apply(int16_t x) override;
+                result_type apply(int16_t x) override;
 
-        result_type apply(uint16_t x) override;
+                result_type apply(uint16_t x) override;
 
-        result_type apply(int32_t x) override;
+                result_type apply(int32_t x) override;
 
-        result_type apply(uint32_t x) override;
+                result_type apply(uint32_t x) override;
 
-        result_type apply(int64_t x) override;
+                result_type apply(int64_t x) override;
 
-        result_type apply(uint64_t x) override;
+                result_type apply(uint64_t x) override;
 
-        result_type apply(float x) override;
+                result_type apply(float x) override;
 
-        result_type apply(double x) override;
+                result_type apply(double x) override;
 
-        result_type apply(long double x) override;
+                result_type apply(long double x) override;
 
-        result_type apply(string_view x) override;
+                result_type apply(string_view x) override;
 
-        result_type apply(const std::u16string &x) override;
+                result_type apply(const std::u16string &x) override;
 
-        result_type apply(const std::u32string &x) override;
+                result_type apply(const std::u32string &x) override;
 
-        result_type apply(span<const byte> x) override;
+                result_type apply(span<const byte> x) override;
 
-        result_type apply(const std::vector<bool> &xs) override;
+                result_type apply(const std::vector<bool> &xs) override;
 
-    private:
-        size_t result_ = 0;
-    };
+            private:
+                size_t result_ = 0;
+            };
 
-    template<class T>
-    size_t serialized_size(spawner &sys, const T &x) {
-        serialized_size_inspector f {sys};
-        auto err = f(x);
-        static_cast<void>(err);
-        return f.result();
-    }
+            template<class T>
+            size_t serialized_size(spawner &sys, const T &x) {
+                serialized_size_inspector f {sys};
+                auto err = f(x);
+                static_cast<void>(err);
+                return f.result();
+            }
 
-    template<class T>
-    size_t serialized_size(const T &x) {
-        serialized_size_inspector f {nullptr};
-        auto err = f(x);
-        static_cast<void>(err);
-        return f.result();
-    }
+            template<class T>
+            size_t serialized_size(const T &x) {
+                serialized_size_inspector f {nullptr};
+                auto err = f(x);
+                static_cast<void>(err);
+                return f.result();
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

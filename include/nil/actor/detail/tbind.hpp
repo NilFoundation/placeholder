@@ -10,14 +10,18 @@
 
 #pragma once
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<template<class, typename> class Tpl, typename Arg1>
-    struct tbind {
-        template<class Arg2>
-        struct type {
-            static constexpr bool value = Tpl<Arg1, Arg2>::value;
-        };
-    };
+            template<template<class, typename> class Tpl, typename Arg1>
+            struct tbind {
+                template<class Arg2>
+                struct type {
+                    static constexpr bool value = Tpl<Arg1, Arg2>::value;
+                };
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

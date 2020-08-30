@@ -26,24 +26,27 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Reads a number, i.e., on success produces either an `int64_t` or a
-    /// `double`.
-    template<class State, class Consumer>
-    void read_unsigned_integer(State &ps, Consumer &&consumer) {
-        using consumer_type = typename std::decay<Consumer>::type;
-        using value_type = typename consumer_type::value_type;
-        static_assert(std::is_integral<value_type>::value && std::is_unsigned<value_type>::value,
-                      "expected an unsigned integer type");
-        value_type result = 0;
-        // Computes the result on success.
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character) {
-                consumer.value(std::move(result));
-            }
-        });
-        // clang-format off
+                /// Reads a number, i.e., on success produces either an `int64_t` or a
+                /// `double`.
+                template<class State, class Consumer>
+                void read_unsigned_integer(State &ps, Consumer &&consumer) {
+                    using consumer_type = typename std::decay<Consumer>::type;
+                    using value_type = typename consumer_type::value_type;
+                    static_assert(std::is_integral<value_type>::value && std::is_unsigned<value_type>::value,
+                                  "expected an unsigned integer type");
+                    value_type result = 0;
+                    // Computes the result on success.
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character) {
+                            consumer.value(std::move(result));
+                        }
+                    });
+                    // clang-format off
   // Definition of our parser FSM.
   start();
   state(init) {
@@ -91,10 +94,13 @@ namespace nil::actor::detail::parser {
                pec::integer_overflow)
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

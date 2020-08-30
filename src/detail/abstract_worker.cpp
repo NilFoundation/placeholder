@@ -10,30 +10,34 @@
 
 #include <nil/actor/detail/abstract_worker.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    // -- constructors, destructors, and assignment operators ----------------------
+            // -- constructors, destructors, and assignment operators ----------------------
 
-    abstract_worker::abstract_worker() : next_(nullptr) {
-        // nop
-    }
+            abstract_worker::abstract_worker() : next_(nullptr) {
+                // nop
+            }
 
-    abstract_worker::~abstract_worker() {
-        // nop
-    }
+            abstract_worker::~abstract_worker() {
+                // nop
+            }
 
-    // -- implementation of resumable ----------------------------------------------
+            // -- implementation of resumable ----------------------------------------------
 
-    resumable::subtype_t abstract_worker::subtype() const {
-        return resumable::function_object;
-    }
+            resumable::subtype_t abstract_worker::subtype() const {
+                return resumable::function_object;
+            }
 
-    void abstract_worker::intrusive_ptr_add_ref_impl() {
-        ref();
-    }
+            void abstract_worker::intrusive_ptr_add_ref_impl() {
+                ref();
+            }
 
-    void abstract_worker::intrusive_ptr_release_impl() {
-        deref();
-    }
+            void abstract_worker::intrusive_ptr_release_impl() {
+                deref();
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

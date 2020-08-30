@@ -29,10 +29,10 @@
 #include <nil/actor/detail/variant_data.hpp>
 
 #define ACTOR_VARIANT_CASE(n) \
-    case n:                 \
+    case n:                   \
         return f(std::forward<Us>(xs)..., x.get(std::integral_constant<int, (n <= max_type_id ? n : 0)>()))
 
-#define ACTOR_VARIANT_ASSIGN_CASE(n)                                                                         \
+#define ACTOR_VARIANT_ASSIGN_CASE(n)                                                                       \
     case n: {                                                                                              \
         using tmp_t = typename detail::tl_at<detail::type_list<Ts...>, (n < sizeof...(Ts) ? n : 0)>::type; \
         x.x = tmp_t {};                                                                                    \
@@ -45,19 +45,19 @@ namespace nil {
         constexpr size_t variant_npos = static_cast<size_t>(-1);
 
         template<class T>
-        struct is_variant : std::false_type {};
+        struct is_variant : std::false_type { };
 
         template<class... Ts>
-        struct is_variant<variant<Ts...>> : std::true_type {};
+        struct is_variant<variant<Ts...>> : std::true_type { };
 
         template<class... Ts>
-        struct is_variant<variant<Ts...> &> : std::true_type {};
+        struct is_variant<variant<Ts...> &> : std::true_type { };
 
         template<class... Ts>
-        struct is_variant<const variant<Ts...> &> : std::true_type {};
+        struct is_variant<const variant<Ts...> &> : std::true_type { };
 
         template<class... Ts>
-        struct is_variant<const variant<Ts...> &&> : std::true_type {};
+        struct is_variant<const variant<Ts...> &&> : std::true_type { };
 
         template<class... Ts>
         using is_variant_t = typename is_variant<Ts...>::type;
@@ -92,11 +92,11 @@ namespace nil {
         };
 
         template<class F, class... Ts>
-        struct variant_visit_result_impl<false, F, Ts...> {};
+        struct variant_visit_result_impl<false, F, Ts...> { };
 
         template<class F, class... Ts>
         struct variant_visit_result
-            : variant_visit_result_impl<detail::conjunction<is_variant<Ts>::value...>::value, F, Ts...> {};
+            : variant_visit_result_impl<detail::conjunction<is_variant<Ts>::value...>::value, F, Ts...> { };
 
         template<class F, class... Ts>
         using variant_visit_result_t = typename variant_visit_result<detail::decay_t<F>, detail::decay_t<Ts>...>::type;

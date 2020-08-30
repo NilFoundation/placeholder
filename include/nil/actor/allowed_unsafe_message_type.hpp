@@ -21,19 +21,19 @@ namespace nil {
         /// Template specializations can whitelist individual
         /// types for unsafe message passing operations.
         template<class T>
-        struct allowed_unsafe_message_type : std::false_type {};
+        struct allowed_unsafe_message_type : std::false_type { };
 
         template<class T>
-        struct is_allowed_unsafe_message_type : allowed_unsafe_message_type<T> {};
+        struct is_allowed_unsafe_message_type : allowed_unsafe_message_type<T> { };
 
         template<class T>
-        struct is_allowed_unsafe_message_type<T &> : allowed_unsafe_message_type<T> {};
+        struct is_allowed_unsafe_message_type<T &> : allowed_unsafe_message_type<T> { };
 
         template<class T>
-        struct is_allowed_unsafe_message_type<T &&> : allowed_unsafe_message_type<T> {};
+        struct is_allowed_unsafe_message_type<T &&> : allowed_unsafe_message_type<T> { };
 
         template<class T>
-        struct is_allowed_unsafe_message_type<const T &> : allowed_unsafe_message_type<T> {};
+        struct is_allowed_unsafe_message_type<const T &> : allowed_unsafe_message_type<T> { };
 
         template<class T>
         constexpr bool is_allowed_unsafe_message_type_v = allowed_unsafe_message_type<T>::value;
@@ -41,9 +41,9 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-#define ACTOR_ALLOW_UNSAFE_MESSAGE_TYPE(type_name)                               \
-    namespace nil {                                                            \
-        namespace actor {                                                      \
-            template<>                                                         \
-            struct allowed_unsafe_message_type<type_name> : std::true_type {}; \
+#define ACTOR_ALLOW_UNSAFE_MESSAGE_TYPE(type_name)                              \
+    namespace nil {                                                             \
+        namespace actor {                                                       \
+            template<>                                                          \
+            struct allowed_unsafe_message_type<type_name> : std::true_type { }; \
         }

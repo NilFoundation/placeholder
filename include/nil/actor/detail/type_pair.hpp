@@ -10,27 +10,31 @@
 
 #pragma once
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class First, typename Second>
-    struct type_pair {
-        using first = First;
-        using second = Second;
-    };
+            template<class First, typename Second>
+            struct type_pair {
+                using first = First;
+                using second = Second;
+            };
 
-    template<class First, typename Second>
-    struct to_type_pair {
-        using type = type_pair<First, Second>;
-    };
+            template<class First, typename Second>
+            struct to_type_pair {
+                using type = type_pair<First, Second>;
+            };
 
-    template<class What>
-    struct is_type_pair {
-        static constexpr bool value = false;
-    };
+            template<class What>
+            struct is_type_pair {
+                static constexpr bool value = false;
+            };
 
-    template<class First, typename Second>
-    struct is_type_pair<type_pair<First, Second>> {
-        static constexpr bool value = true;
-    };
+            template<class First, typename Second>
+            struct is_type_pair<type_pair<First, Second>> {
+                static constexpr bool value = true;
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

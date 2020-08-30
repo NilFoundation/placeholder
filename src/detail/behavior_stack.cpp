@@ -14,23 +14,27 @@
 #include <nil/actor/local_actor.hpp>
 #include <nil/actor/none.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    void behavior_stack::pop_back() {
-        ACTOR_ASSERT(!elements_.empty());
-        erased_elements_.push_back(std::move(elements_.back()));
-        elements_.pop_back();
-    }
-
-    void behavior_stack::clear() {
-        if (!elements_.empty()) {
-            if (erased_elements_.empty()) {
-                elements_.swap(erased_elements_);
-            } else {
-                std::move(elements_.begin(), elements_.end(), std::back_inserter(erased_elements_));
-                elements_.clear();
+            void behavior_stack::pop_back() {
+                ACTOR_ASSERT(!elements_.empty());
+                erased_elements_.push_back(std::move(elements_.back()));
+                elements_.pop_back();
             }
-        }
-    }
 
-}    // namespace nil::actor::detail
+            void behavior_stack::clear() {
+                if (!elements_.empty()) {
+                    if (erased_elements_.empty()) {
+                        elements_.swap(erased_elements_);
+                    } else {
+                        std::move(elements_.begin(), elements_.end(), std::back_inserter(erased_elements_));
+                        elements_.clear();
+                    }
+                }
+            }
+
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

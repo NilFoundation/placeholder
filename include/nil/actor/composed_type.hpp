@@ -46,7 +46,7 @@ namespace nil {
         // End of inner loop Ys (Zs).
         template<class X, class... Xs, class Ys, class Rs>
         struct composed_type<detail::type_list<X, Xs...>, Ys, detail::type_list<>, Rs>
-            : composed_type<detail::type_list<Xs...>, Ys, Ys, Rs> {};
+            : composed_type<detail::type_list<Xs...>, Ys, Ys, Rs> { };
 
         // Output type matches the input type of the next actor.
         template<class... In, class... Out, class... Xs, class Ys, class... MapsTo, class... Zs, class... Rs>
@@ -54,13 +54,13 @@ namespace nil {
                              detail::type_list<typed_mpi<detail::type_list<Out...>, output_tuple<MapsTo...>>, Zs...>,
                              detail::type_list<Rs...>>
             : composed_type<detail::type_list<Xs...>, Ys, Ys,
-                            detail::type_list<Rs..., typed_mpi<detail::type_list<In...>, output_tuple<MapsTo...>>>> {};
+                            detail::type_list<Rs..., typed_mpi<detail::type_list<In...>, output_tuple<MapsTo...>>>> { };
 
         // No match, recurse over Zs.
         template<class In, class Out, class... Xs, class Ys, class Unrelated, class MapsTo, class... Zs, class Rs>
         struct composed_type<detail::type_list<typed_mpi<In, Out>, Xs...>, Ys,
                              detail::type_list<typed_mpi<Unrelated, MapsTo>, Zs...>, Rs>
-            : composed_type<detail::type_list<typed_mpi<In, Out>, Xs...>, Ys, detail::type_list<Zs...>, Rs> {};
+            : composed_type<detail::type_list<typed_mpi<In, Out>, Xs...>, Ys, detail::type_list<Zs...>, Rs> { };
 
         /// Convenience type alias.
         /// @relates composed_type

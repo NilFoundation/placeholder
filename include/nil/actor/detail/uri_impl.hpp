@@ -22,74 +22,78 @@
 #include <nil/actor/string_view.hpp>
 #include <nil/actor/uri.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class BOOST_SYMBOL_VISIBLE uri_impl {
-    public:
-        // -- constructors, destructors, and assignment operators --------------------
+            class BOOST_SYMBOL_VISIBLE uri_impl {
+            public:
+                // -- constructors, destructors, and assignment operators --------------------
 
-        uri_impl();
+                uri_impl();
 
-        uri_impl(const uri_impl &) = delete;
+                uri_impl(const uri_impl &) = delete;
 
-        uri_impl &operator=(const uri_impl &) = delete;
+                uri_impl &operator=(const uri_impl &) = delete;
 
-        // -- member variables -------------------------------------------------------
+                // -- member variables -------------------------------------------------------
 
-        static uri_impl default_instance;
+                static uri_impl default_instance;
 
-        /// Null-terminated buffer for holding the string-representation of the URI.
-        std::string str;
+                /// Null-terminated buffer for holding the string-representation of the URI.
+                std::string str;
 
-        /// Scheme component.
-        std::string scheme;
+                /// Scheme component.
+                std::string scheme;
 
-        /// Assembled authority component.
-        uri::authority_type authority;
+                /// Assembled authority component.
+                uri::authority_type authority;
 
-        /// Path component.
-        std::string path;
+                /// Path component.
+                std::string path;
 
-        /// Query component as key-value pairs.
-        uri::query_map query;
+                /// Query component as key-value pairs.
+                uri::query_map query;
 
-        /// The fragment component.
-        std::string fragment;
+                /// The fragment component.
+                std::string fragment;
 
-        // -- properties -------------------------------------------------------------
+                // -- properties -------------------------------------------------------------
 
-        bool valid() const noexcept {
-            return !scheme.empty() && (!authority.empty() || !path.empty());
-        }
+                bool valid() const noexcept {
+                    return !scheme.empty() && (!authority.empty() || !path.empty());
+                }
 
-        // -- modifiers --------------------------------------------------------------
+                // -- modifiers --------------------------------------------------------------
 
-        /// Assembles the human-readable string representation for this URI.
-        void assemble_str();
+                /// Assembles the human-readable string representation for this URI.
+                void assemble_str();
 
-        // -- friend functions -------------------------------------------------------
+                // -- friend functions -------------------------------------------------------
 
-        friend BOOST_SYMBOL_VISIBLE void intrusive_ptr_add_ref(const uri_impl *p);
+                friend BOOST_SYMBOL_VISIBLE void intrusive_ptr_add_ref(const uri_impl *p);
 
-        friend BOOST_SYMBOL_VISIBLE void intrusive_ptr_release(const uri_impl *p);
+                friend BOOST_SYMBOL_VISIBLE void intrusive_ptr_release(const uri_impl *p);
 
-    private:
-        // -- member variables -------------------------------------------------------
+            private:
+                // -- member variables -------------------------------------------------------
 
-        mutable std::atomic<size_t> rc_;
-    };
+                mutable std::atomic<size_t> rc_;
+            };
 
-    // -- related free functions -------------------------------------------------
+            // -- related free functions -------------------------------------------------
 
-    /// @relates uri_impl
-    template<class Inspector>
-    typename Inspector::result_type inspect(Inspector &f, uri_impl &x) {
-        auto load = [&] {
-            x.str.clear();
-            if (x.valid())
-                x.assemble_str();
-        };
-        return f(x.scheme, x.authority, x.path, x.query, x.fragment, meta::load_callback(load));
-    }
+            /// @relates uri_impl
+            template<class Inspector>
+            typename Inspector::result_type inspect(Inspector &f, uri_impl &x) {
+                auto load = [&] {
+                    x.str.clear();
+                    if (x.valid())
+                        x.assemble_str();
+                };
+                return f(x.scheme, x.authority, x.path, x.query, x.fragment, meta::load_callback(load));
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

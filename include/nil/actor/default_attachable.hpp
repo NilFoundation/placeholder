@@ -13,7 +13,6 @@
 #include <nil/actor/actor_addr.hpp>
 #include <nil/actor/attachable.hpp>
 
-
 namespace nil {
     namespace actor {
 

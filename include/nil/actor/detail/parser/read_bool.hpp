@@ -23,17 +23,20 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Reads a boolean.
-    template<class State, class Consumer>
-    void read_bool(State &ps, Consumer &&consumer) {
-        bool res = false;
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.value(std::move(res));
-        });
-        // clang-format off
+                /// Reads a boolean.
+                template<class State, class Consumer>
+                void read_bool(State &ps, Consumer &&consumer) {
+                    bool res = false;
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.value(std::move(res));
+                    });
+                    // clang-format off
   start();
   state(init) {
     transition(has_f, 'f')
@@ -64,10 +67,13 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

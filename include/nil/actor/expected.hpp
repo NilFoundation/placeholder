@@ -28,7 +28,7 @@ namespace nil {
 
         /// Helper class to construct an `expected<T>` that represents no error.
         /// @relates expected
-        struct no_error_t {};
+        struct no_error_t { };
 
         /// The only instance of ::no_error_t.
         /// @relates expected

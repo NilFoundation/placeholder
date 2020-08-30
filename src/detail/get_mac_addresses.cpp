@@ -107,59 +107,63 @@ namespace nil {
 #include <unistd.h>
 #include <vector>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    std::vector<iface_info> get_mac_addresses() {
-        // get a socket handle
-        int socktype = SOCK_DGRAM;
+            std::vector<iface_info> get_mac_addresses() {
+                // get a socket handle
+                int socktype = SOCK_DGRAM;
 #ifdef SOCK_CLOEXEC
-        socktype |= SOCK_CLOEXEC;
+                socktype |= SOCK_CLOEXEC;
 #endif
-        int sck = socket(AF_INET, socktype, 0);
-        if (sck < 0) {
-            perror("socket");
-            return {};
-        }
-        auto g = make_scope_guard([&] { close(sck); });
-        // query available interfaces
-        char buf[1024] = {0};
-        ifconf ifc;
-        ifc.ifc_len = sizeof(buf);
-        ifc.ifc_buf = buf;
-        if (ioctl(sck, SIOCGIFCONF, &ifc) < 0) {
-            perror("ioctl(SIOCGIFCONF)");
-            return {};
-        }
-        std::vector<iface_info> result;
-        auto ctoi = [](char c) -> unsigned { return static_cast<unsigned char>(c); };
-        // iterate through interfaces
-        auto ifr = ifc.ifc_req;
-        auto num_ifaces = static_cast<size_t>(ifc.ifc_len) / sizeof(ifreq);
-        for (size_t i = 0; i < num_ifaces; ++i) {
-            auto item = &ifr[i];
-            // get mac address
-            if (ioctl(sck, SIOCGIFHWADDR, item) < 0) {
-                perror("ioctl(SIOCGIFHWADDR)");
-                return {};
+                int sck = socket(AF_INET, socktype, 0);
+                if (sck < 0) {
+                    perror("socket");
+                    return {};
+                }
+                auto g = make_scope_guard([&] { close(sck); });
+                // query available interfaces
+                char buf[1024] = {0};
+                ifconf ifc;
+                ifc.ifc_len = sizeof(buf);
+                ifc.ifc_buf = buf;
+                if (ioctl(sck, SIOCGIFCONF, &ifc) < 0) {
+                    perror("ioctl(SIOCGIFCONF)");
+                    return {};
+                }
+                std::vector<iface_info> result;
+                auto ctoi = [](char c) -> unsigned { return static_cast<unsigned char>(c); };
+                // iterate through interfaces
+                auto ifr = ifc.ifc_req;
+                auto num_ifaces = static_cast<size_t>(ifc.ifc_len) / sizeof(ifreq);
+                for (size_t i = 0; i < num_ifaces; ++i) {
+                    auto item = &ifr[i];
+                    // get mac address
+                    if (ioctl(sck, SIOCGIFHWADDR, item) < 0) {
+                        perror("ioctl(SIOCGIFHWADDR)");
+                        return {};
+                    }
+                    std::ostringstream oss;
+                    oss << std::hex;
+                    oss.width(2);
+                    oss << ctoi(item->ifr_hwaddr.sa_data[0]);
+                    for (size_t j = 1; j < 6; ++j) {
+                        oss << ":";
+                        oss.width(2);
+                        oss << ctoi(item->ifr_hwaddr.sa_data[j]);
+                    }
+                    auto addr = oss.str();
+                    if (addr != "00:00:00:00:00:00") {
+                        result.push_back({item->ifr_name, std::move(addr)});
+                    }
+                }
+                return result;
             }
-            std::ostringstream oss;
-            oss << std::hex;
-            oss.width(2);
-            oss << ctoi(item->ifr_hwaddr.sa_data[0]);
-            for (size_t j = 1; j < 6; ++j) {
-                oss << ":";
-                oss.width(2);
-                oss << ctoi(item->ifr_hwaddr.sa_data[j]);
-            }
-            auto addr = oss.str();
-            if (addr != "00:00:00:00:00:00") {
-                result.push_back({item->ifr_name, std::move(addr)});
-            }
-        }
-        return result;
-    }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil
 
 #else
 

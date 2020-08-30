@@ -56,10 +56,10 @@ namespace nil {
             };
 
             template<class T>
-            struct is_weak_ptr<T *> : std::false_type {};
+            struct is_weak_ptr<T *> : std::false_type { };
 
             template<class... Ts>
-            struct is_weak_ptr<typed_actor_pointer<Ts...>> : std::false_type {};
+            struct is_weak_ptr<typed_actor_pointer<Ts...>> : std::false_type { };
 
         }    // namespace
 

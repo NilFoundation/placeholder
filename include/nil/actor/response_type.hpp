@@ -45,7 +45,7 @@ namespace nil {
         // case #1: no match
         template<class In, class Out, class... Ts, class... Xs>
         struct response_type<detail::type_list<typed_mpi<In, Out>, Ts...>, Xs...>
-            : response_type<detail::type_list<Ts...>, Xs...> {};
+            : response_type<detail::type_list<Ts...>, Xs...> { };
 
         // case #2: match
         template<class... Out, class... Ts, class... Xs>
@@ -67,10 +67,10 @@ namespace nil {
         struct response_type_unbox;
 
         template<class Ts, class... Xs>
-        struct response_type_unbox<Ts, detail::type_list<Xs...>> : response_type<Ts, Xs...> {};
+        struct response_type_unbox<Ts, detail::type_list<Xs...>> : response_type<Ts, Xs...> { };
 
         template<class Ts>
-        struct response_type_unbox<Ts, message> : response_type<Ts, message> {};
+        struct response_type_unbox<Ts, message> : response_type<Ts, message> { };
 
         /// Computes the response message for input `Xs` from the list
         /// of message passing interfaces `Ts`.

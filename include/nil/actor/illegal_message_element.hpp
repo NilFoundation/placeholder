@@ -22,7 +22,7 @@ namespace nil {
         };
 
         template<class T>
-        struct is_illegal_message_element : std::is_base_of<illegal_message_element, T> {};
+        struct is_illegal_message_element : std::is_base_of<illegal_message_element, T> { };
 
     }    // namespace actor
 }    // namespace nil

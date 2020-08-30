@@ -28,28 +28,31 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    // Example input:
-    //
-    // [section1]
-    // value1 = 123
-    // value2 = "string"
-    // subsection1 = {
-    // value3 = 1.23
-    // value4 = 4e20
-    // }
-    // [section2]
-    // value5 = 'atom'
-    // value6 = [1, 'two', "three", {
-    //   a = "b",
-    //   b = "c",
-    // }]
-    //
+                // Example input:
+                //
+                // [section1]
+                // value1 = 123
+                // value2 = "string"
+                // subsection1 = {
+                // value3 = 1.23
+                // value4 = 4e20
+                // }
+                // [section2]
+                // value5 = 'atom'
+                // value6 = [1, 'two', "three", {
+                //   a = "b",
+                //   b = "c",
+                // }]
+                //
 
-    template<class State, class Consumer>
-    void read_ini_comment(State &ps, Consumer &&) {
-        // clang-format off
+                template<class State, class Consumer>
+                void read_ini_comment(State &ps, Consumer &&) {
+                    // clang-format off
   start();
   term_state(init) {
     transition(done, '\n')
@@ -59,15 +62,15 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    template<class State, class Consumer, class InsideList = std::false_type>
-    void read_ini_value(State &ps, Consumer &&consumer, InsideList inside_list = {});
+                template<class State, class Consumer, class InsideList = std::false_type>
+                void read_ini_value(State &ps, Consumer &&consumer, InsideList inside_list = {});
 
-    template<class State, class Consumer>
-    void read_ini_list(State &ps, Consumer &&consumer) {
-        // clang-format off
+                template<class State, class Consumer>
+                void read_ini_list(State &ps, Consumer &&consumer) {
+                    // clang-format off
   start();
   state(init) {
     epsilon(before_value)
@@ -88,14 +91,14 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    template<class State, class Consumer>
-    void read_ini_map(State &ps, Consumer &&consumer) {
-        std::string key;
-        auto alnum_or_dash = [](char x) { return isalnum(x) || x == '-' || x == '_'; };
-        // clang-format off
+                template<class State, class Consumer>
+                void read_ini_map(State &ps, Consumer &&consumer) {
+                    std::string key;
+                    auto alnum_or_dash = [](char x) { return isalnum(x) || x == '-' || x == '_'; };
+                    // clang-format off
   start();
   state(init) {
     epsilon(await_key_name)
@@ -142,17 +145,17 @@ namespace nil::actor::detail::parser {
     //nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    template<class State, class Consumer>
-    void read_ini_uri(State &ps, Consumer &&consumer) {
-        uri_builder builder;
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.value(builder.make());
-        });
-        // clang-format off
+                template<class State, class Consumer>
+                void read_ini_uri(State &ps, Consumer &&consumer) {
+                    uri_builder builder;
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.value(builder.make());
+                    });
+                    // clang-format off
   start();
   state(init) {
     transition(init, " \t\n")
@@ -170,12 +173,12 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    template<class State, class Consumer, class InsideList>
-    void read_ini_value(State &ps, Consumer &&consumer, InsideList inside_list) {
-        // clang-format off
+                template<class State, class Consumer, class InsideList>
+                void read_ini_value(State &ps, Consumer &&consumer, InsideList inside_list) {
+                    // clang-format off
   start();
   state(init) {
     fsm_epsilon(read_string(ps, consumer), done, '"')
@@ -191,26 +194,26 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    /// Reads an INI formatted input.
-    template<class State, class Consumer>
-    void read_ini_section(State &ps, Consumer &&consumer) {
-        using std::swap;
-        std::string tmp;
-        auto alnum = [](char x) { return isalnum(x) || x == '_'; };
-        auto alnum_or_dash = [](char x) { return isalnum(x) || x == '_' || x == '-'; };
-        auto emit_key = [&] {
-            std::string key;
-            swap(tmp, key);
-            consumer.key(std::move(key));
-        };
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.end_map();
-        });
-        // clang-format off
+                /// Reads an INI formatted input.
+                template<class State, class Consumer>
+                void read_ini_section(State &ps, Consumer &&consumer) {
+                    using std::swap;
+                    std::string tmp;
+                    auto alnum = [](char x) { return isalnum(x) || x == '_'; };
+                    auto alnum_or_dash = [](char x) { return isalnum(x) || x == '_' || x == '-'; };
+                    auto emit_key = [&] {
+                        std::string key;
+                        swap(tmp, key);
+                        consumer.key(std::move(key));
+                    };
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.end_map();
+                    });
+                    // clang-format off
   start();
   // Dispatches to read sections, comments, or key/value pairs.
   term_state(init) {
@@ -242,26 +245,26 @@ namespace nil::actor::detail::parser {
     transition(init, '\n')
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    /// Reads a nested group, e.g., "[foo.bar]" would consume "[foo.]" in read_ini
-    /// and then delegate to this function for parsing "bar]".
-    template<class State, class Consumer>
-    void read_nested_group(State &ps, Consumer &&consumer) {
-        using std::swap;
-        std::string key;
-        auto alnum = [](char x) { return isalnum(x) || x == '_'; };
-        auto alnum_or_dash = [](char x) { return isalnum(x) || x == '_' || x == '-'; };
-        auto begin_section = [&]() -> decltype(consumer.begin_map()) {
-            consumer.key(std::move(key));
-            return consumer.begin_map();
-        };
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.end_map();
-        });
-        // clang-format off
+                /// Reads a nested group, e.g., "[foo.bar]" would consume "[foo.]" in read_ini
+                /// and then delegate to this function for parsing "bar]".
+                template<class State, class Consumer>
+                void read_nested_group(State &ps, Consumer &&consumer) {
+                    using std::swap;
+                    std::string key;
+                    auto alnum = [](char x) { return isalnum(x) || x == '_'; };
+                    auto alnum_or_dash = [](char x) { return isalnum(x) || x == '_' || x == '-'; };
+                    auto begin_section = [&]() -> decltype(consumer.begin_map()) {
+                        consumer.key(std::move(key));
+                        return consumer.begin_map();
+                    };
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.end_map();
+                    });
+                    // clang-format off
   start();
   // Scanning for first section.
   state(init) {
@@ -277,23 +280,23 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    /// Reads an INI formatted input.
-    template<class State, class Consumer>
-    void read_ini(State &ps, Consumer &&consumer) {
-        using std::swap;
-        std::string tmp {"global"};
-        auto alnum = [](char x) { return isalnum(x) || x == '_'; };
-        auto alnum_or_dash = [](char x) { return isalnum(x) || x == '_' || x == '-'; };
-        auto begin_section = [&]() -> decltype(consumer.begin_map()) {
-            std::string key;
-            swap(tmp, key);
-            consumer.key(std::move(key));
-            return consumer.begin_map();
-        };
-        // clang-format off
+                /// Reads an INI formatted input.
+                template<class State, class Consumer>
+                void read_ini(State &ps, Consumer &&consumer) {
+                    using std::swap;
+                    std::string tmp {"global"};
+                    auto alnum = [](char x) { return isalnum(x) || x == '_'; };
+                    auto alnum_or_dash = [](char x) { return isalnum(x) || x == '_' || x == '-'; };
+                    auto begin_section = [&]() -> decltype(consumer.begin_map()) {
+                        std::string key;
+                        swap(tmp, key);
+                        consumer.key(std::move(key));
+                        return consumer.begin_map();
+                    };
+                    // clang-format off
   start();
   // Scanning for first section.
   term_state(init) {
@@ -323,10 +326,13 @@ namespace nil::actor::detail::parser {
     epsilon(init, any_char, tmp = "global")
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

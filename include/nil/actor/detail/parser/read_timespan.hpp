@@ -25,28 +25,31 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Reads a timespan.
-    template<class State, class Consumer>
-    void read_timespan(State &ps, Consumer &&consumer, optional<int64_t> num = none) {
-        using namespace std::chrono;
-        struct interim_consumer {
-            using value_type = int64_t;
+                /// Reads a timespan.
+                template<class State, class Consumer>
+                void read_timespan(State &ps, Consumer &&consumer, optional<int64_t> num = none) {
+                    using namespace std::chrono;
+                    struct interim_consumer {
+                        using value_type = int64_t;
 
-            void value(value_type y) {
-                x = y;
-            }
+                        void value(value_type y) {
+                            x = y;
+                        }
 
-            value_type x = 0;
-        };
-        interim_consumer ic;
-        timespan result;
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.value(std::move(result));
-        });
-        // clang-format off
+                        value_type x = 0;
+                    };
+                    interim_consumer ic;
+                    timespan result;
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.value(std::move(result));
+                    });
+                    // clang-format off
   start();
   state(init) {
     epsilon_if(num, has_integer, any_char, ic.x = *num)
@@ -76,10 +79,13 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

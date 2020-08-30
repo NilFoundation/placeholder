@@ -14,10 +14,14 @@
 
 #include <nil/actor/fwd.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    // Escapes all reserved characters according to RFC 3986 in `x` and
-    // adds the encoded string to `str`.
-    BOOST_SYMBOL_VISIBLE void append_percent_encoded(std::string &str, string_view x, bool is_path = false);
+            // Escapes all reserved characters according to RFC 3986 in `x` and
+            // adds the encoded string to `str`.
+            BOOST_SYMBOL_VISIBLE void append_percent_encoded(std::string &str, string_view x, bool is_path = false);
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

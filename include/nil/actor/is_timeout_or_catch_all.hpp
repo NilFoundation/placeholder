@@ -13,15 +13,17 @@
 #include <nil/actor/catch_all.hpp>
 #include <nil/actor/timeout_definition.hpp>
 
-namespace nil::actor {
+namespace nil {
+    namespace actor {
 
-    template<class T>
-    struct is_timeout_or_catch_all : std::false_type { };
+        template<class T>
+        struct is_timeout_or_catch_all : std::false_type { };
 
-    template<class T>
-    struct is_timeout_or_catch_all<catch_all<T>> : std::true_type { };
+        template<class T>
+        struct is_timeout_or_catch_all<catch_all<T>> : std::true_type { };
 
-    template<class T>
-    struct is_timeout_or_catch_all<timeout_definition<T>> : std::true_type { };
+        template<class T>
+        struct is_timeout_or_catch_all<timeout_definition<T>> : std::true_type { };
 
-}    // namespace nil::actor
+    }    // namespace actor
+}    // namespace nil

@@ -22,28 +22,31 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    //   foo://example.com:8042/over/there?name=ferret#nose
-    //   \_/   \______________/\_________/ \_________/ \__/
-    //    |           |            |            |        |
-    // scheme     authority       path        query   fragment
-    //    |   _____________________|__
-    //   / \ /                        \.
-    //   urn:example:animal:ferret:nose
+                //   foo://example.com:8042/over/there?name=ferret#nose
+                //   \_/   \______________/\_________/ \_________/ \__/
+                //    |           |            |            |        |
+                // scheme     authority       path        query   fragment
+                //    |   _____________________|__
+                //   / \ /                        \.
+                //   urn:example:animal:ferret:nose
 
-    // Unlike our other parsers, the URI parsers only check for validity and
-    // generate ranges for the subcomponents. URIs can't have linebreaks, so we can
-    // safely keep track of the position by looking at the column.
+                // Unlike our other parsers, the URI parsers only check for validity and
+                // generate ranges for the subcomponents. URIs can't have linebreaks, so we can
+                // safely keep track of the position by looking at the column.
 
-    template<class State>
-    void read_uri_percent_encoded(State &ps, std::string &str) {
-        uint8_t char_code = 0;
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                str += static_cast<char>(char_code);
-        });
-        // clang-format off
+                template<class State>
+                void read_uri_percent_encoded(State &ps, std::string &str) {
+                    uint8_t char_code = 0;
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            str += static_cast<char>(char_code);
+                    });
+                    // clang-format off
   start();
   state(init) {
     transition(read_nibble, hexadecimal_chars, add_ascii<16>(char_code, ch))
@@ -55,40 +58,40 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    inline bool uri_unprotected_char(char c) {
-        // Consider valid characters not explicitly stated as reserved as unreserved.
-        return isprint(c) && !in_whitelist(":/?#[]@!$&'()*+,;=<>", c);
-    }
+                inline bool uri_unprotected_char(char c) {
+                    // Consider valid characters not explicitly stated as reserved as unreserved.
+                    return isprint(c) && !in_whitelist(":/?#[]@!$&'()*+,;=<>", c);
+                }
 
 // clang-format off
 #define read_next_char(next_state, dest)                                       \
   transition(next_state, uri_unprotected_char, dest += ch)                     \
   fsm_transition(read_uri_percent_encoded(ps, dest), next_state, '%')
-    // clang-format on
+                // clang-format on
 
-    template<class State, class Consumer>
-    void read_uri_query(State &ps, Consumer &&consumer) {
-        // Local variables.
-        uri::query_map result;
-        std::string key;
-        std::string value;
-        // Utility functions.
-        auto take_str = [&](std::string &str) {
-            using std::swap;
-            std::string res;
-            swap(str, res);
-            return res;
-        };
-        auto push = [&] { result.emplace(take_str(key), take_str(value)); };
-        // Call consumer on exit.
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.query(std::move(result));
-        });
-        // clang-format off
+                template<class State, class Consumer>
+                void read_uri_query(State &ps, Consumer &&consumer) {
+                    // Local variables.
+                    uri::query_map result;
+                    std::string key;
+                    std::string value;
+                    // Utility functions.
+                    auto take_str = [&](std::string &str) {
+                        using std::swap;
+                        std::string res;
+                        swap(str, res);
+                        return res;
+                    };
+                    auto push = [&] { result.emplace(take_str(key), take_str(value)); };
+                    // Call consumer on exit.
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.query(std::move(result));
+                    });
+                    // clang-format off
   start();
   // Query may be empty.
   term_state(init) {
@@ -103,36 +106,36 @@ namespace nil::actor::detail::parser {
     transition(init, '&', push())
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    template<class State, class Consumer>
-    void read_uri(State &ps, Consumer &&consumer) {
-        // Local variables.
-        std::string str;
-        uint16_t port = 0;
-        // Replaces `str` with a default constructed string to make sure we're never
-        // operating on a moved-from string object.
-        auto take_str = [&] {
-            using std::swap;
-            std::string res;
-            swap(str, res);
-            return res;
-        };
-        // Allowed character sets.
-        auto path_char = [](char c) { return uri_unprotected_char(c) || c == '/' || c == ':'; };
-        // Utility setters for avoiding code duplication.
-        auto set_path = [&] { consumer.path(take_str()); };
-        auto set_host = [&] { consumer.host(take_str()); };
-        auto set_userinfo = [&] { consumer.userinfo(take_str()); };
-        // Consumer for reading IPv6 addresses.
-        struct {
-            Consumer &f;
-            void value(ipv6_address addr) {
-                f.host(addr);
-            }
-        } ip_consumer {consumer};
-        // clang-format off
+                template<class State, class Consumer>
+                void read_uri(State &ps, Consumer &&consumer) {
+                    // Local variables.
+                    std::string str;
+                    uint16_t port = 0;
+                    // Replaces `str` with a default constructed string to make sure we're never
+                    // operating on a moved-from string object.
+                    auto take_str = [&] {
+                        using std::swap;
+                        std::string res;
+                        swap(str, res);
+                        return res;
+                    };
+                    // Allowed character sets.
+                    auto path_char = [](char c) { return uri_unprotected_char(c) || c == '/' || c == ':'; };
+                    // Utility setters for avoiding code duplication.
+                    auto set_path = [&] { consumer.path(take_str()); };
+                    auto set_host = [&] { consumer.host(take_str()); };
+                    auto set_userinfo = [&] { consumer.userinfo(take_str()); };
+                    // Consumer for reading IPv6 addresses.
+                    struct {
+                        Consumer &f;
+                        void value(ipv6_address addr) {
+                            f.host(addr);
+                        }
+                    } ip_consumer {consumer};
+                    // clang-format off
   start();
   state(init) {
     epsilon(read_scheme)
@@ -216,10 +219,13 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

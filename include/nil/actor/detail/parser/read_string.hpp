@@ -22,18 +22,21 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Reads a quoted or unquoted string. Quoted strings allow escaping, while
-    /// unquoted strings may only include alphanumeric characters.
-    template<class State, class Consumer>
-    void read_string(State &ps, Consumer &&consumer) {
-        std::string res;
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.value(std::move(res));
-        });
-        // clang-format off
+                /// Reads a quoted or unquoted string. Quoted strings allow escaping, while
+                /// unquoted strings may only include alphanumeric characters.
+                template<class State, class Consumer>
+                void read_string(State &ps, Consumer &&consumer) {
+                    std::string res;
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.value(std::move(res));
+                    });
+                    // clang-format off
   start();
   state(init) {
     transition(init, " \t")
@@ -62,10 +65,13 @@ namespace nil::actor::detail::parser {
     transition(done, " \t")
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

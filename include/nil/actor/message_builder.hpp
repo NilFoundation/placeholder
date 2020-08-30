@@ -12,7 +12,6 @@
 
 #include <vector>
 
-
 #include <nil/actor/detail/implicit_conversions.hpp>
 #include <nil/actor/detail/message_builder_element.hpp>
 #include <nil/actor/detail/type_id_list_builder.hpp>

@@ -10,13 +10,16 @@
 
 #pragma once
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    struct select_all {
-        template<class T, class U>
-        constexpr bool operator()(const T &, const U &) const noexcept {
-            return true;
-        }
-    };
-
-}    // namespace nil::actor::detail
+            struct select_all {
+                template<class T, class U>
+                constexpr bool operator()(const T &, const U &) const noexcept {
+                    return true;
+                }
+            };
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

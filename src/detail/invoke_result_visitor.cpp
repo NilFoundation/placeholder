@@ -10,10 +10,14 @@
 
 #include <nil/actor/detail/invoke_result_visitor.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    invoke_result_visitor::~invoke_result_visitor() {
-        // nop
-    }
+            invoke_result_visitor::~invoke_result_visitor() {
+                // nop
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

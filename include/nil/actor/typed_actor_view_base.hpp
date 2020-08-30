@@ -14,7 +14,7 @@ namespace nil {
     namespace actor {
 
         /// Tag type for @ref typed_actor_view.
-        struct typed_actor_view_base {};
+        struct typed_actor_view_base { };
 
     }    // namespace actor
 }    // namespace nil

@@ -18,44 +18,48 @@
 #include <nil/actor/channel.hpp>
 #include <nil/actor/group.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class raw_access {
-    public:
-        template<class ActorHandle>
-        static abstract_actor *get(const ActorHandle &hdl) {
-            return hdl.ptr_.get();
-        }
+            class raw_access {
+            public:
+                template<class ActorHandle>
+                static abstract_actor *get(const ActorHandle &hdl) {
+                    return hdl.ptr_.get();
+                }
 
-        static abstract_channel *get(const channel &hdl) {
-            return hdl.ptr_.get();
-        }
+                static abstract_channel *get(const channel &hdl) {
+                    return hdl.ptr_.get();
+                }
 
-        static abstract_group *get(const group &hdl) {
-            return hdl.ptr_.get();
-        }
+                static abstract_group *get(const group &hdl) {
+                    return hdl.ptr_.get();
+                }
 
-        static actor unsafe_cast(abstract_actor *ptr) {
-            return {ptr};
-        }
+                static actor unsafe_cast(abstract_actor *ptr) {
+                    return {ptr};
+                }
 
-        static actor unsafe_cast(const actor_addr &hdl) {
-            return {get(hdl)};
-        }
+                static actor unsafe_cast(const actor_addr &hdl) {
+                    return {get(hdl)};
+                }
 
-        static actor unsafe_cast(const abstract_actor_ptr &ptr) {
-            return {ptr.get()};
-        }
+                static actor unsafe_cast(const abstract_actor_ptr &ptr) {
+                    return {ptr.get()};
+                }
 
-        template<class T>
-        static void unsafe_assign(T &lhs, const actor &rhs) {
-            lhs = T {get(rhs)};
-        }
+                template<class T>
+                static void unsafe_assign(T &lhs, const actor &rhs) {
+                    lhs = T {get(rhs)};
+                }
 
-        template<class T>
-        static void unsafe_assign(T &lhs, const abstract_actor_ptr &ptr) {
-            lhs = T {ptr.get()};
-        }
-    };
+                template<class T>
+                static void unsafe_assign(T &lhs, const abstract_actor_ptr &ptr) {
+                    lhs = T {ptr.get()};
+                }
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

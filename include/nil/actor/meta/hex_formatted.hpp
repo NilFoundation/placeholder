@@ -12,17 +12,21 @@
 
 #include <nil/actor/meta/annotation.hpp>
 
-namespace nil::actor::meta {
+namespace nil {
+    namespace actor {
+        namespace meta {
 
-    struct hex_formatted_t : annotation {
-        constexpr hex_formatted_t() {
-            // nop
-        }
-    };
+            struct hex_formatted_t : annotation {
+                constexpr hex_formatted_t() {
+                    // nop
+                }
+            };
 
-    /// Advises the inspector to format the following data field in hex format.
-    constexpr hex_formatted_t hex_formatted() {
-        return {};
-    }
+            /// Advises the inspector to format the following data field in hex format.
+            constexpr hex_formatted_t hex_formatted() {
+                return {};
+            }
 
-}    // namespace nil::actor::meta
+        }    // namespace meta
+    }        // namespace actor
+}    // namespace nil

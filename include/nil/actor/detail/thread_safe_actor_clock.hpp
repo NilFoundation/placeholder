@@ -22,50 +22,54 @@
 #include <nil/actor/detail/ringbuffer.hpp>
 #include <nil/actor/detail/simple_actor_clock.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class BOOST_SYMBOL_VISIBLE thread_safe_actor_clock : public simple_actor_clock {
-    public:
-        // -- constants --------------------------------------------------------------
+            class BOOST_SYMBOL_VISIBLE thread_safe_actor_clock : public simple_actor_clock {
+            public:
+                // -- constants --------------------------------------------------------------
 
-        static constexpr size_t buffer_size = 64;
+                static constexpr size_t buffer_size = 64;
 
-        // -- member types -----------------------------------------------------------
+                // -- member types -----------------------------------------------------------
 
-        using super = simple_actor_clock;
+                using super = simple_actor_clock;
 
-        // -- member functions -------------------------------------------------------
+                // -- member functions -------------------------------------------------------
 
-        void set_ordinary_timeout(time_point t, abstract_actor *self, std::string type, uint64_t id) override;
+                void set_ordinary_timeout(time_point t, abstract_actor *self, std::string type, uint64_t id) override;
 
-        void set_request_timeout(time_point t, abstract_actor *self, message_id id) override;
+                void set_request_timeout(time_point t, abstract_actor *self, message_id id) override;
 
-        void set_multi_timeout(time_point t, abstract_actor *self, std::string type, uint64_t id) override;
+                void set_multi_timeout(time_point t, abstract_actor *self, std::string type, uint64_t id) override;
 
-        void cancel_ordinary_timeout(abstract_actor *self, std::string type) override;
+                void cancel_ordinary_timeout(abstract_actor *self, std::string type) override;
 
-        void cancel_request_timeout(abstract_actor *self, message_id id) override;
+                void cancel_request_timeout(abstract_actor *self, message_id id) override;
 
-        void cancel_timeouts(abstract_actor *self) override;
+                void cancel_timeouts(abstract_actor *self) override;
 
-        void schedule_message(time_point t, strong_actor_ptr receiver, mailbox_element_ptr content) override;
+                void schedule_message(time_point t, strong_actor_ptr receiver, mailbox_element_ptr content) override;
 
-        void schedule_message(time_point t, group target, strong_actor_ptr sender, message content) override;
+                void schedule_message(time_point t, group target, strong_actor_ptr sender, message content) override;
 
-        void cancel_all() override;
+                void cancel_all() override;
 
-        void run_dispatch_loop();
+                void run_dispatch_loop();
 
-        void cancel_dispatch_loop();
+                void cancel_dispatch_loop();
 
-    private:
-        void push(event *ptr);
+            private:
+                void push(event *ptr);
 
-        /// Receives timer events from other threads.
-        detail::ringbuffer<unique_event_ptr, buffer_size> queue_;
+                /// Receives timer events from other threads.
+                detail::ringbuffer<unique_event_ptr, buffer_size> queue_;
 
-        /// Locally caches events for processing.
-        std::array<unique_event_ptr, buffer_size> events_;
-    };
+                /// Locally caches events for processing.
+                std::array<unique_event_ptr, buffer_size> events_;
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

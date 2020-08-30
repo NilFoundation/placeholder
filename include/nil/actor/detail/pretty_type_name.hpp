@@ -15,12 +15,16 @@
 
 #include <boost/config.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    BOOST_SYMBOL_VISIBLE void prettify_type_name(std::string &class_name);
+            BOOST_SYMBOL_VISIBLE void prettify_type_name(std::string &class_name);
 
-    BOOST_SYMBOL_VISIBLE void prettify_type_name(std::string &class_name, const char *input_class_name);
+            BOOST_SYMBOL_VISIBLE void prettify_type_name(std::string &class_name, const char *input_class_name);
 
-    BOOST_SYMBOL_VISIBLE std::string pretty_type_name(const std::type_info &x);
+            BOOST_SYMBOL_VISIBLE std::string pretty_type_name(const std::type_info &x);
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

@@ -74,18 +74,18 @@ namespace nil {
             // case #1: exact match
             template<int Pos, class In, class Out, class... Xs, class... Ys, class... Zs>
             struct imi<Pos, type_list<typed_mpi<In, Out>, Xs...>, type_list<typed_mpi<In, Out>, Ys...>,
-                       type_list<Zs...>> : imi<Pos + 1, type_list<Xs...>, type_list<Zs..., Ys...>, type_list<>> {};
+                       type_list<Zs...>> : imi<Pos + 1, type_list<Xs...>, type_list<Zs..., Ys...>, type_list<>> { };
 
             // case #2: match with skip_t
             template<int Pos, class In, class... Xs, class Out, class... Ys, class... Zs>
             struct imi<Pos, type_list<typed_mpi<In, output_tuple<skip_t>>, Xs...>, type_list<typed_mpi<In, Out>, Ys...>,
-                       type_list<Zs...>> : imi<Pos + 1, type_list<Xs...>, type_list<Zs..., Ys...>, type_list<>> {};
+                       type_list<Zs...>> : imi<Pos + 1, type_list<Xs...>, type_list<Zs..., Ys...>, type_list<>> { };
 
             // case #3: no match at position
             template<int Pos, class Xin, class Xout, class... Xs, class Yin, class Yout, class... Ys, class... Zs>
             struct imi<Pos, type_list<typed_mpi<Xin, Xout>, Xs...>, type_list<typed_mpi<Yin, Yout>, Ys...>,
                        type_list<Zs...>> : imi<Pos, type_list<typed_mpi<Xin, Xout>, Xs...>, type_list<Ys...>,
-                                               type_list<Zs..., typed_mpi<Yin, Yout>>> {};
+                                               type_list<Zs..., typed_mpi<Yin, Yout>>> { };
 
             // case #4: no match (error)
             template<int Pos, class X, class... Xs, class... Zs>

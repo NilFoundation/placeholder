@@ -14,18 +14,23 @@
 
 #include <nil/actor/memory_managed.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class disposer {
-    public:
-        inline void operator()(memory_managed *ptr) const noexcept {
-            ptr->request_deletion(false);
-        }
+            class disposer {
+            public:
+                inline void operator()(memory_managed *ptr) const noexcept {
+                    ptr->request_deletion(false);
+                }
 
-        template<class T>
-        typename std::enable_if<!std::is_base_of<memory_managed, T>::value>::type operator()(T *ptr) const noexcept {
-            delete ptr;
-        }
-    };
+                template<class T>
+                typename std::enable_if<!std::is_base_of<memory_managed, T>::value>::type
+                    operator()(T *ptr) const noexcept {
+                    delete ptr;
+                }
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

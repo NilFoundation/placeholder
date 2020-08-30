@@ -37,12 +37,8 @@ namespace nil {
         /// allow any object to interact with other actors.
         /// @extends local_actor
         class BOOST_SYMBOL_VISIBLE actor_companion
-            // clang-format off
-  : public extend<scheduled_actor, actor_companion>::
-           with<mixin::sender,
-                mixin::subscriber,
-                mixin::behavior_changer> {
-            // clang-format on
+            : public extend<scheduled_actor, actor_companion>::with<mixin::sender, mixin::subscriber,
+                                                                    mixin::behavior_changer> {
         public:
             // -- member types -----------------------------------------------------------
 

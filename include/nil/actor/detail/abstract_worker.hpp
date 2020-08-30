@@ -14,32 +14,36 @@
 #include <nil/actor/ref_counted.hpp>
 #include <nil/actor/resumable.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class BOOST_SYMBOL_VISIBLE abstract_worker : public ref_counted, public resumable {
-    public:
-        // -- friends ----------------------------------------------------------------
+            class BOOST_SYMBOL_VISIBLE abstract_worker : public ref_counted, public resumable {
+            public:
+                // -- friends ----------------------------------------------------------------
 
-        friend abstract_worker_hub;
+                friend abstract_worker_hub;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        abstract_worker();
+                abstract_worker();
 
-        ~abstract_worker() override;
+                ~abstract_worker() override;
 
-        // -- implementation of resumable --------------------------------------------
+                // -- implementation of resumable --------------------------------------------
 
-        subtype_t subtype() const override;
+                subtype_t subtype() const override;
 
-        void intrusive_ptr_add_ref_impl() override;
+                void intrusive_ptr_add_ref_impl() override;
 
-        void intrusive_ptr_release_impl() override;
+                void intrusive_ptr_release_impl() override;
 
-    private:
-        // -- member variables -------------------------------------------------------
+            private:
+                // -- member variables -------------------------------------------------------
 
-        /// Points to the next worker in the hub.
-        std::atomic<abstract_worker *> next_;
-    };
-}    // namespace nil::actor::detail
+                /// Points to the next worker in the hub.
+                std::atomic<abstract_worker *> next_;
+            };
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

@@ -14,8 +14,12 @@
 
 #include <boost/config.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    BOOST_SYMBOL_VISIBLE std::string get_root_uuid();
+            BOOST_SYMBOL_VISIBLE std::string get_root_uuid();
 
-}
+        }
+    }    // namespace actor
+}    // namespace nil

@@ -12,7 +12,6 @@
 
 #include <type_traits>
 
-
 #include <nil/actor/fwd.hpp>
 
 namespace nil {

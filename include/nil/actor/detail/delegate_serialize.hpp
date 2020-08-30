@@ -29,25 +29,30 @@
 
 #include <nil/actor/detail/type_traits.hpp>
 
-namespace boost::serialization {}    // namespace boost::serialization
+namespace boost::serialization { }    // namespace boost::serialization
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    // Calls `serialize(...)` with `using namespace boost::serialization`
-    // to enable both ADL and picking up existing boost code.
+            // Calls `serialize(...)` with `using namespace boost::serialization`
+            // to enable both ADL and picking up existing boost code.
 
-    template<class Processor, class U>
-    auto delegate_serialize(Processor &proc, U &x, const unsigned int y = 0) -> decltype(serialize(proc, x, y)) {
-        using namespace boost::serialization;
-        serialize(proc, x, y);
-    }
+            template<class Processor, class U>
+            auto delegate_serialize(Processor &proc, U &x, const unsigned int y = 0)
+                -> decltype(serialize(proc, x, y)) {
+                using namespace boost::serialization;
+                serialize(proc, x, y);
+            }
 
-    // Calls `serialize(...)` without the unused version argument, which =nil; Actor
-    // ignores anyway.
+            // Calls `serialize(...)` without the unused version argument, which =nil; Actor
+            // ignores anyway.
 
-    template<class Processor, class U>
-    auto delegate_serialize(Processor &proc, U &x) -> decltype(serialize(proc, x)) {
-        serialize(proc, x);
-    }
+            template<class Processor, class U>
+            auto delegate_serialize(Processor &proc, U &x) -> decltype(serialize(proc, x)) {
+                serialize(proc, x);
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

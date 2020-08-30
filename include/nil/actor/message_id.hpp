@@ -235,5 +235,4 @@ namespace std {
             return f(x.integer_value());
         }
     };
-
 }    // namespace std

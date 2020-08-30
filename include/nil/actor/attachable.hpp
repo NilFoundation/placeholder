@@ -14,7 +14,6 @@
 #include <memory>
 #include <typeinfo>
 
-
 #include <nil/actor/error.hpp>
 #include <nil/actor/execution_unit.hpp>
 #include <nil/actor/exit_reason.hpp>

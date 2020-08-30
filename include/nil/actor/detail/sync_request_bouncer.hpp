@@ -18,21 +18,25 @@
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/intrusive/task_result.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// Drains a mailbox and sends an error message to each unhandled request.
-    struct BOOST_SYMBOL_VISIBLE sync_request_bouncer {
-        error rsn;
-        explicit sync_request_bouncer(error r);
-        void operator()(const strong_actor_ptr &sender, const message_id &mid) const;
-        void operator()(const mailbox_element &e) const;
+            /// Drains a mailbox and sends an error message to each unhandled request.
+            struct BOOST_SYMBOL_VISIBLE sync_request_bouncer {
+                error rsn;
+                explicit sync_request_bouncer(error r);
+                void operator()(const strong_actor_ptr &sender, const message_id &mid) const;
+                void operator()(const mailbox_element &e) const;
 
-        /// Unwrap WDRR queues. Nesting WDRR queues results in a Key/Queue prefix for
-        /// each layer of nesting.
-        template<class Key, class Queue, class... Ts>
-        intrusive::task_result operator()(const Key &, const Queue &, const Ts &... xs) const {
-            (*this)(xs...);
-            return intrusive::task_result::resume;
-        }
-    };
-}    // namespace nil::actor::detail
+                /// Unwrap WDRR queues. Nesting WDRR queues results in a Key/Queue prefix for
+                /// each layer of nesting.
+                template<class Key, class Queue, class... Ts>
+                intrusive::task_result operator()(const Key &, const Queue &, const Ts &... xs) const {
+                    (*this)(xs...);
+                    return intrusive::task_result::resume;
+                }
+            };
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

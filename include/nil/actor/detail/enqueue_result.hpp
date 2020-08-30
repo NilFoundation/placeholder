@@ -12,9 +12,13 @@
 
 #include <nil/actor/intrusive/inbox_result.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// Alias for backwards compatibility.
-    using enqueue_result = intrusive::inbox_result;
+            /// Alias for backwards compatibility.
+            using enqueue_result = intrusive::inbox_result;
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

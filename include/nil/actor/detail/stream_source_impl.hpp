@@ -19,66 +19,70 @@
 #include <nil/actor/stream_source.hpp>
 #include <nil/actor/stream_source_trait.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class Driver>
-    class stream_source_impl : public Driver::source_type {
-    public:
-        // -- member types -----------------------------------------------------------
+            template<class Driver>
+            class stream_source_impl : public Driver::source_type {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using super = typename Driver::source_type;
+                using super = typename Driver::source_type;
 
-        using driver_type = Driver;
+                using driver_type = Driver;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        template<class... Ts>
-        stream_source_impl(scheduled_actor *self, Ts &&... xs) :
-            stream_manager(self), super(self), driver_(std::forward<Ts>(xs)...), at_end_(false) {
-            // nop
-        }
+                template<class... Ts>
+                stream_source_impl(scheduled_actor *self, Ts &&... xs) :
+                    stream_manager(self), super(self), driver_(std::forward<Ts>(xs)...), at_end_(false) {
+                    // nop
+                }
 
-        // -- implementation of virtual functions ------------------------------------
+                // -- implementation of virtual functions ------------------------------------
 
-        void shutdown() override {
-            super::shutdown();
-            at_end_ = true;
-        }
+                void shutdown() override {
+                    super::shutdown();
+                    at_end_ = true;
+                }
 
-        bool done() const override {
-            return this->pending_handshakes_ == 0 && at_end_ && this->out_.clean();
-        }
+                bool done() const override {
+                    return this->pending_handshakes_ == 0 && at_end_ && this->out_.clean();
+                }
 
-        bool generate_messages() override {
-            ACTOR_LOG_TRACE("");
-            if (at_end_)
-                return false;
-            auto hint = this->out_.capacity();
-            ACTOR_LOG_DEBUG(ACTOR_ARG(hint));
-            if (hint == 0)
-                return false;
-            downstream<typename Driver::output_type> ds {this->out_.buf()};
-            driver_.pull(ds, hint);
-            if (driver_.done())
-                at_end_ = true;
-            return hint != this->out_.capacity();
-        }
+                bool generate_messages() override {
+                    ACTOR_LOG_TRACE("");
+                    if (at_end_)
+                        return false;
+                    auto hint = this->out_.capacity();
+                    ACTOR_LOG_DEBUG(ACTOR_ARG(hint));
+                    if (hint == 0)
+                        return false;
+                    downstream<typename Driver::output_type> ds {this->out_.buf()};
+                    driver_.pull(ds, hint);
+                    if (driver_.done())
+                        at_end_ = true;
+                    return hint != this->out_.capacity();
+                }
 
-    protected:
-        void finalize(const error &reason) override {
-            driver_.finalize(reason);
-        }
+            protected:
+                void finalize(const error &reason) override {
+                    driver_.finalize(reason);
+                }
 
-        Driver driver_;
+                Driver driver_;
 
-    private:
-        bool at_end_;
-    };
+            private:
+                bool at_end_;
+            };
 
-    template<class Driver, class... Ts>
-    typename Driver::source_ptr_type make_stream_source(scheduled_actor *self, Ts &&... xs) {
-        using impl = stream_source_impl<Driver>;
-        return make_counted<impl>(self, std::forward<Ts>(xs)...);
-    }
+            template<class Driver, class... Ts>
+            typename Driver::source_ptr_type make_stream_source(scheduled_actor *self, Ts &&... xs) {
+                using impl = stream_source_impl<Driver>;
+                return make_counted<impl>(self, std::forward<Ts>(xs)...);
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

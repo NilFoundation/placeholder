@@ -14,7 +14,6 @@
 #include <tuple>
 #include <type_traits>
 
-
 #include <nil/actor/timeout_definition.hpp>
 #include <nil/actor/timespan.hpp>
 

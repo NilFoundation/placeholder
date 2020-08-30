@@ -223,13 +223,13 @@ namespace nil {
             }
         };
 
-        struct config_value_access_unspecialized {};
+        struct config_value_access_unspecialized { };
 
         /// @relates config_value
         template<class T>
-        struct config_value_access : config_value_access_unspecialized {};
+        struct config_value_access : config_value_access_unspecialized { };
 
-#define ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(type, name)                                             \
+#define ACTOR_DEFAULT_CONFIG_VALUE_ACCESS(type, name)                                           \
     template<>                                                                                  \
     struct BOOST_SYMBOL_VISIBLE config_value_access<type> : default_config_value_access<type> { \
         static std::string type_name() {                                                        \

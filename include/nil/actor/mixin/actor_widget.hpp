@@ -22,78 +22,83 @@ ACTOR_PUSH_WARNINGS
 #include <QEvent>
 ACTOR_POP_WARNINGS
 
-namespace nil::actor::mixin {
+namespace nil {
+    namespace actor {
+        namespace mixin {
 
-    template<typename Base, int EventId = static_cast<int>(QEvent::User + 31337)>
-    class actor_widget : public Base {
-    public:
-        struct event_type : public QEvent {
-            mailbox_element_ptr mptr;
-            event_type(mailbox_element_ptr ptr) : QEvent(static_cast<QEvent::Type>(EventId)), mptr(std::move(ptr)) {
-                // nop
-            }
-        };
+            template<typename Base, int EventId = static_cast<int>(QEvent::User + 31337)>
+            class actor_widget : public Base {
+            public:
+                struct event_type : public QEvent {
+                    mailbox_element_ptr mptr;
+                    event_type(mailbox_element_ptr ptr) :
+                        QEvent(static_cast<QEvent::Type>(EventId)), mptr(std::move(ptr)) {
+                        // nop
+                    }
+                };
 
-        template<typename... Ts>
-        actor_widget(Ts &&... xs) : Base(std::forward<Ts>(xs)...), alive_(false) {
-            // nop
-        }
-
-        ~actor_widget() {
-            if (companion_)
-                self()->cleanup(error {}, &dummy_);
-        }
-
-        void init(spawner &system) {
-            alive_ = true;
-            companion_ = actor_cast<strong_actor_ptr>(system.spawn<actor_companion>());
-            self()->on_enqueue([=](mailbox_element_ptr ptr) { qApp->postEvent(this, new event_type(std::move(ptr))); });
-            self()->on_exit([=] {
-                // close widget if actor companion dies
-                this->close();
-            });
-        }
-
-        template<class F>
-        void set_message_handler(F pfun) {
-            self()->become(pfun(self()));
-        }
-
-        /// Terminates the actor companion and closes this widget.
-        void quit_and_close(error exit_state = error {}) {
-            self()->quit(std::move(exit_state));
-            this->close();
-        }
-
-        bool event(QEvent *event) override {
-            if (event->type() == static_cast<QEvent::Type>(EventId)) {
-                auto ptr = dynamic_cast<event_type *>(event);
-                if (ptr && alive_) {
-                    switch (self()->activate(&dummy_, *(ptr->mptr))) {
-                        default:
-                            break;
-                    };
-                    return true;
+                template<typename... Ts>
+                actor_widget(Ts &&... xs) : Base(std::forward<Ts>(xs)...), alive_(false) {
+                    // nop
                 }
-            }
-            return Base::event(event);
-        }
 
-        actor as_actor() const {
-            ACTOR_ASSERT(companion_);
-            return actor_cast<actor>(companion_);
-        }
+                ~actor_widget() {
+                    if (companion_)
+                        self()->cleanup(error {}, &dummy_);
+                }
 
-        actor_companion *self() {
-            using bptr = abstract_actor *;     // base pointer
-            using dptr = actor_companion *;    // derived pointer
-            return companion_ ? static_cast<dptr>(actor_cast<bptr>(companion_)) : nullptr;
-        }
+                void init(spawner &system) {
+                    alive_ = true;
+                    companion_ = actor_cast<strong_actor_ptr>(system.spawn<actor_companion>());
+                    self()->on_enqueue(
+                        [=](mailbox_element_ptr ptr) { qApp->postEvent(this, new event_type(std::move(ptr))); });
+                    self()->on_exit([=] {
+                        // close widget if actor companion dies
+                        this->close();
+                    });
+                }
 
-    private:
-        scoped_execution_unit dummy_;
-        strong_actor_ptr companion_;
-        bool alive_;
-    };
+                template<class F>
+                void set_message_handler(F pfun) {
+                    self()->become(pfun(self()));
+                }
 
-}    // namespace nil::actor::mixin
+                /// Terminates the actor companion and closes this widget.
+                void quit_and_close(error exit_state = error {}) {
+                    self()->quit(std::move(exit_state));
+                    this->close();
+                }
+
+                bool event(QEvent *event) override {
+                    if (event->type() == static_cast<QEvent::Type>(EventId)) {
+                        auto ptr = dynamic_cast<event_type *>(event);
+                        if (ptr && alive_) {
+                            switch (self()->activate(&dummy_, *(ptr->mptr))) {
+                                default:
+                                    break;
+                            };
+                            return true;
+                        }
+                    }
+                    return Base::event(event);
+                }
+
+                actor as_actor() const {
+                    ACTOR_ASSERT(companion_);
+                    return actor_cast<actor>(companion_);
+                }
+
+                actor_companion *self() {
+                    using bptr = abstract_actor *;     // base pointer
+                    using dptr = actor_companion *;    // derived pointer
+                    return companion_ ? static_cast<dptr>(actor_cast<bptr>(companion_)) : nullptr;
+                }
+
+            private:
+                scoped_execution_unit dummy_;
+                strong_actor_ptr companion_;
+                bool alive_;
+            };
+        }    // namespace mixin
+    }        // namespace actor
+}    // namespace nil

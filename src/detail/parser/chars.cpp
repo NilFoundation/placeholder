@@ -10,21 +10,27 @@
 
 #include <nil/actor/detail/parser/chars.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    const char alphanumeric_chars[63] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
+                const char alphanumeric_chars[63] =
+                    "0123456789"
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                    "abcdefghijklmnopqrstuvwxyz";
 
-    const char alphabetic_chars[53] =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
+                const char alphabetic_chars[53] =
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                    "abcdefghijklmnopqrstuvwxyz";
 
-    const char hexadecimal_chars[23] = "0123456789ABCDEFabcdef";
+                const char hexadecimal_chars[23] = "0123456789ABCDEFabcdef";
 
-    const char decimal_chars[11] = "0123456789";
+                const char decimal_chars[11] = "0123456789";
 
-    const char octal_chars[9] = "01234567";
+                const char octal_chars[9] = "01234567";
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil

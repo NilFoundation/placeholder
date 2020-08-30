@@ -55,10 +55,10 @@ namespace nil {
         };
 
         template<class T>
-        struct is_timeout_definition : std::false_type {};
+        struct is_timeout_definition : std::false_type { };
 
         template<class T>
-        struct is_timeout_definition<timeout_definition<T>> : std::true_type {};
+        struct is_timeout_definition<timeout_definition<T>> : std::true_type { };
 
         using generic_timeout_definition = timeout_definition<std::function<void()>>;
 

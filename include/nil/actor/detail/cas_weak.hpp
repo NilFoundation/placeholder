@@ -14,16 +14,20 @@
 
 #include <nil/actor/config.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class T>
-    bool cas_weak(std::atomic<T> *obj, T *expected, T desired) {
+            template<class T>
+            bool cas_weak(std::atomic<T> *obj, T *expected, T desired) {
 #if (defined(BOOST_COMP_CLANG_AVAILABLE) && ACTOR_COMPILER_VERSION < 30401) || \
     (defined(BOOST_COMP_GNUC_AVAILABLE) && ACTOR_COMPILER_VERSION < 40803)
-        return std::atomic_compare_exchange_strong(obj, expected, desired);
+                return std::atomic_compare_exchange_strong(obj, expected, desired);
 #else
-        return std::atomic_compare_exchange_weak(obj, expected, desired);
+                return std::atomic_compare_exchange_weak(obj, expected, desired);
 #endif
-    }
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

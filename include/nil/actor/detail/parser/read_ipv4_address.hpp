@@ -26,28 +26,31 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    struct read_ipv4_octet_consumer {
-        std::array<uint8_t, 4> bytes;
-        size_t octets = 0;
+                struct read_ipv4_octet_consumer {
+                    std::array<uint8_t, 4> bytes;
+                    size_t octets = 0;
 
-        void value(uint8_t octet) {
-            bytes[octets++] = octet;
-        }
-    };
+                    void value(uint8_t octet) {
+                        bytes[octets++] = octet;
+                    }
+                };
 
-    template<class State, class Consumer>
-    void read_ipv4_octet(State &ps, Consumer &consumer) {
-        uint8_t res = 0;
-        // Reads the a decimal place.
-        auto rd_decimal = [&](char c) { return add_ascii<10>(res, c); };
-        // Computes the result on success.
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.value(res);
-        });
-        // clang-format off
+                template<class State, class Consumer>
+                void read_ipv4_octet(State &ps, Consumer &consumer) {
+                    uint8_t res = 0;
+                    // Reads the a decimal place.
+                    auto rd_decimal = [&](char c) { return add_ascii<10>(res, c); };
+                    // Computes the result on success.
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.value(res);
+                    });
+                    // clang-format off
   start();
   state(init) {
     transition(read, decimal_chars, rd_decimal(ch), pec::integer_overflow)
@@ -56,21 +59,21 @@ namespace nil::actor::detail::parser {
     transition(read, decimal_chars, rd_decimal(ch), pec::integer_overflow)
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    /// Reads a number, i.e., on success produces either an `int64_t` or a
-    /// `double`.
-    template<class State, class Consumer>
-    void read_ipv4_address(State &ps, Consumer &&consumer) {
-        read_ipv4_octet_consumer f;
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character) {
-                ipv4_address result {f.bytes};
-                consumer.value(std::move(result));
-            }
-        });
-        // clang-format off
+                /// Reads a number, i.e., on success produces either an `int64_t` or a
+                /// `double`.
+                template<class State, class Consumer>
+                void read_ipv4_address(State &ps, Consumer &&consumer) {
+                    read_ipv4_octet_consumer f;
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character) {
+                            ipv4_address result {f.bytes};
+                            consumer.value(std::move(result));
+                        }
+                    });
+                    // clang-format off
   start();
   state(init) {
     fsm_epsilon(read_ipv4_octet(ps, f), rd_dot, decimal_chars)
@@ -86,10 +89,13 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

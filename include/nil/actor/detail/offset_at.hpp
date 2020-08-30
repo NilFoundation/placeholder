@@ -12,19 +12,23 @@
 
 #include <nil/actor/detail/padded_size.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<size_t Remaining, class T, class... Ts>
-    struct offset_at_helper {
-        static constexpr size_t value = offset_at_helper<Remaining - 1, Ts...>::value + padded_size_v<T>;
-    };
+            template<size_t Remaining, class T, class... Ts>
+            struct offset_at_helper {
+                static constexpr size_t value = offset_at_helper<Remaining - 1, Ts...>::value + padded_size_v<T>;
+            };
 
-    template<class T, class... Ts>
-    struct offset_at_helper<0, T, Ts...> {
-        static constexpr size_t value = 0;
-    };
+            template<class T, class... Ts>
+            struct offset_at_helper<0, T, Ts...> {
+                static constexpr size_t value = 0;
+            };
 
-    template<size_t Index, class... Ts>
-    constexpr size_t offset_at = offset_at_helper<Index, Ts...>::value;
+            template<size_t Index, class... Ts>
+            constexpr size_t offset_at = offset_at_helper<Index, Ts...>::value;
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

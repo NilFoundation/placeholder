@@ -16,54 +16,58 @@
 
 #include <nil/actor/fwd.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// A central place where workers return to after finishing a task. A hub
-    /// supports any number of workers that call `push`, but only a single master
-    /// that calls `pop`. The hub takes ownership of all workers. Workers register
-    /// at the hub during construction and get destroyed when the hub gets
-    /// destroyed.
-    class BOOST_SYMBOL_VISIBLE abstract_worker_hub {
-    public:
-        // -- constructors, destructors, and assignment operators --------------------
+            /// A central place where workers return to after finishing a task. A hub
+            /// supports any number of workers that call `push`, but only a single master
+            /// that calls `pop`. The hub takes ownership of all workers. Workers register
+            /// at the hub during construction and get destroyed when the hub gets
+            /// destroyed.
+            class BOOST_SYMBOL_VISIBLE abstract_worker_hub {
+            public:
+                // -- constructors, destructors, and assignment operators --------------------
 
-        abstract_worker_hub();
+                abstract_worker_hub();
 
-        virtual ~abstract_worker_hub();
+                virtual ~abstract_worker_hub();
 
-        // -- synchronization --------------------------------------------------------
+                // -- synchronization --------------------------------------------------------
 
-        /// Waits until all workers are back at the hub.
-        void await_workers();
+                /// Waits until all workers are back at the hub.
+                void await_workers();
 
-    protected:
-        // -- worker management ------------------------------------------------------
+            protected:
+                // -- worker management ------------------------------------------------------
 
-        /// Adds a new worker to the hub.
-        void push_new(abstract_worker *ptr);
+                /// Adds a new worker to the hub.
+                void push_new(abstract_worker *ptr);
 
-        /// Returns a worker to the hub.
-        void push_returning(abstract_worker *ptr);
+                /// Returns a worker to the hub.
+                void push_returning(abstract_worker *ptr);
 
-        /// Tries to retrieve a worker from the hub.
-        /// @returns the next available worker (in LIFO order) or `nullptr` if the
-        ///          hub is currently empty.
-        abstract_worker *pop_impl();
+                /// Tries to retrieve a worker from the hub.
+                /// @returns the next available worker (in LIFO order) or `nullptr` if the
+                ///          hub is currently empty.
+                abstract_worker *pop_impl();
 
-        /// Checks which worker would `pop` currently return.
-        /// @returns the next available worker (in LIFO order) or `nullptr` if the
-        ///          hub is currently empty.
-        abstract_worker *peek_impl();
+                /// Checks which worker would `pop` currently return.
+                /// @returns the next available worker (in LIFO order) or `nullptr` if the
+                ///          hub is currently empty.
+                abstract_worker *peek_impl();
 
-        // -- member variables -------------------------------------------------------
+                // -- member variables -------------------------------------------------------
 
-        std::atomic<abstract_worker *> head_;
+                std::atomic<abstract_worker *> head_;
 
-        std::atomic<size_t> running_;
+                std::atomic<size_t> running_;
 
-        std::mutex mtx_;
+                std::mutex mtx_;
 
-        std::condition_variable cv_;
-    };
+                std::condition_variable cv_;
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

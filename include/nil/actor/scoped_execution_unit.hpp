@@ -10,7 +10,6 @@
 
 #pragma once
 
-
 #include <nil/actor/execution_unit.hpp>
 
 namespace nil {

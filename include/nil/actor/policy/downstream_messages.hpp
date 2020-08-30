@@ -12,100 +12,103 @@
 
 #include <map>
 
-
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/intrusive/drr_queue.hpp>
 #include <nil/actor/mailbox_element.hpp>
 #include <nil/actor/stream_slot.hpp>
 #include <nil/actor/unit.hpp>
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    /// Configures a dynamic WDRR queue for holding downstream messages.
-    class BOOST_SYMBOL_VISIBLE downstream_messages {
-    public:
-        // -- nested types -----------------------------------------------------------
+            /// Configures a dynamic WDRR queue for holding downstream messages.
+            class BOOST_SYMBOL_VISIBLE downstream_messages {
+            public:
+                // -- nested types -----------------------------------------------------------
 
-        /// Configures a nested DRR queue.
-        class BOOST_SYMBOL_VISIBLE nested {
-        public:
-            // -- member types ---------------------------------------------------------
+                /// Configures a nested DRR queue.
+                class BOOST_SYMBOL_VISIBLE nested {
+                public:
+                    // -- member types ---------------------------------------------------------
 
-            using mapped_type = mailbox_element;
+                    using mapped_type = mailbox_element;
 
-            using task_size_type = size_t;
+                    using task_size_type = size_t;
 
-            using deficit_type = size_t;
+                    using deficit_type = size_t;
 
-            using unique_pointer = mailbox_element_ptr;
+                    using unique_pointer = mailbox_element_ptr;
 
-            using handler_type = std::unique_ptr<inbound_path>;
+                    using handler_type = std::unique_ptr<inbound_path>;
 
-            static task_size_type task_size(const mailbox_element &x) noexcept;
+                    static task_size_type task_size(const mailbox_element &x) noexcept;
 
-            // -- constructors, destructors, and assignment operators ------------------
+                    // -- constructors, destructors, and assignment operators ------------------
 
-            template<class T>
-            nested(T &&x) : handler(std::forward<T>(x)) {
-                // nop
-            }
+                    template<class T>
+                    nested(T &&x) : handler(std::forward<T>(x)) {
+                        // nop
+                    }
 
-            nested() = default;
+                    nested() = default;
 
-            nested(nested &&) = default;
+                    nested(nested &&) = default;
 
-            nested &operator=(nested &&) = default;
+                    nested &operator=(nested &&) = default;
 
-            nested(const nested &) = delete;
+                    nested(const nested &) = delete;
 
-            nested &operator=(const nested &) = delete;
+                    nested &operator=(const nested &) = delete;
 
-            // -- member variables -----------------------------------------------------
+                    // -- member variables -----------------------------------------------------
 
-            handler_type handler;
-        };
+                    handler_type handler;
+                };
 
-        // -- member types -----------------------------------------------------------
+                // -- member types -----------------------------------------------------------
 
-        using mapped_type = mailbox_element;
+                using mapped_type = mailbox_element;
 
-        using task_size_type = size_t;
+                using task_size_type = size_t;
 
-        using deficit_type = size_t;
+                using deficit_type = size_t;
 
-        using unique_pointer = mailbox_element_ptr;
+                using unique_pointer = mailbox_element_ptr;
 
-        using key_type = stream_slot;
+                using key_type = stream_slot;
 
-        using nested_queue_type = intrusive::drr_queue<nested>;
+                using nested_queue_type = intrusive::drr_queue<nested>;
 
-        using queue_map_type = std::map<key_type, nested_queue_type>;
+                using queue_map_type = std::map<key_type, nested_queue_type>;
 
-        // -- required functions for wdrr_dynamic_multiplexed_queue ------------------
+                // -- required functions for wdrr_dynamic_multiplexed_queue ------------------
 
-        static key_type id_of(mailbox_element &x) noexcept;
+                static key_type id_of(mailbox_element &x) noexcept;
 
-        static bool enabled(const nested_queue_type &q) noexcept;
+                static bool enabled(const nested_queue_type &q) noexcept;
 
-        static deficit_type quantum(const nested_queue_type &q, deficit_type x) noexcept;
+                static deficit_type quantum(const nested_queue_type &q, deficit_type x) noexcept;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        downstream_messages() = default;
+                downstream_messages() = default;
 
-        downstream_messages(const downstream_messages &) = default;
+                downstream_messages(const downstream_messages &) = default;
 
-        downstream_messages &operator=(const downstream_messages &) = default;
+                downstream_messages &operator=(const downstream_messages &) = default;
 
-        constexpr downstream_messages(unit_t) {
-            // nop
-        }
+                constexpr downstream_messages(unit_t) {
+                    // nop
+                }
 
-        // -- required functions for drr_queue ---------------------------------------
+                // -- required functions for drr_queue ---------------------------------------
 
-        static inline task_size_type task_size(const mailbox_element &) noexcept {
-            return 1;
-        }
-    };
+                static inline task_size_type task_size(const mailbox_element &) noexcept {
+                    return 1;
+                }
+            };
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

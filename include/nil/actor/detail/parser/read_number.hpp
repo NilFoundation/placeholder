@@ -28,34 +28,38 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Reads the second half of 'n..m' range statement.
-    ///
-    /// Expect the current position to point at the number *after* the dots:
-    ///
-    /// ~~~
-    /// foo = [1..2]
-    ///        ~~~^
-    /// ~~~
-    template<class State, class Consumer>
-    void read_number_range(State &ps, Consumer &consumer, int64_t begin);
+                /// Reads the second half of 'n..m' range statement.
+                ///
+                /// Expect the current position to point at the number *after* the dots:
+                ///
+                /// ~~~
+                /// foo = [1..2]
+                ///        ~~~^
+                /// ~~~
+                template<class State, class Consumer>
+                void read_number_range(State &ps, Consumer &consumer, int64_t begin);
 
-    /// Reads a number, i.e., on success produces either an `int64_t` or a
-    /// `double`.
-    template<class State, class Consumer, class EnableFloat = std::true_type, class EnableRange = std::false_type>
-    void read_number(State &ps, Consumer &consumer, EnableFloat = {}, EnableRange = {}) {
-        static constexpr bool enable_float = EnableFloat::value;
-        static constexpr bool enable_range = EnableRange::value;
-        // Our result when reading an integer number.
-        int64_t result = 0;
-        // Computes the result on success.
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.value(result);
-        });
-        using odbl = optional<double>;
-        // clang-format off
+                /// Reads a number, i.e., on success produces either an `int64_t` or a
+                /// `double`.
+                template<class State, class Consumer, class EnableFloat = std::true_type,
+                         class EnableRange = std::false_type>
+                void read_number(State &ps, Consumer &consumer, EnableFloat = {}, EnableRange = {}) {
+                    static constexpr bool enable_float = EnableFloat::value;
+                    static constexpr bool enable_range = EnableRange::value;
+                    // Our result when reading an integer number.
+                    int64_t result = 0;
+                    // Computes the result on success.
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.value(result);
+                    });
+                    using odbl = optional<double>;
+                    // clang-format off
   // Definition of our parser FSM.
   start();
   state(init) {
@@ -178,52 +182,52 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
-
-    template<class State, class Consumer>
-    void read_number_range(State &ps, Consumer &consumer, int64_t begin) {
-        optional<int64_t> end;
-        optional<int64_t> step;
-        auto end_consumer = make_consumer(end);
-        auto step_consumer = make_consumer(step);
-        auto generate_2 = [&](int64_t n, int64_t m) {
-            if (n <= m)
-                while (n <= m)
-                    consumer.value(n++);
-            else
-                while (n >= m)
-                    consumer.value(n--);
-        };
-        auto generate_3 = [&](int64_t n, int64_t m, int64_t s) {
-            if (n == m) {
-                consumer.value(n);
-                return;
-            }
-            if (s == 0 || (n > m && s > 0) || (n < m && s < 0)) {
-                ps.code = pec::invalid_range_expression;
-                return;
-            }
-            if (n <= m)
-                for (auto i = n; i <= m; i += s)
-                    consumer.value(i);
-            else
-                for (auto i = n; i >= m; i += s)
-                    consumer.value(i);
-        };
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character) {
-                if (!end) {
-                    ps.code = pec::invalid_range_expression;
-                } else if (!step) {
-                    generate_2(begin, *end);
-                } else {
-                    generate_3(begin, *end, *step);
+                    // clang-format on
                 }
-            }
-        });
-        static constexpr std::false_type no_float = std::false_type {};
-        // clang-format off
+
+                template<class State, class Consumer>
+                void read_number_range(State &ps, Consumer &consumer, int64_t begin) {
+                    optional<int64_t> end;
+                    optional<int64_t> step;
+                    auto end_consumer = make_consumer(end);
+                    auto step_consumer = make_consumer(step);
+                    auto generate_2 = [&](int64_t n, int64_t m) {
+                        if (n <= m)
+                            while (n <= m)
+                                consumer.value(n++);
+                        else
+                            while (n >= m)
+                                consumer.value(n--);
+                    };
+                    auto generate_3 = [&](int64_t n, int64_t m, int64_t s) {
+                        if (n == m) {
+                            consumer.value(n);
+                            return;
+                        }
+                        if (s == 0 || (n > m && s > 0) || (n < m && s < 0)) {
+                            ps.code = pec::invalid_range_expression;
+                            return;
+                        }
+                        if (n <= m)
+                            for (auto i = n; i <= m; i += s)
+                                consumer.value(i);
+                        else
+                            for (auto i = n; i >= m; i += s)
+                                consumer.value(i);
+                    };
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character) {
+                            if (!end) {
+                                ps.code = pec::invalid_range_expression;
+                            } else if (!step) {
+                                generate_2(begin, *end);
+                            } else {
+                                generate_3(begin, *end, *step);
+                            }
+                        }
+                    });
+                    static constexpr std::false_type no_float = std::false_type {};
+                    // clang-format off
   // Definition of our parser FSM.
   start();
   state(init) {
@@ -242,10 +246,13 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

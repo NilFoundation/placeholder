@@ -16,7 +16,7 @@ namespace nil {
     namespace actor {
 
         template<class T, int Pos>
-        struct sum_type_token {};
+        struct sum_type_token { };
 
         template<class T, int Pos>
         constexpr std::integral_constant<int, Pos> pos(sum_type_token<T, Pos>) {

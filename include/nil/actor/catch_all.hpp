@@ -44,10 +44,10 @@ namespace nil {
         };
 
         template<class T>
-        struct is_catch_all : std::false_type {};
+        struct is_catch_all : std::false_type { };
 
         template<class T>
-        struct is_catch_all<catch_all<T>> : std::true_type {};
+        struct is_catch_all<catch_all<T>> : std::true_type { };
 
     }    // namespace actor
 }    // namespace nil

@@ -15,42 +15,46 @@
 #include <nil/actor/detail/append_hex.hpp>
 #include <nil/actor/string_view.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    void append_percent_encoded(std::string &str, string_view x, bool is_path) {
-        for (auto ch : x)
-            switch (ch) {
-                case ':':
-                case '/':
-                    if (is_path) {
-                        str += ch;
-                        break;
+            void append_percent_encoded(std::string &str, string_view x, bool is_path) {
+                for (auto ch : x)
+                    switch (ch) {
+                        case ':':
+                        case '/':
+                            if (is_path) {
+                                str += ch;
+                                break;
+                            }
+                            [[fallthrough]];
+                        case ' ':
+                        case '?':
+                        case '#':
+                        case '[':
+                        case ']':
+                        case '@':
+                        case '!':
+                        case '$':
+                        case '&':
+                        case '\'':
+                        case '"':
+                        case '(':
+                        case ')':
+                        case '*':
+                        case '+':
+                        case ',':
+                        case ';':
+                        case '=':
+                            str += '%';
+                            append_hex(str, ch);
+                            break;
+                        default:
+                            str += ch;
                     }
-                    [[fallthrough]];
-                case ' ':
-                case '?':
-                case '#':
-                case '[':
-                case ']':
-                case '@':
-                case '!':
-                case '$':
-                case '&':
-                case '\'':
-                case '"':
-                case '(':
-                case ')':
-                case '*':
-                case '+':
-                case ',':
-                case ';':
-                case '=':
-                    str += '%';
-                    append_hex(str, ch);
-                    break;
-                default:
-                    str += ch;
             }
-    }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

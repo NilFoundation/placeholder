@@ -16,13 +16,14 @@
 #include <nil/actor/intrusive_ptr.hpp>
 #include <nil/actor/ref_counted.hpp>
 
-namespace nil::actor {
+namespace nil {
+    namespace actor {
 
-    /// Constructs an object of type `T` in an `intrusive_ptr`.
-    /// @relates ref_counted
-    template<class T, class... Ts>
-    intrusive_ptr<T> make_counted(Ts &&... xs) {
-        return intrusive_ptr<T>(new T(std::forward<Ts>(xs)...), false);
-    }
-
-}    // namespace nil::actor
+        /// Constructs an object of type `T` in an `intrusive_ptr`.
+        /// @relates ref_counted
+        template<class T, class... Ts>
+        intrusive_ptr<T> make_counted(Ts &&... xs) {
+            return intrusive_ptr<T>(new T(std::forward<Ts>(xs)...), false);
+        }
+    }    // namespace actor
+}    // namespace nil

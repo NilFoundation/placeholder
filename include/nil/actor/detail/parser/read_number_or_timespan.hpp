@@ -30,50 +30,53 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    /// Reads a number or a duration, i.e., on success produces an `int64_t`, a
-    /// `double`, or a `timespan`.
-    template<class State, class Consumer, class EnableRange = std::false_type>
-    void read_number_or_timespan(State &ps, Consumer &consumer, EnableRange enable_range = {}) {
-        using namespace std::chrono;
-        struct interim_consumer {
-            size_t invocations = 0;
-            Consumer *outer = nullptr;
-            variant<none_t, int64_t, double> interim;
-            void value(int64_t x) {
-                switch (++invocations) {
-                    case 1:
-                        interim = x;
-                        break;
-                    case 2:
-                        ACTOR_ASSERT(holds_alternative<int64_t>(interim));
-                        outer->value(get<int64_t>(interim));
-                        interim = none;
-                        [[fallthrough]];
-                    default:
-                        outer->value(x);
-                }
-            }
-            void value(double x) {
-                interim = x;
-            }
-        };
-        interim_consumer ic;
-        ic.outer = &consumer;
-        auto has_int = [&] { return holds_alternative<int64_t>(ic.interim); };
-        auto has_dbl = [&] { return holds_alternative<double>(ic.interim); };
-        auto get_int = [&] { return get<int64_t>(ic.interim); };
-        auto g = make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character) {
-                if (has_dbl())
-                    consumer.value(get<double>(ic.interim));
-                else if (has_int())
-                    consumer.value(get_int());
-            }
-        });
-        static constexpr std::true_type enable_float = std::true_type {};
-        // clang-format off
+                /// Reads a number or a duration, i.e., on success produces an `int64_t`, a
+                /// `double`, or a `timespan`.
+                template<class State, class Consumer, class EnableRange = std::false_type>
+                void read_number_or_timespan(State &ps, Consumer &consumer, EnableRange enable_range = {}) {
+                    using namespace std::chrono;
+                    struct interim_consumer {
+                        size_t invocations = 0;
+                        Consumer *outer = nullptr;
+                        variant<none_t, int64_t, double> interim;
+                        void value(int64_t x) {
+                            switch (++invocations) {
+                                case 1:
+                                    interim = x;
+                                    break;
+                                case 2:
+                                    ACTOR_ASSERT(holds_alternative<int64_t>(interim));
+                                    outer->value(get<int64_t>(interim));
+                                    interim = none;
+                                    [[fallthrough]];
+                                default:
+                                    outer->value(x);
+                            }
+                        }
+                        void value(double x) {
+                            interim = x;
+                        }
+                    };
+                    interim_consumer ic;
+                    ic.outer = &consumer;
+                    auto has_int = [&] { return holds_alternative<int64_t>(ic.interim); };
+                    auto has_dbl = [&] { return holds_alternative<double>(ic.interim); };
+                    auto get_int = [&] { return get<int64_t>(ic.interim); };
+                    auto g = make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character) {
+                            if (has_dbl())
+                                consumer.value(get<double>(ic.interim));
+                            else if (has_int())
+                                consumer.value(get_int());
+                        }
+                    });
+                    static constexpr std::true_type enable_float = std::true_type {};
+                    // clang-format off
   start();
   state(init) {
     fsm_epsilon(read_number(ps, ic, enable_float, enable_range), has_number)
@@ -93,10 +96,13 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

@@ -14,13 +14,17 @@
 
 #include <nil/actor/fwd.hpp>
 
-namespace nil::actor::mixin {
+namespace nil {
+    namespace actor {
+        namespace mixin {
 
-    // TODO: legacy API. Deprecate with 0.18, remove with 0.19.
-    template<class T>
-    struct is_blocking_requester : std::false_type {};
+            // TODO: legacy API. Deprecate with 0.18, remove with 0.19.
+            template<class T>
+            struct is_blocking_requester : std::false_type { };
 
-}    // namespace nil::actor::mixin
+        }    // namespace mixin
+    }        // namespace actor
+}    // namespace nil
 
 namespace nil {
     namespace actor {
@@ -35,16 +39,16 @@ namespace nil {
         // statically typed markers.
 
         /// Marker type for dynamically typed actors.
-        struct dynamically_typed_actor_base {};
+        struct dynamically_typed_actor_base { };
 
         /// Marker type for statically typed actors.
-        struct statically_typed_actor_base {};
+        struct statically_typed_actor_base { };
 
         /// Marker type for blocking actors.
-        struct blocking_actor_base {};
+        struct blocking_actor_base { };
 
         /// Marker type for non-blocking actors.
-        struct non_blocking_actor_base {};
+        struct non_blocking_actor_base { };
 
         /// Default implementation of `actor_traits` for non-actors (SFINAE-friendly).
         /// @relates actor_traits
@@ -91,7 +95,7 @@ namespace nil {
 
         /// Provides uniform access to properties of actor types.
         template<class T>
-        struct actor_traits : default_actor_traits<T, std::is_base_of<abstract_actor, T>::value> {};
+        struct actor_traits : default_actor_traits<T, std::is_base_of<abstract_actor, T>::value> { };
 
     }    // namespace actor
 }    // namespace nil

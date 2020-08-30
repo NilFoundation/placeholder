@@ -12,10 +12,14 @@
 
 #include <boost/config.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// Sets the name thread shown by the OS. Not supported on all platforms
-    /// (no-op on Windows).
-    BOOST_SYMBOL_VISIBLE void set_thread_name(const char *name);
+            /// Sets the name thread shown by the OS. Not supported on all platforms
+            /// (no-op on Windows).
+            BOOST_SYMBOL_VISIBLE void set_thread_name(const char *name);
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

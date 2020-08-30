@@ -12,28 +12,32 @@
 
 #include <utility>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class T>
-    class consumer {
-    public:
-        using value_type = T;
+            template<class T>
+            class consumer {
+            public:
+                using value_type = T;
 
-        explicit consumer(T &x) : x_(x) {
-            // nop
-        }
+                explicit consumer(T &x) : x_(x) {
+                    // nop
+                }
 
-        void value(T &&y) {
-            x_ = std::move(y);
-        }
+                void value(T &&y) {
+                    x_ = std::move(y);
+                }
 
-    private:
-        T &x_;
-    };
+            private:
+                T &x_;
+            };
 
-    template<class T>
-    consumer<T> make_consumer(T &x) {
-        return consumer<T> {x};
-    }
+            template<class T>
+            consumer<T> make_consumer(T &x) {
+                return consumer<T> {x};
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

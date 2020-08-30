@@ -66,11 +66,11 @@ namespace nil {
 
             // case #3: function returning an optional<>
             template<class Y, class... Xs>
-            struct dmi<optional<Y>(Xs...)> : dmi<Y(Xs...)> {};
+            struct dmi<optional<Y>(Xs...)> : dmi<Y(Xs...)> { };
 
             // case #4: function returning an expected<>
             template<class Y, class... Xs>
-            struct dmi<expected<Y>(Xs...)> : dmi<Y(Xs...)> {};
+            struct dmi<expected<Y>(Xs...)> : dmi<Y(Xs...)> { };
 
             // -- dmfou = deduce_mpi_function_object_unboxing
 
@@ -79,18 +79,18 @@ namespace nil {
 
             // case #1: const member function pointer
             template<class C, class Result, class... Ts>
-            struct dmfou<Result (C::*)(Ts...) const, false> : dmi<Result(Ts...)> {};
+            struct dmfou<Result (C::*)(Ts...) const, false> : dmi<Result(Ts...)> { };
 
             // case #2: member function pointer
             template<class C, class Result, class... Ts>
-            struct dmfou<Result (C::*)(Ts...), false> : dmi<Result(Ts...)> {};
+            struct dmfou<Result (C::*)(Ts...), false> : dmi<Result(Ts...)> { };
 
             // case #3: good ol' function
             template<class Result, class... Ts>
-            struct dmfou<Result(Ts...), false> : dmi<Result(Ts...)> {};
+            struct dmfou<Result(Ts...), false> : dmi<Result(Ts...)> { };
 
             template<class T>
-            struct dmfou<T, true> : dmfou<decltype(&T::operator()), false> {};
+            struct dmfou<T, true> : dmfou<decltype(&T::operator()), false> { };
 
             // this specialization leaves timeout definitions untouched,
             // later stages such as interface_mismatch need to deal with them later

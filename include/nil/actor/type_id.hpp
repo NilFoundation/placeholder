@@ -95,7 +95,7 @@ namespace nil {
 ///
 /// @note =nil; Actor reserves all names with the suffix `_module`. For example, core
 ///       module uses the project name `core_module`.
-#define ACTOR_BEGIN_TYPE_ID_BLOCK(project_name, first_id)                        \
+#define ACTOR_BEGIN_TYPE_ID_BLOCK(project_name, first_id)                      \
     namespace nil::actor::id_block {                                           \
         constexpr type_id_t project_name##_type_id_counter_init = __COUNTER__; \
         constexpr type_id_t project_name##_first_type_id = first_id;           \
@@ -103,7 +103,7 @@ namespace nil {
 
 #define ACTOR_PP_EXPAND(...) __VA_ARGS__
 
-#ifdef BOOST_MSVC
+#if defined(BOOST_COMP_MSVC_AVAILABLE)
 /// Assigns the next free type ID to `fully_qualified_name`.
 #define ACTOR_ADD_TYPE_ID(project_name, fully_qualified_name)                                                  \
     namespace nil {                                                                                            \
@@ -124,7 +124,7 @@ namespace nil {
             };                                                                                                 \
             template<>                                                                                         \
             struct type_name_by_id<type_id<ACTOR_PP_EXPAND fully_qualified_name>::value>                       \
-                : type_name<ACTOR_PP_EXPAND fully_qualified_name> {};                                          \
+                : type_name<ACTOR_PP_EXPAND fully_qualified_name> { };                                         \
         }
 #else
 #define ACTOR_ADD_TYPE_ID(project_name, fully_qualified_name)                                                         \
@@ -145,7 +145,7 @@ namespace nil {
             };                                                                                                        \
             template<>                                                                                                \
             struct type_name_by_id<type_id<ACTOR_PP_EXPAND fully_qualified_name>::value>                              \
-                : type_name<ACTOR_PP_EXPAND fully_qualified_name> {};                                                 \
+                : type_name<ACTOR_PP_EXPAND fully_qualified_name> { };                                                \
         }                                                                                                             \
     }
 #endif
@@ -153,7 +153,7 @@ namespace nil {
 /// Creates a new tag type (atom) in the global namespace and assigns the next
 /// free type ID to it.
 #define ACTOR_ADD_ATOM_2(project_name, atom_name)                      \
-    struct atom_name {};                                               \
+    struct atom_name { };                                              \
     static constexpr atom_name atom_name##_v = atom_name {};           \
     [[maybe_unused]] constexpr bool operator==(atom_name, atom_name) { \
         return true;                                                   \
@@ -170,7 +170,7 @@ namespace nil {
 /// Creates a new tag type (atom) and assigns the next free type ID to it.
 #define ACTOR_ADD_ATOM_3(project_name, atom_namespace, atom_name)                   \
     namespace atom_namespace {                                                      \
-        struct atom_name {};                                                        \
+        struct atom_name { };                                                       \
         static constexpr atom_name atom_name##_v = atom_name {};                    \
         [[maybe_unused]] constexpr bool operator==(atom_name, atom_name) {          \
             return true;                                                            \
@@ -195,7 +195,7 @@ namespace nil {
 /// `nil::actor::type_id::${project_name}` with two static members `begin` and `end`.
 /// The former stores the first assigned type ID. The latter stores the last
 /// assigned type ID + 1.
-#define ACTOR_END_TYPE_ID_BLOCK(project_name)                                                         \
+#define ACTOR_END_TYPE_ID_BLOCK(project_name)                                                       \
     namespace nil::actor::id_block {                                                                \
         constexpr type_id_t project_name##_last_type_id =                                           \
             project_name##_first_type_id + (__COUNTER__ - project_name##_type_id_counter_init - 2); \
@@ -309,10 +309,14 @@ ACTOR_ADD_ATOM(core_module, nil::actor, wait_for_atom)
 
 ACTOR_END_TYPE_ID_BLOCK(core_module)
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    static constexpr type_id_t io_module_begin = id_block::core_module::end;
+            static constexpr type_id_t io_module_begin = id_block::core_module::end;
 
-    static constexpr type_id_t io_module_end = io_module_begin + 19;
+            static constexpr type_id_t io_module_end = io_module_begin + 19;
 
-}    // namespace nil::actor::detail
+        }    // namespace nil::actor::detail
+    }
+}

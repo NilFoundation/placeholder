@@ -394,10 +394,11 @@ namespace nil {
 /// Concatenates `a` and `b` to a single preprocessor token.
 #define ACTOR_CAT(a, b) a##b
 
-#define ACTOR_LOG_MAKE_EVENT(aid, component, loglvl, message)                                                       \
-    ::nil::actor::logger::event(loglvl, __LINE__, component, ACTOR_PRETTY_FUN, __func__, nil::actor::logger::skip_path(__FILE__), \
-                         (::nil::actor::logger::line_builder {} << message).get(), ::std::this_thread::get_id(), aid,    \
-                         ::nil::actor::make_timestamp())
+#define ACTOR_LOG_MAKE_EVENT(aid, component, loglvl, message)                             \
+    ::nil::actor::logger::event(loglvl, __LINE__, component, ACTOR_PRETTY_FUN, __func__,  \
+                                nil::actor::logger::skip_path(__FILE__),                  \
+                                (::nil::actor::logger::line_builder {} << message).get(), \
+                                ::std::this_thread::get_id(), aid, ::nil::actor::make_timestamp())
 
 /// Expands to `argument = <argument>` in log output.
 #define ACTOR_ARG(argument) nil::actor::detail::make_arg_wrapper(#argument, argument)
@@ -410,22 +411,22 @@ namespace nil {
 
 // -- logging macros -----------------------------------------------------------
 
-#define ACTOR_LOG_IMPL(component, loglvl, message)                                                                   \
-    do {                                                                                                           \
-        auto ACTOR_UNIFYN(caf_logger) = nil::actor::logger::current_logger();                                               \
+#define ACTOR_LOG_IMPL(component, loglvl, message)                                                                     \
+    do {                                                                                                               \
+        auto ACTOR_UNIFYN(caf_logger) = nil::actor::logger::current_logger();                                          \
         if (ACTOR_UNIFYN(caf_logger) != nullptr && ACTOR_UNIFYN(caf_logger)->accepts(loglvl, component))               \
-            ACTOR_UNIFYN(caf_logger)                                                                                 \
+            ACTOR_UNIFYN(caf_logger)                                                                                   \
                 ->log(ACTOR_LOG_MAKE_EVENT(ACTOR_UNIFYN(caf_logger)->thread_local_aid(), component, loglvl, message)); \
     } while (false)
 
-#define ACTOR_PUSH_AID(aarg)                                                         \
-    auto ACTOR_UNIFYN(caf_tmp_ptr) = nil::actor::logger::current_logger();                  \
-    nil::actor::actor_id ACTOR_UNIFYN(caf_aid_tmp) = 0;                                     \
-    if (ACTOR_UNIFYN(caf_tmp_ptr))                                                   \
+#define ACTOR_PUSH_AID(aarg)                                                           \
+    auto ACTOR_UNIFYN(caf_tmp_ptr) = nil::actor::logger::current_logger();             \
+    nil::actor::actor_id ACTOR_UNIFYN(caf_aid_tmp) = 0;                                \
+    if (ACTOR_UNIFYN(caf_tmp_ptr))                                                     \
         ACTOR_UNIFYN(caf_aid_tmp) = ACTOR_UNIFYN(caf_tmp_ptr)->thread_local_aid(aarg); \
-    auto ACTOR_UNIFYN(aid_aid_tmp_guard) = nil::actor::detail::make_scope_guard([=] {       \
-        auto ACTOR_UNIFYN(caf_tmp2_ptr) = nil::actor::logger::current_logger();             \
-        if (ACTOR_UNIFYN(caf_tmp2_ptr))                                              \
+    auto ACTOR_UNIFYN(aid_aid_tmp_guard) = nil::actor::detail::make_scope_guard([=] {  \
+        auto ACTOR_UNIFYN(caf_tmp2_ptr) = nil::actor::logger::current_logger();        \
+        if (ACTOR_UNIFYN(caf_tmp2_ptr))                                                \
             ACTOR_UNIFYN(caf_tmp2_ptr)->thread_local_aid(ACTOR_UNIFYN(caf_aid_tmp));   \
     })
 
@@ -444,10 +445,10 @@ namespace nil {
 
 #else    // ACTOR_LOG_LEVEL < ACTOR_LOG_LEVEL_TRACE
 
-#define ACTOR_LOG_TRACE(entry_message)                                                \
+#define ACTOR_LOG_TRACE(entry_message)                                                    \
     ACTOR_LOG_IMPL(ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_TRACE, "ENTRY" << entry_message); \
-    auto ACTOR_UNIFYN(caf_log_trace_guard_) =                                         \
-        ::nil::actor::detail::make_scope_guard([=] { ACTOR_LOG_IMPL(ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_TRACE, "EXIT"); })
+    auto ACTOR_UNIFYN(caf_log_trace_guard_) = ::nil::actor::detail::make_scope_guard(     \
+        [=] { ACTOR_LOG_IMPL(ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_TRACE, "EXIT"); })
 
 #endif    // ACTOR_LOG_LEVEL < ACTOR_LOG_LEVEL_TRACE
 
@@ -471,8 +472,8 @@ namespace nil {
 #define ACTOR_LOG_INFO(output) ACTOR_VOID_STMT
 #define ACTOR_LOG_INFO_IF(cond, output) ACTOR_VOID_STMT
 #else    // ACTOR_LOG_INFO
-#define ACTOR_LOG_INFO_IF(cond, output)                                \
-    if (cond)                                                        \
+#define ACTOR_LOG_INFO_IF(cond, output)                                    \
+    if (cond)                                                              \
         ACTOR_LOG_IMPL(ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_INFO, output); \
     ACTOR_VOID_STMT
 #endif    // ACTOR_LOG_INFO
@@ -481,8 +482,8 @@ namespace nil {
 #define ACTOR_LOG_DEBUG(output) ACTOR_VOID_STMT
 #define ACTOR_LOG_DEBUG_IF(cond, output) ACTOR_VOID_STMT
 #else    // ACTOR_LOG_DEBUG
-#define ACTOR_LOG_DEBUG_IF(cond, output)                                \
-    if (cond)                                                         \
+#define ACTOR_LOG_DEBUG_IF(cond, output)                                    \
+    if (cond)                                                               \
         ACTOR_LOG_IMPL(ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_DEBUG, output); \
     ACTOR_VOID_STMT
 #endif    // ACTOR_LOG_DEBUG
@@ -491,8 +492,8 @@ namespace nil {
 #define ACTOR_LOG_WARNING(output) ACTOR_VOID_STMT
 #define ACTOR_LOG_WARNING_IF(cond, output) ACTOR_VOID_STMT
 #else    // ACTOR_LOG_WARNING
-#define ACTOR_LOG_WARNING_IF(cond, output)                                \
-    if (cond)                                                           \
+#define ACTOR_LOG_WARNING_IF(cond, output)                                    \
+    if (cond)                                                                 \
         ACTOR_LOG_IMPL(ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_WARNING, output); \
     ACTOR_VOID_STMT
 #endif    // ACTOR_LOG_WARNING
@@ -501,8 +502,8 @@ namespace nil {
 #define ACTOR_LOG_ERROR(output) ACTOR_VOID_STMT
 #define ACTOR_LOG_ERROR_IF(cond, output) ACTOR_VOID_STMT
 #else    // ACTOR_LOG_ERROR
-#define ACTOR_LOG_ERROR_IF(cond, output)                                \
-    if (cond)                                                         \
+#define ACTOR_LOG_ERROR_IF(cond, output)                                    \
+    if (cond)                                                               \
         ACTOR_LOG_IMPL(ACTOR_LOG_COMPONENT, ACTOR_LOG_LEVEL_ERROR, output); \
     ACTOR_VOID_STMT
 #endif    // ACTOR_LOG_ERROR
@@ -515,24 +516,26 @@ namespace nil {
 
 #if ACTOR_LOG_LEVEL >= ACTOR_LOG_LEVEL_DEBUG
 
-#define ACTOR_LOG_SPAWN_EVENT(ref, ctor_data)                                                                        \
-    ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                                      \
-                 "SPAWN ; ID =" << ref.id() << "; NAME =" << ref.name() << "; TYPE ="                              \
-                                << ::nil::actor::detail::pretty_type_name(typeid(ref)) << "; ARGS =" << ctor_data.c_str() \
-                                << "; NODE =" << ref.node() << "; GROUPS =" << ::nil::actor::logger::joined_groups_of(ref))
+#define ACTOR_LOG_SPAWN_EVENT(ref, ctor_data)                                                          \
+    ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                    \
+                   "SPAWN ; ID =" << ref.id() << "; NAME =" << ref.name()                              \
+                                  << "; TYPE =" << ::nil::actor::detail::pretty_type_name(typeid(ref)) \
+                                  << "; ARGS =" << ctor_data.c_str() << "; NODE =" << ref.node()       \
+                                  << "; GROUPS =" << ::nil::actor::logger::joined_groups_of(ref))
 
-#define ACTOR_LOG_SEND_EVENT(ptr)                                                                         \
-    ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                           \
-                 "SEND ; TO =" << ::nil::actor::deep_to_string(::nil::actor::strong_actor_ptr {this->ctrl()}).c_str() \
-                               << "; FROM =" << ::nil::actor::deep_to_string(ptr->sender).c_str()              \
-                               << "; STAGES =" << ::nil::actor::deep_to_string(ptr->stages).c_str()            \
-                               << "; CONTENT =" << ::nil::actor::deep_to_string(ptr->content()).c_str())
+#define ACTOR_LOG_SEND_EVENT(ptr)                                                                            \
+    ACTOR_LOG_IMPL(                                                                                          \
+        ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                                     \
+        "SEND ; TO =" << ::nil::actor::deep_to_string(::nil::actor::strong_actor_ptr {this->ctrl()}).c_str() \
+                      << "; FROM =" << ::nil::actor::deep_to_string(ptr->sender).c_str()                     \
+                      << "; STAGES =" << ::nil::actor::deep_to_string(ptr->stages).c_str()                   \
+                      << "; CONTENT =" << ::nil::actor::deep_to_string(ptr->content()).c_str())
 
-#define ACTOR_LOG_RECEIVE_EVENT(ptr)                                                                \
-    ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                     \
-                 "RECEIVE ; FROM =" << ::nil::actor::deep_to_string(ptr->sender).c_str()                 \
-                                    << "; STAGES =" << ::nil::actor::deep_to_string(ptr->stages).c_str() \
-                                    << "; CONTENT =" << ::nil::actor::deep_to_string(ptr->content()).c_str())
+#define ACTOR_LOG_RECEIVE_EVENT(ptr)                                                                       \
+    ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                        \
+                   "RECEIVE ; FROM =" << ::nil::actor::deep_to_string(ptr->sender).c_str()                 \
+                                      << "; STAGES =" << ::nil::actor::deep_to_string(ptr->stages).c_str() \
+                                      << "; CONTENT =" << ::nil::actor::deep_to_string(ptr->content()).c_str())
 
 #define ACTOR_LOG_REJECT_EVENT() ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG, "REJECT")
 
@@ -545,18 +548,18 @@ namespace nil {
 
 #define ACTOR_LOG_FINALIZE_EVENT() ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG, "FINALIZE")
 
-#define ACTOR_LOG_SKIP_OR_FINALIZE_EVENT(invoke_result)             \
-    do {                                                          \
+#define ACTOR_LOG_SKIP_OR_FINALIZE_EVENT(invoke_result)                  \
+    do {                                                                 \
         if (invoke_result == nil::actor::invoke_message_result::skipped) \
-            ACTOR_LOG_SKIP_EVENT();                                 \
-        else                                                      \
-            ACTOR_LOG_FINALIZE_EVENT();                             \
+            ACTOR_LOG_SKIP_EVENT();                                      \
+        else                                                             \
+            ACTOR_LOG_FINALIZE_EVENT();                                  \
     } while (false)
 
 #define ACTOR_LOG_TERMINATE_EVENT(thisptr, rsn)                                                       \
-    ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                       \
-                 "TERMINATE ; ID =" << thisptr->id() << "; REASON =" << deep_to_string(rsn).c_str() \
-                                    << "; NODE =" << thisptr->node())
+    ACTOR_LOG_IMPL(ACTOR_LOG_FLOW_COMPONENT, ACTOR_LOG_LEVEL_DEBUG,                                   \
+                   "TERMINATE ; ID =" << thisptr->id() << "; REASON =" << deep_to_string(rsn).c_str() \
+                                      << "; NODE =" << thisptr->node())
 
 #else    // ACTOR_LOG_LEVEL >= ACTOR_LOG_LEVEL_DEBUG
 
@@ -591,7 +594,7 @@ namespace nil {
 #if ACTOR_LOG_LEVEL >= ACTOR_LOG_LEVEL_DEBUG
 #define ACTOR_STREAM_LOG_DEBUG(output) ACTOR_LOG_IMPL(ACTOR_LOG_STREAM_COMPONENT, ACTOR_LOG_LEVEL_DEBUG, output)
 #define ACTOR_STREAM_LOG_DEBUG_IF(condition, output) \
-    if (condition)                                 \
+    if (condition)                                   \
     ACTOR_LOG_IMPL(ACTOR_LOG_STREAM_COMPONENT, ACTOR_LOG_LEVEL_DEBUG, output)
 #else
 #define ACTOR_STREAM_LOG_DEBUG(unused) ACTOR_VOID_STMT

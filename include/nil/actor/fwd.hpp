@@ -19,58 +19,87 @@
 namespace nil {
     namespace actor {
 
-        // clang-format off
+        // -- 1 param templates --------------------------------------------------------
 
-// -- 1 param templates --------------------------------------------------------
+        template<class>
+        class behavior_type_of;
+        template<class>
+        class dictionary;
+        template<class>
+        class downstream;
+        template<class>
+        class error_code;
+        template<class>
+        class expected;
+        template<class>
+        class intrusive_cow_ptr;
+        template<class>
+        class intrusive_ptr;
+        template<class>
+        class optional;
+        template<class>
+        class param;
+        template<class>
+        class span;
+        template<class>
+        class stream;
+        template<class>
+        class stream_sink;
+        template<class>
+        class stream_source;
+        template<class>
+        class weak_intrusive_ptr;
 
-template <class> class behavior_type_of;
-template <class> class dictionary;
-template <class> class downstream;
-template <class> class error_code;
-template <class> class expected;
-template <class> class intrusive_cow_ptr;
-template <class> class intrusive_ptr;
-template <class> class optional;
-template <class> class param;
-template <class> class span;
-template <class> class stream;
-template <class> class stream_sink;
-template <class> class stream_source;
-template <class> class weak_intrusive_ptr;
+        template<class>
+        struct timeout_definition;
+        template<class>
+        struct type_id;
 
-template <class> struct timeout_definition;
-template <class> struct type_id;
+        template<uint16_t>
+        struct type_by_id;
+        template<uint16_t>
+        struct type_name_by_id;
 
-template <uint16_t> struct type_by_id;
-template <uint16_t> struct type_name_by_id;
+        // -- 2 param templates --------------------------------------------------------
 
-// -- 2 param templates --------------------------------------------------------
+        template<class, class>
+        class stream_stage;
 
-template <class, class> class stream_stage;
+        template<class Iterator, class Sentinel = Iterator>
+        struct parser_state;
 
-template <class Iterator, class Sentinel = Iterator> struct parser_state;
+        // -- 3 param templates --------------------------------------------------------
 
-// -- 3 param templates --------------------------------------------------------
+        template<class, class, int>
+        class actor_cast_access;
 
-template <class, class, int> class actor_cast_access;
+        template<class, class, class>
+        class broadcast_downstream_manager;
 
-template <class, class, class> class broadcast_downstream_manager;
+        // -- variadic templates -------------------------------------------------------
 
-// -- variadic templates -------------------------------------------------------
-
-template <class...> class const_typed_message_view;
-template <class...> class cow_tuple;
-template <class...> class delegated;
-template <class...> class result;
-template <class...> class typed_actor;
-template <class...> class typed_actor_pointer;
-template <class...> class typed_actor_view;
-template <class...> class typed_event_based_actor;
-template <class...> class typed_message_view;
-template <class...> class typed_response_promise;
-template <class...> class variant;
-
-        // clang-format on
+        template<class...>
+        class const_typed_message_view;
+        template<class...>
+        class cow_tuple;
+        template<class...>
+        class delegated;
+        template<class...>
+        class result;
+        template<class...>
+        class typed_actor;
+        template<class...>
+        class typed_actor_pointer;
+        template<class...>
+        class typed_actor_view;
+        template<class...>
+        class typed_event_based_actor;
+        template<class...>
+        class typed_message_view;
+        template<class...>
+        class typed_response_promise;
+        template<class...>
+        class variant;
 
         // -- classes ------------------------------------------------------------------
 

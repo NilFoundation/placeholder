@@ -14,20 +14,24 @@
 
 #include <nil/actor/detail/type_traits.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// Moves the value from `x` if it is not a pointer (e.g., `optional` or
-    /// `expected`), returns `*x` otherwise.
-    template<class T>
-    T &move_if_not_ptr(T *x) {
-        return *x;
-    }
+            /// Moves the value from `x` if it is not a pointer (e.g., `optional` or
+            /// `expected`), returns `*x` otherwise.
+            template<class T>
+            T &move_if_not_ptr(T *x) {
+                return *x;
+            }
 
-    /// Moves the value from `x` if it is not a pointer (e.g., `optional` or
-    /// `expected`), returns `*x` otherwise.
-    template<class T, class E = enable_if_t<!std::is_pointer<T>::value>>
-    auto move_if_not_ptr(T &x) -> decltype(std::move(*x)) {
-        return std::move(*x);
-    }
+            /// Moves the value from `x` if it is not a pointer (e.g., `optional` or
+            /// `expected`), returns `*x` otherwise.
+            template<class T, class E = enable_if_t<!std::is_pointer<T>::value>>
+            auto move_if_not_ptr(T &x) -> decltype(std::move(*x)) {
+                return std::move(*x);
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

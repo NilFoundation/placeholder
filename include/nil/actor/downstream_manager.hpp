@@ -13,7 +13,6 @@
 #include <memory>
 #include <vector>
 
-
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/stream_slot.hpp>
 

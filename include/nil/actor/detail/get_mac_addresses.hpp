@@ -16,10 +16,14 @@
 
 #include <boost/config.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    using iface_info = std::pair<std::string /* interface name */, std::string /* interface address */>;
+            using iface_info = std::pair<std::string /* interface name */, std::string /* interface address */>;
 
-    BOOST_SYMBOL_VISIBLE std::vector<iface_info> get_mac_addresses();
+            BOOST_SYMBOL_VISIBLE std::vector<iface_info> get_mac_addresses();
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

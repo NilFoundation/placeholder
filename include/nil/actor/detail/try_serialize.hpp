@@ -10,16 +10,20 @@
 
 #pragma once
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class Processor, class T>
-    auto try_serialize(Processor &proc, T *x) -> decltype(proc & *x) {
-        proc &*x;
-    }
+            template<class Processor, class T>
+            auto try_serialize(Processor &proc, T *x) -> decltype(proc & *x) {
+                proc &*x;
+            }
 
-    template<class Processor>
-    void try_serialize(Processor &, void *) {
-        // nop
-    }
+            template<class Processor>
+            void try_serialize(Processor &, void *) {
+                // nop
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

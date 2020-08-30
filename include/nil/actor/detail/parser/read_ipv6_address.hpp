@@ -29,38 +29,41 @@ ACTOR_PUSH_UNUSED_LABEL_WARNING
 
 #include <nil/actor/detail/parser/fsm.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    //  IPv6address =                            6( h16 ":" ) ls32
-    //              /                       "::" 5( h16 ":" ) ls32
-    //              / [               h16 ] "::" 4( h16 ":" ) ls32
-    //              / [ *1( h16 ":" ) h16 ] "::" 3( h16 ":" ) ls32
-    //              / [ *2( h16 ":" ) h16 ] "::" 2( h16 ":" ) ls32
-    //              / [ *3( h16 ":" ) h16 ] "::"    h16 ":"   ls32
-    //              / [ *4( h16 ":" ) h16 ] "::"              ls32
-    //              / [ *5( h16 ":" ) h16 ] "::"              h16
-    //              / [ *6( h16 ":" ) h16 ] "::"
-    //
-    //  ls32        = ( h16 ":" h16 ) / IPv4address
-    //
-    //  h16         = 1*4HEXDIG
+                //  IPv6address =                            6( h16 ":" ) ls32
+                //              /                       "::" 5( h16 ":" ) ls32
+                //              / [               h16 ] "::" 4( h16 ":" ) ls32
+                //              / [ *1( h16 ":" ) h16 ] "::" 3( h16 ":" ) ls32
+                //              / [ *2( h16 ":" ) h16 ] "::" 2( h16 ":" ) ls32
+                //              / [ *3( h16 ":" ) h16 ] "::"    h16 ":"   ls32
+                //              / [ *4( h16 ":" ) h16 ] "::"              ls32
+                //              / [ *5( h16 ":" ) h16 ] "::"              h16
+                //              / [ *6( h16 ":" ) h16 ] "::"
+                //
+                //  ls32        = ( h16 ":" h16 ) / IPv4address
+                //
+                //  h16         = 1*4HEXDIG
 
-    /// Reads 16 (hex) bits of an IPv6 address.
-    template<class State, class Consumer>
-    void read_ipv6_h16(State &ps, Consumer &consumer) {
-        uint16_t res = 0;
-        size_t digits = 0;
-        // Reads the a hexadecimal place.
-        auto rd_hex = [&](char c) {
-            ++digits;
-            return add_ascii<16>(res, c);
-        };
-        // Computes the result on success.
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character)
-                consumer.value(res);
-        });
-        // clang-format off
+                /// Reads 16 (hex) bits of an IPv6 address.
+                template<class State, class Consumer>
+                void read_ipv6_h16(State &ps, Consumer &consumer) {
+                    uint16_t res = 0;
+                    size_t digits = 0;
+                    // Reads the a hexadecimal place.
+                    auto rd_hex = [&](char c) {
+                        ++digits;
+                        return add_ascii<16>(res, c);
+                    };
+                    // Computes the result on success.
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character)
+                            consumer.value(res);
+                    });
+                    // clang-format off
   start();
   state(init) {
     transition(read, hexadecimal_chars, rd_hex(ch), pec::integer_overflow)
@@ -70,53 +73,53 @@ namespace nil::actor::detail::parser {
                   read, hexadecimal_chars, rd_hex(ch), pec::integer_overflow)
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    /// Reads 16 (hex) or 32 (IPv4 notation) bits of an IPv6 address.
-    template<class State, class Consumer>
-    void read_ipv6_h16_or_l32(State &ps, Consumer &consumer) {
-        enum mode_t { indeterminate, v6_bits, v4_octets };
-        mode_t mode = indeterminate;
-        uint16_t hex_res = 0;
-        uint8_t dec_res = 0;
-        int digits = 0;
-        int octet = 0;
-        // Reads a single character (dec and/or hex).
-        auto rd_hex = [&](char c) {
-            ++digits;
-            return add_ascii<16>(hex_res, c);
-        };
-        auto rd_dec = [&](char c) {
-            ++digits;
-            return add_ascii<10>(dec_res, c);
-        };
-        auto rd_both = [&](char c) {
-            ACTOR_ASSERT(mode == indeterminate);
-            ++digits;
-            // IPv4 octets cannot have more than 3 digits.
-            if (!in_whitelist(decimal_chars, c) || !add_ascii<10>(dec_res, c))
-                mode = v6_bits;
-            return add_ascii<16>(hex_res, c);
-        };
-        auto fin_octet = [&]() {
-            ++octet;
-            mode = v4_octets;
-            consumer.value(dec_res);
-            dec_res = 0;
-            digits = 0;
-        };
-        // Computes the result on success. Note, when reading octets, this will give
-        // the consumer the final byte. Previous bytes were signaled during parsing.
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character) {
-                if (mode != v4_octets)
-                    consumer.value(hex_res);
-                else
-                    fin_octet();
-            }
-        });
-        // clang-format off
+                /// Reads 16 (hex) or 32 (IPv4 notation) bits of an IPv6 address.
+                template<class State, class Consumer>
+                void read_ipv6_h16_or_l32(State &ps, Consumer &consumer) {
+                    enum mode_t { indeterminate, v6_bits, v4_octets };
+                    mode_t mode = indeterminate;
+                    uint16_t hex_res = 0;
+                    uint8_t dec_res = 0;
+                    int digits = 0;
+                    int octet = 0;
+                    // Reads a single character (dec and/or hex).
+                    auto rd_hex = [&](char c) {
+                        ++digits;
+                        return add_ascii<16>(hex_res, c);
+                    };
+                    auto rd_dec = [&](char c) {
+                        ++digits;
+                        return add_ascii<10>(dec_res, c);
+                    };
+                    auto rd_both = [&](char c) {
+                        ACTOR_ASSERT(mode == indeterminate);
+                        ++digits;
+                        // IPv4 octets cannot have more than 3 digits.
+                        if (!in_whitelist(decimal_chars, c) || !add_ascii<10>(dec_res, c))
+                            mode = v6_bits;
+                        return add_ascii<16>(hex_res, c);
+                    };
+                    auto fin_octet = [&]() {
+                        ++octet;
+                        mode = v4_octets;
+                        consumer.value(dec_res);
+                        dec_res = 0;
+                        digits = 0;
+                    };
+                    // Computes the result on success. Note, when reading octets, this will give
+                    // the consumer the final byte. Previous bytes were signaled during parsing.
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character) {
+                            if (mode != v4_octets)
+                                consumer.value(hex_res);
+                            else
+                                fin_octet();
+                        }
+                    });
+                    // clang-format off
   start();
   state(init) {
     transition(read, hexadecimal_chars, rd_both(ch), pec::integer_overflow)
@@ -138,84 +141,84 @@ namespace nil::actor::detail::parser {
                rd_dec(ch), pec::integer_overflow)
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-    template<class F>
-    struct read_ipv6_address_piece_consumer {
-        F callback;
+                template<class F>
+                struct read_ipv6_address_piece_consumer {
+                    F callback;
 
-        inline void value(uint16_t x) {
-            union {
-                uint16_t bits;
-                std::array<uint8_t, 2> bytes;
-            } val;
-            val.bits = to_network_order(x);
-            callback(val.bytes.data(), val.bytes.size());
-        }
+                    inline void value(uint16_t x) {
+                        union {
+                            uint16_t bits;
+                            std::array<uint8_t, 2> bytes;
+                        } val;
+                        val.bits = to_network_order(x);
+                        callback(val.bytes.data(), val.bytes.size());
+                    }
 
-        inline void value(uint8_t x) {
-            callback(&x, 1);
-        }
-    };
+                    inline void value(uint8_t x) {
+                        callback(&x, 1);
+                    }
+                };
 
-    template<class F>
-    read_ipv6_address_piece_consumer<F> make_read_ipv6_address_piece_consumer(F f) {
-        return {f};
-    }
+                template<class F>
+                read_ipv6_address_piece_consumer<F> make_read_ipv6_address_piece_consumer(F f) {
+                    return {f};
+                }
 
-    /// Reads a number, i.e., on success produces either an `int64_t` or a
-    /// `double`.
-    template<class State, class Consumer>
-    void read_ipv6_address(State &ps, Consumer &&consumer) {
-        // IPv6 allows omitting blocks of zeros, splitting the string into a part
-        // before the zeros (prefix) and a part after the zeros (suffix). For example,
-        // ff::1 is 00FF0000000000000000000000000001
-        ipv6_address::array_type prefix;
-        ipv6_address::array_type suffix;
-        prefix.fill(0);
-        suffix.fill(0);
-        // Keeps track of all bytes consumed so far, suffix and prefix combined.
-        size_t filled_bytes = 0;
-        auto remaining_bytes = [&] { return ipv6_address::num_bytes - filled_bytes; };
-        // Computes the result on success.
-        auto g = nil::actor::detail::make_scope_guard([&] {
-            if (ps.code <= pec::trailing_character) {
-                ipv6_address result;
-                auto &bytes = result.bytes();
-                for (size_t i = 0; i < ipv6_address::num_bytes; ++i)
-                    bytes[i] = prefix[i] | suffix[i];
-                consumer.value(std::move(result));
-            }
-        });
-        // We need to parse 2-byte hexadecimal numbers (x) and also keep track of
-        // the current writing position when reading the prefix.
-        auto read_prefix = [&](uint8_t *bytes, size_t count) {
-            for (size_t i = 0; i < count; ++i)
-                prefix[filled_bytes++] = bytes[i];
-        };
-        auto prefix_consumer = make_read_ipv6_address_piece_consumer(read_prefix);
-        // The suffix reader rotates bytes into place, so that we can bitwise-OR
-        // prefix and suffix for obtaining the full address.
-        auto read_suffix = [&](uint8_t *bytes, size_t count) {
-            for (size_t i = 0; i < count; ++i)
-                suffix[i] = bytes[i];
-            std::rotate(suffix.begin(), suffix.begin() + count, suffix.end());
-            filled_bytes += count;
-        };
-        auto suffix_consumer = make_read_ipv6_address_piece_consumer(read_suffix);
-        // Utility function for promoting an IPv4 formatted input.
-        auto promote_v4 = [&] {
-            if (filled_bytes == 4) {
-                ipv4_address v4;
-                auto &bytes = v4.bytes();
-                memcpy(bytes.data(), prefix.data(), bytes.size());
-                prefix = ipv6_address {v4}.bytes();
-                return true;
-            }
-            return false;
-        };
-        // clang-format off
+                /// Reads a number, i.e., on success produces either an `int64_t` or a
+                /// `double`.
+                template<class State, class Consumer>
+                void read_ipv6_address(State &ps, Consumer &&consumer) {
+                    // IPv6 allows omitting blocks of zeros, splitting the string into a part
+                    // before the zeros (prefix) and a part after the zeros (suffix). For example,
+                    // ff::1 is 00FF0000000000000000000000000001
+                    ipv6_address::array_type prefix;
+                    ipv6_address::array_type suffix;
+                    prefix.fill(0);
+                    suffix.fill(0);
+                    // Keeps track of all bytes consumed so far, suffix and prefix combined.
+                    size_t filled_bytes = 0;
+                    auto remaining_bytes = [&] { return ipv6_address::num_bytes - filled_bytes; };
+                    // Computes the result on success.
+                    auto g = nil::actor::detail::make_scope_guard([&] {
+                        if (ps.code <= pec::trailing_character) {
+                            ipv6_address result;
+                            auto &bytes = result.bytes();
+                            for (size_t i = 0; i < ipv6_address::num_bytes; ++i)
+                                bytes[i] = prefix[i] | suffix[i];
+                            consumer.value(std::move(result));
+                        }
+                    });
+                    // We need to parse 2-byte hexadecimal numbers (x) and also keep track of
+                    // the current writing position when reading the prefix.
+                    auto read_prefix = [&](uint8_t *bytes, size_t count) {
+                        for (size_t i = 0; i < count; ++i)
+                            prefix[filled_bytes++] = bytes[i];
+                    };
+                    auto prefix_consumer = make_read_ipv6_address_piece_consumer(read_prefix);
+                    // The suffix reader rotates bytes into place, so that we can bitwise-OR
+                    // prefix and suffix for obtaining the full address.
+                    auto read_suffix = [&](uint8_t *bytes, size_t count) {
+                        for (size_t i = 0; i < count; ++i)
+                            suffix[i] = bytes[i];
+                        std::rotate(suffix.begin(), suffix.begin() + count, suffix.end());
+                        filled_bytes += count;
+                    };
+                    auto suffix_consumer = make_read_ipv6_address_piece_consumer(read_suffix);
+                    // Utility function for promoting an IPv4 formatted input.
+                    auto promote_v4 = [&] {
+                        if (filled_bytes == 4) {
+                            ipv4_address v4;
+                            auto &bytes = v4.bytes();
+                            memcpy(bytes.data(), prefix.data(), bytes.size());
+                            prefix = ipv6_address {v4}.bytes();
+                            return true;
+                        }
+                        return false;
+                    };
+                    // clang-format off
   start();
   // Either transitions to reading leading "::" or reads the first h16. When
   // reading an l32 immediately promotes to IPv4 address and stops.
@@ -284,10 +287,13 @@ namespace nil::actor::detail::parser {
     // nop
   }
   fin();
-        // clang-format on
-    }
+                    // clang-format on
+                }
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil
 
 #include <nil/actor/detail/parser/fsm_undef.hpp>
 

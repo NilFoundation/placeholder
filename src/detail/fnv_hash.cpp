@@ -12,21 +12,23 @@
 
 #include <cstdint>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    namespace {
+            namespace {
 
 #if SIZE_MAX == 0xFFFFFFFF
 
-        constexpr size_t basis = 2166136261u;
+                constexpr size_t basis = 2166136261u;
 
-        constexpr size_t prime = 16777619u;
+                constexpr size_t prime = 16777619u;
 
 #elif SIZE_MAX == 0xFFFFFFFFFFFFFFFF
 
-        constexpr size_t basis = 14695981039346656037u;
+                constexpr size_t basis = 14695981039346656037u;
 
-        constexpr size_t prime = 1099511628211u;
+                constexpr size_t prime = 1099511628211u;
 
 #else
 
@@ -34,19 +36,21 @@ namespace nil::actor::detail {
 
 #endif
 
-    }    // namespace
+            }    // namespace
 
-    size_t fnv_hash(const unsigned char *first, const unsigned char *last) {
-        return fnv_hash_append(basis, first, last);
-    }
+            size_t fnv_hash(const unsigned char *first, const unsigned char *last) {
+                return fnv_hash_append(basis, first, last);
+            }
 
-    size_t fnv_hash_append(size_t intermediate, const unsigned char *first, const unsigned char *last) {
-        auto result = intermediate;
-        for (; first != last; ++first) {
-            result *= prime;
-            result ^= *first;
-        }
-        return result;
-    }
+            size_t fnv_hash_append(size_t intermediate, const unsigned char *first, const unsigned char *last) {
+                auto result = intermediate;
+                for (; first != last; ++first) {
+                    result *= prime;
+                    result ^= *first;
+                }
+                return result;
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

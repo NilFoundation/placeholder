@@ -14,38 +14,42 @@
 #include <nil/actor/mailbox_element.hpp>
 #include <nil/actor/unit.hpp>
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    /// Configures a DRR queue for holding upstream messages.
-    class BOOST_SYMBOL_VISIBLE upstream_messages {
-    public:
-        // -- member types -----------------------------------------------------------
+            /// Configures a DRR queue for holding upstream messages.
+            class BOOST_SYMBOL_VISIBLE upstream_messages {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using mapped_type = mailbox_element;
+                using mapped_type = mailbox_element;
 
-        using task_size_type = size_t;
+                using task_size_type = size_t;
 
-        using deficit_type = size_t;
+                using deficit_type = size_t;
 
-        using unique_pointer = mailbox_element_ptr;
+                using unique_pointer = mailbox_element_ptr;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        upstream_messages() = default;
+                upstream_messages() = default;
 
-        upstream_messages(const upstream_messages &) = default;
+                upstream_messages(const upstream_messages &) = default;
 
-        upstream_messages &operator=(const upstream_messages &) = default;
+                upstream_messages &operator=(const upstream_messages &) = default;
 
-        constexpr upstream_messages(unit_t) {
-            // nop
-        }
+                constexpr upstream_messages(unit_t) {
+                    // nop
+                }
 
-        // -- interface required by drr_queue ----------------------------------------
+                // -- interface required by drr_queue ----------------------------------------
 
-        static inline task_size_type task_size(const mailbox_element &) noexcept {
-            return 1;
-        }
-    };
+                static inline task_size_type task_size(const mailbox_element &) noexcept {
+                    return 1;
+                }
+            };
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

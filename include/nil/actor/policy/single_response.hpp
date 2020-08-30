@@ -18,52 +18,56 @@
 #include <nil/actor/error.hpp>
 #include <nil/actor/message_id.hpp>
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    /// Trivial policy for handling a single result in a `response_handler`.
-    /// @relates response_handle
-    template<class ResponseType>
-    class single_response {
-    public:
-        static constexpr bool is_trivial = true;
+            /// Trivial policy for handling a single result in a `response_handler`.
+            /// @relates response_handle
+            template<class ResponseType>
+            class single_response {
+            public:
+                static constexpr bool is_trivial = true;
 
-        using response_type = ResponseType;
+                using response_type = ResponseType;
 
-        template<class Fun>
-        using type_checker = detail::type_checker<response_type, Fun>;
+                template<class Fun>
+                using type_checker = detail::type_checker<response_type, Fun>;
 
-        explicit single_response(message_id mid) noexcept : mid_(mid) {
-            // nop
-        }
+                explicit single_response(message_id mid) noexcept : mid_(mid) {
+                    // nop
+                }
 
-        single_response(single_response &&) noexcept = default;
+                single_response(single_response &&) noexcept = default;
 
-        single_response &operator=(single_response &&) noexcept = default;
+                single_response &operator=(single_response &&) noexcept = default;
 
-        template<class Self, class F, class OnError>
-        void await(Self *self, F &&f, OnError &&g) const {
-            behavior bhvr {std::forward<F>(f), std::forward<OnError>(g)};
-            self->add_awaited_response_handler(mid_, std::move(bhvr));
-        }
+                template<class Self, class F, class OnError>
+                void await(Self *self, F &&f, OnError &&g) const {
+                    behavior bhvr {std::forward<F>(f), std::forward<OnError>(g)};
+                    self->add_awaited_response_handler(mid_, std::move(bhvr));
+                }
 
-        template<class Self, class F, class OnError>
-        void then(Self *self, F &&f, OnError &&g) const {
-            behavior bhvr {std::forward<F>(f), std::forward<OnError>(g)};
-            self->add_multiplexed_response_handler(mid_, std::move(bhvr));
-        }
+                template<class Self, class F, class OnError>
+                void then(Self *self, F &&f, OnError &&g) const {
+                    behavior bhvr {std::forward<F>(f), std::forward<OnError>(g)};
+                    self->add_multiplexed_response_handler(mid_, std::move(bhvr));
+                }
 
-        template<class Self, class F, class OnError>
-        void receive(Self *self, F &&f, OnError &&g) const {
-            typename Self::accept_one_cond rc;
-            self->varargs_receive(rc, mid_, std::forward<F>(f), std::forward<OnError>(g));
-        }
+                template<class Self, class F, class OnError>
+                void receive(Self *self, F &&f, OnError &&g) const {
+                    typename Self::accept_one_cond rc;
+                    self->varargs_receive(rc, mid_, std::forward<F>(f), std::forward<OnError>(g));
+                }
 
-        message_id id() const noexcept {
-            return mid_;
-        }
+                message_id id() const noexcept {
+                    return mid_;
+                }
 
-    private:
-        message_id mid_;
-    };
+            private:
+                message_id mid_;
+            };
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

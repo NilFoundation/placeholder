@@ -10,10 +10,14 @@
 
 #include <nil/actor/policy/work_sharing.hpp>
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    work_sharing::~work_sharing() {
-        // nop
-    }
+            work_sharing::~work_sharing() {
+                // nop
+            }
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

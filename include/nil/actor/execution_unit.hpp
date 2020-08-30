@@ -14,7 +14,6 @@
 
 #include <nil/actor/config.hpp>
 
-
 namespace nil {
     namespace actor {
 

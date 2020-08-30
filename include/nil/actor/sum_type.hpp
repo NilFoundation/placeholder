@@ -95,11 +95,11 @@ namespace nil {
         };
 
         template<class F, class... Ts>
-        struct sum_type_visit_result_impl<false, F, Ts...> {};
+        struct sum_type_visit_result_impl<false, F, Ts...> { };
 
         template<class F, class... Ts>
         struct sum_type_visit_result
-            : sum_type_visit_result_impl<detail::conjunction<SumType<Ts>()...>::value, F, Ts...> {};
+            : sum_type_visit_result_impl<detail::conjunction<SumType<Ts>()...>::value, F, Ts...> { };
 
         template<class F, class... Ts>
         using sum_type_visit_result_t =

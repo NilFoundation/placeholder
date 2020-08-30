@@ -16,38 +16,41 @@
 
 #include <nil/actor/fwd.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    class private_thread {
-    public:
-        enum worker_state { active, shutdown_requested, await_resume_or_shutdown };
+            class private_thread {
+            public:
+                enum worker_state { active, shutdown_requested, await_resume_or_shutdown };
 
-        explicit private_thread(scheduled_actor *self);
+                explicit private_thread(scheduled_actor *self);
 
-        void run();
+                void run();
 
-        bool await_resume();
+                bool await_resume();
 
-        void resume();
+                void resume();
 
-        void shutdown();
+                void shutdown();
 
-        static void exec(private_thread *this_ptr);
+                static void exec(private_thread *this_ptr);
 
-        void notify_self_destroyed();
+                void notify_self_destroyed();
 
-        void await_self_destroyed();
+                void await_self_destroyed();
 
-        void start();
+                void start();
 
-    private:
-        std::mutex mtx_;
-        std::condition_variable cv_;
-        std::atomic<bool> self_destroyed_;
-        std::atomic<scheduled_actor *> self_;
-        std::atomic<worker_state> state_;
-        spawner &system_;
-    };
+            private:
+                std::mutex mtx_;
+                std::condition_variable cv_;
+                std::atomic<bool> self_destroyed_;
+                std::atomic<scheduled_actor *> self_;
+                std::atomic<worker_state> state_;
+                spawner &system_;
+            };
 
-}    // namespace nil::actor::detail
-
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

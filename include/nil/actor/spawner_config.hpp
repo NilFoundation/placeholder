@@ -172,9 +172,8 @@ namespace nil {
             /// Loads module `T` with optional template parameters `Ts...`.
             template<class T, class... Ts>
             spawner_config &load() {
-                module_factories.push_back([](spawner &sys) -> spawner_module * {
-                    return T::make(sys, detail::type_list<Ts...> {});
-                });
+                module_factories.push_back(
+                    [](spawner &sys) -> spawner_module * { return T::make(sys, detail::type_list<Ts...> {}); });
                 return *this;
             }
 

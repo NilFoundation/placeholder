@@ -12,17 +12,21 @@
 
 #include <nil/actor/meta/annotation.hpp>
 
-namespace nil::actor::meta {
+namespace nil {
+    namespace actor {
+        namespace meta {
 
-    struct omittable_if_empty_t : annotation {
-        constexpr omittable_if_empty_t() {
-            // nop
-        }
-    };
+            struct omittable_if_empty_t : annotation {
+                constexpr omittable_if_empty_t() {
+                    // nop
+                }
+            };
 
-    /// Allows an inspector to omit the following data field if it is empty.
-    constexpr omittable_if_empty_t omittable_if_empty() {
-        return {};
-    }
+            /// Allows an inspector to omit the following data field if it is empty.
+            constexpr omittable_if_empty_t omittable_if_empty() {
+                return {};
+            }
 
-}    // namespace nil::actor::meta
+        }    // namespace meta
+    }        // namespace actor
+}    // namespace nil

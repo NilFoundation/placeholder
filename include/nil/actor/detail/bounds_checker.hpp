@@ -14,19 +14,23 @@
 #include <limits>
 #include <type_traits>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class To, bool LargeUnsigned = sizeof(To) >= sizeof(int64_t) && std::is_unsigned<To>::value>
-    struct bounds_checker {
-        static inline bool check(int64_t x) {
-            return x >= std::numeric_limits<To>::min() && x <= std::numeric_limits<To>::max();
-        }
-    };
+            template<class To, bool LargeUnsigned = sizeof(To) >= sizeof(int64_t) && std::is_unsigned<To>::value>
+            struct bounds_checker {
+                static inline bool check(int64_t x) {
+                    return x >= std::numeric_limits<To>::min() && x <= std::numeric_limits<To>::max();
+                }
+            };
 
-    template<class To>
-    struct bounds_checker<To, true> {
-        static inline bool check(int64_t x) {
-            return x >= 0;
-        }
-    };
-}    // namespace nil::actor::detail
+            template<class To>
+            struct bounds_checker<To, true> {
+                static inline bool check(int64_t x) {
+                    return x >= 0;
+                }
+            };
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

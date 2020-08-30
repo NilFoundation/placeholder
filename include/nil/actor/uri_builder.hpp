@@ -16,49 +16,50 @@
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/uri.hpp>
 
-namespace nil::actor {
+namespace nil {
+    namespace actor {
 
-    class BOOST_SYMBOL_VISIBLE uri_builder {
-    public:
-        // -- member types -----------------------------------------------------------
+        class BOOST_SYMBOL_VISIBLE uri_builder {
+        public:
+            // -- member types -----------------------------------------------------------
 
-        /// Pointer to implementation.
-        using impl_ptr = intrusive_ptr<detail::uri_impl>;
+            /// Pointer to implementation.
+            using impl_ptr = intrusive_ptr<detail::uri_impl>;
 
-        // -- constructors, destructors, and assignment operators --------------------
+            // -- constructors, destructors, and assignment operators --------------------
 
-        uri_builder();
+            uri_builder();
 
-        uri_builder(uri_builder &&) = default;
+            uri_builder(uri_builder &&) = default;
 
-        uri_builder &operator=(uri_builder &&) = default;
+            uri_builder &operator=(uri_builder &&) = default;
 
-        // -- setter -----------------------------------------------------------------
+            // -- setter -----------------------------------------------------------------
 
-        uri_builder &scheme(std::string str);
+            uri_builder &scheme(std::string str);
 
-        uri_builder &userinfo(std::string str);
+            uri_builder &userinfo(std::string str);
 
-        uri_builder &host(std::string str);
+            uri_builder &host(std::string str);
 
-        uri_builder &host(ip_address addr);
+            uri_builder &host(ip_address addr);
 
-        uri_builder &port(uint16_t value);
+            uri_builder &port(uint16_t value);
 
-        uri_builder &path(std::string str);
+            uri_builder &path(std::string str);
 
-        uri_builder &query(uri::query_map map);
+            uri_builder &query(uri::query_map map);
 
-        uri_builder &fragment(std::string str);
+            uri_builder &fragment(std::string str);
 
-        // -- factory functions ------------------------------------------------------
+            // -- factory functions ------------------------------------------------------
 
-        uri make();
+            uri make();
 
-    private:
-        // -- member variables -------------------------------------------------------
+        private:
+            // -- member variables -------------------------------------------------------
 
-        impl_ptr impl_;
-    };
-
-}    // namespace nil::actor
+            impl_ptr impl_;
+        };
+    }    // namespace actor
+}    // namespace nil

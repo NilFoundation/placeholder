@@ -10,26 +10,30 @@
 
 #include <nil/actor/detail/blocking_behavior.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    blocking_behavior::~blocking_behavior() {
-        // nop
-    }
+            blocking_behavior::~blocking_behavior() {
+                // nop
+            }
 
-    blocking_behavior::blocking_behavior(behavior &x) : nested(x) {
-        // nop
-    }
+            blocking_behavior::blocking_behavior(behavior &x) : nested(x) {
+                // nop
+            }
 
-    result<message> blocking_behavior::fallback(message &) {
-        return skip;
-    }
+            result<message> blocking_behavior::fallback(message &) {
+                return skip;
+            }
 
-    timespan blocking_behavior::timeout() {
-        return infinite;
-    }
+            timespan blocking_behavior::timeout() {
+                return infinite;
+            }
 
-    void blocking_behavior::handle_timeout() {
-        // nop
-    }
+            void blocking_behavior::handle_timeout() {
+                // nop
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

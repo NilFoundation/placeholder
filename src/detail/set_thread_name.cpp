@@ -25,23 +25,27 @@
 #include <thread>
 #include <type_traits>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    void set_thread_name(const char *name) {
-        ACTOR_IGNORE_UNUSED(name);
+            void set_thread_name(const char *name) {
+                ACTOR_IGNORE_UNUSED(name);
 #ifdef BOOST_OS_WINDOWS_AVAILABLE
-        // nop
+                // nop
 #else    // BOOST_OS_WINDOWS_AVAILABLE
-        static_assert(std::is_same<std::thread::native_handle_type, pthread_t>::value,
-                      "std::thread not based on pthread_t");
+                static_assert(std::is_same<std::thread::native_handle_type, pthread_t>::value,
+                              "std::thread not based on pthread_t");
 #if defined(BOOST_OS_MACOS_AVAILABLE)
-        pthread_setname_np(name);
+                pthread_setname_np(name);
 #elif defined(BOOST_OS_LINUX_AVAILABLE)
-        prctl(PR_SET_NAME, name, 0, 0, 0);
+                prctl(PR_SET_NAME, name, 0, 0, 0);
 #elif defined(BOOST_OS_BSD_AVAILABLE)
-        pthread_set_name_np(pthread_self(), name);
+                pthread_set_name_np(pthread_self(), name);
 #endif    // defined(...)
 #endif    // BOOST_OS_WINDOWS_AVAILABLE
-    }
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

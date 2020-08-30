@@ -15,79 +15,85 @@
 #include <nil/actor/detail/dispatch_parse_cli.hpp>
 #include <nil/actor/optional.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class Object, class Value>
-    class config_value_field_base : public config_value_field<Object> {
-    public:
-        using super = config_value_field<Object>;
+            template<class Object, class Value>
+            class config_value_field_base : public config_value_field<Object> {
+            public:
+                using super = config_value_field<Object>;
 
-        using object_type = typename super::object_type;
+                using object_type = typename super::object_type;
 
-        using value_type = Value;
+                using value_type = Value;
 
-        using predicate_type = bool (*)(const value_type &);
+                using predicate_type = bool (*)(const value_type &);
 
-        config_value_field_base(string_view name, optional<value_type> default_value, predicate_type predicate) :
-            name_(name), default_value_(std::move(default_value)), predicate_(predicate) {
-            // nop
-        }
+                config_value_field_base(string_view name, optional<value_type> default_value,
+                                        predicate_type predicate) :
+                    name_(name),
+                    default_value_(std::move(default_value)), predicate_(predicate) {
+                    // nop
+                }
 
-        config_value_field_base(config_value_field_base &&) = default;
+                config_value_field_base(config_value_field_base &&) = default;
 
-        bool has_default() const noexcept override {
-            return static_cast<bool>(default_value_);
-        }
+                bool has_default() const noexcept override {
+                    return static_cast<bool>(default_value_);
+                }
 
-        string_view name() const noexcept override {
-            return name_;
-        }
+                string_view name() const noexcept override {
+                    return name_;
+                }
 
-        config_value get(const object_type &object) const override {
-            using access = nil::actor::select_config_value_access_t<value_type>;
-            return config_value {access::convert(get_value(object))};
-        }
+                config_value get(const object_type &object) const override {
+                    using access = nil::actor::select_config_value_access_t<value_type>;
+                    return config_value {access::convert(get_value(object))};
+                }
 
-        bool valid_input(const config_value &x) const override {
-            if (!predicate_)
-                return holds_alternative<value_type>(x);
-            if (auto value = get_if<value_type>(&x))
-                return predicate_(*value);
-            return false;
-        }
-
-        bool set(object_type &x, const config_value &y) const override {
-            if (auto value = get_if<value_type>(&y)) {
-                if (predicate_ && !predicate_(*value))
+                bool valid_input(const config_value &x) const override {
+                    if (!predicate_)
+                        return holds_alternative<value_type>(x);
+                    if (auto value = get_if<value_type>(&x))
+                        return predicate_(*value);
                     return false;
-                set_value(x, move_if_optional(value));
-                return true;
-            }
-            return false;
-        }
+                }
 
-        void set_default(object_type &x) const override {
-            set_value(x, *default_value_);
-        }
+                bool set(object_type &x, const config_value &y) const override {
+                    if (auto value = get_if<value_type>(&y)) {
+                        if (predicate_ && !predicate_(*value))
+                            return false;
+                        set_value(x, move_if_optional(value));
+                        return true;
+                    }
+                    return false;
+                }
 
-        void parse_cli(string_parser_state &ps, object_type &x, const char *char_blacklist) const override {
-            value_type tmp;
-            dispatch_parse_cli(ps, tmp, char_blacklist);
-            if (ps.code <= pec::trailing_character) {
-                if (predicate_ && !predicate_(tmp))
-                    ps.code = pec::invalid_argument;
-                else
-                    set_value(x, std::move(tmp));
-            }
-        }
+                void set_default(object_type &x) const override {
+                    set_value(x, *default_value_);
+                }
 
-        virtual const value_type &get_value(const object_type &object) const = 0;
+                void parse_cli(string_parser_state &ps, object_type &x, const char *char_blacklist) const override {
+                    value_type tmp;
+                    dispatch_parse_cli(ps, tmp, char_blacklist);
+                    if (ps.code <= pec::trailing_character) {
+                        if (predicate_ && !predicate_(tmp))
+                            ps.code = pec::invalid_argument;
+                        else
+                            set_value(x, std::move(tmp));
+                    }
+                }
 
-        virtual void set_value(object_type &object, value_type value) const = 0;
+                virtual const value_type &get_value(const object_type &object) const = 0;
 
-    protected:
-        string_view name_;
-        optional<value_type> default_value_;
-        predicate_type predicate_;
-    };
-}    // namespace nil::actor::detail
+                virtual void set_value(object_type &object, value_type value) const = 0;
+
+            protected:
+                string_view name_;
+                optional<value_type> default_value_;
+                predicate_type predicate_;
+            };
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

@@ -12,19 +12,23 @@
 
 #include <type_traits>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// Checks whether `T` is in the template parameter pack `Ts`.
-    template<class T, class... Ts>
-    struct is_one_of;
+            /// Checks whether `T` is in the template parameter pack `Ts`.
+            template<class T, class... Ts>
+            struct is_one_of;
 
-    template<class T>
-    struct is_one_of<T> : std::false_type {};
+            template<class T>
+            struct is_one_of<T> : std::false_type { };
 
-    template<class T, class... Ts>
-    struct is_one_of<T, T, Ts...> : std::true_type {};
+            template<class T, class... Ts>
+            struct is_one_of<T, T, Ts...> : std::true_type { };
 
-    template<class T, class U, class... Ts>
-    struct is_one_of<T, U, Ts...> : is_one_of<T, Ts...> {};
+            template<class T, class U, class... Ts>
+            struct is_one_of<T, U, Ts...> : is_one_of<T, Ts...> { };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

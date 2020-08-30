@@ -12,7 +12,6 @@
 
 #include <functional>
 
-
 #include <nil/actor/fwd.hpp>
 
 namespace nil {

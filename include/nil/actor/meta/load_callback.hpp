@@ -14,35 +14,39 @@
 
 #include <nil/actor/meta/annotation.hpp>
 
-namespace nil::actor::meta {
+namespace nil {
+    namespace actor {
+        namespace meta {
 
-    template<class F>
-    struct load_callback_t : annotation {
-        load_callback_t(F &&f) : fun(f) {
-            // nop
-        }
+            template<class F>
+            struct load_callback_t : annotation {
+                load_callback_t(F &&f) : fun(f) {
+                    // nop
+                }
 
-        load_callback_t(load_callback_t &&) = default;
+                load_callback_t(load_callback_t &&) = default;
 
-        load_callback_t(const load_callback_t &) = default;
+                load_callback_t(const load_callback_t &) = default;
 
-        F fun;
-    };
+                F fun;
+            };
 
-    template<class T>
-    struct is_load_callback : std::false_type {};
+            template<class T>
+            struct is_load_callback : std::false_type { };
 
-    template<class F>
-    struct is_load_callback<load_callback_t<F>> : std::true_type {};
+            template<class F>
+            struct is_load_callback<load_callback_t<F>> : std::true_type { };
 
-    template<class F>
-    constexpr bool is_load_callback_v = is_load_callback<F>::value;
+            template<class F>
+            constexpr bool is_load_callback_v = is_load_callback<F>::value;
 
-    /// Returns an annotation that allows inspectors to call
-    /// user-defined code after performing load operations.
-    template<class F>
-    load_callback_t<F> load_callback(F fun) {
-        return {std::move(fun)};
-    }
+            /// Returns an annotation that allows inspectors to call
+            /// user-defined code after performing load operations.
+            template<class F>
+            load_callback_t<F> load_callback(F fun) {
+                return {std::move(fun)};
+            }
 
-}    // namespace nil::actor::meta
+        }    // namespace meta
+    }        // namespace actor
+}    // namespace nil

@@ -10,9 +10,13 @@
 
 #pragma once
 
-namespace nil::actor::tag {
+namespace nil {
+    namespace actor {
+        namespace tag {
 
-    /// Allows the testing DSL to recognize that subtypes are boxing content types.
-    struct boxing_type {};
+            /// Allows the testing DSL to recognize that subtypes are boxing content types.
+            struct boxing_type { };
 
-}    // namespace nil::actor::tag
+        }    // namespace tag
+    }        // namespace actor
+}    // namespace nil

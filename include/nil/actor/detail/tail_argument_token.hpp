@@ -10,8 +10,12 @@
 
 #pragma once
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    struct tail_argument_token {};
+            struct tail_argument_token { };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

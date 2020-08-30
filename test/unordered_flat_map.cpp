@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-namespace nil::actor::detail {
+namespace nil  { namespace actor  { namespace detail {
 
     template<class T>
     bool operator==(const unordered_flat_map<int, T> &xs, const std::vector<std::pair<int, T>> &ys) {

@@ -10,7 +10,6 @@
 
 #pragma once
 
-
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/mailbox_element.hpp>
 #include <nil/actor/message_priority.hpp>
@@ -20,51 +19,55 @@
 #include <nil/actor/policy/urgent_messages.hpp>
 #include <nil/actor/unit.hpp>
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    /// Configures a cached WDRR fixed multiplexed queue for dispatching to four
-    /// nested queue (one for each message category type).
-    class BOOST_SYMBOL_VISIBLE categorized {
-    public:
-        // -- member types -----------------------------------------------------------
+            /// Configures a cached WDRR fixed multiplexed queue for dispatching to four
+            /// nested queue (one for each message category type).
+            class BOOST_SYMBOL_VISIBLE categorized {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using mapped_type = mailbox_element;
+                using mapped_type = mailbox_element;
 
-        using task_size_type = size_t;
+                using task_size_type = size_t;
 
-        using deficit_type = size_t;
+                using deficit_type = size_t;
 
-        using unique_pointer = mailbox_element_ptr;
+                using unique_pointer = mailbox_element_ptr;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        categorized() = default;
+                categorized() = default;
 
-        categorized(const categorized &) = default;
+                categorized(const categorized &) = default;
 
-        categorized &operator=(const categorized &) = default;
+                categorized &operator=(const categorized &) = default;
 
-        constexpr categorized(unit_t) {
-            // nop
-        }
+                constexpr categorized(unit_t) {
+                    // nop
+                }
 
-        // -- interface required by wdrr_fixed_multiplexed_queue ---------------------
+                // -- interface required by wdrr_fixed_multiplexed_queue ---------------------
 
-        template<template<class> class Queue>
-        static deficit_type quantum(const Queue<urgent_messages> &, deficit_type x) noexcept {
-            // Allow actors to consume twice as many urgent as normal messages per
-            // credit round.
-            return x + x;
-        }
+                template<template<class> class Queue>
+                static deficit_type quantum(const Queue<urgent_messages> &, deficit_type x) noexcept {
+                    // Allow actors to consume twice as many urgent as normal messages per
+                    // credit round.
+                    return x + x;
+                }
 
-        template<class Queue>
-        static deficit_type quantum(const Queue &, deficit_type x) noexcept {
-            return x;
-        }
+                template<class Queue>
+                static deficit_type quantum(const Queue &, deficit_type x) noexcept {
+                    return x;
+                }
 
-        static size_t id_of(const mailbox_element &x) noexcept {
-            return static_cast<size_t>(x.mid.category());
-        }
-    };
+                static size_t id_of(const mailbox_element &x) noexcept {
+                    return static_cast<size_t>(x.mid.category());
+                }
+            };
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

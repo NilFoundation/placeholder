@@ -31,8 +31,7 @@ namespace nil {
         class actor_storage {
         public:
             template<class... Us>
-            actor_storage(actor_id x, node_id y, spawner *sys, Us &&... zs) :
-                ctrl(x, y, sys, data_dtor, block_dtor) {
+            actor_storage(actor_id x, node_id y, spawner *sys, Us &&... zs) : ctrl(x, y, sys, data_dtor, block_dtor) {
                 // construct data member
                 new (&data) T(std::forward<Us>(zs)...);
             }

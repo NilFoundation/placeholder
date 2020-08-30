@@ -12,18 +12,22 @@
 
 #include <nil/actor/meta/annotation.hpp>
 
-namespace nil::actor::meta {
+namespace nil {
+    namespace actor {
+        namespace meta {
 
-    struct type_name_t : annotation {
-        constexpr type_name_t(const char *cstr) : value(cstr) {
-            // nop
-        }
+            struct type_name_t : annotation {
+                constexpr type_name_t(const char *cstr) : value(cstr) {
+                    // nop
+                }
 
-        const char *value;
-    };
+                const char *value;
+            };
 
-    /// Returns a type name annotation.
-    type_name_t constexpr type_name(const char *cstr) {
-        return {cstr};
-    }
-}    // namespace nil::actor::meta
+            /// Returns a type name annotation.
+            type_name_t constexpr type_name(const char *cstr) {
+                return {cstr};
+            }
+        }    // namespace meta
+    }        // namespace actor
+}    // namespace nil

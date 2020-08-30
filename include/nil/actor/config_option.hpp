@@ -13,7 +13,6 @@
 #include <memory>
 #include <string>
 
-
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/string_algorithms.hpp>
 #include <nil/actor/string_view.hpp>

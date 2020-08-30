@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <memory>
 
-
 #include <nil/actor/detail/unordered_flat_map.hpp>
 #include <nil/actor/downstream_manager.hpp>
 #include <nil/actor/outbound_path.hpp>

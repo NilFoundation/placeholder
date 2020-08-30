@@ -12,11 +12,15 @@
 
 #include <nil/actor/logger.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    void log_cstring_error(const char *cstring) {
-        ACTOR_IGNORE_UNUSED(cstring);
-        ACTOR_LOG_ERROR(cstring);
-    }
+            void log_cstring_error(const char *cstring) {
+                ACTOR_IGNORE_UNUSED(cstring);
+                ACTOR_LOG_ERROR(cstring);
+            }
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

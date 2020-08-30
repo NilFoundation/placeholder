@@ -12,18 +12,22 @@
 
 #include <nil/actor/meta/annotation.hpp>
 
-namespace nil::actor::meta {
+namespace nil {
+    namespace actor {
+        namespace meta {
 
-    struct omittable_t : annotation {
-        constexpr omittable_t() {
-            // nop
-        }
-    };
+            struct omittable_t : annotation {
+                constexpr omittable_t() {
+                    // nop
+                }
+            };
 
-    /// Allows an inspector to omit the following data field
-    /// unconditionally when producing human-friendly output.
-    constexpr omittable_t omittable() {
-        return {};
-    }
+            /// Allows an inspector to omit the following data field
+            /// unconditionally when producing human-friendly output.
+            constexpr omittable_t omittable() {
+                return {};
+            }
 
-}    // namespace nil::actor::meta
+        }    // namespace meta
+    }        // namespace actor
+}    // namespace nil

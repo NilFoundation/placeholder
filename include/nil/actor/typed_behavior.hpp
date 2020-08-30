@@ -37,7 +37,7 @@ namespace nil {
             using skip_list = detail::type_list<skip_t>;
 
             template<class Input, class RepliesToWith>
-            struct same_input : std::is_same<Input, typename RepliesToWith::input_types> {};
+            struct same_input : std::is_same<Input, typename RepliesToWith::input_types> { };
 
             template<class Output, class RepliesToWith>
             struct same_output_or_skip_t {
@@ -71,13 +71,13 @@ namespace nil {
             };
 
             template<class T>
-            struct is_system_msg_handler : std::false_type {};
+            struct is_system_msg_handler : std::false_type { };
 
             template<>
-            struct is_system_msg_handler<reacts_to<exit_msg>> : std::true_type {};
+            struct is_system_msg_handler<reacts_to<exit_msg>> : std::true_type { };
 
             template<>
-            struct is_system_msg_handler<reacts_to<down_msg>> : std::true_type {};
+            struct is_system_msg_handler<reacts_to<down_msg>> : std::true_type { };
 
             // Tests whether the input list (IList) matches the
             // signature list (SList) for a typed actor behavior
@@ -142,7 +142,7 @@ namespace nil {
             using signatures = detail::type_list<Sigs...>;
 
             /// Empty struct tag for constructing from an untyped behavior.
-            struct unsafe_init {};
+            struct unsafe_init { };
 
             // -- constructors, destructors, and assignment operators --------------------
 
@@ -231,10 +231,10 @@ namespace nil {
         };
 
         template<class T>
-        struct is_typed_behavior : std::false_type {};
+        struct is_typed_behavior : std::false_type { };
 
         template<class... Sigs>
-        struct is_typed_behavior<typed_behavior<Sigs...>> : std::true_type {};
+        struct is_typed_behavior<typed_behavior<Sigs...>> : std::true_type { };
 
         /// Creates a typed behavior from given function objects.
         template<class... Fs>

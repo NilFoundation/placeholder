@@ -10,44 +10,47 @@
 
 #pragma once
 
-
 #include <nil/actor/fwd.hpp>
 #include <nil/actor/mailbox_element.hpp>
 #include <nil/actor/unit.hpp>
 
-namespace nil::actor::policy {
+namespace nil {
+    namespace actor {
+        namespace policy {
 
-    /// Configures a cached DRR queue for holding asynchronous messages with
-    /// default priority.
-    class BOOST_SYMBOL_VISIBLE urgent_messages {
-    public:
-        // -- member types -----------------------------------------------------------
+            /// Configures a cached DRR queue for holding asynchronous messages with
+            /// default priority.
+            class BOOST_SYMBOL_VISIBLE urgent_messages {
+            public:
+                // -- member types -----------------------------------------------------------
 
-        using mapped_type = mailbox_element;
+                using mapped_type = mailbox_element;
 
-        using task_size_type = size_t;
+                using task_size_type = size_t;
 
-        using deficit_type = size_t;
+                using deficit_type = size_t;
 
-        using unique_pointer = mailbox_element_ptr;
+                using unique_pointer = mailbox_element_ptr;
 
-        // -- constructors, destructors, and assignment operators --------------------
+                // -- constructors, destructors, and assignment operators --------------------
 
-        urgent_messages() = default;
+                urgent_messages() = default;
 
-        urgent_messages(const urgent_messages &) = default;
+                urgent_messages(const urgent_messages &) = default;
 
-        urgent_messages &operator=(const urgent_messages &) = default;
+                urgent_messages &operator=(const urgent_messages &) = default;
 
-        constexpr urgent_messages(unit_t) {
-            // nop
-        }
+                constexpr urgent_messages(unit_t) {
+                    // nop
+                }
 
-        // -- interface required by drr_queue ----------------------------------------
+                // -- interface required by drr_queue ----------------------------------------
 
-        static inline task_size_type task_size(const mailbox_element &) noexcept {
-            return 1;
-        }
-    };
+                static inline task_size_type task_size(const mailbox_element &) noexcept {
+                    return 1;
+                }
+            };
 
-}    // namespace nil::actor::policy
+        }    // namespace policy
+    }        // namespace actor
+}    // namespace nil

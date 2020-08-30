@@ -21,7 +21,7 @@
 #include <nil/actor/sec.hpp>
 #include <nil/actor/unifyn.hpp>
 
-#define ACTOR_READ_INSPECTOR_TRY(statement)                           \
+#define ACTOR_READ_INSPECTOR_TRY(statement)                         \
     if constexpr (std::is_same<decltype(statement), void>::value) { \
         statement;                                                  \
     } else {                                                        \

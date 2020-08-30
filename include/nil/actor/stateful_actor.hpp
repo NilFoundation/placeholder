@@ -18,28 +18,31 @@
 
 #include <nil/actor/detail/type_traits.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    /// Conditional base type for `stateful_actor` that overrides `make_behavior` if
-    /// `State::make_behavior()` exists.
-    template<class State, class Base>
-    class stateful_actor_base : public Base {
-    public:
-        using Base::Base;
+            /// Conditional base type for `stateful_actor` that overrides `make_behavior` if
+            /// `State::make_behavior()` exists.
+            template<class State, class Base>
+            class stateful_actor_base : public Base {
+            public:
+                using Base::Base;
 
-        typename Base::behavior_type make_behavior() override;
-    };
+                typename Base::behavior_type make_behavior() override;
+            };
 
-    /// Evaluates to either `stateful_actor_base<State, Base> `or `Base`, depending
-    /// on whether `State::make_behavior()` exists.
-    template<class State, class Base>
-    using stateful_actor_base_t =
-        std::conditional_t<has_make_behavior_member<State>::value, stateful_actor_base<State, Base>, Base>;
+            /// Evaluates to either `stateful_actor_base<State, Base> `or `Base`, depending
+            /// on whether `State::make_behavior()` exists.
+            template<class State, class Base>
+            using stateful_actor_base_t =
+                std::conditional_t<has_make_behavior_member<State>::value, stateful_actor_base<State, Base>, Base>;
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil
 
-
-    namespace nil {
+namespace nil {
     namespace actor {
 
         /// An event-based actor with managed state. The state is constructed with the
@@ -88,17 +91,18 @@ namespace nil::actor::detail {
                 State state;
             };
         };
-
     }    // namespace actor
-}
+}    // namespace nil
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class State, class Base>
-    typename Base::behavior_type stateful_actor_base<State, Base>::make_behavior() {
-        auto dptr = static_cast<stateful_actor<State, Base> *>(this);
-        return dptr->state.make_behavior();
-    }
-
-}    // namespace nil::actor::detail
-
+            template<class State, class Base>
+            typename Base::behavior_type stateful_actor_base<State, Base>::make_behavior() {
+                auto dptr = static_cast<stateful_actor<State, Base> *>(this);
+                return dptr->state.make_behavior();
+            }
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

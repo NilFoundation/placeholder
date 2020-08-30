@@ -13,31 +13,35 @@
 #include <nil/actor/intrusive_ptr.hpp>
 #include <nil/actor/ref_counted.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    template<class Base>
-    class embedded final : public Base {
-    public:
-        template<class... Ts>
-        embedded(intrusive_ptr<ref_counted> storage, Ts &&... xs) :
-            Base(std::forward<Ts>(xs)...), storage_(std::move(storage)) {
-            // nop
-        }
+            template<class Base>
+            class embedded final : public Base {
+            public:
+                template<class... Ts>
+                embedded(intrusive_ptr<ref_counted> storage, Ts &&... xs) :
+                    Base(std::forward<Ts>(xs)...), storage_(std::move(storage)) {
+                    // nop
+                }
 
-        ~embedded() {
-            // nop
-        }
+                ~embedded() {
+                    // nop
+                }
 
-        void request_deletion(bool) noexcept override {
-            intrusive_ptr<ref_counted> guard;
-            guard.swap(storage_);
-            // this code assumes that embedded is part of pair_storage<>,
-            // i.e., this object lives inside a union!
-            this->~embedded();
-        }
+                void request_deletion(bool) noexcept override {
+                    intrusive_ptr<ref_counted> guard;
+                    guard.swap(storage_);
+                    // this code assumes that embedded is part of pair_storage<>,
+                    // i.e., this object lives inside a union!
+                    this->~embedded();
+                }
 
-    protected:
-        intrusive_ptr<ref_counted> storage_;
-    };
+            protected:
+                intrusive_ptr<ref_counted> storage_;
+            };
 
-}    // namespace nil::actor::detail
+        }    // namespace detail
+    }        // namespace actor
+}    // namespace nil

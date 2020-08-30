@@ -42,14 +42,14 @@ namespace nil {
         }
 
         template<class T>
-        struct is_void_response : std::false_type {};
+        struct is_void_response : std::false_type { };
 
         template<>
-        struct is_void_response<detail::type_list<void>> : std::true_type {};
+        struct is_void_response<detail::type_list<void>> : std::true_type { };
 
         // true for the purpose of type checking performed by send()
         template<>
-        struct is_void_response<none_t> : std::true_type {};
+        struct is_void_response<none_t> : std::true_type { };
 
     }    // namespace actor
 }    // namespace nil

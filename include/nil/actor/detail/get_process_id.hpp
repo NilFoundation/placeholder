@@ -16,8 +16,12 @@
 
 #include <boost/config.hpp>
 
-namespace nil::actor::detail {
+namespace nil {
+    namespace actor {
+        namespace detail {
 
-    BOOST_SYMBOL_VISIBLE unsigned get_process_id();
+            BOOST_SYMBOL_VISIBLE unsigned get_process_id();
 
-}
+        }
+    }    // namespace actor
+}    // namespace nil

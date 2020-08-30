@@ -14,40 +14,46 @@
 
 #include <nil/actor/config.hpp>
 
-namespace nil::actor::detail::parser {
+namespace nil {
+    namespace actor {
+        namespace detail {
+            namespace parser {
 
-    struct any_char_t {};
+                struct any_char_t { };
 
-    constexpr any_char_t any_char = any_char_t {};
+                constexpr any_char_t any_char = any_char_t {};
 
-    constexpr bool in_whitelist(any_char_t, char) {
-        return true;
-    }
+                constexpr bool in_whitelist(any_char_t, char) {
+                    return true;
+                }
 
-    constexpr bool in_whitelist(char whitelist, char ch) {
-        return whitelist == ch;
-    }
+                constexpr bool in_whitelist(char whitelist, char ch) {
+                    return whitelist == ch;
+                }
 
-    inline bool in_whitelist(const char *whitelist, char ch) {
-        // Note: using strchr breaks if `ch == '\0'`.
-        for (char c = *whitelist++; c != '\0'; c = *whitelist++)
-            if (c == ch)
-                return true;
-        return false;
-    }
+                inline bool in_whitelist(const char *whitelist, char ch) {
+                    // Note: using strchr breaks if `ch == '\0'`.
+                    for (char c = *whitelist++; c != '\0'; c = *whitelist++)
+                        if (c == ch)
+                            return true;
+                    return false;
+                }
 
-    inline bool in_whitelist(bool (*filter)(char), char ch) {
-        return filter(ch);
-    }
+                inline bool in_whitelist(bool (*filter)(char), char ch) {
+                    return filter(ch);
+                }
 
-    BOOST_SYMBOL_VISIBLE extern const char alphanumeric_chars[63];
+                BOOST_SYMBOL_VISIBLE extern const char alphanumeric_chars[63];
 
-    BOOST_SYMBOL_VISIBLE extern const char alphabetic_chars[53];
+                BOOST_SYMBOL_VISIBLE extern const char alphabetic_chars[53];
 
-    BOOST_SYMBOL_VISIBLE extern const char hexadecimal_chars[23];
+                BOOST_SYMBOL_VISIBLE extern const char hexadecimal_chars[23];
 
-    BOOST_SYMBOL_VISIBLE extern const char decimal_chars[11];
+                BOOST_SYMBOL_VISIBLE extern const char decimal_chars[11];
 
-    BOOST_SYMBOL_VISIBLE extern const char octal_chars[9];
+                BOOST_SYMBOL_VISIBLE extern const char octal_chars[9];
 
-}    // namespace nil::actor::detail::parser
+            }    // namespace parser
+        }        // namespace detail
+    }            // namespace actor
+}    // namespace nil

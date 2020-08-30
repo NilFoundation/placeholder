@@ -14,23 +14,27 @@
 
 #include <boost/config.hpp>
 
-namespace nil::actor::intrusive {
+namespace nil {
+    namespace actor {
+        namespace intrusive {
 
-    /// Communicates the state of a LIFO or FIFO inbox after pushing to it.
-    enum class inbox_result {
-        /// Indicates that the enqueue operation succeeded and
-        /// the reader is ready to receive the data.
-        success,
+            /// Communicates the state of a LIFO or FIFO inbox after pushing to it.
+            enum class inbox_result {
+                /// Indicates that the enqueue operation succeeded and
+                /// the reader is ready to receive the data.
+                success,
 
-        /// Indicates that the enqueue operation succeeded and
-        /// the reader is currently blocked, i.e., needs to be re-scheduled.
-        unblocked_reader,
+                /// Indicates that the enqueue operation succeeded and
+                /// the reader is currently blocked, i.e., needs to be re-scheduled.
+                unblocked_reader,
 
-        /// Indicates that the enqueue operation failed because the
-        /// queue has been closed by the reader.
-        queue_closed,
-    };
+                /// Indicates that the enqueue operation failed because the
+                /// queue has been closed by the reader.
+                queue_closed,
+            };
 
-    BOOST_SYMBOL_VISIBLE std::string to_string(inbox_result);
+            BOOST_SYMBOL_VISIBLE std::string to_string(inbox_result);
 
-}    // namespace nil::actor::intrusive
+        }    // namespace intrusive
+    }        // namespace actor
+}    // namespace nil

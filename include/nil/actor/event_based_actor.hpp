@@ -38,14 +38,9 @@ namespace nil {
         /// recommended base class for user-defined actors.
         /// @extends scheduled_actor
         class BOOST_SYMBOL_VISIBLE event_based_actor
-            // clang-format off
-  : public extend<scheduled_actor, event_based_actor>::
-           with<mixin::sender,
-                mixin::requester,
-                mixin::subscriber,
-                mixin::behavior_changer>,
-    public dynamically_typed_actor_base {
-            // clang-format on
+            : public extend<scheduled_actor, event_based_actor>::with<mixin::sender, mixin::requester,
+                                                                      mixin::subscriber, mixin::behavior_changer>,
+              public dynamically_typed_actor_base {
         public:
             // -- member types -----------------------------------------------------------
 
