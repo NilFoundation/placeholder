@@ -1,153 +1,378 @@
-include(CMTest)
+#
+# This file is open source software, licensed to you under the terms
+# of the Apache License, Version 2.0 (the "License").  See the NOTICE file
+# distributed with this work for additional information regarding copyright
+# ownership.  You may not use this file except in compliance with the License.
+#
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 
-cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_core)
+#
+# Copyright (C) 2018 Scylladb, Ltd.
+#
 
-if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
-    cm_find_package(Boost REQUIRED COMPONENTS system unit_test_framework)
+# Logical target for all unit tests.
+add_custom_target(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_unit_tests)
+
+set(BUILD_WITH_UNIT_TEST_SMP
+  2
+  CACHE
+  STRING
+  "Run unit tests with this many cores.")
+
+#
+# Define a new unit test with the given name.
+#
+# seastar_add_test(name
+#   [KIND {SEASTAR,BOOST,CUSTOM}]
+#   [SOURCES source1 source2 ... sourcen]
+#   [WORKING_DIRECTORY dir]
+#   [LIBRARIES library1 library2 ... libraryn]
+#   [RUN_ARGS arg1 arg2 ... argn])
+#
+# There are three kinds of test we support (the KIND parameter):
+#
+# - SEASTAR: Unit tests which use macros like `SEASTAR_TEST_CASE`
+# - BOOST: Unit tests which use macros like `BOOST_AUTO_TEST_CASE`
+# - CUSTOM: Custom tests which need to be specified
+#
+# SEASTAR and BOOST tests will have their output saved for interpretation by the Jenkins continuous integration service
+# if this is configured for the build.
+#
+# KIND can be omitted, in which case it is assumed to be SEASTAR.
+#
+# If SOURCES is provided, then the test files are first compiled into an executable which has the same name as the test
+# but with a suffix ("_test").
+#
+# WORKING_DIRECTORY can be optionally provided to choose where the test is executed.
+#
+# If LIBRARIES is provided along with SOURCES, then the executable is additionally linked with these libraries.
+#
+# RUN_ARGS are optional additional arguments to pass to the executable. For SEASTAR tests, these come after `--`. For
+# CUSTOM tests with no SOURCES, this parameter can be used to specify the executable name as well as its arguments since
+# no executable is compiled.
+#
+function(seastar_add_test name)
+  set(test_kinds
+    SEASTAR
+    BOOST
+    CUSTOM)
+
+  cmake_parse_arguments (parsed_args
+    ""
+    "WORKING_DIRECTORY;KIND"
+    "RUN_ARGS;SOURCES;LIBRARIES;DEPENDS"
+    ${ARGN})
+
+  if(NOT parsed_args_KIND)
+    set(parsed_args_KIND SEASTAR)
+  elseif(NOT (parsed_args_KIND IN_LIST test_kinds))
+    message (FATAL_ERROR "Invalid test kind. KIND must be one of ${test_kinds}")
+  endif()
+
+  if(parsed_args_SOURCES)
+    #
+    # Each kind of test must populate the `args` and `libraries` lists.
+    #
+
+    set(libraries "${parsed_args_LIBRARIES}")
+
+    set(args "")
+    if(parsed_args_KIND STREQUAL "SEASTAR")
+      list (APPEND libraries
+        ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_testing
+        ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_private)
+
+      if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
+        list (APPEND args ${jenkins_args})
+      endif()
+
+      list (APPEND args -- -c ${BUILD_WITH_UNIT_TEST_SMP})
+    elseif(parsed_args_KIND STREQUAL "BOOST")
+      list (APPEND libraries
+        Boost::unit_test_framework
+        seastar_private)
+
+      if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
+        list (APPEND args ${jenkins_args})
+      endif()
+    endif()
+
+    list (APPEND args ${parsed_args_RUN_ARGS})
+
+    set(executable_target
+        ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit_${name})
+    add_executable (${executable_target} ${parsed_args_SOURCES})
+
+    target_link_libraries (${executable_target}
+      PRIVATE ${libraries})
+
+    target_compile_definitions (${executable_target}
+      PRIVATE SEASTAR_TESTING_MAIN)
+
+    if((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
+        ((BUILD_WITH_STACK_GUARDS STREQUAL "DEFAULT") AND
+         (CMAKE_BUILD_TYPE IN_LIST Seastar_STACK_GUARD_MODES)))
+      target_compile_definitions (${executable_target}
+        PRIVATE
+          SEASTAR_THREAD_STACK_GUARDS)
+    endif()
+
+    target_include_directories(${executable_target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${BUILD_WITH_SOURCE_DIR}/src)
+
+    set_target_properties(${executable_target} PROPERTIES OUTPUT_NAME ${name}_test)
+
+    add_dependencies(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_unit_tests ${executable_target})
+    set(forwarded_args COMMAND ${executable_target} ${args})
+  else ()
+    if(NOT (parsed_args_KIND STREQUAL "CUSTOM"))
+      message (FATAL_ERROR "SOURCES are required for ${parsed_args_KIND} tests")
+    endif()
+
+    set(forwarded_args COMMAND ${parsed_args_RUN_ARGS})
+  endif()
+
+  #
+  # We expect `forwarded_args` to be populated correctly at this point.
+  #
+
+  set(target ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit_${name}_run)
+
+  if(parsed_args_WORKING_DIRECTORY)
+    list (APPEND forwarded_args WORKING_DIRECTORY ${parsed_args_WORKING_DIRECTORY})
+  endif()
+
+  if(parsed_args_DEPENDS)
+    add_dependencies(${executable_target} ${parsed_args_DEPENDS})
+  endif()
+
+  add_custom_target(${target}
+    ${forwarded_args}
+    USES_TERMINAL)
+
+  add_test(NAME Seastar.unit.${name}
+    COMMAND ${CMAKE_COMMAND} --build ${Seastar_BINARY_DIR} --target ${target})
+
+  set_tests_properties(Seastar.unit.${name} PROPERTIES
+      TIMEOUT ${BUILD_WITH_TEST_TIMEOUT}
+      ENVIRONMENT "${BUILD_WITH_TEST_ENVIRONMENT}")
+endfunction()
+
+#
+# Define a new custom unit test whose entry point is a Seastar application.
+#
+# seastar_add_app_test(name
+#   [SOURCES source1 source2 ... sourcen]
+#   [LIBRARIES library1 library2 ... libraryn]
+#   [RUN_ARGS arg1 arg2 ... argn])
+#
+# These kinds of tests are structured like Seastar applications.
+#
+# These tests always link against `seastar_private` and are always invoked with
+# `-c ${BUILD_WITH_UNIT_TEST_SMP}`.
+#
+function(seastar_add_app_test name)
+  cmake_parse_arguments (parsed_args
+    ""
+    ""
+    "RUN_ARGS;SOURCES;LIBRARIES"
+    ${ARGN})
+
+  seastar_add_test(${name}
+    KIND CUSTOM
+    SOURCES ${parsed_args_SOURCES}
+    LIBRARIES
+      seastar_private
+      ${parsed_args_LIBRARIES}
+    RUN_ARGS
+      -c ${BUILD_WITH_UNIT_TEST_SMP}
+      ${parsed_args_RUN_ARGS})
+endfunction()
+
+function(prepend_each var prefix)
+  set(result "")
+
+  foreach(x ${ARGN})
+    list (APPEND result ${prefix}/${x})
+  endforeach()
+
+  set(${var} ${result} PARENT_SCOPE)
+endfunction()
+
+add_custom_target(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit
+  COMMAND ctest --verbose -R Seastar.unit
+  USES_TERMINAL)
+
+seastar_add_test(abort_source SOURCES abort_source_test.cc)
+
+seastar_add_test(alloc SOURCES alloc_test.cc)
+
+if(NOT Seastar_EXECUTE_ONLY_FAST_TESTS)
+  set(allocator_test_args "")
+else ()
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(allocator_test_args --iterations 5)
+  else ()
+    set(allocator_test_args --time 0.1)
+  endif()
 endif()
 
-cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+seastar_add_test(allocator
+  SOURCES allocator_test.cc
+  RUN_ARGS ${allocator_test_args})
 
-                       module
+seastar_add_app_test(alien
+  SOURCES alien_test.cc)
 
-                       ${Boost_LIBRARIES})
+seastar_add_test(checked_ptr
+  SOURCES checked_ptr_test.cc)
 
-macro(define_core_test name)
-    cm_test(NAME core_${name}_test SOURCES ${name}.cpp)
+seastar_add_test(chunked_fifo
+  SOURCES chunked_fifo_test.cc)
 
-    target_include_directories(core_${name}_test PRIVATE
-                               ${CMAKE_CURRENT_SOURCE_DIR}/include
-                               $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                               $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+seastar_add_test(circular_buffer
+  SOURCES circular_buffer_test.cc)
 
-                               ${Boost_INCLUDE_DIRS})
+seastar_add_test(circular_buffer_fixed_capacity
+  SOURCES circular_buffer_fixed_capacity_test.cc)
 
-    set_target_properties(core_${name}_test PROPERTIES
-                          CXX_STANDARD 17
-                          CXX_STANDARD_REQUIRED TRUE)
+seastar_add_test(coroutines
+  SOURCES coroutines_test.cc)
 
-    get_target_property(target_type Boost::unit_test_framework TYPE)
-    if(target_type STREQUAL "SHARED_LIB")
-        target_compile_definitions(core_${name}_test PRIVATE BOOST_TEST_DYN_LINK)
-    elseif(target_type STREQUAL "STATIC_LIB")
+seastar_add_test(defer
+  SOURCES defer_test.cc)
 
-    endif()
-endmacro()
+seastar_add_test(deleter
+  SOURCES deleter_test.cc)
 
-list(APPEND TESTS_NAMES
-     expected
-     selective_streaming
-     unordered_flat_map
-     type_id_list
-     drr_cached_queue
-     or_else
-     handles
-     span
-     actor_pool
-     bounds_checker
-     sequencer
-     string_view
-     categorized
-#     tracing_data
-     composable_behavior
-     ipv6_subnet
-     ipv4_address
-     make_config_value_field
-     sum_type
-     message_id
-     ipv6_address
-     read_ini
-     metaprogramming
-     config_option_set
-#     actor_profiler
-     aout
-     optional
-     type_id_list_builder
-     variant
-     mailbox_element
-     serialization
-     config_value
-     ringbuffer
-     read_bool
-     logger
-     continuous_streaming
-     read_string
-     detached_actors
-     message
-     native_streaming_classes
-     function_view
-     request_timeout
-     ipv4_subnet
-     result
-     config_option
-     constructor_attach
-     wdrr_dynamic_multiplexed_queue
-     actor_clock
-     read_number
-     unique_function
-     requester
-     binary_deserializer
-     select_any
-#     serial_reply
-     actor_registry
-     fifo_inbox
-     custom_exception_handler
-     inspector
-     read_floating_point
-     cow_tuple
-     config_value_adaptor
-     lifo_inbox
-     deep_to_string
-     message_builder_element
-     error
-#     meta_object
-#     fused_downstream_manager
-     parse
-     settings
-     blocking_actor
-     simple_timeout
-     mock_streaming_classes
-     serialized_size
-     sender
-     thread_hook
-     typed_behavior
-     read_number_or_timespan
-     binary_serializer
-     wdrr_fixed_multiplexed_queue
-     typed_message_view
-     task_queue
-     intrusive_ptr
-     pipeline_streaming
-     typed_response_promise
-     node_id
-     typed_spawn
-     const_typed_message_view
-     read_unsigned_integer
-     actor_lifetime
-     unit
-     byte
-     string_algorithms
-     read_signed_integer
-     stateful_actor
-     behavior
-     broadcast_downstream_manager
-     composition
-     ini_consumer
-     uri
-     select_all
-     dynamic_spawn
-     tick_emitter
-     drr_queue
-     ipv6_endpoint
-     local_group
-     dictionary
-     message_lifetime
-     actor_factory
-     read_timespan
-     actor_termination
-     spawner_config
-     ipv4_endpoint)
+seastar_add_app_test(directory
+  SOURCES directory_test.cc)
 
-foreach(TEST_NAME ${TESTS_NAMES})
-    define_core_test(${TEST_NAME})
-endforeach()
+seastar_add_test(distributed
+  SOURCES distributed_test.cc)
+
+seastar_add_test(execution_stage
+  SOURCES execution_stage_test.cc)
+
+seastar_add_test(expiring_fifo
+  SOURCES expiring_fifo_test.cc)
+
+seastar_add_test(io_queue
+  SOURCES io_queue_test.cc)
+
+seastar_add_test(fair_queue
+  SOURCES fair_queue_test.cc)
+
+seastar_add_test(file_io
+  SOURCES file_io_test.cc)
+
+seastar_add_test(file_utils
+  SOURCES file_utils_test.cc)
+
+seastar_add_test(foreign_ptr
+  SOURCES foreign_ptr_test.cc)
+
+seastar_add_test(fsnotifier
+  SOURCES fsnotifier_test.cc)
+
+seastar_add_test(fstream
+  SOURCES
+    fstream_test.cc
+    mock_file.hh)
+
+seastar_add_test(futures
+  SOURCES futures_test.cc)
+
+seastar_add_test(sharded
+  SOURCES sharded_test.cc)
+
+seastar_add_test(locking
+  SOURCES locking_test.cc)
+
+seastar_add_test(lowres_clock
+  SOURCES lowres_clock_test.cc)
+
+seastar_add_test(metrics
+  SOURCES metrics_test.cc)
+
+seastar_add_test(noncopyable_function
+  KIND BOOST
+  SOURCES noncopyable_function_test.cc)
+
+seastar_add_test(program_options
+  KIND BOOST
+  SOURCES program_options_test.cc)
+
+seastar_add_test(queue
+  SOURCES queue_test.cc)
+
+seastar_add_test(semaphore
+  SOURCES semaphore_test.cc)
+
+seastar_add_test(shared_ptr
+  KIND BOOST
+  SOURCES shared_ptr_test.cc)
+
+seastar_add_test(signal
+  SOURCES signal_test.cc)
+
+seastar_add_test(simple_stream
+  KIND BOOST
+  SOURCES simple_stream_test.cc)
+
+# TODO: Disabled for now. See GH-520.
+# seastar_add_test(slab
+#   SOURCES slab_test.cc
+#   NO_SEASTAR_TESTING_LIBRARY)
+
+seastar_add_app_test(smp
+  SOURCES smp_test.cc)
+
+seastar_add_test(sstring
+  KIND BOOST
+  SOURCES sstring_test.cc)
+
+seastar_add_test(stall_detector
+  SOURCES stall_detector_test.cc)
+
+seastar_add_test(thread
+  SOURCES thread_test.cc)
+
+seastar_add_test(scheduling_group
+  SOURCES scheduling_group_test.cc)
+
+seastar_add_app_test(thread_context_switch
+  SOURCES thread_context_switch_test.cc)
+
+seastar_add_app_test(timer
+  SOURCES timer_test.cc)
+
+seastar_add_test(uname
+  KIND BOOST
+  SOURCES uname_test.cc)
+
+seastar_add_test(tuple_utils
+  KIND BOOST
+  SOURCES tuple_utils_test.cc)
+
+seastar_add_test(unwind
+  KIND BOOST
+  SOURCES unwind_test.cc)
+
+seastar_add_test(weak_ptr
+  KIND BOOST
+  SOURCES weak_ptr_test.cc)
+
+seastar_add_test(log_buf
+  SOURCES log_buf_test.cc)
