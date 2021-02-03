@@ -23,12 +23,14 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/testing/perf_tests.hh>
+
 #include <nil/actor/core/sharded.hh>
 #include <nil/actor/core/thread.hh>
 #include <nil/actor/core/fair_queue.hh>
 #include <nil/actor/core/semaphore.hh>
 #include <nil/actor/core/loop.hh>
 #include <nil/actor/core/when_all.hh>
+
 #include <boost/range/irange.hpp>
 
 struct local_fq_and_class {
