@@ -22,12 +22,12 @@
 
 #pragma once
 
-namespace nil { namespace actor {
+namespace nil {
+    namespace actor {
+        namespace testing {
 
-namespace testing {
+            int entry_point(int argc, char **argv);
 
-int entry_point(int argc, char **argv);
-
-}
-
-}
+        }
+    }    // namespace actor
+}    // namespace nil
