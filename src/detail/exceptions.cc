@@ -20,16 +20,19 @@
  * Copyright 2020 ScyllaDB
  */
 
-#include <seastar/util/exceptions.hh>
+#include <nil/actor/detail/exceptions.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
-std::filesystem::filesystem_error make_filesystem_error(const std::string& what, std::filesystem::path path, int error) {
-    return std::filesystem::filesystem_error(what, std::move(path), std::error_code(error, std::system_category()));
-}
+    std::filesystem::filesystem_error make_filesystem_error(const std::string &what, std::filesystem::path path,
+                                                            int error) {
+        return std::filesystem::filesystem_error(what, std::move(path), std::error_code(error, std::system_category()));
+    }
 
-std::filesystem::filesystem_error make_filesystem_error(const std::string& what, std::filesystem::path path1, std::filesystem::path path2, int error) {
-    return std::filesystem::filesystem_error(what, std::move(path1), std::move(path1), std::error_code(error, std::system_category()));
-}
+    std::filesystem::filesystem_error make_filesystem_error(const std::string &what, std::filesystem::path path1,
+                                                            std::filesystem::path path2, int error) {
+        return std::filesystem::filesystem_error(what, std::move(path1), std::move(path1),
+                                                 std::error_code(error, std::system_category()));
+    }
 
-} // namespace seastar
+}}

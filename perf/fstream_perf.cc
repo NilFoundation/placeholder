@@ -19,15 +19,15 @@
  * Copyright (C) 2016 ScyllaDB
  */
 
-#include <seastar/core/fstream.hh>
-#include <seastar/core/seastar.hh>
-#include <seastar/core/file.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/loop.hh>
+#include <nil/actor/core/fstream.hh>
+#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/file.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/loop.hh>
 #include <fmt/printf.h>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 int main(int ac, char **av) {

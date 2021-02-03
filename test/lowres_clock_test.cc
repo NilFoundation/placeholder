@@ -19,12 +19,12 @@
  * Copyright (C) 2017 ScyllaDB
  */
 
-#include <seastar/testing/test_case.hh>
+#include <nil/actor/testing/test_case.hh>
 
-#include <seastar/core/do_with.hh>
-#include <seastar/core/lowres_clock.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/loop.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/lowres_clock.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/loop.hh>
 
 #include <ctime>
 
@@ -32,7 +32,7 @@
 #include <array>
 #include <chrono>
 
-using namespace seastar;
+using namespace nil::actor;
 
 //
 // Sanity check the accuracy of the steady low-resolution clock.
@@ -41,7 +41,7 @@ SEASTAR_TEST_CASE(steady_clock_sanity) {
     return do_with(lowres_clock::now(), [](auto &&t1) {
         static constexpr auto sleep_duration = std::chrono::milliseconds(100);
 
-        return ::seastar::sleep(sleep_duration).then([&t1] {
+        return ::nil::actor::sleep(sleep_duration).then([&t1] {
             auto const elapsed = lowres_clock::now() - t1;
             auto const minimum_elapsed = 0.9 * sleep_duration;
 
@@ -85,7 +85,7 @@ SEASTAR_TEST_CASE(system_clock_sanity) {
                 return make_ready_future<stop_iteration>(stop_iteration::yes);
             }
 
-            return ::seastar::sleep(std::chrono::milliseconds(10)).then([&index, &success_count] {
+            return ::nil::actor::sleep(std::chrono::milliseconds(10)).then([&index, &success_count] {
                 if (check_matching()) {
                     ++success_count;
                 }
@@ -102,7 +102,7 @@ SEASTAR_TEST_CASE(system_clock_sanity) {
 //
 SEASTAR_TEST_CASE(system_clock_dynamic) {
     return do_with(lowres_system_clock::now(), [](auto &&t1) {
-        return seastar::sleep(std::chrono::milliseconds(100)).then([&t1] {
+        return nil::actor::sleep(std::chrono::milliseconds(100)).then([&t1] {
             auto const t2 = lowres_system_clock::now();
             BOOST_REQUIRE_NE(t1.time_since_epoch().count(), t2.time_since_epoch().count());
 

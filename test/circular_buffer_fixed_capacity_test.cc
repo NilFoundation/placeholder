@@ -24,13 +24,13 @@
 #include <boost/test/included/unit_test.hpp>
 #include <deque>
 #include <random>
-#include <seastar/core/circular_buffer_fixed_capacity.hh>
+#include <nil/actor/core/circular_buffer_fixed_capacity.hh>
 
 #include <boost/range/algorithm/sort.hpp>
 #include <boost/range/algorithm/equal.hpp>
 #include <boost/range/algorithm/reverse.hpp>
 
-using namespace seastar;
+using namespace nil::actor;
 
 using cb16_t = circular_buffer_fixed_capacity<int, 16>;
 

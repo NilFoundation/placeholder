@@ -22,9 +22,9 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/core/deleter.hh>
+#include <nil/actor/core/deleter.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 struct TestObject {
     TestObject() : has_ref(true) {

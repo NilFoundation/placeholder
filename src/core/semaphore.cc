@@ -20,83 +20,86 @@
  */
 
 #include <fmt/format.h>
-#include <seastar/core/semaphore.hh>
 
-namespace seastar {
+#include <nil/actor/core/semaphore.hh>
 
-// Exception Factory for standard semaphore
-//
-// constructs standard semaphore exceptions
-// \see semaphore_timed_out and broken_semaphore
+namespace nil {
+    namespace actor {
 
-static_assert(std::is_nothrow_default_constructible_v<semaphore_default_exception_factory>);
-static_assert(std::is_nothrow_move_constructible_v<semaphore_default_exception_factory>);
+        // Exception Factory for standard semaphore
+        //
+        // constructs standard semaphore exceptions
+        // \see semaphore_timed_out and broken_semaphore
 
-static_assert(std::is_nothrow_constructible_v<semaphore, size_t>);
-static_assert(std::is_nothrow_constructible_v<semaphore, size_t, semaphore_default_exception_factory&&>);
-static_assert(std::is_nothrow_move_constructible_v<semaphore>);
+        static_assert(std::is_nothrow_default_constructible<semaphore_default_exception_factory>::value);
+        static_assert(std::is_nothrow_move_constructible<semaphore_default_exception_factory>::value);
 
+        static_assert(std::is_nothrow_constructible<semaphore, size_t>::value);
+        static_assert(std::is_nothrow_constructible<semaphore, size_t, semaphore_default_exception_factory &&>::value);
+        static_assert(std::is_nothrow_move_constructible<semaphore>::value);
 
-const char* broken_semaphore::what() const noexcept {
-    return "Semaphore broken";
-}
+        const char *broken_semaphore::what() const noexcept {
+            return "Semaphore broken";
+        }
 
-const char* semaphore_timed_out::what() const noexcept {
-    return "Semaphore timedout";
-}
+        const char *semaphore_timed_out::what() const noexcept {
+            return "Semaphore timedout";
+        }
 
-semaphore_timed_out semaphore_default_exception_factory::timeout() noexcept {
-    static_assert(std::is_nothrow_default_constructible_v<semaphore_timed_out>);
-    return semaphore_timed_out();
-}
+        semaphore_timed_out semaphore_default_exception_factory::timeout() noexcept {
+            static_assert(std::is_nothrow_default_constructible_v<semaphore_timed_out>);
+            return semaphore_timed_out();
+        }
 
-broken_semaphore semaphore_default_exception_factory::broken() noexcept {
-    static_assert(std::is_nothrow_default_constructible_v<broken_semaphore>);
-    return broken_semaphore();
-}
+        broken_semaphore semaphore_default_exception_factory::broken() noexcept {
+            static_assert(std::is_nothrow_default_constructible_v<broken_semaphore>);
+            return broken_semaphore();
+        }
 
-// A factory of semaphore exceptions that contain additional context: the semaphore name
-// auto sem = named_semaphore(0, named_semaphore_exception_factory{"file_opening_limit_semaphore"});
+        // A factory of semaphore exceptions that contain additional context: the semaphore name
+        // auto sem = named_semaphore(0, named_semaphore_exception_factory{"file_opening_limit_semaphore"});
 
-static_assert(std::is_nothrow_default_constructible_v<named_semaphore_exception_factory>);
-static_assert(std::is_nothrow_move_constructible_v<named_semaphore_exception_factory>);
+        static_assert(std::is_nothrow_default_constructible<named_semaphore_exception_factory>::value);
+        static_assert(std::is_nothrow_move_constructible<named_semaphore_exception_factory>::value);
 
-static_assert(std::is_nothrow_constructible_v<named_semaphore, size_t>);
-static_assert(std::is_nothrow_constructible_v<named_semaphore, size_t, named_semaphore_exception_factory&&>);
-static_assert(std::is_nothrow_move_constructible_v<named_semaphore>);
+        static_assert(std::is_nothrow_constructible<named_semaphore, size_t>::value);
+        static_assert(
+            std::is_nothrow_constructible<named_semaphore, size_t, named_semaphore_exception_factory &&>::value);
+        static_assert(std::is_nothrow_move_constructible<named_semaphore>::value);
 
-named_semaphore_timed_out::named_semaphore_timed_out(std::string_view msg) noexcept : _msg() {
-    try {
-        _msg = format("Semaphore timed out: {}", msg);
-    } catch (...) {
-        // ignore, empty _msg will generate a static message in what().
-    }
-}
+        named_semaphore_timed_out::named_semaphore_timed_out(std::string_view msg) noexcept : _msg() {
+            try {
+                _msg = format("Semaphore timed out: {}", msg);
+            } catch (...) {
+                // ignore, empty _msg will generate a static message in what().
+            }
+        }
 
-broken_named_semaphore::broken_named_semaphore(std::string_view msg) noexcept : _msg() {
-    try {
-        _msg = format("Semaphore broken: {}", msg);
-    } catch (...) {
-        // ignore, empty _msg will generate a static message in what().
-    }
-}
+        broken_named_semaphore::broken_named_semaphore(std::string_view msg) noexcept : _msg() {
+            try {
+                _msg = format("Semaphore broken: {}", msg);
+            } catch (...) {
+                // ignore, empty _msg will generate a static message in what().
+            }
+        }
 
-const char* named_semaphore_timed_out::what() const noexcept {
-    // return a static message if generating the dynamic message failed.
-    return _msg.empty() ? "Named semaphore timed out" : _msg.c_str();
-}
+        const char *named_semaphore_timed_out::what() const noexcept {
+            // return a static message if generating the dynamic message failed.
+            return _msg.empty() ? "Named semaphore timed out" : _msg.c_str();
+        }
 
-const char* broken_named_semaphore::what() const noexcept {
-    // return a static message if generating the dynamic message failed.
-    return _msg.empty() ? "Broken named semaphore" : _msg.c_str();
-}
+        const char *broken_named_semaphore::what() const noexcept {
+            // return a static message if generating the dynamic message failed.
+            return _msg.empty() ? "Broken named semaphore" : _msg.c_str();
+        }
 
-named_semaphore_timed_out named_semaphore_exception_factory::timeout() const noexcept {
-    return named_semaphore_timed_out(name);
-}
+        named_semaphore_timed_out named_semaphore_exception_factory::timeout() const noexcept {
+            return named_semaphore_timed_out(name);
+        }
 
-broken_named_semaphore named_semaphore_exception_factory::broken() const noexcept {
-    return broken_named_semaphore(name);
-}
+        broken_named_semaphore named_semaphore_exception_factory::broken() const noexcept {
+            return broken_named_semaphore(name);
+        }
 
-} // namespace seastar
+    }    // namespace actor
+}    // namespace nil

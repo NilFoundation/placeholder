@@ -1,29 +1,31 @@
+#---------------------------------------------------------------------------//
+# Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
 #
-# This file is open source software, licensed to you under the terms
-# of the Apache License, Version 2.0 (the "License").  See the NOTICE file
-# distributed with this work for additional information regarding copyright
-# ownership.  You may not use this file except in compliance with the License.
+# MIT License
 #
-# You may obtain a copy of the License at
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#   http://www.apache.org/licenses/LICENSE-2.0
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
 #
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-
-#
-# Copyright (C) 2019 Scylladb, Ltd.
-#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#---------------------------------------------------------------------------//
 
 #
 # CMake bundles `FindBoost.cmake`, which is coupled to the Boost version. If
 # we're on a system without a recent enough version of `FindBoost.cmake`, then
-# we need to use the one bundled with Seastar.
+# we need to use the one bundled with =nil; Actor.
 #
 # The "real" FIND_PACKAGE invocation for Boost is inside SEASTAR_FIND_DEPENDENCIES.
 #
@@ -43,9 +45,9 @@ find_package (Boost 1.64 MODULE)
 #
 macro (seastar_find_dependencies)
   #
-  # List of Seastar dependencies that is meant to be used
-  # both in Seastar configuration and by clients which
-  # consume Seastar via SeastarConfig.cmake.
+  # List of =nil; Actor dependencies that is meant to be used
+  # both in =nil; Actor configuration and by clients which
+  # consume =nil; Actor via =nil; ActorConfig.cmake.
   #
   set (_seastar_all_dependencies
     # Public dependencies.
@@ -71,7 +73,7 @@ macro (seastar_find_dependencies)
   # Arguments to `find_package` for each 3rd-party dependency.
   # Note that the version specification is a "minimal" version requirement.
 
-  # `unit_test_framework` is not required in the case we are building Seastar
+  # `unit_test_framework` is not required in the case we are building =nil; Actor
   # without the testing library, however the component is always specified as required
   # to keep the CMake code minimalistic and easy-to-use.
   set (_seastar_dep_args_Boost

@@ -20,20 +20,20 @@
  * Copyright (C) 2021 ScyllaDB
  */
 
-#include <seastar/core/thread.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/testing/test_runner.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/core/when_all.hh>
-#include <seastar/core/file.hh>
-#include <seastar/core/io_queue.hh>
-#include <seastar/core/io_intent.hh>
-#include <seastar/core/internal/io_request.hh>
-#include <seastar/core/internal/io_sink.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/smp.hh>
+#include <nil/actor/core/when_all.hh>
+#include <nil/actor/core/file.hh>
+#include <nil/actor/core/io_queue.hh>
+#include <nil/actor/core/io_intent.hh>
+#include <nil/actor/core/detail/io_request.hh>
+#include <nil/actor/core/detail/io_sink.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 template<size_t Len>
 struct fake_file {
@@ -81,7 +81,7 @@ SEASTAR_THREAD_TEST_CASE(test_intent_safe_ref) {
         try {
             iref.retrieve();
             return false;
-        } catch (seastar::cancelled_error &err) {
+        } catch (nil::actor::cancelled_error &err) {
             return true;
         }
     };

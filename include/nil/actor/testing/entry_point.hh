@@ -22,7 +22,7 @@
 
 #pragma once
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 

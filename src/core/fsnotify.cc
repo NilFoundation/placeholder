@@ -19,16 +19,17 @@
  * Copyright 2020 ScyllaDB Ltd.
  */
 
-#include <seastar/core/internal/pollable_fd.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/reactor.hh>
-#include "fsnotify.hh"
+#include <nil/actor/core/posix.hh>
+#include <nil/actor/core/reactor.hh>
 
-class seastar::fsnotifier::impl : public enable_shared_from_this<impl> {
+#include <nil/actor/core/detail/pollable_fd.hh>
+#include <nil/actor/core/detail/fsnotify.hh>
+
+class nil::actor::fsnotifier::impl : public enable_shared_from_this<impl> {
     class my_poll_fd : public pollable_fd {
     public:
-        using pollable_fd::pollable_fd;
         using pollable_fd::get_fd;
+        using pollable_fd::pollable_fd;
 
         operator int() const {
             return get_fd();
@@ -36,12 +37,12 @@ class seastar::fsnotifier::impl : public enable_shared_from_this<impl> {
     };
     my_poll_fd _fd;
     watch_token _close_dummy = -1;
+
 public:
-    impl()
-        : _fd(file_desc::inotify_init(IN_NONBLOCK | IN_CLOEXEC))
-    {}
+    impl() : _fd(file_desc::inotify_init(IN_NONBLOCK | IN_CLOEXEC)) {
+    }
     void remove_watch(watch_token);
-    future<watch_token> create_watch(const sstring& path, flags events);
+    future<watch_token> create_watch(const sstring &path, flags events);
     future<std::vector<event>> wait();
     void shutdown();
     bool active() const {
@@ -49,7 +50,7 @@ public:
     }
 };
 
-void seastar::fsnotifier::impl::remove_watch(watch_token token) {
+void nil::actor::fsnotifier::impl::remove_watch(watch_token token) {
     if (active()) {
         auto res = ::inotify_rm_watch(_fd, token);
         // throw if any other error than EINVAL.
@@ -57,14 +58,15 @@ void seastar::fsnotifier::impl::remove_watch(watch_token token) {
     }
 }
 
-seastar::future<seastar::fsnotifier::watch_token> seastar::fsnotifier::impl::create_watch(const sstring& path, flags events) {
+nil::actor::future<nil::actor::fsnotifier::watch_token> nil::actor::fsnotifier::impl::create_watch(const sstring &path,
+                                                                                          flags events) {
     if (!active()) {
         throw std::runtime_error("attempting to use closed notifier");
     }
     return engine().inotify_add_watch(_fd, path, uint32_t(events));
 }
 
-seastar::future<std::vector<seastar::fsnotifier::event>> seastar::fsnotifier::impl::wait() {
+nil::actor::future<std::vector<nil::actor::fsnotifier::event>> nil::actor::fsnotifier::impl::wait() {
     // be paranoid about buffer alignment
     auto buf = temporary_buffer<char>::aligned(std::max(alignof(::inotify_event), alignof(int64_t)), 4096);
     auto f = _fd.read_some(buf.get_write(), buf.size());
@@ -75,14 +77,12 @@ seastar::future<std::vector<seastar::fsnotifier::event>> seastar::fsnotifier::im
         std::vector<event> events;
 
         while (p < e) {
-            auto ev = reinterpret_cast<const ::inotify_event*>(p);
+            auto ev = reinterpret_cast<const ::inotify_event *>(p);
             if (ev->wd == me->_close_dummy && me->_close_dummy != -1) {
-                me->_fd.close();                
+                me->_fd.close();
             } else {
-                events.emplace_back(event {
-                    ev->wd, flags(ev->mask), ev->cookie,
-                    ev->len != 0 ? sstring(ev->name) : sstring{}
-                });
+                events.emplace_back(
+                    event {ev->wd, flags(ev->mask), ev->cookie, ev->len != 0 ? sstring(ev->name) : sstring {}});
             }
             p += sizeof(::inotify_event) + ev->len;
         }
@@ -91,61 +91,56 @@ seastar::future<std::vector<seastar::fsnotifier::event>> seastar::fsnotifier::im
     });
 }
 
-void seastar::fsnotifier::impl::shutdown() {
-    // reactor does not yet have 
+void nil::actor::fsnotifier::impl::shutdown() {
+    // reactor does not yet have
     // any means of "shutting down" a non-socket read,
     // so we work around this by creating a watch for something ubiquitous,
     // then removing the watch while adding a mark.
     // This will cause any event waiter to wake up, but ignore the event for our
-    // dummy. 
+    // dummy.
     (void)create_watch("/", flags::delete_self).then([me = shared_from_this()](watch_token t) {
         me->_close_dummy = t;
         me->remove_watch(t);
     });
 }
 
-seastar::fsnotifier::watch::~watch() {
+nil::actor::fsnotifier::watch::~watch() {
     if (_impl) {
         _impl->remove_watch(_token);
     }
 }
 
-seastar::fsnotifier::watch::watch(watch&&) noexcept = default;
-seastar::fsnotifier::watch& seastar::fsnotifier::watch::operator=(watch&&) noexcept = default;
+nil::actor::fsnotifier::watch::watch(watch &&) noexcept = default;
+nil::actor::fsnotifier::watch &nil::actor::fsnotifier::watch::operator=(watch &&) noexcept = default;
 
-seastar::fsnotifier::watch_token seastar::fsnotifier::watch::release() {
+nil::actor::fsnotifier::watch_token nil::actor::fsnotifier::watch::release() {
     _impl = {};
     return _token;
 }
 
-seastar::fsnotifier::watch::watch(shared_ptr<impl> impl, watch_token token)
-    : _token(token)
-    , _impl(std::move(impl))
-{}
-
-seastar::fsnotifier::fsnotifier()
-    : _impl(make_shared<impl>())
-{}
-
-seastar::fsnotifier::~fsnotifier() = default;
-
-seastar::fsnotifier::fsnotifier(fsnotifier&&) = default;
-seastar::fsnotifier& seastar::fsnotifier::operator=(fsnotifier&&) = default;
-
-seastar::future<seastar::fsnotifier::watch> seastar::fsnotifier::create_watch(const sstring& path, flags events) {
-    return _impl->create_watch(path, events).then([this](watch_token token) {
-        return watch(_impl, token);
-    });
+nil::actor::fsnotifier::watch::watch(shared_ptr<impl> impl, watch_token token) : _token(token), _impl(std::move(impl)) {
 }
 
-seastar::future<std::vector<seastar::fsnotifier::event>> seastar::fsnotifier::wait() const {
+nil::actor::fsnotifier::fsnotifier() : _impl(make_shared<impl>()) {
+}
+
+nil::actor::fsnotifier::~fsnotifier() = default;
+
+nil::actor::fsnotifier::fsnotifier(fsnotifier &&) = default;
+nil::actor::fsnotifier &nil::actor::fsnotifier::operator=(fsnotifier &&) = default;
+
+nil::actor::future<nil::actor::fsnotifier::watch> nil::actor::fsnotifier::create_watch(const sstring &path, flags events) {
+    return _impl->create_watch(path, events).then([this](watch_token token) { return watch(_impl, token); });
+}
+
+nil::actor::future<std::vector<nil::actor::fsnotifier::event>> nil::actor::fsnotifier::wait() const {
     return _impl->wait();
 }
 
-void seastar::fsnotifier::shutdown() {
+void nil::actor::fsnotifier::shutdown() {
     _impl->shutdown();
 }
 
-bool seastar::fsnotifier::active() const {
+bool nil::actor::fsnotifier::active() const {
     return _impl->active();
 }

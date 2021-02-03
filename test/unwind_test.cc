@@ -23,11 +23,11 @@
 
 #include <boost/test/included/unit_test.hpp>
 #include <pthread.h>
-#include <seastar/util/defer.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/util/backtrace.hh>
+#include <nil/actor/detail/defer.hh>
+#include <nil/actor/core/posix.hh>
+#include <nil/actor/detail/backtrace.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 void foo() {
     throw std::runtime_error("foo");

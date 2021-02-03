@@ -23,21 +23,21 @@
 #include <vector>
 #include <chrono>
 
-#include <seastar/core/thread.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/testing/test_runner.hh>
-#include <seastar/core/execution_stage.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/scheduling_specific.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/core/with_scheduling_group.hh>
-#include <seastar/util/later.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
+#include <nil/actor/core/execution_stage.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/print.hh>
+#include <nil/actor/core/scheduling_specific.hh>
+#include <nil/actor/core/smp.hh>
+#include <nil/actor/core/with_scheduling_group.hh>
+#include <nil/actor/detail/later.hh>
 
 using namespace std::chrono_literals;
 
-using namespace seastar;
+using namespace nil::actor;
 
 /**
  *  Test setting primitive and object as a value after all groups are created
@@ -210,17 +210,17 @@ SEASTAR_THREAD_TEST_CASE(sg_specific_values_define_before_and_after_sg_create) {
 }
 
 /*
- * Test that current scheduling group is inherited by seastar::async()
+ * Test that current scheduling group is inherited by nil::actor::async()
  */
 SEASTAR_THREAD_TEST_CASE(sg_scheduling_group_inheritance_in_seastar_async_test) {
     scheduling_group sg = create_scheduling_group("sg0", 100).get0();
     thread_attributes attr = {};
     attr.sched_group = sg;
-    seastar::async(attr, [attr] {
+    nil::actor::async(attr, [attr] {
         BOOST_REQUIRE_EQUAL(internal::scheduling_group_index(current_scheduling_group()),
                             internal::scheduling_group_index(*(attr.sched_group)));
 
-        seastar::async([attr] {
+        nil::actor::async([attr] {
             BOOST_REQUIRE_EQUAL(internal::scheduling_group_index(current_scheduling_group()),
                                 internal::scheduling_group_index(*(attr.sched_group)));
 

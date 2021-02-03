@@ -1,52 +1,58 @@
-/*
- * This file is open source software, licensed to you under the terms
- * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership.  You may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright (C) 2016 ScyllaDB
- */
+//---------------------------------------------------------------------------//
+// Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//---------------------------------------------------------------------------//
 
 #pragma once
 
-#include <seastar/http/httpd.hh>
-#include <seastar/core/metrics.hh>
-#include <seastar/util/std-compat.hh>
+#include <nil/actor/http/httpd.hh>
+#include <nil/actor/core/metrics.hh>
+#include <nil/actor/detail/std-compat.hh>
 
-namespace seastar {
+namespace nil {
+    namespace actor {
 
-    namespace prometheus {
+        namespace prometheus {
 
-        /*!
-         * Holds prometheus related configuration
-         */
-        struct config {
-            sstring metric_help;                             //!< Default help message for the returned metrics
-            sstring hostname;                                //!< hostname is deprecated, use label instead
-            std::optional<metrics::label_instance> label;    //!< A label that will be added to all metrics, we advice
-                                                             //!< not to use it and set it on the prometheus server
-            sstring prefix = "seastar";                      //!< a prefix that will be added to metric names
-        };
+            /*!
+             * Holds prometheus related configuration
+             */
+            struct config {
+                sstring metric_help;    //!< Default help message for the returned metrics
+                sstring hostname;       //!< hostname is deprecated, use label instead
+                std::optional<metrics::label_instance>
+                    label;                     //!< A label that will be added to all metrics, we advice
+                                               //!< not to use it and set it on the prometheus server
+                sstring prefix = "seastar";    //!< a prefix that will be added to metric names
+            };
 
-        future<> start(httpd::http_server_control &http_server, config ctx);
+            future<> start(httpd::http_server_control &http_server, config ctx);
 
-        /// \defgroup add_prometheus_routes adds a /metrics endpoint that returns prometheus metrics
-        ///    both in txt format and in protobuf according to the prometheus spec
-        /// @{
-        future<> add_prometheus_routes(distributed<http_server> &server, config ctx);
-        future<> add_prometheus_routes(http_server &server, config ctx);
-        /// @}
-    }    // namespace prometheus
-}    // namespace seastar
+            /// \defgroup add_prometheus_routes adds a /metrics endpoint that returns prometheus metrics
+            ///    both in txt format and in protobuf according to the prometheus spec
+            /// @{
+            future<> add_prometheus_routes(distributed<http_server> &server, config ctx);
+            future<> add_prometheus_routes(http_server &server, config ctx);
+            /// @}
+        }    // namespace prometheus
+    }        // namespace actor
+}    // namespace nil

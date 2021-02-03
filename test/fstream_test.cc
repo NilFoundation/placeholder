@@ -22,25 +22,25 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
-#include <seastar/core/fstream.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/seastar.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/test_runner.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/print.hh>
-#include <seastar/util/defer.hh>
-#include <seastar/util/tmp_file.hh>
+#include <nil/actor/core/fstream.hh>
+#include <nil/actor/core/smp.hh>
+#include <nil/actor/core/shared_ptr.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/semaphore.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/print.hh>
+#include <nil/actor/detail/defer.hh>
+#include <nil/actor/detail/tmp_file.hh>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
 #include "mock_file.hh"
 #include <boost/range/irange.hpp>
 
-using namespace seastar;
+using namespace nil::actor;
 namespace fs = std::filesystem;
 
 struct writer {
@@ -371,7 +371,7 @@ SEASTAR_TEST_CASE(file_handle_test) {
         auto bad = std::vector<unsigned>(
             smp::count);    // std::vector<bool> is special and unsuitable because it uses bitfields
         smp::invoke_on_all([fh = f.dup(), &bad] {
-            return seastar::async([fh, &bad] {
+            return nil::actor::async([fh, &bad] {
                 auto f = fh.to_file();
                 auto buf = static_cast<char *>(aligned_alloc(4096, 4096));
                 auto del = defer([&] { ::free(buf); });
@@ -387,7 +387,7 @@ SEASTAR_TEST_CASE(file_handle_test) {
 }
 
 SEASTAR_TEST_CASE(test_fstream_slow_start) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         static constexpr size_t file_size = 128 * 1024 * 1024;
         static constexpr size_t buffer_size = 260 * 1024;
         static constexpr size_t read_ahead = 1;

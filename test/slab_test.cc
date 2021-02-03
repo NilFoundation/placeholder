@@ -23,9 +23,9 @@
 
 #include <iostream>
 #include <assert.h>
-#include <seastar/core/slab.hh>
+#include <nil/actor/core/slab.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 namespace bi = boost::intrusive;
 

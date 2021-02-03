@@ -19,21 +19,21 @@
  * Copyright 2020 ScyllaDB
  */
 
-#include <seastar/core/on_internal_error.hh>
-#include <seastar/util/backtrace.hh>
-#include <seastar/util/log.hh>
+#include <nil/actor/core/on_internal_error.hh>
+#include <nil/actor/detail/backtrace.hh>
+#include <nil/actor/detail/log.hh>
 
 #include <atomic>
 
-static std::atomic<bool> abort_on_internal_error{false};
+static std::atomic<bool> abort_on_internal_error {false};
 
-using namespace seastar;
+using namespace nil::actor;
 
-void seastar::set_abort_on_internal_error(bool do_abort) {
+void nil::actor::set_abort_on_internal_error(bool do_abort) {
     abort_on_internal_error.store(do_abort);
 }
 
-void seastar::on_internal_error(logger& logger, std::string_view msg) {
+void nil::actor::on_internal_error(logger &logger, std::string_view msg) {
     if (abort_on_internal_error.load()) {
         logger.error("{}, at: {}", msg, current_backtrace());
         abort();
@@ -42,7 +42,7 @@ void seastar::on_internal_error(logger& logger, std::string_view msg) {
     }
 }
 
-void seastar::on_internal_error(logger& logger, std::exception_ptr ex) {
+void nil::actor::on_internal_error(logger &logger, std::exception_ptr ex) {
     if (abort_on_internal_error.load()) {
         logger.error("{}", ex);
         abort();
@@ -51,7 +51,7 @@ void seastar::on_internal_error(logger& logger, std::exception_ptr ex) {
     }
 }
 
-void seastar::on_internal_error_noexcept(logger& logger, std::string_view msg) noexcept {
+void nil::actor::on_internal_error_noexcept(logger &logger, std::string_view msg) noexcept {
     logger.error("{}, at: {}", msg, current_backtrace());
     if (abort_on_internal_error.load()) {
         abort();

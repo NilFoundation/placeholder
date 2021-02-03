@@ -20,20 +20,20 @@
  * Copyright (C) 2016 ScyllaDB
  */
 
-#include <seastar/core/thread.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/testing/test_runner.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/fair_queue.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/util/later.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/print.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
+#include <nil/actor/core/sstring.hh>
+#include <nil/actor/core/fair_queue.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/detail/later.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/print.hh>
 #include <boost/range/irange.hpp>
 #include <chrono>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 struct request {

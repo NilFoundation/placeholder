@@ -21,7 +21,7 @@
 
 #pragma once
 
-namespace seastar {
+namespace nil { namespace actor {
 namespace testing {
 
 // Disables aborting in on_internal_error() for a scope.

@@ -22,18 +22,18 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
-#include <seastar/core/thread.hh>
+#include <nil/actor/core/future.hh>
+#include <nil/actor/core/thread.hh>
 
-#include <seastar/testing/seastar_test.hh>
+#include <nil/actor/testing/seastar_test.hh>
 
 #define SEASTAR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures) \
-    struct name : public seastar::testing::seastar_test { \
+    struct name : public nil::actor::testing::seastar_test { \
         const char* get_test_file() override { return __FILE__; } \
         const char* get_name() override { return #name; } \
         int get_expected_failures() override { return failures; } \
-        seastar::future<> run_test_case() override { \
-            return seastar::async([this] { \
+        nil::actor::future<> run_test_case() override { \
+            return nil::actor::async([this] { \
                 do_run_test_case(); \
             }); \
         } \

@@ -19,10 +19,10 @@
  * Copyright (C) 2020 Cloudius Systems, Ltd.
  */
 
-#include <seastar/testing/test_case.hh>
-#include <seastar/util/log.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/detail/log.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 SEASTAR_TEST_CASE(log_buf_realloc) {
     std::array<char, 128> external_buf;

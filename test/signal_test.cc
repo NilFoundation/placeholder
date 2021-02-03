@@ -19,12 +19,12 @@
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/reactor.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/testing/test_case.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/shared_ptr.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/testing/test_case.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 extern "C" {
 #include <signal.h>

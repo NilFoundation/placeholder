@@ -21,14 +21,14 @@
 
 #define BOOST_TEST_MODULE core
 
-#include <seastar/util/tuple_utils.hh>
+#include <nil/actor/detail/tuple_utils.hh>
 
 #include <boost/test/included/unit_test.hpp>
 
 #include <sstream>
 #include <type_traits>
 
-using namespace seastar;
+using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(map) {
     const auto pairs = tuple_map(std::make_tuple(10, 5.5, true), [](auto &&e) { return std::make_tuple(e, e); });

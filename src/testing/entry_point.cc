@@ -20,11 +20,11 @@
  * Copyright (C) 2018 ScyllaDB Ltd.
  */
 
-#include <seastar/testing/entry_point.hh>
-#include <seastar/testing/seastar_test.hh>
-#include <seastar/testing/test_runner.hh>
+#include <nil/actor/testing/entry_point.hh>
+#include <nil/actor/testing/seastar_test.hh>
+#include <nil/actor/testing/test_runner.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 
@@ -75,7 +75,7 @@ int entry_point(int argc, char** argv) {
 #endif
 
     const int boost_exit_code = ::boost::unit_test::unit_test_main(&init_unit_test_suite, argc, argv);
-    const int seastar_exit_code = seastar::testing::global_test_runner().finalize();
+    const int seastar_exit_code = nil::actor::testing::global_test_runner().finalize();
     if (boost_exit_code) {
         return boost_exit_code;
     }

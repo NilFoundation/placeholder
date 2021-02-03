@@ -19,7 +19,7 @@
  * Copyright (C) 2018 ScyllaDB Ltd.
  */
 
-#include <seastar/testing/perf_tests.hh>
+#include <nil/actor/testing/perf_tests.hh>
 
 #include <fstream>
 #include <regex>
@@ -30,12 +30,12 @@
 
 #include <fmt/ostream.h>
 
-#include <seastar/core/app-template.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/sharded.hh>
-#include <seastar/json/formatter.hh>
-#include <seastar/util/later.hh>
-#include <seastar/testing/random.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/sharded.hh>
+#include <nil/actor/json/formatter.hh>
+#include <nil/actor/detail/later.hh>
+#include <nil/actor/testing/random.hh>
 
 #include <signal.h>
 

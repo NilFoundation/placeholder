@@ -23,7 +23,7 @@
 
 #include <random>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 
@@ -31,4 +31,4 @@ extern thread_local std::default_random_engine local_random_engine;
 
 } // namespace testing
 
-} // namespace seastar
+} // namespace nil::actor

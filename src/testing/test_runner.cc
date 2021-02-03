@@ -21,12 +21,12 @@
 
 #include <iostream>
 
-#include <seastar/core/app-template.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/testing/test_runner.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/posix.hh>
+#include <nil/actor/testing/test_runner.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 

@@ -20,20 +20,20 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/thread.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/core/map_reduce.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/shared_mutex.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/core/sstring.hh>
+#include <nil/actor/core/semaphore.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/core/map_reduce.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/shared_mutex.hh>
 #include <boost/range/irange.hpp>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 SEASTAR_TEST_CASE(test_semaphore_consume) {

@@ -19,15 +19,15 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/testing/test_case.hh>
+#include <nil/actor/testing/test_case.hh>
 
-#include <seastar/core/distributed.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/sleep.hh>
+#include <nil/actor/core/distributed.hh>
+#include <nil/actor/core/shared_ptr.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/sleep.hh>
 #include <iostream>
 
-using namespace seastar;
+using namespace nil::actor;
 
 SEASTAR_TEST_CASE(make_foreign_ptr_from_lw_shared_ptr) {
     auto p = make_foreign(make_lw_shared<sstring>("foo"));
@@ -42,7 +42,7 @@ SEASTAR_TEST_CASE(make_foreign_ptr_from_shared_ptr) {
 }
 
 SEASTAR_TEST_CASE(foreign_ptr_copy_test) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         auto ptr = make_foreign(make_shared<sstring>("foo"));
         BOOST_REQUIRE(ptr->size() == 3);
         auto ptr2 = ptr.copy().get0();
@@ -101,14 +101,14 @@ SEASTAR_TEST_CASE(foreign_ptr_cpu_test) {
 
     using namespace std::chrono_literals;
 
-    return seastar::async([] {
+    return nil::actor::async([] {
                auto p = smp::submit_to(1, [] { return make_foreign(std::make_unique<dummy>()); }).get0();
 
                p.reset(std::make_unique<dummy>());
            })
         .then([] {
             // Let ~foreign_ptr() take its course. RIP dummy.
-            return seastar::sleep(100ms);
+            return nil::actor::sleep(100ms);
         });
 }
 
@@ -120,14 +120,14 @@ SEASTAR_TEST_CASE(foreign_ptr_move_assignment_test) {
 
     using namespace std::chrono_literals;
 
-    return seastar::async([] {
+    return nil::actor::async([] {
                auto p = smp::submit_to(1, [] { return make_foreign(std::make_unique<dummy>()); }).get0();
 
                p = foreign_ptr<std::unique_ptr<dummy>>();
            })
         .then([] {
             // Let ~foreign_ptr() take its course. RIP dummy.
-            return seastar::sleep(100ms);
+            return nil::actor::sleep(100ms);
         });
 }
 

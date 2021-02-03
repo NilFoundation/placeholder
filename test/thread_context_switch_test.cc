@@ -20,15 +20,15 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/thread.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/distributed.hh>
-#include <seastar/core/sleep.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/semaphore.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/distributed.hh>
+#include <nil/actor/core/sleep.hh>
 #include <fmt/printf.h>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 class context_switch_tester {

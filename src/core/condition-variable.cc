@@ -19,26 +19,28 @@
  * Copyright (C) 2020 ScyllaDB, Ltd.
  */
 
-#include <seastar/core/condition-variable.hh>
+#include <nil/actor/core/condition-variable.hh>
 
-namespace seastar {
+namespace nil {
+    namespace actor {
 
-const char* broken_condition_variable::what() const noexcept {
-    return "Condition variable is broken";
-}
+        const char *broken_condition_variable::what() const noexcept {
+            return "Condition variable is broken";
+        }
 
-const char* condition_variable_timed_out::what() const noexcept {
-    return "Condition variable timed out";
-}
+        const char *condition_variable_timed_out::what() const noexcept {
+            return "Condition variable timed out";
+        }
 
-condition_variable_timed_out condition_variable::condition_variable_exception_factory::timeout() noexcept {
-    static_assert(std::is_nothrow_default_constructible_v<condition_variable_timed_out>);
-    return condition_variable_timed_out();
-}
+        condition_variable_timed_out condition_variable::condition_variable_exception_factory::timeout() noexcept {
+            static_assert(std::is_nothrow_default_constructible_v<condition_variable_timed_out>);
+            return condition_variable_timed_out();
+        }
 
-broken_condition_variable condition_variable::condition_variable_exception_factory::broken() noexcept {
-    static_assert(std::is_nothrow_default_constructible_v<broken_condition_variable>);
-    return broken_condition_variable();
-}
+        broken_condition_variable condition_variable::condition_variable_exception_factory::broken() noexcept {
+            static_assert(std::is_nothrow_default_constructible_v<broken_condition_variable>);
+            return broken_condition_variable();
+        }
 
-} // namespace seastar
+    }    // namespace actor
+}    // namespace nil

@@ -19,19 +19,19 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/testing/test_case.hh>
-#include <seastar/core/memory.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/core/temporary_buffer.hh>
-#include <seastar/util/memory_diagnostics.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/core/memory.hh>
+#include <nil/actor/core/smp.hh>
+#include <nil/actor/core/temporary_buffer.hh>
+#include <nil/actor/detail/memory_diagnostics.hh>
 
 #include <vector>
 #include <future>
 #include <iostream>
 
-#include <malloc.h>
+#include <cmalloc>
 
-using namespace seastar;
+using namespace nil::actor;
 
 SEASTAR_TEST_CASE(alloc_almost_all_and_realloc_it_with_a_smaller_size) {
 #ifndef SEASTAR_DEFAULT_ALLOCATOR
@@ -128,9 +128,9 @@ struct thread_alloc_info {
 template<typename Func>
 thread_alloc_info run_with_stats(Func &&f) {
     return std::async([&f]() {
-               auto before = seastar::memory::stats();
+               auto before = nil::actor::memory::stats();
                void *ptr = f();
-               auto after = seastar::memory::stats();
+               auto after = nil::actor::memory::stats();
                return thread_alloc_info {before, after, ptr};
            })
         .get();
@@ -141,9 +141,9 @@ void test_allocation_function(Func f) {
     // alien alloc and free
     auto alloc_info = run_with_stats(f);
     auto free_info = std::async([p = alloc_info.ptr]() {
-                         auto before = seastar::memory::stats();
+                         auto before = nil::actor::memory::stats();
                          free(p);
-                         auto after = seastar::memory::stats();
+                         auto after = nil::actor::memory::stats();
                          return thread_alloc_info {before, after, nullptr};
                      }).get();
 

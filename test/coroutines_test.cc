@@ -19,10 +19,10 @@
  * Copyright (C) 2019 ScyllaDB Ltd.
  */
 
-#include <seastar/core/future-util.hh>
-#include <seastar/testing/test_case.hh>
+#include <nil/actor/core/future-util.hh>
+#include <nil/actor/testing/test_case.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 #ifndef SEASTAR_COROUTINES_ENABLED
 
@@ -32,7 +32,7 @@ SEASTAR_TEST_CASE(test_coroutines_not_compiled_in) {
 
 #else
 
-#include <seastar/core/coroutine.hh>
+#include <nil/actor/core/coroutine.hh>
 
 namespace {
 

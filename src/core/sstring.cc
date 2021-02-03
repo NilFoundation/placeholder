@@ -19,9 +19,9 @@
  * Copyright (C) 2020 ScyllaDB
  */
 
-#include <seastar/core/sstring.hh>
+#include <nil/actor/core/sstring.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 [[noreturn]] void internal::throw_bad_alloc() {
     throw std::bad_alloc();

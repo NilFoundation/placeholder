@@ -19,9 +19,9 @@
  * Copyright (C) 2020 Cloudius Systems, Ltd.
  */
 
-#include <seastar/testing/test_runner.hh>
+#include <nil/actor/testing/test_runner.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 
@@ -29,4 +29,4 @@ thread_local std::default_random_engine local_random_engine;
 
 } // namespace testing
 
-} // namespace seastar
+} // namespace nil::actor

@@ -22,15 +22,15 @@
 
 #pragma once
 
-#include <seastar/core/future.hh>
+#include <nil/actor/core/future.hh>
 
-#include <seastar/testing/seastar_test.hh>
+#include <nil/actor/testing/seastar_test.hh>
 
 #define SEASTAR_TEST_CASE(name) \
-    struct name : public seastar::testing::seastar_test { \
+    struct name : public nil::actor::testing::seastar_test { \
         const char* get_test_file() override { return __FILE__; } \
         const char* get_name() override { return #name; } \
-        seastar::future<> run_test_case() override; \
+        nil::actor::future<> run_test_case() override; \
     }; \
     static name name ## _instance; \
-    seastar::future<> name::run_test_case()
+    nil::actor::future<> name::run_test_case()

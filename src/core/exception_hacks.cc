@@ -54,71 +54,72 @@
 
 #include <link.h>
 #include <dlfcn.h>
-#include <assert.h>
+#include <cassert>
 #include <vector>
 #include <cstddef>
-#include <seastar/core/exception_hacks.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/util/backtrace.hh>
+#include <nil/actor/core/exception_hacks.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/detail/backtrace.hh>
 
-namespace seastar {
-using dl_iterate_fn = int (*) (int (*callback) (struct dl_phdr_info *info, size_t size, void *data), void *data);
+namespace nil {
+    namespace actor {
+        using dl_iterate_fn = int (*)(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data);
 
-[[gnu::no_sanitize_address]]
-static dl_iterate_fn dl_iterate_phdr_org() {
-    static dl_iterate_fn org = [] {
-        auto org = (dl_iterate_fn)dlsym (RTLD_NEXT, "dl_iterate_phdr");
-        assert(org);
-        return org;
-    }();
-    return org;
-}
+        [[gnu::no_sanitize_address]] static dl_iterate_fn dl_iterate_phdr_org() {
+            static dl_iterate_fn org = [] {
+                auto org = (dl_iterate_fn)dlsym(RTLD_NEXT, "dl_iterate_phdr");
+                assert(org);
+                return org;
+            }();
+            return org;
+        }
 
-// phdrs_cache has to remain valid until very late in the process
-// life, and that time is not a mirror image of when it is first used.
-// Given that, we avoid a static constructor/destructor pair and just
-// never destroy it.
-static std::vector<dl_phdr_info> *phdrs_cache = nullptr;
+        // phdrs_cache has to remain valid until very late in the process
+        // life, and that time is not a mirror image of when it is first used.
+        // Given that, we avoid a static constructor/destructor pair and just
+        // never destroy it.
+        static std::vector<dl_phdr_info> *phdrs_cache = nullptr;
 
-void init_phdr_cache() {
-    // Fill out elf header cache for access without locking.
-    // This assumes no dynamic object loading/unloading after this point
-    phdrs_cache = new std::vector<dl_phdr_info>();
-    dl_iterate_phdr_org()([] (struct dl_phdr_info *info, size_t size, void *data) {
-        phdrs_cache->push_back(*info);
-        return 0;
-    }, nullptr);
-}
+        void init_phdr_cache() {
+            // Fill out elf header cache for access without locking.
+            // This assumes no dynamic object loading/unloading after this point
+            phdrs_cache = new std::vector<dl_phdr_info>();
+            dl_iterate_phdr_org()(
+                [](struct dl_phdr_info *info, size_t size, void *data) {
+                    phdrs_cache->push_back(*info);
+                    return 0;
+                },
+                nullptr);
+        }
 
 #ifndef NO_EXCEPTION_INTERCEPT
-seastar::logger exception_logger("exception");
+        nil::actor::logger exception_logger("exception");
 
-void log_exception_trace() noexcept {
-    seastar::engine()._cxx_exceptions++;
-    static thread_local bool nested = false;
-    if (!nested && exception_logger.is_enabled(log_level::trace)) {
-        nested = true;
-        exception_logger.trace("Throw exception at:\n{}", current_backtrace());
-        nested = false;
-    }
-}
+        void log_exception_trace() noexcept {
+            nil::actor::engine()._cxx_exceptions++;
+            static thread_local bool nested = false;
+            if (!nested && exception_logger.is_enabled(log_level::trace)) {
+                nested = true;
+                exception_logger.trace("Throw exception at:\n{}", current_backtrace());
+                nested = false;
+            }
+        }
 #else
-void log_exception_trace() noexcept {}
+        void log_exception_trace() noexcept {
+        }
 #endif
 
-}
+    }    // namespace actor
+}    // namespace nil
 
-extern "C"
-[[gnu::visibility("default")]]
-[[gnu::used]]
-[[gnu::no_sanitize_address]]
-int dl_iterate_phdr(int (*callback) (struct dl_phdr_info *info, size_t size, void *data), void *data) {
-    if (!seastar::local_engine || !seastar::phdrs_cache) {
+extern "C" [[gnu::visibility("default")]] [[gnu::used]] [[gnu::no_sanitize_address]] int
+    dl_iterate_phdr(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data) {
+    if (!nil::actor::local_engine || !nil::actor::phdrs_cache) {
         // Cache is not yet populated, pass through to original function
-        return seastar::dl_iterate_phdr_org()(callback, data);
+        return nil::actor::dl_iterate_phdr_org()(callback, data);
     }
     int r = 0;
-    for (auto h : *seastar::phdrs_cache) {
+    for (auto h : *nil::actor::phdrs_cache) {
         // Pass dl_phdr_info size that does not include dlpi_adds and dlpi_subs.
         // This forces libgcc to disable caching which is not thread safe and
         // requires dl_iterate_phdr to serialize calls to callback. Since we do
@@ -132,18 +133,15 @@ int dl_iterate_phdr(int (*callback) (struct dl_phdr_info *info, size_t size, voi
 }
 
 #ifndef NO_EXCEPTION_INTERCEPT
-extern "C"
-[[gnu::visibility("default")]]
-[[gnu::used]]
-int _Unwind_RaiseException(struct _Unwind_Exception *h) {
-    using throw_fn =  int (*)(void *);
+extern "C" [[gnu::visibility("default")]] [[gnu::used]] int _Unwind_RaiseException(struct _Unwind_Exception *h) {
+    using throw_fn = int (*)(void *);
     static throw_fn org = nullptr;
 
     if (!org) {
-        org = (throw_fn)dlsym (RTLD_NEXT, "_Unwind_RaiseException");
+        org = (throw_fn)dlsym(RTLD_NEXT, "_Unwind_RaiseException");
     }
-    if (seastar::local_engine) {
-        seastar::log_exception_trace();
+    if (nil::actor::local_engine) {
+        nil::actor::log_exception_trace();
     }
     return org(h);
 }

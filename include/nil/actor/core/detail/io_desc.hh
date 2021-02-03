@@ -22,15 +22,18 @@
 #pragma once
 
 #include <nil/actor/core/linux-aio.hh>
+
 #include <exception>
 
-namespace seastar {
+namespace nil {
+    namespace actor {
 
-    class kernel_completion {
-    protected:
-        ~kernel_completion() = default;
+        class kernel_completion {
+        protected:
+            ~kernel_completion() = default;
 
-    public:
-        virtual void complete_with(ssize_t res) = 0;
-    };
-}    // namespace seastar
+        public:
+            virtual void complete_with(ssize_t res) = 0;
+        };
+    }    // namespace actor
+}    // namespace nil

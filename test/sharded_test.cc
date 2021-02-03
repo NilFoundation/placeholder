@@ -19,11 +19,11 @@
  *  Copyright (C) 2018 Scylladb, Ltd.
  */
 
-#include <seastar/testing/thread_test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
-#include <seastar/core/sharded.hh>
+#include <nil/actor/core/sharded.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 namespace {
     class invoke_on_during_stop final : public peering_sharded_service<invoke_on_during_stop> {
@@ -57,7 +57,7 @@ public:
 };
 
 SEASTAR_THREAD_TEST_CASE(invoke_map_returns_non_future_value) {
-    seastar::sharded<mydata> s;
+    nil::actor::sharded<mydata> s;
     s.start().get();
     s.map([](mydata &m) { return m.x; })
         .then([](std::vector<int> results) {
@@ -70,7 +70,7 @@ SEASTAR_THREAD_TEST_CASE(invoke_map_returns_non_future_value) {
 };
 
 SEASTAR_THREAD_TEST_CASE(invoke_map_returns_future_value) {
-    seastar::sharded<mydata> s;
+    nil::actor::sharded<mydata> s;
     s.start().get();
     s.map([](mydata &m) { return make_ready_future<int>(m.x); })
         .then([](std::vector<int> results) {
@@ -83,9 +83,9 @@ SEASTAR_THREAD_TEST_CASE(invoke_map_returns_future_value) {
 }
 
 SEASTAR_THREAD_TEST_CASE(invoke_map_returns_future_value_from_thread) {
-    seastar::sharded<mydata> s;
+    nil::actor::sharded<mydata> s;
     s.start().get();
-    s.map([](mydata &m) { return seastar::async([&m] { return m.x; }); })
+    s.map([](mydata &m) { return nil::actor::async([&m] { return m.x; }); })
         .then([](std::vector<int> results) {
             for (auto &x : results) {
                 assert(x == 1);
@@ -103,6 +103,6 @@ SEASTAR_THREAD_TEST_CASE(failed_sharded_start_doesnt_hang) {
         }
     };
 
-    seastar::sharded<fail_to_start> s;
+    nil::actor::sharded<fail_to_start> s;
     s.start().then_wrapped([](auto &&fut) { fut.ignore_ready_future(); }).get();
 }

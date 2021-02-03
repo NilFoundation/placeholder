@@ -23,14 +23,14 @@
 #include <future>
 #include <numeric>
 #include <iostream>
-#include <seastar/core/alien.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/util/later.hh>
+#include <nil/actor/core/alien.hh>
+#include <nil/actor/core/smp.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/posix.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/detail/later.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 enum {
     ENGINE_READY = 24,
@@ -58,10 +58,10 @@ int main(int argc, char **argv) {
         std::vector<std::future<int>> counts;
         for (auto i : boost::irange(0u, smp::count)) {
             // send messages from alien.
-            counts.push_back(alien::submit_to(i, [i] { return seastar::make_ready_future<int>(i); }));
+            counts.push_back(alien::submit_to(i, [i] { return nil::actor::make_ready_future<int>(i); }));
         }
         // std::future<void>
-        alien::submit_to(0, [] { return seastar::make_ready_future<>(); }).wait();
+        alien::submit_to(0, [] { return nil::actor::make_ready_future<>(); }).wait();
         int total = 0;
         for (auto &count : counts) {
             total += count.get();
@@ -71,17 +71,17 @@ int main(int argc, char **argv) {
         return total;
     });
 
-    seastar::app_template app;
+    nil::actor::app_template app;
     eventfd_t result = 0;
     app.run(argc, argv, [&] {
-        return seastar::now()
+        return nil::actor::now()
             .then([engine_ready_fd] {
                 // engine ready!
                 ::eventfd_write(engine_ready_fd, ENGINE_READY);
-                return seastar::now();
+                return nil::actor::now();
             })
             .then([alien_done = std::move(alien_done), &result]() mutable {
-                return do_with(seastar::pollable_fd(std::move(alien_done)), [&result](pollable_fd &alien_done_fds) {
+                return do_with(nil::actor::pollable_fd(std::move(alien_done)), [&result](pollable_fd &alien_done_fds) {
                     // check if alien has dismissed me.
                     return alien_done_fds.readable().then([&result, &alien_done_fds] {
                         auto ret = alien_done_fds.get_file_desc().read(&result, sizeof(result));
@@ -96,10 +96,10 @@ int main(int argc, char **argv) {
                 if (result != ALIEN_DONE) {
                     throw std::logic_error("alien failed to dismiss me");
                 }
-                return seastar::now();
+                return nil::actor::now();
             })
             .handle_exception([](auto ep) { std::cerr << "Error: " << ep << std::endl; })
-            .finally([] { seastar::engine().exit(0); });
+            .finally([] { nil::actor::engine().exit(0); });
     });
     int total = zim.get();
     const auto shards = boost::irange(0u, smp::count);

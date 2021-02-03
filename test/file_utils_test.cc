@@ -22,18 +22,18 @@
 
 #include <stdlib.h>
 
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/testing/test_runner.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
 
-#include <seastar/core/file.hh>
-#include <seastar/core/seastar.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/util/tmp_file.hh>
-#include <seastar/util/file.hh>
+#include <nil/actor/core/file.hh>
+#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/print.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/detail/tmp_file.hh>
+#include <nil/actor/detail/file.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 namespace fs = std::filesystem;
 
 class expected_exception : std::runtime_error {

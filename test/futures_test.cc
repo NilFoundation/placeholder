@@ -19,34 +19,34 @@
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  */
 
-#include <seastar/testing/test_case.hh>
+#include <nil/actor/testing/test_case.hh>
 
-#include <seastar/core/reactor.hh>
-#include <seastar/core/shared_ptr.hh>
-#include <seastar/core/future-util.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/stream.hh>
-#include <seastar/util/backtrace.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/shared_future.hh>
-#include <seastar/core/manual_clock.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/gate.hh>
-#include <seastar/util/log.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/shared_ptr.hh>
+#include <nil/actor/core/future-util.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/stream.hh>
+#include <nil/actor/detail/backtrace.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/shared_future.hh>
+#include <nil/actor/core/manual_clock.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/print.hh>
+#include <nil/actor/core/gate.hh>
+#include <nil/actor/detail/log.hh>
 #include <boost/iterator/counting_iterator.hpp>
-#include <seastar/testing/thread_test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <boost/range/iterator_range.hpp>
 #include <boost/range/irange.hpp>
 
-#include <seastar/core/internal/api-level.hh>
+#include <nil/actor/core/detail/api-level.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
-static_assert(std::is_nothrow_default_constructible_v<gate>, "seastar::gate constructor must not throw");
-static_assert(std::is_nothrow_move_constructible_v<gate>, "seastar::gate move constructor must not throw");
+static_assert(std::is_nothrow_default_constructible_v<gate>, "nil::actor::gate constructor must not throw");
+static_assert(std::is_nothrow_move_constructible_v<gate>, "nil::actor::gate move constructor must not throw");
 
 static_assert(std::is_nothrow_default_constructible_v<shared_future<>>);
 static_assert(std::is_nothrow_copy_constructible_v<shared_future<>>);
@@ -216,11 +216,11 @@ public:
 static void check_finally_exception(std::exception_ptr ex) {
     BOOST_REQUIRE_EQUAL(
         fmt::format("{}", ex),
-        "seastar::nested_exception: test_exception (bar) (while cleaning up after test_exception (foo))");
+        "nil::actor::nested_exception: test_exception (bar) (while cleaning up after test_exception (foo))");
     try {
         // convert to the concrete type nested_exception
         std::rethrow_exception(ex);
-    } catch (seastar::nested_exception &ex) {
+    } catch (nil::actor::nested_exception &ex) {
         try {
             std::rethrow_exception(ex.inner);
         } catch (test_exception &inner) {
@@ -870,7 +870,7 @@ SEASTAR_TEST_CASE(test_unused_shared_future_is_not_a_broken_future) {
 }
 
 SEASTAR_TEST_CASE(test_shared_future_propagates_value_to_all) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         promise<shared_ptr<int>> p;    // shared_ptr<> to check it deals with emptyable types
         shared_future<shared_ptr<int>> f(p.get_future());
 
@@ -894,7 +894,7 @@ void check_fails_with_expected(future<T...> f) {
 }
 
 SEASTAR_TEST_CASE(test_shared_future_propagates_value_to_copies) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         promise<int> p;
         auto sf1 = shared_future<int>(p.get_future());
         auto sf2 = sf1;
@@ -925,7 +925,7 @@ SEASTAR_TEST_CASE(test_obtaining_future_from_shared_future_after_it_is_resolved)
 }
 
 SEASTAR_TEST_CASE(test_valueless_shared_future) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         promise<> p;
         shared_future<> f(p.get_future());
 
@@ -1101,7 +1101,7 @@ static void check_timed_out(future<T...> &&f) {
 }
 
 SEASTAR_TEST_CASE(test_with_timeout_when_it_times_out) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         promise<> pr;
         auto f = with_timeout(manual_clock::now() + 2s, pr.get_future());
 
@@ -1144,7 +1144,7 @@ SEASTAR_THREAD_TEST_CASE(test_shared_future_get_future_after_timeout) {
 }
 
 SEASTAR_TEST_CASE(test_custom_exception_factory_in_with_timeout) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         class custom_error : public std::exception {
         public:
             virtual const char *what() const noexcept {
@@ -1167,7 +1167,7 @@ SEASTAR_TEST_CASE(test_custom_exception_factory_in_with_timeout) {
 }
 
 SEASTAR_TEST_CASE(test_with_timeout_when_it_does_not_time_out) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         {
             promise<int> pr;
             auto f = with_timeout(manual_clock::now() + 1s, pr.get_future());
@@ -1184,7 +1184,7 @@ SEASTAR_TEST_CASE(test_with_timeout_when_it_does_not_time_out) {
 }
 
 SEASTAR_TEST_CASE(test_shared_future_with_timeout) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         shared_promise<with_clock<manual_clock>, int> pr;
         auto f1 = pr.get_shared_future(manual_clock::now() + 1s);
         auto f2 = pr.get_shared_future(manual_clock::now() + 2s);
@@ -1220,7 +1220,7 @@ SEASTAR_TEST_CASE(test_shared_future_with_timeout) {
 #endif
 
 SEASTAR_TEST_CASE(test_when_all_succeed_tuples) {
-    return seastar::when_all_succeed(make_ready_future<>(),
+    return nil::actor::when_all_succeed(make_ready_future<>(),
                                      make_ready_future<sstring>("hello world"),
                                      make_ready_future<int>(42),
                                      make_ready_future<>(),
@@ -1233,7 +1233,7 @@ SEASTAR_TEST_CASE(test_when_all_succeed_tuples) {
             BOOST_REQUIRE_EQUAL(std::get<1>(t), "hi");
             BOOST_REQUIRE_EQUAL(b, true);
 
-            return seastar::when_all_succeed(make_exception_future<>(42),
+            return nil::actor::when_all_succeed(make_exception_future<>(42),
                                              make_ready_future<sstring>("hello world"),
                                              make_exception_future<int>(43),
                                              make_ready_future<>())
@@ -1261,14 +1261,14 @@ SEASTAR_TEST_CASE(test_when_all_succeed_vector) {
     vecs.emplace_back(make_ready_future<>());
     vecs.emplace_back(make_ready_future<>());
     vecs.emplace_back(make_ready_future<>());
-    return seastar::when_all_succeed(vecs.begin(), vecs.end())
+    return nil::actor::when_all_succeed(vecs.begin(), vecs.end())
         .then([] {
             std::vector<future<>> vecs;
             vecs.emplace_back(make_ready_future<>());
             vecs.emplace_back(make_ready_future<>());
             vecs.emplace_back(make_exception_future<>(42));
             vecs.emplace_back(make_exception_future<>(43));
-            return seastar::when_all_succeed(vecs.begin(), vecs.end());
+            return nil::actor::when_all_succeed(vecs.begin(), vecs.end());
         })
         .then([] {
             BOOST_FAIL("shouldn't reach");
@@ -1291,7 +1291,7 @@ SEASTAR_TEST_CASE(test_when_all_succeed_vector) {
             vecs.emplace_back(make_ready_future<int>(1));
             vecs.emplace_back(make_ready_future<int>(2));
             vecs.emplace_back(make_ready_future<int>(3));
-            return seastar::when_all_succeed(vecs.begin(), vecs.end());
+            return nil::actor::when_all_succeed(vecs.begin(), vecs.end());
         })
         .then([](std::vector<int> vals) {
             BOOST_REQUIRE_EQUAL(vals.size(), 3u);
@@ -1304,7 +1304,7 @@ SEASTAR_TEST_CASE(test_when_all_succeed_vector) {
             vecs.emplace_back(make_ready_future<int>(2));
             vecs.emplace_back(make_exception_future<int>(42));
             vecs.emplace_back(make_exception_future<int>(43));
-            return seastar::when_all_succeed(vecs.begin(), vecs.end());
+            return nil::actor::when_all_succeed(vecs.begin(), vecs.end());
         })
         .then([](std::vector<int>) {
             BOOST_FAIL("shouldn't reach");
@@ -1325,12 +1325,12 @@ SEASTAR_TEST_CASE(test_when_all_succeed_vector) {
 
 SEASTAR_TEST_CASE(test_futurize_mutable) {
     int count = 0;
-    return seastar::repeat([count]() mutable {
+    return nil::actor::repeat([count]() mutable {
         ++count;
         if (count == 3) {
-            return seastar::stop_iteration::yes;
+            return nil::actor::stop_iteration::yes;
         }
-        return seastar::stop_iteration::no;
+        return nil::actor::stop_iteration::no;
     });
 }
 
@@ -1433,11 +1433,11 @@ future<> func4() {
 }
 
 void func3() {
-    seastar::async([] { func4().get(); }).get();
+    nil::actor::async([] { func4().get(); }).get();
 }
 
 future<> func2() {
-    return seastar::async([] { func3(); });
+    return nil::actor::async([] { func3(); });
 }
 
 future<> func1() {

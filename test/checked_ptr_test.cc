@@ -23,10 +23,10 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/core/checked_ptr.hh>
-#include <seastar/core/weak_ptr.hh>
+#include <nil/actor/core/checked_ptr.hh>
+#include <nil/actor/core/weak_ptr.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 static_assert(std::is_nothrow_default_constructible_v<checked_ptr<int *>>);
 static_assert(std::is_nothrow_move_constructible_v<checked_ptr<int *>>);
@@ -36,7 +36,7 @@ static_assert(std::is_nothrow_default_constructible_v<checked_ptr<weak_ptr<int>>
 static_assert(std::is_nothrow_move_constructible_v<checked_ptr<weak_ptr<int>>>);
 
 template<typename T>
-class may_throw_on_null_ptr : public seastar::weak_ptr<T> {
+class may_throw_on_null_ptr : public nil::actor::weak_ptr<T> {
 public:
     may_throw_on_null_ptr(std::nullptr_t) {
     }
@@ -53,14 +53,14 @@ struct my_st : public weakly_referencable<my_st> {
     int a;
 };
 
-void const_ref_check_naked(const seastar::checked_ptr<my_st *> &cp) {
+void const_ref_check_naked(const nil::actor::checked_ptr<my_st *> &cp) {
     BOOST_REQUIRE(bool(cp));
     BOOST_REQUIRE((*cp).a == 3);
     BOOST_REQUIRE(cp->a == 3);
     BOOST_REQUIRE(cp.get()->a == 3);
 }
 
-void const_ref_check_smart(const seastar::checked_ptr<::weak_ptr<my_st>> &cp) {
+void const_ref_check_smart(const nil::actor::checked_ptr<::weak_ptr<my_st>> &cp) {
     BOOST_REQUIRE(bool(cp));
     BOOST_REQUIRE((*cp).a == 3);
     BOOST_REQUIRE(cp->a == 3);
@@ -68,28 +68,28 @@ void const_ref_check_smart(const seastar::checked_ptr<::weak_ptr<my_st>> &cp) {
 }
 
 BOOST_AUTO_TEST_CASE(test_checked_ptr_is_empty_when_default_initialized) {
-    seastar::checked_ptr<int *> cp;
+    nil::actor::checked_ptr<int *> cp;
     BOOST_REQUIRE(!bool(cp));
 }
 
 BOOST_AUTO_TEST_CASE(test_checked_ptr_is_empty_when_nullptr_initialized_nakes_ptr) {
-    seastar::checked_ptr<int *> cp = nullptr;
+    nil::actor::checked_ptr<int *> cp = nullptr;
     BOOST_REQUIRE(!bool(cp));
 }
 
 BOOST_AUTO_TEST_CASE(test_checked_ptr_is_empty_when_nullptr_initialized_smart_ptr) {
-    seastar::checked_ptr<::weak_ptr<my_st>> cp = nullptr;
+    nil::actor::checked_ptr<::weak_ptr<my_st>> cp = nullptr;
     BOOST_REQUIRE(!bool(cp));
 }
 
 BOOST_AUTO_TEST_CASE(test_checked_ptr_is_initialized_after_assignment_naked_ptr) {
-    seastar::checked_ptr<my_st *> cp = nullptr;
+    nil::actor::checked_ptr<my_st *> cp = nullptr;
     BOOST_REQUIRE(!bool(cp));
     my_st i(3);
     my_st k(3);
     cp = &i;
-    seastar::checked_ptr<my_st *> cp1(&i);
-    seastar::checked_ptr<my_st *> cp2(&k);
+    nil::actor::checked_ptr<my_st *> cp1(&i);
+    nil::actor::checked_ptr<my_st *> cp2(&k);
     BOOST_REQUIRE(bool(cp));
     BOOST_REQUIRE(cp == cp1);
     BOOST_REQUIRE(cp != cp2);
@@ -104,12 +104,12 @@ BOOST_AUTO_TEST_CASE(test_checked_ptr_is_initialized_after_assignment_naked_ptr)
 }
 
 BOOST_AUTO_TEST_CASE(test_checked_ptr_is_initialized_after_assignment_smart_ptr) {
-    seastar::checked_ptr<::weak_ptr<my_st>> cp = nullptr;
+    nil::actor::checked_ptr<::weak_ptr<my_st>> cp = nullptr;
     BOOST_REQUIRE(!bool(cp));
     std::unique_ptr<my_st> i = std::make_unique<my_st>(3);
     cp = i->weak_from_this();
-    seastar::checked_ptr<::weak_ptr<my_st>> cp1(i->weak_from_this());
-    seastar::checked_ptr<::weak_ptr<my_st>> cp2;
+    nil::actor::checked_ptr<::weak_ptr<my_st>> cp1(i->weak_from_this());
+    nil::actor::checked_ptr<::weak_ptr<my_st>> cp2;
     BOOST_REQUIRE(bool(cp));
     BOOST_REQUIRE(cp == cp1);
     BOOST_REQUIRE(cp != cp2);

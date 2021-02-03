@@ -19,9 +19,9 @@
  * Copyright 2014 Cloudius Systems
  */
 
-#include <seastar/core/memory.hh>
-#include <seastar/core/timer.hh>
-#include <seastar/testing/test_runner.hh>
+#include <nil/actor/core/memory.hh>
+#include <nil/actor/core/timer.hh>
+#include <nil/actor/testing/test_runner.hh>
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -31,7 +31,7 @@
 #include <chrono>
 #include <boost/program_options.hpp>
 
-using namespace seastar;
+using namespace nil::actor;
 
 struct allocation {
     size_t n;

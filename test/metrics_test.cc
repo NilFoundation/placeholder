@@ -20,26 +20,26 @@
  * Copyright (C) 2019 ScyllaDB.
  */
 
-#include <seastar/core/metrics_registration.hh>
-#include <seastar/core/metrics.hh>
-#include <seastar/core/metrics_api.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/scheduling.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/sharded.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/io_queue.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/testing/test_runner.hh>
+#include <nil/actor/core/metrics_registration.hh>
+#include <nil/actor/core/metrics.hh>
+#include <nil/actor/core/metrics_api.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/scheduling.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/sharded.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/io_queue.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
 #include <boost/range/irange.hpp>
 
 SEASTAR_TEST_CASE(test_add_group) {
-    using namespace seastar::metrics;
+    using namespace nil::actor::metrics;
     // Just has to compile:
     metric_groups().add_group("g1", {}).add_group("g2", std::vector<metric_definition>());
-    return seastar::make_ready_future();
+    return nil::actor::make_ready_future();
 }
 
 /**
@@ -54,14 +54,14 @@ SEASTAR_TEST_CASE(test_add_group) {
  * @return a set containing all the different values
  *         of the label.
  */
-static std::set<seastar::sstring> get_label_values(seastar::sstring metric_name, seastar::sstring label_name) {
-    namespace smi = seastar::metrics::impl;
+static std::set<nil::actor::sstring> get_label_values(nil::actor::sstring metric_name, nil::actor::sstring label_name) {
+    namespace smi = nil::actor::metrics::impl;
     auto all_metrics = smi::get_values();
     const auto &all_metadata = *all_metrics->metadata;
     const auto qp_group = find_if(cbegin(all_metadata), cend(all_metadata),
                                   [&metric_name](const auto &x) { return x.mf.name == metric_name; });
     BOOST_REQUIRE(qp_group != cend(all_metadata));
-    std::set<seastar::sstring> labels;
+    std::set<nil::actor::sstring> labels;
     for (const auto &metric : qp_group->metrics) {
         const auto found = metric.id.labels().find(label_name);
         BOOST_REQUIRE(found != metric.id.labels().cend());
@@ -75,7 +75,7 @@ SEASTAR_THREAD_TEST_CASE(test_renaming_scheuling_groups) {
     // renaming functionality is primarily for statistics
     // otherwise those classes could have just been reused
     // without renaming them.
-    using namespace seastar;
+    using namespace nil::actor;
 
     static const char *name1 = "A";
     static const char *name2 = "B";
@@ -103,7 +103,7 @@ SEASTAR_THREAD_TEST_CASE(test_renaming_scheuling_groups) {
                            // scheduling group name, do it 1000 in parallel on all shards so there
                            // is a chance of collision.
                            return do_for_each(rng, [sg, &dist](auto i) {
-                               bool odd = dist(seastar::testing::local_random_engine) % 2;
+                               bool odd = dist(nil::actor::testing::local_random_engine) % 2;
                                return rename_scheduling_group(sg, odd ? name1 : name2);
                            });
                        });
@@ -121,10 +121,10 @@ SEASTAR_THREAD_TEST_CASE(test_renaming_io_priority_classes) {
     // renaming functionality is primarily for statistics
     // otherwise those classes could have just been reused
     // without renaming them.
-    using namespace seastar;
+    using namespace nil::actor;
     static const char *name1 = "A";
     static const char *name2 = "B";
-    seastar::io_priority_class pc = engine().register_one_priority_class("hello", 100);
+    nil::actor::io_priority_class pc = engine().register_one_priority_class("hello", 100);
     smp::invoke_on_all([pc]() {
         // this is a trick to get all of the queues actually register their
         // stats.
@@ -154,7 +154,7 @@ SEASTAR_THREAD_TEST_CASE(test_renaming_io_priority_classes) {
                            // scheduling group name, do it 1000 in parallel on all shards so there
                            // is a chance of collision.
                            return do_for_each(rng, [pc, &dist](auto i) {
-                               bool odd = dist(seastar::testing::local_random_engine) % 2;
+                               bool odd = dist(nil::actor::testing::local_random_engine) % 2;
                                return rename_priority_class(pc, odd ? name1 : name2);
                            });
                        });

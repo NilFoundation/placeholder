@@ -19,21 +19,21 @@
  * Copyright (C) 2014-2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/testing/test_runner.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
 
-#include <seastar/core/seastar.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/condition-variable.hh>
-#include <seastar/core/file.hh>
-#include <seastar/core/layered_file.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/stall_sampler.hh>
-#include <seastar/core/aligned_buffer.hh>
-#include <seastar/core/io_intent.hh>
-#include <seastar/util/tmp_file.hh>
-#include <seastar/util/alloc_failure_injector.hh>
+#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/semaphore.hh>
+#include <nil/actor/core/condition-variable.hh>
+#include <nil/actor/core/file.hh>
+#include <nil/actor/core/layered_file.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/stall_sampler.hh>
+#include <nil/actor/core/aligned_buffer.hh>
+#include <nil/actor/core/io_intent.hh>
+#include <nil/actor/detail/tmp_file.hh>
+#include <nil/actor/detail/alloc_failure_injector.hh>
 
 #include <boost/range/adaptor/transformed.hpp>
 #include <iostream>
@@ -41,7 +41,7 @@
 
 #include "core/file-impl.hh"
 
-using namespace seastar;
+using namespace nil::actor;
 namespace fs = std::filesystem;
 
 SEASTAR_TEST_CASE(open_flags_test) {
@@ -658,9 +658,11 @@ SEASTAR_TEST_CASE(test_with_file_close_on_failure) {
     });
 }
 
-namespace seastar {
-    extern bool aio_nowait_supported;
-}
+namespace nil {
+    namespace actor {
+        extern bool aio_nowait_supported;
+    }
+}    // namespace nil
 
 SEASTAR_TEST_CASE(test_nowait_flag_correctness) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
@@ -677,7 +679,7 @@ SEASTAR_TEST_CASE(test_nowait_flag_correctness) {
             return buf.f_type == 0x01021994;    // TMPFS_MAGIC
         };
 
-        if (!seastar::aio_nowait_supported) {
+        if (!nil::actor::aio_nowait_supported) {
             BOOST_TEST_WARN(0, "Skipping this test because RWF_NOWAIT is not supported by the system");
             return;
         }

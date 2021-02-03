@@ -22,10 +22,10 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/core/sstring.hh>
+#include <nil/actor/core/sstring.hh>
 #include <list>
 
-using namespace seastar;
+using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(test_make_sstring) {
     std::string_view foo = "foo";

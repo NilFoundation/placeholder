@@ -20,21 +20,21 @@
  * Copyright (C) 2015 Cloudius Systems, Ltd.
  */
 
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/core/distributed.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/print.hh>
-#include <seastar/util/defer.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/core/distributed.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/core/semaphore.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/print.hh>
+#include <nil/actor/detail/defer.hh>
 #include <mutex>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
-struct async_service : public seastar::async_sharded_service<async_service> {
+struct async_service : public nil::actor::async_sharded_service<async_service> {
     thread_local static bool deleted;
     ~async_service() {
         deleted = true;
@@ -144,7 +144,7 @@ SEASTAR_TEST_CASE(test_async) {
 }
 
 SEASTAR_TEST_CASE(test_invoke_on_others) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         struct my_service {
             int counter = 0;
             void up() {
@@ -156,7 +156,7 @@ SEASTAR_TEST_CASE(test_invoke_on_others) {
         };
         for (unsigned c = 0; c < smp::count; ++c) {
             smp::submit_to(c, [c] {
-                return seastar::async([c] {
+                return nil::actor::async([c] {
                     sharded<my_service> s;
                     s.start().get();
                     s.invoke_on_others([](auto &s) { s.up(); }).get();

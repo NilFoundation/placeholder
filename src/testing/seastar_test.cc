@@ -23,15 +23,15 @@
 #include <thread>
 #include <iostream>
 
-#include <seastar/testing/entry_point.hh>
-#include <seastar/testing/seastar_test.hh>
-#include <seastar/testing/test_runner.hh>
-#include <seastar/core/future.hh>
-#include <seastar/core/on_internal_error.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/testing/on_internal_error.hh>
+#include <nil/actor/testing/entry_point.hh>
+#include <nil/actor/testing/seastar_test.hh>
+#include <nil/actor/testing/test_runner.hh>
+#include <nil/actor/core/future.hh>
+#include <nil/actor/core/on_internal_error.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/testing/on_internal_error.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 

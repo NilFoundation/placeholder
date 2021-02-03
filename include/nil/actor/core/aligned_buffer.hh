@@ -23,23 +23,25 @@
 #include <memory>
 #include <stdexcept>
 
-namespace seastar {
+namespace nil {
+    namespace actor {
 
-    namespace internal {
-        void *allocate_aligned_buffer_impl(size_t size, size_t align);
-    }
-
-    struct free_deleter {
-        void operator()(void *p) {
-            ::free(p);
+        namespace internal {
+            void *allocate_aligned_buffer_impl(size_t size, size_t align);
         }
-    };
 
-    template<typename CharType>
-    inline std::unique_ptr<CharType[], free_deleter> allocate_aligned_buffer(size_t size, size_t align) {
-        static_assert(sizeof(CharType) == 1, "must allocate byte type");
-        void *ret = internal::allocate_aligned_buffer_impl(size, align);
-        return std::unique_ptr<CharType[], free_deleter>(reinterpret_cast<CharType *>(ret));
-    }
+        struct free_deleter {
+            void operator()(void *p) {
+                ::free(p);
+            }
+        };
 
-}    // namespace seastar
+        template<typename CharType>
+        inline std::unique_ptr<CharType[], free_deleter> allocate_aligned_buffer(size_t size, size_t align) {
+            static_assert(sizeof(CharType) == 1, "must allocate byte type");
+            void *ret = internal::allocate_aligned_buffer_impl(size, align);
+            return std::unique_ptr<CharType[], free_deleter>(reinterpret_cast<CharType *>(ret));
+        }
+
+    }    // namespace actor
+}    // namespace nil

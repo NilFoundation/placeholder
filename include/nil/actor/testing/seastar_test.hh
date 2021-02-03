@@ -26,11 +26,11 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <seastar/core/future.hh>
-#include <seastar/util/std-compat.hh>
-#include <seastar/testing/entry_point.hh>
+#include <nil/actor/core/future.hh>
+#include <nil/actor/detail/std-compat.hh>
+#include <nil/actor/testing/entry_point.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 
@@ -62,7 +62,7 @@ std::function<bool(const std::exception&)> message_contains(std::string_view exp
 #ifdef SEASTAR_TESTING_MAIN
 
 int main(int argc, char** argv) {
-    return seastar::testing::entry_point(argc, argv);
+    return nil::actor::testing::entry_point(argc, argv);
 }
 
 #endif // SEASTAR_TESTING_MAIN

@@ -23,9 +23,9 @@
 
 #include <mutex>
 #include <condition_variable>
-#include <seastar/util/std-compat.hh>
+#include <nil/actor/detail/std-compat.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 

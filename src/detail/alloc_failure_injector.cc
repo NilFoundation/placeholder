@@ -19,47 +19,48 @@
  * Copyright 2017 ScyllaDB
  */
 
-#include <seastar/util/alloc_failure_injector.hh>
-#include <seastar/util/backtrace.hh>
-#include <seastar/util/log.hh>
-#include <seastar/util/defer.hh>
+#include <nil/actor/detail/alloc_failure_injector.hh>
+#include <nil/actor/detail/backtrace.hh>
+#include <nil/actor/detail/log.hh>
+#include <nil/actor/detail/defer.hh>
 
-namespace seastar {
-namespace memory {
+namespace nil { namespace actor {
+    namespace memory {
 
-static logger log("failure_injector");
+        static logger log("failure_injector");
 
-thread_local alloc_failure_injector the_alloc_failure_injector;
+        thread_local alloc_failure_injector the_alloc_failure_injector;
 
-void alloc_failure_injector::fail() {
-    _failed = true;
-    cancel();
-    if (log.is_enabled(log_level::trace)) {
-        log.trace("Failing at {}", current_backtrace());
-    }
-    _on_alloc_failure();
-}
-
-void alloc_failure_injector::run_with_callback(noncopyable_function<void()> callback, noncopyable_function<void()> to_run) {
-    auto restore = defer([this, prev = std::exchange(_on_alloc_failure, std::move(callback))] () mutable {
-        _on_alloc_failure = std::move(prev);
-    });
-    to_run();
-}
-
-void with_allocation_failures(noncopyable_function<void()> func) {
-    auto& injector = memory::local_failure_injector();
-    uint64_t i = 0;
-    do {
-        try {
-            injector.fail_after(i++);
-            func();
-            injector.cancel();
-        } catch (const std::bad_alloc&) {
-            // expected
+        void alloc_failure_injector::fail() {
+            _failed = true;
+            cancel();
+            if (log.is_enabled(log_level::trace)) {
+                log.trace("Failing at {}", current_backtrace());
+            }
+            _on_alloc_failure();
         }
-    } while (injector.failed());
-}
 
-}
-}
+        void alloc_failure_injector::run_with_callback(noncopyable_function<void()> callback,
+                                                       noncopyable_function<void()> to_run) {
+            auto restore = defer([this, prev = std::exchange(_on_alloc_failure, std::move(callback))]() mutable {
+                _on_alloc_failure = std::move(prev);
+            });
+            to_run();
+        }
+
+        void with_allocation_failures(noncopyable_function<void()> func) {
+            auto &injector = memory::local_failure_injector();
+            uint64_t i = 0;
+            do {
+                try {
+                    injector.fail_after(i++);
+                    func();
+                    injector.cancel();
+                } catch (const std::bad_alloc &) {
+                    // expected
+                }
+            } while (injector.failed());
+        }
+
+    }    // namespace memory
+}}

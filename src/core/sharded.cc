@@ -19,20 +19,17 @@
  * Copyright (C) 2018 ScyllaDB
  */
 
-#include <seastar/core/sharded.hh>
-#include <seastar/core/loop.hh>
+#include <nil/actor/core/sharded.hh>
+#include <nil/actor/core/loop.hh>
+
 #include <boost/iterator/counting_iterator.hpp>
 
-namespace seastar {
+namespace nil { namespace actor {
+    namespace internal {
 
-namespace internal {
-
-
-future<>
-sharded_parallel_for_each(unsigned nr_shards, on_each_shard_func on_each_shard) noexcept(std::is_nothrow_move_constructible_v<on_each_shard_func>) {
-    return parallel_for_each(boost::irange<unsigned>(0, nr_shards), std::move(on_each_shard));
-}
-
-}
-
-}
+        future<> sharded_parallel_for_each(unsigned nr_shards, on_each_shard_func on_each_shard) noexcept(
+            std::is_nothrow_move_constructible<on_each_shard_func>::value) {
+            return parallel_for_each(boost::irange<unsigned>(0, nr_shards), std::move(on_each_shard));
+        }
+    }    // namespace internal
+}}

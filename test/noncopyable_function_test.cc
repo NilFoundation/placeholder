@@ -22,9 +22,9 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/util/noncopyable_function.hh>
+#include <nil/actor/detail/noncopyable_function.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(basic_tests) {
     struct s {

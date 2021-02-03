@@ -25,12 +25,12 @@
 #include <functional>
 #include <atomic>
 #include <random>
-#include <seastar/core/future.hh>
-#include <seastar/core/posix.hh>
-#include <seastar/testing/exchanger.hh>
-#include <seastar/testing/random.hh>
+#include <nil/actor/core/future.hh>
+#include <nil/actor/core/posix.hh>
+#include <nil/actor/testing/exchanger.hh>
+#include <nil/actor/testing/random.hh>
 
-namespace seastar {
+namespace nil { namespace actor {
 
 namespace testing {
 
@@ -43,11 +43,11 @@ private:
     int _exit_code{0};
 public:
     // Returns whether initialization was successful.
-    // Will return as soon as the seastar::app was started.
+    // Will return as soon as the nil::actor::app was started.
     bool start(int argc, char** argv);
     ~test_runner();
     void run_sync(std::function<future<>()> task);
-    // Returns the return value of the underlying `seastar::app::run()`.
+    // Returns the return value of the underlying `nil::actor::app::run()`.
     int finalize();
 };
 

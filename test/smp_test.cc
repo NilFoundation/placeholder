@@ -19,12 +19,12 @@
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/reactor.hh>
-#include <seastar/core/smp.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/print.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/smp.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/print.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 future<bool> test_smp_call() {
     return smp::submit_to(1, [] { return make_ready_future<int>(3); }).then([](int ret) {

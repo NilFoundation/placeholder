@@ -26,10 +26,10 @@
 
 #include <fmt/format.h>
 
-#include <seastar/core/future.hh>
-#include <seastar/core/loop.hh>
+#include <nil/actor/core/future.hh>
+#include <nil/actor/core/loop.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 namespace perf_tests {
 namespace internal {

@@ -21,7 +21,7 @@
 
 #define BOOST_TEST_MODULE core
 
-#include <seastar/util/program-options.hh>
+#include <nil/actor/detail/program-options.hh>
 
 #include <boost/program_options.hpp>
 #include <boost/test/included/unit_test.hpp>
@@ -31,7 +31,7 @@
 
 namespace bpo = boost::program_options;
 
-using namespace seastar;
+using namespace nil::actor;
 
 static bpo::variables_map parse(const bpo::options_description &desc, std::initializer_list<const char *> args) {
     std::vector<const char *> raw_args {"program_options_test"};

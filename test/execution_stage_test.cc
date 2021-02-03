@@ -23,30 +23,30 @@
 #include <vector>
 #include <chrono>
 
-#include <seastar/core/thread.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/testing/test_runner.hh>
-#include <seastar/core/execution_stage.hh>
-#include <seastar/core/sleep.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/testing/test_runner.hh>
+#include <nil/actor/core/execution_stage.hh>
+#include <nil/actor/core/sleep.hh>
 
 using namespace std::chrono_literals;
 
-using namespace seastar;
+using namespace nil::actor;
 
 SEASTAR_TEST_CASE(test_create_stage_from_lvalue_function_object) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         auto dont_move = [obj = make_shared<int>(53)] { return *obj; };
-        auto stage = seastar::make_execution_stage("test", dont_move);
+        auto stage = nil::actor::make_execution_stage("test", dont_move);
         BOOST_REQUIRE_EQUAL(stage().get0(), 53);
         BOOST_REQUIRE_EQUAL(dont_move(), 53);
     });
 }
 
 SEASTAR_TEST_CASE(test_create_stage_from_rvalue_function_object) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         auto dont_copy = [obj = std::make_unique<int>(42)] { return *obj; };
-        auto stage = seastar::make_execution_stage("test", std::move(dont_copy));
+        auto stage = nil::actor::make_execution_stage("test", std::move(dont_copy));
         BOOST_REQUIRE_EQUAL(stage().get0(), 42);
     });
 }
@@ -56,15 +56,15 @@ int func() {
 }
 
 SEASTAR_TEST_CASE(test_create_stage_from_function) {
-    return seastar::async([] {
-        auto stage = seastar::make_execution_stage("test", func);
+    return nil::actor::async([] {
+        auto stage = nil::actor::make_execution_stage("test", func);
         BOOST_REQUIRE_EQUAL(stage().get0(), 64);
     });
 }
 
 template<typename Function, typename Verify>
 void test_simple_execution_stage(Function &&func, Verify &&verify) {
-    auto stage = seastar::make_execution_stage("test", std::forward<Function>(func));
+    auto stage = nil::actor::make_execution_stage("test", std::forward<Function>(func));
 
     std::vector<int> vs;
     std::default_random_engine &gen = testing::local_random_engine;
@@ -82,7 +82,7 @@ void test_simple_execution_stage(Function &&func, Verify &&verify) {
 }
 
 SEASTAR_TEST_CASE(test_simple_stage_returning_int) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         test_simple_execution_stage(
             [](int x) {
                 if (x % 2) {
@@ -102,7 +102,7 @@ SEASTAR_TEST_CASE(test_simple_stage_returning_int) {
 }
 
 SEASTAR_TEST_CASE(test_simple_stage_returning_future_int) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         test_simple_execution_stage(
             [](int x) {
                 if (x % 2) {
@@ -123,7 +123,7 @@ SEASTAR_TEST_CASE(test_simple_stage_returning_future_int) {
 
 template<typename T>
 void test_execution_stage_avoids_copy() {
-    auto stage = seastar::make_execution_stage("test", [](T obj) { return std::move(obj); });
+    auto stage = nil::actor::make_execution_stage("test", [](T obj) { return std::move(obj); });
 
     auto f = stage(T());
     T obj = f.get0();
@@ -131,7 +131,7 @@ void test_execution_stage_avoids_copy() {
 }
 
 SEASTAR_TEST_CASE(test_stage_moves_when_cannot_copy) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         struct noncopyable_but_movable {
             noncopyable_but_movable() = default;
             noncopyable_but_movable(const noncopyable_but_movable &) = delete;
@@ -143,7 +143,7 @@ SEASTAR_TEST_CASE(test_stage_moves_when_cannot_copy) {
 }
 
 SEASTAR_TEST_CASE(test_stage_prefers_move_to_copy) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         struct copyable_and_movable {
             copyable_and_movable() = default;
             copyable_and_movable(const copyable_and_movable &) {
@@ -157,8 +157,8 @@ SEASTAR_TEST_CASE(test_stage_prefers_move_to_copy) {
 }
 
 SEASTAR_TEST_CASE(test_rref_decays_to_value) {
-    return seastar::async([] {
-        auto stage = seastar::make_execution_stage("test", [](std::vector<int> &&vec) { return vec.size(); });
+    return nil::actor::async([] {
+        auto stage = nil::actor::make_execution_stage("test", [](std::vector<int> &&vec) { return vec.size(); });
 
         std::vector<int> tmp;
         std::vector<future<size_t>> fs;
@@ -175,14 +175,14 @@ SEASTAR_TEST_CASE(test_rref_decays_to_value) {
 }
 
 SEASTAR_TEST_CASE(test_lref_does_not_decay) {
-    return seastar::async([] {
-        auto stage = seastar::make_execution_stage("test", [](int &v) { v++; });
+    return nil::actor::async([] {
+        auto stage = nil::actor::make_execution_stage("test", [](int &v) { v++; });
 
         int value = 0;
         std::vector<future<>> fs;
         for (auto i = 0; i < 100; i++) {
             // fs.emplace_back(stage(value)); // should fail to compile
-            fs.emplace_back(stage(seastar::ref(value)));
+            fs.emplace_back(stage(nil::actor::ref(value)));
         }
 
         for (auto &&f : fs) {
@@ -193,14 +193,14 @@ SEASTAR_TEST_CASE(test_lref_does_not_decay) {
 }
 
 SEASTAR_TEST_CASE(test_explicit_reference_wrapper_is_not_unwrapped) {
-    return seastar::async([] {
-        auto stage = seastar::make_execution_stage("test", [](seastar::reference_wrapper<int> v) { v.get()++; });
+    return nil::actor::async([] {
+        auto stage = nil::actor::make_execution_stage("test", [](nil::actor::reference_wrapper<int> v) { v.get()++; });
 
         int value = 0;
         std::vector<future<>> fs;
         for (auto i = 0; i < 100; i++) {
             // fs.emplace_back(stage(value)); // should fail to compile
-            fs.emplace_back(stage(seastar::ref(value)));
+            fs.emplace_back(stage(nil::actor::ref(value)));
         }
 
         for (auto &&f : fs) {
@@ -211,7 +211,7 @@ SEASTAR_TEST_CASE(test_explicit_reference_wrapper_is_not_unwrapped) {
 }
 
 SEASTAR_TEST_CASE(test_function_is_class_member) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         struct foo {
             int value = -1;
             int member(int x) {
@@ -219,7 +219,7 @@ SEASTAR_TEST_CASE(test_function_is_class_member) {
             }
         };
 
-        auto stage = seastar::make_execution_stage("test", &foo::member);
+        auto stage = nil::actor::make_execution_stage("test", &foo::member);
 
         foo object;
         std::vector<future<int>> fs;
@@ -235,14 +235,14 @@ SEASTAR_TEST_CASE(test_function_is_class_member) {
 }
 
 SEASTAR_TEST_CASE(test_function_is_const_class_member) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         struct foo {
             int value = 999;
             int member() const {
                 return value;
             }
         };
-        auto stage = seastar::make_execution_stage("test", &foo::member);
+        auto stage = nil::actor::make_execution_stage("test", &foo::member);
 
         const foo object;
         BOOST_REQUIRE_EQUAL(stage(&object).get0(), 999);
@@ -250,8 +250,8 @@ SEASTAR_TEST_CASE(test_function_is_const_class_member) {
 }
 
 SEASTAR_TEST_CASE(test_stage_stats) {
-    return seastar::async([] {
-        auto stage = seastar::make_execution_stage("test", [] {});
+    return nil::actor::async([] {
+        auto stage = nil::actor::make_execution_stage("test", [] {});
 
         BOOST_REQUIRE_EQUAL(stage.get_stats().function_calls_enqueued, 0u);
         BOOST_REQUIRE_EQUAL(stage.get_stats().function_calls_executed, 0u);
@@ -274,33 +274,33 @@ SEASTAR_TEST_CASE(test_stage_stats) {
 }
 
 SEASTAR_TEST_CASE(test_unique_stage_names_are_enforced) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         {
-            auto stage = seastar::make_execution_stage("test", [] {});
-            BOOST_REQUIRE_THROW(seastar::make_execution_stage("test", [] {}), std::invalid_argument);
+            auto stage = nil::actor::make_execution_stage("test", [] {});
+            BOOST_REQUIRE_THROW(nil::actor::make_execution_stage("test", [] {}), std::invalid_argument);
             stage().get();
         }
 
-        auto stage = seastar::make_execution_stage("test", [] {});
+        auto stage = nil::actor::make_execution_stage("test", [] {});
         stage().get();
     });
 }
 
 SEASTAR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage) {
-    auto sg1 = seastar::create_scheduling_group("sg1", 300).get0();
-    auto ksg1 = seastar::defer([&] { seastar::destroy_scheduling_group(sg1).get(); });
-    auto sg2 = seastar::create_scheduling_group("sg2", 100).get0();
-    auto ksg2 = seastar::defer([&] { seastar::destroy_scheduling_group(sg2).get(); });
-    auto check_sg = [](seastar::scheduling_group sg) { BOOST_REQUIRE(seastar::current_scheduling_group() == sg); };
-    auto es = seastar::inheriting_concrete_execution_stage<void, seastar::scheduling_group>("stage", check_sg);
+    auto sg1 = nil::actor::create_scheduling_group("sg1", 300).get0();
+    auto ksg1 = nil::actor::defer([&] { nil::actor::destroy_scheduling_group(sg1).get(); });
+    auto sg2 = nil::actor::create_scheduling_group("sg2", 100).get0();
+    auto ksg2 = nil::actor::defer([&] { nil::actor::destroy_scheduling_group(sg2).get(); });
+    auto check_sg = [](nil::actor::scheduling_group sg) { BOOST_REQUIRE(nil::actor::current_scheduling_group() == sg); };
+    auto es = nil::actor::inheriting_concrete_execution_stage<void, nil::actor::scheduling_group>("stage", check_sg);
     auto make_attr = [](scheduling_group sg) {
-        seastar::thread_attributes a;
+        nil::actor::thread_attributes a;
         a.sched_group = sg;
         return a;
     };
     bool done = false;
     auto make_test_thread = [&](scheduling_group sg) {
-        return seastar::thread(make_attr(sg), [&, sg] {
+        return nil::actor::thread(make_attr(sg), [&, sg] {
             while (!done) {
                 es(sg).get();    // will check if executed with same sg
             };
@@ -308,7 +308,7 @@ SEASTAR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage) {
     };
     auto th1 = make_test_thread(sg1);
     auto th2 = make_test_thread(sg2);
-    seastar::sleep(10ms).get();
+    nil::actor::sleep(10ms).get();
     done = true;
     th1.join().get();
     th2.join().get();
@@ -320,7 +320,7 @@ SEASTAR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage_reference_para
     // mostly a compile test, but take the opportunity to test that passing
     // by reference preserves the address
     auto check_ref = [](a_struct &ref, a_struct *ptr) { BOOST_REQUIRE_EQUAL(&ref, ptr); };
-    auto es = seastar::inheriting_concrete_execution_stage<void, a_struct &, a_struct *>("stage", check_ref);
+    auto es = nil::actor::inheriting_concrete_execution_stage<void, a_struct &, a_struct *>("stage", check_ref);
     a_struct obj;
-    es(seastar::ref(obj), &obj).get();
+    es(nil::actor::ref(obj), &obj).get();
 }

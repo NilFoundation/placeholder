@@ -19,13 +19,13 @@
  * Copyright (C) 2017 ScyllaDB
  */
 
-#include <seastar/testing/test_case.hh>
+#include <nil/actor/testing/test_case.hh>
 
-#include <seastar/core/gate.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/do_with.hh>
+#include <nil/actor/core/gate.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/do_with.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 SEASTAR_TEST_CASE(test_abort_source_notifies_subscriber) {

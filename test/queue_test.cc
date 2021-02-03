@@ -19,12 +19,12 @@
  * Copyright 2018 ScyllaDB
  */
 
-#include <seastar/testing/test_case.hh>
-#include <seastar/core/queue.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/sleep.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/core/queue.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/sleep.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 SEASTAR_TEST_CASE(test_queue_pop_after_abort) {

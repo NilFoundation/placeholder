@@ -19,17 +19,17 @@
  * Copyright (C) 2018 ScyllaDB Ltd.
  */
 
-#include <seastar/core/reactor.hh>
-#include <seastar/core/thread_cputime_clock.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/util/later.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/thread_cputime_clock.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/detail/later.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 #include <../../src/core/stall_detector.hh>
 #include <atomic>
 #include <chrono>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 class temporary_stall_detector_settings {

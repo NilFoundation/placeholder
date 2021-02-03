@@ -25,10 +25,10 @@
 #include <boost/test/included/unit_test.hpp>
 #include <set>
 #include <unordered_map>
-#include <seastar/core/sstring.hh>
-#include <seastar/core/shared_ptr.hh>
+#include <nil/actor/core/sstring.hh>
+#include <nil/actor/core/shared_ptr.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 struct expected_exception : public std::exception { };
 

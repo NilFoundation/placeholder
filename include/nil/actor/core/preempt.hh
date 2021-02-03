@@ -1,58 +1,62 @@
-/*
- * This file is open source software, licensed to you under the terms
- * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership.  You may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright (C) 2016 ScyllaDB.
- */
+//---------------------------------------------------------------------------//
+// Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//---------------------------------------------------------------------------//
 
 #pragma once
 #include <atomic>
 
-namespace seastar {
+namespace nil {
+    namespace actor {
 
-    namespace internal {
+        namespace internal {
 
-        struct preemption_monitor {
-            // We preempt when head != tail
-            // This happens to match the Linux aio completion ring, so we can have the
-            // kernel preempt a task by queuing a completion event to an io_context.
-            std::atomic<uint32_t> head;
-            std::atomic<uint32_t> tail;
-        };
+            struct preemption_monitor {
+                // We preempt when head != tail
+                // This happens to match the Linux aio completion ring, so we can have the
+                // kernel preempt a task by queuing a completion event to an io_context.
+                std::atomic<uint32_t> head;
+                std::atomic<uint32_t> tail;
+            };
 
-    }    // namespace internal
+        }    // namespace internal
 
-    extern __thread const internal::preemption_monitor *g_need_preempt;
+        extern __thread const internal::preemption_monitor *g_need_preempt;
 
-    inline bool need_preempt() noexcept {
+        inline bool need_preempt() noexcept {
 #ifndef SEASTAR_DEBUG
-        // prevent compiler from eliminating loads in a loop
-        std::atomic_signal_fence(std::memory_order_seq_cst);
-        auto np = g_need_preempt;
-        // We aren't reading anything from the ring, so we don't need
-        // any barriers.
-        auto head = np->head.load(std::memory_order_relaxed);
-        auto tail = np->tail.load(std::memory_order_relaxed);
-        // Possible optimization: read head and tail in a single 64-bit load,
-        // and find a funky way to compare the two 32-bit halves.
-        return __builtin_expect(head != tail, false);
+            // prevent compiler from eliminating loads in a loop
+            std::atomic_signal_fence(std::memory_order_seq_cst);
+            auto np = g_need_preempt;
+            // We aren't reading anything from the ring, so we don't need
+            // any barriers.
+            auto head = np->head.load(std::memory_order_relaxed);
+            auto tail = np->tail.load(std::memory_order_relaxed);
+            // Possible optimization: read head and tail in a single 64-bit load,
+            // and find a funky way to compare the two 32-bit halves.
+            return __builtin_expect(head != tail, false);
 #else
-        return true;
+            return true;
 #endif
-    }
-
-}    // namespace seastar
+        }
+    }    // namespace actor
+}    // namespace nil

@@ -22,17 +22,17 @@
 #include <random>
 #include <algorithm>
 
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/core/fstream.hh>
-#include <seastar/core/file.hh>
-#include <seastar/core/seastar.hh>
-#include <seastar/util/std-compat.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/core/fstream.hh>
+#include <nil/actor/core/file.hh>
+#include <nil/actor/core/seastar.hh>
+#include <nil/actor/detail/std-compat.hh>
 
 #include "../../src/core/fsnotify.hh"
 #include "tmpdir.hh"
 
 namespace fs = std::filesystem;
-using namespace seastar;
+using namespace nil::actor;
 
 static bool find_event(const std::vector<fsnotifier::event> &events, const fsnotifier::watch &w, fsnotifier::flags mask,
                        std::optional<sstring> path = {}) {

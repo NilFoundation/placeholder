@@ -19,12 +19,12 @@
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/reactor.hh>
-#include <seastar/core/app-template.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/shared_ptr.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/print.hh>
+#include <nil/actor/core/shared_ptr.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 const char *de_type_desc(directory_entry_type t) {
     switch (t) {

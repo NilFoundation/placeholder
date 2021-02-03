@@ -22,9 +22,9 @@
 #include <boost/range.hpp>
 #include <boost/range/irange.hpp>
 
-#include <seastar/testing/perf_tests.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/util/later.hh>
+#include <nil/actor/testing/perf_tests.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/detail/later.hh>
 
 struct parallel_for_each {
     std::vector<int> empty_range;
@@ -36,7 +36,7 @@ struct parallel_for_each {
 };
 
 PERF_TEST_F(parallel_for_each, empty) {
-    return seastar::parallel_for_each(empty_range, [](int) -> future<> { abort(); });
+    return nil::actor::parallel_for_each(empty_range, [](int) -> future<> { abort(); });
 }
 
 [[gnu::noinline]] future<> immediate(int v, int &vs) {
@@ -45,7 +45,7 @@ PERF_TEST_F(parallel_for_each, empty) {
 }
 
 PERF_TEST_F(parallel_for_each, immediate) {
-    return seastar::parallel_for_each(range, [this](int v) { return immediate(v, value); }).then([this] {
+    return nil::actor::parallel_for_each(range, [this](int v) { return immediate(v, value); }).then([this] {
         perf_tests::do_not_optimize(value);
     });
 }
@@ -56,7 +56,7 @@ PERF_TEST_F(parallel_for_each, immediate) {
 }
 
 PERF_TEST_F(parallel_for_each, suspend) {
-    return seastar::parallel_for_each(range, [this](int v) { return suspend(v, value); }).then([this] {
+    return nil::actor::parallel_for_each(range, [this](int v) { return suspend(v, value); }).then([this] {
         perf_tests::do_not_optimize(value);
     });
 }

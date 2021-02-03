@@ -25,7 +25,7 @@
 #include <boost/test/included/unit_test.hpp>
 #include "../../src/core/uname.hh"
 
-using namespace seastar::internal;
+using namespace nil::actor::internal;
 
 BOOST_AUTO_TEST_CASE(test_nowait_aio_fix) {
     auto check = [](const char *uname) {

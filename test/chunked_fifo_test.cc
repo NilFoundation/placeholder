@@ -22,13 +22,13 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/core/chunked_fifo.hh>
+#include <nil/actor/core/chunked_fifo.hh>
 #include <stdlib.h>
 #include <chrono>
 #include <deque>
-#include <seastar/core/circular_buffer.hh>
+#include <nil/actor/core/circular_buffer.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(chunked_fifo_small) {
     // Check all the methods of chunked_fifo but with a trivial type (int) and

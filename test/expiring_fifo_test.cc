@@ -20,14 +20,14 @@
  * Copyright (C) 2016 ScyllaDB
  */
 
-#include <seastar/core/thread.hh>
-#include <seastar/core/manual_clock.hh>
-#include <seastar/testing/test_case.hh>
-#include <seastar/core/expiring_fifo.hh>
-#include <seastar/util/later.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/manual_clock.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/core/expiring_fifo.hh>
+#include <nil/actor/detail/later.hh>
 #include <boost/range/irange.hpp>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 SEASTAR_TEST_CASE(test_no_expiry_operations) {
@@ -76,7 +76,7 @@ SEASTAR_TEST_CASE(test_no_expiry_operations) {
 }
 
 SEASTAR_TEST_CASE(test_expiry_operations) {
-    return seastar::async([] {
+    return nil::actor::async([] {
         std::vector<int> expired;
         struct my_expiry {
             std::vector<int> &e;

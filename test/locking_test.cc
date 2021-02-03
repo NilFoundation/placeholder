@@ -22,17 +22,17 @@
 
 #include <chrono>
 
-#include <seastar/testing/test_case.hh>
-#include <seastar/testing/thread_test_case.hh>
-#include <seastar/core/do_with.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/core/sleep.hh>
-#include <seastar/core/rwlock.hh>
-#include <seastar/core/shared_mutex.hh>
-#include <seastar/util/alloc_failure_injector.hh>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+#include <nil/actor/core/do_with.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/core/sleep.hh>
+#include <nil/actor/core/rwlock.hh>
+#include <nil/actor/core/shared_mutex.hh>
+#include <nil/actor/detail/alloc_failure_injector.hh>
 #include <boost/range/irange.hpp>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 SEASTAR_THREAD_TEST_CASE(test_rwlock) {
@@ -196,13 +196,13 @@ SEASTAR_THREAD_TEST_CASE(test_shared_mutex_failed_lock) {
     // if l.lock() fails neither the function nor l.unlock()
     // should be called.
     sm.lock().get();
-    seastar::memory::local_failure_injector().fail_after(0);
+    nil::actor::memory::local_failure_injector().fail_after(0);
     BOOST_REQUIRE_THROW(with_shared(sm, [] { BOOST_REQUIRE(false); }).get(), std::bad_alloc);
 
-    seastar::memory::local_failure_injector().fail_after(0);
+    nil::actor::memory::local_failure_injector().fail_after(0);
     BOOST_REQUIRE_THROW(with_lock(sm, [] { BOOST_REQUIRE(false); }).get(), std::bad_alloc);
     sm.unlock();
 
-    seastar::memory::local_failure_injector().cancel();
+    nil::actor::memory::local_failure_injector().cancel();
 #endif    // SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION
 }

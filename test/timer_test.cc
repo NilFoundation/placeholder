@@ -19,16 +19,16 @@
  * Copyright (C) 2014 Cloudius Systems, Ltd.
  */
 
-#include <seastar/core/app-template.hh>
-#include <seastar/core/timer.hh>
-#include <seastar/core/reactor.hh>
-#include <seastar/core/print.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/sleep.hh>
+#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/timer.hh>
+#include <nil/actor/core/reactor.hh>
+#include <nil/actor/core/print.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/sleep.hh>
 #include <chrono>
 #include <iostream>
 
-using namespace seastar;
+using namespace nil::actor;
 using namespace std::chrono_literals;
 
 #define BUG()                                                                \

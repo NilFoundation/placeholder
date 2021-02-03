@@ -20,31 +20,32 @@
  * Copyright (C) 2020 ScyllaDB Ltd.
  */
 
-#include <seastar/util/tmp_file.hh>
+#include <nil/actor/detail/tmp_file.hh>
 
-namespace seastar {
+namespace nil {
+    namespace actor {
 
-    /**
-     * Temp dir helper for RAII usage when doing tests
-     * in seastar threads. Will not work in "normal" mode.
-     * Just use tmp_dir::do_with for that.
-     */
-    class tmpdir {
-        seastar::tmp_dir _tmp;
+        /**
+         * Temp dir helper for RAII usage when doing tests
+         * in seastar threads. Will not work in "normal" mode.
+         * Just use tmp_dir::do_with for that.
+         */
+        class tmpdir {
+            nil::actor::tmp_dir _tmp;
 
-    public:
-        tmpdir(tmpdir &&) = default;
-        tmpdir(const tmpdir &) = delete;
+        public:
+            tmpdir(tmpdir &&) = default;
+            tmpdir(const tmpdir &) = delete;
 
-        tmpdir(const sstring &name = sstring(seastar::default_tmpdir()) + "/testXXXX") {
-            _tmp.create(std::filesystem::path(name)).get();
-        }
-        ~tmpdir() {
-            _tmp.remove().get();
-        }
-        auto path() const {
-            return _tmp.get_path();
-        }
-    };
-
-}    // namespace seastar
+            tmpdir(const sstring &name = sstring(nil::actor::default_tmpdir()) + "/testXXXX") {
+                _tmp.create(std::filesystem::path(name)).get();
+            }
+            ~tmpdir() {
+                _tmp.remove().get();
+            }
+            auto path() const {
+                return _tmp.get_path();
+            }
+        };
+    }    // namespace actor
+}    // namespace nil

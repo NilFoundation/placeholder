@@ -25,9 +25,9 @@
 #include <stdlib.h>
 #include <chrono>
 #include <deque>
-#include <seastar/core/circular_buffer.hh>
+#include <nil/actor/core/circular_buffer.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(test_erasing) {
     circular_buffer<int> buf;

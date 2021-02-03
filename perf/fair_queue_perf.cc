@@ -19,29 +19,29 @@
  * Copyright (C) 2020 ScyllaDB Ltd.
  */
 
-#include <seastar/testing/perf_tests.hh>
-#include <seastar/core/sharded.hh>
-#include <seastar/core/thread.hh>
-#include <seastar/core/fair_queue.hh>
-#include <seastar/core/semaphore.hh>
-#include <seastar/core/loop.hh>
-#include <seastar/core/when_all.hh>
+#include <nil/actor/testing/perf_tests.hh>
+#include <nil/actor/core/sharded.hh>
+#include <nil/actor/core/thread.hh>
+#include <nil/actor/core/fair_queue.hh>
+#include <nil/actor/core/semaphore.hh>
+#include <nil/actor/core/loop.hh>
+#include <nil/actor/core/when_all.hh>
 #include <boost/range/irange.hpp>
 
 struct local_fq_and_class {
-    seastar::fair_group fg;
-    seastar::fair_queue fq;
-    seastar::fair_queue sfq;
-    seastar::priority_class_ptr pclass;
+    nil::actor::fair_group fg;
+    nil::actor::fair_queue fq;
+    nil::actor::fair_queue sfq;
+    nil::actor::priority_class_ptr pclass;
     unsigned executed = 0;
 
-    seastar::fair_queue &queue(bool local) noexcept {
+    nil::actor::fair_queue &queue(bool local) noexcept {
         return local ? fq : sfq;
     }
 
-    local_fq_and_class(seastar::fair_group &sfg) :
-        fg(seastar::fair_group::config(1, 1)), fq(fg, seastar::fair_queue::config()),
-        sfq(sfg, seastar::fair_queue::config()), pclass(fq.register_priority_class(1)) {
+    local_fq_and_class(nil::actor::fair_group &sfg) :
+        fg(nil::actor::fair_group::config(1, 1)), fq(fg, nil::actor::fair_queue::config()),
+        sfq(sfg, nil::actor::fair_queue::config()), pclass(fq.register_priority_class(1)) {
     }
 
     ~local_fq_and_class() {
@@ -50,12 +50,12 @@ struct local_fq_and_class {
 };
 
 struct local_fq_entry {
-    seastar::fair_queue_entry ent;
+    nil::actor::fair_queue_entry ent;
     std::function<void()> submit;
 
     template<typename Func>
     local_fq_entry(unsigned weight, unsigned index, Func &&f) :
-        ent(seastar::fair_queue_ticket(weight, index)), submit(std::move(f)) {
+        ent(nil::actor::fair_queue_ticket(weight, index)), submit(std::move(f)) {
     }
 };
 
@@ -63,11 +63,11 @@ struct perf_fair_queue {
 
     static constexpr unsigned requests_to_dispatch = 1000;
 
-    seastar::sharded<local_fq_and_class> local_fq;
+    nil::actor::sharded<local_fq_and_class> local_fq;
 
-    seastar::fair_group shared_fg;
+    nil::actor::fair_group shared_fg;
 
-    perf_fair_queue() : shared_fg(seastar::fair_group::config(smp::count, smp::count)) {
+    perf_fair_queue() : shared_fg(nil::actor::fair_group::config(smp::count, smp::count)) {
         local_fq.start(std::ref(shared_fg)).get();
     }
 
@@ -84,7 +84,7 @@ future<> perf_fair_queue::test(bool loc) {
         return parallel_for_each(boost::irange(0u, requests_to_dispatch), [&local, loc](unsigned dummy) {
             auto req = std::make_unique<local_fq_entry>(1, 1, [&local, loc] {
                 local.executed++;
-                local.queue(loc).notify_requests_finished(seastar::fair_queue_ticket {1, 1});
+                local.queue(loc).notify_requests_finished(nil::actor::fair_queue_ticket {1, 1});
             });
             local.queue(loc).queue(local.pclass, req->ent);
             req.release();

@@ -23,9 +23,9 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/core/weak_ptr.hh>
+#include <nil/actor/core/weak_ptr.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 class myclass : public weakly_referencable<myclass> { };
 

@@ -22,9 +22,9 @@
 #define BOOST_TEST_MODULE simple_stream
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/core/simple-stream.hh>
+#include <nil/actor/core/simple-stream.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 template<typename Input, typename Output>
 static void write_read_test(Input in, Output out) {

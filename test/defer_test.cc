@@ -22,9 +22,9 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include <seastar/util/defer.hh>
+#include <nil/actor/detail/defer.hh>
 
-using namespace seastar;
+using namespace nil::actor;
 
 BOOST_AUTO_TEST_CASE(test_defer_does_not_run_when_canceled) {
     bool ran = false;
