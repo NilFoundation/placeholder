@@ -1,31 +1,7 @@
-#---------------------------------------------------------------------------//
-# Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
-#
-# MIT License
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#---------------------------------------------------------------------------//
-
 #
 # CMake bundles `FindBoost.cmake`, which is coupled to the Boost version. If
 # we're on a system without a recent enough version of `FindBoost.cmake`, then
-# we need to use the one bundled with =nil; Actor.
+# we need to use the one bundled with Seastar.
 #
 # The "real" FIND_PACKAGE invocation for Boost is inside SEASTAR_FIND_DEPENDENCIES.
 #
@@ -34,69 +10,77 @@
 # This is required because cmake-boost may return to Boost_{component}_LIBRARY:
 # - /usr/lib64/libboost_foo.so
 # - Boost::foo
-set (Boost_NO_BOOST_CMAKE ON)
+set(Boost_NO_BOOST_CMAKE ON)
 
 # This is the minimum version of Boost we need the CMake-bundled `FindBoost.cmake` to know about.
-find_package (Boost 1.64 MODULE)
+find_package(Boost 1.64 MODULE)
 
 #
 # Iterate through the dependency list defined below and execute `find_package`
 # with the corresponding configuration for each 3rd-party dependency.
 #
-macro (seastar_find_dependencies)
-  #
-  # List of =nil; Actor dependencies that is meant to be used
-  # both in =nil; Actor configuration and by clients which
-  # consume =nil; Actor via =nil; ActorConfig.cmake.
-  #
-  set (_seastar_all_dependencies
-    # Public dependencies.
-    Boost
-    c-ares
-    cryptopp
-    dpdk # No version information published.
-    fmt
-    lz4
-    # Private and private/public dependencies.
-    Concepts
-    GnuTLS
-    LinuxMembarrier
-    Protobuf
-    Sanitizers
-    StdAtomic
-    hwloc
-    lksctp-tools # No version information published.
-    numactl # No version information published.
-    rt
-    yaml-cpp)
+macro(seastar_find_dependencies)
+    #
+    # List of Seastar dependencies that is meant to be used
+    # both in Seastar configuration and by clients which
+    # consume Seastar via SeastarConfig.cmake.
+    #
+    set(_seastar_all_dependencies
+        # Public dependencies.
+        Boost
+        c-ares
+        cryptopp
+        dpdk # No version information published.
+        fmt
+        lz4
+        # Private and private/public dependencies.
+        Concepts
+        GnuTLS
+        LinuxMembarrier
+        Protobuf
+        Sanitizers
+        StdAtomic
+        hwloc
+        yaml-cpp)
 
-  # Arguments to `find_package` for each 3rd-party dependency.
-  # Note that the version specification is a "minimal" version requirement.
+    if(UNIX AND NOT APPLE)
+        list(APPEND _seastar_all_dependencies
 
-  # `unit_test_framework` is not required in the case we are building =nil; Actor
-  # without the testing library, however the component is always specified as required
-  # to keep the CMake code minimalistic and easy-to-use.
-  set (_seastar_dep_args_Boost
-    1.64.0
-    COMPONENTS
-      program_options
-      thread
-      unit_test_framework
-    REQUIRED)
+            lksctp-tools
+            numactl
+            rt)
+    elseif(APPLE)
 
-  set (_seastar_dep_args_c-ares 1.13 REQUIRED)
-  set (_seastar_dep_args_cryptopp 5.6.5 REQUIRED)
-  set (_seastar_dep_args_fmt 5.0.0 REQUIRED)
-  set (_seastar_dep_args_lz4 1.7.3 REQUIRED)
-  set (_seastar_dep_args_GnuTLS 3.3.26 REQUIRED)
-  set (_seastar_dep_args_Protobuf 2.5.0 REQUIRED)
-  set (_seastar_dep_args_StdAtomic REQUIRED)
-  set (_seastar_dep_args_hwloc 1.11.2)
-  set (_seastar_dep_args_lksctp-tools REQUIRED)
-  set (_seastar_dep_args_rt REQUIRED)
-  set (_seastar_dep_args_yaml-cpp 0.5.1 REQUIRED)
+    endif()
 
-  foreach (third_party ${_seastar_all_dependencies})
-    find_package ("${third_party}" ${_seastar_dep_args_${third_party}})
-  endforeach ()
-endmacro ()
+    # Arguments to `find_package` for each 3rd-party dependency.
+    # Note that the version specification is a "minimal" version requirement.
+
+    # `unit_test_framework` is not required in the case we are building Seastar
+    # without the testing library, however the component is always specified as required
+    # to keep the CMake code minimalistic and easy-to-use.
+    set(_seastar_dep_args_Boost
+        1.64.0
+        COMPONENTS
+        program_options
+        thread
+        unit_test_framework
+        REQUIRED)
+
+    set(_seastar_dep_args_c-ares 1.13 REQUIRED)
+    set(_seastar_dep_args_cryptopp 5.6.5 REQUIRED)
+    set(_seastar_dep_args_fmt 5.0.0 REQUIRED)
+    set(_seastar_dep_args_lz4 1.7.3 REQUIRED)
+    set(_seastar_dep_args_GnuTLS 3.3.26 REQUIRED)
+    set(_seastar_dep_args_Protobuf 2.5.0 REQUIRED)
+    set(_seastar_dep_args_StdAtomic REQUIRED)
+    set(_seastar_dep_args_hwloc 1.11.2)
+    set(_seastar_dep_args_lksctp-tools REQUIRED)
+    set(_seastar_dep_args_rt REQUIRED)
+    set(_seastar_dep_args_yaml-cpp 0.5.1 REQUIRED)
+
+    foreach(third_party ${_seastar_all_dependencies})
+        find_package("${third_party}" ${_seastar_dep_args_${third_party}})
+    endforeach()
+endmacro()
+
