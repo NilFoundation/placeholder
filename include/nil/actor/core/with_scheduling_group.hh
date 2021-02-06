@@ -33,7 +33,7 @@ namespace nil {
         /// \addtogroup future-util
         /// @{
 
-        namespace internal {
+        namespace detail {
 
             template<typename Func>
             SEASTAR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
@@ -44,7 +44,7 @@ namespace nil {
                 return tsk->get_future();
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// \brief run a callable (with some arbitrary arguments) in a scheduling group
         ///
@@ -65,7 +65,7 @@ namespace nil {
             if (sg.active()) {
                 return futurator::invoke(func, std::forward<Args>(args)...);
             } else {
-                return internal::schedule_in_group(
+                return detail::schedule_in_group(
                     sg, [func = std::move(func), args = std::make_tuple(std::forward<Args>(args)...)]() mutable {
                         return futurator::apply(func, std::move(args));
                     });

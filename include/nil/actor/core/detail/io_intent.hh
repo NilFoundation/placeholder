@@ -31,7 +31,7 @@ namespace nil {
 
         class io_intent;
 
-        namespace internal {
+        namespace detail {
 
             /*
              * The tracker of cancellable sub-queue of requests.
@@ -132,7 +132,7 @@ namespace nil {
                 io_intent *retrieve() const;
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
     }    // namespace actor
 }    // namespace nil

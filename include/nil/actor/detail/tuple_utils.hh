@@ -32,7 +32,7 @@ namespace nil {
     namespace actor {
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
 
             template<typename Tuple>
             Tuple untuple(Tuple t) {
@@ -82,7 +82,7 @@ namespace nil {
                 return std::make_tuple(std::get<I>(std::forward<Tuple>(t))...);
             }
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         /// \addtogroup utilities
@@ -120,15 +120,15 @@ namespace nil {
         /// \return a tuple contaning elements which type passed the test
         template<template<typename> class FilterClass, typename... Elements>
         auto tuple_filter_by_type(const std::tuple<Elements...> &t) {
-            using sequence = typename internal::tuple_filter<FilterClass, std::tuple<Elements...>,
+            using sequence = typename detail::tuple_filter<FilterClass, std::tuple<Elements...>,
                                                              std::index_sequence_for<Elements...>>::type;
-            return internal::tuple_filter_helper(t, sequence());
+            return detail::tuple_filter_helper(t, sequence());
         }
         template<template<typename> class FilterClass, typename... Elements>
         auto tuple_filter_by_type(std::tuple<Elements...> &&t) {
-            using sequence = typename internal::tuple_filter<FilterClass, std::tuple<Elements...>,
+            using sequence = typename detail::tuple_filter<FilterClass, std::tuple<Elements...>,
                                                              std::index_sequence_for<Elements...>>::type;
-            return internal::tuple_filter_helper(std::move(t), sequence());
+            return detail::tuple_filter_helper(std::move(t), sequence());
         }
 
         /// Applies function to all elements in tuple
@@ -141,11 +141,11 @@ namespace nil {
         /// \return tuple of results returned by f for each element in t
         template<typename Function, typename... Elements>
         auto tuple_map(const std::tuple<Elements...> &t, Function &&f) {
-            return internal::tuple_map_helper(t, std::forward<Function>(f), std::index_sequence_for<Elements...>());
+            return detail::tuple_map_helper(t, std::forward<Function>(f), std::index_sequence_for<Elements...>());
         }
         template<typename Function, typename... Elements>
         auto tuple_map(std::tuple<Elements...> &&t, Function &&f) {
-            return internal::tuple_map_helper(std::move(t), std::forward<Function>(f),
+            return detail::tuple_map_helper(std::move(t), std::forward<Function>(f),
                                               std::index_sequence_for<Elements...>());
         }
 
@@ -158,17 +158,17 @@ namespace nil {
         /// \param f function to call for each tuple element
         template<typename Function, typename... Elements>
         void tuple_for_each(const std::tuple<Elements...> &t, Function &&f) {
-            return internal::tuple_for_each_helper(t, std::forward<Function>(f),
+            return detail::tuple_for_each_helper(t, std::forward<Function>(f),
                                                    std::index_sequence_for<Elements...>());
         }
         template<typename Function, typename... Elements>
         void tuple_for_each(std::tuple<Elements...> &t, Function &&f) {
-            return internal::tuple_for_each_helper(t, std::forward<Function>(f),
+            return detail::tuple_for_each_helper(t, std::forward<Function>(f),
                                                    std::index_sequence_for<Elements...>());
         }
         template<typename Function, typename... Elements>
         void tuple_for_each(std::tuple<Elements...> &&t, Function &&f) {
-            return internal::tuple_for_each_helper(std::move(t), std::forward<Function>(f),
+            return detail::tuple_for_each_helper(std::move(t), std::forward<Function>(f),
                                                    std::index_sequence_for<Elements...>());
         }
 

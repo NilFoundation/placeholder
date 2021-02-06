@@ -29,7 +29,7 @@ namespace nil {
         namespace memory {
 
             /// \cond internal
-            namespace internal {
+            namespace detail {
 
 // This variable is used in hot paths so we want to avoid the compiler
 // generating TLS init guards for it. In C++20 we have constinit to tell the
@@ -42,7 +42,7 @@ namespace nil {
                 extern __thread int critical_alloc_section;
 #endif
 
-            }    // namespace internal
+            }    // namespace detail
             /// \endcond
 
             /// \brief Marks scopes that contain critical allocations.
@@ -59,10 +59,10 @@ namespace nil {
             class scoped_critical_alloc_section {
             public:
                 scoped_critical_alloc_section() {
-                    ++internal::critical_alloc_section;
+                    ++detail::critical_alloc_section;
                 }
                 ~scoped_critical_alloc_section() {
-                    --internal::critical_alloc_section;
+                    --detail::critical_alloc_section;
                 }
             };
 
@@ -71,7 +71,7 @@ namespace nil {
             /// Will return true if there is at least one \ref scoped_critical_alloc_section
             /// alive in the current scope or the scope of any of the caller functions.
             inline bool is_critical_alloc_section() {
-                return bool(internal::critical_alloc_section);
+                return bool(detail::critical_alloc_section);
             }
 
         }    // namespace memory

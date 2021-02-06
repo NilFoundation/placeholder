@@ -35,7 +35,7 @@ namespace nil {
 
         /// \cond internal
 
-        namespace internal {
+        namespace detail {
 
             template<typename HeldState, typename Future>
             class do_with_state final : public continuation_base_from_future<Future>::type {
@@ -61,10 +61,10 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
-        namespace internal {
+        namespace detail {
             template<typename Tuple, size_t... Idx>
             inline auto cherry_pick_tuple(std::index_sequence<Idx...>, Tuple &&tuple) {
                 return std::forward_as_tuple(std::get<Idx>(std::forward<Tuple>(tuple))...);
@@ -90,7 +90,7 @@ namespace nil {
                 using ret_type = decltype(std::apply(just_func, std::declval<value_tuple &>()));
                 auto task = std::apply(
                     [](auto &&...x) {
-                        return std::make_unique<internal::do_with_state<value_tuple, ret_type>>(
+                        return std::make_unique<detail::do_with_state<value_tuple, ret_type>>(
                             std::forward<decltype(x)>(x)...);
                     },
                     std::move(just_values));
@@ -99,10 +99,10 @@ namespace nil {
                     return fut;
                 }
                 auto ret = task->get_future();
-                internal::set_callback(fut, task.release());
+                detail::set_callback(fut, task.release());
                 return ret;
             }
-        }    // namespace internal
+        }    // namespace detail
 
         /// \addtogroup future-util
         /// @{
@@ -126,7 +126,7 @@ namespace nil {
         /// \return whatever the function returns
         template<typename T1, typename T2, typename... More>
         inline auto do_with(T1 &&rv1, T2 &&rv2, More &&...more) noexcept {
-            auto func = internal::do_with_impl<T1, T2, More...>;
+            auto func = detail::do_with_impl<T1, T2, More...>;
             return futurize_invoke(func, std::forward<T1>(rv1), std::forward<T2>(rv2), std::forward<More>(more)...);
         }
 

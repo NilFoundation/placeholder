@@ -34,7 +34,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 #if defined(__x86_64__) || defined(__i386__)
 
             /// \brief Puts the current CPU thread into a "relaxed" state.
@@ -73,7 +73,7 @@ namespace nil {
 
 #endif
 
-        }    // namespace internal
+        }    // namespace detail
 
         namespace util {
 
@@ -95,7 +95,7 @@ namespace nil {
                 }
                 void lock() noexcept {
                     while (_busy.exchange(true, std::memory_order_acquire)) {
-                        internal::cpu_relax();
+                        detail::cpu_relax();
                     }
                 }
                 void unlock() noexcept {

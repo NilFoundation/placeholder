@@ -123,14 +123,14 @@ namespace nil {
             }
         };
 
-        namespace internal {
+        namespace detail {
 
             template<typename Func>
             inline auto invoke_func_with_gate(gate &g, Func &&func) noexcept {
                 return futurize_invoke(std::forward<Func>(func)).finally([&g] { g.leave(); });
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Executes the function \c func making sure the gate \c g is properly entered
         /// and later on, properly left.
@@ -143,7 +143,7 @@ namespace nil {
         template<typename Func>
         inline auto with_gate(gate &g, Func &&func) {
             g.enter();
-            return internal::invoke_func_with_gate(g, std::forward<Func>(func));
+            return detail::invoke_func_with_gate(g, std::forward<Func>(func));
         }
 
         /// Executes the function \c func if the gate \c g can be entered
@@ -163,7 +163,7 @@ namespace nil {
                 using futurator = futurize<std::result_of_t<Func()>>;
                 return futurator::make_exception_future(gate_closed_exception());
             }
-            return internal::invoke_func_with_gate(g, std::forward<Func>(func));
+            return detail::invoke_func_with_gate(g, std::forward<Func>(func));
         }
         /// @}
     }    // namespace actor

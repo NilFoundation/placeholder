@@ -30,7 +30,7 @@ namespace nil {
         template<typename CharType>
         class temporary_buffer;
 
-        namespace internal {
+        namespace detail {
 
             // Internal interface for allocating buffers for reads. Used to decouple
             // allocation strategies (where to allocate from, and what sizes) from the
@@ -41,7 +41,7 @@ namespace nil {
                 virtual temporary_buffer<char> allocate_buffer() = 0;
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
     }    // namespace actor
 }    // namespace nil

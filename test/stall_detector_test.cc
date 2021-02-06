@@ -50,8 +50,8 @@ public:
 };
 
 void spin(std::chrono::duration<double> how_much) {
-    auto end = internal::cpu_stall_detector::clock_type::now() + how_much;
-    while (internal::cpu_stall_detector::clock_type::now() < end) {
+    auto end = detail::cpu_stall_detector::clock_type::now() + how_much;
+    while (detail::cpu_stall_detector::clock_type::now() < end) {
         // spin!
     }
 }

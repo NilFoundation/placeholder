@@ -50,10 +50,10 @@ namespace nil {
         struct aio_general_context {
             explicit aio_general_context(size_t nr);
             ~aio_general_context();
-            internal::linux_abi::aio_context_t io_context {};
-            std::unique_ptr<internal::linux_abi::iocb *[]> iocbs;
-            internal::linux_abi::iocb **last = iocbs.get();
-            void queue(internal::linux_abi::iocb *iocb);
+            detail::linux_abi::aio_context_t io_context {};
+            std::unique_ptr<detail::linux_abi::iocb *[]> iocbs;
+            detail::linux_abi::iocb **last = iocbs.get();
+            void queue(detail::linux_abi::iocb *iocb);
             size_t flush();
         };
 
@@ -61,27 +61,27 @@ namespace nil {
             static constexpr unsigned max_aio = 1024;
 
             class iocb_pool {
-                alignas(cache_line_size) std::array<internal::linux_abi::iocb, max_aio> _iocb_pool;
-                std::stack<internal::linux_abi::iocb *,
-                           boost::container::static_vector<internal::linux_abi::iocb *, max_aio>>
+                alignas(cache_line_size) std::array<detail::linux_abi::iocb, max_aio> _iocb_pool;
+                std::stack<detail::linux_abi::iocb *,
+                           boost::container::static_vector<detail::linux_abi::iocb *, max_aio>>
                     _free_iocbs;
 
             public:
                 iocb_pool();
-                internal::linux_abi::iocb &get_one();
-                void put_one(internal::linux_abi::iocb *io);
+                detail::linux_abi::iocb &get_one();
+                void put_one(detail::linux_abi::iocb *io);
                 unsigned outstanding() const;
                 bool has_capacity() const;
             };
 
             reactor *_r;
-            internal::linux_abi::aio_context_t _io_context;
-            boost::container::static_vector<internal::linux_abi::iocb *, max_aio> _submission_queue;
+            detail::linux_abi::aio_context_t _io_context;
+            boost::container::static_vector<detail::linux_abi::iocb *, max_aio> _submission_queue;
             iocb_pool _iocb_pool;
-            size_t handle_aio_error(internal::linux_abi::iocb *iocb, int ec);
-            using pending_aio_retry_t = boost::container::static_vector<internal::linux_abi::iocb *, max_aio>;
+            size_t handle_aio_error(detail::linux_abi::iocb *iocb, int ec);
+            using pending_aio_retry_t = boost::container::static_vector<detail::linux_abi::iocb *, max_aio>;
             pending_aio_retry_t _pending_aio_retry;
-            internal::linux_abi::io_event _ev_buffer[max_aio];
+            detail::linux_abi::io_event _ev_buffer[max_aio];
 
         public:
             explicit aio_storage_context(reactor *r);
@@ -95,7 +95,7 @@ namespace nil {
 
         class completion_with_iocb {
             bool _in_context = false;
-            internal::linux_abi::iocb _iocb;
+            detail::linux_abi::iocb _iocb;
 
         protected:
             completion_with_iocb(int fd, int events, void *user_data);
@@ -190,7 +190,7 @@ namespace nil {
             virtual void shutdown(pollable_fd_state &fd, int how) = 0;
             virtual future<size_t> read_some(pollable_fd_state &fd, void *buffer, size_t len) = 0;
             virtual future<size_t> read_some(pollable_fd_state &fd, const std::vector<iovec> &iov) = 0;
-            virtual future<temporary_buffer<char>> read_some(pollable_fd_state &fd, internal::buffer_allocator *ba) = 0;
+            virtual future<temporary_buffer<char>> read_some(pollable_fd_state &fd, detail::buffer_allocator *ba) = 0;
             virtual future<size_t> write_some(pollable_fd_state &fd, net::packet &p) = 0;
             virtual future<size_t> write_some(pollable_fd_state &fd, const void *buffer, size_t len) = 0;
 
@@ -241,7 +241,7 @@ namespace nil {
             virtual future<size_t> read_some(pollable_fd_state &fd, void *buffer, size_t len) override;
             virtual future<size_t> read_some(pollable_fd_state &fd, const std::vector<iovec> &iov) override;
             virtual future<temporary_buffer<char>> read_some(pollable_fd_state &fd,
-                                                             internal::buffer_allocator *ba) override;
+                                                             detail::buffer_allocator *ba) override;
             virtual future<size_t> write_some(pollable_fd_state &fd, net::packet &p) override;
             virtual future<size_t> write_some(pollable_fd_state &fd, const void *buffer, size_t len) override;
 
@@ -290,7 +290,7 @@ namespace nil {
             virtual future<size_t> read_some(pollable_fd_state &fd, void *buffer, size_t len) override;
             virtual future<size_t> read_some(pollable_fd_state &fd, const std::vector<iovec> &iov) override;
             virtual future<temporary_buffer<char>> read_some(pollable_fd_state &fd,
-                                                             internal::buffer_allocator *ba) override;
+                                                             detail::buffer_allocator *ba) override;
             virtual future<size_t> write_some(pollable_fd_state &fd, net::packet &p) override;
             virtual future<size_t> write_some(pollable_fd_state &fd, const void *buffer, size_t len) override;
 
@@ -336,7 +336,7 @@ namespace nil {
             virtual future<size_t> read_some(pollable_fd_state &fd, void *buffer, size_t len) override;
             virtual future<size_t> read_some(pollable_fd_state &fd, const std::vector<iovec> &iov) override;
             virtual future<temporary_buffer<char>> read_some(pollable_fd_state &fd,
-                                                             internal::buffer_allocator *ba) override;
+                                                             detail::buffer_allocator *ba) override;
             virtual future<size_t> write_some(net::packet &p) override;
             virtual future<size_t> write_some(pollable_fd_state &fd, const void *buffer, size_t len) override;
 

@@ -82,7 +82,7 @@ namespace nil {
         };
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
             template<typename T>
             class pipe_buffer {
             private:
@@ -125,7 +125,7 @@ namespace nil {
                     return !_read_open;
                 }
             };
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         template<typename T>
@@ -139,9 +139,9 @@ namespace nil {
         template<typename T>
         class pipe_reader {
         private:
-            internal::pipe_buffer<T> *_bufp;
+            detail::pipe_buffer<T> *_bufp;
             std::optional<T> _unread;
-            pipe_reader(internal::pipe_buffer<T> *bufp) : _bufp(bufp) {
+            pipe_reader(detail::pipe_buffer<T> *bufp) : _bufp(bufp) {
             }
             friend class pipe<T>;
 
@@ -201,8 +201,8 @@ namespace nil {
         template<typename T>
         class pipe_writer {
         private:
-            internal::pipe_buffer<T> *_bufp;
-            pipe_writer(internal::pipe_buffer<T> *bufp) : _bufp(bufp) {
+            detail::pipe_buffer<T> *_bufp;
+            pipe_writer(detail::pipe_buffer<T> *bufp) : _bufp(bufp) {
             }
             friend class pipe<T>;
 
@@ -266,11 +266,11 @@ namespace nil {
         public:
             pipe_reader<T> reader;
             pipe_writer<T> writer;
-            explicit pipe(size_t size) : pipe(new internal::pipe_buffer<T>(size)) {
+            explicit pipe(size_t size) : pipe(new detail::pipe_buffer<T>(size)) {
             }
 
         private:
-            pipe(internal::pipe_buffer<T> *bufp) : reader(bufp), writer(bufp) {
+            pipe(detail::pipe_buffer<T> *bufp) : reader(bufp), writer(bufp) {
             }
         };
 

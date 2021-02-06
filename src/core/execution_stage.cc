@@ -1,23 +1,19 @@
-/*
- * This file is open source software, licensed to you under the terms
- * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership.  You may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright (C) 2018 ScyllaDB Ltd.
- */
+//---------------------------------------------------------------------------//
+// Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the Server Side Public License, version 1,
+// as published by the author.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Server Side Public License for more details.
+//
+// You should have received a copy of the Server Side Public License
+// along with this program. If not, see
+// <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
+//---------------------------------------------------------------------------//
 
 #include <nil/actor/core/execution_stage.hh>
 #include <nil/actor/core/print.hh>
@@ -26,7 +22,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             void execution_stage_manager::register_execution_stage(execution_stage &stage) {
                 auto ret = _stages_by_name.emplace(stage.name(), &stage);
@@ -83,21 +79,21 @@ namespace nil {
                 return instance;
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         execution_stage::~execution_stage() {
-            internal::execution_stage_manager::get().unregister_execution_stage(*this);
+            detail::execution_stage_manager::get().unregister_execution_stage(*this);
         }
 
         execution_stage::execution_stage(execution_stage &&other) :
             _sg(other._sg), _stats(other._stats), _name(std::move(other._name)),
             _metric_group(std::move(other._metric_group)) {
-            internal::execution_stage_manager::get().update_execution_stage_registration(other, *this);
+            detail::execution_stage_manager::get().update_execution_stage_registration(other, *this);
         }
 
         execution_stage::execution_stage(const sstring &name, scheduling_group sg) : _sg(sg), _name(name) {
-            internal::execution_stage_manager::get().register_execution_stage(*this);
-            auto undo = defer([&] { internal::execution_stage_manager::get().unregister_execution_stage(*this); });
+            detail::execution_stage_manager::get().register_execution_stage(*this);
+            auto undo = defer([&] { detail::execution_stage_manager::get().unregister_execution_stage(*this); });
             _metric_group = metrics::metric_group(
                 "execution_stages",
                 {
@@ -106,7 +102,7 @@ namespace nil {
                                          {
                                              metrics::label_instance("execution_stage", name),
                                          },
-                                         [name, &esm = internal::execution_stage_manager::get()] {
+                                         [name, &esm = detail::execution_stage_manager::get()] {
                                              return esm.get_stage(name)->get_stats().tasks_scheduled;
                                          }),
                     metrics::make_derive(
@@ -116,7 +112,7 @@ namespace nil {
                         {
                             metrics::label_instance("execution_stage", name),
                         },
-                        [name, &esm = internal::execution_stage_manager::get()] {
+                        [name, &esm = detail::execution_stage_manager::get()] {
                             return esm.get_stage(name)->get_stats().tasks_preempted;
                         }),
                     metrics::make_derive("function_calls_enqueued",
@@ -124,7 +120,7 @@ namespace nil {
                                          {
                                              metrics::label_instance("execution_stage", name),
                                          },
-                                         [name, &esm = internal::execution_stage_manager::get()] {
+                                         [name, &esm = detail::execution_stage_manager::get()] {
                                              return esm.get_stage(name)->get_stats().function_calls_enqueued;
                                          }),
                     metrics::make_derive("function_calls_executed",
@@ -132,7 +128,7 @@ namespace nil {
                                          {
                                              metrics::label_instance("execution_stage", name),
                                          },
-                                         [name, &esm = internal::execution_stage_manager::get()] {
+                                         [name, &esm = detail::execution_stage_manager::get()] {
                                              return esm.get_stage(name)->get_stats().function_calls_executed;
                                          }),
                 });

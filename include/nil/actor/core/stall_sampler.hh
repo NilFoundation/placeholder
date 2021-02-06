@@ -36,7 +36,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             struct stall_report {
                 uint64_t kernel_stalls;
@@ -50,7 +50,7 @@ namespace nil {
 
             std::ostream &operator<<(std::ostream &os, const stall_report &sr);
 
-        }    // namespace internal
+        }    // namespace detail
 
     }    // namespace actor
 }    // namespace nil

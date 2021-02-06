@@ -53,11 +53,11 @@ namespace nil {
         using sstring = std::string;
 #endif
 
-        namespace internal {
+        namespace detail {
             [[noreturn]] void throw_bad_alloc();
             [[noreturn]] void throw_sstring_overflow();
             [[noreturn]] void throw_sstring_out_of_range();
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename char_type, typename Size, Size max_size, bool NulTerminate>
         class basic_sstring {
@@ -124,7 +124,7 @@ namespace nil {
                     u.internal.size = -1;
                     u.external.str = reinterpret_cast<char_type *>(std::malloc(x.u.external.size + padding()));
                     if (!u.external.str) {
-                        internal::throw_bad_alloc();
+                        detail::throw_bad_alloc();
                     }
                     std::copy(x.u.external.str, x.u.external.str + x.u.external.size + padding(), u.external.str);
                     u.external.size = x.u.external.size;
@@ -143,7 +143,7 @@ namespace nil {
             }
             basic_sstring(initialized_later, size_t size) {
                 if (size_type(size) != size) {
-                    internal::throw_sstring_overflow();
+                    detail::throw_sstring_overflow();
                 }
                 if (size + padding() <= sizeof(u.internal.str)) {
                     if (NulTerminate) {
@@ -154,7 +154,7 @@ namespace nil {
                     u.internal.size = -1;
                     u.external.str = reinterpret_cast<char_type *>(std::malloc(size + padding()));
                     if (!u.external.str) {
-                        internal::throw_bad_alloc();
+                        detail::throw_bad_alloc();
                     }
                     u.external.size = size;
                     if (NulTerminate) {
@@ -164,7 +164,7 @@ namespace nil {
             }
             basic_sstring(const char_type *x, size_t size) {
                 if (size_type(size) != size) {
-                    internal::throw_sstring_overflow();
+                    detail::throw_sstring_overflow();
                 }
                 if (size + padding() <= sizeof(u.internal.str)) {
                     std::copy(x, x + size, u.internal.str);
@@ -176,7 +176,7 @@ namespace nil {
                     u.internal.size = -1;
                     u.external.str = reinterpret_cast<char_type *>(std::malloc(size + padding()));
                     if (!u.external.str) {
-                        internal::throw_bad_alloc();
+                        detail::throw_bad_alloc();
                     }
                     u.external.size = size;
                     std::copy(x, x + size, u.external.str);
@@ -338,7 +338,7 @@ namespace nil {
              */
             basic_sstring &replace(size_type pos, size_type n1, const char_type *s, size_type n2) {
                 if (pos > size()) {
-                    internal::throw_sstring_out_of_range();
+                    detail::throw_sstring_out_of_range();
                 }
 
                 if (n1 > size() - pos) {
@@ -367,7 +367,7 @@ namespace nil {
             template<class InputIterator>
             basic_sstring &replace(const_iterator i1, const_iterator i2, InputIterator first, InputIterator last) {
                 if (i1 < begin() || i1 > end() || i2 < begin()) {
-                    internal::throw_sstring_out_of_range();
+                    detail::throw_sstring_out_of_range();
                 }
                 if (i2 > end()) {
                     i2 = end();
@@ -422,7 +422,7 @@ namespace nil {
 
             basic_sstring substr(size_t from, size_t len = npos) const {
                 if (from > size()) {
-                    internal::throw_sstring_out_of_range();
+                    detail::throw_sstring_out_of_range();
                 }
                 if (len > size() - from) {
                     len = size() - from;
@@ -435,14 +435,14 @@ namespace nil {
 
             const char_type &at(size_t pos) const {
                 if (pos >= size()) {
-                    internal::throw_sstring_out_of_range();
+                    detail::throw_sstring_out_of_range();
                 }
                 return *(str() + pos);
             }
 
             char_type &at(size_t pos) {
                 if (pos >= size()) {
-                    internal::throw_sstring_out_of_range();
+                    detail::throw_sstring_out_of_range();
                 }
                 return *(str() + pos);
             }
@@ -494,7 +494,7 @@ namespace nil {
 
             int compare(size_t pos, size_t sz, std::basic_string_view<char_type, traits_type> x) const {
                 if (pos > size()) {
-                    internal::throw_sstring_out_of_range();
+                    detail::throw_sstring_out_of_range();
                 }
 
                 sz = std::min(size() - pos, sz);
@@ -676,7 +676,7 @@ namespace nil {
             return ret;
         }
 
-        namespace internal {
+        namespace detail {
             template<typename string_type, typename T>
             string_type to_sstring_sprintf(T value, const char *fmt) {
                 char tmp[sizeof(value) * 3 + 2];
@@ -744,11 +744,11 @@ namespace nil {
             string_type to_sstring(const temporary_buffer<char> &buf) {
                 return string_type(buf.get(), buf.size());
             }
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename string_type = sstring, typename T>
         string_type to_sstring(T value) {
-            return internal::to_sstring<string_type>(value);
+            return detail::to_sstring<string_type>(value);
         }
     }    // namespace actor
 }    // namespace nil

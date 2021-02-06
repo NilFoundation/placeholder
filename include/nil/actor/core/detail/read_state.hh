@@ -29,7 +29,7 @@
 
 namespace nil {
     namespace actor {
-        namespace internal {
+        namespace detail {
 
             template<typename CharType>
             struct file_read_state {
@@ -98,9 +98,9 @@ namespace nil {
                 uint64_t _offset;
                 size_t _to_read;
                 uint64_t _front;
-                internal::intent_reference _iref;
+                detail::intent_reference _iref;
             };
 
-        }    // namespace internal
+        }    // namespace detail
     }        // namespace actor
 }    // namespace nil

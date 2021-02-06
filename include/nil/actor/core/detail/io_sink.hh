@@ -33,16 +33,16 @@ namespace nil {
 
         class io_completion;
 
-        namespace internal {
+        namespace detail {
 
             class io_sink;
 
-            class pending_io_request : private internal::io_request {
+            class pending_io_request : private detail::io_request {
                 friend class io_sink;
                 io_completion *_completion;
 
             public:
-                pending_io_request(internal::io_request req, io_completion *desc) noexcept :
+                pending_io_request(detail::io_request req, io_completion *desc) noexcept :
                     io_request(std::move(req)), _completion(desc) {
                 }
             };
@@ -51,12 +51,12 @@ namespace nil {
                 circular_buffer<pending_io_request> _pending_io;
 
             public:
-                void submit(io_completion *desc, internal::io_request req) noexcept;
+                void submit(io_completion *desc, detail::io_request req) noexcept;
 
                 template<typename Fn>
                 // Fn should return whether the request was consumed and
                 // draining should try to drain more
-                SEASTAR_CONCEPT(requires std::is_invocable_r<bool, Fn, internal::io_request &, io_completion *>::value)
+                SEASTAR_CONCEPT(requires std::is_invocable_r<bool, Fn, detail::io_request &, io_completion *>::value)
                     size_t drain(Fn &&consume) {
                     size_t pending = _pending_io.size();
                     size_t drained = 0;
@@ -75,7 +75,7 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
     }    // namespace actor
 }    // namespace nil

@@ -137,7 +137,7 @@ namespace nil {
                 smp::_qs[shard].submit(std::move(func));
             }
 
-            namespace internal {
+            namespace detail {
                 template<typename Func>
                 using return_value_t = typename futurize<std::invoke_result_t<Func>>::value_type;
 
@@ -162,7 +162,7 @@ namespace nil {
                 };
                 template<typename Func>
                 using return_type_t = typename return_type_of<Func>::type;
-            }    // namespace internal
+            }    // namespace detail
 
             /// Runs a function on a remote shard from an alien thread where engine() is not available.
             ///
@@ -172,7 +172,7 @@ namespace nil {
             ///          the caller must guarantee that it will survive the call.
             /// \return whatever \c func returns, as a \c std::future<>
             /// \note the caller must keep the returned future alive until \c func returns
-            template<typename Func, typename T = internal::return_type_t<Func>>
+            template<typename Func, typename T = detail::return_type_t<Func>>
             std::future<T> submit_to(unsigned shard, Func func) {
                 std::promise<T> pr;
                 auto fut = pr.get_future();
@@ -180,7 +180,7 @@ namespace nil {
                     // std::future returned via std::promise above.
                     (void)func().then_wrapped([pr = std::move(pr)](auto &&result) mutable {
                         try {
-                            internal::return_type_of<Func>::set(pr, result.get());
+                            detail::return_type_of<Func>::set(pr, result.get());
                         } catch (...) {
                             pr.set_exception(std::current_exception());
                         }

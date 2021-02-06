@@ -33,7 +33,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             // Overload when lw_shared_ptr_deleter<T> specialized
             template<typename T>
@@ -42,7 +42,7 @@ namespace nil {
                 return static_cast<T *>(counter);
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
     }    // namespace actor
 }    // namespace nil

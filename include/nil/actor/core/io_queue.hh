@@ -52,7 +52,7 @@ namespace nil {
 
         class io_intent;
 
-        namespace internal {
+        namespace detail {
             class io_sink;
             namespace linux_abi {
 
@@ -60,7 +60,7 @@ namespace nil {
                 struct iocb;
 
             }    // namespace linux_abi
-        }        // namespace internal
+        }        // namespace detail
 
         using shard_id = unsigned;
 
@@ -93,7 +93,7 @@ namespace nil {
             std::vector<std::vector<std::unique_ptr<priority_class_data>>> _priority_classes;
             io_group_ptr _group;
             fair_queue _fq;
-            internal::io_sink &_sink;
+            detail::io_sink &_sink;
 
             static constexpr unsigned _max_classes = 2048;
             static std::mutex _register_lock;
@@ -137,14 +137,14 @@ namespace nil {
                 sstring mountpoint = "undefined";
             };
 
-            io_queue(io_group_ptr group, internal::io_sink &sink, config cfg);
+            io_queue(io_group_ptr group, detail::io_sink &sink, config cfg);
             ~io_queue();
 
-            fair_queue_ticket request_fq_ticket(const internal::io_request &req, size_t len) const;
+            fair_queue_ticket request_fq_ticket(const detail::io_request &req, size_t len) const;
 
-            future<size_t> queue_request(const io_priority_class &pc, size_t len, internal::io_request req,
+            future<size_t> queue_request(const io_priority_class &pc, size_t len, detail::io_request req,
                                          io_intent *intent) noexcept;
-            void submit_request(io_desc_read_write *desc, internal::io_request req,
+            void submit_request(io_desc_read_write *desc, detail::io_request req,
                                 priority_class_data &pclass) noexcept;
             void cancel_request(queued_io_request &req, priority_class_data &pclass) noexcept;
             void complete_cancelled_request(queued_io_request &req) noexcept;

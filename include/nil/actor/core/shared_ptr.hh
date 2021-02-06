@@ -104,7 +104,7 @@ namespace nil {
             shared_ptr_counter_type _count = 0;
         };
 
-        namespace internal {
+        namespace detail {
 
             template<class T, class U>
             struct lw_shared_ptr_accessors;
@@ -115,7 +115,7 @@ namespace nil {
             template<class T>
             struct lw_shared_ptr_accessors_no_esft;
 
-        }    // namespace internal
+        }    // namespace detail
 
         // We want to support two use cases for shared_ptr<T>:
         //
@@ -163,9 +163,9 @@ namespace nil {
             template<typename X>
             friend class lw_shared_ptr;
             template<typename X>
-            friend struct internal::lw_shared_ptr_accessors_esft;
+            friend struct detail::lw_shared_ptr_accessors_esft;
             template<typename X, class Y>
-            friend struct internal::lw_shared_ptr_accessors;
+            friend struct detail::lw_shared_ptr_accessors;
         };
 
         template<typename T>
@@ -184,9 +184,9 @@ namespace nil {
             template<typename X>
             friend class lw_shared_ptr;
             template<typename X>
-            friend struct internal::lw_shared_ptr_accessors_no_esft;
+            friend struct detail::lw_shared_ptr_accessors_no_esft;
             template<typename X, class Y>
-            friend struct internal::lw_shared_ptr_accessors;
+            friend struct detail::lw_shared_ptr_accessors;
         };
 
         /// Extension point: the user may override this to change how \ref lw_shared_ptr objects are destroyed,
@@ -200,7 +200,7 @@ namespace nil {
         template<typename T>
         struct lw_shared_ptr_deleter;    // No generic implementation
 
-        namespace internal {
+        namespace detail {
 
             template<typename T>
             struct lw_shared_ptr_accessors_esft {
@@ -263,11 +263,11 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename T>
         class lw_shared_ptr {
-            using accessors = internal::lw_shared_ptr_accessors<std::remove_const_t<T>>;
+            using accessors = detail::lw_shared_ptr_accessors<std::remove_const_t<T>>;
             using concrete_type = typename accessors::concrete_type;
             mutable lw_shared_ptr_counter_base *_p = nullptr;
 

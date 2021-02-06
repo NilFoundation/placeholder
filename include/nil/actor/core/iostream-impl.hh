@@ -22,10 +22,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-/*
- * Copyright (C) 2015 Cloudius Systems, Ltd.
- */
-
 #pragma once
 
 #include <nil/actor/core/do_with.hh>
@@ -479,7 +475,7 @@ namespace nil {
             return std::move(_fd);
         }
 
-        namespace internal {
+        namespace detail {
 
             /// \cond internal
             template<typename CharType>
@@ -502,13 +498,13 @@ namespace nil {
             };
             /// \endcond
 
-        }    // namespace internal
+        }    // namespace detail
 
-        extern template struct internal::stream_copy_consumer<char>;
+        extern template struct detail::stream_copy_consumer<char>;
 
         template<typename CharType>
         future<> copy(input_stream<CharType> &in, output_stream<CharType> &out) {
-            return in.consume(internal::stream_copy_consumer<CharType>(out));
+            return in.consume(detail::stream_copy_consumer<CharType>(out));
         }
 
         extern template future<> copy<char>(input_stream<char> &, output_stream<char> &);

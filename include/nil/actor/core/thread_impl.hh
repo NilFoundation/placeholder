@@ -27,6 +27,9 @@
 #include <nil/actor/core/preempt.hh>
 
 #include <csetjmp>
+#if defined(__APPLE__)
+#define _XOPEN_SOURCE
+#endif
 #include <ucontext.h>
 #include <chrono>
 

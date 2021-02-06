@@ -34,7 +34,6 @@
 #include <type_traits>
 #include <chrono>
 #include <nil/actor/detail/std-compat.hh>
-#include <ucontext.h>
 #include <boost/intrusive/list.hpp>
 
 /// \defgroup thread-module =nil; Actor threads

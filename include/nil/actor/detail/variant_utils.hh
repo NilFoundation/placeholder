@@ -30,7 +30,7 @@ namespace nil {
     namespace actor {
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
 
             template<typename... Args>
             struct variant_visitor : Args... {
@@ -42,7 +42,7 @@ namespace nil {
             template<typename... Args>
             variant_visitor(Args &&...) -> variant_visitor<Args...>;
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         /// \addtogroup utilities
@@ -56,7 +56,7 @@ namespace nil {
         /// \param args function objects each accepting one or some types stored in the variant as input
         template<typename... Args>
         auto make_visitor(Args &&...args) {
-            return internal::variant_visitor<Args...>(std::forward<Args>(args)...);
+            return detail::variant_visitor<Args...>(std::forward<Args>(args)...);
         }
 
         /// Applies a static visitor comprised of supplied lambdas to a variant.
@@ -75,7 +75,7 @@ namespace nil {
             return std::visit(make_visitor(std::forward<Args>(args)...), variant);
         }
 
-        namespace internal {
+        namespace detail {
             template<typename... Args>
             struct castable_variant {
                 std::variant<Args...> var;
@@ -85,15 +85,15 @@ namespace nil {
                     return std::visit([](auto &&x) { return std::variant<SuperArgs...>(std::move(x)); }, var);
                 }
             };
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename... Args>
-        internal::castable_variant<Args...> variant_cast(std::variant<Args...> &&var) {
+        detail::castable_variant<Args...> variant_cast(std::variant<Args...> &&var) {
             return {std::move(var)};
         }
 
         template<typename... Args>
-        internal::castable_variant<Args...> variant_cast(const std::variant<Args...> &var) {
+        detail::castable_variant<Args...> variant_cast(const std::variant<Args...> &var) {
             return {var};
         }
 

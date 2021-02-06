@@ -50,7 +50,7 @@ namespace nil {
             struct intents_for_queue {
                 dev_t dev;
                 io_priority_class_id qid;
-                internal::cancellable_queue cq;
+                detail::cancellable_queue cq;
 
                 intents_for_queue(dev_t dev_, io_priority_class_id qid_) noexcept : dev(dev_), qid(qid_), cq() {
                 }
@@ -60,7 +60,7 @@ namespace nil {
             };
 
             struct references {
-                internal::intent_reference::container_type list;
+                detail::intent_reference::container_type list;
 
                 references(references &&) noexcept = default;
 
@@ -70,17 +70,17 @@ namespace nil {
                 }
 
                 void clear() {
-                    list.clear_and_dispose([](internal::intent_reference *r) { r->on_cancel(); });
+                    list.clear_and_dispose([](detail::intent_reference *r) { r->on_cancel(); });
                 }
 
-                void bind(internal::intent_reference &iref) noexcept {
+                void bind(detail::intent_reference &iref) noexcept {
                     list.push_back(iref);
                 }
             };
 
             boost::container::small_vector<intents_for_queue, 1> _intents;
             references _refs;
-            friend internal::intent_reference::intent_reference(io_intent *) noexcept;
+            friend detail::intent_reference::intent_reference(io_intent *) noexcept;
 
         public:
             io_intent() = default;
@@ -104,7 +104,7 @@ namespace nil {
             }
 
             /// @private
-            internal::cancellable_queue &find_or_create_cancellable_queue(dev_t dev, io_priority_class_id qid) {
+            detail::cancellable_queue &find_or_create_cancellable_queue(dev_t dev, io_priority_class_id qid) {
                 for (auto &&i : _intents) {
                     if (i.dev == dev && i.qid == qid) {
                         return i.cq;

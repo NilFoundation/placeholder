@@ -33,10 +33,20 @@
 #include <utility>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+
+#if defined(__linux__)
+
 #include <sys/eventfd.h>
 #include <sys/timerfd.h>
-#include <sys/socket.h>
 #include <sys/epoll.h>
+
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+
+#include <sys/event.h>
+
+#endif
+
+#include <sys/socket.h>
 #include <sys/mman.h>
 #include <csignal>
 #include <system_error>
@@ -123,7 +133,11 @@ namespace nil {
                 return file_desc(fd);
             }
             static file_desc eventfd(unsigned initval, int flags) {
+#if defined(__linux__)
                 int fd = ::eventfd(initval, flags);
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+                int fd = ::kqueue();
+#endif
                 throw_system_error_on(fd == -1, "eventfd");
                 return file_desc(fd);
             }

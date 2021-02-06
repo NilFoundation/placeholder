@@ -46,7 +46,7 @@ namespace nil {
         struct stop_iteration_tag { };
         using stop_iteration = bool_class<stop_iteration_tag>;
 
-        namespace internal {
+        namespace detail {
 
             template<typename AsyncAction>
             class repeater final : public continuation_base<stop_iteration> {
@@ -79,7 +79,7 @@ namespace nil {
                         do {
                             auto f = futurize_invoke(_action);
                             if (!f.available()) {
-                                internal::set_callback(f, this);
+                                detail::set_callback(f, this);
                                 return;
                             }
                             if (f.get0() == stop_iteration::yes) {
@@ -98,7 +98,7 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         // Delete these overloads so that the actual implementation can use a
         // universal reference but still reject lvalue references.
@@ -130,9 +130,9 @@ namespace nil {
                 if (!f.available() || f.failed() || need_preempt()) {
                     return [&]() noexcept {
                         memory::scoped_critical_alloc_section _;
-                        auto repeater = new internal::repeater<AsyncAction>(std::move(action));
+                        auto repeater = new detail::repeater<AsyncAction>(std::move(action));
                         auto ret = repeater->get_future();
-                        internal::set_callback(f, repeater);
+                        detail::set_callback(f, repeater);
                         return ret;
                     }();
                 }
@@ -166,7 +166,7 @@ namespace nil {
 
         /// \endcond
 
-        namespace internal {
+        namespace detail {
 
             template<typename AsyncAction, typename T>
             class repeat_until_value_state final : public continuation_base<std::optional<T>> {
@@ -204,7 +204,7 @@ namespace nil {
                         do {
                             auto f = futurize_invoke(_action);
                             if (!f.available()) {
-                                internal::set_callback(f, this);
+                                detail::set_callback(f, this);
                                 return;
                             }
                             auto ret = f.get0();
@@ -224,7 +224,7 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Invokes given action until it fails or the function requests iteration to stop by returning
         /// an engaged \c future<std::optional<T>> or std::optional<T>.  The value is extracted
@@ -254,9 +254,9 @@ namespace nil {
                 if (!f.available()) {
                     return [&]() noexcept {
                         memory::scoped_critical_alloc_section _;
-                        auto state = new internal::repeat_until_value_state<AsyncAction, value_type>(std::move(action));
+                        auto state = new detail::repeat_until_value_state<AsyncAction, value_type>(std::move(action));
                         auto ret = state->get_future();
-                        internal::set_callback(f, state);
+                        detail::set_callback(f, state);
                         return ret;
                     }();
                 }
@@ -273,7 +273,7 @@ namespace nil {
 
             try {
                 auto state =
-                    new internal::repeat_until_value_state<AsyncAction, value_type>(std::nullopt, std::move(action));
+                    new detail::repeat_until_value_state<AsyncAction, value_type>(std::nullopt, std::move(action));
                 auto f = state->get_future();
                 schedule(state);
                 return f;
@@ -282,7 +282,7 @@ namespace nil {
             }
         }
 
-        namespace internal {
+        namespace detail {
 
             template<typename StopCondition, typename AsyncAction>
             class do_until_state final : public continuation_base<> {
@@ -318,7 +318,7 @@ namespace nil {
                             }
                             auto f = _action();
                             if (!f.available()) {
-                                internal::set_callback(f, this);
+                                detail::set_callback(f, this);
                                 return;
                             }
                             if (f.failed()) {
@@ -336,7 +336,7 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Invokes given action until it fails or given condition evaluates to true or fails.
         ///
@@ -353,7 +353,7 @@ namespace nil {
         SEASTAR_CONCEPT(
             requires nil::actor::InvokeReturns<StopCondition, bool> &&nil::actor::InvokeReturns<AsyncAction, future<>>)
         inline future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
-            using namespace internal;
+            using namespace detail;
             for (;;) {
                 try {
                     if (stop_cond()) {
@@ -372,7 +372,7 @@ namespace nil {
                         auto task =
                             new do_until_state<StopCondition, AsyncAction>(std::move(stop_cond), std::move(action));
                         auto ret = task->get_future();
-                        internal::set_callback(f, task);
+                        detail::set_callback(f, task);
                         return ret;
                     }();
                 }
@@ -393,7 +393,7 @@ namespace nil {
                 [action = std::move(action)]() mutable { return action().then([] { return stop_iteration::no; }); });
         }
 
-        namespace internal {
+        namespace detail {
             template<typename Iterator, typename AsyncAction>
             class do_for_each_state final : public continuation_base<> {
                 Iterator _begin;
@@ -404,7 +404,7 @@ namespace nil {
             public:
                 do_for_each_state(Iterator begin, Iterator end, AsyncAction action, future<> first_unavailable) :
                     _begin(std::move(begin)), _end(std::move(end)), _action(std::move(action)) {
-                    internal::set_callback(first_unavailable, this);
+                    detail::set_callback(first_unavailable, this);
                 }
                 virtual void run_and_dispose() noexcept override {
                     std::unique_ptr<do_for_each_state> zis(this);
@@ -420,7 +420,7 @@ namespace nil {
                         }
                         if (!f.available() || need_preempt()) {
                             _state = {};
-                            internal::set_callback(f, this);
+                            detail::set_callback(f, this);
                             zis.release();
                             return;
                         }
@@ -443,14 +443,14 @@ namespace nil {
                         return f;
                     }
                     if (!f.available() || need_preempt()) {
-                        auto *s = new internal::do_for_each_state<Iterator, AsyncAction> {
+                        auto *s = new detail::do_for_each_state<Iterator, AsyncAction> {
                             std::move(begin), std::move(end), std::move(action), std::move(f)};
                         return s->get_future();
                     }
                 }
                 return make_ready_future<>();
             }
-        }    // namespace internal
+        }    // namespace detail
 
         /// \addtogroup future-util
 
@@ -473,7 +473,7 @@ namespace nil {
         })
         inline future<> do_for_each(Iterator begin, Iterator end, AsyncAction action) noexcept {
             try {
-                return internal::do_for_each_impl(std::move(begin), std::move(end), std::move(action));
+                return detail::do_for_each_impl(std::move(begin), std::move(end), std::move(action));
             } catch (...) {
                 return current_exception_as_future();
             }
@@ -497,13 +497,13 @@ namespace nil {
         })
         inline future<> do_for_each(Container &c, AsyncAction action) noexcept {
             try {
-                return internal::do_for_each_impl(std::begin(c), std::end(c), std::move(action));
+                return detail::do_for_each_impl(std::begin(c), std::end(c), std::move(action));
             } catch (...) {
                 return current_exception_as_future();
             }
         }
 
-        namespace internal {
+        namespace detail {
 
             template<typename Iterator, typename IteratorCategory>
             inline size_t iterator_range_estimate_vector_capacity(Iterator begin, Iterator end,
@@ -519,7 +519,7 @@ namespace nil {
                 return std::distance(begin, end);
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// \cond internal
 
@@ -579,7 +579,7 @@ namespace nil {
                     if (!s) {
                         memory::scoped_critical_alloc_section _;
                         using itraits = std::iterator_traits<Iterator>;
-                        auto n = (internal::iterator_range_estimate_vector_capacity(
+                        auto n = (detail::iterator_range_estimate_vector_capacity(
                                       begin, end, typename itraits::iterator_category()) +
                                   1);
                         s = new parallel_for_each_state(n);
@@ -614,14 +614,14 @@ namespace nil {
         ///         \c func returned an exceptional future, then the return
         ///         value will contain one of those exceptions.
 
-        namespace internal {
+        namespace detail {
 
             template<typename Range, typename Func>
             inline future<> parallel_for_each_impl(Range &&range, Func &&func) {
                 return parallel_for_each(std::begin(range), std::end(range), std::forward<Func>(func));
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename Range, typename Func>
         SEASTAR_CONCEPT(requires requires(Func f, Range r) {
@@ -629,7 +629,7 @@ namespace nil {
             ->std::same_as<future<>>;
         })
         inline future<> parallel_for_each(Range &&range, Func &&func) noexcept {
-            auto impl = internal::parallel_for_each_impl<Range, Func>;
+            auto impl = detail::parallel_for_each_impl<Range, Func>;
             return futurize_invoke(impl, std::forward<Range>(range), std::forward<Func>(func));
         }
 

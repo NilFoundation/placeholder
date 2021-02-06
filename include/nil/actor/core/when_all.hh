@@ -38,7 +38,7 @@ namespace nil {
         /// \addtogroup future-util
         /// @{
 
-        namespace internal {
+        namespace detail {
 
             template<typename... Futures>
             struct identity_futures_tuple {
@@ -195,7 +195,7 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// \cond internal
         SEASTAR_CONCEPT(
@@ -230,7 +230,7 @@ namespace nil {
         }
         /// \endcond
 
-        namespace internal {
+        namespace detail {
 
             template<typename... Futs>
             SEASTAR_CONCEPT(requires nil::actor::AllAreFutures<Futs...>)
@@ -239,7 +239,7 @@ namespace nil {
                 return state::wait_all(std::forward<Futs>(futs)...);
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Wait for many futures to complete, capturing possible errors (variadic version).
         ///
@@ -256,10 +256,10 @@ namespace nil {
         ///         all contained futures will be ready as well.
         template<typename... FutOrFuncs>
         inline auto when_all(FutOrFuncs &&...fut_or_funcs) noexcept {
-            return internal::when_all_impl(futurize_invoke_if_func(std::forward<FutOrFuncs>(fut_or_funcs))...);
+            return detail::when_all_impl(futurize_invoke_if_func(std::forward<FutOrFuncs>(fut_or_funcs))...);
         }
 
-        namespace internal {
+        namespace detail {
 
             template<typename Future>
             struct identity_futures_vector {
@@ -308,7 +308,7 @@ namespace nil {
                 return complete_when_all<ResolvedVectorTransform>(std::move(ret), ret.begin());
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Wait for many futures to complete, capturing possible errors (iterator version).
         ///
@@ -338,7 +338,7 @@ namespace nil {
             }
         }
 
-        namespace internal {
+        namespace detail {
 
             template<typename Future>
             struct future_has_value {
@@ -409,11 +409,11 @@ namespace nil {
             class extract_values_from_futures_tuple {
                 static auto transform(std::tuple<Futures...> futures) noexcept {
                     auto prepare_result = [](auto futures) noexcept {
-                        auto fs = tuple_filter_by_type<internal::future_has_value>(std::move(futures));
+                        auto fs = tuple_filter_by_type<detail::future_has_value>(std::move(futures));
                         return tuple_map(std::move(fs), [](auto &&e) { return e.get0(); });
                     };
 
-                    using tuple_futurizer = internal::tuple_to_future<decltype(prepare_result(std::move(futures)))>;
+                    using tuple_futurizer = detail::tuple_to_future<decltype(prepare_result(std::move(futures)))>;
 
                     std::exception_ptr excp;
                     tuple_for_each(futures, [&excp](auto &f) {
@@ -521,7 +521,7 @@ namespace nil {
                 return state::wait_all(std::forward<Futures>(futures)...);
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Wait for many futures to complete (variadic version).
         ///
@@ -535,7 +535,7 @@ namespace nil {
         /// \return future containing values of futures returned by funcs
         template<typename... FutOrFuncs>
         inline auto when_all_succeed(FutOrFuncs &&...fut_or_funcs) noexcept {
-            return internal::when_all_succeed_impl(futurize_invoke_if_func(std::forward<FutOrFuncs>(fut_or_funcs))...);
+            return detail::when_all_succeed_impl(futurize_invoke_if_func(std::forward<FutOrFuncs>(fut_or_funcs))...);
         }
 
         /// Wait for many futures to complete (iterator version).
@@ -557,9 +557,9 @@ namespace nil {
         })
         inline auto when_all_succeed(FutureIterator begin, FutureIterator end) noexcept {
             using itraits = std::iterator_traits<FutureIterator>;
-            using result_transform = internal::extract_values_from_futures_vector<typename itraits::value_type>;
+            using result_transform = detail::extract_values_from_futures_vector<typename itraits::value_type>;
             try {
-                return internal::do_when_all<result_transform>(std::move(begin), std::move(end));
+                return detail::do_when_all<result_transform>(std::move(begin), std::move(end));
             } catch (...) {
                 return result_transform::current_exception_as_future();
             }

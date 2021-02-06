@@ -33,7 +33,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             struct scheduling_group_specific_thread_local_data {
                 struct per_scheduling_group {
@@ -71,11 +71,11 @@ namespace nil {
              */
             template<typename T>
             T *scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key key) noexcept {
-                auto &data = internal::get_scheduling_group_specific_thread_local_data();
+                auto &data = detail::get_scheduling_group_specific_thread_local_data();
 #ifdef SEASTAR_DEBUG
                 assert(std::type_index(typeid(T)) == data.scheduling_group_key_configs[key.id()].type_index);
 #endif
-                auto sg_id = internal::scheduling_group_index(sg);
+                auto sg_id = detail::scheduling_group_index(sg);
                 if (__builtin_expect(sg_id < data.per_scheduling_group_data.size() &&
                                          data.per_scheduling_group_data[sg_id].queue_is_initialized,
                                      true)) {
@@ -84,7 +84,7 @@ namespace nil {
                 return nullptr;
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /**
          * Returns a reference to the given scheduling group specific data.
@@ -97,9 +97,9 @@ namespace nil {
          */
         template<typename T>
         T &scheduling_group_get_specific(scheduling_group sg, scheduling_group_key key) {
-            T *p = internal::scheduling_group_get_specific_ptr<T>(sg, std::move(key));
+            T *p = detail::scheduling_group_get_specific_ptr<T>(sg, std::move(key));
             if (!p) {
-                internal::no_such_scheduling_group(sg);
+                detail::no_such_scheduling_group(sg);
             }
             return *p;
         }
@@ -113,12 +113,12 @@ namespace nil {
          */
         template<typename T>
         T &scheduling_group_get_specific(scheduling_group_key key) noexcept {
-            // Unlike internal::scheduling_group_get_specific_ptr, this can
+            // Unlike detail::scheduling_group_get_specific_ptr, this can
             // return a reference to an element whose queue_is_initialized is
             // false.
-            auto &data = internal::get_scheduling_group_specific_thread_local_data();
+            auto &data = detail::get_scheduling_group_specific_thread_local_data();
             assert(std::type_index(typeid(T)) == data.scheduling_group_key_configs[key.id()].type_index);
-            auto sg_id = internal::scheduling_group_index(current_scheduling_group());
+            auto sg_id = detail::scheduling_group_index(current_scheduling_group());
             return *reinterpret_cast<T *>(data.per_scheduling_group_data[sg_id].specific_vals[key.id()]);
         }
 
@@ -145,10 +145,10 @@ namespace nil {
         })
         future<typename function_traits<Reducer>::return_type> map_reduce_scheduling_group_specific(
             Mapper mapper, Reducer reducer, Initial initial_val, scheduling_group_key key) {
-            using per_scheduling_group = internal::scheduling_group_specific_thread_local_data::per_scheduling_group;
-            auto &data = internal::get_scheduling_group_specific_thread_local_data();
+            using per_scheduling_group = detail::scheduling_group_specific_thread_local_data::per_scheduling_group;
+            auto &data = detail::get_scheduling_group_specific_thread_local_data();
             auto wrapped_mapper = [key, mapper](per_scheduling_group &psg) {
-                auto id = internal::scheduling_group_key_id(key);
+                auto id = detail::scheduling_group_key_id(key);
                 return make_ready_future<typename function_traits<Mapper>::return_type>(
                     mapper(*reinterpret_cast<SpecificValType *>(psg.specific_vals[id])));
             };
@@ -180,11 +180,11 @@ namespace nil {
             Reducer reducer,
             Initial initial_val,
             scheduling_group_key key) {
-            using per_scheduling_group = internal::scheduling_group_specific_thread_local_data::per_scheduling_group;
-            auto &data = internal::get_scheduling_group_specific_thread_local_data();
+            using per_scheduling_group = detail::scheduling_group_specific_thread_local_data::per_scheduling_group;
+            auto &data = detail::get_scheduling_group_specific_thread_local_data();
 
             auto mapper = [key](per_scheduling_group &psg) {
-                auto id = internal::scheduling_group_key_id(key);
+                auto id = detail::scheduling_group_key_id(key);
                 return make_ready_future<SpecificValType>(*reinterpret_cast<SpecificValType *>(psg.specific_vals[id]));
             };
 

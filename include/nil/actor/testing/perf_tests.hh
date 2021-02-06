@@ -35,7 +35,7 @@
 using namespace nil::actor;
 
 namespace perf_tests {
-    namespace internal {
+    namespace detail {
 
         struct config;
 
@@ -228,14 +228,14 @@ namespace perf_tests {
             }
         };
 
-    }    // namespace internal
+    }    // namespace detail
 
     [[gnu::always_inline]] inline void start_measuring_time() {
-        internal::measure_time.start_iteration();
+        detail::measure_time.start_iteration();
     }
 
     [[gnu::always_inline]] inline void stop_measuring_time() {
-        internal::measure_time.stop_iteration();
+        detail::measure_time.stop_iteration();
     }
 
     template<typename T>
@@ -259,7 +259,7 @@ namespace perf_tests {
     struct test_##test_group##_##test_case : test_group {                          \
         [[gnu::always_inline]] inline auto run();                                  \
     };                                                                             \
-    static ::perf_tests::internal::test_registrar<test_##test_group##_##test_case> \
+    static ::perf_tests::detail::test_registrar<test_##test_group##_##test_case> \
         test_##test_group##_##test_case##_registrar(#test_group, #test_case);      \
     [[gnu::always_inline]] auto test_##test_group##_##test_case::run()
 
@@ -267,6 +267,6 @@ namespace perf_tests {
     struct test_##test_group##_##test_case {                                       \
         [[gnu::always_inline]] inline auto run();                                  \
     };                                                                             \
-    static ::perf_tests::internal::test_registrar<test_##test_group##_##test_case> \
+    static ::perf_tests::detail::test_registrar<test_##test_group##_##test_case> \
         test_##test_group##_##test_case##_registrar(#test_group, #test_case);      \
     [[gnu::always_inline]] auto test_##test_group##_##test_case::run()

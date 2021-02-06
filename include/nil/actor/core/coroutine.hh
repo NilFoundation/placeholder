@@ -34,7 +34,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             template<typename T = void>
             class coroutine_traits_base {
@@ -226,11 +226,11 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename... T>
         auto operator co_await(future<T...> f) noexcept {
-            return internal::awaiter<T...>(std::move(f));
+            return detail::awaiter<T...>(std::move(f));
         }
 
     }    // namespace actor
@@ -240,7 +240,7 @@ namespace SEASTAR_INTERNAL_COROUTINE_NAMESPACE {
 
     template<typename... T, typename... Args>
     class coroutine_traits<nil::actor::future<T...>, Args...>
-        : public nil::actor::internal::coroutine_traits_base<T...> { };
+        : public nil::actor::detail::coroutine_traits_base<T...> { };
 
 }    // namespace SEASTAR_INTERNAL_COROUTINE_NAMESPACE
 

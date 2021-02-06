@@ -29,7 +29,7 @@ SEASTAR_TEST_CASE(log_buf_realloc) {
 
     const auto external_buf_ptr = reinterpret_cast<uintptr_t>(external_buf.data());
 
-    internal::log_buf b(external_buf.data(), external_buf.size());
+    detail::log_buf b(external_buf.data(), external_buf.size());
 
     BOOST_REQUIRE_EQUAL(reinterpret_cast<uintptr_t>(b.data()), external_buf_ptr);
 

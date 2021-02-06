@@ -1,23 +1,19 @@
-/*
- * This file is open source software, licensed to you under the terms
- * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership.  You may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright (C) 2014 Cloudius Systems, Ltd.
- */
+//---------------------------------------------------------------------------//
+// Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the Server Side Public License, version 1,
+// as published by the author.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Server Side Public License for more details.
+//
+// You should have received a copy of the Server Side Public License
+// along with this program. If not, see
+// <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
+//---------------------------------------------------------------------------//
 
 #include <functional>
 #include <unordered_map>
@@ -90,9 +86,9 @@ namespace nil {
             static const size_t payload_size = 1024;
 
             enum class part_type : uint16_t {
-                Host = 0x0000,    // The name of the host to associate with subsequent data values
-                Time = 0x0001,    // Time  Numeric The timestamp to associate with subsequent data values, unix time
-                                  // format (seconds since epoch)
+                Host = 0x0000,      // The name of the host to associate with subsequent data values
+                Time = 0x0001,      // Time  Numeric The timestamp to associate with subsequent data values, unix time
+                                    // format (seconds since epoch)
                 TimeHr = 0x0008,    // Time (high resolution)  Numeric The timestamp to associate with subsequent data
                                     // values. Time is defined in 2–30 seconds since epoch. New in Version 5.0.
                 Plugin =
@@ -275,7 +271,8 @@ namespace nil {
                     }
                     return *this;
                 }
-                cpwriter &put(const sstring &host, const nil::actor::metrics::impl::metric_id &id, const type_id &type) {
+                cpwriter &put(const sstring &host, const nil::actor::metrics::impl::metric_id &id,
+                              const type_id &type) {
                     const auto ts = std::chrono::system_clock::now().time_since_epoch();
                     const auto lrts = std::chrono::duration_cast<std::chrono::seconds>(ts).count();
 

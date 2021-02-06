@@ -49,7 +49,7 @@ namespace nil {
         class smp_service_group;
         class reactor_backend_selector;
 
-        namespace internal {
+        namespace detail {
 
             unsigned smp_service_group_id(smp_service_group ssg) noexcept;
 
@@ -58,11 +58,11 @@ namespace nil {
                 return &g_this_shard_id;
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Returns shard_id of the of the current shard.
         inline shard_id this_shard_id() noexcept {
-            return *internal::this_shard_id_ptr();
+            return *detail::this_shard_id_ptr();
         }
 
         /// Configuration for smp_service_group objects.
@@ -107,12 +107,12 @@ namespace nil {
             explicit smp_service_group(unsigned id) noexcept : _id(id) {
             }
 
-            friend unsigned internal::smp_service_group_id(smp_service_group ssg) noexcept;
+            friend unsigned detail::smp_service_group_id(smp_service_group ssg) noexcept;
             friend smp_service_group default_smp_service_group() noexcept;
             friend future<smp_service_group> create_smp_service_group(smp_service_group_config ssgc) noexcept;
         };
 
-        inline unsigned internal::smp_service_group_id(smp_service_group ssg) noexcept {
+        inline unsigned detail::smp_service_group_id(smp_service_group ssg) noexcept {
             return ssg._id;
         }
 

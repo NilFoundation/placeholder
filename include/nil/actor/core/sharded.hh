@@ -53,7 +53,7 @@ namespace nil {
         template<typename Func, typename... Param>
         class sharded_parameter;
 
-        namespace internal {
+        namespace detail {
 
             template<typename Func, typename... Param>
             auto unwrap_sharded_arg(sharded_parameter<Func, Param...> sp);
@@ -63,7 +63,7 @@ namespace nil {
             future<> sharded_parallel_for_each(unsigned nr_shards, on_each_shard_func on_each_shard) noexcept(
                 std::is_nothrow_move_constructible_v<on_each_shard_func>);
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// \addtogroup smp-module
         /// @{
@@ -164,9 +164,9 @@ namespace nil {
                 set_container(T &service) noexcept {
             }
 
-            future<> sharded_parallel_for_each(internal::on_each_shard_func func) noexcept(
-                std::is_nothrow_move_constructible_v<internal::on_each_shard_func>) {
-                return internal::sharded_parallel_for_each(_instances.size(), std::move(func));
+            future<> sharded_parallel_for_each(detail::on_each_shard_func func) noexcept(
+                std::is_nothrow_move_constructible_v<detail::on_each_shard_func>) {
+                return detail::sharded_parallel_for_each(_instances.size(), std::move(func));
             }
 
         public:
@@ -381,7 +381,7 @@ namespace nil {
             /// \tparam  Mapper unary function taking `Service&` and producing some result.
             /// \return  Result vector of invoking `map` with each instance in parallel
             template<typename Mapper, typename Future = futurize_t<std::result_of_t<Mapper(Service &)>>,
-                     typename return_type = decltype(internal::untuple(std::declval<typename Future::tuple_type>()))>
+                     typename return_type = decltype(detail::untuple(std::declval<typename Future::tuple_type>()))>
             inline future<std::vector<return_type>> map(Mapper mapper) {
                 return do_with(std::vector<return_type>(), [&mapper, this](std::vector<return_type> &vec) mutable {
                     vec.resize(smp::count);
@@ -477,7 +477,7 @@ namespace nil {
             }
         };
 
-        namespace internal {
+        namespace detail {
 
             template<typename T>
             struct sharded_unwrap {
@@ -492,7 +492,7 @@ namespace nil {
             template<typename T>
             using sharded_unwrap_t = typename sharded_unwrap<T>::type;
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// \brief Helper to pass a parameter to a `sharded<>` object that depends
         /// on the shard. It is evaluated on the shard, just before being
@@ -513,7 +513,7 @@ namespace nil {
             ///                  instance will be passed. Anything else
             ///                  will be passed by value unchanged.
             explicit sharded_parameter(Func func, Params... params)
-                SEASTAR_CONCEPT(requires std::invocable<Func, internal::sharded_unwrap_t<Params>...>) :
+                SEASTAR_CONCEPT(requires std::invocable<Func, detail::sharded_unwrap_t<Params>...>) :
                 _func(std::move(func)),
                 _params(std::make_tuple(std::move(params)...)) {
             }
@@ -522,7 +522,7 @@ namespace nil {
             auto evaluate() const;
 
             template<typename Func_, typename... Param_>
-            friend auto internal::unwrap_sharded_arg(sharded_parameter<Func_, Param_...> sp);
+            friend auto detail::unwrap_sharded_arg(sharded_parameter<Func_, Param_...> sp);
         };
 
         /// \example sharded_parameter_demo.cc
@@ -536,7 +536,7 @@ namespace nil {
             assert(_instances.empty());
         }
 
-        namespace internal {
+        namespace detail {
 
             template<typename Service>
             class either_sharded_or_local {
@@ -568,12 +568,12 @@ namespace nil {
                 return sp.evaluate();
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename Func, typename... Param>
         auto sharded_parameter<Func, Param...>::evaluate() const {
             auto unwrap_params_and_invoke = [this](const auto &...params) {
-                return std::invoke(_func, internal::unwrap_sharded_arg(params)...);
+                return std::invoke(_func, detail::unwrap_sharded_arg(params)...);
             };
             return std::apply(unwrap_params_and_invoke, _params);
         }
@@ -589,7 +589,7 @@ namespace nil {
                                    _instances[this_shard_id()].service = std::apply(
                                        [this](Args... args) {
                                            return create_local_service(
-                                               internal::unwrap_sharded_arg(std::forward<Args>(args))...);
+                                               detail::unwrap_sharded_arg(std::forward<Args>(args))...);
                                        },
                                        args);
                                });
@@ -619,7 +619,7 @@ namespace nil {
                                           _instances[0].service = std::apply(
                                               [this](Args... args) {
                                                   return create_local_service(
-                                                      internal::unwrap_sharded_arg(std::forward<Args>(args))...);
+                                                      detail::unwrap_sharded_arg(std::forward<Args>(args))...);
                                               },
                                               args);
                                       })
@@ -637,7 +637,7 @@ namespace nil {
             }
         }
 
-        namespace internal {
+        namespace detail {
 
             // Helper check if Service::stop exists
 
@@ -678,11 +678,11 @@ namespace nil {
 
             template<typename Service>
             inline future<> stop_sharded_instance(Service &instance) {
-                constexpr bool has_stop = internal::sharded_has_stop::check<Service>(0);
-                return internal::sharded_call_stop<has_stop>::call(instance);
+                constexpr bool has_stop = detail::sharded_has_stop::check<Service>(0);
+                return detail::sharded_call_stop<has_stop>::call(instance);
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         template<typename Service>
         future<> sharded<Service>::stop() noexcept {
@@ -693,7 +693,7 @@ namespace nil {
                                if (!inst) {
                                    return make_ready_future<>();
                                }
-                               return internal::stop_sharded_instance(*inst);
+                               return detail::stop_sharded_instance(*inst);
                            });
                        })
                     .then_wrapped([this](future<> fut) {

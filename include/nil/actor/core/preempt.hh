@@ -28,7 +28,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             struct preemption_monitor {
                 // We preempt when head != tail
@@ -38,9 +38,9 @@ namespace nil {
                 std::atomic<uint32_t> tail;
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
-        extern __thread const internal::preemption_monitor *g_need_preempt;
+        extern __thread const detail::preemption_monitor *g_need_preempt;
 
         inline bool need_preempt() noexcept {
 #ifndef SEASTAR_DEBUG

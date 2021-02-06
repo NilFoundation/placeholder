@@ -37,7 +37,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             namespace linux_abi {
 
@@ -123,11 +123,11 @@ namespace nil {
 
             void setup_aio_context(size_t nr, linux_abi::aio_context_t *io_context);
 
-        }    // namespace internal
+        }    // namespace detail
 
         extern bool aio_nowait_supported;
 
-        namespace internal {
+        namespace detail {
 
             inline linux_abi::iocb make_read_iocb(int fd, uint64_t offset, void *buffer, size_t len) {
                 linux_abi::iocb iocb {};
@@ -213,7 +213,7 @@ namespace nil {
 #endif
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
     }    // namespace actor
 }    // namespace nil

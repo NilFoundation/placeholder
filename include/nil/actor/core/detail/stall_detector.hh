@@ -38,7 +38,7 @@ namespace nil {
         class reactor;
         class thread_cputime_clock;
 
-        namespace internal {
+        namespace detail {
 
             struct cpu_stall_detector_config {
                 std::chrono::duration<double> threshold = std::chrono::seconds(2);
@@ -92,6 +92,6 @@ namespace nil {
                 void end_sleep();
             };
 
-        }    // namespace internal
+        }    // namespace detail
     }        // namespace actor
 }    // namespace nil

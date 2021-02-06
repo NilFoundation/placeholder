@@ -1,23 +1,20 @@
-/*
- * This file is open source software, licensed to you under the terms
- * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership.  You may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright 2019 ScyllaDB
- */
+//---------------------------------------------------------------------------//
+// Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the Server Side Public License, version 1,
+// as published by the author.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Server Side Public License for more details.
+//
+// You should have received a copy of the Server Side Public License
+// along with this program. If not, see
+// <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
+//---------------------------------------------------------------------------//
+
 #include <nil/actor/core/detail/reactor_backend.hh>
 #include <nil/actor/core/detail/thread_pool.hh>
 #include <nil/actor/core/detail/syscall_result.hh>
@@ -39,8 +36,8 @@ namespace nil {
     namespace actor {
 
         using namespace std::chrono_literals;
-        using namespace internal;
-        using namespace internal::linux_abi;
+        using namespace detail;
+        using namespace detail::linux_abi;
         namespace fs = std::filesystem;
 
         class pollable_fd_state_completion : public kernel_completion {
@@ -92,20 +89,20 @@ namespace nil {
         aio_storage_context::aio_storage_context(reactor *r) : _r(r), _io_context(0) {
             static_assert(max_aio >= reactor::max_queues * reactor::max_queues,
                           "Mismatch between maximum allowed io and what the IO queues can produce");
-            internal::setup_aio_context(max_aio, &_io_context);
+            detail::setup_aio_context(max_aio, &_io_context);
         }
 
         aio_storage_context::~aio_storage_context() {
-            internal::io_destroy(_io_context);
+            detail::io_destroy(_io_context);
         }
 
-        inline internal::linux_abi::iocb &aio_storage_context::iocb_pool::get_one() {
+        inline detail::linux_abi::iocb &aio_storage_context::iocb_pool::get_one() {
             auto io = _free_iocbs.top();
             _free_iocbs.pop();
             return *io;
         }
 
-        inline void aio_storage_context::iocb_pool::put_one(internal::linux_abi::iocb *io) {
+        inline void aio_storage_context::iocb_pool::put_one(detail::linux_abi::iocb *io) {
             _free_iocbs.push(io);
         }
 
@@ -143,7 +140,7 @@ namespace nil {
             bool did_work = false;
 
             _submission_queue.resize(0);
-            size_t to_submit = _r->_io_sink.drain([this](internal::io_request &req, io_completion *desc) -> bool {
+            size_t to_submit = _r->_io_sink.drain([this](detail::io_request &req, io_completion *desc) -> bool {
                 if (!_iocb_pool.has_capacity()) {
                     return false;
                 }
@@ -440,10 +437,10 @@ namespace nil {
         }
 
         class aio_pollable_fd_state : public pollable_fd_state {
-            internal::linux_abi::iocb _iocb_pollin;
+            detail::linux_abi::iocb _iocb_pollin;
             pollable_fd_state_completion _completion_pollin;
 
-            internal::linux_abi::iocb _iocb_pollout;
+            detail::linux_abi::iocb _iocb_pollout;
             pollable_fd_state_completion _completion_pollout;
 
         public:
@@ -453,7 +450,7 @@ namespace nil {
                 }
                 return &_completion_pollout;
             }
-            internal::linux_abi::iocb *get_iocb(int events) {
+            detail::linux_abi::iocb *get_iocb(int events) {
                 if (events & POLLIN) {
                     return &_iocb_pollin;
                 }
@@ -528,7 +525,7 @@ namespace nil {
         }
 
         future<temporary_buffer<char>> reactor_backend_aio::read_some(pollable_fd_state &fd,
-                                                                      internal::buffer_allocator *ba) {
+                                                                      detail::buffer_allocator *ba) {
             return engine().do_read_some(fd, ba);
         }
 
@@ -796,7 +793,7 @@ namespace nil {
         }
 
         future<temporary_buffer<char>> reactor_backend_epoll::read_some(pollable_fd_state &fd,
-                                                                        internal::buffer_allocator *ba) {
+                                                                        detail::buffer_allocator *ba) {
             return engine().do_read_some(fd, ba);
         }
 
@@ -889,7 +886,7 @@ namespace nil {
         }
 
         future<temporary_buffer<char>> reactor_backend_osv::read_some(pollable_fd_state &fd,
-                                                                      internal::buffer_allocator *ba) {
+                                                                      detail::buffer_allocator *ba) {
             return engine().do_read_some(fd, ba);
         }
 
@@ -919,7 +916,7 @@ namespace nil {
             aio_context_t ioc {};
             setup_aio_context(1, &ioc);
             auto cleanup = defer([&] { io_destroy(ioc); });
-            linux_abi::iocb iocb = internal::make_poll_iocb(fd.get(), POLLIN | POLLOUT);
+            linux_abi::iocb iocb = detail::make_poll_iocb(fd.get(), POLLIN | POLLOUT);
             linux_abi::iocb *a[1] = {&iocb};
             auto r = io_submit(ioc, 1, a);
             if (r != 1) {

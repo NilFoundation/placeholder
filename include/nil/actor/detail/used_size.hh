@@ -29,13 +29,13 @@
 
 namespace nil {
     namespace actor {
-        namespace internal {
+        namespace detail {
             // Empty types have a size of 1, but that byte is not actually
             // used. This helper is used to avoid accessing that byte.
             template<typename T>
             struct used_size {
                 static constexpr size_t value = std::is_empty<T>::value ? 0 : sizeof(T);
             };
-        }    // namespace internal
+        }    // namespace detail
     }        // namespace actor
 }    // namespace nil

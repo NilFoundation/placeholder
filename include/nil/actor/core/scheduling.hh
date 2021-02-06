@@ -53,7 +53,7 @@ namespace nil {
         class scheduling_group;
         class scheduling_group_key;
 
-        namespace internal {
+        namespace detail {
 
             // Returns an index between 0 and max_scheduling_groups()
             unsigned scheduling_group_index(scheduling_group sg) noexcept;
@@ -64,7 +64,7 @@ namespace nil {
             template<typename T>
             T *scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key key) noexcept;
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Creates a scheduling group with a specified number of shares.
         ///
@@ -166,15 +166,15 @@ namespace nil {
             friend class reactor;
             friend future<scheduling_group_key> scheduling_group_key_create(scheduling_group_key_config cfg) noexcept;
             template<typename T>
-            friend T *internal::scheduling_group_get_specific_ptr(scheduling_group sg,
+            friend T *detail::scheduling_group_get_specific_ptr(scheduling_group sg,
                                                                   scheduling_group_key key) noexcept;
             template<typename T>
             friend T &scheduling_group_get_specific(scheduling_group_key key) noexcept;
 
-            friend unsigned long internal::scheduling_group_key_id(scheduling_group_key key) noexcept;
+            friend unsigned long detail::scheduling_group_key_id(scheduling_group_key key) noexcept;
         };
 
-        namespace internal {
+        namespace detail {
 
             inline unsigned long scheduling_group_key_id(scheduling_group_key key) noexcept {
                 return key.id();
@@ -202,7 +202,7 @@ namespace nil {
             void apply_constructor(void *pre_alocated_mem, Tuple args, std::index_sequence<Idx...> idx_seq) {
                 new (pre_alocated_mem) ConstructorType(std::get<Idx>(args)...);
             }
-        }    // namespace internal
+        }    // namespace detail
 
         /**
          * A template function that builds a scheduling group specific value configuration.
@@ -220,7 +220,7 @@ namespace nil {
             sgkc.allocation_size = sizeof(T);
             sgkc.alignment = alignof(T);
             sgkc.constructor = [args = std::make_tuple(args...)](void *p) {
-                internal::apply_constructor<T>(p, args, std::make_index_sequence<sizeof...(ConstructorArgs)>());
+                detail::apply_constructor<T>(p, args, std::make_index_sequence<sizeof...(ConstructorArgs)>());
             };
             sgkc.destructor = [](void *p) { static_cast<T *>(p)->~T(); };
             return sgkc;
@@ -279,7 +279,7 @@ namespace nil {
              * @return A reference to this scheduling specific value.
              */
             T &get_specific(scheduling_group_key key) noexcept {
-                return *internal::scheduling_group_get_specific_ptr<T>(*this, key);
+                return *detail::scheduling_group_get_specific_ptr<T>(*this, key);
             }
             /// Adjusts the number of shares allotted to the group.
             ///
@@ -298,8 +298,8 @@ namespace nil {
             friend future<> destroy_scheduling_group(scheduling_group sg) noexcept;
             friend future<> rename_scheduling_group(scheduling_group sg, sstring new_name) noexcept;
             friend class reactor;
-            friend unsigned internal::scheduling_group_index(scheduling_group sg) noexcept;
-            friend scheduling_group internal::scheduling_group_from_index(unsigned index) noexcept;
+            friend unsigned detail::scheduling_group_index(scheduling_group sg) noexcept;
+            friend scheduling_group detail::scheduling_group_from_index(unsigned index) noexcept;
 
             template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
             SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
@@ -320,7 +320,7 @@ namespace nil {
         };
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
 
             inline unsigned scheduling_group_index(scheduling_group sg) noexcept {
                 return sg._id;
@@ -336,12 +336,12 @@ namespace nil {
                 return &sg;
             }
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         /// Returns the current scheduling group
         inline scheduling_group current_scheduling_group() noexcept {
-            return *internal::current_scheduling_group_ptr();
+            return *detail::current_scheduling_group_ptr();
         }
 
         inline scheduling_group default_scheduling_group() noexcept {
@@ -360,7 +360,7 @@ namespace std {
     template<>
     struct hash<nil::actor::scheduling_group> {
         size_t operator()(nil::actor::scheduling_group sg) const noexcept {
-            return nil::actor::internal::scheduling_group_index(sg);
+            return nil::actor::detail::scheduling_group_index(sg);
         }
     };
 

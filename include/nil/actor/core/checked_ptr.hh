@@ -51,7 +51,7 @@ namespace nil {
 
         /// \cond internal
         /// \namespace nil::actor::internal
-        namespace internal {
+        namespace detail {
 
             /// \name nil::actor::checked_ptr::get() helpers
             /// Helper functions that simplify the nil::actor::checked_ptr::get() implementation.
@@ -76,7 +76,7 @@ namespace nil {
                 return ptr;
             }
             /// @}
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         /// \class nil::actor::checked_ptr
@@ -137,7 +137,7 @@ namespace nil {
             /// (const variant). \return The pointer to the underlying object
             pointer get() const {
                 check();
-                return internal::checked_ptr_do_get(_ptr);
+                return detail::checked_ptr_do_get(_ptr);
             }
 
             /// Gets a reference to the underlying pointer object.

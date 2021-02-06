@@ -1,23 +1,19 @@
-/*
- * This file is open source software, licensed to you under the terms
- * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership.  You may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright (C) 2020 ScyllaDB
- */
+//---------------------------------------------------------------------------//
+// Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the Server Side Public License, version 1,
+// as published by the author.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Server Side Public License for more details.
+//
+// You should have received a copy of the Server Side Public License
+// along with this program. If not, see
+// <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
+//---------------------------------------------------------------------------//
 
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/reactor.hh>
@@ -52,7 +48,7 @@ namespace nil {
         static_assert(std::is_nothrow_move_constructible<std::exception_ptr>::value,
                       "std::exception_ptr's move constructor must not throw");
 
-        namespace internal {
+        namespace detail {
 
             static_assert(std::is_empty<uninitialized_wrapper<std::tuple<>>>::value, "This should still be empty");
 
@@ -121,7 +117,7 @@ namespace nil {
 
             template void promise_base::make_ready<promise_base::urgent::no>() noexcept;
             template void promise_base::make_ready<promise_base::urgent::yes>() noexcept;
-        }    // namespace internal
+        }    // namespace detail
 
         template future<> current_exception_as_future() noexcept;
 
@@ -252,7 +248,7 @@ namespace nil {
             };
         }    // namespace
 
-        void internal::future_base::do_wait() noexcept {
+        void detail::future_base::do_wait() noexcept {
             auto thread = thread_impl::get();
             assert(thread);
             thread_wake_task wake_task {thread};
@@ -262,7 +258,7 @@ namespace nil {
         }
 
 #ifdef SEASTAR_COROUTINES_ENABLED
-        void internal::future_base::set_coroutine(task &coroutine) noexcept {
+        void detail::future_base::set_coroutine(task &coroutine) noexcept {
             assert(_promise);
             _promise->_task = &coroutine;
         }

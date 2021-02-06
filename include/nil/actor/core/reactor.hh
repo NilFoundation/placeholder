@@ -147,7 +147,7 @@ namespace nil {
 
         class reactor_backend;
 
-        namespace internal {
+        namespace detail {
 
             class reactor_stall_sampler;
             class cpu_stall_detector;
@@ -177,7 +177,7 @@ namespace nil {
                 friend class reactor;
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         class kernel_completion;
         class io_queue;
@@ -214,7 +214,7 @@ namespace nil {
             class execution_stage_pollfn;
             friend class manual_clock;
             friend class file_data_source_impl;    // for fstream statistics
-            friend class internal::reactor_stall_sampler;
+            friend class detail::reactor_stall_sampler;
             friend class preempt_io_context;
             friend struct hrtimer_aio_completion;
             friend struct task_quota_aio_completion;
@@ -224,7 +224,7 @@ namespace nil {
             friend class aio_storage_context;
 
         public:
-            using poller = internal::poller;
+            using poller = detail::poller;
             using idle_cpu_handler_result = nil::actor::idle_cpu_handler_result;
             using work_waiting_on_reactor = nil::actor::work_waiting_on_reactor;
             using idle_cpu_handler = nil::actor::idle_cpu_handler;
@@ -270,7 +270,7 @@ namespace nil {
             // some reactors will talk to foreign io_queues. If this reactor holds a valid IO queue, it will
             // be stored here.
             std::unordered_map<dev_t, std::unique_ptr<io_queue>> _io_queues;
-            internal::io_sink _io_sink;
+            detail::io_sink _io_sink;
 
             std::vector<noncopyable_function<future<>()>> _exit_funcs;
             unsigned _id = 0;
@@ -283,10 +283,10 @@ namespace nil {
             int _return = 0;
             promise<> _start_promise;
             semaphore _cpu_started;
-            internal::preemption_monitor _preemption_monitor {};
+            detail::preemption_monitor _preemption_monitor {};
             uint64_t _global_tasks_processed = 0;
             uint64_t _polls = 0;
-            std::unique_ptr<internal::cpu_stall_detector> _cpu_stall_detector;
+            std::unique_ptr<detail::cpu_stall_detector> _cpu_stall_detector;
 
             unsigned _max_task_backlog = 1000;
             timer_set<timer<>, &timer<>::_link> _timers;
@@ -326,7 +326,7 @@ namespace nil {
             };
 
             boost::container::static_vector<std::unique_ptr<task_queue>, max_scheduling_groups()> _task_queues;
-            internal::scheduling_group_specific_thread_local_data _scheduling_group_specific_data;
+            detail::scheduling_group_specific_thread_local_data _scheduling_group_specific_data;
             int64_t _last_vruntime = 0;
             task_queue_list _active_task_queues;
             task_queue_list _activating_task_queues;
@@ -369,7 +369,7 @@ namespace nil {
             static std::chrono::nanoseconds calculate_poll_time();
             static void block_notifier(int);
             void wakeup();
-            size_t handle_aio_error(internal::linux_abi::iocb *iocb, int ec);
+            size_t handle_aio_error(detail::linux_abi::iocb *iocb, int ec);
             bool flush_pending_aio();
             steady_clock_type::time_point next_pending_aio() const noexcept;
             bool reap_kernel_completions();
@@ -423,7 +423,7 @@ namespace nil {
             std::unique_ptr<thread_pool> _thread_pool;
             friend class thread_pool;
             friend class thread_context;
-            friend class internal::cpu_stall_detector;
+            friend class detail::cpu_stall_detector;
 
             uint64_t pending_task_count() const;
             void run_tasks(task_queue &tq);
@@ -453,7 +453,7 @@ namespace nil {
 
             future<size_t> do_read_some(pollable_fd_state &fd, void *buffer, size_t size);
             future<size_t> do_read_some(pollable_fd_state &fd, const std::vector<iovec> &iov);
-            future<temporary_buffer<char>> do_read_some(pollable_fd_state &fd, internal::buffer_allocator *ba);
+            future<temporary_buffer<char>> do_read_some(pollable_fd_state &fd, detail::buffer_allocator *ba);
 
             future<size_t> do_write_some(pollable_fd_state &fd, const void *buffer, size_t size);
             future<size_t> do_write_some(pollable_fd_state &fd, net::packet &p);
@@ -540,12 +540,12 @@ namespace nil {
             future<size_t> submit_io_read(io_queue *ioq,
                                           const io_priority_class &priority_class,
                                           size_t len,
-                                          internal::io_request req,
+                                          detail::io_request req,
                                           io_intent *intent) noexcept;
             future<size_t> submit_io_write(io_queue *ioq,
                                            const io_priority_class &priority_class,
                                            size_t len,
-                                           internal::io_request req,
+                                           detail::io_request req,
                                            io_intent *intent) noexcept;
 
             int run();
@@ -678,7 +678,7 @@ namespace nil {
             friend class timer<manual_clock>;
             friend class smp;
             friend class smp_message_queue;
-            friend class internal::poller;
+            friend class detail::poller;
             friend class scheduling_group;
             friend void add_to_flush_poller(output_stream<char> *os);
             friend void nil::actor::log_exception_trace() noexcept;
@@ -691,7 +691,7 @@ namespace nil {
             friend future<scheduling_group_key> scheduling_group_key_create(scheduling_group_key_config cfg) noexcept;
 
             template<typename T>
-            friend T *internal::scheduling_group_get_specific_ptr(scheduling_group sg,
+            friend T *detail::scheduling_group_get_specific_ptr(scheduling_group sg,
                                                                   scheduling_group_key key) noexcept;
             template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
             SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
@@ -739,7 +739,7 @@ namespace nil {
         };
 
         template<typename Func>    // signature: bool ()
-        inline std::unique_ptr<nil::actor::pollfn> internal::make_pollfn(Func &&func) {
+        inline std::unique_ptr<nil::actor::pollfn> detail::make_pollfn(Func &&func) {
             struct the_pollfn : simple_pollfn<false> {
                 the_pollfn(Func &&func) : func(std::forward<Func>(func)) {
                 }

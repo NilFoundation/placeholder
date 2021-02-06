@@ -34,7 +34,7 @@
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             // Representation of a Linux kernel version number
             struct uname_t {
@@ -61,6 +61,6 @@ namespace nil {
 
             uname_t parse_uname(const char *u);
 
-        }    // namespace internal
+        }    // namespace detail
     }        // namespace actor
 }    // namespace nil

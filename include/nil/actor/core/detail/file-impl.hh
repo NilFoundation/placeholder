@@ -34,7 +34,7 @@ namespace nil {
     namespace actor {
         class io_queue;
 
-        namespace internal {
+        namespace detail {
 
             // Given a properly aligned vector of iovecs, ensures that it respects the
             // IOV_MAX limit, by trimming if necessary. The modified vector still satisfied
@@ -42,7 +42,7 @@ namespace nil {
             // Returns the final total length of all iovecs.
             size_t sanitize_iovecs(std::vector<iovec> &iov, size_t disk_alignment) noexcept;
 
-        }    // namespace internal
+        }    // namespace detail
 
         class posix_file_handle_impl : public nil::actor::file_handle_impl {
             int _fd;

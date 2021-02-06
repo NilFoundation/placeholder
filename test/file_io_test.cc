@@ -143,7 +143,7 @@ SEASTAR_TEST_CASE(test1) {
 }
 
 SEASTAR_TEST_CASE(parallel_write_fsync) {
-    return internal::report_reactor_stalls([] {
+    return detail::report_reactor_stalls([] {
                return tmp_dir::do_with_thread([](tmp_dir &t) {
                    // Plan: open a file and write to it like crazy. In parallel fsync() it all the time.
                    auto fname = (t.get_path() / "testfile.tmp").native();
@@ -195,7 +195,7 @@ SEASTAR_TEST_CASE(parallel_write_fsync) {
                    remove_file(fname).get();
                });
            })
-        .then([](internal::stall_report sr) { std::cout << "parallel_write_fsync: " << sr << "\n"; });
+        .then([](detail::stall_report sr) { std::cout << "parallel_write_fsync: " << sr << "\n"; });
 }
 
 SEASTAR_TEST_CASE(test_iov_max) {
@@ -261,7 +261,7 @@ SEASTAR_THREAD_TEST_CASE(test_sanitize_iovecs) {
     {    // Single fragment, sanitize is noop
         auto original_iovecs = std::vector<iovec> {{buf.get_write(), buf.size()}};
         auto actual_iovecs = original_iovecs;
-        auto actual_length = internal::sanitize_iovecs(actual_iovecs, 4096);
+        auto actual_length = detail::sanitize_iovecs(actual_iovecs, 4096);
         BOOST_CHECK_EQUAL(actual_length, 4096);
         BOOST_CHECK_EQUAL(actual_iovecs.size(), 1);
         BOOST_CHECK(iovec_equal(original_iovecs.back(), actual_iovecs.back()));
@@ -273,7 +273,7 @@ SEASTAR_THREAD_TEST_CASE(test_sanitize_iovecs) {
             original_iovecs.emplace_back(iovec {buf.get_write(), i == 0 ? 1024u : 512u});
         }
         auto actual_iovecs = original_iovecs;
-        auto actual_length = internal::sanitize_iovecs(actual_iovecs, 4096);
+        auto actual_length = detail::sanitize_iovecs(actual_iovecs, 4096);
         BOOST_CHECK_EQUAL(actual_length, 512 * IOV_MAX);
         BOOST_CHECK_EQUAL(actual_iovecs.size(), IOV_MAX - 1);
 
@@ -289,7 +289,7 @@ SEASTAR_THREAD_TEST_CASE(test_sanitize_iovecs) {
             original_iovecs.emplace_back(iovec {buf.get_write(), i == (IOV_MAX - 1) ? 1024u : 512u});
         }
         auto actual_iovecs = original_iovecs;
-        auto actual_length = internal::sanitize_iovecs(actual_iovecs, 4096);
+        auto actual_length = detail::sanitize_iovecs(actual_iovecs, 4096);
         BOOST_CHECK_EQUAL(actual_length, 512 * IOV_MAX);
         BOOST_CHECK_EQUAL(actual_iovecs.size(), IOV_MAX);
 
@@ -305,7 +305,7 @@ SEASTAR_THREAD_TEST_CASE(test_sanitize_iovecs) {
             original_iovecs.emplace_back(iovec {buf.get_write(), 512});
         }
         auto actual_iovecs = original_iovecs;
-        auto actual_length = internal::sanitize_iovecs(actual_iovecs, 4096);
+        auto actual_length = detail::sanitize_iovecs(actual_iovecs, 4096);
         BOOST_CHECK_EQUAL(actual_length, 512 * IOV_MAX);
         BOOST_CHECK_EQUAL(actual_iovecs.size(), IOV_MAX);
 

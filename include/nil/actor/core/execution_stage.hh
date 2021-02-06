@@ -82,7 +82,7 @@ namespace nil {
         /// @{
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
 
             // Execution wraps lreferences in reference_wrapper so that the caller is forced
             // to use nil::actor::ref(). Then when the function is actually called the
@@ -122,7 +122,7 @@ namespace nil {
                 return std::reference_wrapper<T>(ref.get());
             }
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         /// Base execution stage class
@@ -188,7 +188,7 @@ namespace nil {
         };
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
 
             class execution_stage_manager {
                 std::vector<execution_stage *> _execution_stages;
@@ -211,7 +211,7 @@ namespace nil {
                 static execution_stage_manager &get() noexcept;
             };
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         /// \brief Concrete execution stage class
@@ -234,13 +234,13 @@ namespace nil {
 
             using return_type = futurize_t<ReturnType>;
             using promise_type = typename return_type::promise_type;
-            using input_type = typename tuple_map_types<internal::wrap_for_es, args_tuple>::type;
+            using input_type = typename tuple_map_types<detail::wrap_for_es, args_tuple>::type;
 
             struct work_item {
                 input_type _in;
                 promise_type _ready;
 
-                work_item(typename internal::wrap_for_es<Args>::type... args) : _in(std::move(args)...) {
+                work_item(typename detail::wrap_for_es<Args>::type... args) : _in(std::move(args)...) {
                 }
 
                 work_item(work_item &&other) = delete;
@@ -254,7 +254,7 @@ namespace nil {
         private:
             auto unwrap(input_type &&in) {
                 return tuple_map(std::move(in),
-                                 [](auto &&obj) { return internal::unwrap_for_es(std::forward<decltype(obj)>(obj)); });
+                                 [](auto &&obj) { return detail::unwrap_for_es(std::forward<decltype(obj)>(obj)); });
             }
 
             virtual void do_flush() noexcept override {
@@ -308,7 +308,7 @@ namespace nil {
             ///
             /// \param args arguments passed to the stage's function
             /// \return future containing the result of the call to the stage's function
-            return_type operator()(typename internal::wrap_for_es<Args>::type... args) {
+            return_type operator()(typename detail::wrap_for_es<Args>::type... args) {
                 if (_queue.size() >= max_queue_length) {
                     do_flush();
                 }
@@ -396,9 +396,9 @@ namespace nil {
             ///
             /// \param args arguments passed to the stage's function
             /// \return future containing the result of the call to the stage's function
-            return_type operator()(typename internal::wrap_for_es<Args>::type... args) {
+            return_type operator()(typename detail::wrap_for_es<Args>::type... args) {
                 auto sg = current_scheduling_group();
-                auto sg_id = internal::scheduling_group_index(sg);
+                auto sg_id = detail::scheduling_group_index(sg);
                 auto &slot = _stage_for_group[sg_id];
                 if (!slot) {
                     slot.emplace(make_stage_for_group(sg));
@@ -416,7 +416,7 @@ namespace nil {
             inheriting_execution_stage::stats get_stats() const noexcept {
                 inheriting_execution_stage::stats summary;
                 for (unsigned sg_id = 0; sg_id != _stage_for_group.size(); ++sg_id) {
-                    auto sg = internal::scheduling_group_from_index(sg_id);
+                    auto sg = detail::scheduling_group_from_index(sg_id);
                     if (_stage_for_group[sg_id]) {
                         summary.push_back({sg, _stage_for_group[sg_id]->get_stats()});
                     }
@@ -426,7 +426,7 @@ namespace nil {
         };
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
 
             template<typename Ret, typename ArgsTuple>
             struct concrete_execution_stage_helper;
@@ -436,7 +436,7 @@ namespace nil {
                 using type = concrete_execution_stage<Ret, Args...>;
             };
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
         /// Creates a new execution stage
@@ -476,7 +476,7 @@ namespace nil {
             using ret_type = typename traits::return_type;
             using args_as_tuple = typename traits::args_as_tuple;
             using concrete_execution_stage =
-                typename internal::concrete_execution_stage_helper<ret_type, args_as_tuple>::type;
+                typename detail::concrete_execution_stage_helper<ret_type, args_as_tuple>::type;
             return concrete_execution_stage(name, sg, std::forward<Function>(fn));
         }
 

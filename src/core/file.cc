@@ -1,35 +1,47 @@
-/*
- * This file is open source software, licensed to you under the terms
- * of the Apache License, Version 2.0 (the "License").  See the NOTICE file
- * distributed with this work for additional information regarding copyright
- * ownership.  You may not use this file except in compliance with the License.
- *
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
- * Copyright 2019 ScyllaDB
- */
+//---------------------------------------------------------------------------//
+// Copyright (c) 2018-2021 Mikhail Komarov <nemo@nil.foundation>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the Server Side Public License, version 1,
+// as published by the author.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// Server Side Public License for more details.
+//
+// You should have received a copy of the Server Side Public License
+// along with this program. If not, see
+// <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
+//---------------------------------------------------------------------------//
 
 #define __user /* empty */    // for xfs includes, below
 
+#include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <dirent.h>
+
+#if defined(__linux__)
+
 #include <linux/types.h>    // for xfs, below
 #include <linux/fs.h>       // BLKBSZGET
-#include <sys/ioctl.h>
 #include <xfs/linux.h>
+
 #define min min /* prevent xfs.h from defining min() as a macro */
 #include <xfs/xfs.h>
 #undef min
+
+#elif defined(__APPLE__)
+
+#include <sys/types.h>
+#include <sys/disk.h>
+
+#elif defined(__FreeBSD__)
+
+#include <sys/types.h>
+#include <sys/disk.h>
+
+#endif
 
 #include <memory>
 
@@ -49,12 +61,97 @@
 
 namespace nil {
     namespace actor {
+        namespace detail {
+            bool fallocate(int fd, int mode, off_t offset, size_t len) {
+#if defined(__linux__)
+                return ::fallocate(fd, mode, offset, len) == 0;
+#elif defined(SEASTAR_HAS_POSIX_FALLOCATE)
+                return posix_fallocate(fd, offset, len) == 0;
+#elif defined(_WIN32)
+                return _lseeki64(fd, offset, len) == len && 0 != SetEndOfFile((HANDLE)fd);
+#elif defined(__APPLE__)
+                fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, offset, len};
+                // Try to get a continous chunk of disk space
+                int ret = fcntl(fd, F_PREALLOCATE, &store);
+                if (-1 == ret) {
+                    // OK, perhaps we are too fragmented, allocate non-continuous
+                    store.fst_flags = F_ALLOCATEALL;
+                    ret = fcntl(fd, F_PREALLOCATE, &store);
+                    if (-1 == ret)
+                        return false;
+                }
+                return 0 == ftruncate(fd, len);
+#elif defined(__FreeBSD__) || defined(__unix__) || defined(__unix)
+                // The following is copied from fcntlSizeHint in sqlite
+                /* If the OS does not have posix_fallocate(), fake it. First use
+                ** ftruncate() to set the file size, then write a single byte to
+                ** the last byte in each block within the extended region. This
+                ** is the same technique used by glibc to implement posix_fallocate()
+                ** on systems that do not have a real fallocate() system call.
+                */
+                struct stat buf;
+                if (fstat(fd, &buf))
+                    return false;
+
+                if (buf.st_size >= len)
+                    return false;
+
+                const int nBlk = buf.st_blksize;
+
+                if (!nBlk)
+                    return false;
+
+                if (ftruncate(fd, len))
+                    return false;
+
+                int nWrite;                                                           // Return value from write()
+                int64_t iWrite = ((buf.st_size + 2 * nBlk - 1) / nBlk) * nBlk - 1;    // Next offset to write to
+                do {
+                    nWrite = 0;
+                    if (PR_Seek64(aFD, iWrite, PR_SEEK_SET) == iWrite)
+                        nWrite = PR_Write(aFD, "", 1);
+                    iWrite += nBlk;
+                } while (nWrite == 1 && iWrite < aLength);
+                return nWrite == 1;
+#endif
+                return false;
+            }
+
+            int blkgetsize(int fd, uint64_t *psize) {
+                int ret = -1;
+#if defined(__linux__)
+#if defined(BLKGETSIZE64)
+                ret = ioctl(fd, BLKGETSIZE64, psize);
+#elif defined(BLKGETSIZE)
+                unsigned long sectors = 0;
+                ret = ioctl(fd, BLKGETSIZE, &sectors);
+                *psize = sectors * 512ULL;
+#else
+#error "Linux configuration error (blkgetsize)"
+#endif
+#elif defined(__APPLE__)
+                unsigned long blocksize = 0;
+                ret = ioctl(fd, DKIOCGETBLOCKSIZE, &blocksize);
+                if (!ret) {
+                    unsigned long nblocks;
+                    ret = ioctl(fd, DKIOCGETBLOCKCOUNT, &nblocks);
+                    if (!ret)
+                        *psize = (uint64_t)nblocks * blocksize;
+                }
+#elif defined(__FreeBSD__)
+                ret = ioctl(fd, DIOCGMEDIASIZE, psize);
+#else
+#error "Unable to query block device size: unsupported platform, please report."
+#endif
+                return ret;
+            }
+        }    // namespace detail
 
         static_assert(std::is_nothrow_copy_constructible<io_priority_class>::value);
         static_assert(std::is_nothrow_move_constructible<io_priority_class>::value);
 
-        using namespace internal;
-        using namespace internal::linux_abi;
+        using namespace detail;
+        using namespace detail::linux_abi;
 
         file_handle::file_handle(const file_handle &x) :
             _impl(x._impl ? x._impl->clone() : std::unique_ptr<file_handle_impl>()) {
@@ -153,7 +250,7 @@ namespace nil {
                 ._thread_pool
                 ->submit<syscall_result<int>>([this, offset, length]() mutable {
                     return wrap_syscall<int>(
-                        ::fallocate(_fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset, length));
+                        detail::fallocate(_fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset, length));
                 })
                 .then([](syscall_result<int> sr) {
                     sr.throw_if_error();
@@ -171,7 +268,7 @@ namespace nil {
             return engine()
                 ._thread_pool
                 ->submit<syscall_result<int>>([this, position, length]() mutable {
-                    auto ret = ::fallocate(_fd, FALLOC_FL_ZERO_RANGE | FALLOC_FL_KEEP_SIZE, position, length);
+                    auto ret = detail::fallocate(_fd, FALLOC_FL_ZERO_RANGE | FALLOC_FL_KEEP_SIZE, position, length);
                     if (ret == -1 && errno == EOPNOTSUPP) {
                         ret = 0;
                         supported = false;    // Racy, but harmless.  At most we issue an extra call or two.
@@ -226,7 +323,7 @@ namespace nil {
                 ._thread_pool
                 ->submit<syscall_result_extra<size_t>>([this] {
                     uint64_t size;
-                    int ret = ::ioctl(_fd, BLKGETSIZE64, &size);
+                    int ret = ::ioctl(_fd, detail::blkgetsize(_fd, &size), &size);
                     return wrap_syscall(ret, size);
                 })
                 .then([](syscall_result_extra<uint64_t> ret) {
@@ -254,8 +351,12 @@ namespace nil {
 
             // From getdents(2):
             struct linux_dirent64 {
-                ino64_t d_ino;           /* 64-bit inode number */
-                off64_t d_off;           /* 64-bit offset to next structure */
+                ino64_t d_ino; /* 64-bit inode number */
+#ifdef __linux__
+                off64_t d_off; /* 64-bit offset to next structure */
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+                off_t d_off;
+#endif
                 unsigned short d_reclen; /* Size of this dirent */
                 unsigned char d_type;    /* File type */
                 char d_name[];           /* Filename (null-terminated) */
@@ -332,15 +433,15 @@ namespace nil {
         future<size_t> posix_file_impl::do_write_dma(uint64_t pos, const void *buffer, size_t len,
                                                      const io_priority_class &io_priority_class,
                                                      io_intent *intent) noexcept {
-            auto req = internal::io_request::make_write(_fd, pos, buffer, len);
+            auto req = detail::io_request::make_write(_fd, pos, buffer, len);
             return engine().submit_io_write(_io_queue, io_priority_class, len, std::move(req), intent);
         }
 
         future<size_t> posix_file_impl::do_write_dma(uint64_t pos, std::vector<iovec> iov,
                                                      const io_priority_class &io_priority_class,
                                                      io_intent *intent) noexcept {
-            auto len = internal::sanitize_iovecs(iov, _disk_write_dma_alignment);
-            auto req = internal::io_request::make_writev(_fd, pos, iov);
+            auto len = detail::sanitize_iovecs(iov, _disk_write_dma_alignment);
+            auto req = detail::io_request::make_writev(_fd, pos, iov);
             return engine()
                 .submit_io_write(_io_queue, io_priority_class, len, std::move(req), intent)
                 .finally([iov = std::move(iov)]() {});
@@ -349,15 +450,15 @@ namespace nil {
         future<size_t> posix_file_impl::do_read_dma(uint64_t pos, void *buffer, size_t len,
                                                     const io_priority_class &io_priority_class,
                                                     io_intent *intent) noexcept {
-            auto req = internal::io_request::make_read(_fd, pos, buffer, len);
+            auto req = detail::io_request::make_read(_fd, pos, buffer, len);
             return engine().submit_io_read(_io_queue, io_priority_class, len, std::move(req), intent);
         }
 
         future<size_t> posix_file_impl::do_read_dma(uint64_t pos, std::vector<iovec> iov,
                                                     const io_priority_class &io_priority_class,
                                                     io_intent *intent) noexcept {
-            auto len = internal::sanitize_iovecs(iov, _disk_read_dma_alignment);
-            auto req = internal::io_request::make_readv(_fd, pos, iov);
+            auto len = detail::sanitize_iovecs(iov, _disk_read_dma_alignment);
+            auto req = detail::io_request::make_readv(_fd, pos, iov);
             return engine()
                 .submit_io_read(_io_queue, io_priority_class, len, std::move(req), intent)
                 .finally([iov = std::move(iov)]() {});
@@ -392,14 +493,14 @@ namespace nil {
         future<temporary_buffer<uint8_t>> posix_file_impl::do_dma_read_bulk(uint64_t offset, size_t range_size,
                                                                             const io_priority_class &pc,
                                                                             io_intent *intent) noexcept {
-            using tmp_buf_type = typename internal::file_read_state<uint8_t>::tmp_buf_type;
+            using tmp_buf_type = typename detail::file_read_state<uint8_t>::tmp_buf_type;
 
             try {
                 auto front = offset & (_disk_read_dma_alignment - 1);
                 offset -= front;
                 range_size += front;
 
-                auto rstate = make_lw_shared<internal::file_read_state<uint8_t>>(
+                auto rstate = make_lw_shared<detail::file_read_state<uint8_t>>(
                     offset, front, range_size, _memory_dma_alignment, _disk_read_dma_alignment, intent);
 
                 //
@@ -675,7 +776,7 @@ namespace nil {
                 return later().then([] { return size_t(0); });
             }
             len = std::min(pos + len, align_up<uint64_t>(_logical_size, _disk_read_dma_alignment)) - pos;
-            internal::intent_reference iref(intent);
+            detail::intent_reference iref(intent);
             return enqueue<size_t>(opcode::read, pos, len,
                                    [this, pos, buffer, len, &pc, iref = std::move(iref)]() mutable {
                                        return posix_file_impl::do_read_dma(pos, buffer, len, pc, iref.retrieve());
@@ -702,7 +803,7 @@ namespace nil {
                 }
                 iov.erase(i, iov.end());
             }
-            internal::intent_reference iref(intent);
+            detail::intent_reference iref(intent);
             return enqueue<size_t>(opcode::read, pos, len,
                                    [this, pos, iov = std::move(iov), &pc, iref = std::move(iref)]() mutable {
                                        return posix_file_impl::do_read_dma(pos, std::move(iov), pc, iref.retrieve());
@@ -712,7 +813,7 @@ namespace nil {
         future<size_t> append_challenged_posix_file_impl::write_dma(uint64_t pos, const void *buffer, size_t len,
                                                                     const io_priority_class &pc,
                                                                     io_intent *intent) noexcept {
-            internal::intent_reference iref(intent);
+            detail::intent_reference iref(intent);
             return enqueue<size_t>(opcode::write, pos, len, [this, pos, buffer, len, &pc, iref = std::move(iref)] {
                 return posix_file_impl::do_write_dma(pos, buffer, len, pc, iref.retrieve())
                     .then([this, pos](size_t ret) {
@@ -726,7 +827,7 @@ namespace nil {
                                                                     const io_priority_class &pc,
                                                                     io_intent *intent) noexcept {
             auto len = boost::accumulate(iov | boost::adaptors::transformed(std::mem_fn(&iovec::iov_len)), size_t(0));
-            internal::intent_reference iref(intent);
+            detail::intent_reference iref(intent);
             return enqueue<size_t>(opcode::write, pos, len,
                                    [this, pos, iov = std::move(iov), &pc, iref = std::move(iref)]() mutable {
                                        return posix_file_impl::do_write_dma(pos, std::move(iov), pc, iref.retrieve())
@@ -816,8 +917,8 @@ namespace nil {
 
         shared_ptr<file_impl> posix_file_handle_impl::to_file() && {
             auto ret = ::nil::actor::make_shared<posix_file_real_impl>(_fd, _open_flags, _refcount, _device_id,
-                                                                    _memory_dma_alignment, _disk_read_dma_alignment,
-                                                                    _disk_write_dma_alignment);
+                                                                       _memory_dma_alignment, _disk_read_dma_alignment,
+                                                                       _disk_write_dma_alignment);
             _fd = -1;
             _refcount = nullptr;
             return ret;

@@ -33,7 +33,7 @@ namespace nil {
     namespace actor {
 
         /// \cond internal
-        namespace internal {
+        namespace detail {
 
             /// A buffer to format log messages into.
             ///
@@ -127,7 +127,7 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
         /// \endcond
 
     }    // namespace actor

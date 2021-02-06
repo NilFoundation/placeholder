@@ -43,7 +43,7 @@
 #include <csignal>
 
 namespace perf_tests {
-    namespace internal {
+    namespace detail {
 
         namespace {
 
@@ -311,7 +311,7 @@ namespace perf_tests {
             }
         }
 
-    }    // namespace internal
+    }    // namespace detail
 }    // namespace perf_tests
 
 int main(int ac, char **av) {

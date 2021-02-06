@@ -99,10 +99,10 @@ namespace nil {
             class log_writer {
             public:
                 virtual ~log_writer() = default;
-                virtual internal::log_buf::inserter_iterator operator()(internal::log_buf::inserter_iterator) = 0;
+                virtual detail::log_buf::inserter_iterator operator()(detail::log_buf::inserter_iterator) = 0;
             };
             template<typename Func>
-            SEASTAR_CONCEPT(requires requires(Func fn, internal::log_buf::inserter_iterator it) { it = fn(it); })
+            SEASTAR_CONCEPT(requires requires(Func fn, detail::log_buf::inserter_iterator it) { it = fn(it); })
             class lambda_log_writer : public log_writer {
                 Func _func;
 
@@ -110,8 +110,8 @@ namespace nil {
                 lambda_log_writer(Func &&func) : _func(std::forward<Func>(func)) {
                 }
                 virtual ~lambda_log_writer() override = default;
-                virtual internal::log_buf::inserter_iterator
-                    operator()(internal::log_buf::inserter_iterator it) override {
+                virtual detail::log_buf::inserter_iterator
+                    operator()(detail::log_buf::inserter_iterator it) override {
                     return _func(it);
                 }
             };
@@ -191,7 +191,7 @@ namespace nil {
             void log(log_level level, const char *fmt, Args &&...args) noexcept {
                 if (is_enabled(level)) {
                     try {
-                        lambda_log_writer writer([&](internal::log_buf::inserter_iterator it) {
+                        lambda_log_writer writer([&](detail::log_buf::inserter_iterator it) {
                             return fmt::format_to(it, fmt, std::forward<Args>(args)...);
                         });
                         do_log(level, writer);
@@ -218,7 +218,7 @@ namespace nil {
             void log(log_level level, rate_limit &rl, const char *fmt, Args &&...args) noexcept {
                 if (is_enabled(level) && rl.check()) {
                     try {
-                        lambda_log_writer writer([&](internal::log_buf::inserter_iterator it) {
+                        lambda_log_writer writer([&](detail::log_buf::inserter_iterator it) {
                             if (rl.has_dropped_messages()) {
                                 it = fmt::format_to(it, "(rate limiting dropped {} similar messages) ",
                                                     rl.get_and_reset_dropped_messages());
@@ -239,7 +239,7 @@ namespace nil {
             ///
             /// This is a low level method for use cases where it is very important to
             /// avoid any allocations. The \arg writer will be passed a
-            /// internal::log_buf::inserter_iterator that allows it to write into the log
+            /// detail::log_buf::inserter_iterator that allows it to write into the log
             /// buffer directly, avoiding the use of any intermediary buffers.
             void log(log_level level, log_writer &writer) noexcept {
                 if (is_enabled(level)) {
@@ -256,13 +256,13 @@ namespace nil {
             ///
             /// This is a low level method for use cases where it is very important to
             /// avoid any allocations. The \arg writer will be passed a
-            /// internal::log_buf::inserter_iterator that allows it to write into the log
+            /// detail::log_buf::inserter_iterator that allows it to write into the log
             /// buffer directly, avoiding the use of any intermediary buffers.
             /// This is rate-limited version, see \ref rate_limit.
             void log(log_level level, rate_limit &rl, log_writer &writer) noexcept {
                 if (is_enabled(level) && rl.check()) {
                     try {
-                        lambda_log_writer writer_wrapper([&](internal::log_buf::inserter_iterator it) {
+                        lambda_log_writer writer_wrapper([&](detail::log_buf::inserter_iterator it) {
                             if (rl.has_dropped_messages()) {
                                 it = fmt::format_to(it, "(rate limiting dropped {} similar messages) ",
                                                     rl.get_and_reset_dropped_messages());

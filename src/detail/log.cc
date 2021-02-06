@@ -56,7 +56,7 @@ using namespace std::chrono_literals;
 namespace nil {
     namespace actor {
 
-        namespace internal {
+        namespace detail {
 
             void log_buf::free_buffer() noexcept {
                 if (_own_buf) {
@@ -89,7 +89,7 @@ namespace nil {
                 free_buffer();
             }
 
-        }    // namespace internal
+        }    // namespace detail
 
         thread_local uint64_t logging_failures = 0;
 
@@ -155,16 +155,16 @@ namespace nil {
             return os;
         }
 
-        static internal::log_buf::inserter_iterator print_no_timestamp(internal::log_buf::inserter_iterator it) {
+        static detail::log_buf::inserter_iterator print_no_timestamp(detail::log_buf::inserter_iterator it) {
             return it;
         }
 
-        static internal::log_buf::inserter_iterator print_boot_timestamp(internal::log_buf::inserter_iterator it) {
+        static detail::log_buf::inserter_iterator print_boot_timestamp(detail::log_buf::inserter_iterator it) {
             auto n = std::chrono::steady_clock::now().time_since_epoch() / 1us;
             return fmt::format_to(it, "{:10d}.{:06d}", n / 1000000, n % 1000000);
         }
 
-        static internal::log_buf::inserter_iterator print_real_timestamp(internal::log_buf::inserter_iterator it) {
+        static detail::log_buf::inserter_iterator print_real_timestamp(detail::log_buf::inserter_iterator it) {
             struct a_second {
                 time_t t;
                 std::string s;
@@ -181,7 +181,7 @@ namespace nil {
             return fmt::format_to(it, "{},{:03d}", this_second.s, ms);
         }
 
-        static internal::log_buf::inserter_iterator (*print_timestamp)(internal::log_buf::inserter_iterator) =
+        static detail::log_buf::inserter_iterator (*print_timestamp)(detail::log_buf::inserter_iterator) =
             print_no_timestamp;
 
         const std::map<log_level, sstring> log_level_names = {
@@ -250,7 +250,7 @@ namespace nil {
                 {int(log_level::debug), "DEBUG"}, {int(log_level::info), "INFO "},  {int(log_level::trace), "TRACE"},
                 {int(log_level::warn), "WARN "},  {int(log_level::error), "ERROR"},
             };
-            auto print_once = [&](internal::log_buf::inserter_iterator it) {
+            auto print_once = [&](detail::log_buf::inserter_iterator it) {
                 if (local_engine) {
                     it = fmt::format_to(it, " [shard {}]", this_shard_id());
                 }
@@ -259,7 +259,7 @@ namespace nil {
             };
 
             if (is_ostream_enabled) {
-                internal::log_buf buf(static_log_buf.data(), static_log_buf.size());
+                detail::log_buf buf(static_log_buf.data(), static_log_buf.size());
                 auto it = buf.back_insert_begin();
                 it = fmt::format_to(it, "{} ", level_map[int(level)]);
                 it = print_timestamp(it);
@@ -269,7 +269,7 @@ namespace nil {
                 _out->flush();
             }
             if (is_syslog_enabled) {
-                internal::log_buf buf(static_log_buf.data(), static_log_buf.size());
+                detail::log_buf buf(static_log_buf.data(), static_log_buf.size());
                 auto it = buf.back_insert_begin();
                 it = print_once(it);
                 *it = '\0';
@@ -290,7 +290,7 @@ namespace nil {
 
         void logger::failed_to_log(std::exception_ptr ex) noexcept {
             try {
-                lambda_log_writer writer([ex = std::move(ex)](internal::log_buf::inserter_iterator it) {
+                lambda_log_writer writer([ex = std::move(ex)](detail::log_buf::inserter_iterator it) {
                     return fmt::format_to(it, "failed to log message: {}", ex);
                 });
                 do_log(log_level::error, writer);

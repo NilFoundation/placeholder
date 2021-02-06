@@ -29,7 +29,7 @@
 
 namespace nil {
     namespace actor {
-        namespace internal {
+        namespace detail {
 
             class io_request {
             public:
@@ -250,6 +250,6 @@ namespace nil {
                     return io_request(operation::cancel, fd, reinterpret_cast<char *>(addr));
                 }
             };
-        }    // namespace internal
+        }    // namespace detail
     }        // namespace actor
 }    // namespace nil

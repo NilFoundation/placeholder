@@ -25,7 +25,11 @@
 #pragma once
 
 #include <algorithm>
+#ifdef __linux
 #include <endian.h>
+#elif defined(__APPLE__)
+#include <machine/endian.h>
+#endif
 #include <nil/actor/core/unaligned.hh>
 
 namespace nil {

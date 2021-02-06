@@ -39,12 +39,12 @@ template<size_t Len>
 struct fake_file {
     int data[Len] = {};
 
-    static internal::io_request make_write_req(size_t idx, int val) {
+    static detail::io_request make_write_req(size_t idx, int val) {
         int *buf = new int(val);
-        return internal::io_request::make_write(0, idx, buf, 1);
+        return detail::io_request::make_write(0, idx, buf, 1);
     }
 
-    void execute_write_req(internal::io_request &rq, io_completion *desc) {
+    void execute_write_req(detail::io_request &rq, io_completion *desc) {
         data[rq.pos()] = *(reinterpret_cast<int *>(rq.address()));
         desc->complete_with(rq.size());
     }
@@ -52,7 +52,7 @@ struct fake_file {
 
 struct io_queue_for_tests {
     io_group_ptr group;
-    internal::io_sink sink;
+    detail::io_sink sink;
     io_queue queue;
 
     io_queue_for_tests() :
@@ -68,7 +68,7 @@ SEASTAR_THREAD_TEST_CASE(test_basic_flow) {
                  .then([&file](size_t len) { BOOST_REQUIRE(file.data[0] == 42); });
 
     tio.queue.poll_io_queue();
-    tio.sink.drain([&file](internal::io_request &rq, io_completion *desc) -> bool {
+    tio.sink.drain([&file](detail::io_request &rq, io_completion *desc) -> bool {
         file.execute_write_req(rq, desc);
         return true;
     });
@@ -77,7 +77,7 @@ SEASTAR_THREAD_TEST_CASE(test_basic_flow) {
 }
 
 SEASTAR_THREAD_TEST_CASE(test_intent_safe_ref) {
-    auto get_cancelled = [](internal::intent_reference &iref) -> bool {
+    auto get_cancelled = [](detail::intent_reference &iref) -> bool {
         try {
             iref.retrieve();
             return false;
@@ -88,15 +88,15 @@ SEASTAR_THREAD_TEST_CASE(test_intent_safe_ref) {
 
     io_intent intent, intent_x;
 
-    internal::intent_reference ref_orig(&intent);
+    detail::intent_reference ref_orig(&intent);
     BOOST_REQUIRE(ref_orig.retrieve() == &intent);
 
     // Test move armed
-    internal::intent_reference ref_armed(std::move(ref_orig));
+    detail::intent_reference ref_armed(std::move(ref_orig));
     BOOST_REQUIRE(ref_orig.retrieve() == nullptr);
     BOOST_REQUIRE(ref_armed.retrieve() == &intent);
 
-    internal::intent_reference ref_armed_2(&intent_x);
+    detail::intent_reference ref_armed_2(&intent_x);
     ref_armed_2 = std::move(ref_armed);
     BOOST_REQUIRE(ref_armed.retrieve() == nullptr);
     BOOST_REQUIRE(ref_armed_2.retrieve() == &intent);
@@ -105,20 +105,20 @@ SEASTAR_THREAD_TEST_CASE(test_intent_safe_ref) {
     BOOST_REQUIRE(get_cancelled(ref_armed_2));
 
     // Test move cancelled
-    internal::intent_reference ref_cancelled(std::move(ref_armed_2));
+    detail::intent_reference ref_cancelled(std::move(ref_armed_2));
     BOOST_REQUIRE(ref_armed_2.retrieve() == nullptr);
     BOOST_REQUIRE(get_cancelled(ref_cancelled));
 
-    internal::intent_reference ref_cancelled_2(&intent_x);
+    detail::intent_reference ref_cancelled_2(&intent_x);
     ref_cancelled_2 = std::move(ref_cancelled);
     BOOST_REQUIRE(ref_cancelled.retrieve() == nullptr);
     BOOST_REQUIRE(get_cancelled(ref_cancelled_2));
 
     // Test move empty
-    internal::intent_reference ref_empty(std::move(ref_orig));
+    detail::intent_reference ref_empty(std::move(ref_orig));
     BOOST_REQUIRE(ref_empty.retrieve() == nullptr);
 
-    internal::intent_reference ref_empty_2(&intent_x);
+    detail::intent_reference ref_empty_2(&intent_x);
     ref_empty_2 = std::move(ref_empty);
     BOOST_REQUIRE(ref_empty_2.retrieve() == nullptr);
 }
@@ -202,7 +202,7 @@ SEASTAR_THREAD_TEST_CASE(test_io_cancellation) {
     when_all_succeed(cancelled.begin(), cancelled.end()).get();
 
     tio.queue.poll_io_queue();
-    tio.sink.drain([&file](internal::io_request &rq, io_completion *desc) -> bool {
+    tio.sink.drain([&file](detail::io_request &rq, io_completion *desc) -> bool {
         file.execute_write_req(rq, desc);
         return true;
     });

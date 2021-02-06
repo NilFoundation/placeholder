@@ -189,7 +189,7 @@ namespace nil {
 
         std::ostream &operator<<(std::ostream &out, const tasktrace &b);
 
-        namespace internal {
+        namespace detail {
 
             template<class Exc>
             class backtraced : public Exc {
@@ -214,7 +214,7 @@ namespace nil {
                 }
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// Create an exception pointer of unspecified type that is derived from Exc type
         /// with a backtrace attached to its message.
@@ -228,7 +228,7 @@ namespace nil {
             using exc_type = std::decay_t<Exc>;
             static_assert(std::is_base_of<std::exception, exc_type>::value,
                           "throw_with_backtrace only works with exception types");
-            return std::make_exception_ptr<internal::backtraced<exc_type>>(Exc(std::forward<Args>(args)...));
+            return std::make_exception_ptr<detail::backtraced<exc_type>>(Exc(std::forward<Args>(args)...));
         }
 
         /**

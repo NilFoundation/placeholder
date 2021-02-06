@@ -217,15 +217,15 @@ SEASTAR_THREAD_TEST_CASE(sg_scheduling_group_inheritance_in_seastar_async_test) 
     thread_attributes attr = {};
     attr.sched_group = sg;
     nil::actor::async(attr, [attr] {
-        BOOST_REQUIRE_EQUAL(internal::scheduling_group_index(current_scheduling_group()),
-                            internal::scheduling_group_index(*(attr.sched_group)));
+        BOOST_REQUIRE_EQUAL(detail::scheduling_group_index(current_scheduling_group()),
+                            detail::scheduling_group_index(*(attr.sched_group)));
 
         nil::actor::async([attr] {
-            BOOST_REQUIRE_EQUAL(internal::scheduling_group_index(current_scheduling_group()),
-                                internal::scheduling_group_index(*(attr.sched_group)));
+            BOOST_REQUIRE_EQUAL(detail::scheduling_group_index(current_scheduling_group()),
+                                detail::scheduling_group_index(*(attr.sched_group)));
 
-            smp::invoke_on_all([sched_group_idx = internal::scheduling_group_index(*(attr.sched_group))]() {
-                BOOST_REQUIRE_EQUAL(internal::scheduling_group_index(current_scheduling_group()), sched_group_idx);
+            smp::invoke_on_all([sched_group_idx = detail::scheduling_group_index(*(attr.sched_group))]() {
+                BOOST_REQUIRE_EQUAL(detail::scheduling_group_index(current_scheduling_group()), sched_group_idx);
             }).get();
         }).get();
     }).get();
@@ -236,8 +236,8 @@ SEASTAR_THREAD_TEST_CASE(later_preserves_sg) {
     auto cleanup = defer([&] { destroy_scheduling_group(sg).get(); });
     with_scheduling_group(sg, [&] {
         return later().then([&] {
-            BOOST_REQUIRE_EQUAL(internal::scheduling_group_index(current_scheduling_group()),
-                                internal::scheduling_group_index(sg));
+            BOOST_REQUIRE_EQUAL(detail::scheduling_group_index(current_scheduling_group()),
+                                detail::scheduling_group_index(sg));
         });
     }).get();
 }

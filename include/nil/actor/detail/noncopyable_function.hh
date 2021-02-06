@@ -36,7 +36,7 @@ namespace nil {
         template<typename Signature>
         class noncopyable_function;
 
-        namespace internal {
+        namespace detail {
 
             class noncopyable_function_base {
             private:
@@ -102,12 +102,12 @@ namespace nil {
                 static constexpr bool value = true;
             };
 
-        }    // namespace internal
+        }    // namespace detail
 
         /// A clone of \c std::function, but only invokes the move constructor
         /// of the contained function.
         template<typename Ret, typename... Args, bool Noexcept>
-        class noncopyable_function<Ret(Args...) noexcept(Noexcept)> : private internal::noncopyable_function_base {
+        class noncopyable_function<Ret(Args...) noexcept(Noexcept)> : private detail::noncopyable_function_base {
             using call_type = Ret (*)(const noncopyable_function *func, Args...);
             struct vtable {
                 const call_type call;
@@ -146,7 +146,7 @@ namespace nil {
                 static constexpr move_type select_move_thunk() {
                     bool can_trivially_move = std::is_trivially_move_constructible<Func>::value &&
                                               std::is_trivially_destructible<Func>::value;
-                    return can_trivially_move ? trivial_direct_move<internal::used_size<Func>::value> : move;
+                    return can_trivially_move ? trivial_direct_move<detail::used_size<Func>::value> : move;
                 }
                 static void destroy(noncopyable_function_base *func) {
                     access(func)->~Func();
@@ -238,7 +238,7 @@ namespace nil {
             }
 
             Ret operator()(Args... args) const noexcept(Noexcept) {
-                static_assert(!Noexcept || internal::is_nothrow_if_object<Args...>::value);
+                static_assert(!Noexcept || detail::is_nothrow_if_object<Args...>::value);
                 return _vtable->call(this, std::forward<Args>(args)...);
             }
 
