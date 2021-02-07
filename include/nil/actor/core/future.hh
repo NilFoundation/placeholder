@@ -24,9 +24,6 @@
 
 #pragma once
 
-#include <nil/actor/core/task.hh>
-#include <nil/actor/core/thread_impl.hh>
-
 #include <stdexcept>
 #include <atomic>
 #include <memory>
@@ -36,7 +33,10 @@
 
 #include <boost/config.hpp>
 
+#include <nil/actor/core/task.hh>
+#include <nil/actor/core/thread_impl.hh>
 #include <nil/actor/core/function_traits.hh>
+
 #include <nil/actor/detail/critical_alloc_section.hh>
 #include <nil/actor/detail/attribute-compat.hh>
 #include <nil/actor/detail/noncopyable_function.hh>
@@ -815,11 +815,8 @@ namespace nil {
                 delete this;
             }
             Func _func;
-#ifdef __clang__
-            Wrapper _wrapper;
-#else
-            [[no_unique_address]] Wrapper _wrapper;
-#endif
+
+            BOOST_ATTRIBUTE_NO_UNIQUE_ADDRESS Wrapper _wrapper;
         };
 
 #if ACTOR_API_LEVEL < 4
