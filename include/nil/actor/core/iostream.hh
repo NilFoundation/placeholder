@@ -203,37 +203,38 @@ namespace nil {
             consumption_variant _result;
         };
 
+#ifdef BOOST_HAS_CONCEPTS
         // Consumer concept, for consume() method
-        ACTOR_CONCEPT(
-            // The consumer should operate on the data given to it, and
-            // return a future "consumption result", which can be
-            //  - continue_consuming, if the consumer has consumed all the input given
-            // to it and is ready for more
-            //  - stop_consuming, when the consumer is done (and in that case
-            // the contained buffer is the unconsumed part of the last data buffer - this
-            // can also happen to be empty).
-            //  - skip_bytes, when the consumer has consumed all the input given to it
-            // and wants to skip before processing the next chunk
-            //
-            // For backward compatibility reasons, we also support the deprecated return value
-            // of type "unconsumed remainder" which can be
-            //  - empty optional, if the consumer consumed all the input given to it
-            // and is ready for more
-            //  - non-empty optional, when the consumer is done (and in that case
-            // the value is the unconsumed part of the last data buffer - this
-            // can also happen to be empty).
+        // The consumer should operate on the data given to it, and
+        // return a future "consumption result", which can be
+        //  - continue_consuming, if the consumer has consumed all the input given
+        // to it and is ready for more
+        //  - stop_consuming, when the consumer is done (and in that case
+        // the contained buffer is the unconsumed part of the last data buffer - this
+        // can also happen to be empty).
+        //  - skip_bytes, when the consumer has consumed all the input given to it
+        // and wants to skip before processing the next chunk
+        //
+        // For backward compatibility reasons, we also support the deprecated return value
+        // of type "unconsumed remainder" which can be
+        //  - empty optional, if the consumer consumed all the input given to it
+        // and is ready for more
+        //  - non-empty optional, when the consumer is done (and in that case
+        // the value is the unconsumed part of the last data buffer - this
+        // can also happen to be empty).
 
-            template<typename Consumer, typename CharType> concept InputStreamConsumer =
-                requires(Consumer c) {
-                    { c(temporary_buffer<CharType> {}) }
-                    ->std::same_as<future<consumption_result<CharType>>>;
-                };
+        template<typename Consumer, typename CharType>
+        concept InputStreamConsumer = requires(Consumer c) {
+            { c(temporary_buffer<CharType> {}) }
+            ->std::same_as<future<consumption_result<CharType>>>;
+        };
 
-            template<typename Consumer, typename CharType> concept ObsoleteInputStreamConsumer =
-                requires(Consumer c) {
-                    { c(temporary_buffer<CharType> {}) }
-                    ->std::same_as<future<std::optional<temporary_buffer<CharType>>>>;
-                };)
+        template<typename Consumer, typename CharType>
+        concept ObsoleteInputStreamConsumer = requires(Consumer c) {
+            { c(temporary_buffer<CharType> {}) }
+            ->std::same_as<future<std::optional<temporary_buffer<CharType>>>>;
+        };
+#endif
 
         /// Buffers data from a data_source and provides a stream interface to the user.
         ///
@@ -281,14 +282,17 @@ namespace nil {
             /// \throws if an I/O error occurs during the read. As explained above,
             /// prematurely reaching the end of stream is *not* an I/O error.
             future<temporary_buffer<CharType>> read_exactly(size_t n);
+
             template<typename Consumer>
-            ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
-                            ObsoleteInputStreamConsumer<Consumer, CharType>)
-            future<> consume(Consumer &&c);
+#ifdef BOOST_HAS_CONCEPTS
+                requires InputStreamConsumer<Consumer, CharType> || ObsoleteInputStreamConsumer<Consumer, CharType>
+#endif
+                                                                        future<> consume(Consumer &&c);
             template<typename Consumer>
-            ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
-                            ObsoleteInputStreamConsumer<Consumer, CharType>)
-            future<> consume(Consumer &c);
+#ifdef BOOST_HAS_CONCEPTS
+                requires InputStreamConsumer<Consumer, CharType> || ObsoleteInputStreamConsumer<Consumer, CharType>
+#endif
+                                                                        future<> consume(Consumer &c);
             bool eof() const {
                 return _eof;
             }

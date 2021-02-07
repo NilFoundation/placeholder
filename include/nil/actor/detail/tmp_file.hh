@@ -135,10 +135,12 @@ namespace nil {
             future<> remove() noexcept;
 
             template<typename Func>
-            ACTOR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
-            static future<> do_with(
-                std::filesystem::path path_template, Func &&func,
-                file_permissions create_permissions = file_permissions::default_dir_permissions) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+            requires std::is_nothrow_move_constructible<Func>::value
+#endif
+                static future<>
+                do_with(std::filesystem::path path_template, Func &&func,
+                        file_permissions create_permissions = file_permissions::default_dir_permissions) noexcept {
                 static_assert(std::is_nothrow_move_constructible_v<Func>, "Func's move constructor must not throw");
                 return nil::actor::do_with(tmp_dir(), [func = std::move(func), path_template = std::move(path_template),
                                                        create_permissions](tmp_dir &t) mutable {
@@ -154,9 +156,11 @@ namespace nil {
             }
 
             template<typename Func>
-
-            ACTOR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
-            static future<> do_with_thread(Func &&func) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+            requires std::is_nothrow_move_constructible<Func>::value
+#endif
+                static future<>
+                do_with_thread(Func &&func) noexcept {
                 static_assert(std::is_nothrow_move_constructible_v<Func>, "Func's move constructor must not throw");
                 return async([func = std::move(func)]() mutable {
                     auto t = tmp_dir();

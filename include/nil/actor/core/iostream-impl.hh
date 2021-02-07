@@ -186,10 +186,12 @@ namespace nil {
         }
 
         template<typename CharType>
-        template<typename Consumer>
-        ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
-                        ObsoleteInputStreamConsumer<Consumer, CharType>)
-        future<> input_stream<CharType>::consume(Consumer &&consumer) {
+            template<typename Consumer>
+#ifdef BOOST_HAS_CONCEPTS
+            requires InputStreamConsumer<Consumer, CharType> ||
+            ObsoleteInputStreamConsumer<Consumer, CharType>
+#endif
+                future<> input_stream<CharType>::consume(Consumer &&consumer) {
             return repeat([consumer = std::move(consumer), this]() mutable {
                 if (_buf.empty() && !_eof) {
                     return _fd.get().then([this](tmp_buf buf) {
@@ -226,10 +228,12 @@ namespace nil {
         }
 
         template<typename CharType>
-        template<typename Consumer>
-        ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
-                        ObsoleteInputStreamConsumer<Consumer, CharType>)
-        future<> input_stream<CharType>::consume(Consumer &consumer) {
+            template<typename Consumer>
+#ifdef BOOST_HAS_CONCEPTS
+            requires InputStreamConsumer<Consumer, CharType> ||
+            ObsoleteInputStreamConsumer<Consumer, CharType>
+#endif
+                future<> input_stream<CharType>::consume(Consumer &consumer) {
             return consume(std::ref(consumer));
         }
 

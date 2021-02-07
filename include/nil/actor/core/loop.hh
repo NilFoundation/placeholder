@@ -117,9 +117,11 @@ namespace nil {
         /// \return a ready future if we stopped successfully, or a failed future if
         ///         a call to to \c action failed.
         template<typename AsyncAction>
-        ACTOR_CONCEPT(requires nil::actor::InvokeReturns<AsyncAction, stop_iteration> ||
-                        nil::actor::InvokeReturns<AsyncAction, future<stop_iteration>>)
-        inline future<> repeat(AsyncAction &&action) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+            requires nil::actor::InvokeReturns<AsyncAction, stop_iteration> ||
+            nil::actor::InvokeReturns<AsyncAction, future<stop_iteration>>
+#endif
+            inline future<> repeat(AsyncAction &&action) noexcept {
             using futurator = futurize<std::result_of_t<AsyncAction()>>;
             static_assert(std::is_same<future<stop_iteration>, typename futurator::type>::value,
                           "bad AsyncAction signature");
@@ -238,10 +240,12 @@ namespace nil {
         /// \return a ready future if we stopped successfully, or a failed future if
         ///         a call to to \c action failed.  The \c optional's value is returned.
         template<typename AsyncAction>
-        ACTOR_CONCEPT(requires requires(AsyncAction aa) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(AsyncAction aa) {
             bool(futurize_invoke(aa).get0());
             futurize_invoke(aa).get0().value();
-        })
+        }
+#endif
         repeat_until_value_return_type<AsyncAction> repeat_until_value(AsyncAction action) noexcept {
             using futurator = futurize<std::result_of_t<AsyncAction()>>;
             using type_helper = repeat_until_value_type_helper<typename futurator::type>;
@@ -350,9 +354,10 @@ namespace nil {
         /// \return a ready future if we stopped successfully, or a failed future if
         ///         a call to to \c action or a call to \c stop_cond failed.
         template<typename AsyncAction, typename StopCondition>
-        ACTOR_CONCEPT(
-            requires nil::actor::InvokeReturns<StopCondition, bool> &&nil::actor::InvokeReturns<AsyncAction, future<>>)
-        inline future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+        requires nil::actor::InvokeReturns<StopCondition, bool> &&nil::actor::InvokeReturns<AsyncAction, future<>>
+#endif
+            inline future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
             using namespace detail;
             for (;;) {
                 try {
@@ -387,8 +392,10 @@ namespace nil {
         ///        that becomes ready when you wish it to be called again.
         /// \return a future<> that will resolve to the first failure of \c action
         template<typename AsyncAction>
-        ACTOR_CONCEPT(requires nil::actor::InvokeReturns<AsyncAction, future<>>)
-        inline future<> keep_doing(AsyncAction action) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+        requires nil::actor::InvokeReturns<AsyncAction, future<>>
+#endif
+            inline future<> keep_doing(AsyncAction action) noexcept {
             return repeat(
                 [action = std::move(action)]() mutable { return action().then([] { return stop_iteration::no; }); });
         }
@@ -467,10 +474,12 @@ namespace nil {
         /// \return a ready future on success, or the first failed future if
         ///         \c action failed.
         template<typename Iterator, typename AsyncAction>
-        ACTOR_CONCEPT(requires requires(Iterator i, AsyncAction aa) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Iterator i, AsyncAction aa) {
             { futurize_invoke(aa, *i) }
             ->std::same_as<future<>>;
-        })
+        }
+#endif
         inline future<> do_for_each(Iterator begin, Iterator end, AsyncAction action) noexcept {
             try {
                 return detail::do_for_each_impl(std::move(begin), std::move(end), std::move(action));
@@ -491,10 +500,12 @@ namespace nil {
         /// \return a ready future on success, or the first failed future if
         ///         \c action failed.
         template<typename Container, typename AsyncAction>
-        ACTOR_CONCEPT(requires requires(Container c, AsyncAction aa) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Container c, AsyncAction aa) {
             { futurize_invoke(aa, *c.begin()) }
             ->std::same_as<future<>>;
-        })
+        }
+#endif
         inline future<> do_for_each(Container &c, AsyncAction action) noexcept {
             try {
                 return detail::do_for_each_impl(std::begin(c), std::end(c), std::move(action));
@@ -563,10 +574,12 @@ namespace nil {
         ///         complete.  If one or more return an exception, the return value
         ///         contains one of the exceptions.
         template<typename Iterator, typename Func>
-        ACTOR_CONCEPT(requires requires(Func f, Iterator i) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Func f, Iterator i) {
             { f(*i++) }
             ->std::same_as<future<>>;
-        })
+        }
+#endif
         inline future<> parallel_for_each(Iterator begin, Iterator end, Func &&func) noexcept {
             parallel_for_each_state *s = nullptr;
             // Process all elements, giving each future the following treatment:
@@ -624,10 +637,12 @@ namespace nil {
         }    // namespace detail
 
         template<typename Range, typename Func>
-        ACTOR_CONCEPT(requires requires(Func f, Range r) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Func f, Range r) {
             { f(*r.begin()) }
             ->std::same_as<future<>>;
-        })
+        }
+#endif
         inline future<> parallel_for_each(Range &&range, Func &&func) noexcept {
             auto impl = detail::parallel_for_each_impl<Range, Func>;
             return futurize_invoke(impl, std::forward<Range>(range), std::forward<Func>(func));
@@ -652,10 +667,12 @@ namespace nil {
         ///         complete.  If one or more return an exception, the return value
         ///         contains one of the exceptions.
         template<typename Iterator, typename Func>
-        ACTOR_CONCEPT(requires requires(Func f, Iterator i) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Func f, Iterator i) {
             { f(*i++) }
             ->std::same_as<future<>>;
-        })
+        }
+#endif
         inline future<> max_concurrent_for_each(Iterator begin, Iterator end, size_t max_concurrent,
                                                 Func &&func) noexcept {
             struct state {
@@ -731,10 +748,12 @@ namespace nil {
         ///         complete.  If one or more return an exception, the return value
         ///         contains one of the exceptions.
         template<typename Range, typename Func>
-        ACTOR_CONCEPT(requires std::ranges::range<Range> &&requires(Func f, Range r) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires std::ranges::range<Range> &&requires(Func f, Range r) {
             { f(*r.begin()) }
             ->std::same_as<future<>>;
-        })
+        }
+#endif
         inline future<> max_concurrent_for_each(Range &&range, size_t max_concurrent, Func &&func) noexcept {
             try {
                 return max_concurrent_for_each(std::begin(range), std::end(range), max_concurrent,

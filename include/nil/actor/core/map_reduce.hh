@@ -26,6 +26,8 @@
 
 #include <iterator>
 
+#include <boost/config.hpp>
+
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/shared_ptr.hh>
 
@@ -86,13 +88,15 @@ namespace nil {
 
         // TODO: specialize for non-deferring reducer
         template<typename Iterator, typename Mapper, typename Reducer>
-        ACTOR_CONCEPT(requires requires(Iterator i, Mapper mapper, Reducer reduce) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Iterator i, Mapper mapper, Reducer reduce) {
             *i++;
             { i != i }
             ->std::convertible_to<bool>;
             mapper(*i);
             reduce(futurize_invoke(mapper, *i).get0());
-        })
+        }
+#endif
         inline auto map_reduce(Iterator begin, Iterator end, Mapper &&mapper, Reducer &&r) ->
             typename reducer_traits<Reducer>::future_type {
             auto r_ptr = make_lw_shared(std::forward<Reducer>(r));
@@ -148,7 +152,8 @@ namespace nil {
         ///
         /// \return equivalent to \c reduce(reduce(initial, mapper(obj0)), mapper(obj1)) ...
         template<typename Iterator, typename Mapper, typename Initial, typename Reduce>
-        ACTOR_CONCEPT(requires requires(Iterator i, Mapper mapper, Initial initial, Reduce reduce) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Iterator i, Mapper mapper, Initial initial, Reduce reduce) {
             *i++;
             { i != i }
             ->std::convertible_to<bool>;
@@ -156,7 +161,8 @@ namespace nil {
             requires is_future<decltype(mapper(*i))>::value;
             { reduce(std::move(initial), mapper(*i).get0()) }
             ->std::convertible_to<Initial>;
-        })
+        }
+#endif
         inline future<Initial> map_reduce(Iterator begin, Iterator end, Mapper &&mapper, Initial initial,
                                           Reduce reduce) {
             struct state {
@@ -218,14 +224,16 @@ namespace nil {
         ///
         /// \return equivalent to \c reduce(reduce(initial, mapper(obj0)), mapper(obj1)) ...
         template<typename Range, typename Mapper, typename Initial, typename Reduce>
-        ACTOR_CONCEPT(requires requires(Range range, Mapper mapper, Initial initial, Reduce reduce) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(Range range, Mapper mapper, Initial initial, Reduce reduce) {
             std::begin(range);
             std::end(range);
             mapper(*std::begin(range));
             requires is_future<std::remove_reference_t<decltype(mapper(*std::begin(range)))>>::value;
             { reduce(std::move(initial), mapper(*std::begin(range)).get0()) }
             ->std::convertible_to<Initial>;
-        })
+        }
+#endif
         inline future<Initial> map_reduce(Range &&range, Mapper &&mapper, Initial initial, Reduce reduce) {
             return map_reduce(std::begin(range), std::end(range), std::forward<Mapper>(mapper), std::move(initial),
                               std::move(reduce));

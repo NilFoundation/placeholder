@@ -197,27 +197,27 @@ namespace nil {
 
         }    // namespace detail
 
-        /// \cond internal
-        ACTOR_CONCEPT(
+/// \cond internal
+#ifdef BOOST_HAS_CONCEPTS
 
-            namespace impl {
-                // Want: folds
+        namespace impl {
+            // Want: folds
 
-                template<typename T>
-                struct is_tuple_of_futures : std::false_type { };
+            template<typename T>
+            struct is_tuple_of_futures : std::false_type { };
 
-                template<>
-                struct is_tuple_of_futures<std::tuple<>> : std::true_type { };
+            template<>
+            struct is_tuple_of_futures<std::tuple<>> : std::true_type { };
 
-                template<typename... T, typename... Rest>
-                struct is_tuple_of_futures<std::tuple<future<T...>, Rest...>>
-                    : is_tuple_of_futures<std::tuple<Rest...>> { };
-            }
+            template<typename... T, typename... Rest>
+            struct is_tuple_of_futures<std::tuple<future<T...>, Rest...>> : is_tuple_of_futures<std::tuple<Rest...>> {
+            };
+        }    // namespace impl
 
-            template<typename... Futs>
-            concept AllAreFutures = impl::is_tuple_of_futures<std::tuple<Futs...>>::value;
+        template<typename... Futs>
+        concept AllAreFutures = impl::is_tuple_of_futures<std::tuple<Futs...>>::value;
 
-        )
+#endif
 
         template<typename Fut, std::enable_if_t<is_future<Fut>::value, int> = 0>
         auto futurize_invoke_if_func(Fut &&fut) noexcept {
@@ -233,8 +233,10 @@ namespace nil {
         namespace detail {
 
             template<typename... Futs>
-            ACTOR_CONCEPT(requires nil::actor::AllAreFutures<Futs...>)
-            inline future<std::tuple<Futs...>> when_all_impl(Futs &&...futs) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+            requires nil::actor::AllAreFutures<Futs...>
+#endif
+                inline future<std::tuple<Futs...>> when_all_impl(Futs &&...futs) noexcept {
                 using state = when_all_state<identity_futures_tuple<Futs...>, Futs...>;
                 return state::wait_all(std::forward<Futs>(futs)...);
             }
@@ -321,13 +323,14 @@ namespace nil {
         /// \return an \c std::vector<> of all the futures in the input; when
         ///         ready, all contained futures will be ready as well.
         template<typename FutureIterator>
-        ACTOR_CONCEPT(requires requires(FutureIterator i) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(FutureIterator i) {
             {*i++};
             requires is_future<std::remove_reference_t<decltype(*i)>>::value;
-        })
-        inline future<std::vector<typename std::iterator_traits<FutureIterator>::value_type>> when_all(
-            FutureIterator begin,
-            FutureIterator end) noexcept {
+        }
+#endif
+        inline future<std::vector<typename std::iterator_traits<FutureIterator>::value_type>>
+            when_all(FutureIterator begin, FutureIterator end) noexcept {
             using itraits = std::iterator_traits<FutureIterator>;
             using result_transform = detail::identity_futures_vector<typename itraits::value_type>;
             try {
@@ -514,8 +517,10 @@ namespace nil {
             };
 
             template<typename... Futures>
-            ACTOR_CONCEPT(requires nil::actor::AllAreFutures<Futures...>)
-            inline auto when_all_succeed_impl(Futures &&...futures) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+            requires nil::actor::AllAreFutures<Futures...>
+#endif
+                inline auto when_all_succeed_impl(Futures &&...futures) noexcept {
                 using state = when_all_state<extract_values_from_futures_tuple<Futures...>, Futures...>;
                 return state::wait_all(std::forward<Futures>(futures)...);
             }
@@ -548,12 +553,14 @@ namespace nil {
         /// \param end an \c InputIterator designating the end of the range of futures
         /// \return an \c std::vector<> of all the valus in the input
         template<typename FutureIterator, typename = typename std::iterator_traits<FutureIterator>::value_type>
-        ACTOR_CONCEPT(requires requires(FutureIterator i) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(FutureIterator i) {
             *i++;
             { i != i }
             ->std::convertible_to<bool>;
             requires is_future<std::remove_reference_t<decltype(*i)>>::value;
-        })
+        }
+#endif
         inline auto when_all_succeed(FutureIterator begin, FutureIterator end) noexcept {
             using itraits = std::iterator_traits<FutureIterator>;
             using result_transform = detail::extract_values_from_futures_vector<typename itraits::value_type>;

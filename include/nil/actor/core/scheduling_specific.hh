@@ -138,13 +138,15 @@ namespace nil {
          * SpecificValType is convertible to SpecificValType.
          */
         template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
-        ACTOR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
-                                          Initial initial) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer, Initial initial) {
             { reducer(initial, mapper(specific_val)) }
             ->std::convertible_to<Initial>;
-        })
-        future<typename function_traits<Reducer>::return_type> map_reduce_scheduling_group_specific(
-            Mapper mapper, Reducer reducer, Initial initial_val, scheduling_group_key key) {
+        }
+#endif
+        future<typename function_traits<Reducer>::return_type>
+            map_reduce_scheduling_group_specific(Mapper mapper, Reducer reducer, Initial initial_val,
+                                                 scheduling_group_key key) {
             using per_scheduling_group = detail::scheduling_group_specific_thread_local_data::per_scheduling_group;
             auto &data = detail::get_scheduling_group_specific_thread_local_data();
             auto wrapped_mapper = [key, mapper](per_scheduling_group &psg) {
@@ -172,14 +174,14 @@ namespace nil {
          * where SpecificValType is convertible to SpecificValType.
          */
         template<typename SpecificValType, typename Reducer, typename Initial>
-        ACTOR_CONCEPT(requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
+#ifdef BOOST_HAS_CONCEPTS
+        requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
             { reducer(initial, specific_val) }
             ->std::convertible_to<Initial>;
-        })
-        future<typename function_traits<Reducer>::return_type> reduce_scheduling_group_specific(
-            Reducer reducer,
-            Initial initial_val,
-            scheduling_group_key key) {
+        }
+#endif
+        future<typename function_traits<Reducer>::return_type>
+            reduce_scheduling_group_specific(Reducer reducer, Initial initial_val, scheduling_group_key key) {
             using per_scheduling_group = detail::scheduling_group_specific_thread_local_data::per_scheduling_group;
             auto &data = detail::get_scheduling_group_specific_thread_local_data();
 
