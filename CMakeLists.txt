@@ -576,6 +576,7 @@ if(BUILD_WITH_SSTRING)
         -DACTOR_SSTRING)
 endif()
 
+include(CheckFunctionExists)
 check_function_exists(posix_fallocate ACTOR_HAS_POSIX_FALLOCATE)
 if(ACTOR_HAS_POSIX_FALLOCATE)
     add_definitions(-DACTOR_HAS_POSIX_FALLOCATE)
