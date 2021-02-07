@@ -475,7 +475,7 @@ namespace nil {
         /// \returns the future returned by \c func, or an exceptional future if either \c file_fut or closing the file
         /// failed.
         template<typename Func>
-        SEASTAR_CONCEPT(requires std::invocable<Func, file &> &&std::is_nothrow_move_constructible_v<Func>)
+        ACTOR_CONCEPT(requires std::invocable<Func, file &> &&std::is_nothrow_move_constructible_v<Func>)
         auto with_file(future<file> file_fut, Func func) noexcept {
             static_assert(std::is_nothrow_move_constructible_v<Func>, "Func's move constructor must not throw");
             return file_fut.then([func = std::move(func)](file f) mutable {
@@ -501,7 +501,7 @@ namespace nil {
         /// \returns the future returned by \c func, or an exceptional future if \c file_fut failed or a nested
         /// exception if closing the file failed.
         template<typename Func>
-        SEASTAR_CONCEPT(requires std::invocable<Func, file &> &&std::is_nothrow_move_constructible_v<Func>)
+        ACTOR_CONCEPT(requires std::invocable<Func, file &> &&std::is_nothrow_move_constructible_v<Func>)
         auto with_file_close_on_failure(future<file> file_fut, Func func) noexcept {
             static_assert(std::is_nothrow_move_constructible_v<Func>, "Func's move constructor must not throw");
             return file_fut.then([func = std::move(func)](file f) mutable {

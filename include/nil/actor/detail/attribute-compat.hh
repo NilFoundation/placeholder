@@ -25,7 +25,7 @@
 #pragma once
 
 #if defined(__has_cpp_attribute) && __has_cpp_attribute(nodiscard)
-#define SEASTAR_NODISCARD [[nodiscard]]
+#define ACTOR_NODISCARD [[nodiscard]]
 #else
-#define SEASTAR_NODISCARD
+#define ACTOR_NODISCARD
 #endif

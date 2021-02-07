@@ -30,7 +30,7 @@ macro (seastar_add_test name)
 
   cmake_parse_arguments (
     parsed_args
-    "NO_SEASTAR_PERF_TESTING_LIBRARY"
+    "NO_ACTOR_PERF_TESTING_LIBRARY"
     ""
     "SOURCES"
     ${args})
@@ -38,7 +38,7 @@ macro (seastar_add_test name)
   set (target test_perf_${name})
   add_executable (${target} ${parsed_args_SOURCES})
 
-  if (parsed_args_NO_SEASTAR_PERF_TESTING_LIBRARY)
+  if (parsed_args_NO_ACTOR_PERF_TESTING_LIBRARY)
     set (libraries seastar_private)
   else ()
     set (libraries
@@ -62,7 +62,7 @@ macro (seastar_add_test name)
   set (${name}_test ${target})
 endmacro ()
 
-seastar_add_test(fstream SOURCES fstream_perf.cc NO_SEASTAR_PERF_TESTING_LIBRARY)
+seastar_add_test(fstream SOURCES fstream_perf.cc NO_ACTOR_PERF_TESTING_LIBRARY)
 
 seastar_add_test(fair_queue SOURCES fair_queue_perf.cc)
 

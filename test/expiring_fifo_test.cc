@@ -30,7 +30,7 @@
 using namespace nil::actor;
 using namespace std::chrono_literals;
 
-SEASTAR_TEST_CASE(test_no_expiry_operations) {
+ACTOR_TEST_CASE(test_no_expiry_operations) {
     expiring_fifo<int> fifo;
 
     BOOST_REQUIRE(fifo.empty());
@@ -75,7 +75,7 @@ SEASTAR_TEST_CASE(test_no_expiry_operations) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_expiry_operations) {
+ACTOR_TEST_CASE(test_expiry_operations) {
     return nil::actor::async([] {
         std::vector<int> expired;
         struct my_expiry {

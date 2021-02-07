@@ -28,7 +28,7 @@
 
 #include <nil/actor/testing/seastar_test.hh>
 
-#define SEASTAR_TEST_CASE(name)                              \
+#define ACTOR_TEST_CASE(name)                              \
     struct name : public nil::actor::testing::seastar_test { \
         const char *get_test_file() override {               \
             return __FILE__;                                 \

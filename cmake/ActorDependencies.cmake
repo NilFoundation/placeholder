@@ -3,7 +3,7 @@
 # we're on a system without a recent enough version of `FindBoost.cmake`, then
 # we need to use the one bundled with Seastar.
 #
-# The "real" FIND_PACKAGE invocation for Boost is inside SEASTAR_FIND_DEPENDENCIES.
+# The "real" FIND_PACKAGE invocation for Boost is inside ACTOR_FIND_DEPENDENCIES.
 #
 
 # Be consistent in results from FindBoost.cmake.
@@ -29,7 +29,6 @@ macro(seastar_find_dependencies)
         # Public dependencies.
         Boost
         c-ares
-        cryptopp
         dpdk # No version information published.
         fmt
         lz4
@@ -68,7 +67,6 @@ macro(seastar_find_dependencies)
         REQUIRED)
 
     set(_seastar_dep_args_c-ares 1.13 REQUIRED)
-    set(_seastar_dep_args_cryptopp 5.6.5 REQUIRED)
     set(_seastar_dep_args_fmt 5.0.0 REQUIRED)
     set(_seastar_dep_args_lz4 1.7.3 REQUIRED)
     set(_seastar_dep_args_GnuTLS 3.3.26 REQUIRED)

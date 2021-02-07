@@ -42,7 +42,7 @@ using namespace nil::actor;
 /**
  *  Test setting primitive and object as a value after all groups are created
  */
-SEASTAR_THREAD_TEST_CASE(sg_specific_values_define_after_sg_create) {
+ACTOR_THREAD_TEST_CASE(sg_specific_values_define_after_sg_create) {
     using ivec = std::vector<int>;
     const int num_scheduling_groups = 4;
     std::vector<scheduling_group> sgs;
@@ -97,7 +97,7 @@ SEASTAR_THREAD_TEST_CASE(sg_specific_values_define_after_sg_create) {
 /**
  *  Test setting primitive and object as a value before all groups are created
  */
-SEASTAR_THREAD_TEST_CASE(sg_specific_values_define_before_sg_create) {
+ACTOR_THREAD_TEST_CASE(sg_specific_values_define_before_sg_create) {
     using ivec = std::vector<int>;
     const int num_scheduling_groups = 4;
     std::vector<scheduling_group> sgs;
@@ -153,7 +153,7 @@ SEASTAR_THREAD_TEST_CASE(sg_specific_values_define_before_sg_create) {
  *  Test setting primitive and an object as a value before some groups are created
  *  and after some of the groups are created.
  */
-SEASTAR_THREAD_TEST_CASE(sg_specific_values_define_before_and_after_sg_create) {
+ACTOR_THREAD_TEST_CASE(sg_specific_values_define_before_and_after_sg_create) {
     using ivec = std::vector<int>;
     const int num_scheduling_groups = 4;
     std::vector<scheduling_group> sgs;
@@ -212,7 +212,7 @@ SEASTAR_THREAD_TEST_CASE(sg_specific_values_define_before_and_after_sg_create) {
 /*
  * Test that current scheduling group is inherited by nil::actor::async()
  */
-SEASTAR_THREAD_TEST_CASE(sg_scheduling_group_inheritance_in_seastar_async_test) {
+ACTOR_THREAD_TEST_CASE(sg_scheduling_group_inheritance_in_seastar_async_test) {
     scheduling_group sg = create_scheduling_group("sg0", 100).get0();
     thread_attributes attr = {};
     attr.sched_group = sg;
@@ -231,7 +231,7 @@ SEASTAR_THREAD_TEST_CASE(sg_scheduling_group_inheritance_in_seastar_async_test) 
     }).get();
 }
 
-SEASTAR_THREAD_TEST_CASE(later_preserves_sg) {
+ACTOR_THREAD_TEST_CASE(later_preserves_sg) {
     scheduling_group sg = create_scheduling_group("sg", 100).get0();
     auto cleanup = defer([&] { destroy_scheduling_group(sg).get(); });
     with_scheduling_group(sg, [&] {

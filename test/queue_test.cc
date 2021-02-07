@@ -27,7 +27,7 @@
 using namespace nil::actor;
 using namespace std::chrono_literals;
 
-SEASTAR_TEST_CASE(test_queue_pop_after_abort) {
+ACTOR_TEST_CASE(test_queue_pop_after_abort) {
     return async([] {
         queue<int> q(1);
         bool exception = false;
@@ -48,7 +48,7 @@ SEASTAR_TEST_CASE(test_queue_pop_after_abort) {
     });
 }
 
-SEASTAR_TEST_CASE(test_queue_push_abort) {
+ACTOR_TEST_CASE(test_queue_push_abort) {
     return async([] {
         queue<int> q(1);
         bool exception = false;

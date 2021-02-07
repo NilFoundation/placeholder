@@ -25,7 +25,7 @@
 #include <atomic>
 #include <mutex>
 
-#if SEASTAR_HAS_MEMBARRIER
+#if ACTOR_HAS_MEMBARRIER
 #include <linux/membarrier.h>
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -34,7 +34,7 @@
 namespace nil {
     namespace actor {
 
-#ifdef SEASTAR_HAS_MEMBARRIER
+#ifdef ACTOR_HAS_MEMBARRIER
 
         static bool has_native_membarrier = [] {
             auto r = syscall(SYS_membarrier, MEMBARRIER_CMD_QUERY, 0);

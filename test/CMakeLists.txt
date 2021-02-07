@@ -35,7 +35,7 @@ set(BUILD_WITH_UNIT_TEST_SMP
 # Define a new unit test with the given name.
 #
 # seastar_add_test(name
-#   [KIND {SEASTAR,BOOST,CUSTOM}]
+#   [KIND {ACTOR,BOOST,CUSTOM}]
 #   [SOURCES source1 source2 ... sourcen]
 #   [WORKING_DIRECTORY dir]
 #   [LIBRARIES library1 library2 ... libraryn]
@@ -43,14 +43,14 @@ set(BUILD_WITH_UNIT_TEST_SMP
 #
 # There are three kinds of test we support (the KIND parameter):
 #
-# - SEASTAR: Unit tests which use macros like `SEASTAR_TEST_CASE`
+# - ACTOR: Unit tests which use macros like `ACTOR_TEST_CASE`
 # - BOOST: Unit tests which use macros like `BOOST_AUTO_TEST_CASE`
 # - CUSTOM: Custom tests which need to be specified
 #
-# SEASTAR and BOOST tests will have their output saved for interpretation by the Jenkins continuous integration service
+# ACTOR and BOOST tests will have their output saved for interpretation by the Jenkins continuous integration service
 # if this is configured for the build.
 #
-# KIND can be omitted, in which case it is assumed to be SEASTAR.
+# KIND can be omitted, in which case it is assumed to be ACTOR.
 #
 # If SOURCES is provided, then the test files are first compiled into an executable which has the same name as the test
 # but with a suffix ("_test").
@@ -59,13 +59,13 @@ set(BUILD_WITH_UNIT_TEST_SMP
 #
 # If LIBRARIES is provided along with SOURCES, then the executable is additionally linked with these libraries.
 #
-# RUN_ARGS are optional additional arguments to pass to the executable. For SEASTAR tests, these come after `--`. For
+# RUN_ARGS are optional additional arguments to pass to the executable. For ACTOR tests, these come after `--`. For
 # CUSTOM tests with no SOURCES, this parameter can be used to specify the executable name as well as its arguments since
 # no executable is compiled.
 #
 function(seastar_add_test name)
   set(test_kinds
-    SEASTAR
+    ACTOR
     BOOST
     CUSTOM)
 
@@ -76,7 +76,7 @@ function(seastar_add_test name)
     ${ARGN})
 
   if(NOT parsed_args_KIND)
-    set(parsed_args_KIND SEASTAR)
+    set(parsed_args_KIND ACTOR)
   elseif(NOT (parsed_args_KIND IN_LIST test_kinds))
     message (FATAL_ERROR "Invalid test kind. KIND must be one of ${test_kinds}")
   endif()
@@ -89,7 +89,7 @@ function(seastar_add_test name)
     set(libraries "${parsed_args_LIBRARIES}")
 
     set(args "")
-    if(parsed_args_KIND STREQUAL "SEASTAR")
+    if(parsed_args_KIND STREQUAL "ACTOR")
       list (APPEND libraries
         ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_testing
         ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_private)
@@ -119,14 +119,14 @@ function(seastar_add_test name)
       PRIVATE ${libraries})
 
     target_compile_definitions (${executable_target}
-      PRIVATE SEASTAR_TESTING_MAIN)
+      PRIVATE ACTOR_TESTING_MAIN)
 
     if((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
         ((BUILD_WITH_STACK_GUARDS STREQUAL "DEFAULT") AND
          (CMAKE_BUILD_TYPE IN_LIST Seastar_STACK_GUARD_MODES)))
       target_compile_definitions (${executable_target}
         PRIVATE
-          SEASTAR_THREAD_STACK_GUARDS)
+          ACTOR_THREAD_STACK_GUARDS)
     endif()
 
     target_include_directories(${executable_target} PRIVATE
@@ -336,7 +336,7 @@ seastar_add_test(simple_stream
 # TODO: Disabled for now. See GH-520.
 # seastar_add_test(slab
 #   SOURCES slab_test.cc
-#   NO_SEASTAR_TESTING_LIBRARY)
+#   NO_ACTOR_TESTING_LIBRARY)
 
 seastar_add_app_test(smp
   SOURCES smp_test.cc)

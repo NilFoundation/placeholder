@@ -34,7 +34,7 @@ using namespace std::chrono_literals;
 
 using namespace nil::actor;
 
-SEASTAR_TEST_CASE(test_create_stage_from_lvalue_function_object) {
+ACTOR_TEST_CASE(test_create_stage_from_lvalue_function_object) {
     return nil::actor::async([] {
         auto dont_move = [obj = make_shared<int>(53)] { return *obj; };
         auto stage = nil::actor::make_execution_stage("test", dont_move);
@@ -43,7 +43,7 @@ SEASTAR_TEST_CASE(test_create_stage_from_lvalue_function_object) {
     });
 }
 
-SEASTAR_TEST_CASE(test_create_stage_from_rvalue_function_object) {
+ACTOR_TEST_CASE(test_create_stage_from_rvalue_function_object) {
     return nil::actor::async([] {
         auto dont_copy = [obj = std::make_unique<int>(42)] { return *obj; };
         auto stage = nil::actor::make_execution_stage("test", std::move(dont_copy));
@@ -55,7 +55,7 @@ int func() {
     return 64;
 }
 
-SEASTAR_TEST_CASE(test_create_stage_from_function) {
+ACTOR_TEST_CASE(test_create_stage_from_function) {
     return nil::actor::async([] {
         auto stage = nil::actor::make_execution_stage("test", func);
         BOOST_REQUIRE_EQUAL(stage().get0(), 64);
@@ -81,7 +81,7 @@ void test_simple_execution_stage(Function &&func, Verify &&verify) {
     }
 }
 
-SEASTAR_TEST_CASE(test_simple_stage_returning_int) {
+ACTOR_TEST_CASE(test_simple_stage_returning_int) {
     return nil::actor::async([] {
         test_simple_execution_stage(
             [](int x) {
@@ -101,7 +101,7 @@ SEASTAR_TEST_CASE(test_simple_stage_returning_int) {
     });
 }
 
-SEASTAR_TEST_CASE(test_simple_stage_returning_future_int) {
+ACTOR_TEST_CASE(test_simple_stage_returning_future_int) {
     return nil::actor::async([] {
         test_simple_execution_stage(
             [](int x) {
@@ -130,7 +130,7 @@ void test_execution_stage_avoids_copy() {
     (void)obj;
 }
 
-SEASTAR_TEST_CASE(test_stage_moves_when_cannot_copy) {
+ACTOR_TEST_CASE(test_stage_moves_when_cannot_copy) {
     return nil::actor::async([] {
         struct noncopyable_but_movable {
             noncopyable_but_movable() = default;
@@ -142,7 +142,7 @@ SEASTAR_TEST_CASE(test_stage_moves_when_cannot_copy) {
     });
 }
 
-SEASTAR_TEST_CASE(test_stage_prefers_move_to_copy) {
+ACTOR_TEST_CASE(test_stage_prefers_move_to_copy) {
     return nil::actor::async([] {
         struct copyable_and_movable {
             copyable_and_movable() = default;
@@ -156,7 +156,7 @@ SEASTAR_TEST_CASE(test_stage_prefers_move_to_copy) {
     });
 }
 
-SEASTAR_TEST_CASE(test_rref_decays_to_value) {
+ACTOR_TEST_CASE(test_rref_decays_to_value) {
     return nil::actor::async([] {
         auto stage = nil::actor::make_execution_stage("test", [](std::vector<int> &&vec) { return vec.size(); });
 
@@ -174,7 +174,7 @@ SEASTAR_TEST_CASE(test_rref_decays_to_value) {
     });
 }
 
-SEASTAR_TEST_CASE(test_lref_does_not_decay) {
+ACTOR_TEST_CASE(test_lref_does_not_decay) {
     return nil::actor::async([] {
         auto stage = nil::actor::make_execution_stage("test", [](int &v) { v++; });
 
@@ -192,7 +192,7 @@ SEASTAR_TEST_CASE(test_lref_does_not_decay) {
     });
 }
 
-SEASTAR_TEST_CASE(test_explicit_reference_wrapper_is_not_unwrapped) {
+ACTOR_TEST_CASE(test_explicit_reference_wrapper_is_not_unwrapped) {
     return nil::actor::async([] {
         auto stage = nil::actor::make_execution_stage("test", [](nil::actor::reference_wrapper<int> v) { v.get()++; });
 
@@ -210,7 +210,7 @@ SEASTAR_TEST_CASE(test_explicit_reference_wrapper_is_not_unwrapped) {
     });
 }
 
-SEASTAR_TEST_CASE(test_function_is_class_member) {
+ACTOR_TEST_CASE(test_function_is_class_member) {
     return nil::actor::async([] {
         struct foo {
             int value = -1;
@@ -234,7 +234,7 @@ SEASTAR_TEST_CASE(test_function_is_class_member) {
     });
 }
 
-SEASTAR_TEST_CASE(test_function_is_const_class_member) {
+ACTOR_TEST_CASE(test_function_is_const_class_member) {
     return nil::actor::async([] {
         struct foo {
             int value = 999;
@@ -249,7 +249,7 @@ SEASTAR_TEST_CASE(test_function_is_const_class_member) {
     });
 }
 
-SEASTAR_TEST_CASE(test_stage_stats) {
+ACTOR_TEST_CASE(test_stage_stats) {
     return nil::actor::async([] {
         auto stage = nil::actor::make_execution_stage("test", [] {});
 
@@ -273,7 +273,7 @@ SEASTAR_TEST_CASE(test_stage_stats) {
     });
 }
 
-SEASTAR_TEST_CASE(test_unique_stage_names_are_enforced) {
+ACTOR_TEST_CASE(test_unique_stage_names_are_enforced) {
     return nil::actor::async([] {
         {
             auto stage = nil::actor::make_execution_stage("test", [] {});
@@ -286,7 +286,7 @@ SEASTAR_TEST_CASE(test_unique_stage_names_are_enforced) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage) {
+ACTOR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage) {
     auto sg1 = nil::actor::create_scheduling_group("sg1", 300).get0();
     auto ksg1 = nil::actor::defer([&] { nil::actor::destroy_scheduling_group(sg1).get(); });
     auto sg2 = nil::actor::create_scheduling_group("sg2", 100).get0();
@@ -316,7 +316,7 @@ SEASTAR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage) {
 
 struct a_struct { };
 
-SEASTAR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage_reference_parameters) {
+ACTOR_THREAD_TEST_CASE(test_inheriting_concrete_execution_stage_reference_parameters) {
     // mostly a compile test, but take the opportunity to test that passing
     // by reference preserves the address
     auto check_ref = [](a_struct &ref, a_struct *ptr) { BOOST_REQUIRE_EQUAL(&ref, ptr); };

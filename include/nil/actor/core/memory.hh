@@ -118,13 +118,13 @@ namespace nil {
 
             /// \cond internal
 
-#ifdef SEASTAR_OVERRIDE_ALLOCATOR_PAGE_SIZE
-#define SEASTAR_INTERNAL_ALLOCATOR_PAGE_SIZE (SEASTAR_OVERRIDE_ALLOCATOR_PAGE_SIZE)
+#ifdef ACTOR_OVERRIDE_ALLOCATOR_PAGE_SIZE
+#define ACTOR_INTERNAL_ALLOCATOR_PAGE_SIZE (ACTOR_OVERRIDE_ALLOCATOR_PAGE_SIZE)
 #else
-#define SEASTAR_INTERNAL_ALLOCATOR_PAGE_SIZE 4096
+#define ACTOR_INTERNAL_ALLOCATOR_PAGE_SIZE 4096
 #endif
 
-            static constexpr size_t page_size = SEASTAR_INTERNAL_ALLOCATOR_PAGE_SIZE;
+            static constexpr size_t page_size = ACTOR_INTERNAL_ALLOCATOR_PAGE_SIZE;
             static constexpr size_t page_bits = log2ceil(page_size);
             static constexpr size_t huge_page_size =
 #if defined(__x86_64__) || defined(__i386__) || defined(__s390x__) || defined(__zarch__)
@@ -380,7 +380,7 @@ namespace nil {
             /// Enable/disable heap profiling.
             ///
             /// In order to use heap profiling you have to define
-            /// `SEASTAR_HEAPPROF`.
+            /// `ACTOR_HEAPPROF`.
             /// Heap profiling data is not currently exposed via an API for
             /// inspection, instead it was designed to be inspected from a
             /// debugger.

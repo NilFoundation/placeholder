@@ -24,7 +24,7 @@
 
 using namespace nil::actor;
 
-SEASTAR_TEST_CASE(log_buf_realloc) {
+ACTOR_TEST_CASE(log_buf_realloc) {
     std::array<char, 128> external_buf;
 
     const auto external_buf_ptr = reinterpret_cast<uintptr_t>(external_buf.data());

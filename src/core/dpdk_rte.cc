@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
 
 #include <cinttypes>
 #include <nil/actor/net/dpdk.hh>
@@ -119,4 +119,4 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-#endif    // SEASTAR_HAVE_DPDK
+#endif    // ACTOR_HAVE_DPDK

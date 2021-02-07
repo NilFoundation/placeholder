@@ -453,7 +453,7 @@ namespace nil {
             }
         };
 
-        SEASTAR_INCLUDE_API_V2 namespace api_v2 {
+        ACTOR_INCLUDE_API_V2 namespace api_v2 {
 
             data_sink make_file_data_sink(file f, file_output_stream_options options) {
                 return data_sink(std::make_unique<file_data_sink_impl>(std::move(f), options));
@@ -479,7 +479,7 @@ namespace nil {
             }
         }
 
-        SEASTAR_INCLUDE_API_V3 namespace api_v3 {
+        ACTOR_INCLUDE_API_V3 namespace api_v3 {
             inline namespace and_newer {
 
                 future<data_sink> make_file_data_sink(file f, file_output_stream_options options) noexcept {

@@ -300,7 +300,7 @@ namespace nil {
             virtual void signal_received(int signo, siginfo_t *siginfo, void *ignore) override;
             virtual void start_tick() override;
             virtual void stop_tick() override;
-            virtual void arm_highres_timer(const ::itimerspec &its) override;
+            virtual void arm_highres_timer(const ::itimerspec &ts) override;
             virtual void reset_preemption_monitor() override;
             virtual void request_preemption() override;
             virtual void start_handling_signal() override;

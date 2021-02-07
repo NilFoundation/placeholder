@@ -29,7 +29,7 @@
 
 #include <nil/actor/testing/seastar_test.hh>
 
-#define SEASTAR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures)    \
+#define ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures)    \
     struct name : public nil::actor::testing::seastar_test {          \
         const char *get_test_file() override {                        \
             return __FILE__;                                          \
@@ -48,4 +48,4 @@
     static name name##_instance;                                      \
     void name::do_run_test_case()
 
-#define SEASTAR_THREAD_TEST_CASE(name) SEASTAR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, 0)
+#define ACTOR_THREAD_TEST_CASE(name) ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, 0)

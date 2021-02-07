@@ -37,7 +37,7 @@ using namespace nil::actor;
 //
 // Sanity check the accuracy of the steady low-resolution clock.
 //
-SEASTAR_TEST_CASE(steady_clock_sanity) {
+ACTOR_TEST_CASE(steady_clock_sanity) {
     return do_with(lowres_clock::now(), [](auto &&t1) {
         static constexpr auto sleep_duration = std::chrono::milliseconds(100);
 
@@ -56,7 +56,7 @@ SEASTAR_TEST_CASE(steady_clock_sanity) {
 // At the very least, we can verify that the low-resolution system clock is within a second of the
 // high-resolution system clock.
 //
-SEASTAR_TEST_CASE(system_clock_sanity) {
+ACTOR_TEST_CASE(system_clock_sanity) {
     static const auto check_matching = [] {
         auto const system_time = std::chrono::system_clock::now();
         auto const lowres_time = lowres_system_clock::now();
@@ -100,7 +100,7 @@ SEASTAR_TEST_CASE(system_clock_sanity) {
 //
 // Verify that the low-resolution clock updates its reported time point over time.
 //
-SEASTAR_TEST_CASE(system_clock_dynamic) {
+ACTOR_TEST_CASE(system_clock_dynamic) {
     return do_with(lowres_system_clock::now(), [](auto &&t1) {
         return nil::actor::sleep(std::chrono::milliseconds(100)).then([&t1] {
             auto const t2 = lowres_system_clock::now();

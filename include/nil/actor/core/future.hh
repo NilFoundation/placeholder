@@ -34,14 +34,15 @@
 #include <cassert>
 #include <cstdlib>
 
+#include <boost/config.hpp>
+
 #include <nil/actor/core/function_traits.hh>
 #include <nil/actor/detail/critical_alloc_section.hh>
 #include <nil/actor/detail/attribute-compat.hh>
-#include <nil/actor/detail/concepts.hh>
 #include <nil/actor/detail/noncopyable_function.hh>
 #include <nil/actor/detail/backtrace.hh>
 
-#if __cplusplus > 201703L
+#ifdef BOOST_HAS_CONCEPTS
 #include <concepts>
 #endif
 
@@ -148,14 +149,14 @@ namespace nil {
         /// \addtogroup future-module
         /// @{
 
-#if SEASTAR_API_LEVEL < 6
+#if ACTOR_API_LEVEL < 6
         template<class... T>
 #else
         template<class T = void>
 #endif
         class promise;
 
-        template<class SEASTAR_ELLIPSIS T>
+        template<class ACTOR_ELLIPSIS T>
         class future;
 
         template<typename... T>
@@ -223,7 +224,7 @@ namespace nil {
         extern template future<> current_exception_as_future() noexcept;
 
         namespace detail {
-#if SEASTAR_API_LEVEL < 6
+#if ACTOR_API_LEVEL < 6
             template<class... T>
 #else
             template<class T = void>
@@ -238,7 +239,7 @@ namespace nil {
 
             template<>
             struct future_stored_type<> {
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
                 using type = std::tuple<>;
 #else
                 using type = monostate;
@@ -247,7 +248,7 @@ namespace nil {
 
             template<typename T>
             struct future_stored_type<T> {
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
                 using type = std::tuple<T>;
 #else
                 using type = std::conditional_t<std::is_void_v<T>, detail::monostate, T>;
@@ -258,7 +259,7 @@ namespace nil {
             using future_stored_type_t = typename future_stored_type<T...>::type;
 
             template<typename T>
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
             using future_tuple_type_t = T;
 #else
             using future_tuple_type_t = std::conditional_t<std::is_same_v<T, monostate>, std::tuple<>, std::tuple<T>>;
@@ -585,7 +586,7 @@ namespace nil {
             friend struct future_state;
             template<typename... U>
             friend future<U...> current_exception_as_future() noexcept;
-            template<typename SEASTAR_ELLIPSIS U>
+            template<typename ACTOR_ELLIPSIS U>
             friend class future;
             template<typename T>
             friend struct futurize;
@@ -607,7 +608,7 @@ namespace nil {
         template<typename T>
         struct future_state : public future_state_base, private detail::uninitialized_wrapper<T> {
             static constexpr bool copy_noexcept = std::is_nothrow_copy_constructible<T>::value;
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
             static constexpr bool has_trivial_move_and_destroy =
                 detail::is_tuple_effectively_trivially_move_constructible_and_destructible<T>;
 #else
@@ -720,7 +721,7 @@ namespace nil {
             }
 
             get0_return_type get0() {
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
                 return get0(std::move(*this).get());
 #else
                 return std::move(*this).get();
@@ -728,17 +729,17 @@ namespace nil {
             }
         };
 
-#if SEASTAR_API_LEVEL < 6
+#if ACTOR_API_LEVEL < 6
         template<typename... T>
 #else
         template<typename T = void>
 #endif
         class continuation_base : public task {
         protected:
-            using future_state = nil::actor::future_state<detail::future_stored_type_t<T SEASTAR_ELLIPSIS>>;
+            using future_state = nil::actor::future_state<detail::future_stored_type_t<T ACTOR_ELLIPSIS>>;
             future_state _state;
-            using future_type = future<T SEASTAR_ELLIPSIS>;
-            using promise_type = promise<T SEASTAR_ELLIPSIS>;
+            using future_type = future<T ACTOR_ELLIPSIS>;
+            using promise_type = promise<T ACTOR_ELLIPSIS>;
 
         public:
             continuation_base() noexcept = default;
@@ -752,9 +753,9 @@ namespace nil {
             virtual task *waiting_task() noexcept override {
                 return nullptr;
             }
-            friend class detail::promise_base_with_type<T SEASTAR_ELLIPSIS>;
-            friend class promise<T SEASTAR_ELLIPSIS>;
-            friend class future<T SEASTAR_ELLIPSIS>;
+            friend class detail::promise_base_with_type<T ACTOR_ELLIPSIS>;
+            friend class promise<T ACTOR_ELLIPSIS>;
+            friend class future<T ACTOR_ELLIPSIS>;
         };
 
         // Given a future type, find the corresponding continuation_base.
@@ -769,13 +770,13 @@ namespace nil {
         template<typename Future>
         using continuation_base_from_future_t = typename continuation_base_from_future<Future>::type;
 
-#if SEASTAR_API_LEVEL < 6
+#if ACTOR_API_LEVEL < 6
         template<typename Promise, typename... T>
 #else
         template<typename Promise, typename T = void>
 #endif
-        class continuation_base_with_promise : public continuation_base<T SEASTAR_ELLIPSIS> {
-            friend class detail::promise_base_with_type<T SEASTAR_ELLIPSIS>;
+        class continuation_base_with_promise : public continuation_base<T ACTOR_ELLIPSIS> {
+            friend class detail::promise_base_with_type<T ACTOR_ELLIPSIS>;
 
         protected:
             continuation_base_with_promise(Promise &&pr) noexcept : _pr(std::move(pr)) {
@@ -785,12 +786,12 @@ namespace nil {
             Promise _pr;
         };
 
-#if SEASTAR_API_LEVEL < 6
+#if ACTOR_API_LEVEL < 6
         template<typename Promise, typename Func, typename Wrapper, typename... T>
 #else
         template<typename Promise, typename Func, typename Wrapper, typename T = void>
 #endif
-        struct continuation final : continuation_base_with_promise<Promise, T SEASTAR_ELLIPSIS> {
+        struct continuation final : continuation_base_with_promise<Promise, T ACTOR_ELLIPSIS> {
             // Func is the original function passed to then/then_wrapped. The
             // Wrapper is a helper function that implements the specific logic
             // needed by then/then_wrapped. We call the wrapper passing it the
@@ -802,7 +803,7 @@ namespace nil {
             // std::unexpected as close to the failure as possible is the best
             // we can do.
             continuation(Promise &&pr, Func &&func, Wrapper &&wrapper) noexcept :
-                continuation_base_with_promise<Promise, T SEASTAR_ELLIPSIS>(std::move(pr)), _func(std::move(func)),
+                continuation_base_with_promise<Promise, T ACTOR_ELLIPSIS>(std::move(pr)), _func(std::move(func)),
                 _wrapper(std::move(wrapper)) {
             }
             virtual void run_and_dispose() noexcept override {
@@ -814,10 +815,14 @@ namespace nil {
                 delete this;
             }
             Func _func;
+#ifdef __clang__
+            Wrapper _wrapper;
+#else
             [[no_unique_address]] Wrapper _wrapper;
+#endif
         };
 
-#if SEASTAR_API_LEVEL < 4
+#if ACTOR_API_LEVEL < 4
 
         // This is an internal future<> payload for nil::actor::when_all_succeed(). It is used
         // to return a variadic future (when two or more of its input futures were non-void),
@@ -916,7 +921,7 @@ namespace nil {
                 }
 
                 friend class future_base;
-                template<typename SEASTAR_ELLIPSIS U>
+                template<typename ACTOR_ELLIPSIS U>
                 friend class nil::actor::future;
 
             public:
@@ -938,10 +943,10 @@ namespace nil {
             /// future is created first, so we know the promise always has an
             /// external place to point to. We cannot just use promise_base
             /// because we need to know the type that is being stored.
-            template<typename SEASTAR_ELLIPSIS T>
+            template<typename ACTOR_ELLIPSIS T>
             class promise_base_with_type : protected detail::promise_base {
             protected:
-                using future_state = nil::actor::future_state<future_stored_type_t<T SEASTAR_ELLIPSIS>>;
+                using future_state = nil::actor::future_state<future_stored_type_t<T ACTOR_ELLIPSIS>>;
                 future_state *get_state() noexcept {
                     return static_cast<future_state *>(_state);
                 }
@@ -950,7 +955,7 @@ namespace nil {
             public:
                 promise_base_with_type(future_state_base *state) noexcept : promise_base(state) {
                 }
-                promise_base_with_type(future<T SEASTAR_ELLIPSIS> *future) noexcept :
+                promise_base_with_type(future<T ACTOR_ELLIPSIS> *future) noexcept :
                     promise_base(future, &future->_state) {
                 }
                 promise_base_with_type(promise_base_with_type &&x) noexcept = default;
@@ -992,7 +997,7 @@ namespace nil {
                 using detail::promise_base::waiting_task;
 
             private:
-                template<typename SEASTAR_ELLIPSIS U>
+                template<typename ACTOR_ELLIPSIS U>
                 friend class nil::actor::future;
 
                 friend future_state;
@@ -1005,26 +1010,26 @@ namespace nil {
         /// \tparam T A list of types to be carried as the result of the associated future.
         ///           A list with two or more types is deprecated; use
         ///           \c promise<std::tuple<T...>> instead.
-        template<typename SEASTAR_ELLIPSIS T>
-        class promise : private detail::promise_base_with_type<T SEASTAR_ELLIPSIS> {
-            using future_state = typename detail::promise_base_with_type<T SEASTAR_ELLIPSIS>::future_state;
+        template<typename ACTOR_ELLIPSIS T>
+        class promise : private detail::promise_base_with_type<T ACTOR_ELLIPSIS> {
+            using future_state = typename detail::promise_base_with_type<T ACTOR_ELLIPSIS>::future_state;
             future_state _local_state;
 
         public:
             /// \brief Constructs an empty \c promise.
             ///
             /// Creates promise with no associated future yet (see get_future()).
-            promise() noexcept : detail::promise_base_with_type<T SEASTAR_ELLIPSIS>(&_local_state) {
+            promise() noexcept : detail::promise_base_with_type<T ACTOR_ELLIPSIS>(&_local_state) {
             }
 
             /// \brief Moves a \c promise object.
             void move_it(promise &&x) noexcept;
-            promise(promise &&x) noexcept : detail::promise_base_with_type<T SEASTAR_ELLIPSIS>(std::move(x)) {
+            promise(promise &&x) noexcept : detail::promise_base_with_type<T ACTOR_ELLIPSIS>(std::move(x)) {
                 move_it(std::move(x));
             }
             promise(const promise &) = delete;
             promise &operator=(promise &&x) noexcept {
-                detail::promise_base_with_type<T SEASTAR_ELLIPSIS>::operator=(std::move(x));
+                detail::promise_base_with_type<T ACTOR_ELLIPSIS>::operator=(std::move(x));
                 // If this is a self-move, _state is now nullptr and it is
                 // safe to call move_it.
                 move_it(std::move(x));
@@ -1049,7 +1054,7 @@ namespace nil {
             /// both are moved.  When \c set_value() or \c set_exception() are called
             /// on the promise, the future will be become ready, and if a continuation
             /// was attached to the future, it will run.
-            future<T SEASTAR_ELLIPSIS> get_future() noexcept;
+            future<T ACTOR_ELLIPSIS> get_future() noexcept;
 
             /// \brief Sets the promises value
             ///
@@ -1064,7 +1069,7 @@ namespace nil {
             /// pr.set_value(std::tuple<int, double>(42, 43.0))
             template<typename... A>
             void set_value(A &&...a) noexcept {
-                detail::promise_base_with_type<T SEASTAR_ELLIPSIS>::set_value(std::forward<A>(a)...);
+                detail::promise_base_with_type<T ACTOR_ELLIPSIS>::set_value(std::forward<A>(a)...);
             }
 
             /// \brief Marks the promise as failed
@@ -1089,13 +1094,13 @@ namespace nil {
                 detail::promise_base::set_exception(std::forward<Exception>(e));
             }
 
-            using detail::promise_base_with_type<T SEASTAR_ELLIPSIS>::set_urgent_state;
+            using detail::promise_base_with_type<T ACTOR_ELLIPSIS>::set_urgent_state;
 
-            template<typename SEASTAR_ELLIPSIS U>
+            template<typename ACTOR_ELLIPSIS U>
             friend class future;
         };
 
-#if SEASTAR_API_LEVEL < 6
+#if ACTOR_API_LEVEL < 6
         /// \brief Specialization of \c promise<void>
         ///
         /// This is an alias for \c promise<>, for generic programming purposes.
@@ -1131,38 +1136,44 @@ namespace nil {
         template<typename T>
         struct futurize;
 
-        SEASTAR_CONCEPT(
+#ifdef BOOST_HAS_CONCEPTS
 
-            template<typename T> concept Future = is_future<T>::value;
+        template<typename T>
+        concept Future = is_future<T>::value;
 
-            template<typename Func, typename... T> concept CanInvoke = std::invocable<Func, T...>;
+        template<typename Func, typename... T>
+        concept CanInvoke = std::invocable<Func, T...>;
 
-            // Deprecated alias
-            template<typename Func, typename... T> concept CanApply = CanInvoke<Func, T...>;
+        // Deprecated alias
+        template<typename Func, typename... T>
+        concept CanApply = CanInvoke<Func, T...>;
 
-            template<typename Func, typename... T>
-            concept CanApplyTuple = sizeof...(T) == 1 &&
-                                    requires(Func func, std::tuple<T...> wrapped_val) {
-                                        {std::apply(func, std::get<0>(std::move(wrapped_val)))};
-                                    };
+        template<typename Func, typename... T>
+        concept CanApplyTuple = sizeof...(T) == 1 && requires(Func func, std::tuple<T...> wrapped_val) {
+            {std::apply(func, std::get<0>(std::move(wrapped_val)))};
+        };
 
-            template<typename Func, typename Return, typename... T> concept InvokeReturns =
-                requires(Func f, T... args) {
-                    { f(std::forward<T>(args)...) }
-                    ->std::same_as<Return>;
-                };
+        // clang-format off
+        template<typename Func, typename Return, typename... T>
+        concept InvokeReturns = requires(Func f, T... args) {
+            { f(std::forward<T>(args)...) } -> std::same_as<Return>;
+        };
+        // clang-format on
 
-            // Deprecated alias
-            template<typename Func, typename Return, typename... T>
-            concept ApplyReturns = InvokeReturns<Func, Return, T...>;
+        // Deprecated alias
+        template<typename Func, typename Return, typename... T>
+        concept ApplyReturns = InvokeReturns<Func, Return, T...>;
 
-            template<typename Func, typename... T> concept InvokeReturnsAnyFuture =
-                requires(Func f, T... args) { requires is_future<decltype(f(std::forward<T>(args)...))>::value; };
+        template<typename Func, typename... T>
+        concept InvokeReturnsAnyFuture = requires(Func f, T... args) {
+            requires is_future<decltype(f(std::forward<T>(args)...))>::value;
+        };
 
-            // Deprecated alias
-            template<typename Func, typename... T> concept ApplyReturnsAnyFuture = InvokeReturnsAnyFuture<Func, T...>;
+        // Deprecated alias
+        template<typename Func, typename... T>
+        concept ApplyReturnsAnyFuture = InvokeReturnsAnyFuture<Func, T...>;
 
-        )
+#endif
 
         /// \endcond
 
@@ -1228,7 +1239,7 @@ namespace nil {
 
                 void do_wait() noexcept;
 
-#ifdef SEASTAR_COROUTINES_ENABLED
+#ifdef ACTOR_COROUTINES_ENABLED
                 void set_coroutine(task &coroutine) noexcept;
 #endif
 
@@ -1249,8 +1260,8 @@ namespace nil {
                 using func_type = future_type();
             };
 
-            template<typename Func, typename SEASTAR_ELLIPSIS T>
-            using future_result_t = typename future_result<Func, T SEASTAR_ELLIPSIS>::type;
+            template<typename Func, typename ACTOR_ELLIPSIS T>
+            using future_result_t = typename future_result<Func, T ACTOR_ELLIPSIS>::type;
 
             template<typename Func, typename T>
             auto future_invoke(Func &&func, T &&v) {
@@ -1284,7 +1295,7 @@ namespace nil {
                 }
             };
 
-#if SEASTAR_API_LEVEL < 4
+#if ACTOR_API_LEVEL < 4
 
             // Special case: we unpack the tuple before calling the function
             template<typename... T>
@@ -1313,9 +1324,12 @@ namespace nil {
             template<typename Func, typename... Args>
             using call_then_impl_result_type = typename call_then_impl<future<Args...>>::template result_type<Func>;
 
-            SEASTAR_CONCEPT(template<typename Func, typename... Args> concept CanInvokeWhenAllSucceed = requires {
+#ifdef BOOST_HAS_CONCEPTS
+            template<typename Func, typename... Args>
+            concept CanInvokeWhenAllSucceed = requires {
                 typename call_then_impl_result_type<Func, Args...>;
-            };)
+            };
+#endif
 
             template<typename Func, typename... T>
             struct result_of_apply {
@@ -1332,8 +1346,8 @@ namespace nil {
 
         }    // namespace detail
 
-        template<typename Promise, typename SEASTAR_ELLIPSIS T>
-        task *continuation_base_with_promise<Promise, T SEASTAR_ELLIPSIS>::waiting_task() noexcept {
+        template<typename Promise, typename ACTOR_ELLIPSIS T>
+        task *continuation_base_with_promise<Promise, T ACTOR_ELLIPSIS>::waiting_task() noexcept {
             return _pr.waiting_task();
         }
 
@@ -1379,9 +1393,9 @@ namespace nil {
         ///           failure, an exception).
         ///           A list with two or more types is deprecated; use
         ///           \c future<std::tuple<T...>> instead.
-        template<typename SEASTAR_ELLIPSIS T>
-        class SEASTAR_NODISCARD future : private detail::future_base {
-            using future_state = nil::actor::future_state<detail::future_stored_type_t<T SEASTAR_ELLIPSIS>>;
+        template<typename ACTOR_ELLIPSIS T>
+        class ACTOR_NODISCARD future : private detail::future_base {
+            using future_state = nil::actor::future_state<detail::future_stored_type_t<T ACTOR_ELLIPSIS>>;
             future_state _state;
             static constexpr bool copy_noexcept = future_state::copy_noexcept;
             using call_then_impl = detail::call_then_impl<future>;
@@ -1396,7 +1410,7 @@ namespace nil {
             future(future_for_get_promise_marker m) noexcept {
             }
 
-            future(promise<T SEASTAR_ELLIPSIS> *pr) noexcept :
+            future(promise<T ACTOR_ELLIPSIS> *pr) noexcept :
                 future_base(pr, &_state), _state(std::move(pr->_local_state)) {
             }
             template<typename... A>
@@ -1418,15 +1432,14 @@ namespace nil {
             }
             [[gnu::always_inline]] explicit future(future_state &&state) noexcept : _state(std::move(state)) {
             }
-            detail::promise_base_with_type<T SEASTAR_ELLIPSIS> get_promise() noexcept {
+            detail::promise_base_with_type<T ACTOR_ELLIPSIS> get_promise() noexcept {
                 assert(!_promise);
-                return detail::promise_base_with_type<T SEASTAR_ELLIPSIS>(this);
+                return detail::promise_base_with_type<T ACTOR_ELLIPSIS>(this);
             }
-            detail::promise_base_with_type<T SEASTAR_ELLIPSIS> *detach_promise() noexcept {
-                return static_cast<detail::promise_base_with_type<T SEASTAR_ELLIPSIS> *>(
-                    future_base::detach_promise());
+            detail::promise_base_with_type<T ACTOR_ELLIPSIS> *detach_promise() noexcept {
+                return static_cast<detail::promise_base_with_type<T ACTOR_ELLIPSIS> *>(future_base::detach_promise());
             }
-            void schedule(continuation_base<T SEASTAR_ELLIPSIS> *tws) noexcept {
+            void schedule(continuation_base<T ACTOR_ELLIPSIS> *tws) noexcept {
                 future_base::schedule(tws, &tws->_state);
             }
             template<typename Pr, typename Func, typename Wrapper>
@@ -1436,11 +1449,11 @@ namespace nil {
                 // and we cannot break the chain. Since this function is
                 // noexcept, it will call std::terminate if new throws.
                 memory::scoped_critical_alloc_section _;
-                auto tws = new continuation<Pr, Func, Wrapper, T SEASTAR_ELLIPSIS>(
+                auto tws = new continuation<Pr, Func, Wrapper, T ACTOR_ELLIPSIS>(
                     std::move(pr), std::move(func), std::move(wrapper));
                 // In a debug build we schedule ready futures, but not in
                 // other build modes.
-#ifdef SEASTAR_DEBUG
+#ifdef ACTOR_DEBUG
                 if (_state.available()) {
                     tws->set_state(std::move(_state));
                     ::nil::actor::schedule(tws);
@@ -1458,13 +1471,13 @@ namespace nil {
                 return std::move(_state);
             }
 
-            future<T SEASTAR_ELLIPSIS> rethrow_with_nested(future_state_base &&n) noexcept {
-                return future<T SEASTAR_ELLIPSIS>(
+            future<T ACTOR_ELLIPSIS> rethrow_with_nested(future_state_base &&n) noexcept {
+                return future<T ACTOR_ELLIPSIS>(
                     future_state_base::nested_exception_marker(), std::move(n), std::move(_state));
             }
 
-            future<T SEASTAR_ELLIPSIS> rethrow_with_nested() noexcept {
-                return future<T SEASTAR_ELLIPSIS>(future_state_base::nested_exception_marker(), std::move(_state));
+            future<T ACTOR_ELLIPSIS> rethrow_with_nested() noexcept {
+                return future<T ACTOR_ELLIPSIS>(future_state_base::nested_exception_marker(), std::move(_state));
             }
 
             template<typename... U>
@@ -1472,10 +1485,10 @@ namespace nil {
 
         public:
             /// \brief The data type carried by the future.
-            using value_type = detail::future_stored_type_t<T SEASTAR_ELLIPSIS>;
+            using value_type = detail::future_stored_type_t<T ACTOR_ELLIPSIS>;
             using tuple_type = detail::future_tuple_type_t<value_type>;
             /// \brief The data type carried by the future.
-            using promise_type = promise<T SEASTAR_ELLIPSIS>;
+            using promise_type = promise<T ACTOR_ELLIPSIS>;
             /// \brief Moves the future into a new object.
             [[gnu::always_inline]] future(future &&x) noexcept :
                 future_base(std::move(x), &_state), _state(std::move(x._state)) {
@@ -1516,7 +1529,7 @@ namespace nil {
             /// Equivalent to: \c std::get<0>(f.get()).
             using get0_return_type = typename future_state::get0_return_type;
             get0_return_type get0() {
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
                 return future_state::get0(get());
 #else
                 return (get0_return_type)get();
@@ -1565,15 +1578,17 @@ namespace nil {
             /// \return a \c future representing the return value of \c func, applied
             ///         to the eventual value of this future.
             template<typename Func, typename Result = futurize_t<typename call_then_impl::template result_type<Func>>>
-            SEASTAR_CONCEPT(requires std::invocable<Func, T SEASTAR_ELLIPSIS> ||
-                            detail::CanInvokeWhenAllSucceed<Func, T SEASTAR_ELLIPSIS>)
-            Result then(Func &&func) noexcept {
+#ifdef BOOST_HAS_CONCEPTS
+                requires std::invocable<Func, T ACTOR_ELLIPSIS> ||
+                detail::CanInvokeWhenAllSucceed<Func, T ACTOR_ELLIPSIS>
+#endif
+                    Result then(Func &&func) noexcept {
                 // The implementation of then() is customized via the call_then_impl helper
                 // template, in order to special case the results of when_all_succeed().
                 // when_all_succeed() used to return a variadic future, which is deprecated, so
                 // now it returns a when_all_succeed_tuple, which we intercept in call_then_impl,
                 // and treat it as a variadic future.
-#ifndef SEASTAR_TYPE_ERASE_MORE
+#ifndef ACTOR_TYPE_ERASE_MORE
                 return call_then_impl::run(*this, std::move(func));
 #else
                 using func_type = typename call_then_impl::template func_type<Func>;
@@ -1607,12 +1622,14 @@ namespace nil {
             ///               unless it has failed.
             /// \return a \c future representing the return value of \c func, applied
             ///         to the eventual value of this future.
-            template<typename Func, typename Result = futurize_t<detail::result_of_apply_t<Func, T SEASTAR_ELLIPSIS>>>
-            SEASTAR_CONCEPT(requires ::nil::actor::CanApplyTuple<Func, T SEASTAR_ELLIPSIS>)
-            Result then_unpack(Func &&func) noexcept {
-                return then([func = std::forward<Func>(func)](T &&SEASTAR_ELLIPSIS tuple) mutable {
+            template<typename Func, typename Result = futurize_t<detail::result_of_apply_t<Func, T ACTOR_ELLIPSIS>>>
+#ifdef BOOST_HAS_CONCEPTS
+            requires ::nil::actor::CanApplyTuple<Func, T ACTOR_ELLIPSIS>
+#endif
+                Result then_unpack(Func &&func) noexcept {
+                return then([func = std::forward<Func>(func)](T &&ACTOR_ELLIPSIS tuple) mutable {
                     // sizeof...(tuple) is required to be 1
-                    return std::apply(func, std::move(tuple) SEASTAR_ELLIPSIS);
+                    return std::apply(func, std::move(tuple) ACTOR_ELLIPSIS);
                 });
             }
 
@@ -1620,7 +1637,7 @@ namespace nil {
             // Keep this simple so that Named Return Value Optimization is used.
             template<typename Func, typename Result>
             Result then_impl_nrvo(Func &&func) noexcept {
-                using futurator = futurize<detail::future_result_t<Func, T SEASTAR_ELLIPSIS>>;
+                using futurator = futurize<detail::future_result_t<Func, T ACTOR_ELLIPSIS>>;
                 typename futurator::type fut(future_for_get_promise_marker {});
                 using pr_type = decltype(fut.get_promise());
                 schedule(fut.get_promise(), std::move(func), [](pr_type &&pr, Func &func, future_state &&state) {
@@ -1628,7 +1645,7 @@ namespace nil {
                         pr.set_exception(static_cast<future_state_base &&>(std::move(state)));
                     } else {
                         futurator::satisfy_with_result_of(std::move(pr), [&func, &state] {
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
                             return std::apply(func, std::move(state).get_value());
 #else
                     // clang thinks that "state" is not used, below, for future<>.
@@ -1642,15 +1659,15 @@ namespace nil {
                 return fut;
             }
 
-            template<typename Func, typename Result = futurize_t<detail::future_result_t<Func, T SEASTAR_ELLIPSIS>>>
+            template<typename Func, typename Result = futurize_t<detail::future_result_t<Func, T ACTOR_ELLIPSIS>>>
             Result then_impl(Func &&func) noexcept {
-#ifndef SEASTAR_DEBUG
-                using futurator = futurize<detail::future_result_t<Func, T SEASTAR_ELLIPSIS>>;
+#ifndef ACTOR_DEBUG
+                using futurator = futurize<detail::future_result_t<Func, T ACTOR_ELLIPSIS>>;
                 if (failed()) {
                     return futurator::make_exception_future(
                         static_cast<future_state_base &&>(get_available_state_ref()));
                 } else if (available()) {
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
                     return futurator::apply(std::forward<Func>(func), get_available_state_ref().take_value());
 #else
                     return futurator::invoke(std::forward<Func>(func), get_available_state_ref().take_value());
@@ -1661,37 +1678,45 @@ namespace nil {
             }
 
         public:
-            /// \brief Schedule a block of code to run when the future is ready, allowing
-            ///        for exception handling.
-            ///
-            /// Schedules a function (often a lambda) to run when the future becomes
-            /// available.  The function is called with the this future as a parameter;
-            /// it will be in an available state.  The return value of the function becomes
-            /// the return value of then_wrapped(), itself as a future; this allows
-            /// then_wrapped() calls to be chained.
-            ///
-            /// Unlike then(), the function will be called for both value and exceptional
-            /// futures.
-            ///
-            /// \param func - function to be called when the future becomes available,
-            /// \return a \c future representing the return value of \c func, applied
-            ///         to the eventual value of this future.
+/// \brief Schedule a block of code to run when the future is ready, allowing
+///        for exception handling.
+///
+/// Schedules a function (often a lambda) to run when the future becomes
+/// available.  The function is called with the this future as a parameter;
+/// it will be in an available state.  The return value of the function becomes
+/// the return value of then_wrapped(), itself as a future; this allows
+/// then_wrapped() calls to be chained.
+///
+/// Unlike then(), the function will be called for both value and exceptional
+/// futures.
+///
+/// \param func - function to be called when the future becomes available,
+/// \return a \c future representing the return value of \c func, applied
+///         to the eventual value of this future.
+#ifdef BOOST_HAS_CONCEPTS
             template<typename Func, typename FuncResult = std::invoke_result_t<Func, future>>
-            SEASTAR_CONCEPT(requires std::invocable<Func, future>)
+            requires std::invocable<Func, future> futurize_t<FuncResult> then_wrapped(Func &&func) &noexcept {
+                return then_wrapped_maybe_erase<false, FuncResult>(std::forward<Func>(func));
+            }
+            template<typename Func, typename FuncResult = std::invoke_result_t<Func, future &&>>
+            requires std::invocable<Func, future &&> futurize_t<FuncResult> then_wrapped(Func &&func) &&noexcept {
+                return then_wrapped_maybe_erase<true, FuncResult>(std::forward<Func>(func));
+            }
+#else
+            template<typename Func, typename FuncResult = std::invoke_result_t<Func, future>>
             futurize_t<FuncResult> then_wrapped(Func &&func) &noexcept {
                 return then_wrapped_maybe_erase<false, FuncResult>(std::forward<Func>(func));
             }
-
             template<typename Func, typename FuncResult = std::invoke_result_t<Func, future &&>>
-            SEASTAR_CONCEPT(requires std::invocable<Func, future &&>)
             futurize_t<FuncResult> then_wrapped(Func &&func) &&noexcept {
                 return then_wrapped_maybe_erase<true, FuncResult>(std::forward<Func>(func));
             }
+#endif
 
         private:
             template<bool AsSelf, typename FuncResult, typename Func>
             futurize_t<FuncResult> then_wrapped_maybe_erase(Func &&func) noexcept {
-#ifndef SEASTAR_TYPE_ERASE_MORE
+#ifndef ACTOR_TYPE_ERASE_MORE
                 return then_wrapped_common<AsSelf, FuncResult>(std::forward<Func>(func));
 #else
                 using futurator = futurize<FuncResult>;
@@ -1723,7 +1748,7 @@ namespace nil {
 
             template<bool AsSelf, typename FuncResult, typename Func>
             futurize_t<FuncResult> then_wrapped_common(Func &&func) noexcept {
-#ifndef SEASTAR_DEBUG
+#ifndef ACTOR_DEBUG
                 using futurator = futurize<FuncResult>;
                 if (available()) {
                     if constexpr (AsSelf) {
@@ -1739,7 +1764,7 @@ namespace nil {
                 return then_wrapped_nrvo<FuncResult, Func>(std::forward<Func>(func));
             }
 
-            void forward_to(detail::promise_base_with_type<T SEASTAR_ELLIPSIS> &&pr) noexcept {
+            void forward_to(detail::promise_base_with_type<T ACTOR_ELLIPSIS> &&pr) noexcept {
                 if (_state.available()) {
                     pr.set_urgent_state(std::move(_state));
                 } else {
@@ -1758,7 +1783,7 @@ namespace nil {
             ///
             /// \param pr a promise that will be fulfilled with the results of this
             /// future.
-            void forward_to(promise<T SEASTAR_ELLIPSIS> &&pr) noexcept {
+            void forward_to(promise<T ACTOR_ELLIPSIS> &&pr) noexcept {
                 if (_state.available()) {
                     pr.set_urgent_state(std::move(_state));
                 } else if (&pr._local_state != pr._state) {
@@ -1770,6 +1795,7 @@ namespace nil {
                 }
             }
 
+#ifdef BOOST_HAS_CONCEPTS
             /**
              * Finally continuation for statements that require waiting for the result.
              * I.e. you need to "finally" call a function that returns a possibly
@@ -1786,11 +1812,32 @@ namespace nil {
              * nested will be propagated.
              */
             template<typename Func>
-            SEASTAR_CONCEPT(requires std::invocable<Func>)
-            future<T SEASTAR_ELLIPSIS> finally(Func &&func) noexcept {
+            requires std::invocable<Func> future<T ACTOR_ELLIPSIS> finally(Func &&func) noexcept {
                 return then_wrapped(
                     finally_body<Func, is_future<std::invoke_result_t<Func>>::value>(std::forward<Func>(func)));
             }
+#else
+            /**
+             * Finally continuation for statements that require waiting for the result.
+             * I.e. you need to "finally" call a function that returns a possibly
+             * unavailable future. The returned future will be "waited for", any
+             * exception generated will be propagated, but the return value is ignored.
+             * I.e. the original return value (the future upon which you are making this
+             * call) will be preserved.
+             *
+             * If the original return value or the callback return value is an
+             * exceptional future it will be propagated.
+             *
+             * If both of them are exceptional - the std::nested_exception exception
+             * with the callback exception on top and the original future exception
+             * nested will be propagated.
+             */
+            template<typename Func>
+            future<T ACTOR_ELLIPSIS> finally(Func &&func) noexcept {
+                return then_wrapped(
+                    finally_body<Func, is_future<std::invoke_result_t<Func>>::value>(std::forward<Func>(func)));
+            }
+#endif
 
             template<typename Func, bool FuncReturnsFuture>
             struct finally_body;
@@ -1802,7 +1849,7 @@ namespace nil {
                 finally_body(Func &&func) noexcept : _func(std::forward<Func>(func)) {
                 }
 
-                future<T SEASTAR_ELLIPSIS> operator()(future<T SEASTAR_ELLIPSIS> &&result) noexcept {
+                future<T ACTOR_ELLIPSIS> operator()(future<T ACTOR_ELLIPSIS> &&result) noexcept {
                     return futurize_invoke(_func).then_wrapped([result = std::move(result)](auto &&f_res) mutable {
                         if (!f_res.failed()) {
                             return std::move(result);
@@ -1820,7 +1867,7 @@ namespace nil {
                 finally_body(Func &&func) noexcept : _func(std::forward<Func>(func)) {
                 }
 
-                future<T SEASTAR_ELLIPSIS> operator()(future<T SEASTAR_ELLIPSIS> &&result) noexcept {
+                future<T ACTOR_ELLIPSIS> operator()(future<T ACTOR_ELLIPSIS> &&result) noexcept {
                     try {
                         _func();
                         return std::move(result);
@@ -1869,19 +1916,18 @@ namespace nil {
             /// future<>, the handler function does not need to return anything.
             template<typename Func>
             /* Broken?
-            SEASTAR_CONCEPT( requires ::nil::actor::InvokeReturns<Func, future<T...>, std::exception_ptr>
+            ACTOR_CONCEPT( requires ::nil::actor::InvokeReturns<Func, future<T...>, std::exception_ptr>
                             || (sizeof...(T) == 0 && ::nil::actor::InvokeReturns<Func, void, std::exception_ptr>)
                             || (sizeof...(T) == 1 && ::nil::actor::InvokeReturns<Func, T..., std::exception_ptr>)
             ) */
-            future<T SEASTAR_ELLIPSIS> handle_exception(Func &&func) noexcept {
-                return then_wrapped(
-                    [func = std::forward<Func>(func)](auto &&fut) mutable -> future<T SEASTAR_ELLIPSIS> {
-                        if (!fut.failed()) {
-                            return make_ready_future<T SEASTAR_ELLIPSIS>(fut.get());
-                        } else {
-                            return futurize_invoke(func, fut.get_exception());
-                        }
-                    });
+            future<T ACTOR_ELLIPSIS> handle_exception(Func &&func) noexcept {
+                return then_wrapped([func = std::forward<Func>(func)](auto &&fut) mutable -> future<T ACTOR_ELLIPSIS> {
+                    if (!fut.failed()) {
+                        return make_ready_future<T ACTOR_ELLIPSIS>(fut.get());
+                    } else {
+                        return futurize_invoke(func, fut.get_exception());
+                    }
+                });
             }
 
             /// \brief Handle the exception of a certain type carried by this future.
@@ -1895,18 +1941,17 @@ namespace nil {
             /// If exception, that future holds, does not match func parameter type
             /// it is propagated as is.
             template<typename Func>
-            future<T SEASTAR_ELLIPSIS> handle_exception_type(Func &&func) noexcept {
+            future<T ACTOR_ELLIPSIS> handle_exception_type(Func &&func) noexcept {
                 using trait = function_traits<Func>;
                 static_assert(trait::arity == 1, "func can take only one parameter");
                 using ex_type = typename trait::template arg<0>::type;
-                return then_wrapped(
-                    [func = std::forward<Func>(func)](auto &&fut) mutable -> future<T SEASTAR_ELLIPSIS> {
-                        try {
-                            return make_ready_future<T SEASTAR_ELLIPSIS>(fut.get());
-                        } catch (ex_type &ex) {
-                            return futurize_invoke(func, ex);
-                        }
-                    });
+                return then_wrapped([func = std::forward<Func>(func)](auto &&fut) mutable -> future<T ACTOR_ELLIPSIS> {
+                    try {
+                        return make_ready_future<T ACTOR_ELLIPSIS>(fut.get());
+                    } catch (ex_type &ex) {
+                        return futurize_invoke(func, ex);
+                    }
+                });
             }
 
             /// \brief Ignore any result hold by this future
@@ -1918,11 +1963,11 @@ namespace nil {
                 _state.ignore();
             }
 
-#ifdef SEASTAR_COROUTINES_ENABLED
+#ifdef ACTOR_COROUTINES_ENABLED
             using future_base::set_coroutine;
 #endif
         private:
-            void set_callback(continuation_base<T SEASTAR_ELLIPSIS> *callback) noexcept {
+            void set_callback(continuation_base<T ACTOR_ELLIPSIS> *callback) noexcept {
                 if (_state.available()) {
                     callback->set_state(get_available_state_ref());
                     ::nil::actor::schedule(callback);
@@ -1933,13 +1978,13 @@ namespace nil {
             }
 
             /// \cond internal
-            template<typename SEASTAR_ELLIPSIS U>
+            template<typename ACTOR_ELLIPSIS U>
             friend class future;
-            template<typename SEASTAR_ELLIPSIS U>
+            template<typename ACTOR_ELLIPSIS U>
             friend class promise;
             template<typename U>
             friend struct futurize;
-            template<typename SEASTAR_ELLIPSIS U>
+            template<typename ACTOR_ELLIPSIS U>
             friend class detail::promise_base_with_type;
             template<typename... U, typename... A>
             friend future<U...> make_ready_future(A &&...value) noexcept;
@@ -2047,7 +2092,7 @@ namespace nil {
                 return type(ready_future_marker(), value);
             }
 
-#if SEASTAR_API_LEVEL >= 5
+#if ACTOR_API_LEVEL >= 5
             /// Convert the tuple representation into a future
             static type from_tuple(value_type &&value) {
                 return type(ready_future_marker(), std::move(value));
@@ -2058,14 +2103,21 @@ namespace nil {
             }
 #endif
         private:
+#ifdef BOOST_HAS_CONCEPTS
             /// Forwards the result of, or exception thrown by, func() to the
             /// promise. This avoids creating a future if func() doesn't
             /// return one.
             template<typename Func>
-            SEASTAR_CONCEPT(requires std::invocable<Func>)
+            requires std::invocable<Func> static void satisfy_with_result_of(promise_base_with_type &&, Func &&func);
+#else
+            /// Forwards the result of, or exception thrown by, func() to the
+            /// promise. This avoids creating a future if func() doesn't
+            /// return one.
+            template<typename Func>
             static void satisfy_with_result_of(promise_base_with_type &&, Func &&func);
+#endif
 
-            template<typename SEASTAR_ELLIPSIS U>
+            template<typename ACTOR_ELLIPSIS U>
             friend class future;
         };
 
@@ -2074,14 +2126,14 @@ namespace nil {
             _future->_promise = this;
         }
 
-        template<typename SEASTAR_ELLIPSIS T>
-        inline future<T SEASTAR_ELLIPSIS> promise<T SEASTAR_ELLIPSIS>::get_future() noexcept {
+        template<typename ACTOR_ELLIPSIS T>
+        inline future<T ACTOR_ELLIPSIS> promise<T ACTOR_ELLIPSIS>::get_future() noexcept {
             assert(!this->_future && this->_state && !this->_task);
-            return future<T SEASTAR_ELLIPSIS>(this);
+            return future<T ACTOR_ELLIPSIS>(this);
         }
 
-        template<typename SEASTAR_ELLIPSIS T>
-        inline void promise<T SEASTAR_ELLIPSIS>::move_it(promise &&x) noexcept {
+        template<typename ACTOR_ELLIPSIS T>
+        inline void promise<T ACTOR_ELLIPSIS>::move_it(promise &&x) noexcept {
             if (this->_state == &x._local_state) {
                 this->_state = &_local_state;
                 new (&_local_state) future_state(std::move(x._local_state));
@@ -2148,10 +2200,24 @@ namespace nil {
                 return current_exception_as_future();
             }
         }
-
+#ifdef BOOST_HAS_CONCEPTS
         template<typename T>
         template<typename Func>
-        SEASTAR_CONCEPT(requires std::invocable<Func>)
+        requires std::invocable<Func> void futurize<T>::satisfy_with_result_of(promise_base_with_type &&pr,
+                                                                               Func &&func) {
+            using ret_t = decltype(func());
+            if constexpr (std::is_void_v<ret_t>) {
+                func();
+                pr.set_value();
+            } else if constexpr (is_future<ret_t>::value) {
+                func().forward_to(std::move(pr));
+            } else {
+                pr.set_value(func());
+            }
+        }
+#else
+        template<typename T>
+        template<typename Func>
         void futurize<T>::satisfy_with_result_of(promise_base_with_type &&pr, Func &&func) {
             using ret_t = decltype(func());
             if constexpr (std::is_void_v<ret_t>) {
@@ -2163,6 +2229,7 @@ namespace nil {
                 pr.set_value(func());
             }
         }
+#endif
 
         template<typename T>
         template<typename Func, typename... FuncArgs>

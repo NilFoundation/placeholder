@@ -25,7 +25,6 @@
 #pragma once
 
 #include <nil/actor/core/sstring.hh>
-#include <nil/actor/detail/concepts.hh>
 #include <nil/actor/detail/log-impl.hh>
 #include <nil/actor/core/lowres_clock.hh>
 
@@ -35,6 +34,7 @@
 #include <atomic>
 #include <mutex>
 
+#include <boost/config.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <fmt/format.h>
@@ -102,7 +102,11 @@ namespace nil {
                 virtual detail::log_buf::inserter_iterator operator()(detail::log_buf::inserter_iterator) = 0;
             };
             template<typename Func>
-            SEASTAR_CONCEPT(requires requires(Func fn, detail::log_buf::inserter_iterator it) { it = fn(it); })
+#ifdef BOOST_HAS_CONCEPTS
+            requires requires(Func fn, detail::log_buf::inserter_iterator it) {
+                it = fn(it);
+            }
+#endif
             class lambda_log_writer : public log_writer {
                 Func _func;
 
@@ -110,8 +114,7 @@ namespace nil {
                 lambda_log_writer(Func &&func) : _func(std::forward<Func>(func)) {
                 }
                 virtual ~lambda_log_writer() override = default;
-                virtual detail::log_buf::inserter_iterator
-                    operator()(detail::log_buf::inserter_iterator it) override {
+                virtual detail::log_buf::inserter_iterator operator()(detail::log_buf::inserter_iterator it) override {
                     return _func(it);
                 }
             };

@@ -27,12 +27,12 @@
 // Clang currently only supports the TS
 #if __has_include(<coroutine>) && !defined(__clang__)
 #include <coroutine>
-#define SEASTAR_INTERNAL_COROUTINE_NAMESPACE std
+#define ACTOR_INTERNAL_COROUTINE_NAMESPACE std
 #elif __has_include(<experimental/coroutine>)
 #include <experimental/coroutine>
-#define SEASTAR_INTERNAL_COROUTINE_NAMESPACE std::experimental
+#define ACTOR_INTERNAL_COROUTINE_NAMESPACE std::experimental
 #else
-#define SEASTAR_INTERNAL_COROUTINE_NAMESPACE std::experimental
+#define ACTOR_INTERNAL_COROUTINE_NAMESPACE std::experimental
 
 // We are not exactly allowed to defined anything in the std namespace, but this
 // makes coroutines work with libstdc++. All of this is experimental anyway.

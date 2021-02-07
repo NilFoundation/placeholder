@@ -25,7 +25,15 @@
 #pragma once
 
 #include <memory>
-#include <sys/inotify.h>
+
+#include <libfswatch/c++/path_utils.hpp>
+#include <libfswatch/c++/event.hpp>
+#include <libfswatch/c++/monitor.hpp>
+#include <libfswatch/c++/monitor_factory.hpp>
+#include <libfswatch/c/error.h>
+#include <libfswatch/c/libfswatch.h>
+#include <libfswatch/c/libfswatch_log.h>
+#include <libfswatch/c++/libfswatch_exception.hpp>
 
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/sstring.hh>

@@ -32,7 +32,11 @@
 #include <nil/actor/core/idle_cpu_handler.hh>
 #include <memory>
 #include <type_traits>
+#if defined(__linux__)
 #include <sys/epoll.h>
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+#include <sys/event.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unordered_map>
@@ -86,8 +90,8 @@
 #include <nil/actor/core/detail/io_request.hh>
 #include <nil/actor/core/detail/io_sink.hh>
 #include <nil/actor/core/make_task.hh>
-#include "internal/pollable_fd.hh"
-#include "internal/poll.hh"
+#include <nil/actor/core/detail/pollable_fd.hh>
+#include <nil/actor/core/detail/poll.hh>
 
 #ifdef HAVE_OSV
 #include <osv/sched.hh>
@@ -549,7 +553,13 @@ namespace nil {
                                            io_intent *intent) noexcept;
 
             int run();
+
             void exit(int ret);
+
+#ifdef ACTOR_SHUFFLE_TASK_QUEUE
+            void shuffle(task *&, task_queue &);
+#endif
+
             future<> when_started() {
                 return _start_promise.get_future();
             }
@@ -567,9 +577,10 @@ namespace nil {
                 _at_destroy_tasks->_q.push_back(make_task(default_scheduling_group(), std::forward<Func>(func)));
             }
 
-#ifdef SEASTAR_SHUFFLE_TASK_QUEUE
-            void shuffle(task *&, task_queue &);
+#ifdef current_task
+#undef current_task
 #endif
+
             task *current_task() const {
                 return _current_task;
             }
@@ -579,7 +590,7 @@ namespace nil {
                 auto *q = _task_queues[sg._id].get();
                 bool was_empty = q->_q.empty();
                 q->_q.push_back(std::move(t));
-#ifdef SEASTAR_SHUFFLE_TASK_QUEUE
+#ifdef ACTOR_SHUFFLE_TASK_QUEUE
                 shuffle(q->_q.back(), *q);
 #endif
                 if (was_empty) {
@@ -592,7 +603,7 @@ namespace nil {
                 auto *q = _task_queues[sg._id].get();
                 bool was_empty = q->_q.empty();
                 q->_q.push_front(std::move(t));
-#ifdef SEASTAR_SHUFFLE_TASK_QUEUE
+#ifdef ACTOR_SHUFFLE_TASK_QUEUE
                 shuffle(q->_q.front(), *q);
 #endif
                 if (was_empty) {
@@ -691,18 +702,17 @@ namespace nil {
             friend future<scheduling_group_key> scheduling_group_key_create(scheduling_group_key_config cfg) noexcept;
 
             template<typename T>
-            friend T *detail::scheduling_group_get_specific_ptr(scheduling_group sg,
-                                                                  scheduling_group_key key) noexcept;
+            friend T *detail::scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key key) noexcept;
             template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
-            SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
-                                              Initial initial) {
+            ACTOR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
+                                            Initial initial) {
                 { reducer(initial, mapper(specific_val)) }
                 ->std::convertible_to<Initial>;
             })
             friend future<typename function_traits<Reducer>::return_type> map_reduce_scheduling_group_specific(
                 Mapper mapper, Reducer reducer, Initial initial_val, scheduling_group_key key);
             template<typename SpecificValType, typename Reducer, typename Initial>
-            SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
+            ACTOR_CONCEPT(requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
                 { reducer(initial, specific_val) }
                 ->std::convertible_to<Initial>;
             })

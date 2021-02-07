@@ -72,7 +72,7 @@ namespace nil {
             template<typename T>
             T *scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key key) noexcept {
                 auto &data = detail::get_scheduling_group_specific_thread_local_data();
-#ifdef SEASTAR_DEBUG
+#ifdef ACTOR_DEBUG
                 assert(std::type_index(typeid(T)) == data.scheduling_group_key_configs[key.id()].type_index);
 #endif
                 auto sg_id = detail::scheduling_group_index(sg);
@@ -138,7 +138,7 @@ namespace nil {
          * SpecificValType is convertible to SpecificValType.
          */
         template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
-        SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
+        ACTOR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
                                           Initial initial) {
             { reducer(initial, mapper(specific_val)) }
             ->std::convertible_to<Initial>;
@@ -172,7 +172,7 @@ namespace nil {
          * where SpecificValType is convertible to SpecificValType.
          */
         template<typename SpecificValType, typename Reducer, typename Initial>
-        SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
+        ACTOR_CONCEPT(requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
             { reducer(initial, specific_val) }
             ->std::convertible_to<Initial>;
         })

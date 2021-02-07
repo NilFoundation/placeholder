@@ -64,12 +64,12 @@ public:
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wself-move"
 #endif
-SEASTAR_TEST_CASE(test_self_move) {
+ACTOR_TEST_CASE(test_self_move) {
     future_state<std::tuple<std::unique_ptr<int>>> s1;
     s1.set(std::make_unique<int>(42));
     s1 = std::move(s1);    // no crash, but the value of s1 is not defined.
 
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
     future_state<std::tuple<std::unique_ptr<int>>> s2;
 #else
     future_state<std::unique_ptr<int>> s2;
@@ -107,12 +107,12 @@ static subscription<int> get_empty_subscription(std::function<future<>(int)> fun
     return ret;
 }
 
-SEASTAR_TEST_CASE(test_stream) {
+ACTOR_TEST_CASE(test_stream) {
     auto sub = get_empty_subscription([](int x) { return make_ready_future<>(); });
     return sub.done();
 }
 
-SEASTAR_TEST_CASE(test_stream_drop_sub) {
+ACTOR_TEST_CASE(test_stream_drop_sub) {
     auto s = make_lw_shared<stream<int>>();
     std::optional<future<>> ret;
     {
@@ -126,7 +126,7 @@ SEASTAR_TEST_CASE(test_stream_drop_sub) {
     });
 }
 
-SEASTAR_TEST_CASE(test_reference) {
+ACTOR_TEST_CASE(test_reference) {
     int a = 42;
     future<int &> orig = make_ready_future<int &>(a);
     future<int &> fut = std::move(orig);
@@ -136,7 +136,7 @@ SEASTAR_TEST_CASE(test_reference) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_set_future_state_with_tuple) {
+ACTOR_TEST_CASE(test_set_future_state_with_tuple) {
     future_state<std::tuple<int>> s1;
     promise<int> p1;
     const std::tuple<int> v1(42);
@@ -146,7 +146,7 @@ SEASTAR_TEST_CASE(test_set_future_state_with_tuple) {
     return make_ready_future<>();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_set_value_make_exception_in_copy) {
+ACTOR_THREAD_TEST_CASE(test_set_value_make_exception_in_copy) {
     struct throw_in_copy {
         throw_in_copy() noexcept = default;
         throw_in_copy(throw_in_copy &&x) noexcept {
@@ -161,7 +161,7 @@ SEASTAR_THREAD_TEST_CASE(test_set_value_make_exception_in_copy) {
     BOOST_REQUIRE_THROW(p1.get_future().get(), int);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_set_exception_in_constructor) {
+ACTOR_THREAD_TEST_CASE(test_set_exception_in_constructor) {
     struct throw_in_constructor {
         throw_in_constructor() {
             throw 42;
@@ -172,7 +172,7 @@ SEASTAR_THREAD_TEST_CASE(test_set_exception_in_constructor) {
     BOOST_REQUIRE_THROW(f.get(), int);
 }
 
-SEASTAR_TEST_CASE(test_finally_is_called_on_success_and_failure) {
+ACTOR_TEST_CASE(test_finally_is_called_on_success_and_failure) {
     auto finally1 = make_shared<bool>();
     auto finally2 = make_shared<bool>();
 
@@ -194,7 +194,7 @@ SEASTAR_TEST_CASE(test_finally_is_called_on_success_and_failure) {
         });
 }
 
-SEASTAR_TEST_CASE(test_get_on_promise) {
+ACTOR_TEST_CASE(test_get_on_promise) {
     auto p = promise<uint32_t>();
     p.set_value(10);
     BOOST_REQUIRE_EQUAL(10u, p.get_future().get0());
@@ -234,21 +234,21 @@ static void check_finally_exception(std::exception_ptr ex) {
     }
 }
 
-SEASTAR_TEST_CASE(test_finally_exception) {
+ACTOR_TEST_CASE(test_finally_exception) {
     return make_ready_future<>()
         .then([] { throw test_exception("foo"); })
         .finally([] { throw test_exception("bar"); })
         .handle_exception(check_finally_exception);
 }
 
-SEASTAR_TEST_CASE(test_finally_exceptional_future) {
+ACTOR_TEST_CASE(test_finally_exceptional_future) {
     return make_ready_future<>()
         .then([] { throw test_exception("foo"); })
         .finally([] { return make_exception_future<>(test_exception("bar")); })
         .handle_exception(check_finally_exception);
 }
 
-SEASTAR_TEST_CASE(test_finally_waits_for_inner) {
+ACTOR_TEST_CASE(test_finally_waits_for_inner) {
     auto finally = make_shared<bool>();
     auto p = make_shared<promise<>>();
 
@@ -261,7 +261,7 @@ SEASTAR_TEST_CASE(test_finally_waits_for_inner) {
     return f;
 }
 
-SEASTAR_TEST_CASE(test_finally_is_called_on_success_and_failure__not_ready_to_armed) {
+ACTOR_TEST_CASE(test_finally_is_called_on_success_and_failure__not_ready_to_armed) {
     auto finally1 = make_shared<bool>();
     auto finally2 = make_shared<bool>();
 
@@ -283,7 +283,7 @@ SEASTAR_TEST_CASE(test_finally_is_called_on_success_and_failure__not_ready_to_ar
     return f;
 }
 
-SEASTAR_TEST_CASE(test_exception_from_finally_fails_the_target) {
+ACTOR_TEST_CASE(test_exception_from_finally_fails_the_target) {
     promise<> pr;
     auto f = pr.get_future()
                  .finally([=] { throw std::runtime_error(""); })
@@ -299,7 +299,7 @@ SEASTAR_TEST_CASE(test_exception_from_finally_fails_the_target) {
     return f;
 }
 
-SEASTAR_TEST_CASE(test_exception_from_finally_fails_the_target_on_already_resolved) {
+ACTOR_TEST_CASE(test_exception_from_finally_fails_the_target_on_already_resolved) {
     return make_ready_future()
         .finally([=] { throw std::runtime_error(""); })
         .then([] { BOOST_REQUIRE(false); })
@@ -311,7 +311,7 @@ SEASTAR_TEST_CASE(test_exception_from_finally_fails_the_target_on_already_resolv
         });
 }
 
-SEASTAR_TEST_CASE(test_exception_thrown_from_then_wrapped_causes_future_to_fail) {
+ACTOR_TEST_CASE(test_exception_thrown_from_then_wrapped_causes_future_to_fail) {
     return make_ready_future().then_wrapped([](auto &&f) { throw std::runtime_error(""); }).then_wrapped([](auto &&f) {
         try {
             f.get();
@@ -321,7 +321,7 @@ SEASTAR_TEST_CASE(test_exception_thrown_from_then_wrapped_causes_future_to_fail)
     });
 }
 
-SEASTAR_TEST_CASE(test_exception_thrown_from_then_wrapped_causes_future_to_fail__async_case) {
+ACTOR_TEST_CASE(test_exception_thrown_from_then_wrapped_causes_future_to_fail__async_case) {
     promise<> p;
 
     auto f = p.get_future().then_wrapped([](auto &&f) { throw std::runtime_error(""); }).then_wrapped([](auto &&f) {
@@ -337,7 +337,7 @@ SEASTAR_TEST_CASE(test_exception_thrown_from_then_wrapped_causes_future_to_fail_
     return f;
 }
 
-SEASTAR_TEST_CASE(test_failing_intermediate_promise_should_fail_the_master_future) {
+ACTOR_TEST_CASE(test_failing_intermediate_promise_should_fail_the_master_future) {
     promise<> p1;
     promise<> p2;
 
@@ -357,7 +357,7 @@ SEASTAR_TEST_CASE(test_failing_intermediate_promise_should_fail_the_master_futur
     });
 }
 
-SEASTAR_TEST_CASE(test_future_forwarding__not_ready_to_unarmed) {
+ACTOR_TEST_CASE(test_future_forwarding__not_ready_to_unarmed) {
     promise<> p1;
     promise<> p2;
 
@@ -374,7 +374,7 @@ SEASTAR_TEST_CASE(test_future_forwarding__not_ready_to_unarmed) {
     return called;
 }
 
-SEASTAR_TEST_CASE(test_future_forwarding__not_ready_to_armed) {
+ACTOR_TEST_CASE(test_future_forwarding__not_ready_to_armed) {
     promise<> p1;
     promise<> p2;
 
@@ -392,7 +392,7 @@ SEASTAR_TEST_CASE(test_future_forwarding__not_ready_to_armed) {
     return called;
 }
 
-SEASTAR_TEST_CASE(test_future_forwarding__ready_to_unarmed) {
+ACTOR_TEST_CASE(test_future_forwarding__ready_to_unarmed) {
     promise<> p2;
 
     auto f1 = make_ready_future<>();
@@ -404,7 +404,7 @@ SEASTAR_TEST_CASE(test_future_forwarding__ready_to_unarmed) {
     return std::move(f2).then_wrapped([](future<> f) { BOOST_REQUIRE(!f.failed()); });
 }
 
-SEASTAR_TEST_CASE(test_future_forwarding__ready_to_armed) {
+ACTOR_TEST_CASE(test_future_forwarding__ready_to_armed) {
     promise<> p2;
 
     auto f1 = make_ready_future<>();
@@ -423,14 +423,14 @@ static void forward_dead_unarmed_promise_with_dead_future_to(promise<> &p) {
     p.get_future().forward_to(std::move(p2));
 }
 
-SEASTAR_TEST_CASE(test_future_forwarding__ready_to_unarmed_soon_to_be_dead) {
+ACTOR_TEST_CASE(test_future_forwarding__ready_to_unarmed_soon_to_be_dead) {
     promise<> p1;
     forward_dead_unarmed_promise_with_dead_future_to(p1);
     make_ready_future<>().forward_to(std::move(p1));
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_exception_can_be_thrown_from_do_until_body) {
+ACTOR_TEST_CASE(test_exception_can_be_thrown_from_do_until_body) {
     return do_until([] { return false; },
                     [] {
                         throw expected_exception();
@@ -446,7 +446,7 @@ SEASTAR_TEST_CASE(test_exception_can_be_thrown_from_do_until_body) {
         });
 }
 
-SEASTAR_TEST_CASE(test_exception_can_be_thrown_from_do_until_condition) {
+ACTOR_TEST_CASE(test_exception_can_be_thrown_from_do_until_condition) {
     return do_until(
                [] {
                    throw expected_exception();
@@ -463,11 +463,11 @@ SEASTAR_TEST_CASE(test_exception_can_be_thrown_from_do_until_condition) {
         });
 }
 
-SEASTAR_TEST_CASE(test_bare_value_can_be_returned_from_callback) {
+ACTOR_TEST_CASE(test_bare_value_can_be_returned_from_callback) {
     return now().then([] { return 3; }).then([](int x) { BOOST_REQUIRE(x == 3); });
 }
 
-SEASTAR_TEST_CASE(test_when_all_iterator_range) {
+ACTOR_TEST_CASE(test_when_all_iterator_range) {
     std::vector<future<size_t>> futures;
     for (size_t i = 0; i != 1000000; ++i) {
         // Use a mix of available and unavailable futures to exercise
@@ -485,7 +485,7 @@ SEASTAR_TEST_CASE(test_when_all_iterator_range) {
     });
 }
 
-SEASTAR_TEST_CASE(test_map_reduce) {
+ACTOR_TEST_CASE(test_map_reduce) {
     auto square = [](long x) { return make_ready_future<long>(x * x); };
     long n = 1000;
     return map_reduce(boost::make_counting_iterator<long>(0), boost::make_counting_iterator<long>(n), square, long(0),
@@ -496,7 +496,7 @@ SEASTAR_TEST_CASE(test_map_reduce) {
         });
 }
 
-SEASTAR_TEST_CASE(test_map_reduce_simple) {
+ACTOR_TEST_CASE(test_map_reduce_simple) {
     return do_with(0L, [](auto &res) {
         long n = 10;
         return map_reduce(
@@ -509,7 +509,7 @@ SEASTAR_TEST_CASE(test_map_reduce_simple) {
     });
 }
 
-SEASTAR_TEST_CASE(test_map_reduce_tuple) {
+ACTOR_TEST_CASE(test_map_reduce_tuple) {
     return do_with(0L, 0L, [](auto &res0, auto &res1) {
         long n = 10;
         return map_reduce(
@@ -531,18 +531,18 @@ SEASTAR_TEST_CASE(test_map_reduce_tuple) {
 // returned by sleep to complete. However, a bug we had in sleep() caused
 // this test to fail the sanitizer in the debug build, so this is a useful
 // regression test.
-SEASTAR_TEST_CASE(test_sleep) {
+ACTOR_TEST_CASE(test_sleep) {
     return sleep(std::chrono::milliseconds(100));
 }
 
-SEASTAR_TEST_CASE(test_do_with_1) {
+ACTOR_TEST_CASE(test_do_with_1) {
     return do_with(1, [](int &one) {
         BOOST_REQUIRE_EQUAL(one, 1);
         return make_ready_future<>();
     });
 }
 
-SEASTAR_TEST_CASE(test_do_with_2) {
+ACTOR_TEST_CASE(test_do_with_2) {
     return do_with(1, 2L, [](int &one, long two) {
         BOOST_REQUIRE_EQUAL(one, 1);
         BOOST_REQUIRE_EQUAL(two, 2);
@@ -550,7 +550,7 @@ SEASTAR_TEST_CASE(test_do_with_2) {
     });
 }
 
-SEASTAR_TEST_CASE(test_do_with_3) {
+ACTOR_TEST_CASE(test_do_with_3) {
     return do_with(1, 2L, 3, [](int &one, long two, int three) {
         BOOST_REQUIRE_EQUAL(one, 1);
         BOOST_REQUIRE_EQUAL(two, 2);
@@ -559,7 +559,7 @@ SEASTAR_TEST_CASE(test_do_with_3) {
     });
 }
 
-SEASTAR_TEST_CASE(test_do_with_4) {
+ACTOR_TEST_CASE(test_do_with_4) {
     return do_with(1, 2L, 3, 4, [](int &one, long two, int three, int four) {
         BOOST_REQUIRE_EQUAL(one, 1);
         BOOST_REQUIRE_EQUAL(two, 2);
@@ -569,22 +569,22 @@ SEASTAR_TEST_CASE(test_do_with_4) {
     });
 }
 
-SEASTAR_TEST_CASE(test_do_with_5) {
+ACTOR_TEST_CASE(test_do_with_5) {
     using func = noncopyable_function<void()>;
     return do_with(func([] {}), [](func &) { return make_ready_future<>(); });
 }
 
-SEASTAR_TEST_CASE(test_do_with_6) {
+ACTOR_TEST_CASE(test_do_with_6) {
     const int x = 42;
     return do_with(int(42), x, [](int &, int &) { return make_ready_future<>(); });
 }
 
-SEASTAR_TEST_CASE(test_do_with_7) {
+ACTOR_TEST_CASE(test_do_with_7) {
     const int x = 42;
     return do_with(x, [](int &) { return make_ready_future<>(); });
 }
 
-SEASTAR_TEST_CASE(test_do_while_stopping_immediately) {
+ACTOR_TEST_CASE(test_do_while_stopping_immediately) {
     return do_with(int(0), [](int &count) {
         return repeat([&count] {
                    ++count;
@@ -594,7 +594,7 @@ SEASTAR_TEST_CASE(test_do_while_stopping_immediately) {
     });
 }
 
-SEASTAR_TEST_CASE(test_do_while_stopping_after_two_iterations) {
+ACTOR_TEST_CASE(test_do_while_stopping_after_two_iterations) {
     return do_with(int(0), [](int &count) {
         return repeat([&count] {
                    ++count;
@@ -604,7 +604,7 @@ SEASTAR_TEST_CASE(test_do_while_stopping_after_two_iterations) {
     });
 }
 
-SEASTAR_TEST_CASE(test_do_while_failing_in_the_first_step) {
+ACTOR_TEST_CASE(test_do_while_failing_in_the_first_step) {
     return repeat([] {
                throw expected_exception();
                return stop_iteration::no;
@@ -619,7 +619,7 @@ SEASTAR_TEST_CASE(test_do_while_failing_in_the_first_step) {
         });
 }
 
-SEASTAR_TEST_CASE(test_do_while_failing_in_the_second_step) {
+ACTOR_TEST_CASE(test_do_while_failing_in_the_second_step) {
     return do_with(int(0), [](int &count) {
         return repeat([&count] {
                    ++count;
@@ -639,7 +639,7 @@ SEASTAR_TEST_CASE(test_do_while_failing_in_the_second_step) {
     });
 }
 
-SEASTAR_TEST_CASE(test_parallel_for_each) {
+ACTOR_TEST_CASE(test_parallel_for_each) {
     return async([] {
         // empty
         parallel_for_each(std::vector<int>(), [](int) -> future<> {
@@ -671,7 +671,7 @@ SEASTAR_TEST_CASE(test_parallel_for_each) {
     });
 }
 
-SEASTAR_TEST_CASE(test_parallel_for_each_early_failure) {
+ACTOR_TEST_CASE(test_parallel_for_each_early_failure) {
     return do_with(0, [](int &counter) {
         return parallel_for_each(boost::irange(0, 11000),
                                  [&counter](int i) {
@@ -700,7 +700,7 @@ SEASTAR_TEST_CASE(test_parallel_for_each_early_failure) {
     });
 }
 
-SEASTAR_TEST_CASE(test_parallel_for_each_waits_for_all_fibers_even_if_one_of_them_failed) {
+ACTOR_TEST_CASE(test_parallel_for_each_waits_for_all_fibers_even_if_one_of_them_failed) {
     auto can_exit = make_lw_shared<bool>(false);
     return parallel_for_each(boost::irange(0, 2),
                              [can_exit](int i) {
@@ -723,7 +723,7 @@ SEASTAR_TEST_CASE(test_parallel_for_each_waits_for_all_fibers_even_if_one_of_the
         });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_parallel_for_each_broken_promise) {
+ACTOR_THREAD_TEST_CASE(test_parallel_for_each_broken_promise) {
     auto fut = [] {
         std::vector<promise<>> v(2);
         return parallel_for_each(v, [](promise<> &p) { return p.get_future(); });
@@ -731,7 +731,7 @@ SEASTAR_THREAD_TEST_CASE(test_parallel_for_each_broken_promise) {
     BOOST_CHECK_THROW(fut.get(), broken_promise);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_repeat_broken_promise) {
+ACTOR_THREAD_TEST_CASE(test_repeat_broken_promise) {
     auto get_fut = [] {
         promise<stop_iteration> pr;
         return pr.get_future();
@@ -742,8 +742,8 @@ SEASTAR_THREAD_TEST_CASE(test_repeat_broken_promise) {
     BOOST_CHECK_THROW(r.get(), broken_promise);
 }
 
-#ifndef SEASTAR_SHUFFLE_TASK_QUEUE
-SEASTAR_TEST_CASE(test_high_priority_task_runs_in_the_middle_of_loops) {
+#ifndef ACTOR_SHUFFLE_TASK_QUEUE
+ACTOR_TEST_CASE(test_high_priority_task_runs_in_the_middle_of_loops) {
     auto counter = make_lw_shared<int>(0);
     auto flag = make_lw_shared<bool>(false);
     return repeat([counter, flag] {
@@ -758,7 +758,7 @@ SEASTAR_TEST_CASE(test_high_priority_task_runs_in_the_middle_of_loops) {
 }
 #endif
 
-SEASTAR_TEST_CASE(futurize_invoke_val_exception) {
+ACTOR_TEST_CASE(futurize_invoke_val_exception) {
     return futurize_invoke(
                [](int arg) {
                    throw expected_exception();
@@ -774,7 +774,7 @@ SEASTAR_TEST_CASE(futurize_invoke_val_exception) {
         });
 }
 
-SEASTAR_TEST_CASE(futurize_invoke_val_ok) {
+ACTOR_TEST_CASE(futurize_invoke_val_ok) {
     return futurize_invoke([](int arg) { return arg * 2; }, 2).then_wrapped([](future<int> f) {
         try {
             auto x = f.get0();
@@ -785,7 +785,7 @@ SEASTAR_TEST_CASE(futurize_invoke_val_ok) {
     });
 }
 
-SEASTAR_TEST_CASE(futurize_invoke_val_future_exception) {
+ACTOR_TEST_CASE(futurize_invoke_val_future_exception) {
     return futurize_invoke(
                [](int a) {
                    return sleep(std::chrono::milliseconds(100)).then([] {
@@ -803,7 +803,7 @@ SEASTAR_TEST_CASE(futurize_invoke_val_future_exception) {
         });
 }
 
-SEASTAR_TEST_CASE(futurize_invoke_val_future_ok) {
+ACTOR_TEST_CASE(futurize_invoke_val_future_ok) {
     return futurize_invoke(
                [](int a) {
                    return sleep(std::chrono::milliseconds(100)).then([a] { return make_ready_future<int>(a * 100); });
@@ -818,7 +818,7 @@ SEASTAR_TEST_CASE(futurize_invoke_val_future_ok) {
             }
         });
 }
-SEASTAR_TEST_CASE(futurize_invoke_void_exception) {
+ACTOR_TEST_CASE(futurize_invoke_void_exception) {
     return futurize_invoke([](auto arg) { throw expected_exception(); }, 0).then_wrapped([](future<> f) {
         try {
             f.get();
@@ -828,7 +828,7 @@ SEASTAR_TEST_CASE(futurize_invoke_void_exception) {
     });
 }
 
-SEASTAR_TEST_CASE(futurize_invoke_void_ok) {
+ACTOR_TEST_CASE(futurize_invoke_void_ok) {
     return futurize_invoke([](auto arg) {}, 0).then_wrapped([](future<> f) {
         try {
             f.get();
@@ -838,7 +838,7 @@ SEASTAR_TEST_CASE(futurize_invoke_void_ok) {
     });
 }
 
-SEASTAR_TEST_CASE(futurize_invoke_void_future_exception) {
+ACTOR_TEST_CASE(futurize_invoke_void_future_exception) {
     return futurize_invoke(
                [](auto a) { return sleep(std::chrono::milliseconds(100)).then([] { throw expected_exception(); }); }, 0)
         .then_wrapped([](future<> f) {
@@ -850,7 +850,7 @@ SEASTAR_TEST_CASE(futurize_invoke_void_future_exception) {
         });
 }
 
-SEASTAR_TEST_CASE(futurize_invoke_void_future_ok) {
+ACTOR_TEST_CASE(futurize_invoke_void_future_ok) {
     auto a = make_lw_shared<int>(1);
     return futurize_invoke([](int &a) { return sleep(std::chrono::milliseconds(100)).then([&a] { a *= 100; }); }, *a)
         .then_wrapped([a](future<> f) {
@@ -863,13 +863,13 @@ SEASTAR_TEST_CASE(futurize_invoke_void_future_ok) {
         });
 }
 
-SEASTAR_TEST_CASE(test_unused_shared_future_is_not_a_broken_future) {
+ACTOR_TEST_CASE(test_unused_shared_future_is_not_a_broken_future) {
     promise<> p;
     shared_future<> s(p.get_future());
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_shared_future_propagates_value_to_all) {
+ACTOR_TEST_CASE(test_shared_future_propagates_value_to_all) {
     return nil::actor::async([] {
         promise<shared_ptr<int>> p;    // shared_ptr<> to check it deals with emptyable types
         shared_future<shared_ptr<int>> f(p.get_future());
@@ -893,7 +893,7 @@ void check_fails_with_expected(future<T...> f) {
     }
 }
 
-SEASTAR_TEST_CASE(test_shared_future_propagates_value_to_copies) {
+ACTOR_TEST_CASE(test_shared_future_propagates_value_to_copies) {
     return nil::actor::async([] {
         promise<int> p;
         auto sf1 = shared_future<int>(p.get_future());
@@ -909,7 +909,7 @@ SEASTAR_TEST_CASE(test_shared_future_propagates_value_to_copies) {
     });
 }
 
-SEASTAR_TEST_CASE(test_obtaining_future_from_shared_future_after_it_is_resolved) {
+ACTOR_TEST_CASE(test_obtaining_future_from_shared_future_after_it_is_resolved) {
     promise<int> p1;
     promise<int> p2;
     auto sf1 = shared_future<int>(p1.get_future());
@@ -924,7 +924,7 @@ SEASTAR_TEST_CASE(test_obtaining_future_from_shared_future_after_it_is_resolved)
         .then_wrapped([](auto &&f) { BOOST_REQUIRE(f.get0() == 1); });
 }
 
-SEASTAR_TEST_CASE(test_valueless_shared_future) {
+ACTOR_TEST_CASE(test_valueless_shared_future) {
     return nil::actor::async([] {
         promise<> p;
         shared_future<> f(p.get_future());
@@ -939,7 +939,7 @@ SEASTAR_TEST_CASE(test_valueless_shared_future) {
     });
 }
 
-SEASTAR_TEST_CASE(test_shared_future_propagates_errors_to_all) {
+ACTOR_TEST_CASE(test_shared_future_propagates_errors_to_all) {
     promise<int> p;
     shared_future<int> f(p.get_future());
 
@@ -956,7 +956,7 @@ SEASTAR_TEST_CASE(test_shared_future_propagates_errors_to_all) {
         .then_wrapped([](auto &&f) mutable { check_fails_with_expected(std::move(f)); });
 }
 
-SEASTAR_TEST_CASE(test_ignored_future_warning) {
+ACTOR_TEST_CASE(test_ignored_future_warning) {
     // This doesn't warn:
     promise<> p;
     p.set_exception(expected_exception());
@@ -971,19 +971,19 @@ SEASTAR_TEST_CASE(test_ignored_future_warning) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_futurize_from_tuple) {
+ACTOR_TEST_CASE(test_futurize_from_tuple) {
     std::tuple<int> v1 = std::make_tuple(3);
     std::tuple<> v2 = {};
     future<int> fut1 = futurize<int>::from_tuple(v1);
     future<> fut2 = futurize<void>::from_tuple(v2);
     BOOST_REQUIRE(fut1.get0() == std::get<0>(v1));
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
     BOOST_REQUIRE(fut2.get() == v2);
 #endif
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_repeat_until_value) {
+ACTOR_TEST_CASE(test_repeat_until_value) {
     return do_with(int(), [](int &counter) {
         return repeat_until_value([&counter]() -> future<std::optional<int>> {
                    if (counter == 10000) {
@@ -1000,7 +1000,7 @@ SEASTAR_TEST_CASE(test_repeat_until_value) {
     });
 }
 
-SEASTAR_TEST_CASE(test_repeat_until_value_implicit_future) {
+ACTOR_TEST_CASE(test_repeat_until_value_implicit_future) {
     // Same as above, but returning std::optional<int> instead of future<std::optional<int>>
     return do_with(int(), [](int &counter) {
         return repeat_until_value([&counter] {
@@ -1018,7 +1018,7 @@ SEASTAR_TEST_CASE(test_repeat_until_value_implicit_future) {
     });
 }
 
-SEASTAR_TEST_CASE(test_repeat_until_value_exception) {
+ACTOR_TEST_CASE(test_repeat_until_value_exception) {
     return repeat_until_value([] {
                throw expected_exception();
                return std::optional<int>(43);
@@ -1026,7 +1026,7 @@ SEASTAR_TEST_CASE(test_repeat_until_value_exception) {
         .then_wrapped([](future<int> f) { check_fails_with_expected(std::move(f)); });
 }
 
-SEASTAR_TEST_CASE(test_when_allx) {
+ACTOR_TEST_CASE(test_when_allx) {
     return when_all(later(), later(), make_ready_future()).discard_result();
 }
 
@@ -1037,7 +1037,7 @@ struct non_copy_non_move {
     non_copy_non_move(const non_copy_non_move &) = delete;
 };
 
-SEASTAR_TEST_CASE(test_when_all_functions) {
+ACTOR_TEST_CASE(test_when_all_functions) {
     auto f = [x = non_copy_non_move()] {
         (void)x;
         return make_ready_future<int>(42);
@@ -1062,7 +1062,7 @@ SEASTAR_TEST_CASE(test_when_all_functions) {
         });
 }
 
-SEASTAR_TEST_CASE(test_when_all_succeed_functions) {
+ACTOR_TEST_CASE(test_when_all_succeed_functions) {
     auto f = [x = non_copy_non_move()] {
         (void)x;
         return make_ready_future<int>(42);
@@ -1100,7 +1100,7 @@ static void check_timed_out(future<T...> &&f) {
     check_failed_with<timed_out_error>(std::move(f));
 }
 
-SEASTAR_TEST_CASE(test_with_timeout_when_it_times_out) {
+ACTOR_TEST_CASE(test_with_timeout_when_it_times_out) {
     return nil::actor::async([] {
         promise<> pr;
         auto f = with_timeout(manual_clock::now() + 2s, pr.get_future());
@@ -1121,7 +1121,7 @@ SEASTAR_TEST_CASE(test_with_timeout_when_it_times_out) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_shared_future_get_future_after_timeout) {
+ACTOR_THREAD_TEST_CASE(test_shared_future_get_future_after_timeout) {
     // This used to crash because shared_future checked if the list of
     // pending futures was empty to decide if it had already called
     // then_wrapped. If all pending futures timed out, it would call
@@ -1143,7 +1143,7 @@ SEASTAR_THREAD_TEST_CASE(test_shared_future_get_future_after_timeout) {
     fut3.get();
 }
 
-SEASTAR_TEST_CASE(test_custom_exception_factory_in_with_timeout) {
+ACTOR_TEST_CASE(test_custom_exception_factory_in_with_timeout) {
     return nil::actor::async([] {
         class custom_error : public std::exception {
         public:
@@ -1166,7 +1166,7 @@ SEASTAR_TEST_CASE(test_custom_exception_factory_in_with_timeout) {
     });
 }
 
-SEASTAR_TEST_CASE(test_with_timeout_when_it_does_not_time_out) {
+ACTOR_TEST_CASE(test_with_timeout_when_it_does_not_time_out) {
     return nil::actor::async([] {
         {
             promise<int> pr;
@@ -1183,7 +1183,7 @@ SEASTAR_TEST_CASE(test_with_timeout_when_it_does_not_time_out) {
     });
 }
 
-SEASTAR_TEST_CASE(test_shared_future_with_timeout) {
+ACTOR_TEST_CASE(test_shared_future_with_timeout) {
     return nil::actor::async([] {
         shared_promise<with_clock<manual_clock>, int> pr;
         auto f1 = pr.get_shared_future(manual_clock::now() + 1s);
@@ -1213,13 +1213,13 @@ SEASTAR_TEST_CASE(test_shared_future_with_timeout) {
     });
 }
 
-#if SEASTAR_API_LEVEL < 4
+#if ACTOR_API_LEVEL < 4
 #define THEN_UNPACK then
 #else
 #define THEN_UNPACK then_unpack
 #endif
 
-SEASTAR_TEST_CASE(test_when_all_succeed_tuples) {
+ACTOR_TEST_CASE(test_when_all_succeed_tuples) {
     return nil::actor::when_all_succeed(make_ready_future<>(),
                                      make_ready_future<sstring>("hello world"),
                                      make_ready_future<int>(42),
@@ -1255,7 +1255,7 @@ SEASTAR_TEST_CASE(test_when_all_succeed_tuples) {
         });
 }
 
-SEASTAR_TEST_CASE(test_when_all_succeed_vector) {
+ACTOR_TEST_CASE(test_when_all_succeed_vector) {
     std::vector<future<>> vecs;
     vecs.emplace_back(make_ready_future<>());
     vecs.emplace_back(make_ready_future<>());
@@ -1323,7 +1323,7 @@ SEASTAR_TEST_CASE(test_when_all_succeed_vector) {
         .then([](auto ret) { BOOST_REQUIRE(ret); });
 }
 
-SEASTAR_TEST_CASE(test_futurize_mutable) {
+ACTOR_TEST_CASE(test_futurize_mutable) {
     int count = 0;
     return nil::actor::repeat([count]() mutable {
         ++count;
@@ -1334,7 +1334,7 @@ SEASTAR_TEST_CASE(test_futurize_mutable) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_broken_promises) {
+ACTOR_THREAD_TEST_CASE(test_broken_promises) {
     std::optional<future<>> f;
     std::optional<future<>> f2;
     {    // Broken after attaching a continuation
@@ -1367,7 +1367,7 @@ SEASTAR_THREAD_TEST_CASE(test_broken_promises) {
     BOOST_CHECK_THROW(f->get(), broken_promise);
 }
 
-SEASTAR_TEST_CASE(test_warn_on_broken_promise_with_no_future) {
+ACTOR_TEST_CASE(test_warn_on_broken_promise_with_no_future) {
     // Example code where we expect a "Exceptional future ignored"
     // warning.
     promise<> p;
@@ -1379,7 +1379,7 @@ SEASTAR_TEST_CASE(test_warn_on_broken_promise_with_no_future) {
     return make_ready_future<>();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_exception_future_with_backtrace) {
+ACTOR_THREAD_TEST_CASE(test_exception_future_with_backtrace) {
     int counter = 0;
     auto inner = [&](bool return_exception) mutable {
         if (!return_exception) {
@@ -1423,7 +1423,7 @@ public:
     }
 };
 
-SEASTAR_TEST_CASE(test_async_throw_on_move) {
+ACTOR_TEST_CASE(test_async_throw_on_move) {
     return async([](throw_on_move t) { BOOST_CHECK(false); }, throw_on_move())
         .handle_exception_type([](const expected_exception &) { return make_ready_future<>(); });
 }
@@ -1444,11 +1444,11 @@ future<> func1() {
     return later().then([] { return func2(); });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_backtracing) {
+ACTOR_THREAD_TEST_CASE(test_backtracing) {
     func1().get();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_then_unpack) {
+ACTOR_THREAD_TEST_CASE(test_then_unpack) {
     make_ready_future<std::tuple<>>().then_unpack([]() { BOOST_REQUIRE(true); }).get();
     make_ready_future<std::tuple<int>>(std::tuple<int>(1)).then_unpack([](int x) { BOOST_REQUIRE(x == 1); }).get();
     make_ready_future<std::tuple<int, long>>(std::tuple<int, long>(1, 2))
@@ -1463,11 +1463,11 @@ future<> test_then_function_f() {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_then_function) {
+ACTOR_TEST_CASE(test_then_function) {
     return make_ready_future<>().then(test_then_function_f);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_with_gate) {
+ACTOR_THREAD_TEST_CASE(test_with_gate) {
     gate g;
     int counter = 0;
     int gate_closed_errors = 0;
@@ -1529,7 +1529,7 @@ SEASTAR_THREAD_TEST_CASE(test_with_gate) {
     BOOST_REQUIRE(!other_errors);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_max_concurrent_for_each) {
+ACTOR_THREAD_TEST_CASE(test_max_concurrent_for_each) {
     BOOST_TEST_MESSAGE("empty range");
     max_concurrent_for_each(std::vector<int>(), 3, [](int) {
         BOOST_FAIL("should not reach");

@@ -86,7 +86,7 @@ namespace nil {
 
         // TODO: specialize for non-deferring reducer
         template<typename Iterator, typename Mapper, typename Reducer>
-        SEASTAR_CONCEPT(requires requires(Iterator i, Mapper mapper, Reducer reduce) {
+        ACTOR_CONCEPT(requires requires(Iterator i, Mapper mapper, Reducer reduce) {
             *i++;
             { i != i }
             ->std::convertible_to<bool>;
@@ -148,7 +148,7 @@ namespace nil {
         ///
         /// \return equivalent to \c reduce(reduce(initial, mapper(obj0)), mapper(obj1)) ...
         template<typename Iterator, typename Mapper, typename Initial, typename Reduce>
-        SEASTAR_CONCEPT(requires requires(Iterator i, Mapper mapper, Initial initial, Reduce reduce) {
+        ACTOR_CONCEPT(requires requires(Iterator i, Mapper mapper, Initial initial, Reduce reduce) {
             *i++;
             { i != i }
             ->std::convertible_to<bool>;
@@ -218,7 +218,7 @@ namespace nil {
         ///
         /// \return equivalent to \c reduce(reduce(initial, mapper(obj0)), mapper(obj1)) ...
         template<typename Range, typename Mapper, typename Initial, typename Reduce>
-        SEASTAR_CONCEPT(requires requires(Range range, Mapper mapper, Initial initial, Reduce reduce) {
+        ACTOR_CONCEPT(requires requires(Range range, Mapper mapper, Initial initial, Reduce reduce) {
             std::begin(range);
             std::end(range);
             mapper(*std::begin(range));

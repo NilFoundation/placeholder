@@ -29,19 +29,19 @@
 
 using namespace nil::actor;
 
-SEASTAR_TEST_CASE(make_foreign_ptr_from_lw_shared_ptr) {
+ACTOR_TEST_CASE(make_foreign_ptr_from_lw_shared_ptr) {
     auto p = make_foreign(make_lw_shared<sstring>("foo"));
     BOOST_REQUIRE(p->size() == 3);
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(make_foreign_ptr_from_shared_ptr) {
+ACTOR_TEST_CASE(make_foreign_ptr_from_shared_ptr) {
     auto p = make_foreign(make_shared<sstring>("foo"));
     BOOST_REQUIRE(p->size() == 3);
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(foreign_ptr_copy_test) {
+ACTOR_TEST_CASE(foreign_ptr_copy_test) {
     return nil::actor::async([] {
         auto ptr = make_foreign(make_shared<sstring>("foo"));
         BOOST_REQUIRE(ptr->size() == 3);
@@ -50,13 +50,13 @@ SEASTAR_TEST_CASE(foreign_ptr_copy_test) {
     });
 }
 
-SEASTAR_TEST_CASE(foreign_ptr_get_test) {
+ACTOR_TEST_CASE(foreign_ptr_get_test) {
     auto p = make_foreign(std::make_unique<sstring>("foo"));
     BOOST_REQUIRE_EQUAL(p.get(), &*p);
     return make_ready_future<>();
 };
 
-SEASTAR_TEST_CASE(foreign_ptr_release_test) {
+ACTOR_TEST_CASE(foreign_ptr_release_test) {
     auto p = make_foreign(std::make_unique<sstring>("foo"));
     auto raw_ptr = p.get();
     BOOST_REQUIRE(bool(p));
@@ -68,7 +68,7 @@ SEASTAR_TEST_CASE(foreign_ptr_release_test) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(foreign_ptr_reset_test) {
+ACTOR_TEST_CASE(foreign_ptr_reset_test) {
     auto fp = make_foreign(std::make_unique<sstring>("foo"));
     BOOST_REQUIRE(bool(fp));
     BOOST_REQUIRE(fp->size() == 3);
@@ -93,7 +93,7 @@ public:
     }
 };
 
-SEASTAR_TEST_CASE(foreign_ptr_cpu_test) {
+ACTOR_TEST_CASE(foreign_ptr_cpu_test) {
     if (smp::count == 1) {
         std::cerr << "Skipping multi-cpu foreign_ptr tests. Run with --smp=2 to test multi-cpu delete and reset.";
         return make_ready_future<>();
@@ -112,7 +112,7 @@ SEASTAR_TEST_CASE(foreign_ptr_cpu_test) {
         });
 }
 
-SEASTAR_TEST_CASE(foreign_ptr_move_assignment_test) {
+ACTOR_TEST_CASE(foreign_ptr_move_assignment_test) {
     if (smp::count == 1) {
         std::cerr << "Skipping multi-cpu foreign_ptr tests. Run with --smp=2 to test multi-cpu delete and reset.";
         return make_ready_future<>();

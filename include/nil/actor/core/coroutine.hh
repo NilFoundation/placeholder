@@ -25,7 +25,7 @@
 
 #include <nil/actor/core/future.hh>
 
-#ifndef SEASTAR_COROUTINES_ENABLED
+#ifndef ACTOR_COROUTINES_ENABLED
 #error Coroutines support disabled.
 #endif
 
@@ -68,16 +68,16 @@ namespace nil {
                         return _promise.get_future();
                     }
 
-                    SEASTAR_INTERNAL_COROUTINE_NAMESPACE::suspend_never initial_suspend() noexcept {
+                    ACTOR_INTERNAL_COROUTINE_NAMESPACE::suspend_never initial_suspend() noexcept {
                         return {};
                     }
-                    SEASTAR_INTERNAL_COROUTINE_NAMESPACE::suspend_never final_suspend() noexcept {
+                    ACTOR_INTERNAL_COROUTINE_NAMESPACE::suspend_never final_suspend() noexcept {
                         return {};
                     }
 
                     virtual void run_and_dispose() noexcept override {
                         auto handle =
-                            SEASTAR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<promise_type>::from_promise(*this);
+                            ACTOR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<promise_type>::from_promise(*this);
                         handle.resume();
                     }
 
@@ -120,16 +120,16 @@ namespace nil {
                         return _promise.get_future();
                     }
 
-                    SEASTAR_INTERNAL_COROUTINE_NAMESPACE::suspend_never initial_suspend() noexcept {
+                    ACTOR_INTERNAL_COROUTINE_NAMESPACE::suspend_never initial_suspend() noexcept {
                         return {};
                     }
-                    SEASTAR_INTERNAL_COROUTINE_NAMESPACE::suspend_never final_suspend() noexcept {
+                    ACTOR_INTERNAL_COROUTINE_NAMESPACE::suspend_never final_suspend() noexcept {
                         return {};
                     }
 
                     virtual void run_and_dispose() noexcept override {
                         auto handle =
-                            SEASTAR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<promise_type>::from_promise(*this);
+                            ACTOR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<promise_type>::from_promise(*this);
                         handle.resume();
                     }
 
@@ -155,7 +155,7 @@ namespace nil {
                 }
 
                 template<typename U>
-                void await_suspend(SEASTAR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<U> hndl) noexcept {
+                void await_suspend(ACTOR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<U> hndl) noexcept {
                     if (!_future.available()) {
                         _future.set_coroutine(hndl.promise());
                     } else {
@@ -184,7 +184,7 @@ namespace nil {
                 }
 
                 template<typename U>
-                void await_suspend(SEASTAR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<U> hndl) noexcept {
+                void await_suspend(ACTOR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<U> hndl) noexcept {
                     if (!_future.available()) {
                         _future.set_coroutine(hndl.promise());
                     } else {
@@ -213,7 +213,7 @@ namespace nil {
                 }
 
                 template<typename U>
-                void await_suspend(SEASTAR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<U> hndl) noexcept {
+                void await_suspend(ACTOR_INTERNAL_COROUTINE_NAMESPACE::coroutine_handle<U> hndl) noexcept {
                     if (!_future.available()) {
                         _future.set_coroutine(hndl.promise());
                     } else {
@@ -236,11 +236,11 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-namespace SEASTAR_INTERNAL_COROUTINE_NAMESPACE {
+namespace ACTOR_INTERNAL_COROUTINE_NAMESPACE {
 
     template<typename... T, typename... Args>
     class coroutine_traits<nil::actor::future<T...>, Args...>
         : public nil::actor::detail::coroutine_traits_base<T...> { };
 
-}    // namespace SEASTAR_INTERNAL_COROUTINE_NAMESPACE
+}    // namespace ACTOR_INTERNAL_COROUTINE_NAMESPACE
 

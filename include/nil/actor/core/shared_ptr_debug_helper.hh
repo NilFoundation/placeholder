@@ -24,7 +24,7 @@
 
 #pragma once
 
-#ifdef SEASTAR_DEBUG_SHARED_PTR
+#ifdef ACTOR_DEBUG_SHARED_PTR
 
 #include <thread>
 #include <cassert>

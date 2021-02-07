@@ -45,7 +45,7 @@ namespace nil {
         class scheduling_group;
 
         struct jmp_buf_link {
-#ifdef SEASTAR_ASAN_ENABLED
+#ifdef ACTOR_ASAN_ENABLED
             ucontext_t context;
             void *fake_stack = nullptr;
             const void *stack_bottom;

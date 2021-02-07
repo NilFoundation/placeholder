@@ -62,7 +62,7 @@ namespace nil {
             }
 
             int entry_point(int argc, char **argv) {
-#ifndef SEASTAR_ASAN_ENABLED
+#ifndef ACTOR_ASAN_ENABLED
                 // Before we call into boost, install some dummy signal
                 // handlers. This seems to be the only way to stop boost from
                 // installing its own handlers, which disables our backtrace

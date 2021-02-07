@@ -24,7 +24,7 @@
 //
 #pragma once
 
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
 
 #include <bitset>
 #include <rte_config.h>
@@ -71,4 +71,4 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-#endif    // SEASTAR_HAVE_DPDK
+#endif    // ACTOR_HAVE_DPDK

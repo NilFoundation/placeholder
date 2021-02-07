@@ -73,7 +73,7 @@ future<> do_with_distributed(Func &&func) {
     return func(*x).finally([x] { return x->stop(); }).finally([x] {});
 }
 
-SEASTAR_TEST_CASE(test_that_each_core_gets_the_arguments) {
+ACTOR_TEST_CASE(test_that_each_core_gets_the_arguments) {
     return do_with_distributed<X>([](auto &x) {
         return x.start().then([&x] {
             return x.map_reduce(
@@ -88,7 +88,7 @@ SEASTAR_TEST_CASE(test_that_each_core_gets_the_arguments) {
     });
 }
 
-SEASTAR_TEST_CASE(test_functor_version) {
+ACTOR_TEST_CASE(test_functor_version) {
     return do_with_distributed<X>([](auto &x) {
         return x.start().then([&x] {
             return x.map_reduce(
@@ -111,7 +111,7 @@ struct Y {
     }
 };
 
-SEASTAR_TEST_CASE(test_constructor_argument_is_passed_to_each_core) {
+ACTOR_TEST_CASE(test_constructor_argument_is_passed_to_each_core) {
     return do_with_distributed<Y>([](auto &y) {
         return y.start(sstring("hello")).then([&y] {
             return y.invoke_on_all([](Y &y) {
@@ -123,7 +123,7 @@ SEASTAR_TEST_CASE(test_constructor_argument_is_passed_to_each_core) {
     });
 }
 
-SEASTAR_TEST_CASE(test_map_reduce) {
+ACTOR_TEST_CASE(test_map_reduce) {
     return do_with_distributed<X>([](distributed<X> &x) {
         return x.start().then([&x] {
             return x.map_reduce0(std::mem_fn(&X::cpu_id_squared), 0, std::plus<int>()).then([](int result) {
@@ -136,14 +136,14 @@ SEASTAR_TEST_CASE(test_map_reduce) {
     });
 }
 
-SEASTAR_TEST_CASE(test_async) {
+ACTOR_TEST_CASE(test_async) {
     return do_with_distributed<async_service>([](distributed<async_service> &x) {
                return x.start().then([&x] { return x.invoke_on_all(&async_service::run); });
            })
         .then([] { return sleep(std::chrono::milliseconds(100 * (smp::count + 1))); });
 }
 
-SEASTAR_TEST_CASE(test_invoke_on_others) {
+ACTOR_TEST_CASE(test_invoke_on_others) {
     return nil::actor::async([] {
         struct my_service {
             int counter = 0;
@@ -203,7 +203,7 @@ struct remote_worker {
     }
 };
 
-SEASTAR_TEST_CASE(test_smp_service_groups) {
+ACTOR_TEST_CASE(test_smp_service_groups) {
     return async([] {
         smp_service_group_config ssgc1;
         ssgc1.max_nonlocal_requests = 1;
@@ -229,7 +229,7 @@ SEASTAR_TEST_CASE(test_smp_service_groups) {
     });
 }
 
-SEASTAR_TEST_CASE(test_smp_service_groups_re_construction) {
+ACTOR_TEST_CASE(test_smp_service_groups_re_construction) {
     // During development of the feature, we saw a bug where the vector
     // holding the groups did not expand correctly. This test triggers the
     // bug.
@@ -243,7 +243,7 @@ SEASTAR_TEST_CASE(test_smp_service_groups_re_construction) {
     });
 }
 
-SEASTAR_TEST_CASE(test_smp_timeout) {
+ACTOR_TEST_CASE(test_smp_timeout) {
     return async([] {
         smp_service_group_config ssgc1;
         ssgc1.max_nonlocal_requests = 1;
@@ -288,7 +288,7 @@ SEASTAR_TEST_CASE(test_smp_timeout) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_sharded_parameter) {
+ACTOR_THREAD_TEST_CASE(test_sharded_parameter) {
     struct dependency {
         unsigned val = this_shard_id() * 7;
     };

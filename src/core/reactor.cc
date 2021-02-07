@@ -88,7 +88,7 @@
 #define min min /* prevent xfs.h from defining min() as a macro */
 #include <xfs/xfs.h>
 #undef min
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
 #include <nil/actor/core/dpdk_rte.hh>
 #include <rte_lcore.h>
 #include <rte_launch.h>
@@ -103,7 +103,7 @@
 #include <cxxabi.h>
 #endif
 
-#ifdef SEASTAR_SHUFFLE_TASK_QUEUE
+#ifdef ACTOR_SHUFFLE_TASK_QUEUE
 #include <random>
 #endif
 
@@ -134,7 +134,7 @@
 
 #include <yaml-cpp/yaml.h>
 
-#ifdef SEASTAR_TASK_HISTOGRAM
+#ifdef ACTOR_TASK_HISTOGRAM
 #include <typeinfo>
 #endif
 
@@ -470,7 +470,7 @@ namespace nil {
 
         namespace detail {
 
-#ifdef SEASTAR_TASK_HISTOGRAM
+#ifdef ACTOR_TASK_HISTOGRAM
 
             class task_histogram {
                 static constexpr unsigned max_countdown = 1'000'000;
@@ -502,7 +502,7 @@ namespace nil {
 #endif
 
             void task_histogram_add_task(const task &t) {
-#ifdef SEASTAR_TASK_HISTOGRAM
+#ifdef ACTOR_TASK_HISTOGRAM
                 this_thread_task_histogram.add(t);
 #endif
             }
@@ -2257,7 +2257,7 @@ namespace nil {
             }
         }
 
-#ifdef SEASTAR_SHUFFLE_TASK_QUEUE
+#ifdef ACTOR_SHUFFLE_TASK_QUEUE
         void reactor::shuffle(task *&t, task_queue &q) {
             static thread_local std::mt19937 gen = std::mt19937(std::default_random_engine()());
             std::uniform_int_distribution<size_t> tasks_dist {0, q._q.size() - 1};
@@ -2703,7 +2703,7 @@ namespace nil {
         }
 
         int reactor::run() {
-#ifndef SEASTAR_ASAN_ENABLED
+#ifndef ACTOR_ASAN_ENABLED
             // SIGSTKSZ is too small when using asan. We also don't need to
             // handle SIGSEGV ourselves when using asan, so just don't install
             // a signal handler stack.
@@ -3392,7 +3392,7 @@ namespace nil {
                 format("Internal reactor implementation ({})", reactor_backend_selector::available()).c_str())(
                 "aio-fsync", bpo::value<bool>()->default_value(kernel_supports_aio_fsync()),
                 "Use Linux aio for fsync() calls. This reduces latency; requires Linux 4.18 or later.")
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                 ("heapprof", "enable seastar heap profiling")
 #endif
                 ;
@@ -3415,7 +3415,7 @@ namespace nil {
                 "lock-memory", bpo::value<bool>(),
                 "lock all memory (prevents swapping)")("thread-affinity", bpo::value<bool>()->default_value(true),
                                                        "pin threads to their cpus (disable for overprovisioning)")
-#ifdef SEASTAR_HAVE_HWLOC
+#ifdef ACTOR_HAVE_HWLOC
                 ("num-io-queues", bpo::value<unsigned>(),
                  "Number of IO queues. Each IO unit will be responsible for a fraction of the IO requests. Defaults to "
                  "the "
@@ -3436,11 +3436,11 @@ namespace nil {
                         "io-properties", bpo::value<std::string>(),
                         "a YAML string describing the characteristics of the I/O Subsystem")(
                         "mbind", bpo::value<bool>()->default_value(true), "enable mbind")
-#ifndef SEASTAR_NO_EXCEPTION_HACK
+#ifndef ACTOR_NO_EXCEPTION_HACK
                         ("enable-glibc-exception-scaling-workaround", bpo::value<bool>()->default_value(true),
                          "enable workaround for glibc/gcc c++ exception scalablity problem")
 #endif
-#ifdef SEASTAR_HAVE_HWLOC
+#ifdef ACTOR_HAVE_HWLOC
                             ("allow-cpus-in-remote-numa-nodes", bpo::value<bool>()->default_value(true),
                              "if some CPUs are found not to have any local NUMA nodes, allow assigning them to remote "
                              "ones")
@@ -3482,7 +3482,7 @@ namespace nil {
             alien::smp::_qs[this_shard_id()].start();
         }
 
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
 
         int dpdk_thread_adaptor(void *f) {
             (*static_cast<std::function<void()> *>(f))();
@@ -3492,7 +3492,7 @@ namespace nil {
 #endif
 
         void smp::join_all() {
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
             if (_using_dpdk) {
                 rte_eal_mp_wait_lcore();
                 return;
@@ -3759,7 +3759,7 @@ namespace nil {
         }
 
         void smp::configure(boost::program_options::variables_map configuration, reactor_config reactor_cfg) {
-#ifndef SEASTAR_NO_EXCEPTION_HACK
+#ifndef ACTOR_NO_EXCEPTION_HACK
             if (configuration["enable-glibc-exception-scaling-workaround"].as<bool>()) {
                 init_phdr_cache();
             }
@@ -3782,7 +3782,7 @@ namespace nil {
             }
             pthread_sigmask(SIG_BLOCK, &sigs, nullptr);
 
-#ifndef SEASTAR_ASAN_ENABLED
+#ifndef ACTOR_ASAN_ENABLED
             // We don't need to handle SIGSEGV when asan is enabled.
             install_oneshot_signal_handler<SIGSEGV, sigsegv_action>();
 #else
@@ -3790,7 +3790,7 @@ namespace nil {
 #endif
             install_oneshot_signal_handler<SIGABRT, sigabrt_action>();
 
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
             _using_dpdk = configuration.count("dpdk-pmd");
 #endif
             auto thread_affinity = configuration["thread-affinity"].as<bool>();
@@ -3847,7 +3847,7 @@ namespace nil {
             resource::configuration rc;
             if (configuration.count("memory")) {
                 rc.total_memory = parse_memory_size(configuration["memory"].as<std::string>());
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
                 if (configuration.count("hugepages") &&
                     !configuration["network-stack"].as<std::string>().compare("native") && _using_dpdk) {
                     size_t dpdk_memory = dpdk::eal::mem_size(smp::count);
@@ -3906,7 +3906,7 @@ namespace nil {
             }
             rc.num_io_groups = disk_config.num_io_groups();
 
-#ifdef SEASTAR_HAVE_HWLOC
+#ifdef ACTOR_HAVE_HWLOC
             if (configuration["allow-cpus-in-remote-numa-nodes"].as<bool>()) {
                 rc.assign_orphan_cpus = true;
             }
@@ -3933,7 +3933,7 @@ namespace nil {
                 memory::set_heap_profiling_enabled(heapprof_enabled);
             }
 
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
             if (smp::_using_dpdk) {
                 dpdk::eal::cpuset cpus;
                 for (auto &&a : allocations) {
@@ -4048,7 +4048,7 @@ namespace nil {
                 alloc_io_queue(0, dev_id);
             }
 
-#ifdef SEASTAR_HAVE_DPDK
+#ifdef ACTOR_HAVE_DPDK
             if (_using_dpdk) {
                 auto it = _thread_loops.begin();
                 RTE_LCORE_FOREACH_SLAVE(i) {
@@ -4498,7 +4498,7 @@ namespace nil {
 
         }    // namespace detail
 
-#ifdef SEASTAR_TASK_BACKTRACE
+#ifdef ACTOR_TASK_BACKTRACE
 
         void task::make_backtrace() noexcept {
             memory::disable_backtrace_temporarily dbt;

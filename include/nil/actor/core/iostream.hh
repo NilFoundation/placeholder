@@ -204,7 +204,7 @@ namespace nil {
         };
 
         // Consumer concept, for consume() method
-        SEASTAR_CONCEPT(
+        ACTOR_CONCEPT(
             // The consumer should operate on the data given to it, and
             // return a future "consumption result", which can be
             //  - continue_consuming, if the consumer has consumed all the input given
@@ -282,11 +282,11 @@ namespace nil {
             /// prematurely reaching the end of stream is *not* an I/O error.
             future<temporary_buffer<CharType>> read_exactly(size_t n);
             template<typename Consumer>
-            SEASTAR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
+            ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
                             ObsoleteInputStreamConsumer<Consumer, CharType>)
             future<> consume(Consumer &&c);
             template<typename Consumer>
-            SEASTAR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
+            ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
                             ObsoleteInputStreamConsumer<Consumer, CharType>)
             future<> consume(Consumer &c);
             bool eof() const {

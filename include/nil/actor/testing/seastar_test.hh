@@ -66,10 +66,10 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-#ifdef SEASTAR_TESTING_MAIN
+#ifdef ACTOR_TESTING_MAIN
 
 int main(int argc, char **argv) {
     return nil::actor::testing::entry_point(argc, argv);
 }
 
-#endif    // SEASTAR_TESTING_MAIN
+#endif    // ACTOR_TESTING_MAIN

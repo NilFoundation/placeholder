@@ -42,7 +42,7 @@ public:
     }
 };
 
-SEASTAR_TEST_CASE(test_make_tmp_file) {
+ACTOR_TEST_CASE(test_make_tmp_file) {
     return make_tmp_file().then([](tmp_file tf) {
         return async([tf = std::move(tf)]() mutable {
             const sstring tmp_path = tf.get_path().native();
@@ -60,7 +60,7 @@ static temporary_buffer<char> get_init_buffer(file &f) {
     return buf;
 }
 
-SEASTAR_THREAD_TEST_CASE(test_tmp_file) {
+ACTOR_THREAD_TEST_CASE(test_tmp_file) {
     size_t expected = ~0;
     size_t actual = 0;
 
@@ -78,7 +78,7 @@ SEASTAR_THREAD_TEST_CASE(test_tmp_file) {
     BOOST_REQUIRE_EQUAL(expected, actual);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_non_existing_TMPDIR) {
+ACTOR_THREAD_TEST_CASE(test_non_existing_TMPDIR) {
     auto old_tmpdir = getenv("TMPDIR");
     setenv("TMPDIR", "/tmp/non-existing-TMPDIR", true);
     BOOST_REQUIRE_EXCEPTION(tmp_file::do_with("/tmp/non-existing-TMPDIR", [](tmp_file &tf) {}).get(), std::system_error,
@@ -94,7 +94,7 @@ static future<> touch_file(const sstring &filename, open_flags oflags = open_fla
     return open_file_dma(filename, oflags).then([](file f) { return f.close().finally([f] {}); });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_recursive_remove_directory) {
+ACTOR_THREAD_TEST_CASE(test_recursive_remove_directory) {
     struct test_dir {
         test_dir *parent;
         sstring name;
@@ -159,7 +159,7 @@ SEASTAR_THREAD_TEST_CASE(test_recursive_remove_directory) {
     BOOST_REQUIRE(!file_exists(base.path().native()).get0());
 }
 
-SEASTAR_TEST_CASE(test_make_tmp_dir) {
+ACTOR_TEST_CASE(test_make_tmp_dir) {
     return make_tmp_dir().then([](tmp_dir td) {
         return async([td = std::move(td)]() mutable {
             const sstring tmp_path = td.get_path().native();
@@ -170,7 +170,7 @@ SEASTAR_TEST_CASE(test_make_tmp_dir) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_tmp_dir) {
+ACTOR_THREAD_TEST_CASE(test_tmp_dir) {
     size_t expected;
     size_t actual;
     tmp_dir::do_with([&](tmp_dir &td) {
@@ -189,7 +189,7 @@ SEASTAR_THREAD_TEST_CASE(test_tmp_dir) {
     BOOST_REQUIRE_EQUAL(expected, actual);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_tmp_dir_with_path) {
+ACTOR_THREAD_TEST_CASE(test_tmp_dir_with_path) {
     size_t expected;
     size_t actual;
     tmp_dir::do_with(".", [&](tmp_dir &td) {
@@ -208,13 +208,13 @@ SEASTAR_THREAD_TEST_CASE(test_tmp_dir_with_path) {
     BOOST_REQUIRE_EQUAL(expected, actual);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_tmp_dir_with_non_existing_path) {
+ACTOR_THREAD_TEST_CASE(test_tmp_dir_with_non_existing_path) {
     BOOST_REQUIRE_EXCEPTION(tmp_dir::do_with("/tmp/this_name_should_not_exist", [](tmp_dir &) {}).get(),
                             std::system_error,
                             testing::exception_predicate::message_contains("No such file or directory"));
 }
 
-SEASTAR_TEST_CASE(tmp_dir_with_thread_test) {
+ACTOR_TEST_CASE(tmp_dir_with_thread_test) {
     return tmp_dir::do_with_thread([](tmp_dir &td) {
         tmp_file tf = make_tmp_file(td.get_path()).get0();
         auto &f = tf.get_file();
@@ -227,7 +227,7 @@ SEASTAR_TEST_CASE(tmp_dir_with_thread_test) {
     });
 }
 
-SEASTAR_TEST_CASE(tmp_dir_with_leftovers_test) {
+ACTOR_TEST_CASE(tmp_dir_with_leftovers_test) {
     return tmp_dir::do_with_thread([](tmp_dir &td) {
         fs::path path = td.get_path() / "testfile.tmp";
         touch_file(path.native()).get();
@@ -235,7 +235,7 @@ SEASTAR_TEST_CASE(tmp_dir_with_leftovers_test) {
     });
 }
 
-SEASTAR_TEST_CASE(tmp_dir_do_with_fail_func_test) {
+ACTOR_TEST_CASE(tmp_dir_do_with_fail_func_test) {
     return tmp_dir::do_with_thread([](tmp_dir &outer) {
         BOOST_REQUIRE_THROW(tmp_dir::do_with([](tmp_dir &inner) mutable {
                                 return make_exception_future<>(expected_exception());
@@ -244,7 +244,7 @@ SEASTAR_TEST_CASE(tmp_dir_do_with_fail_func_test) {
     });
 }
 
-SEASTAR_TEST_CASE(tmp_dir_do_with_fail_remove_test) {
+ACTOR_TEST_CASE(tmp_dir_do_with_fail_remove_test) {
     return tmp_dir::do_with_thread([](tmp_dir &outer) {
         auto saved_default_tmpdir = default_tmpdir();
         sstring outer_path = outer.get_path().native();
@@ -261,14 +261,14 @@ SEASTAR_TEST_CASE(tmp_dir_do_with_fail_remove_test) {
     });
 }
 
-SEASTAR_TEST_CASE(tmp_dir_do_with_thread_fail_func_test) {
+ACTOR_TEST_CASE(tmp_dir_do_with_thread_fail_func_test) {
     return tmp_dir::do_with_thread([](tmp_dir &outer) {
         BOOST_REQUIRE_THROW(tmp_dir::do_with_thread([](tmp_dir &inner) mutable { throw expected_exception(); }).get(),
                             expected_exception);
     });
 }
 
-SEASTAR_TEST_CASE(tmp_dir_do_with_thread_fail_remove_test) {
+ACTOR_TEST_CASE(tmp_dir_do_with_thread_fail_remove_test) {
     return tmp_dir::do_with_thread([](tmp_dir &outer) {
         auto saved_default_tmpdir = default_tmpdir();
         sstring outer_path = outer.get_path().native();

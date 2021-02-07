@@ -44,7 +44,7 @@
 using namespace nil::actor;
 namespace fs = std::filesystem;
 
-SEASTAR_TEST_CASE(open_flags_test) {
+ACTOR_TEST_CASE(open_flags_test) {
     open_flags flags = open_flags::rw | open_flags::create | open_flags::exclusive;
     BOOST_REQUIRE(std::underlying_type_t<open_flags>(flags) ==
                   (std::underlying_type_t<open_flags>(open_flags::rw) |
@@ -56,7 +56,7 @@ SEASTAR_TEST_CASE(open_flags_test) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(access_flags_test) {
+ACTOR_TEST_CASE(access_flags_test) {
     access_flags flags = access_flags::read | access_flags::write | access_flags::execute;
     BOOST_REQUIRE(std::underlying_type_t<open_flags>(flags) ==
                   (std::underlying_type_t<open_flags>(access_flags::read) |
@@ -65,7 +65,7 @@ SEASTAR_TEST_CASE(access_flags_test) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(file_exists_test) {
+ACTOR_TEST_CASE(file_exists_test) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::rw | open_flags::create).get0();
@@ -78,7 +78,7 @@ SEASTAR_TEST_CASE(file_exists_test) {
     });
 }
 
-SEASTAR_TEST_CASE(handle_bad_alloc_test) {
+ACTOR_TEST_CASE(handle_bad_alloc_test) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::rw | open_flags::create).get0();
@@ -89,7 +89,7 @@ SEASTAR_TEST_CASE(handle_bad_alloc_test) {
     });
 }
 
-SEASTAR_TEST_CASE(file_access_test) {
+ACTOR_TEST_CASE(file_access_test) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::rw | open_flags::create).get0();
@@ -107,7 +107,7 @@ struct file_test {
     semaphore par = {1000};
 };
 
-SEASTAR_TEST_CASE(test1) {
+ACTOR_TEST_CASE(test1) {
     // Note: this tests generates a file "testfile.tmp" with size 4096 * max (= 40 MB).
     return tmp_dir::do_with([](tmp_dir &t) {
         static constexpr auto max = 10000;
@@ -142,7 +142,7 @@ SEASTAR_TEST_CASE(test1) {
     });
 }
 
-SEASTAR_TEST_CASE(parallel_write_fsync) {
+ACTOR_TEST_CASE(parallel_write_fsync) {
     return detail::report_reactor_stalls([] {
                return tmp_dir::do_with_thread([](tmp_dir &t) {
                    // Plan: open a file and write to it like crazy. In parallel fsync() it all the time.
@@ -198,7 +198,7 @@ SEASTAR_TEST_CASE(parallel_write_fsync) {
         .then([](detail::stall_report sr) { std::cout << "parallel_write_fsync: " << sr << "\n"; });
 }
 
-SEASTAR_TEST_CASE(test_iov_max) {
+ACTOR_TEST_CASE(test_iov_max) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         static constexpr size_t buffer_size = 4096;
         static constexpr size_t buffer_count = IOV_MAX * 2 + 1;
@@ -251,7 +251,7 @@ SEASTAR_TEST_CASE(test_iov_max) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_sanitize_iovecs) {
+ACTOR_THREAD_TEST_CASE(test_sanitize_iovecs) {
     auto buf = temporary_buffer<char>::aligned(4096, 4096);
 
     auto iovec_equal = [](const iovec &a, const iovec &b) {
@@ -315,7 +315,7 @@ SEASTAR_THREAD_TEST_CASE(test_sanitize_iovecs) {
     }
 }
 
-SEASTAR_TEST_CASE(test_chmod) {
+ACTOR_TEST_CASE(test_chmod) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto oflags = open_flags::rw | open_flags::create;
         sstring filename = (t.get_path() / "testfile.tmp").native();
@@ -347,7 +347,7 @@ SEASTAR_TEST_CASE(test_chmod) {
     });
 }
 
-SEASTAR_TEST_CASE(test_open_file_dma_permissions) {
+ACTOR_TEST_CASE(test_open_file_dma_permissions) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto oflags = open_flags::rw | open_flags::create;
         sstring filename = (t.get_path() / "testfile.tmp").native();
@@ -381,7 +381,7 @@ SEASTAR_TEST_CASE(test_open_file_dma_permissions) {
     });
 }
 
-SEASTAR_TEST_CASE(test_make_directory_permissions) {
+ACTOR_TEST_CASE(test_make_directory_permissions) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring dirname = (t.get_path() / "testdir.tmp").native();
         auto orig_umask = umask(0);
@@ -407,7 +407,7 @@ SEASTAR_TEST_CASE(test_make_directory_permissions) {
     });
 }
 
-SEASTAR_TEST_CASE(test_touch_directory_permissions) {
+ACTOR_TEST_CASE(test_touch_directory_permissions) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring dirname = (t.get_path() / "testdir.tmp").native();
         auto orig_umask = umask(0);
@@ -441,7 +441,7 @@ SEASTAR_TEST_CASE(test_touch_directory_permissions) {
     });
 }
 
-SEASTAR_TEST_CASE(test_recursive_touch_directory_permissions) {
+ACTOR_TEST_CASE(test_recursive_touch_directory_permissions) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring base_dirname = (t.get_path() / "testbasedir.tmp").native();
         sstring dirpath = base_dirname + "/" + "testsubdir.tmp";
@@ -494,7 +494,7 @@ SEASTAR_TEST_CASE(test_recursive_touch_directory_permissions) {
     });
 }
 
-SEASTAR_TEST_CASE(test_file_stat_method) {
+ACTOR_TEST_CASE(test_file_stat_method) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto oflags = open_flags::rw | open_flags::create;
         sstring filename = (t.get_path() / "testfile.tmp").native();
@@ -561,7 +561,7 @@ public:
     }
 };
 
-SEASTAR_TEST_CASE(test_underlying_file) {
+ACTOR_TEST_CASE(test_underlying_file) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto oflags = open_flags::rw | open_flags::create;
         sstring filename = (t.get_path() / "testfile.tmp").native();
@@ -574,7 +574,7 @@ SEASTAR_TEST_CASE(test_underlying_file) {
     });
 }
 
-SEASTAR_TEST_CASE(test_file_stat_method_with_file) {
+ACTOR_TEST_CASE(test_file_stat_method_with_file) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto oflags = open_flags::rw | open_flags::create | open_flags::truncate;
         sstring filename = (t.get_path() / "testfile.tmp").native();
@@ -597,7 +597,7 @@ SEASTAR_TEST_CASE(test_file_stat_method_with_file) {
     });
 }
 
-SEASTAR_TEST_CASE(test_open_error_with_file) {
+ACTOR_TEST_CASE(test_open_error_with_file) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto open_file = [&t](bool do_open) {
             auto oflags = open_flags::ro;
@@ -628,7 +628,7 @@ SEASTAR_TEST_CASE(test_open_error_with_file) {
     });
 }
 
-SEASTAR_TEST_CASE(test_with_file_close_on_failure) {
+ACTOR_TEST_CASE(test_with_file_close_on_failure) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto oflags = open_flags::rw | open_flags::create | open_flags::truncate;
         sstring filename = (t.get_path() / "testfile.tmp").native();
@@ -664,7 +664,7 @@ namespace nil {
     }
 }    // namespace nil
 
-SEASTAR_TEST_CASE(test_nowait_flag_correctness) {
+ACTOR_TEST_CASE(test_nowait_flag_correctness) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto oflags = open_flags::rw | open_flags::create;
         sstring filename = (t.get_path() / "testfile.tmp").native();
@@ -704,7 +704,7 @@ SEASTAR_TEST_CASE(test_nowait_flag_correctness) {
     });
 }
 
-SEASTAR_TEST_CASE(test_destruct_just_constructed_append_challenged_file) {
+ACTOR_TEST_CASE(test_destruct_just_constructed_append_challenged_file) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto oflags = open_flags::rw | open_flags::create;
@@ -712,7 +712,7 @@ SEASTAR_TEST_CASE(test_destruct_just_constructed_append_challenged_file) {
     });
 }
 
-SEASTAR_TEST_CASE(test_destruct_just_constructed_append_challenged_file_with_sloppy_size) {
+ACTOR_TEST_CASE(test_destruct_just_constructed_append_challenged_file_with_sloppy_size) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto oflags = open_flags::rw | open_flags::create;
@@ -722,7 +722,7 @@ SEASTAR_TEST_CASE(test_destruct_just_constructed_append_challenged_file_with_slo
     });
 }
 
-SEASTAR_TEST_CASE(test_destruct_append_challenged_file_after_write) {
+ACTOR_TEST_CASE(test_destruct_append_challenged_file_after_write) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto buf = allocate_aligned_buffer<unsigned char>(4096, 4096);
@@ -733,7 +733,7 @@ SEASTAR_TEST_CASE(test_destruct_append_challenged_file_after_write) {
     });
 }
 
-SEASTAR_TEST_CASE(test_destruct_append_challenged_file_after_read) {
+ACTOR_TEST_CASE(test_destruct_append_challenged_file_after_read) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto buf = allocate_aligned_buffer<unsigned char>(4096, 4096);
@@ -749,7 +749,7 @@ SEASTAR_TEST_CASE(test_destruct_append_challenged_file_after_read) {
     });
 }
 
-SEASTAR_TEST_CASE(test_dma_iovec) {
+ACTOR_TEST_CASE(test_dma_iovec) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         static constexpr size_t alignment = 4096;
         auto wbuf = allocate_aligned_buffer<char>(alignment, alignment);
@@ -790,7 +790,7 @@ SEASTAR_TEST_CASE(test_dma_iovec) {
     });
 }
 
-SEASTAR_TEST_CASE(test_intent) {
+ACTOR_TEST_CASE(test_intent) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         sstring filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::rw | open_flags::create).get0();

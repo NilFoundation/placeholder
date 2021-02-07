@@ -60,7 +60,7 @@ struct reader {
     }
 };
 
-SEASTAR_TEST_CASE(test_fstream) {
+ACTOR_TEST_CASE(test_fstream) {
     return tmp_dir::do_with([](tmp_dir &t) {
         auto filename = (t.get_path() / "testfile.tmp").native();
         return open_file_dma(filename, open_flags::rw | open_flags::create | open_flags::truncate)
@@ -116,7 +116,7 @@ SEASTAR_TEST_CASE(test_fstream) {
     });
 }
 
-SEASTAR_TEST_CASE(test_consume_skip_bytes) {
+ACTOR_TEST_CASE(test_consume_skip_bytes) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::rw | open_flags::create | open_flags::truncate).get0();
@@ -184,7 +184,7 @@ SEASTAR_TEST_CASE(test_consume_skip_bytes) {
     });
 }
 
-SEASTAR_TEST_CASE(test_fstream_unaligned) {
+ACTOR_TEST_CASE(test_fstream_unaligned) {
     return tmp_dir::do_with([](tmp_dir &t) {
         auto filename = (t.get_path() / "testfile.tmp").native();
         return open_file_dma(filename, open_flags::rw | open_flags::create | open_flags::truncate)
@@ -266,23 +266,23 @@ future<> test_consume_until_end(uint64_t size) {
     });
 }
 
-SEASTAR_TEST_CASE(test_consume_aligned_file) {
+ACTOR_TEST_CASE(test_consume_aligned_file) {
     return test_consume_until_end(4096);
 }
 
-SEASTAR_TEST_CASE(test_consume_empty_file) {
+ACTOR_TEST_CASE(test_consume_empty_file) {
     return test_consume_until_end(0);
 }
 
-SEASTAR_TEST_CASE(test_consume_unaligned_file) {
+ACTOR_TEST_CASE(test_consume_unaligned_file) {
     return test_consume_until_end(1);
 }
 
-SEASTAR_TEST_CASE(test_consume_unaligned_file_large) {
+ACTOR_TEST_CASE(test_consume_unaligned_file_large) {
     return test_consume_until_end((1 << 20) + 1);
 }
 
-SEASTAR_TEST_CASE(test_input_stream_esp_around_eof) {
+ACTOR_TEST_CASE(test_input_stream_esp_around_eof) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto flen = uint64_t(5341);
         auto rdist = std::uniform_int_distribution<char>();
@@ -347,8 +347,8 @@ SEASTAR_TEST_CASE(test_input_stream_esp_around_eof) {
     });
 }
 
-#if SEASTAR_API_LEVEL >= 3
-SEASTAR_TEST_CASE(without_api_prefix) {
+#if ACTOR_API_LEVEL >= 3
+ACTOR_TEST_CASE(without_api_prefix) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::rw | open_flags::create | open_flags::truncate).get0();
@@ -358,7 +358,7 @@ SEASTAR_TEST_CASE(without_api_prefix) {
 }
 #endif
 
-SEASTAR_TEST_CASE(file_handle_test) {
+ACTOR_TEST_CASE(file_handle_test) {
     return tmp_dir::do_with_thread([](tmp_dir &t) {
         auto filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::create | open_flags::truncate | open_flags::rw).get0();
@@ -386,7 +386,7 @@ SEASTAR_TEST_CASE(file_handle_test) {
     });
 }
 
-SEASTAR_TEST_CASE(test_fstream_slow_start) {
+ACTOR_TEST_CASE(test_fstream_slow_start) {
     return nil::actor::async([] {
         static constexpr size_t file_size = 128 * 1024 * 1024;
         static constexpr size_t buffer_size = 260 * 1024;

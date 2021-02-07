@@ -198,7 +198,7 @@ namespace nil {
         }    // namespace detail
 
         /// \cond internal
-        SEASTAR_CONCEPT(
+        ACTOR_CONCEPT(
 
             namespace impl {
                 // Want: folds
@@ -233,7 +233,7 @@ namespace nil {
         namespace detail {
 
             template<typename... Futs>
-            SEASTAR_CONCEPT(requires nil::actor::AllAreFutures<Futs...>)
+            ACTOR_CONCEPT(requires nil::actor::AllAreFutures<Futs...>)
             inline future<std::tuple<Futs...>> when_all_impl(Futs &&...futs) noexcept {
                 using state = when_all_state<identity_futures_tuple<Futs...>, Futs...>;
                 return state::wait_all(std::forward<Futs>(futs)...);
@@ -321,18 +321,17 @@ namespace nil {
         /// \return an \c std::vector<> of all the futures in the input; when
         ///         ready, all contained futures will be ready as well.
         template<typename FutureIterator>
-        SEASTAR_CONCEPT(requires requires(FutureIterator i) {
+        ACTOR_CONCEPT(requires requires(FutureIterator i) {
             {*i++};
             requires is_future<std::remove_reference_t<decltype(*i)>>::value;
         })
         inline future<std::vector<typename std::iterator_traits<FutureIterator>::value_type>> when_all(
             FutureIterator begin,
             FutureIterator end) noexcept {
-            namespace si = internal;
             using itraits = std::iterator_traits<FutureIterator>;
-            using result_transform = si::identity_futures_vector<typename itraits::value_type>;
+            using result_transform = detail::identity_futures_vector<typename itraits::value_type>;
             try {
-                return si::do_when_all<result_transform>(std::move(begin), std::move(end));
+                return detail::do_when_all<result_transform>(std::move(begin), std::move(end));
             } catch (...) {
                 return result_transform::current_exception_as_future();
             }
@@ -350,7 +349,7 @@ namespace nil {
 
             template<typename... Elements>
             struct tuple_to_future<std::tuple<Elements...>> {
-#if SEASTAR_API_LEVEL < 4
+#if ACTOR_API_LEVEL < 4
                 using value_type = when_all_succeed_tuple<Elements...>;
 #else
                 using value_type = std::tuple<Elements...>;
@@ -370,7 +369,7 @@ namespace nil {
                 }
             };
 
-#if SEASTAR_API_LEVEL < 4
+#if ACTOR_API_LEVEL < 4
 
             template<typename Element>
             struct tuple_to_future<std::tuple<Element>> {
@@ -515,7 +514,7 @@ namespace nil {
             };
 
             template<typename... Futures>
-            SEASTAR_CONCEPT(requires nil::actor::AllAreFutures<Futures...>)
+            ACTOR_CONCEPT(requires nil::actor::AllAreFutures<Futures...>)
             inline auto when_all_succeed_impl(Futures &&...futures) noexcept {
                 using state = when_all_state<extract_values_from_futures_tuple<Futures...>, Futures...>;
                 return state::wait_all(std::forward<Futures>(futures)...);
@@ -549,7 +548,7 @@ namespace nil {
         /// \param end an \c InputIterator designating the end of the range of futures
         /// \return an \c std::vector<> of all the valus in the input
         template<typename FutureIterator, typename = typename std::iterator_traits<FutureIterator>::value_type>
-        SEASTAR_CONCEPT(requires requires(FutureIterator i) {
+        ACTOR_CONCEPT(requires requires(FutureIterator i) {
             *i++;
             { i != i }
             ->std::convertible_to<bool>;

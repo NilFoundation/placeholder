@@ -33,8 +33,8 @@
 
 using namespace nil::actor;
 
-SEASTAR_TEST_CASE(alloc_almost_all_and_realloc_it_with_a_smaller_size) {
-#ifndef SEASTAR_DEFAULT_ALLOCATOR
+ACTOR_TEST_CASE(alloc_almost_all_and_realloc_it_with_a_smaller_size) {
+#ifndef ACTOR_DEFAULT_ALLOCATOR
     auto all = memory::stats().total_memory();
     auto reserve = size_t(0.02 * all);
     auto to_alloc = all - (reserve + (10 << 20));
@@ -53,8 +53,8 @@ SEASTAR_TEST_CASE(alloc_almost_all_and_realloc_it_with_a_smaller_size) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(malloc_0_and_free_it) {
-#ifndef SEASTAR_DEFAULT_ALLOCATOR
+ACTOR_TEST_CASE(malloc_0_and_free_it) {
+#ifndef ACTOR_DEFAULT_ALLOCATOR
     auto obj = malloc(0);
     BOOST_REQUIRE(obj != nullptr);
     free(obj);
@@ -62,7 +62,7 @@ SEASTAR_TEST_CASE(malloc_0_and_free_it) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_live_objects_counter_with_cross_cpu_free) {
+ACTOR_TEST_CASE(test_live_objects_counter_with_cross_cpu_free) {
     return smp::submit_to(1,
                           [] {
                               auto ret = std::vector<std::unique_ptr<bool>>(1000000);
@@ -77,7 +77,7 @@ SEASTAR_TEST_CASE(test_live_objects_counter_with_cross_cpu_free) {
         });
 }
 
-SEASTAR_TEST_CASE(test_aligned_alloc) {
+ACTOR_TEST_CASE(test_aligned_alloc) {
     for (size_t align = sizeof(void *); align <= 65536; align <<= 1) {
         for (size_t size = align; size <= align * 2; size <<= 1) {
             void *p = aligned_alloc(align, size);
@@ -90,7 +90,7 @@ SEASTAR_TEST_CASE(test_aligned_alloc) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_temporary_buffer_aligned) {
+ACTOR_TEST_CASE(test_temporary_buffer_aligned) {
     for (size_t align = sizeof(void *); align <= 65536; align <<= 1) {
         for (size_t size = align; size <= align * 2; size <<= 1) {
             auto buf = temporary_buffer<char>::aligned(align, size);
@@ -103,9 +103,9 @@ SEASTAR_TEST_CASE(test_temporary_buffer_aligned) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_memory_diagnostics) {
+ACTOR_TEST_CASE(test_memory_diagnostics) {
     auto report = memory::generate_memory_diagnostics_report();
-#ifdef SEASTAR_DEFAULT_ALLOCATOR
+#ifdef ACTOR_DEFAULT_ALLOCATOR
     BOOST_REQUIRE(report.length() == 0);    // empty report with default allocator
 #else
     // since the output format is unstructured text, not much
@@ -117,7 +117,7 @@ SEASTAR_TEST_CASE(test_memory_diagnostics) {
     return make_ready_future<>();
 }
 
-#ifndef SEASTAR_DEFAULT_ALLOCATOR
+#ifndef ACTOR_DEFAULT_ALLOCATOR
 
 struct thread_alloc_info {
     memory::statistics before;
@@ -169,7 +169,7 @@ void test_allocation_function(Func f) {
     BOOST_REQUIRE(alien_cross_frees == 1);
 }
 
-SEASTAR_TEST_CASE(test_foreign_function_use_glibc_malloc) {
+ACTOR_TEST_CASE(test_foreign_function_use_glibc_malloc) {
     test_allocation_function([]() -> void * { return malloc(1); });
     test_allocation_function([]() { return realloc(NULL, 10); });
     test_allocation_function([]() {

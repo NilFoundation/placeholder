@@ -65,7 +65,7 @@ namespace nil {
             bool fallocate(int fd, int mode, off_t offset, size_t len) {
 #if defined(__linux__)
                 return ::fallocate(fd, mode, offset, len) == 0;
-#elif defined(SEASTAR_HAS_POSIX_FALLOCATE)
+#elif defined(ACTOR_HAS_POSIX_FALLOCATE)
                 return posix_fallocate(fd, offset, len) == 0;
 #elif defined(_WIN32)
                 return _lseeki64(fd, offset, len) == len && 0 != SetEndOfFile((HANDLE)fd);

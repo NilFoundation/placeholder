@@ -66,14 +66,14 @@ void spin_some_cooperatively(std::chrono::duration<double> how_much) {
     }
 }
 
-SEASTAR_THREAD_TEST_CASE(normal_case) {
+ACTOR_THREAD_TEST_CASE(normal_case) {
     std::atomic<unsigned> reports {};
     temporary_stall_detector_settings tsds(10ms, [&] { ++reports; });
     spin_some_cooperatively(1s);
     BOOST_REQUIRE_EQUAL(reports, 0);
 }
 
-SEASTAR_THREAD_TEST_CASE(simple_stalls) {
+ACTOR_THREAD_TEST_CASE(simple_stalls) {
     std::atomic<unsigned> reports {};
     temporary_stall_detector_settings tsds(10ms, [&] { ++reports; });
     unsigned nr = 10;
@@ -88,7 +88,7 @@ SEASTAR_THREAD_TEST_CASE(simple_stalls) {
     BOOST_REQUIRE_EQUAL(reports, 5);
 }
 
-SEASTAR_THREAD_TEST_CASE(no_poll_no_stall) {
+ACTOR_THREAD_TEST_CASE(no_poll_no_stall) {
     std::atomic<unsigned> reports {};
     temporary_stall_detector_settings tsds(10ms, [&] { ++reports; });
     spin_some_cooperatively(1ms);    // need to yield so that stall detector change from above take effect

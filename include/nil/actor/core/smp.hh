@@ -403,7 +403,7 @@ namespace nil {
             ///         of \c func.
             /// \returns a future that resolves when all async invocations finish.
             template<typename Func>
-            SEASTAR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
+            ACTOR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
             static future<> invoke_on_all(smp_submit_to_options options, Func &&func) noexcept {
                 static_assert(std::is_same<future<>, typename futurize<std::result_of_t<Func()>>::type>::value,
                               "bad Func signature");
@@ -434,7 +434,7 @@ namespace nil {
             ///         of \c func.
             /// \returns a future that resolves when all async invocations finish.
             template<typename Func>
-            SEASTAR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
+            ACTOR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
             static future<> invoke_on_others(unsigned cpu_id, smp_submit_to_options options, Func func) noexcept {
                 static_assert(std::is_same<future<>, typename futurize<std::result_of_t<Func()>>::type>::value,
                               "bad Func signature");

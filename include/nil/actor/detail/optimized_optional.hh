@@ -24,7 +24,8 @@
 
 #pragma once
 
-#include <nil/actor/detail/concepts.hh>
+#include <boost/config.hpp>
+
 #include <nil/actor/detail/std-compat.hh>
 
 #include <type_traits>
@@ -33,16 +34,16 @@
 namespace nil {
     namespace actor {
 
-        SEASTAR_CONCEPT(
+#ifdef BOOST_HAS_CONCEPTS
 
-            template<typename T> concept OptimizableOptional = std::is_default_constructible<T>::value &&
-                                                               std::is_nothrow_move_assignable<T>::value &&
-                                                               requires(const T &obj) {
-                                                                   { bool(obj) }
-                                                                   noexcept;
-                                                               };
+        template<typename T>
+        concept OptimizableOptional = std::is_default_constructible<T>::value &&
+            std::is_nothrow_move_assignable<T>::value &&requires(const T &obj) {
+            { bool(obj) }
+            noexcept;
+        };
 
-        )
+#endif
 
         /// \c optimized_optional<> is intended mainly for use with classes that store
         /// their data externally and expect pointer to this data to be always non-null.

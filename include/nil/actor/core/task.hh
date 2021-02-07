@@ -34,7 +34,7 @@ namespace nil {
 
         class task {
             scheduling_group _sg;
-#ifdef SEASTAR_TASK_BACKTRACE
+#ifdef ACTOR_TASK_BACKTRACE
             shared_backtrace _bt;
 #endif
         protected:
@@ -54,7 +54,7 @@ namespace nil {
                 return _sg;
             }
             shared_backtrace get_backtrace() const;
-#ifdef SEASTAR_TASK_BACKTRACE
+#ifdef ACTOR_TASK_BACKTRACE
             void make_backtrace() noexcept;
 #else
             void make_backtrace() noexcept {
@@ -63,7 +63,7 @@ namespace nil {
         };
 
         inline shared_backtrace task::get_backtrace() const {
-#ifdef SEASTAR_TASK_BACKTRACE
+#ifdef ACTOR_TASK_BACKTRACE
             return _bt;
 #else
             return {};

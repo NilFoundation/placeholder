@@ -68,7 +68,7 @@ namespace nil {
                 throw std::system_error(r, std::system_category());
             }
 
-#ifndef SEASTAR_ASAN_ENABLED
+#ifndef ACTOR_ASAN_ENABLED
             auto stack_size = a._stack_size.size;
             if (!stack_size) {
                 stack_size = 2 << 20;

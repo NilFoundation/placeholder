@@ -31,7 +31,6 @@
 #include <nil/actor/core/metrics.hh>
 #include <nil/actor/core/scheduling.hh>
 #include <nil/actor/detail/reference_wrapper.hh>
-#include <nil/actor/detail/concepts.hh>
 #include <nil/actor/detail/noncopyable_function.hh>
 #include <nil/actor/detail/tuple_utils.hh>
 #include <nil/actor/detail/defer.hh>
@@ -223,7 +222,9 @@ namespace nil {
         /// \tparam Args  argument pack containing arguments to the function object, needs
         ///                   to have move constructor that doesn't throw
         template<typename ReturnType, typename... Args>
-        SEASTAR_CONCEPT(requires std::is_nothrow_move_constructible<std::tuple<Args...>>::value)
+#ifdef BOOST_HAS_CONCEPTS
+        requires std::is_nothrow_move_constructible<std::tuple<Args...>>::value)
+#endif
         class concrete_execution_stage final : public execution_stage {
             using args_tuple = std::tuple<Args...>;
             static_assert(std::is_nothrow_move_constructible<args_tuple>::value,
@@ -340,8 +341,10 @@ namespace nil {
         /// \tparam Args  argument pack containing arguments to the function object, needs
         ///                   to have move constructor that doesn't throw
         template<typename ReturnType, typename... Args>
-        SEASTAR_CONCEPT(requires std::is_nothrow_move_constructible<std::tuple<Args...>>::value)
-        class inheriting_concrete_execution_stage final : public inheriting_execution_stage {
+#ifdef BOOST_HAS_CONCEPTS
+        requires std::is_nothrow_move_constructible<std::tuple<Args...>>::value
+#endif
+            class inheriting_concrete_execution_stage final : public inheriting_execution_stage {
             using return_type = futurize_t<ReturnType>;
             using args_tuple = std::tuple<Args...>;
             using per_group_stage_type = concrete_execution_stage<ReturnType, Args...>;

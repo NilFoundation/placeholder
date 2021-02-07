@@ -187,7 +187,7 @@ namespace nil {
 
         template<typename CharType>
         template<typename Consumer>
-        SEASTAR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
+        ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
                         ObsoleteInputStreamConsumer<Consumer, CharType>)
         future<> input_stream<CharType>::consume(Consumer &&consumer) {
             return repeat([consumer = std::move(consumer), this]() mutable {
@@ -227,7 +227,7 @@ namespace nil {
 
         template<typename CharType>
         template<typename Consumer>
-        SEASTAR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
+        ACTOR_CONCEPT(requires InputStreamConsumer<Consumer, CharType> ||
                         ObsoleteInputStreamConsumer<Consumer, CharType>)
         future<> input_stream<CharType>::consume(Consumer &consumer) {
             return consume(std::ref(consumer));

@@ -106,10 +106,10 @@ namespace nil {
                 return the_alloc_failure_injector;
             }
 
-#ifdef SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION
+#ifdef ACTOR_ENABLE_ALLOC_FAILURE_INJECTION
 
-#ifdef SEASTAR_DEFAULT_ALLOCATOR
-#error SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION is not supported when using SEASTAR_DEFAULT_ALLOCATOR
+#ifdef ACTOR_DEFAULT_ALLOCATOR
+#error ACTOR_ENABLE_ALLOC_FAILURE_INJECTION is not supported when using ACTOR_DEFAULT_ALLOCATOR
 #endif
 
 #endif
@@ -120,7 +120,7 @@ namespace nil {
 
             /// \brief Marks a point in code which should be considered for failure injection.
             inline void on_alloc_point() {
-#ifdef SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION
+#ifdef ACTOR_ENABLE_ALLOC_FAILURE_INJECTION
                 local_failure_injector().on_alloc_point();
 #endif
             }

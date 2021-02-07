@@ -42,7 +42,7 @@ namespace {
     };
 }    // namespace
 
-SEASTAR_THREAD_TEST_CASE(invoke_on_during_stop_test) {
+ACTOR_THREAD_TEST_CASE(invoke_on_during_stop_test) {
     sharded<invoke_on_during_stop> s;
     s.start().get();
     s.stop().get();
@@ -56,7 +56,7 @@ public:
     }
 };
 
-SEASTAR_THREAD_TEST_CASE(invoke_map_returns_non_future_value) {
+ACTOR_THREAD_TEST_CASE(invoke_map_returns_non_future_value) {
     nil::actor::sharded<mydata> s;
     s.start().get();
     s.map([](mydata &m) { return m.x; })
@@ -69,7 +69,7 @@ SEASTAR_THREAD_TEST_CASE(invoke_map_returns_non_future_value) {
     s.stop().get();
 };
 
-SEASTAR_THREAD_TEST_CASE(invoke_map_returns_future_value) {
+ACTOR_THREAD_TEST_CASE(invoke_map_returns_future_value) {
     nil::actor::sharded<mydata> s;
     s.start().get();
     s.map([](mydata &m) { return make_ready_future<int>(m.x); })
@@ -82,7 +82,7 @@ SEASTAR_THREAD_TEST_CASE(invoke_map_returns_future_value) {
     s.stop().get();
 }
 
-SEASTAR_THREAD_TEST_CASE(invoke_map_returns_future_value_from_thread) {
+ACTOR_THREAD_TEST_CASE(invoke_map_returns_future_value_from_thread) {
     nil::actor::sharded<mydata> s;
     s.start().get();
     s.map([](mydata &m) { return nil::actor::async([&m] { return m.x; }); })
@@ -95,7 +95,7 @@ SEASTAR_THREAD_TEST_CASE(invoke_map_returns_future_value_from_thread) {
     s.stop().get();
 }
 
-SEASTAR_THREAD_TEST_CASE(failed_sharded_start_doesnt_hang) {
+ACTOR_THREAD_TEST_CASE(failed_sharded_start_doesnt_hang) {
     class fail_to_start {
     public:
         fail_to_start() {

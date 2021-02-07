@@ -35,7 +35,7 @@
 #include <nil/actor/testing/test_runner.hh>
 #include <boost/range/irange.hpp>
 
-SEASTAR_TEST_CASE(test_add_group) {
+ACTOR_TEST_CASE(test_add_group) {
     using namespace nil::actor::metrics;
     // Just has to compile:
     metric_groups().add_group("g1", {}).add_group("g2", std::vector<metric_definition>());
@@ -70,7 +70,7 @@ static std::set<nil::actor::sstring> get_label_values(nil::actor::sstring metric
     return labels;
 }
 
-SEASTAR_THREAD_TEST_CASE(test_renaming_scheuling_groups) {
+ACTOR_THREAD_TEST_CASE(test_renaming_scheuling_groups) {
     // this seams a little bit out of place but the
     // renaming functionality is primarily for statistics
     // otherwise those classes could have just been reused
@@ -116,7 +116,7 @@ SEASTAR_THREAD_TEST_CASE(test_renaming_scheuling_groups) {
     BOOST_REQUIRE((name1_found && !name2_found) || (name2_found && !name1_found));
 }
 
-SEASTAR_THREAD_TEST_CASE(test_renaming_io_priority_classes) {
+ACTOR_THREAD_TEST_CASE(test_renaming_io_priority_classes) {
     // this seams a little bit out of place but the
     // renaming functionality is primarily for statistics
     // otherwise those classes could have just been reused

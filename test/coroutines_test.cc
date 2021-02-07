@@ -24,9 +24,9 @@
 
 using namespace nil::actor;
 
-#ifndef SEASTAR_COROUTINES_ENABLED
+#ifndef ACTOR_COROUTINES_ENABLED
 
-SEASTAR_TEST_CASE(test_coroutines_not_compiled_in) {
+ACTOR_TEST_CASE(test_coroutines_not_compiled_in) {
     return make_ready_future<>();
 }
 
@@ -60,7 +60,7 @@ namespace {
 
 }    // namespace
 
-SEASTAR_TEST_CASE(test_simple_coroutines) {
+ACTOR_TEST_CASE(test_simple_coroutines) {
     BOOST_REQUIRE_EQUAL(co_await old_fashioned_continuations(), 42);
     BOOST_REQUIRE_EQUAL(co_await simple_coroutine(), 53);
     BOOST_REQUIRE_EQUAL(ready_coroutine().get0(), 64);
@@ -68,7 +68,7 @@ SEASTAR_TEST_CASE(test_simple_coroutines) {
     BOOST_REQUIRE_EXCEPTION((void)co_await failing_coroutine(), int, [](auto v) { return v == 42; });
 }
 
-SEASTAR_TEST_CASE(test_abandond_coroutine) {
+ACTOR_TEST_CASE(test_abandond_coroutine) {
     std::optional<future<int>> f;
     {
         auto p1 = promise<>();
@@ -85,7 +85,7 @@ SEASTAR_TEST_CASE(test_abandond_coroutine) {
     BOOST_CHECK_EQUAL(co_await std::move(*f), 1);
 }
 
-SEASTAR_TEST_CASE(test_scheduling_group) {
+ACTOR_TEST_CASE(test_scheduling_group) {
     auto other_sg = co_await create_scheduling_group("the other group", 10.f);
 
     auto p1 = promise<>();
@@ -124,7 +124,7 @@ SEASTAR_TEST_CASE(test_scheduling_group) {
     BOOST_REQUIRE(current_scheduling_group() == default_scheduling_group());
 }
 
-SEASTAR_TEST_CASE(test_preemption) {
+ACTOR_TEST_CASE(test_preemption) {
     bool x = false;
     unsigned preempted = 0;
     auto f = later().then([&x] { x = true; });

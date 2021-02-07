@@ -30,10 +30,13 @@
 #include <nil/actor/detail/is_smart_ptr.hh>
 #include <nil/actor/detail/tuple_utils.hh>
 #include <nil/actor/core/do_with.hh>
-#include <nil/actor/detail/concepts.hh>
+
+#include <boost/config.hpp>
 #include <boost/iterator/counting_iterator.hpp>
+
 #include <functional>
-#if __has_include(<concepts>)
+
+#ifdef BOOST_HAS_CONCEPTS
 #include <concepts>
 #endif
 
@@ -230,6 +233,7 @@ namespace nil {
                 }
             }
 
+#ifdef BOOST_HAS_CONCEPTS
             /// Invoke a function on all instances of `Service`.
             /// The return value becomes ready when all instances have processed
             /// the message. The function can be a member pointer to function,
@@ -245,7 +249,113 @@ namespace nil {
             ///        to be invoked on all shards
             /// \return Future that becomes ready once all calls have completed
             template<typename Func, typename... Args>
-            SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args...>)
+            requires std::invocable<Func, Service &, Args...> future<> invoke_on_all(smp_submit_to_options options,
+                                                                                     Func func, Args... args) noexcept;
+
+            /// Invoke a function on all instances of `Service`.
+            /// The return value becomes ready when all instances have processed
+            /// the message.
+            /// Passes the default \ref smp_submit_to_options to the
+            /// \ref smp::submit_to() called behind the scenes.
+            template<typename Func, typename... Args>
+            requires std::invocable<Func, Service &, Args...> future<> invoke_on_all(Func func, Args... args) noexcept {
+                try {
+                    return invoke_on_all(smp_submit_to_options {}, std::move(func), std::move(args)...);
+                } catch (...) {
+                    return current_exception_as_future();
+                }
+            }
+
+            /// Invoke a callable on all instances of  \c Service except the instance
+            /// which is allocated on current shard.
+            ///
+            /// \param options the options to forward to the \ref smp::submit_to()
+            ///         called behind the scenes.
+            /// \param func a callable with the signature `void (Service&)`
+            ///             or `future<> (Service&)`, to be called on each core
+            ///             with the local instance as an argument.
+            /// \return a `future<>` that becomes ready when all cores but the current one have
+            ///         processed the message.
+            template<typename Func, typename... Args>
+            requires std::invocable<Func, Service &, Args...> future<>
+                invoke_on_others(smp_submit_to_options options, Func func, Args... args) noexcept;
+
+            /// Invoke a callable on all instances of  \c Service except the instance
+            /// which is allocated on current shard.
+            ///
+            /// \param func a callable with the signature `void (Service&)`
+            ///             or `future<> (Service&)`, to be called on each core
+            ///             with the local instance as an argument.
+            /// \return a `future<>` that becomes ready when all cores but the current one have
+            ///         processed the message.
+            ///
+            /// Passes the default \ref smp_submit_to_options to the
+            /// \ref smp::submit_to() called behind the scenes.
+            template<typename Func, typename... Args>
+            requires std::invocable<Func, Service &, Args...> future<> invoke_on_others(Func func,
+                                                                                        Args... args) noexcept {
+                try {
+                    return invoke_on_others(smp_submit_to_options {}, std::move(func), std::move(args)...);
+                } catch (...) {
+                    return current_exception_as_future();
+                }
+            }
+
+            /// Invoke a callable on a specific instance of `Service`.
+            ///
+            /// \param id shard id to call
+            /// \param options the options to forward to the \ref smp::submit_to()
+            ///         called behind the scenes.
+            /// \param func a callable with signature `Value (Service&, Args...)` or
+            ///        `future<Value> (Service&, Args...)` (for some `Value` type), or a pointer
+            ///        to a member function of Service
+            /// \param args parameters to the callable; will be copied or moved. To pass by reference,
+            ///              use std::ref().
+            ///
+            /// \return result of calling `func(instance)` on the designated instance
+            template<typename Func, typename... Args,
+                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args...>>>
+            requires std::invocable<Func, Service &, Args &&...>
+                Ret invoke_on(unsigned id, smp_submit_to_options options, Func &&func, Args &&...args) {
+                return smp::submit_to(
+                    id, options,
+                    [this, func = std::forward<Func>(func), args = std::tuple(std::move(args)...)]() mutable {
+                        auto inst = get_local_service();
+                        return std::apply(std::forward<Func>(func),
+                                          std::tuple_cat(std::forward_as_tuple(*inst), std::move(args)));
+                    });
+            }
+
+            /// Invoke a callable on a specific instance of `Service`.
+            ///
+            /// \param id shard id to call
+            /// \param func a callable with signature `Value (Service&)` or
+            ///        `future<Value> (Service&)` (for some `Value` type), or a pointer
+            ///        to a member function of Service
+            /// \param args parameters to the callable
+            /// \return result of calling `func(instance)` on the designated instance
+            template<typename Func, typename... Args,
+                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args &&...>>>
+            requires std::invocable<Func, Service &, Args &&...> Ret invoke_on(unsigned id, Func &&func,
+                                                                               Args &&...args) {
+                return invoke_on(id, smp_submit_to_options(), std::forward<Func>(func), std::forward<Args>(args)...);
+            }
+#else
+            /// Invoke a function on all instances of `Service`.
+            /// The return value becomes ready when all instances have processed
+            /// the message. The function can be a member pointer to function,
+            /// a free function, or a functor. The first argument of the function
+            /// will be a reference to the local service on the shard.
+            ///
+            /// For a non-static pointer-to-member-function, the first argument
+            /// becomes `this`, not the first declared parameter.
+            ///
+            /// \param options the options to forward to the \ref smp::submit_to()
+            ///         called behind the scenes.
+            /// \param func invocable accepting a `Service&` as the first parameter
+            ///        to be invoked on all shards
+            /// \return Future that becomes ready once all calls have completed
+            template<typename Func, typename... Args>
             future<> invoke_on_all(smp_submit_to_options options, Func func, Args... args) noexcept;
 
             /// Invoke a function on all instances of `Service`.
@@ -254,7 +364,6 @@ namespace nil {
             /// Passes the default \ref smp_submit_to_options to the
             /// \ref smp::submit_to() called behind the scenes.
             template<typename Func, typename... Args>
-            SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args...>)
             future<> invoke_on_all(Func func, Args... args) noexcept {
                 try {
                     return invoke_on_all(smp_submit_to_options {}, std::move(func), std::move(args)...);
@@ -274,7 +383,6 @@ namespace nil {
             /// \return a `future<>` that becomes ready when all cores but the current one have
             ///         processed the message.
             template<typename Func, typename... Args>
-            SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args...>)
             future<> invoke_on_others(smp_submit_to_options options, Func func, Args... args) noexcept;
 
             /// Invoke a callable on all instances of  \c Service except the instance
@@ -289,7 +397,6 @@ namespace nil {
             /// Passes the default \ref smp_submit_to_options to the
             /// \ref smp::submit_to() called behind the scenes.
             template<typename Func, typename... Args>
-            SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args...>)
             future<> invoke_on_others(Func func, Args... args) noexcept {
                 try {
                     return invoke_on_others(smp_submit_to_options {}, std::move(func), std::move(args)...);
@@ -298,13 +405,52 @@ namespace nil {
                 }
             }
 
+            /// Invoke a callable on a specific instance of `Service`.
+            ///
+            /// \param id shard id to call
+            /// \param options the options to forward to the \ref smp::submit_to()
+            ///         called behind the scenes.
+            /// \param func a callable with signature `Value (Service&, Args...)` or
+            ///        `future<Value> (Service&, Args...)` (for some `Value` type), or a pointer
+            ///        to a member function of Service
+            /// \param args parameters to the callable; will be copied or moved. To pass by reference,
+            ///              use std::ref().
+            ///
+            /// \return result of calling `func(instance)` on the designated instance
+            template<typename Func, typename... Args,
+                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args...>>>
+            Ret invoke_on(unsigned id, smp_submit_to_options options, Func &&func, Args &&...args) {
+                return smp::submit_to(
+                    id, options,
+                    [this, func = std::forward<Func>(func), args = std::tuple(std::move(args)...)]() mutable {
+                        auto inst = get_local_service();
+                        return std::apply(std::forward<Func>(func),
+                                          std::tuple_cat(std::forward_as_tuple(*inst), std::move(args)));
+                    });
+            }
+
+            /// Invoke a callable on a specific instance of `Service`.
+            ///
+            /// \param id shard id to call
+            /// \param func a callable with signature `Value (Service&)` or
+            ///        `future<Value> (Service&)` (for some `Value` type), or a pointer
+            ///        to a member function of Service
+            /// \param args parameters to the callable
+            /// \return result of calling `func(instance)` on the designated instance
+            template<typename Func, typename... Args,
+                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args &&...>>>
+            Ret invoke_on(unsigned id, Func &&func, Args &&...args) {
+                return invoke_on(id, smp_submit_to_options(), std::forward<Func>(func), std::forward<Args>(args)...);
+            }
+#endif
+
             /// Invoke a method on all instances of `Service` and reduce the results using
             /// `Reducer`.
             ///
             /// \see map_reduce(Iterator begin, Iterator end, Mapper&& mapper, Reducer&& r)
             template<typename Reducer, typename Ret, typename... FuncArgs, typename... Args>
-            inline auto map_reduce(Reducer &&r, Ret (Service::*func)(FuncArgs...), Args &&...args) ->
-                typename reducer_traits<Reducer>::future_type {
+            inline typename reducer_traits<Reducer>::future_type
+                map_reduce(Reducer &&r, Ret (Service::*func)(FuncArgs...), Args &&...args) {
                 return ::nil::actor::map_reduce(
                     boost::make_counting_iterator<unsigned>(0),
                     boost::make_counting_iterator<unsigned>(_instances.size()),
@@ -330,7 +476,7 @@ namespace nil {
             ///
             /// \see map_reduce(Iterator begin, Iterator end, Mapper&& mapper, Reducer&& r)
             template<typename Reducer, typename Func>
-            inline auto map_reduce(Reducer &&r, Func &&func) -> typename reducer_traits<Reducer>::future_type {
+            inline typename reducer_traits<Reducer>::future_type map_reduce(Reducer &&r, Func &&func) {
                 return ::nil::actor::map_reduce(
                     boost::make_counting_iterator<unsigned>(0),
                     boost::make_counting_iterator<unsigned>(_instances.size()),
@@ -396,46 +542,6 @@ namespace nil {
                                              })
                         .then([&vec] { return make_ready_future<std::vector<return_type>>(std::move(vec)); });
                 });
-            }
-
-            /// Invoke a callable on a specific instance of `Service`.
-            ///
-            /// \param id shard id to call
-            /// \param options the options to forward to the \ref smp::submit_to()
-            ///         called behind the scenes.
-            /// \param func a callable with signature `Value (Service&, Args...)` or
-            ///        `future<Value> (Service&, Args...)` (for some `Value` type), or a pointer
-            ///        to a member function of Service
-            /// \param args parameters to the callable; will be copied or moved. To pass by reference,
-            ///              use std::ref().
-            ///
-            /// \return result of calling `func(instance)` on the designated instance
-            template<typename Func, typename... Args,
-                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args...>>>
-            SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args &&...>)
-            Ret invoke_on(unsigned id, smp_submit_to_options options, Func &&func, Args &&...args) {
-                return smp::submit_to(
-                    id, options,
-                    [this, func = std::forward<Func>(func), args = std::tuple(std::move(args)...)]() mutable {
-                        auto inst = get_local_service();
-                        return std::apply(std::forward<Func>(func),
-                                          std::tuple_cat(std::forward_as_tuple(*inst), std::move(args)));
-                    });
-            }
-
-            /// Invoke a callable on a specific instance of `Service`.
-            ///
-            /// \param id shard id to call
-            /// \param func a callable with signature `Value (Service&)` or
-            ///        `future<Value> (Service&)` (for some `Value` type), or a pointer
-            ///        to a member function of Service
-            /// \param args parameters to the callable
-            /// \return result of calling `func(instance)` on the designated instance
-            template<typename Func, typename... Args,
-                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args &&...>>>
-            SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args &&...>)
-            Ret invoke_on(unsigned id, Func &&func, Args &&...args) {
-                return invoke_on(id, smp_submit_to_options(), std::forward<Func>(func), std::forward<Args>(args)...);
             }
 
             /// Gets a reference to the local instance.
@@ -504,6 +610,7 @@ namespace nil {
             std::tuple<Params...> _params;
 
         public:
+#ifdef BOOST_HAS_CONCEPTS
             /// Creates a sharded parameter, which evaluates differently based on
             /// the shard it is executed on.
             ///
@@ -512,11 +619,23 @@ namespace nil {
             ///                  be std::ref(sharded<whatever>), in which case the local
             ///                  instance will be passed. Anything else
             ///                  will be passed by value unchanged.
-            explicit sharded_parameter(Func func, Params... params)
-                SEASTAR_CONCEPT(requires std::invocable<Func, detail::sharded_unwrap_t<Params>...>) :
-                _func(std::move(func)),
-                _params(std::make_tuple(std::move(params)...)) {
+            explicit sharded_parameter(
+                Func func, Params... params) requires std::invocable<Func, detail::sharded_unwrap_t<Params>...>
+                : _func(std::move(func)), _params(std::make_tuple(std::move(params)...)) {
             }
+#else
+            /// Creates a sharded parameter, which evaluates differently based on
+            /// the shard it is executed on.
+            ///
+            /// \param func      Function to be executed
+            /// \param params    optional parameters to be passed to the function. Can
+            ///                  be std::ref(sharded<whatever>), in which case the local
+            ///                  instance will be passed. Anything else
+            ///                  will be passed by value unchanged.
+            explicit sharded_parameter(Func func, Params... params) :
+                _func(std::move(func)), _params(std::make_tuple(std::move(params)...)) {
+            }
+#endif
 
         private:
             auto evaluate() const;
@@ -730,9 +849,47 @@ namespace nil {
             }
         }
 
+#ifdef BOOST_HAS_CONCEPTS
         template<typename Service>
         template<typename Func, typename... Args>
-        SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args...>)
+        requires std::invocable<Func, Service &, Args...> inline future<>
+            sharded<Service>::invoke_on_all(smp_submit_to_options options, Func func, Args... args) noexcept {
+            static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
+                          "invoke_on_all()'s func must return void or future<>");
+            try {
+                return invoke_on_all(
+                    options,
+                    invoke_on_all_func_type([func, args = std::tuple(std::move(args)...)](Service &service) mutable {
+                        return futurize_apply(func, std::tuple_cat(std::forward_as_tuple(service), args));
+                    }));
+            } catch (...) {
+                return current_exception_as_future();
+            }
+        }
+
+        template<typename Service>
+        template<typename Func, typename... Args>
+        requires std::invocable<Func, Service &, Args...> inline future<>
+            sharded<Service>::invoke_on_others(smp_submit_to_options options, Func func, Args... args) noexcept {
+            static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
+                          "invoke_on_others()'s func must return void or future<>");
+            try {
+                return invoke_on_all(options,
+                                     [orig = this_shard_id(), func = std::move(func),
+                                      args = std::tuple(std::move(args)...)](Service &s) -> future<> {
+                                         return this_shard_id() == orig ?
+                                                    make_ready_future<>() :
+                                                    futurize_apply(func,
+                                                                   std::tuple_cat(std::forward_as_tuple(s), args));
+                                         ;
+                                     });
+            } catch (...) {
+                return current_exception_as_future();
+            }
+        }
+#else
+        template<typename Service>
+        template<typename Func, typename... Args>
         inline future<> sharded<Service>::invoke_on_all(smp_submit_to_options options, Func func,
                                                         Args... args) noexcept {
             static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
@@ -750,7 +907,6 @@ namespace nil {
 
         template<typename Service>
         template<typename Func, typename... Args>
-        SEASTAR_CONCEPT(requires std::invocable<Func, Service &, Args...>)
         inline future<> sharded<Service>::invoke_on_others(smp_submit_to_options options, Func func,
                                                            Args... args) noexcept {
             static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
@@ -769,6 +925,7 @@ namespace nil {
                 return current_exception_as_future();
             }
         }
+#endif
 
         template<typename Service>
         const Service &sharded<Service>::local() const noexcept {

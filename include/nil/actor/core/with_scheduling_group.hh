@@ -36,7 +36,7 @@ namespace nil {
         namespace detail {
 
             template<typename Func>
-            SEASTAR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
+            ACTOR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
             auto schedule_in_group(scheduling_group sg, Func func) noexcept {
                 static_assert(std::is_nothrow_move_constructible_v<Func>);
                 auto tsk = make_task(sg, std::move(func));
@@ -57,7 +57,7 @@ namespace nil {
         /// \param args arguments to the function; may be copied or moved, so use \c std::ref()
         ///             to force passing references
         template<typename Func, typename... Args>
-        SEASTAR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
+        ACTOR_CONCEPT(requires std::is_nothrow_move_constructible_v<Func>)
         inline auto with_scheduling_group(scheduling_group sg, Func func, Args &&...args) noexcept {
             static_assert(std::is_nothrow_move_constructible_v<Func>);
             using return_type = decltype(func(std::forward<Args>(args)...));

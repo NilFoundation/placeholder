@@ -24,9 +24,10 @@
 
 #pragma once
 
+#include <boost/config.hpp>
+
 #include <nil/actor/core/transfer.hh>
 #include <nil/actor/core/bitops.hh>
-#include <nil/actor/detail/concepts.hh>
 
 #include <memory>
 #include <algorithm>
@@ -91,9 +92,13 @@ namespace nil {
             using const_pointer = const T *;
 
         public:
-            circular_buffer() noexcept SEASTAR_CONCEPT(requires std::default_initializable<Alloc>) :
-                circular_buffer(Alloc()) {
+#ifdef BOOST_HAS_CONCEPTS
+            circular_buffer() noexcept requires std::default_initializable<Alloc> : circular_buffer(Alloc()) {
             }
+#else
+            circular_buffer() noexcept : circular_buffer(Alloc()) {
+            }
+#endif
             circular_buffer(Alloc alloc) noexcept;
             circular_buffer(circular_buffer &&X) noexcept;
             circular_buffer(const circular_buffer &X) = delete;

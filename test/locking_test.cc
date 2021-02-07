@@ -35,7 +35,7 @@
 using namespace nil::actor;
 using namespace std::chrono_literals;
 
-SEASTAR_THREAD_TEST_CASE(test_rwlock) {
+ACTOR_THREAD_TEST_CASE(test_rwlock) {
     rwlock l;
 
     l.for_write().lock().get();
@@ -55,12 +55,12 @@ SEASTAR_THREAD_TEST_CASE(test_rwlock) {
     l.for_write().unlock();
 }
 
-SEASTAR_TEST_CASE(test_with_lock_mutable) {
+ACTOR_TEST_CASE(test_with_lock_mutable) {
     return do_with(rwlock(),
                    [](rwlock &l) { return with_lock(l.for_read(), [p = std::make_unique<int>(42)]() mutable {}); });
 }
 
-SEASTAR_TEST_CASE(test_rwlock_exclusive) {
+ACTOR_TEST_CASE(test_rwlock_exclusive) {
     return do_with(rwlock(), unsigned(0), [](rwlock &l, unsigned &counter) {
         return parallel_for_each(boost::irange(0, 10), [&l, &counter](int idx) {
             return with_lock(l.for_write(), [&counter] {
@@ -75,7 +75,7 @@ SEASTAR_TEST_CASE(test_rwlock_exclusive) {
     });
 }
 
-SEASTAR_TEST_CASE(test_rwlock_shared) {
+ACTOR_TEST_CASE(test_rwlock_shared) {
     return do_with(rwlock(), unsigned(0), unsigned(0), [](rwlock &l, unsigned &counter, unsigned &max) {
         return parallel_for_each(boost::irange(0, 10),
                                  [&l, &counter, &max](int idx) {
@@ -92,7 +92,7 @@ SEASTAR_TEST_CASE(test_rwlock_shared) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_rwlock_failed_func) {
+ACTOR_THREAD_TEST_CASE(test_rwlock_failed_func) {
     rwlock l;
 
     // verify that the rwlock is unlocked when func fails
@@ -106,7 +106,7 @@ SEASTAR_THREAD_TEST_CASE(test_rwlock_failed_func) {
     l.for_write().unlock();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_failed_with_lock) {
+ACTOR_THREAD_TEST_CASE(test_failed_with_lock) {
     struct test_lock {
         future<> lock() noexcept {
             return make_exception_future<>(std::runtime_error("injected"));
@@ -123,7 +123,7 @@ SEASTAR_THREAD_TEST_CASE(test_failed_with_lock) {
     BOOST_REQUIRE_THROW(with_lock(l, [] { BOOST_REQUIRE(false); }).get(), std::runtime_error);
 }
 
-SEASTAR_THREAD_TEST_CASE(test_shared_mutex) {
+ACTOR_THREAD_TEST_CASE(test_shared_mutex) {
     shared_mutex sm;
 
     sm.lock().get();
@@ -143,7 +143,7 @@ SEASTAR_THREAD_TEST_CASE(test_shared_mutex) {
     sm.unlock();
 }
 
-SEASTAR_TEST_CASE(test_shared_mutex_exclusive) {
+ACTOR_TEST_CASE(test_shared_mutex_exclusive) {
     return do_with(shared_mutex(), unsigned(0), [](shared_mutex &sm, unsigned &counter) {
         return parallel_for_each(boost::irange(0, 10), [&sm, &counter](int idx) {
             return with_lock(sm, [&counter] {
@@ -158,7 +158,7 @@ SEASTAR_TEST_CASE(test_shared_mutex_exclusive) {
     });
 }
 
-SEASTAR_TEST_CASE(test_shared_mutex_shared) {
+ACTOR_TEST_CASE(test_shared_mutex_shared) {
     return do_with(shared_mutex(), unsigned(0), unsigned(0), [](shared_mutex &sm, unsigned &counter, unsigned &max) {
         return parallel_for_each(boost::irange(0, 10),
                                  [&sm, &counter, &max](int idx) {
@@ -175,7 +175,7 @@ SEASTAR_TEST_CASE(test_shared_mutex_shared) {
     });
 }
 
-SEASTAR_THREAD_TEST_CASE(test_shared_mutex_failed_func) {
+ACTOR_THREAD_TEST_CASE(test_shared_mutex_failed_func) {
     shared_mutex sm;
 
     // verify that the shared_mutex is unlocked when func fails
@@ -189,8 +189,8 @@ SEASTAR_THREAD_TEST_CASE(test_shared_mutex_failed_func) {
     sm.unlock();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_shared_mutex_failed_lock) {
-#ifdef SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION
+ACTOR_THREAD_TEST_CASE(test_shared_mutex_failed_lock) {
+#ifdef ACTOR_ENABLE_ALLOC_FAILURE_INJECTION
     shared_mutex sm;
 
     // if l.lock() fails neither the function nor l.unlock()
@@ -204,5 +204,5 @@ SEASTAR_THREAD_TEST_CASE(test_shared_mutex_failed_lock) {
     sm.unlock();
 
     nil::actor::memory::local_failure_injector().cancel();
-#endif    // SEASTAR_ENABLE_ALLOC_FAILURE_INJECTION
+#endif    // ACTOR_ENABLE_ALLOC_FAILURE_INJECTION
 }

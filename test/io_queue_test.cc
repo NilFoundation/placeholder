@@ -60,7 +60,7 @@ struct io_queue_for_tests {
     }
 };
 
-SEASTAR_THREAD_TEST_CASE(test_basic_flow) {
+ACTOR_THREAD_TEST_CASE(test_basic_flow) {
     io_queue_for_tests tio;
     fake_file<1> file;
 
@@ -76,7 +76,7 @@ SEASTAR_THREAD_TEST_CASE(test_basic_flow) {
     f.get();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_intent_safe_ref) {
+ACTOR_THREAD_TEST_CASE(test_intent_safe_ref) {
     auto get_cancelled = [](detail::intent_reference &iref) -> bool {
         try {
             iref.retrieve();
@@ -125,7 +125,7 @@ SEASTAR_THREAD_TEST_CASE(test_intent_safe_ref) {
 
 static constexpr int nr_requests = 24;
 
-SEASTAR_THREAD_TEST_CASE(test_io_cancellation) {
+ACTOR_THREAD_TEST_CASE(test_io_cancellation) {
     fake_file<nr_requests> file;
 
     io_queue_for_tests tio;

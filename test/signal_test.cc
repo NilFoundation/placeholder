@@ -32,7 +32,7 @@ extern "C" {
 #include <unistd.h>
 }
 
-SEASTAR_TEST_CASE(test_sighup) {
+ACTOR_TEST_CASE(test_sighup) {
     return do_with(make_lw_shared<promise<>>(), false, [](auto const &p, bool &signaled) {
         engine().handle_signal(SIGHUP, [p, &signaled] {
             signaled = true;

@@ -42,7 +42,7 @@ static bool find_event(const std::vector<fsnotifier::event> &events, const fsnot
     return i != events.end();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_notify_modify_close_delete) {
+ACTOR_THREAD_TEST_CASE(test_notify_modify_close_delete) {
     tmpdir tmp;
     fsnotifier fsn;
 
@@ -77,7 +77,7 @@ SEASTAR_THREAD_TEST_CASE(test_notify_modify_close_delete) {
     }
 }
 
-SEASTAR_THREAD_TEST_CASE(test_notify_overwrite) {
+ACTOR_THREAD_TEST_CASE(test_notify_overwrite) {
     tmpdir tmp;
     fsnotifier fsn;
 
@@ -125,7 +125,7 @@ SEASTAR_THREAD_TEST_CASE(test_notify_overwrite) {
     }
 }
 
-SEASTAR_THREAD_TEST_CASE(test_notify_create_delete_child) {
+ACTOR_THREAD_TEST_CASE(test_notify_create_delete_child) {
     tmpdir tmp;
     fsnotifier fsn;
 
@@ -150,7 +150,7 @@ SEASTAR_THREAD_TEST_CASE(test_notify_create_delete_child) {
     }
 }
 
-SEASTAR_THREAD_TEST_CASE(test_notify_open) {
+ACTOR_THREAD_TEST_CASE(test_notify_open) {
     tmpdir tmp;
     fsnotifier fsn;
 
@@ -170,7 +170,7 @@ SEASTAR_THREAD_TEST_CASE(test_notify_open) {
     f2.close().get();
 }
 
-SEASTAR_THREAD_TEST_CASE(test_notify_move) {
+ACTOR_THREAD_TEST_CASE(test_notify_move) {
     tmpdir tmp;
     fsnotifier fsn;
 
@@ -203,7 +203,7 @@ SEASTAR_THREAD_TEST_CASE(test_notify_move) {
     }
 }
 
-SEASTAR_THREAD_TEST_CASE(test_shutdown_notifier) {
+ACTOR_THREAD_TEST_CASE(test_shutdown_notifier) {
     tmpdir tmp;
     fsnotifier fsn;
 

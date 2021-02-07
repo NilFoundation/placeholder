@@ -26,9 +26,10 @@
 
 #include <typeindex>
 
+#include <boost/config.hpp>
+
 #include <nil/actor/core/sstring.hh>
 #include <nil/actor/core/function_traits.hh>
-#include <nil/actor/detail/concepts.hh>
 
 /// \file
 
@@ -39,11 +40,11 @@ namespace nil {
             return 16;
         }
 
-#if SEASTAR_API_LEVEL < 6
-#define SEASTAR_ELLIPSIS ...
-        template<typename SEASTAR_ELLIPSIS T>
+#if ACTOR_API_LEVEL < 6
+#define ACTOR_ELLIPSIS ...
+        template<typename ACTOR_ELLIPSIS T>
 #else
-#define SEASTAR_ELLIPSIS
+#define ACTOR_ELLIPSIS
         template<typename T = void>
 #endif
         class future;
@@ -166,8 +167,7 @@ namespace nil {
             friend class reactor;
             friend future<scheduling_group_key> scheduling_group_key_create(scheduling_group_key_config cfg) noexcept;
             template<typename T>
-            friend T *detail::scheduling_group_get_specific_ptr(scheduling_group sg,
-                                                                  scheduling_group_key key) noexcept;
+            friend T *detail::scheduling_group_get_specific_ptr(scheduling_group sg, scheduling_group_key key) noexcept;
             template<typename T>
             friend T &scheduling_group_get_specific(scheduling_group_key key) noexcept;
 
@@ -300,23 +300,34 @@ namespace nil {
             friend class reactor;
             friend unsigned detail::scheduling_group_index(scheduling_group sg) noexcept;
             friend scheduling_group detail::scheduling_group_from_index(unsigned index) noexcept;
-
+// clang-format off
+#ifdef BOOST_HAS_CONCEPTS
             template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
-            SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer,
-                                              Initial initial) {
-                { reducer(initial, mapper(specific_val)) }
-                ->std::convertible_to<Initial>;
-            })
-            friend future<typename function_traits<Reducer>::return_type> map_reduce_scheduling_group_specific(
-                Mapper mapper, Reducer reducer, Initial initial_val, scheduling_group_key key);
+            requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer, Initial initial) {
+                { reducer(initial, mapper(specific_val)) } -> std::convertible_to<Initial>;
+            }
+            friend future<typename function_traits<Reducer>::return_type>
+                map_reduce_scheduling_group_specific(Mapper mapper, Reducer reducer, Initial initial_val,
+                                                     scheduling_group_key key);
 
             template<typename SpecificValType, typename Reducer, typename Initial>
-            SEASTAR_CONCEPT(requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
-                { reducer(initial, specific_val) }
-                ->std::convertible_to<Initial>;
-            })
-            friend future<typename function_traits<Reducer>::return_type> reduce_scheduling_group_specific(
-                Reducer reducer, Initial initial_val, scheduling_group_key key);
+            requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
+                { reducer(initial, specific_val) } -> std::convertible_to<Initial>;
+            }
+            friend future<typename function_traits<Reducer>::return_type>
+                reduce_scheduling_group_specific(Reducer reducer, Initial initial_val, scheduling_group_key key);
+#else
+            template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
+            friend future<typename function_traits<Reducer>::return_type>
+                map_reduce_scheduling_group_specific(Mapper mapper, Reducer reducer, Initial initial_val,
+                                                     scheduling_group_key key);
+
+            template<typename SpecificValType, typename Reducer, typename Initial>
+            friend future<typename function_traits<Reducer>::return_type>
+                reduce_scheduling_group_specific(Reducer reducer, Initial initial_val, scheduling_group_key key);
+
+#endif
+            // clang-format on
         };
 
         /// \cond internal

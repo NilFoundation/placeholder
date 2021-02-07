@@ -37,7 +37,7 @@
 using namespace nil::actor;
 using namespace std::chrono_literals;
 
-SEASTAR_TEST_CASE(test_thread_1) {
+ACTOR_TEST_CASE(test_thread_1) {
     return do_with(sstring(), [](sstring &x) {
         auto t1 = new thread([&x] { x = "abc"; });
         return t1->join().then([&x, t1] {
@@ -47,7 +47,7 @@ SEASTAR_TEST_CASE(test_thread_1) {
     });
 }
 
-SEASTAR_TEST_CASE(test_thread_2) {
+ACTOR_TEST_CASE(test_thread_2) {
     struct tmp {
         std::vector<thread> threads;
         semaphore sem1 {0};
@@ -73,7 +73,7 @@ SEASTAR_TEST_CASE(test_thread_2) {
     });
 }
 
-SEASTAR_TEST_CASE(test_thread_async) {
+ACTOR_TEST_CASE(test_thread_async) {
     sstring x = "x";
     sstring y = "y";
     auto concat = [](sstring x, sstring y) {
@@ -83,11 +83,11 @@ SEASTAR_TEST_CASE(test_thread_async) {
     return async(concat, x, y).then([](sstring xy) { BOOST_REQUIRE_EQUAL(xy, "xy"); });
 }
 
-SEASTAR_TEST_CASE(test_thread_async_immed) {
+ACTOR_TEST_CASE(test_thread_async_immed) {
     return async([] { return 3; }).then([](int three) { BOOST_REQUIRE_EQUAL(three, 3); });
 }
 
-SEASTAR_TEST_CASE(test_thread_async_nested) {
+ACTOR_TEST_CASE(test_thread_async_nested) {
     return async([] { return async([] { return 3; }).get0(); }).then([](int three) { BOOST_REQUIRE_EQUAL(three, 3); });
 }
 
@@ -101,7 +101,7 @@ void compute(float &result, bool &done, uint64_t &ctr) {
     }
 }
 
-#if defined(SEASTAR_ASAN_ENABLED) && defined(SEASTAR_HAVE_ASAN_FIBER_SUPPORT)
+#if defined(ACTOR_ASAN_ENABLED) && defined(ACTOR_HAVE_ASAN_FIBER_SUPPORT)
 volatile int force_write;
 volatile void *shut_up_gcc;
 
@@ -122,7 +122,7 @@ volatile void *shut_up_gcc;
     }
 }
 
-SEASTAR_TEST_CASE(test_asan_false_positive) {
+ACTOR_TEST_CASE(test_asan_false_positive) {
     return async([] {
         try {
             throw_exception();
@@ -133,12 +133,12 @@ SEASTAR_TEST_CASE(test_asan_false_positive) {
 }
 #endif
 
-SEASTAR_THREAD_TEST_CASE_EXPECTED_FAILURES(abc, 2) {
+ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(abc, 2) {
     BOOST_TEST(false);
     BOOST_TEST(false);
 }
 
-SEASTAR_TEST_CASE(test_thread_custom_stack_size) {
+ACTOR_TEST_CASE(test_thread_custom_stack_size) {
     sstring x = "x";
     sstring y = "y";
     auto concat = [](sstring x, sstring y) {
@@ -154,7 +154,7 @@ SEASTAR_TEST_CASE(test_thread_custom_stack_size) {
 // fails with detect_stack_use_after_return=1. We could put it behind
 // a command line option and fork/exec to run it after removing
 // detect_stack_use_after_return=1 from the environment.
-#if defined(SEASTAR_THREAD_STACK_GUARDS) && defined(__x86_64__) && !defined(SEASTAR_ASAN_ENABLED)
+#if defined(ACTOR_THREAD_STACK_GUARDS) && defined(__x86_64__) && !defined(ACTOR_ASAN_ENABLED)
 struct test_thread_custom_stack_size_failure : public nil::actor::testing::seastar_test {
     const char *get_test_file() override {
         return __FILE__;
@@ -251,4 +251,4 @@ nil::actor::future<> test_thread_custom_stack_size_failure::run_test_case() {
             return async(concat, x, y).then([](sstring xy) { BOOST_REQUIRE_EQUAL(xy, "xy"); });
         });
 }
-#endif    // SEASTAR_THREAD_STACK_GUARDS && __x86_64__
+#endif    // ACTOR_THREAD_STACK_GUARDS && __x86_64__

@@ -117,7 +117,7 @@ namespace nil {
         /// \return a ready future if we stopped successfully, or a failed future if
         ///         a call to to \c action failed.
         template<typename AsyncAction>
-        SEASTAR_CONCEPT(requires nil::actor::InvokeReturns<AsyncAction, stop_iteration> ||
+        ACTOR_CONCEPT(requires nil::actor::InvokeReturns<AsyncAction, stop_iteration> ||
                         nil::actor::InvokeReturns<AsyncAction, future<stop_iteration>>)
         inline future<> repeat(AsyncAction &&action) noexcept {
             using futurator = futurize<std::result_of_t<AsyncAction()>>;
@@ -238,7 +238,7 @@ namespace nil {
         /// \return a ready future if we stopped successfully, or a failed future if
         ///         a call to to \c action failed.  The \c optional's value is returned.
         template<typename AsyncAction>
-        SEASTAR_CONCEPT(requires requires(AsyncAction aa) {
+        ACTOR_CONCEPT(requires requires(AsyncAction aa) {
             bool(futurize_invoke(aa).get0());
             futurize_invoke(aa).get0().value();
         })
@@ -350,7 +350,7 @@ namespace nil {
         /// \return a ready future if we stopped successfully, or a failed future if
         ///         a call to to \c action or a call to \c stop_cond failed.
         template<typename AsyncAction, typename StopCondition>
-        SEASTAR_CONCEPT(
+        ACTOR_CONCEPT(
             requires nil::actor::InvokeReturns<StopCondition, bool> &&nil::actor::InvokeReturns<AsyncAction, future<>>)
         inline future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
             using namespace detail;
@@ -387,7 +387,7 @@ namespace nil {
         ///        that becomes ready when you wish it to be called again.
         /// \return a future<> that will resolve to the first failure of \c action
         template<typename AsyncAction>
-        SEASTAR_CONCEPT(requires nil::actor::InvokeReturns<AsyncAction, future<>>)
+        ACTOR_CONCEPT(requires nil::actor::InvokeReturns<AsyncAction, future<>>)
         inline future<> keep_doing(AsyncAction action) noexcept {
             return repeat(
                 [action = std::move(action)]() mutable { return action().then([] { return stop_iteration::no; }); });
@@ -467,7 +467,7 @@ namespace nil {
         /// \return a ready future on success, or the first failed future if
         ///         \c action failed.
         template<typename Iterator, typename AsyncAction>
-        SEASTAR_CONCEPT(requires requires(Iterator i, AsyncAction aa) {
+        ACTOR_CONCEPT(requires requires(Iterator i, AsyncAction aa) {
             { futurize_invoke(aa, *i) }
             ->std::same_as<future<>>;
         })
@@ -491,7 +491,7 @@ namespace nil {
         /// \return a ready future on success, or the first failed future if
         ///         \c action failed.
         template<typename Container, typename AsyncAction>
-        SEASTAR_CONCEPT(requires requires(Container c, AsyncAction aa) {
+        ACTOR_CONCEPT(requires requires(Container c, AsyncAction aa) {
             { futurize_invoke(aa, *c.begin()) }
             ->std::same_as<future<>>;
         })
@@ -563,7 +563,7 @@ namespace nil {
         ///         complete.  If one or more return an exception, the return value
         ///         contains one of the exceptions.
         template<typename Iterator, typename Func>
-        SEASTAR_CONCEPT(requires requires(Func f, Iterator i) {
+        ACTOR_CONCEPT(requires requires(Func f, Iterator i) {
             { f(*i++) }
             ->std::same_as<future<>>;
         })
@@ -624,7 +624,7 @@ namespace nil {
         }    // namespace detail
 
         template<typename Range, typename Func>
-        SEASTAR_CONCEPT(requires requires(Func f, Range r) {
+        ACTOR_CONCEPT(requires requires(Func f, Range r) {
             { f(*r.begin()) }
             ->std::same_as<future<>>;
         })
@@ -652,7 +652,7 @@ namespace nil {
         ///         complete.  If one or more return an exception, the return value
         ///         contains one of the exceptions.
         template<typename Iterator, typename Func>
-        SEASTAR_CONCEPT(requires requires(Func f, Iterator i) {
+        ACTOR_CONCEPT(requires requires(Func f, Iterator i) {
             { f(*i++) }
             ->std::same_as<future<>>;
         })
@@ -731,7 +731,7 @@ namespace nil {
         ///         complete.  If one or more return an exception, the return value
         ///         contains one of the exceptions.
         template<typename Range, typename Func>
-        SEASTAR_CONCEPT(requires std::ranges::range<Range> &&requires(Func f, Range r) {
+        ACTOR_CONCEPT(requires std::ranges::range<Range> &&requires(Func f, Range r) {
             { f(*r.begin()) }
             ->std::same_as<future<>>;
         })

@@ -33,7 +33,7 @@ namespace nil {
         static_assert(sizeof(future_state<std::tuple<long>>) <= 16, "future_state<std::tuple<long>> is too large");
         static_assert(future_state<std::tuple<>>::has_trivial_move_and_destroy,
                       "future_state<std::tuple<>> not trivial");
-#if SEASTAR_API_LEVEL < 5
+#if ACTOR_API_LEVEL < 5
         static_assert(future_state<std::tuple<long>>::has_trivial_move_and_destroy,
                       "future_state<std::tuple<long>> not trivial");
 #else
@@ -257,7 +257,7 @@ namespace nil {
             thread_impl::switch_out(thread);
         }
 
-#ifdef SEASTAR_COROUTINES_ENABLED
+#ifdef ACTOR_COROUTINES_ENABLED
         void detail::future_base::set_coroutine(task &coroutine) noexcept {
             assert(_promise);
             _promise->_task = &coroutine;

@@ -343,7 +343,7 @@ namespace nil {
                     _erase_func(*item);
                     _stats.frees++;
                 }
-#ifdef SEASTAR_DEBUG
+#ifdef ACTOR_DEBUG
                 printf("lru slab page eviction succeeded! desc_empty?=%d\n", desc.empty());
 #endif
                 ::free(slab_page);    // free slab page object

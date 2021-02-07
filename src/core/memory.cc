@@ -111,7 +111,7 @@ namespace nil {
     }
 }
 
-#ifndef SEASTAR_DEFAULT_ALLOCATOR
+#ifndef ACTOR_DEFAULT_ALLOCATOR
 
 #include <nil/actor/core/bitops.hh>
 #include <nil/actor/core/align.hh>
@@ -132,7 +132,7 @@ namespace nil {
 #include <nil/actor/detail/defer.hh>
 #include <nil/actor/detail/backtrace.hh>
 
-#ifdef SEASTAR_HAVE_NUMA
+#ifdef ACTOR_HAVE_NUMA
 #include <numaif.h>
 #endif
 
@@ -330,7 +330,7 @@ namespace nil {
                 page_list_link link;
                 small_pool *pool;    // if used in a small_pool
                 free_object *freelist;
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                 allocation_site_ptr
                     alloc_site;    // for objects whose size is multiple of page size, valid for head only
 #endif
@@ -472,7 +472,7 @@ namespace nil {
                 small_pool::idx_to_size(small_pool_array::nr_small_pools - 1);
 
             constexpr size_t object_size_with_alloc_site(size_t size) {
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                 // For page-aligned sizes, allocation_site* lives in page::alloc_site, not with the object.
                 static_assert(is_page_aligned(max_small_allocation),
                               "assuming that max_small_allocation is page aligned so that we"
@@ -487,7 +487,7 @@ namespace nil {
                 return size;
             }
 
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
             // Ensure that object_size_with_alloc_site() does not exceed max_small_allocation
             static_assert(object_size_with_alloc_site(max_small_allocation) == max_small_allocation, "");
             static_assert(object_size_with_alloc_site(max_small_allocation - 1) == max_small_allocation, "");
@@ -589,7 +589,7 @@ namespace nil {
             std::atomic<unsigned> cpu_pages::cpu_id_gen;
             cpu_pages *cpu_pages::all_cpus[max_cpus];
 
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
 
             void set_heap_profiling_enabled(bool enable) {
                 bool is_enabled = cpu_mem.collect_backtrace;
@@ -766,7 +766,7 @@ namespace nil {
                 span->free = span_end->free = false;
                 span->span_size = span_end->span_size = span_size;
                 span->pool = nullptr;
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                 auto alloc_site = get_allocation_site();
                 span->alloc_site = alloc_site;
                 if (alloc_site) {
@@ -834,7 +834,7 @@ namespace nil {
                 return alloc_site;
             }
 
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
 
             allocation_site_ptr &small_pool::alloc_site_holder(void *ptr) {
                 if (objects_page_aligned()) {
@@ -852,7 +852,7 @@ namespace nil {
                 auto &pool = small_pools[idx];
                 assert(size <= pool.object_size());
                 auto ptr = pool.allocate();
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                 if (!ptr) {
                     return nullptr;
                 }
@@ -869,7 +869,7 @@ namespace nil {
             void cpu_pages::free_large(void *ptr) {
                 pageidx idx = (reinterpret_cast<char *>(ptr) - mem()) / page_size;
                 page *span = &pages[idx];
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                 auto alloc_site = span->alloc_site;
                 if (alloc_site) {
                     --alloc_site->count;
@@ -883,7 +883,7 @@ namespace nil {
                 page *span = to_page(ptr);
                 if (span->pool) {
                     auto s = span->pool->object_size();
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                     // We must not allow the object to be extended onto the allocation_site_ptr field.
                     if (!span->pool->objects_page_aligned()) {
                         s -= sizeof(allocation_site_ptr);
@@ -928,7 +928,7 @@ namespace nil {
                 page *span = to_page(ptr);
                 if (span->pool) {
                     small_pool &pool = *span->pool;
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                     allocation_site_ptr alloc_site = pool.alloc_site_holder(ptr);
                     if (alloc_site) {
                         --alloc_site->count;
@@ -949,7 +949,7 @@ namespace nil {
                 if (size <= max_small_allocation) {
                     size = object_size_with_alloc_site(size);
                     auto pool = &small_pools[small_pool::size_to_idx(size)];
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                     allocation_site_ptr alloc_site = pool->alloc_site_holder(ptr);
                     if (alloc_site) {
                         --alloc_site->count;
@@ -996,7 +996,7 @@ namespace nil {
                 if (new_size_pages == old_size_pages) {
                     return;
                 }
-#ifdef SEASTAR_HEAPPROF
+#ifdef ACTOR_HEAPPROF
                 auto alloc_site = span->alloc_site;
                 if (alloc_site) {
                     alloc_site->size -= span->span_size * page_size;
@@ -1361,7 +1361,7 @@ namespace nil {
                 return *cpu_mem_ptr;
             }
 
-#ifdef SEASTAR_DEBUG_ALLOCATIONS
+#ifdef ACTOR_DEBUG_ALLOCATIONS
             static constexpr int debug_allocation_pattern = 0xab;
 #endif
 
@@ -1385,7 +1385,7 @@ namespace nil {
                 if (!ptr) {
                     on_allocation_failure(size);
                 } else {
-#ifdef SEASTAR_DEBUG_ALLOCATIONS
+#ifdef ACTOR_DEBUG_ALLOCATIONS
                     std::memset(ptr, debug_allocation_pattern, size);
 #endif
                 }
@@ -1415,7 +1415,7 @@ namespace nil {
                 if (!ptr) {
                     on_allocation_failure(size);
                 } else {
-#ifdef SEASTAR_DEBUG_ALLOCATIONS
+#ifdef ACTOR_DEBUG_ALLOCATIONS
                     std::memset(ptr, debug_allocation_pattern, size);
 #endif
                 }
@@ -1512,7 +1512,7 @@ namespace nil {
                 cpu_mem.resize(total, sys_alloc);
                 size_t pos = 0;
                 for (auto &&x : m) {
-#ifdef SEASTAR_HAVE_NUMA
+#ifdef ACTOR_HAVE_NUMA
                     unsigned long nodemask = 1UL << x.nodeid;
                     if (mbind) {
                         auto r = ::mbind(cpu_mem.mem() + pos, x.bytes, MPOL_PREFERRED, &nodemask,

@@ -116,7 +116,7 @@ namespace nil {
         }
 
         int app_template::run_deprecated(int ac, char **av, std::function<void()> &&func) {
-#ifdef SEASTAR_DEBUG
+#ifdef ACTOR_DEBUG
             fmt::print("WARNING: debug mode. Not for benchmarking or production\n");
 #endif
             bpo::variables_map configuration;

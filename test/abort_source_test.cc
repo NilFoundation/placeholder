@@ -28,7 +28,7 @@
 using namespace nil::actor;
 using namespace std::chrono_literals;
 
-SEASTAR_TEST_CASE(test_abort_source_notifies_subscriber) {
+ACTOR_TEST_CASE(test_abort_source_notifies_subscriber) {
     bool signalled = false;
     auto as = abort_source();
     auto st_opt = as.subscribe([&signalled]() noexcept { signalled = true; });
@@ -39,7 +39,7 @@ SEASTAR_TEST_CASE(test_abort_source_notifies_subscriber) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_abort_source_subscription_unregister) {
+ACTOR_TEST_CASE(test_abort_source_subscription_unregister) {
     bool signalled = false;
     auto as = abort_source();
     auto st_opt = as.subscribe([&signalled]() noexcept { signalled = true; });
@@ -50,7 +50,7 @@ SEASTAR_TEST_CASE(test_abort_source_subscription_unregister) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_abort_source_rejects_subscription) {
+ACTOR_TEST_CASE(test_abort_source_rejects_subscription) {
     auto as = abort_source();
     as.request_abort();
     auto st_opt = as.subscribe([]() noexcept {});
@@ -58,7 +58,7 @@ SEASTAR_TEST_CASE(test_abort_source_rejects_subscription) {
     return make_ready_future<>();
 }
 
-SEASTAR_TEST_CASE(test_sleep_abortable) {
+ACTOR_TEST_CASE(test_sleep_abortable) {
     auto as = std::make_unique<abort_source>();
     auto f = sleep_abortable(100s, *as).then_wrapped([](auto &&f) {
         try {
@@ -76,6 +76,6 @@ SEASTAR_TEST_CASE(test_sleep_abortable) {
 
 // Verify that negative sleep does not sleep forever. It should not sleep
 // at all.
-SEASTAR_TEST_CASE(test_negative_sleep_abortable) {
+ACTOR_TEST_CASE(test_negative_sleep_abortable) {
     return do_with(abort_source(), [](abort_source &as) { return sleep_abortable(-10s, as); });
 }

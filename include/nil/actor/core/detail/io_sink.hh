@@ -24,9 +24,10 @@
 
 #pragma once
 
+#include <boost/config.hpp>
+
 #include <nil/actor/core/circular_buffer.hh>
 #include <nil/actor/core/detail/io_request.hh>
-#include <nil/actor/detail/concepts.hh>
 
 namespace nil {
     namespace actor {
@@ -53,29 +54,38 @@ namespace nil {
             public:
                 void submit(io_completion *desc, detail::io_request req) noexcept;
 
-                template<typename Fn>
+#ifdef BOOST_HAS_CONCEPTS
                 // Fn should return whether the request was consumed and
                 // draining should try to drain more
-                SEASTAR_CONCEPT(requires std::is_invocable_r<bool, Fn, detail::io_request &, io_completion *>::value)
-                    size_t drain(Fn &&consume) {
-                    size_t pending = _pending_io.size();
-                    size_t drained = 0;
+                template<typename Fn>
+                requires std::is_invocable_r<bool, Fn, detail::io_request &, io_completion *>::value size_t
+                    drain(Fn &&consume) {
+#else
+                // Fn should return whether the request was consumed and
+                // draining should try to drain more
+                template<typename Fn>
+                size_t drain(Fn &&consume) {
 
-                    while (pending > drained) {
-                        pending_io_request &req = _pending_io[drained];
+#endif
 
-                        if (!consume(req, req._completion)) {
-                            break;
-                        }
-                        drained++;
+                        size_t pending = _pending_io.size();
+                size_t drained = 0;
+
+                while (pending > drained) {
+                    pending_io_request &req = _pending_io[drained];
+
+                    if (!consume(req, req._completion)) {
+                        break;
                     }
-
-                    _pending_io.erase(_pending_io.begin(), _pending_io.begin() + drained);
-                    return drained;
+                    drained++;
                 }
-            };
 
-        }    // namespace detail
+                _pending_io.erase(_pending_io.begin(), _pending_io.begin() + drained);
+                return drained;
+            }
+        };    // namespace detail
 
     }    // namespace actor
+
+}    // namespace nil
 }    // namespace nil

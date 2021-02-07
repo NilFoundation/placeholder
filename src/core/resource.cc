@@ -243,7 +243,7 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-#ifdef SEASTAR_HAVE_HWLOC
+#ifdef ACTOR_HAVE_HWLOC
 
 #include <nil/actor/detail/defer.hh>
 #include <nil/actor/core/print.hh>

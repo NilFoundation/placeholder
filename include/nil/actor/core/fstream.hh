@@ -100,7 +100,7 @@ namespace nil {
             ::nil::actor::io_priority_class io_priority_class = default_priority_class();
         };
 
-        SEASTAR_INCLUDE_API_V2 namespace api_v2 {
+        ACTOR_INCLUDE_API_V2 namespace api_v2 {
 
             /// Create an output_stream for writing starting at the position zero of a
             /// newly created file.
@@ -120,7 +120,7 @@ namespace nil {
                 file, file_output_stream_options);
         }
 
-        SEASTAR_INCLUDE_API_V3 namespace api_v3 {
+        ACTOR_INCLUDE_API_V3 namespace api_v3 {
             inline namespace and_newer {
 
                 /// Create an output_stream for writing starting at the position zero of a

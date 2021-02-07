@@ -28,7 +28,8 @@
 /// \brief Contains a nil::actor::checked_ptr class implementation.
 
 #include <exception>
-#include <nil/actor/detail/concepts.hh>
+
+#include <boost/config.hpp>
 
 /// \namespace nil::actor
 namespace nil {
@@ -57,16 +58,28 @@ namespace nil {
             /// Helper functions that simplify the nil::actor::checked_ptr::get() implementation.
             /// @{
 
+#ifdef BOOST_HAS_CONCEPTS
             /// Invokes the get() method of a smart pointer object.
             /// \param ptr A smart pointer object
             /// \return A pointer to the underlying object
             template<typename T>
-            /// cond SEASTAR_CONCEPT_DOC - nested '\ cond' doesn't seem to work (bug 736553), so working it around
-            SEASTAR_CONCEPT(requires requires(T ptr) { ptr.get(); })
-                /// endcond
-                inline typename std::pointer_traits<std::remove_const_t<T>>::element_type *checked_ptr_do_get(T &ptr) {
+            /// cond ACTOR_CONCEPT_DOC - nested '\ cond' doesn't seem to work (bug 736553), so working it around
+            requires requires(T ptr) {
+                ptr.get();
+            }
+            /// endcond
+            inline typename std::pointer_traits<std::remove_const_t<T>>::element_type *checked_ptr_do_get(T &ptr) {
                 return ptr.get();
             }
+#else
+            /// Invokes the get() method of a smart pointer object.
+            /// \param ptr A smart pointer object
+            /// \return A pointer to the underlying object
+            template<typename T>
+            inline typename std::pointer_traits<std::remove_const_t<T>>::element_type *checked_ptr_do_get(T &ptr) {
+                return ptr.get();
+            }
+#endif
 
             /// Return a pointer itself for a naked pointer argument.
             /// \param ptr A naked pointer object
@@ -95,11 +108,14 @@ namespace nil {
         /// \tparam NullDerefAction a functor that is invoked when a user tries to dereference a not engaged pointer.
         ///
         template<typename Ptr, typename NullDerefAction = default_null_deref_action>
-        /// \cond SEASTAR_CONCEPT_DOC
-        SEASTAR_CONCEPT(requires std::is_default_constructible<NullDerefAction>::value &&requires(
-            NullDerefAction action) { NullDerefAction(); })
-            /// \endcond
-            class checked_ptr {
+#ifdef BOOST_HAS_CONCEPTS
+        /// \cond ACTOR_CONCEPT_DOC
+        requires std::is_default_constructible<NullDerefAction>::value &&requires(NullDerefAction action) {
+            NullDerefAction();
+        }
+        /// \endcond
+#endif
+        class checked_ptr {
         public:
             /// Underlying element type
             using element_type = typename std::pointer_traits<Ptr>::element_type;
