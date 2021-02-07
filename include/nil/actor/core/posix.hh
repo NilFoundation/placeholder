@@ -43,12 +43,14 @@
 #elif defined(__APPLE__) || defined(__FreeBSD__)
 
 #include <sys/event.h>
+#include <sys/time.h>
 
 #endif
 
 #include <sys/socket.h>
 #include <sys/mman.h>
 #include <csignal>
+#include <ctime>
 #include <system_error>
 #include <pthread.h>
 #include <memory>
@@ -137,17 +139,34 @@ namespace nil {
                 int fd = ::eventfd(initval, flags);
 #elif defined(__APPLE__) || defined(__FreeBSD__)
                 int fd = ::kqueue();
+                if (fcntl(fd, F_SETFL, flags | EVFILT_USER) < 0) {
+                    ::close(fd);
+                }
 #endif
                 throw_system_error_on(fd == -1, "eventfd");
                 return file_desc(fd);
             }
             static file_desc epoll_create(int flags = 0) {
+#if defined(__linux__)
                 int fd = ::epoll_create1(flags);
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+                int fd = ::kqueue();
+                if (fcntl(fd, F_SETFL, flags) < 0) {
+                    ::close(fd);
+                }
+#endif
                 throw_system_error_on(fd == -1, "epoll_create1");
                 return file_desc(fd);
             }
             static file_desc timerfd_create(int clockid, int flags) {
+#if defined(__linux__)
                 int fd = ::timerfd_create(clockid, flags);
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+                int fd = ::kqueue();
+                if (fcntl(fd, F_SETFL, flags | EVFILT_TIMER) < 0) {
+                    ::close(fd);
+                }
+#endif
                 throw_system_error_on(fd == -1, "timerfd_create");
                 return file_desc(fd);
             }
@@ -158,14 +177,28 @@ namespace nil {
                 return file_desc(fd);
             }
             file_desc accept(socket_address &sa, int flags = 0) {
+#if defined(__linux__)
                 auto ret = ::accept4(_fd, &sa.as_posix_sockaddr(), &sa.addr_length, flags);
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+                auto ret = ::accept(_fd, &sa.as_posix_sockaddr(), &sa.addr_length);
+                if (fcntl(ret, F_SETFL, flags) < 0) {
+                    ::close(ret);
+                }
+#endif
                 throw_system_error_on(ret == -1, "accept4");
                 return file_desc(ret);
             }
             static file_desc inotify_init(int flags);
             // return nullopt if no connection is availbale to be accepted
             std::optional<file_desc> try_accept(socket_address &sa, int flags = 0) {
+#if defined(__linux__)
                 auto ret = ::accept4(_fd, &sa.as_posix_sockaddr(), &sa.addr_length, flags);
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+                auto ret = ::accept(_fd, &sa.as_posix_sockaddr(), &sa.addr_length);
+                if (fcntl(ret, F_SETFL, flags) < 0) {
+                    ::close(ret);
+                }
+#endif
                 if (ret == -1 && errno == EAGAIN) {
                     return {};
                 }
@@ -334,8 +367,15 @@ namespace nil {
                 return size_t(r);
             }
             void timerfd_settime(int flags, const itimerspec &its) {
-                auto r = ::timerfd_settime(_fd, flags, &its, NULL);
-                throw_system_error_on(r == -1, "timerfd_settime");
+#if defined(__linux__)
+                auto fd = ::timerfd_settime(_fd, flags, &its, NULL);
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+                int fd;
+                if (fcntl(fd, F_SETFL, flags) < 0) {
+                    ::close(fd);
+                }
+#endif
+                throw_system_error_on(fd == -1, "timerfd_settime");
             }
 
             mmap_area map(size_t size, unsigned prot, unsigned flags, size_t offset, void *addr = nullptr) {

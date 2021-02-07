@@ -108,7 +108,7 @@ namespace nil {
                 int64_t iWrite = ((buf.st_size + 2 * nBlk - 1) / nBlk) * nBlk - 1;    // Next offset to write to
                 do {
                     nWrite = 0;
-                    if (PR_Seek64(aFD, iWrite, PR_SEEK_SET) == iWrite)
+                    if (lseek(aFD, iWrite, PR_SEEK_SET) == iWrite)
                         nWrite = PR_Write(aFD, "", 1);
                     iWrite += nBlk;
                 } while (nWrite == 1 && iWrite < aLength);
