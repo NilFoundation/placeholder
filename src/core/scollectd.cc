@@ -24,7 +24,9 @@
 #include <iostream>
 #include <unordered_map>
 
-#include <nil/actor/core/seastar.hh>
+#include <boost/endian.hpp>
+
+#include <nil/actor/core/core.hh>
 #include <nil/actor/core/scollectd_api.hh>
 #include <nil/actor/core/metrics_api.hh>
 #include <nil/actor/core/byteorder.hh>
@@ -196,7 +198,7 @@ namespace nil {
                 }
                 template<typename T>
                 typename std::enable_if<std::is_integral<T>::value, cpwriter &>::type write_le(const T &t) {
-                    T tmp = cpu_to_le(t);
+                    T tmp = boost::endian::native_to_little(t);
                     auto *p = reinterpret_cast<const uint8_t *>(&tmp);
                     auto *e = p + sizeof(T);
                     write(p, e);

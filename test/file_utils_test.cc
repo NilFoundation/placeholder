@@ -27,7 +27,7 @@
 #include <nil/actor/testing/test_runner.hh>
 
 #include <nil/actor/core/file.hh>
-#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/core.hh>
 #include <nil/actor/core/print.hh>
 #include <nil/actor/core/loop.hh>
 #include <nil/actor/detail/tmp_file.hh>

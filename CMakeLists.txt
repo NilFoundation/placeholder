@@ -364,7 +364,7 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/scheduling.hh
     include/nil/actor/core/scollectd.hh
     include/nil/actor/core/scollectd_api.hh
-    include/nil/actor/core/seastar.hh
+    include/nil/actor/core/core.hh
     include/nil/actor/core/semaphore.hh
     include/nil/actor/core/sharded.hh
     include/nil/actor/core/shared_future.hh

@@ -25,7 +25,7 @@
 #include <nil/actor/testing/thread_test_case.hh>
 #include <nil/actor/core/fstream.hh>
 #include <nil/actor/core/file.hh>
-#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/core.hh>
 #include <nil/actor/detail/std-compat.hh>
 
 #include "../../src/core/fsnotify.hh"

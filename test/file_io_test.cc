@@ -23,7 +23,7 @@
 #include <nil/actor/testing/thread_test_case.hh>
 #include <nil/actor/testing/test_runner.hh>
 
-#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/core.hh>
 #include <nil/actor/core/semaphore.hh>
 #include <nil/actor/core/condition-variable.hh>
 #include <nil/actor/core/file.hh>

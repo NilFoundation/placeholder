@@ -27,7 +27,7 @@
 #include <nil/actor/core/shared_ptr.hh>
 #include <nil/actor/core/app-template.hh>
 #include <nil/actor/core/do_with.hh>
-#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/core.hh>
 #include <nil/actor/core/semaphore.hh>
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/test_runner.hh>

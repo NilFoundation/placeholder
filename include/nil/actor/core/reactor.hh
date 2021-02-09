@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/core.hh>
 #include <nil/actor/core/iostream.hh>
 #include <nil/actor/core/aligned_buffer.hh>
 #include <nil/actor/core/cacheline.hh>

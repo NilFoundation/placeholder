@@ -27,12 +27,17 @@
 #include <cassert>
 #include <cstdlib>
 #include <string>
+
 #include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/spinlock.hh>
+#include <nil/actor/detail/thread_affinity.hh>
+
 #include <vector>
 #include <set>
 #include <sched.h>
+
 #include <boost/any.hpp>
+
 #include <unordered_map>
 
 namespace nil {

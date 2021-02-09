@@ -25,7 +25,7 @@
 #include <iostream>
 #include <random>
 
-#include <nil/actor/core/seastar.hh>
+#include <nil/actor/core/core.hh>
 #include <nil/actor/detail/exceptions.hh>
 #include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/tmp_file.hh>
