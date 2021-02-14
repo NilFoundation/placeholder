@@ -496,7 +496,8 @@ list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES
     ${Boost_LIBRARIES}
     ${c-ares_LIBRARIES}
     ${lz4_LIBRARIES}
-    fmt::fmt)
+    fmt::fmt
+    libfswatch)
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES
     ${CMAKE_DL_LIBS}
