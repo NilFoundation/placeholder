@@ -23,7 +23,6 @@
 #include <sys/statfs.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <sys/inotify.h>
 
 #include <nil/actor/core/task.hh>
 #include <nil/actor/core/reactor.hh>
@@ -1758,21 +1757,6 @@ namespace nil {
                     ret.throw_if_error();
                     return make_ready_future<struct stat>(ret.extra);
                 });
-        }
-
-        future<int> reactor::inotify_add_watch(int fd, std::string_view path, uint32_t flags) {
-            // Allocating memory for a sstring can throw, hence the futurize_invoke
-            return futurize_invoke([path, fd, flags, this] {
-                return _thread_pool
-                    ->submit<syscall_result<int>>([fd, path = sstring(path), flags] {
-                        auto ret = ::inotify_add_watch(fd, path.c_str(), flags);
-                        return wrap_syscall(ret);
-                    })
-                    .then([](syscall_result<int> ret) {
-                        ret.throw_if_error();
-                        return make_ready_future<int>(ret.result);
-                    });
-            });
         }
 
         future<stat_data> reactor::file_stat(std::string_view pathname, follow_symlink follow) noexcept {

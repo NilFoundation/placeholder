@@ -35,12 +35,6 @@ namespace nil {
             return file_desc(fd);
         }
 
-        file_desc file_desc::inotify_init(int flags) {
-            int fd = ::inotify_init1(flags);
-            throw_system_error_on(fd == -1, "could not create inotify instance");
-            return file_desc(fd);
-        }
-
         void mmap_deleter::operator()(void *ptr) const {
             ::munmap(ptr, _size);
         }

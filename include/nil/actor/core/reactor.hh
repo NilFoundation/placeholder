@@ -536,8 +536,6 @@ namespace nil {
             future<> link_file(std::string_view oldpath, std::string_view newpath) noexcept;
             future<> chmod(std::string_view name, file_permissions permissions) noexcept;
 
-            future<int> inotify_add_watch(int fd, std::string_view path, uint32_t flags);
-
             // In the following three methods, prepare_io is not guaranteed to execute in the same processor
             // in which it was generated. Therefore, care must be taken to avoid the use of objects that could
             // be destroyed within or at exit of prepare_io.
