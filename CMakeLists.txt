@@ -434,7 +434,6 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/core/dpdk_rte.cc
     src/core/exception_hacks.cc
     src/core/execution_stage.cc
-    src/core/fsnotify.cc
     src/core/fsqual.cc
     src/core/fstream.cc
     src/core/future.cc
