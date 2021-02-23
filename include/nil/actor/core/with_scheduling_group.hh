@@ -26,6 +26,7 @@
 
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/make_task.hh>
+
 #include <type_traits>
 
 namespace nil {
@@ -38,17 +39,15 @@ namespace nil {
 
             template<typename Func>
 #ifdef BOOST_HAS_CONCEPTS
-            requires std::is_nothrow_move_constructible<Func>::value auto
-#else
-            typename std::enable_if<std::is_nothrow_move_constructible<Func>::value>::type
+            requires std::is_nothrow_move_constructible<Func>::value
 #endif
+                auto
                 schedule_in_group(scheduling_group sg, Func func) noexcept {
-                static_assert(std::is_nothrow_move_constructible_v<Func>);
+                static_assert(std::is_nothrow_move_constructible<Func>::value);
                 auto tsk = make_task(sg, std::move(func));
                 schedule(tsk);
                 return tsk->get_future();
             }
-
         }    // namespace detail
 
         /// \brief run a callable (with some arbitrary arguments) in a scheduling group
@@ -63,12 +62,11 @@ namespace nil {
         ///             to force passing references
         template<typename Func, typename... Args>
 #ifdef BOOST_HAS_CONCEPTS
-        requires std::is_nothrow_move_constructible<Func>::value auto
-#else
-        inline typename std::enable_if<std::is_nothrow_move_constructible<Func>::value>::type
+        requires std::is_nothrow_move_constructible<Func>::value
 #endif
+            inline auto
             with_scheduling_group(scheduling_group sg, Func func, Args &&...args) noexcept {
-            static_assert(std::is_nothrow_move_constructible_v<Func>);
+            static_assert(std::is_nothrow_move_constructible<Func>::value);
             using return_type = decltype(func(std::forward<Args>(args)...));
             using futurator = futurize<return_type>;
             if (sg.active()) {
