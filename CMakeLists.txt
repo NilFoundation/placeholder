@@ -41,12 +41,8 @@ set(BUILD_WITH_DPDK_MACHINE
     STRING
     "Configure DPDK for this processor architecture (if `BUILD_WITH_DPDK` is enabled). A DPDK code name abbreviation (e.g., ivb)")
 
-set(BUILD_WITH_ALLOC_FAILURE_INJECTION
-    "DEFAULT"
-    CACHE
-    STRING
-    "Enable failure injection into the Seastar allocator. Can be ON, OFF or DEFAULT (which enables it for Dev mode)")
-
+option(BUILD_WITH_ALLOC_FAILURE_INJECTION "Enable failure injection into the allocator." FALSE)
+    
 option(BUILD_WITH_TASK_BACKTRACE
     "Collect backtrace at deferring points."
     OFF)

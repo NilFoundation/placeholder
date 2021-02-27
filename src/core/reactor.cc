@@ -19,23 +19,34 @@
 
 #include <cinttypes>
 #include <sys/syscall.h>
+
+#if defined(__linux__)
 #include <sys/vfs.h>
+#endif
+
 #include <sys/statfs.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
+#include <nil/actor/detail/conversions.hh>
+#include <nil/actor/detail/log.hh>
 
 #include <nil/actor/core/task.hh>
 #include <nil/actor/core/reactor.hh>
 #include <nil/actor/core/memory.hh>
 #include <nil/actor/core/posix.hh>
+
 #include <nil/actor/net/packet.hh>
 #include <nil/actor/net/stack.hh>
 #include <nil/actor/net/posix-stack.hh>
+
+#if defined(__linux__)
 #include <nil/actor/net/native-stack.hh>
+#endif
+
 #include <nil/actor/core/resource.hh>
 #include <nil/actor/core/print.hh>
 #include <nil/actor/core/detail/scollectd-impl.hh>
-#include <nil/actor/detail/conversions.hh>
 #include <nil/actor/core/loop.hh>
 #include <nil/actor/core/with_scheduling_group.hh>
 #include <nil/actor/core/thread.hh>
@@ -49,7 +60,6 @@
 #include <nil/actor/core/detail/io_desc.hh>
 #include <nil/actor/core/detail/buffer_allocator.hh>
 #include <nil/actor/core/scheduling_specific.hh>
-#include <nil/actor/detail/log.hh>
 #include <nil/actor/core/detail/file-impl.hh>
 #include <nil/actor/core/detail/reactor_backend.hh>
 #include <nil/actor/core/detail/syscall_result.hh>

@@ -32,6 +32,10 @@
 #include <osv/newpoll.hh>
 #endif
 
+#ifdef __APPLE__
+#define TFD_TIMER_ABSTIME (1 << 0)
+#endif
+
 namespace nil {
     namespace actor {
 
@@ -349,7 +353,11 @@ namespace nil {
         }
 
         file_desc reactor_backend_aio::make_timerfd() {
+#if defined(__linux__)
             return file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+#elif defined(__APPLE__)
+            return file_desc::timerfd_create(CLOCK_MONOTONIC, FD_CLOEXEC | O_NONBLOCK);
+#endif
         }
 
         bool reactor_backend_aio::await_events(int timeout, const sigset_t *active_sigmask) {
@@ -546,7 +554,11 @@ namespace nil {
         }
 
         void reactor_backend_aio::arm_highres_timer(const ::itimerspec &its) {
+#if defined(__linux__)
             _hrtimer_timerfd.timerfd_settime(TFD_TIMER_ABSTIME, its);
+#elif defined(__APPLE__)
+
+#endif
         }
 
         void reactor_backend_aio::reset_preemption_monitor() {
@@ -568,7 +580,14 @@ namespace nil {
         }
 
         reactor_backend_epoll::reactor_backend_epoll(reactor *r) :
-            _r(r), _epollfd(file_desc::epoll_create(EPOLL_CLOEXEC)), _storage_context(_r) {
+            _r(r),
+#if defined(__APPLE__)
+            _epollfd(file_desc::epoll_create(FD_CLOEXEC)),
+#elif defined(__linux__)
+            _epollfd(file_desc::epoll_create(EPOLL_CLOEXEC)),
+#endif
+            _storage_context(_r) {
+#if defined(__linux__)
             ::epoll_event event;
             event.events = EPOLLIN;
             event.data.ptr = nullptr;
@@ -581,12 +600,27 @@ namespace nil {
             sev.sigev_signo = hrtimer_signal();
             ret = timer_create(CLOCK_MONOTONIC, &sev, &_steady_clock_timer);
             assert(ret >= 0);
+#elif defined(__APPLE__)
+            _steady_clock_timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+            if (_steady_clock_timer) {
+                dispatch_source_set_timer(_steady_clock_timer, dispatch_walltime(NULL, 0), 1ull * NSEC_PER_SEC, 0);
+                dispatch_source_set_event_handler(_steady_clock_timer, ^{
+                    raise(hrtimer_signal());
+                });
+                dispatch_resume(_steady_clock_timer);
+            }
+
+#endif
 
             _r->_signals.handle_signal(hrtimer_signal(), [r = _r] { r->service_highres_timer(); });
         }
 
         reactor_backend_epoll::~reactor_backend_epoll() {
+#if defined(__APPLE__)
+            dispatch_source_cancel(_steady_clock_timer);
+#elif defined(__linux__)
             timer_delete(_steady_clock_timer);
+#endif
         }
 
         void reactor_backend_epoll::start_tick() {

@@ -43,6 +43,10 @@
 #include <osv/newpoll.hh>
 #endif
 
+#if defined(__APPLE__)
+#include <dispatch/dispatch.h>
+#endif
+
 namespace nil {
     namespace actor {
 
@@ -215,7 +219,11 @@ namespace nil {
         class reactor_backend_epoll : public reactor_backend {
             reactor *_r;
             std::thread _task_quota_timer_thread;
+#if defined(__APPLE__)
+            dispatch_source_t _steady_clock_timer = {};
+#else
             timer_t _steady_clock_timer = {};
+#endif
 
         private:
             file_desc _epollfd;
