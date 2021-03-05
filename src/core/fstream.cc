@@ -25,7 +25,7 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-#include <cmalloc>
+#include <cstdlib>
 #include <cstring>
 
 namespace nil {

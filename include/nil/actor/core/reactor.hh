@@ -30,13 +30,16 @@
 #include <nil/actor/core/cacheline.hh>
 #include <nil/actor/core/circular_buffer_fixed_capacity.hh>
 #include <nil/actor/core/idle_cpu_handler.hh>
+
 #include <memory>
 #include <type_traits>
-#if defined(__linux__)
+
+#if BOOST_OS_LINUX
 #include <sys/epoll.h>
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
 #include <sys/event.h>
 #endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unordered_map>
@@ -156,6 +159,18 @@ namespace nil {
             class reactor_stall_sampler;
             class cpu_stall_detector;
             class buffer_allocator;
+
+            /* Handle platform discrepancies in pthread_setname_np: macOS uses a
+             * single-argument form, while Linux uses a two-argument form.
+             * This wrapper template handles the difference.  */
+            template<typename R, typename A1, typename A2>
+            void set_thread_name(R (*set_name)(A1, A2), const char *name) {
+                set_name(pthread_self(), name);
+            }
+            template<typename R, typename A1>
+            void set_thread_name(R (*set_name)(A1), const char *name) {
+                set_name(name);
+            }
 
             template<typename Func>    // signature: bool ()
             std::unique_ptr<pollfn> make_pollfn(Func &&func);

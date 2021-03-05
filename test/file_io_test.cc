@@ -40,12 +40,17 @@
 
 #include <boost/range/adaptor/transformed.hpp>
 #include <iostream>
-#include <sys/statfs.h>
 
-#include "core/file-impl.hh"
+#if BOOST_OS_LINUX
+#include <sys/statfs.h>
+#elif BOOST_OS_IOS || BOOST_OS_MACOS
+#include <sys/param.h>
+#include <sys/mount.h>
+#endif
+
+#include <nil/actor/core/detail/file-impl.hh>
 
 using namespace nil::actor;
-namespace fs = std::filesystem;
 
 ACTOR_TEST_CASE(open_flags_test) {
     open_flags flags = open_flags::rw | open_flags::create | open_flags::exclusive;

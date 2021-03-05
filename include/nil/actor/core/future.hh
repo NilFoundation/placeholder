@@ -251,7 +251,7 @@ namespace nil {
 #if ACTOR_API_LEVEL < 5
                 using type = std::tuple<T>;
 #else
-                using type = std::conditional_t<std::is_void_v<T>, detail::monostate, T>;
+                using type = typename std::conditional<std::is_void_v<T>, detail::monostate, T>::type;
 #endif
             };
 
@@ -262,7 +262,8 @@ namespace nil {
 #if ACTOR_API_LEVEL < 5
             using future_tuple_type_t = T;
 #else
-            using future_tuple_type_t = std::conditional_t<std::is_same_v<T, monostate>, std::tuple<>, std::tuple<T>>;
+            using future_tuple_type_t =
+                typename std::conditional<std::is_same<T, monostate>::value, std::tuple<>, std::tuple<T>>::type;
 #endif
 
             // It doesn't seem to be possible to use std::tuple_element_t with an empty tuple. There is an static_assert
@@ -287,7 +288,9 @@ namespace nil {
 
             template<typename T>
             using maybe_wrap_ref =
-                std::conditional_t<std::is_reference_v<T>, std::reference_wrapper<std::remove_reference_t<T>>, T>;
+                typename std::conditional<std::is_reference<T>::value,
+                                          std::reference_wrapper<typename std::remove_reference<T>::type>,
+                                          T>::type;
 
             /// \brief Wrapper for keeping uninitialized values of non default constructible types.
             ///
@@ -337,7 +340,9 @@ namespace nil {
                 using tuple_type = future_tuple_type_t<T>;
                 uninitialized_wrapper_base() noexcept = default;
                 template<typename... U>
-                std::enable_if_t<!std::is_same_v<std::tuple<std::remove_cv_t<U>...>, std::tuple<tuple_type>>, void>
+                typename std::enable_if<
+                    !std::is_same_v<std::tuple<typename std::remove_cv<U>::type...>, std::tuple<tuple_type>>,
+                    void>::type
                     uninitialized_set(U &&...vs) {
                     new (this) T(std::forward<U>(vs)...);
                 }

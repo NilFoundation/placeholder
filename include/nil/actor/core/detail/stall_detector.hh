@@ -32,6 +32,10 @@
 #include <nil/actor/core/posix.hh>
 #include <nil/actor/core/metrics_registration.hh>
 
+#if BOOST_OS_MACOS || BOOST_OS_IOS
+#include <dispatch/dispatch.h>
+#endif
+
 namespace nil {
     namespace actor {
 
@@ -49,7 +53,11 @@ namespace nil {
 
             // Detects stalls in continuations that run for too long
             class cpu_stall_detector {
+#if BOOST_OS_LINUX
                 timer_t _timer;
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                dispatch_source_t _timer;
+#endif
                 std::atomic<uint64_t> _last_tasks_processed_seen {};
                 unsigned _stall_detector_reports_per_minute;
                 std::atomic<uint64_t> _stall_detector_missed_ticks = {0};

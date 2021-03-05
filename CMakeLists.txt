@@ -135,8 +135,7 @@ set(CMAKE_SHARED_LINKER_FLAGS_SANITIZE
     "Flags used by the shared libraries linker during sanitize builds."
     FORCE)
 
-mark_as_advanced(
-    CMAKE_CXX_FLAGS_SANITIZE
+mark_as_advanced(CMAKE_CXX_FLAGS_SANITIZE
     CMAKE_C_FLAGS_SANITIZE
     CMAKE_EXE_LINKER_FLAGS_SANITIZE
     CMAKE_SHARED_LINKER_FLAGS_SANITIZE)
@@ -286,6 +285,14 @@ set(BUILD_WITH_GEN_BINARY_DIR ${BUILD_WITH_BINARY_DIR}/gen)
 include(ActorDependencies)
 seastar_find_dependencies()
 
+if(BUILD_WITH_VALGRIND)
+    find_package(Valgrind)
+    if (VALGRIND_FOUND)
+        list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_HAS_VALGRIND)
+    endif()
+endif()
+
+
 # Private build dependencies not visible to consumers
 find_package(ragel 6.10 REQUIRED)
 find_package(Threads REQUIRED)
@@ -319,7 +326,6 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/do_with.hh
     include/nil/actor/core/dpdk_rte.hh
     include/nil/actor/core/enum.hh
-    include/nil/actor/core/exception_hacks.hh
     include/nil/actor/core/execution_stage.hh
     include/nil/actor/core/expiring_fifo.hh
     include/nil/actor/core/fair_queue.hh
@@ -424,11 +430,12 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/core/alien.cc
     src/core/file.cc
     src/core/fair_queue.cc
-    src/core/reactor_backend.cc
+    src/core/reactor_backend_epoll.cc
+    src/core/reactor_backend_osv.cc
+    src/core/reactor_backend_selector.cc
     src/core/thread_pool.cc
     src/core/app-template.cc
     src/core/dpdk_rte.cc
-    src/core/exception_hacks.cc
     src/core/execution_stage.cc
     src/core/fsqual.cc
     src/core/fstream.cc
@@ -470,8 +477,24 @@ set(${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS
     -Werror
     -Wno-array-bounds # Disabled because of https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93437
     -Wno-error=deprecated-declarations)
+
 if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang"))
     list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS -fdeclspec)
+elseif((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0))
+    list(APPEND ${CURRENT_PROJECT_NAME}_HEADERS
+        include/nil/actor/core/exception_hacks.hh)
+
+    list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES
+        src/core/exception_hacks.cc)
+endif()
+
+if(UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
+    list(APPEND ${CURRENT_PROJECT_NAME}_HEADERS
+        include/nil/actor/core/detail/reactor_backend_aio.hh)
+
+
+    list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES
+        src/core/reactor_backend_aio.cc)
 endif()
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES
@@ -797,7 +820,6 @@ if(BUILD_TESTS)
         src/testing/random.cc
         perf/perf_tests.cc)
 
-
     add_library(${CMAKE_WORKSPACE_NAME}_testing
         ${testing_HEADERS}
         ${testing_SOURCES})
@@ -856,7 +878,7 @@ if(BUILD_TESTS)
         PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
 
     target_link_libraries(${CMAKE_WORKSPACE_NAME}_perf_testing
-        PUBLIC ${CMAKE_WORKSPACE_NAME}::core)
+        PUBLIC ${CMAKE_WORKSPACE_NAME}::core ${Boost_LIBRARIES})
 
     cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
         ${CMAKE_WORKSPACE_NAME}_testing

@@ -16,7 +16,7 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/core/reactor.hh>
-#include <nil/actor/core/thread_pool.hh>
+#include <nil/actor/core/detail/thread_pool.hh>
 
 namespace nil {
     namespace actor {
@@ -27,7 +27,7 @@ namespace nil {
         }
 
         void thread_pool::work(sstring name) {
-            pthread_setname_np(pthread_self(), name.c_str());
+            detail::set_thread_name(pthread_setname_np, name.c_str());
             sigset_t mask;
             sigfillset(&mask);
             auto r = ::pthread_sigmask(SIG_BLOCK, &mask, NULL);

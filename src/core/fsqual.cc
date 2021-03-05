@@ -15,24 +15,64 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
+#include <boost/config.hpp>
+#include <boost/predef.h>
+
 #include <nil/actor/core/posix.hh>
-#include <nil/actor/detail/defer.hh>
 #include <nil/actor/core/linux-aio.hh>
+#include <nil/actor/core/fsqual.hh>
+
+#include <nil/actor/detail/defer.hh>
 
 #include <sys/time.h>
 #include <sys/resource.h>
+
 #include <fcntl.h>
 #include <iostream>
 #include <unistd.h>
 #include <cstdlib>
 #include <type_traits>
 
-#include <nil/actor/core/fsqual.hh>
+#if BOOST_OS_MACOS || BOOST_OS_IOS
+
+#include <mach/mach.h>
+#include <errno.h>
+
+#endif
 
 namespace nil {
     namespace actor {
+        namespace detail {
 
-        using namespace nil::actor::internal;
+#if BOOST_OS_MACOS || BOOST_OS_IOS
+            int getrusage_thread(struct rusage *rusage) {
+                int ret = -1;
+                thread_basic_info_data_t info = {};
+                mach_msg_type_number_t info_count = THREAD_BASIC_INFO_COUNT;
+                kern_return_t kern_err;
+
+                mach_port_t port = mach_thread_self();
+                kern_err = thread_info(port, THREAD_BASIC_INFO, (thread_info_t)&info, &info_count);
+                mach_port_deallocate(mach_task_self(), port);
+
+                if (kern_err == KERN_SUCCESS) {
+                    memset(rusage, 0, sizeof(struct rusage));
+                    rusage->ru_utime.tv_sec = info.user_time.seconds;
+                    rusage->ru_utime.tv_usec = info.user_time.microseconds;
+                    rusage->ru_stime.tv_sec = info.system_time.seconds;
+                    rusage->ru_stime.tv_usec = info.system_time.microseconds;
+                    ret = 0;
+                } else {
+                    errno = EINVAL;
+                }
+
+                return ret;
+            }
+#endif
+
+        }    // namespace detail
+
+        using namespace nil::actor::detail;
         using namespace nil::actor::detail::linux_abi;
 
         // Runs func(), and also adds the number of context switches
@@ -49,7 +89,11 @@ namespace nil {
                 }
                 static Counter nvcsw() {
                     struct rusage usage;
+#if BOOST_OS_LINUX
                     getrusage(RUSAGE_THREAD, &usage);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    detail::getrusage_thread(&usage);
+#endif
                     return usage.ru_nvcsw;
                 }
             };
@@ -63,7 +107,14 @@ namespace nil {
             throw_system_error_on(r == -1, "io_setup");
             auto cleanup = defer([&] { io_destroy(ioctx); });
             auto fname = directory + "/fsqual.tmp";
+#if BOOST_OS_LINUX || BOOST_OS_BSD
             auto fd = file_desc::open(fname, O_CREAT | O_EXCL | O_RDWR | O_DIRECT, 0600);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            auto fd = file_desc::open(fname, O_CREAT | O_EXCL | O_RDWR, 0600);
+            // Not an ultimate solution for Darwin-based systems accroding
+            // to https://github.com/libuv/libuv/issues/1600
+            fcntl(fd.get(), F_NOCACHE, 1);
+#endif
             unlink(fname.c_str());
             auto nr = 1000;
             fd.truncate(nr * 4096);

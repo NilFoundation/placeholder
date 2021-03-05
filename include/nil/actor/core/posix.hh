@@ -24,6 +24,9 @@
 
 #pragma once
 
+#include <boost/config.hpp>
+#include <boost/predef.h>
+
 #include <nil/actor/core/sstring.hh>
 #include <nil/actor/core/abort_on_ebadf.hh>
 
@@ -39,17 +42,18 @@
 #include <sys/mman.h>
 #include <sys/uio.h>
 
-#if defined(__linux__)
+#if BOOST_OS_LINUX
 
 #include <sys/eventfd.h>
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 
-#elif defined(__APPLE__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
 
 #include <sys/event.h>
 #include <sys/time.h>
 #include <sys/sysctl.h>
+
 #endif
 
 #include <cassert>
@@ -64,6 +68,8 @@
 #include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/thread_affinity.hh>
 
+#if BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+
 // https://github.com/freebsd/freebsd/blob/e79c62ff68fc74d88cb6f479859f6fae9baa5101/sys/sys/signal.h#L117
 
 #ifndef SIGRTMIN
@@ -73,8 +79,6 @@
 #ifndef SIGRTMAX
 #define SIGRTMAX 126
 #endif
-
-#if defined(__APPLE__) || defined(__FreeBSD__)
 
 struct itimerspec {
     struct timespec it_interval; /* Timer interval */
@@ -158,9 +162,9 @@ namespace nil {
                 return file_desc(fd);
             }
             static file_desc eventfd(unsigned initval, int flags) {
-#if defined(__linux__)
+#if BOOST_OS_LINUX
                 int fd = ::eventfd(initval, flags);
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                 int fd = ::kqueue();
                 if (fcntl(fd, F_SETFL, flags | EVFILT_USER) < 0) {
                     ::close(fd);
@@ -170,9 +174,9 @@ namespace nil {
                 return file_desc(fd);
             }
             static file_desc epoll_create(int flags = 0) {
-#if defined(__linux__)
+#if BOOST_OS_LINUX
                 int fd = ::epoll_create1(flags);
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                 int fd = ::kqueue();
                 if (fcntl(fd, F_SETFL, flags) < 0) {
                     ::close(fd);
@@ -182,9 +186,9 @@ namespace nil {
                 return file_desc(fd);
             }
             static file_desc timerfd_create(int clockid, int flags) {
-#if defined(__linux__)
+#if BOOST_OS_LINUX
                 int fd = ::timerfd_create(clockid, flags);
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                 int fd = ::kqueue();
                 if (fcntl(fd, F_SETFL, flags | EVFILT_TIMER) < 0) {
                     ::close(fd);
@@ -200,9 +204,9 @@ namespace nil {
                 return file_desc(fd);
             }
             file_desc accept(socket_address &sa, int flags = 0) {
-#if defined(__linux__)
+#if BOOST_OS_LINUX
                 auto ret = ::accept4(_fd, &sa.as_posix_sockaddr(), &sa.addr_length, flags);
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                 auto ret = ::accept(_fd, &sa.as_posix_sockaddr(), &sa.addr_length);
                 if (fcntl(ret, F_SETFL, flags) < 0) {
                     ::close(ret);
@@ -213,9 +217,9 @@ namespace nil {
             }
             // return nullopt if no connection is availbale to be accepted
             std::optional<file_desc> try_accept(socket_address &sa, int flags = 0) {
-#if defined(__linux__)
+#if BOOST_OS_LINUX
                 auto ret = ::accept4(_fd, &sa.as_posix_sockaddr(), &sa.addr_length, flags);
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                 auto ret = ::accept(_fd, &sa.as_posix_sockaddr(), &sa.addr_length);
                 if (fcntl(ret, F_SETFL, flags) < 0) {
                     ::close(ret);
@@ -389,9 +393,9 @@ namespace nil {
                 return size_t(r);
             }
             void timerfd_settime(int flags, const itimerspec &its) {
-#if defined(__linux__)
+#if BOOST_OS_LINUX
                 auto fd = ::timerfd_settime(_fd, flags, &its, NULL);
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                 int fd = ::kqueue();
                 if (fcntl(fd, F_SETFL, flags | EVFILT_TIMER) < 0) {
                     ::close(fd);

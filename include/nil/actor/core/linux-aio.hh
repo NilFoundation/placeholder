@@ -24,13 +24,17 @@
 
 #pragma once
 
-#ifdef __linux
+#include <boost/predef.h>
+
+#if BOOST_OS_LINUX
 #include <endian.h>
-#elif defined(__APPLE__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
 #include <machine/endian.h>
 #endif
+
 #include <sys/time.h>
 #include <sys/uio.h>
+
 #include <csignal>
 #include <cstdint>
 

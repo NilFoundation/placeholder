@@ -17,11 +17,13 @@
 
 #define __user /* empty */    // for xfs includes, below
 
+#include <boost/predef.h>
+
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <dirent.h>
 
-#if defined(__linux__)
+#if BOOST_OS_LINUX
 
 #include <linux/types.h>    // for xfs, below
 #include <linux/fs.h>       // BLKBSZGET
@@ -31,15 +33,12 @@
 #include <xfs/xfs.h>
 #undef min
 
-#elif defined(__APPLE__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
 
 #include <sys/types.h>
 #include <sys/disk.h>
-
-#elif defined(__FreeBSD__)
-
-#include <sys/types.h>
-#include <sys/disk.h>
+#include <sys/param.h>
+#include <sys/mount.h>
 
 #endif
 
@@ -52,7 +51,9 @@
 #include <nil/actor/core/file.hh>
 #include <nil/actor/core/report_exception.hh>
 #include <nil/actor/core/linux-aio.hh>
+
 #include <nil/actor/detail/later.hh>
+
 #include <nil/actor/core/detail/read_state.hh>
 #include <nil/actor/core/detail/file-impl.hh>
 #include <nil/actor/core/detail/syscall_result.hh>
@@ -62,14 +63,14 @@
 namespace nil {
     namespace actor {
         namespace detail {
-            bool fallocate(int fd, int mode, off_t offset, size_t len) {
-#if defined(__linux__)
+            bool fallocate(int fd, int mode, off_t offset, off_t len) {
+#if BOOST_OS_LINUX
                 return ::fallocate(fd, mode, offset, len) == 0;
 #elif defined(ACTOR_HAS_POSIX_FALLOCATE)
                 return posix_fallocate(fd, offset, len) == 0;
-#elif defined(_WIN32)
+#elif BOOST_OS_WINDOWS
                 return _lseeki64(fd, offset, len) == len && 0 != SetEndOfFile((HANDLE)fd);
-#elif defined(__APPLE__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
                 fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, offset, len};
                 // Try to get a continous chunk of disk space
                 int ret = fcntl(fd, F_PREALLOCATE, &store);
@@ -81,7 +82,7 @@ namespace nil {
                         return false;
                 }
                 return 0 == ftruncate(fd, len);
-#elif defined(__FreeBSD__) || defined(__unix__) || defined(__unix)
+#elif BOOST_OS_BSD
                 // The following is copied from fcntlSizeHint in sqlite
                 /* If the OS does not have posix_fallocate(), fake it. First use
                 ** ftruncate() to set the file size, then write a single byte to
@@ -119,7 +120,7 @@ namespace nil {
 
             int blkgetsize(int fd, uint64_t *psize) {
                 int ret = -1;
-#if defined(__linux__)
+#if BOOST_OS_LINUX
 #if defined(BLKGETSIZE64)
                 ret = ioctl(fd, BLKGETSIZE64, psize);
 #elif defined(BLKGETSIZE)
@@ -129,7 +130,7 @@ namespace nil {
 #else
 #error "Linux configuration error (blkgetsize)"
 #endif
-#elif defined(__APPLE__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
                 unsigned long blocksize = 0;
                 ret = ioctl(fd, DKIOCGETBLOCKSIZE, &blocksize);
                 if (!ret) {
@@ -138,7 +139,7 @@ namespace nil {
                     if (!ret)
                         *psize = (uint64_t)nblocks * blocksize;
                 }
-#elif defined(__FreeBSD__)
+#elif BOOST_OS_BSD
                 ret = ioctl(fd, DIOCGMEDIASIZE, psize);
 #else
 #error "Unable to query block device size: unsupported platform, please report."
@@ -192,6 +193,14 @@ namespace nil {
         }
 
         void posix_file_impl::query_dma_alignment(uint32_t block_size) {
+            // FIXME: Consider borrowing the implementation from here:
+            // https://github.com/qemu/qemu/blob/master/block/file-posix.c
+
+            _disk_write_dma_alignment = block_size;
+            _disk_read_dma_alignment = block_size;
+            _memory_dma_alignment = 1;
+
+#if BOOST_OS_LINUX
             dioattr da;
             auto r = ioctl(_fd, XFS_IOC_DIOINFO, &da);
             if (r == 0) {
@@ -201,6 +210,7 @@ namespace nil {
                 // FIXME: really read the block size
                 _disk_write_dma_alignment = std::max<unsigned>(da.d_miniosz, block_size);
             }
+#endif
         }
 
         std::unique_ptr<nil::actor::file_handle_impl> posix_file_impl::dup() {
@@ -249,8 +259,12 @@ namespace nil {
             return engine()
                 ._thread_pool
                 ->submit<syscall_result<int>>([this, offset, length]() mutable {
+#if BOOST_OS_LINUX || BOOST_OS_BSD
                     return wrap_syscall<int>(
                         detail::fallocate(_fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset, length));
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    return wrap_syscall<int>(detail::fallocate(_fd, 0, offset, length));
+#endif
                 })
                 .then([](syscall_result<int> sr) {
                     sr.throw_if_error();
@@ -323,10 +337,10 @@ namespace nil {
                 ._thread_pool
                 ->submit<syscall_result_extra<size_t>>([this] {
                     uint64_t size;
-                    int ret = ::ioctl(_fd, detail::blkgetsize(_fd, &size), &size);
+                    int ret = detail::blkgetsize(_fd, &size);
                     return wrap_syscall(ret, size);
                 })
-                .then([](syscall_result_extra<uint64_t> ret) {
+                .then([](syscall_result_extra<size_t> ret) {
                     ret.throw_if_error();
                     return make_ready_future<uint64_t>(ret.extra);
                 });
@@ -352,15 +366,30 @@ namespace nil {
             // From getdents(2):
             struct linux_dirent64 {
                 ino64_t d_ino; /* 64-bit inode number */
-#ifdef __linux__
+#if BOOST_OS_LINUX
                 off64_t d_off; /* 64-bit offset to next structure */
-#elif defined(__APPLE__) || defined(__FreeBSD__)
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                 off_t d_off;
 #endif
                 unsigned short d_reclen; /* Size of this dirent */
                 unsigned char d_type;    /* File type */
                 char d_name[];           /* Filename (null-terminated) */
             };
+
+#ifndef MAXNAMELEN
+#define MAXNAMELEN 255
+#endif
+
+            // From GETDIRENTRIES(2):
+            struct bsd_dirent {
+                uint32_t d_fileno;
+                uint16_t d_reclen;
+                uint8_t d_type;
+                uint8_t d_namlen;
+                char d_name[MAXNAMELEN + 1]; /* see below	*/
+            };
+
+#undef MAXNAMELEN
 
             auto w = make_lw_shared<work>();
             auto ret = w->s.listen(std::move(next));
@@ -374,8 +403,14 @@ namespace nil {
                             return engine()
                                 ._thread_pool
                                 ->submit<syscall_result<long>>([w, this]() {
+#if BOOST_OS_LINUX
                                     auto ret = ::syscall(__NR_getdents64, _fd,
                                                          reinterpret_cast<linux_dirent64 *>(w->buffer), buffer_size);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+                                    long *basep = NULL;
+                                    auto ret = getdirentries(_fd, w->buffer, buffer_size, basep);
+
+#endif
                                     return wrap_syscall(ret);
                                 })
                                 .then([w](syscall_result<long> ret) {
@@ -389,7 +424,11 @@ namespace nil {
                                 });
                         }
                         auto start = w->buffer + w->current;
+#if BOOST_OS_LINUX
                         auto de = reinterpret_cast<linux_dirent64 *>(start);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+                        auto de = reinterpret_cast<bsd_dirent *>(start);
+#endif
                         std::optional<directory_entry_type> type;
                         switch (de->d_type) {
                             case DT_BLK:
@@ -601,6 +640,7 @@ namespace nil {
         }
 
         future<> blockdev_file_impl::discard(uint64_t offset, uint64_t length) noexcept {
+#if BOOST_OS_LINUX || defined(BLKDISCARD)
             return engine()
                 ._thread_pool
                 ->submit<syscall_result<int>>([this, offset, length]() mutable {
@@ -611,6 +651,9 @@ namespace nil {
                     sr.throw_if_error();
                     return make_ready_future<>();
                 });
+#else
+            return make_ready_future<>();
+#endif
         }
 
         future<> blockdev_file_impl::allocate(uint64_t position, uint64_t length) noexcept {
@@ -880,7 +923,7 @@ namespace nil {
         }
 
         future<uint64_t> append_challenged_posix_file_impl::size() noexcept {
-            return make_ready_future<size_t>(_logical_size);
+            return make_ready_future<uint64_t>(_logical_size);
         }
 
         future<> append_challenged_posix_file_impl::close() noexcept {
@@ -943,7 +986,19 @@ namespace nil {
 
                 if (S_ISBLK(st.st_mode)) {
                     size_t block_size;
+#if BOOST_OS_LINUX
                     auto ret = ::ioctl(fd, BLKBSZGET, &block_size);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    auto ret = ::ioctl(fd, DKIOCGETPHYSICALBLOCKSIZE, &block_size);
+#elif BOOST_OS_BSD
+                    auto ret = ::iotcl(fd, DIOCGSECTORSIZE, &block_size);
+#elif BOOST_OS_SOLARIS
+                    dk_minfo_ext media_info;
+                    auto ret = ::ioctl(fd, DKIOMEDIAINFOEXT, &media_info);
+                    if (ret != -1) {
+                        block_size = media_info.dki_pbsize;
+                    }
+#endif
                     if (ret == -1) {
                         return make_exception_future<shared_ptr<file_impl>>(
                             std::system_error(errno, std::system_category(), "ioctl(BLKBSZGET) failed"));

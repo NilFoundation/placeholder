@@ -20,12 +20,15 @@
 
 #include <unistd.h>
 #include <sys/syscall.h>
+
 #include <atomic>
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
 
+#ifdef ACTOR_HAS_VALGRIND
 #include <valgrind/valgrind.h>
+#endif
 
 namespace nil {
     namespace actor {
@@ -54,7 +57,11 @@ namespace nil {
             }
 
             static bool usable(const linux_aio_ring *ring) {
+#if BOOST_OS_LINUX && defined(ACTOR_HAS_VALGRIND)
                 return ring->magic == 0xa10a10a1 && ring->incompat_features == 0 && !RUNNING_ON_VALGRIND;
+#else
+                return ring->magic == 0xa10a10a1 && ring->incompat_features == 0;
+#endif
             }
 
             int io_setup(int nr_events, aio_context_t *io_context) {
@@ -127,9 +134,9 @@ namespace nil {
 
 #ifndef __NR_io_pgetevents
 
-#if defined(__x86_64__)
+#if BOOST_ARCH_X86_64
 #define __NR_io_pgetevents 333
-#elif defined(__i386__)
+#elif BOOST_ARCH_X86_32
 #define __NR_io_pgetevents 385
 #endif
 

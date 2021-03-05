@@ -17,14 +17,24 @@
 
 #define __user /* empty */    // for xfs includes, below
 
+#include <boost/config.hpp>
+#include <boost/predef.h>
+
 #include <cinttypes>
 #include <sys/syscall.h>
 
-#if defined(__linux__)
-#include <sys/vfs.h>
-#endif
+#if BOOST_OS_LINUX
 
 #include <sys/statfs.h>
+#include <sys/vfs.h>
+
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+
+#include <sys/param.h>
+#include <sys/mount.h>
+
+#endif
+
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -40,7 +50,7 @@
 #include <nil/actor/net/stack.hh>
 #include <nil/actor/net/posix-stack.hh>
 
-#if defined(__linux__)
+#if BOOST_OS_LINUX
 #include <nil/actor/net/native-stack.hh>
 #endif
 
@@ -57,9 +67,10 @@
 #include <nil/actor/core/thread_cputime_clock.hh>
 #include <nil/actor/core/abort_on_ebadf.hh>
 #include <nil/actor/core/io_queue.hh>
+#include <nil/actor/core/scheduling_specific.hh>
+
 #include <nil/actor/core/detail/io_desc.hh>
 #include <nil/actor/core/detail/buffer_allocator.hh>
-#include <nil/actor/core/scheduling_specific.hh>
 #include <nil/actor/core/detail/file-impl.hh>
 #include <nil/actor/core/detail/reactor_backend.hh>
 #include <nil/actor/core/detail/syscall_result.hh>
@@ -72,7 +83,27 @@
 #include <cassert>
 #include <unistd.h>
 #include <fcntl.h>
+
+#ifndef SOCK_NONBLOCK
+#define SOCK_NONBLOCK O_NONBLOCK
+#endif
+
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC O_CLOEXEC
+#endif
+
+/* MSG_NOSIGNAL might not be available (i.e. on MacOSX and Solaris).
+ *   In this case it gets defined as 0. Safety of such a definition is still
+ *   being discussed.
+ */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
+#if BOOST_OS_LINUX
 #include <sys/eventfd.h>
+#endif
+
 #include <sys/poll.h>
 
 #include <boost/lexical_cast.hpp>
@@ -91,12 +122,15 @@
 
 #include <atomic>
 #include <dirent.h>
-#include <linux/types.h>    // for xfs, below
 #include <sys/ioctl.h>
+
+#if BOOST_OS_LINUX
+#include <linux/types.h>    // for xfs, below
 #include <xfs/linux.h>
 #define min min /* prevent xfs.h from defining min() as a macro */
 #include <xfs/xfs.h>
 #undef min
+#endif
 #ifdef ACTOR_HAVE_DPDK
 #include <nil/actor/core/dpdk_rte.hh>
 #include <rte_lcore.h>
@@ -118,8 +152,10 @@
 
 #include <sys/mman.h>
 #include <sys/utsname.h>
+#if BOOST_OS_LINUX
 #include <linux/falloc.h>
 #include <linux/magic.h>
+#endif
 #include <nil/actor/detail/backtrace.hh>
 #include <nil/actor/detail/spinlock.hh>
 #include <nil/actor/detail/print_safe.hh>
@@ -129,7 +165,7 @@
 #include <osv/newpoll.hh>
 #endif
 
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(BOOST_ARCH_X86)
 #include <xmmintrin.h>
 #endif
 
@@ -137,9 +173,12 @@
 #include <nil/actor/core/alien.hh>
 #include <nil/actor/core/metrics.hh>
 #include <nil/actor/core/execution_stage.hh>
-#include <nil/actor/core/exception_hacks.hh>
 #include <nil/actor/core/detail/stall_detector.hh>
 #include <nil/actor/detail/memory_diagnostics.hh>
+
+#if defined(BOOST_COMP_GNUC_AVAILABLE) && BOOST_COMP_GNUC >= BOOST_VERSION_NUMBER(7, 0, 0)
+#include <nil/actor/core/exception_hacks.hh>
+#endif
 
 #include <yaml-cpp/yaml.h>
 
@@ -846,9 +885,9 @@ namespace nil {
             }
         }
 
-#ifdef __clang__
+#ifdef BOOST_COMP_CLANG
         __attribute__((no_sanitize("undefined")))    // multiplication below may overflow; we check for that
-#elif defined(__GNUC__)
+#elif BOOST_COMP_GNUC
         [[gnu::no_sanitize_undefined]]
 #endif
         inline int64_t
@@ -1036,7 +1075,11 @@ namespace nil {
         }
 
         cpu_stall_detector::~cpu_stall_detector() {
+#if BOOST_OS_LINUX
             timer_delete(_timer);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            dispatch_source_cancel(_timer);
+#endif
         }
 
         cpu_stall_detector_config cpu_stall_detector::get_config() const {
@@ -1096,8 +1139,17 @@ namespace nil {
         }
 
         void cpu_stall_detector::arm_timer() {
+#if BOOST_OS_LINUX
             auto its = posix::to_relative_itimerspec(_threshold * _report_at + _slack, 0s);
             timer_settime(_timer, 0, &its, nullptr);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            dispatch_source_set_timer(
+                _timer,
+                dispatch_walltime(
+                    NULL,
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(_threshold * _report_at + _slack).count()),
+                1ull * NSEC_PER_SEC, 0);
+#endif
         }
 
         void cpu_stall_detector::start_task_run(std::chrono::steady_clock::time_point now) {
@@ -1120,8 +1172,12 @@ namespace nil {
         }
 
         void cpu_stall_detector::start_sleep() {
+#if BOOST_OS_LINUX
             auto its = posix::to_relative_itimerspec(0s, 0s);
             timer_settime(_timer, 0, &its, nullptr);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            dispatch_source_set_timer(_timer, dispatch_walltime(NULL, 0), 1ull * NSEC_PER_SEC, 0);
+#endif
             _rearm_timer_at = std::chrono::steady_clock::now();
         }
 
@@ -1130,7 +1186,7 @@ namespace nil {
 
         void reactor::task_quota_timer_thread_fn() {
             auto thread_name = nil::actor::format("timer-{}", _id);
-            pthread_setname_np(pthread_self(), thread_name.c_str());
+            detail::set_thread_name(pthread_setname_np, thread_name.c_str());
 
             sigset_t mask;
             sigfillset(&mask);
@@ -1609,12 +1665,17 @@ namespace nil {
                             if (fd == -1) {
                                 return wrap_syscall<int>(fd);
                             }
+#if BOOST_OS_LINUX
                             int r = ::fcntl(fd, F_SETFL, open_flags | O_DIRECT);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                            int r = ::fcntl(fd, F_SETFL, open_flags | F_NOCACHE);
+#endif
                             auto maybe_ret = wrap_syscall<int>(r);    // capture errno (should be EINVAL)
                             if (r == -1 && strict_o_direct && !is_tmpfs(fd)) {
                                 ::close(fd);
                                 return maybe_ret;
                             }
+#ifdef BOOST_OS_LINUX
                             if (fd != -1) {
                                 fsxattr attr = {};
                                 if (options.extent_allocation_size_hint) {
@@ -1624,6 +1685,7 @@ namespace nil {
                                 // Ignore error; may be !xfs, and just a hint anyway
                                 ::ioctl(fd, XFS_IOC_FSSETXATTR, &attr);
                             }
+#endif
                             return wrap_syscall<int>(fd);
                         })
                         .then([&options, name = std::move(name), &open_flags](syscall_result<int> sr) {
