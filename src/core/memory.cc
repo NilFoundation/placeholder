@@ -47,6 +47,8 @@
 // Spans have a size that is a power-of-two and are naturally aligned (aka buddy
 // allocator)
 
+#include <boost/predef.h>
+
 #include <nil/actor/core/cacheline.hh>
 #include <nil/actor/core/memory.hh>
 #include <nil/actor/core/print.hh>
@@ -61,6 +63,12 @@
 #include <thread>
 
 #include <dlfcn.h>
+
+#if BOOST_OS_BSD
+#ifndef MADV_HUGEPAGE
+#define MADV_HUGEPAGE 14
+#endif
+#endif
 
 namespace nil {
     namespace actor {
@@ -108,8 +116,8 @@ namespace nil {
 
         }    // namespace memory
 
-    }
-}
+    }    // namespace actor
+}    // namespace nil
 
 #ifndef ACTOR_DEFAULT_ALLOCATOR
 
@@ -154,8 +162,8 @@ namespace nil {
             }
         };
 
-    }
-}
+    }    // namespace actor
+}    // namespace nil
 
 namespace std {
 
@@ -293,7 +301,11 @@ namespace nil {
                     if (r == MAP_FAILED) {
                         abort();
                     }
+#if BOOST_OS_LINUX
                     ::madvise(r, 2 * mem_base_alloc, MADV_DONTDUMP);
+#elif BOOST_OS_BSD
+                    ::madvise(r, 2 * mem_base_alloc, MADV_NOCORE);
+#endif
                     auto cr = reinterpret_cast<char *>(r);
                     known = align_up(cr, mem_base_alloc);
                     ::munmap(cr, known - cr);
@@ -1035,7 +1047,9 @@ namespace nil {
                 if (r == MAP_FAILED) {
                     abort();
                 }
+#if BOOST_OS_LINUX || BOOST_OS_BSD
                 ::madvise(base, size, MADV_HUGEPAGE);
+#endif
                 pages = reinterpret_cast<page *>(base);
                 memory = base;
                 nr_pages = size / page_size;
@@ -1059,8 +1073,12 @@ namespace nil {
             mmap_area allocate_hugetlbfs_memory(file_desc &fd, void *where, size_t how_much) {
                 auto pos = fd.size();
                 fd.truncate(pos + how_much);
+#if BOOST_OS_LINUX
                 auto ret = fd.map(how_much, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE | (where ? MAP_FIXED : 0),
                                   pos, where);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                auto ret = fd.map(how_much, PROT_READ | PROT_WRITE, MAP_SHARED | (where ? MAP_FIXED : 0), pos, where);
+#endif
                 return ret;
             }
 
@@ -1088,7 +1106,9 @@ namespace nil {
                 auto mmap_size = new_size - old_size;
                 auto mem = alloc_sys_mem(mmap_start, mmap_size);
                 mem.release();
+#if BOOST_OS_LINUX || BOOST_OS_BSD
                 ::madvise(mmap_start, mmap_size, MADV_HUGEPAGE);
+#endif
                 // one past last page structure is a sentinel
                 auto new_page_array_pages = align_up(sizeof(page[new_pages + 1]), page_size) / page_size;
                 auto new_page_array = reinterpret_cast<page *>(allocate_large(new_page_array_pages));
@@ -1798,25 +1818,35 @@ namespace nil {
             }
 
         }    // namespace memory
-
-    }
-}
+    }        // namespace actor
+}    // namespace nil
 
 using namespace nil::actor::memory;
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] void *malloc(size_t n) throw() {
     if (try_trigger_error_injector()) {
         return nullptr;
     }
     return allocate(n);
 }
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+extern "C" [[gnu::visibility("default")]] [[gnu::used]] void *malloc(size_t n) {
+    if (try_trigger_error_injector()) {
+        return nullptr;
+    }
+    return allocate(n);
+}
+#endif
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::alias("malloc")]] [[gnu::visibility("default")]] [[gnu::malloc]] [[gnu::alloc_size(1)]]
-#ifndef __clang__
+#if !BOOST_COMP_CLANG
 [[gnu::leaf]]
 #endif
 void *
     __libc_malloc(size_t n) throw();
+#endif
 
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] void free(void *ptr) {
     if (ptr) {
@@ -1824,11 +1854,13 @@ extern "C" [[gnu::visibility("default")]] [[gnu::used]] void free(void *ptr) {
     }
 }
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::alias("free")]] [[gnu::visibility("default")]]
-#ifndef __clang__
+#if !BOOST_COMP_CLANG
 [[gnu::leaf]]
 #endif
 void __libc_free(void *obj) throw();
+#endif
 
 extern "C" [[gnu::visibility("default")]] void *calloc(size_t nmemb, size_t size) {
     if (try_trigger_error_injector()) {
@@ -1844,12 +1876,14 @@ extern "C" [[gnu::visibility("default")]] void *calloc(size_t nmemb, size_t size
     return p;
 }
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::alias("calloc")]] [[gnu::visibility("default")]] [[gnu::alloc_size(1, 2)]] [[gnu::malloc]]
-#ifndef __clang__
+#if !BOOST_COMP_CLANG
 [[gnu::leaf]]
 #endif
 void *
     __libc_calloc(size_t n, size_t m) throw();
+#endif
 
 extern "C" [[gnu::visibility("default")]] void *realloc(void *ptr, size_t size) {
     if (try_trigger_error_injector()) {
@@ -1891,15 +1925,18 @@ extern "C" [[gnu::visibility("default")]] void *realloc(void *ptr, size_t size) 
     return nptr;
 }
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::alias("realloc")]] [[gnu::visibility("default")]] [[gnu::alloc_size(2)]]
-#ifndef __clang__
+#if !BOOST_COMP_CLANG
 [[gnu::leaf]]
 #endif
 void *
     __libc_realloc(void *obj, size_t size) throw();
+#endif
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::visibility("default")]] [[gnu::used]]
-#ifndef __clang__
+#if !BOOST_COMP_CLANG
 [[gnu::leaf]]
 #endif
 [[gnu::nonnull(1)]] int
@@ -1913,16 +1950,35 @@ extern "C" [[gnu::visibility("default")]] [[gnu::used]]
     }
     return 0;
 }
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+extern "C" [[gnu::visibility("default")]] [[gnu::used]]
+#if !BOOST_COMP_CLANG
+[[gnu::leaf]]
+#endif
+[[gnu::nonnull(1)]] int
+    posix_memalign(void **ptr, size_t align, size_t size) {
+    if (try_trigger_error_injector()) {
+        return ENOMEM;
+    }
+    *ptr = allocate_aligned(align, size);
+    if (!*ptr) {
+        return ENOMEM;
+    }
+    return 0;
+}
+#endif
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::alias("posix_memalign")]] [[gnu::visibility("default")]]
-#ifndef __clang__
+#if !BOOST_COMP_CLANG
 [[gnu::leaf]]
 #endif
 [[gnu::nonnull(1)]] int
     __libc_posix_memalign(void **ptr, size_t align, size_t size) throw();
+#endif
 
 extern "C" [[gnu::visibility("default")]] [[gnu::malloc]]
-#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 30)
+#if BOOST_LIB_C_GNU >= BOOST_VERSION_NUMBER(2, 30, 0)
 [[gnu::alloc_size(2)]]
 #endif
 void *
@@ -1934,25 +1990,44 @@ void *
     return allocate_aligned(align, size);
 }
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::visibility("default")]] void *aligned_alloc(size_t align, size_t size) throw() {
     if (try_trigger_error_injector()) {
         return nullptr;
     }
     return allocate_aligned(align, size);
 }
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+extern "C" [[gnu::visibility("default")]] void *aligned_alloc(size_t align, size_t size) {
+    if (try_trigger_error_injector()) {
+        return nullptr;
+    }
+    return allocate_aligned(align, size);
+}
+#endif
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::alias("memalign")]] [[gnu::visibility("default")]] [[gnu::malloc]]
-#if defined(__GLIBC__) && __GLIBC_PREREQ(2, 30)
+#if BOOST_LIB_C_GNU >= BOOST_VERSION_NUMBER(2, 30, 0)
 [[gnu::alloc_size(2)]]
 #endif
 void *
     __libc_memalign(size_t align, size_t size) throw();
+#endif
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::visibility("default")]] void cfree(void *obj) throw() {
     return ::free(obj);
 }
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+extern "C" [[gnu::visibility("default")]] void cfree(void *obj) {
+    return ::free(obj);
+}
+#endif
 
+#if BOOST_OS_LINUX || BOOST_OS_BSD
 extern "C" [[gnu::alias("cfree")]] [[gnu::visibility("default")]] void __libc_cfree(void *obj) throw();
+#endif
 
 extern "C" [[gnu::visibility("default")]] size_t malloc_usable_size(void *obj) {
     if (!is_seastar_memory(obj)) {
@@ -2220,9 +2295,8 @@ namespace nil {
             }
 
         }    // namespace memory
-
-    }
-}
+    }        // namespace actor
+}    // namespace nil
 
 namespace nil {
     namespace actor {
@@ -2231,3 +2305,4 @@ namespace nil {
 
         /// \endcond
     }
+}

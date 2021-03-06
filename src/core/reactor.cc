@@ -73,8 +73,8 @@
 #include <nil/actor/core/detail/buffer_allocator.hh>
 #include <nil/actor/core/detail/file-impl.hh>
 #include <nil/actor/core/detail/reactor_backend.hh>
+#include <nil/actor/core/detail/reactor_backend_selector.hh>
 #include <nil/actor/core/detail/syscall_result.hh>
-#include <nil/actor/core/detail/thread_pool.hh>
 #include <nil/actor/core/detail/thread_pool.hh>
 #include <nil/actor/core/detail/syscall_work_queue.hh>
 #include <nil/actor/core/detail/cgroup.hh>

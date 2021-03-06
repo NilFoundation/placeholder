@@ -266,9 +266,11 @@ namespace nil {
         }
 
         void reactor_backend_epoll::forget(pollable_fd_state &fd) noexcept {
+#if BOOST_OS_LINUX
             if (fd.events_epoll) {
                 ::epoll_ctl(_epollfd.get(), EPOLL_CTL_DEL, fd.fd.get(), nullptr);
             }
+#endif
             auto *efd = static_cast<epoll_pollable_fd_state *>(&fd);
             delete efd;
         }

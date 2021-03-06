@@ -19,7 +19,10 @@
 #include <nil/actor/core/align.hh>
 
 #include <sys/mman.h>
+
+#if BOOST_OS_LINUX
 #include <sys/inotify.h>
+#endif
 
 namespace nil {
     namespace actor {
@@ -70,10 +73,17 @@ namespace nil {
             // allocate guard area as well
             _stack = mmap_anonymous(nullptr, stack_size + (4 << 20), PROT_NONE, MAP_PRIVATE | MAP_NORESERVE);
             auto stack_start = align_up(_stack.get() + 1, 2 << 20);
+#if BOOST_OS_LINUX || BOOST_OS_BSD_OPEN
             mmap_area real_stack =
                 mmap_anonymous(stack_start, stack_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED | MAP_STACK);
+#else
+            mmap_area real_stack =
+                mmap_anonymous(stack_start, stack_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED);
+#endif
             real_stack.release();    // protected by @_stack
+#if BOOST_OS_LINUX || BOOST_OS_BSD
             ::madvise(stack_start, stack_size, MADV_HUGEPAGE);
+#endif
             r = pthread_attr_setstack(&pa, stack_start, stack_size);
             if (r) {
                 throw std::system_error(r, std::system_category());

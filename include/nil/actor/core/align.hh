@@ -51,6 +51,5 @@ namespace nil {
             static_assert(sizeof(T) == 1, "align byte pointers only");
             return reinterpret_cast<T *>(align_down(reinterpret_cast<uintptr_t>(v), align));
         }
-
     }    // namespace actor
 }    // namespace nil

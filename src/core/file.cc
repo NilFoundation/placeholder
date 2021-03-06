@@ -335,12 +335,12 @@ namespace nil {
         future<uint64_t> blockdev_file_impl::size(void) noexcept {
             return engine()
                 ._thread_pool
-                ->submit<syscall_result_extra<size_t>>([this] {
+                ->submit<syscall_result_extra<uint64_t>>([this] {
                     uint64_t size;
                     int ret = detail::blkgetsize(_fd, &size);
                     return wrap_syscall(ret, size);
                 })
-                .then([](syscall_result_extra<size_t> ret) {
+                .then([](syscall_result_extra<uint64_t> ret) {
                     ret.throw_if_error();
                     return make_ready_future<uint64_t>(ret.extra);
                 });
@@ -408,7 +408,7 @@ namespace nil {
                                                          reinterpret_cast<linux_dirent64 *>(w->buffer), buffer_size);
 #elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                                     long *basep = NULL;
-                                    auto ret = getdirentries(_fd, w->buffer, buffer_size, basep);
+                                    long ret = getdirentries(_fd, w->buffer, buffer_size, basep);
 
 #endif
                                     return wrap_syscall(ret);

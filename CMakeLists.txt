@@ -340,7 +340,6 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/iostream-impl.hh
     include/nil/actor/core/iostream.hh
     include/nil/actor/core/layered_file.hh
-    include/nil/actor/core/linux-aio.hh
     include/nil/actor/core/loop.hh
     include/nil/actor/core/lowres_clock.hh
     include/nil/actor/core/manual_clock.hh
@@ -441,7 +440,6 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/core/fstream.cc
     src/core/future.cc
     src/core/future-util.cc
-    src/core/linux-aio.cc
     src/core/memory.cc
     src/core/metrics.cc
     src/core/on_internal_error.cc
@@ -490,10 +488,12 @@ endif()
 
 if(UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
     list(APPEND ${CURRENT_PROJECT_NAME}_HEADERS
+        include/nil/actor/core/linux-aio.hh
         include/nil/actor/core/detail/reactor_backend_aio.hh)
 
 
     list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES
+        src/core/linux-aio.cc
         src/core/reactor_backend_aio.cc)
 endif()
 
