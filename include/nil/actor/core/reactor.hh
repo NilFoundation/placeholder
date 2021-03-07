@@ -38,6 +38,9 @@
 #include <sys/epoll.h>
 #elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
 #include <sys/event.h>
+
+#include <dispatch/dispatch.h>
+
 #endif
 
 #include <sys/types.h>

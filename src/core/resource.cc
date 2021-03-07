@@ -278,7 +278,7 @@ namespace nil {
 #else
                 auto local_memory = node->memory.local_memory;
 #endif
-                auto taken = std::min(local_memory - used_mem[node], alloc);
+                auto taken = std::min(local_memory - used_mem[node], static_cast<uint64_t>(alloc));
                 if (taken) {
                     used_mem[node] += taken;
                     auto node_id = hwloc_bitmap_first(node->nodeset);
@@ -483,7 +483,8 @@ namespace nil {
 #else
                 auto available_memory = machine->memory.total_memory;
 #endif
-                size_t mem = calculate_memory(c, std::min(available_memory, cgroup::memory_limit()));
+                size_t mem =
+                    calculate_memory(c, std::min(available_memory, static_cast<uint64_t>(cgroup::memory_limit())));
                 unsigned available_procs = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU);
                 unsigned procs = c.cpus.value_or(available_procs);
                 if (procs > available_procs) {

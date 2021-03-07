@@ -18,7 +18,7 @@
 #include <nil/actor/core/prometheus.hh>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-#include "proto/metrics2.pb.h"
+#include <nil/actor/metrics2.hh>
 #include <sstream>
 
 #include <nil/actor/core/scollectd_api.hh>

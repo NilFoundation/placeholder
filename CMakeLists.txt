@@ -285,11 +285,9 @@ set(BUILD_WITH_GEN_BINARY_DIR ${BUILD_WITH_BINARY_DIR}/gen)
 include(ActorDependencies)
 seastar_find_dependencies()
 
-if(BUILD_WITH_VALGRIND)
-    find_package(Valgrind)
-    if (VALGRIND_FOUND)
-        list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_HAS_VALGRIND)
-    endif()
+find_package(Valgrind REQUIRED)
+if (VALGRIND_FOUND)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_HAS_VALGRIND)
 endif()
 
 
@@ -354,7 +352,6 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/preempt.hh
     include/nil/actor/core/prefetch.hh
     include/nil/actor/core/print.hh
-    include/nil/actor/core/prometheus.hh
     include/nil/actor/core/queue.hh
     include/nil/actor/core/ragel.hh
     include/nil/actor/core/reactor.hh
@@ -444,7 +441,6 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/core/metrics.cc
     src/core/on_internal_error.cc
     src/core/posix.cc
-    src/core/prometheus.cc
     src/core/reactor.cc
     src/core/resource.cc
     src/core/sharded.cc

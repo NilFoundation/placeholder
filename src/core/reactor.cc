@@ -281,8 +281,13 @@ namespace nil {
                 // a task-quota delay. Usually this will fail, but accept is a rare-enough operation
                 // that it is worth the false positive in order to withstand a connection storm
                 // without having to accept at a rate of 1 per task quota.
+#if BOOST_OS_LINUX
                 listenfd.speculate_epoll(EPOLLIN);
                 pollable_fd pfd(std::move(*maybe_fd), pollable_fd::speculation(EPOLLOUT));
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                listenfd.speculate_epoll(POLLIN);
+                pollable_fd pfd(std::move(*maybe_fd), pollable_fd::speculation(POLLOUT));
+#endif
                 return make_ready_future<std::tuple<pollable_fd, socket_address>>(
                     std::make_tuple(std::move(pfd), std::move(sa)));
             });
@@ -306,7 +311,11 @@ namespace nil {
                     return do_read_some(fd, buffer, len);
                 }
                 if (size_t(*r) == len) {
+#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLIN);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    fd.speculate_epoll(POLLIN);
+#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -323,7 +332,11 @@ namespace nil {
                     return do_read_some(fd, ba);
                 }
                 if (size_t(*r) == buffer.size()) {
+#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLIN);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    fd.speculate_epoll(POLLIN);
+#endif
                 }
                 buffer.trim(*r);
                 return make_ready_future<temporary_buffer<char>>(std::move(buffer));
@@ -340,7 +353,11 @@ namespace nil {
                     return do_read_some(fd, iov);
                 }
                 if (size_t(*r) == iovec_len(iov)) {
+#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLIN);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    fd.speculate_epoll(POLLIN);
+#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -353,7 +370,11 @@ namespace nil {
                     return do_write_some(fd, buffer, len);
                 }
                 if (size_t(*r) == len) {
+#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLOUT);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    fd.speculate_epoll(POLLOUT);
+#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -377,7 +398,11 @@ namespace nil {
                     return do_write_some(fd, p);
                 }
                 if (size_t(*r) == p.len()) {
+#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLOUT);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    fd.speculate_epoll(POLLOUT);
+#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -472,14 +497,19 @@ namespace nil {
                 if (!r) {
                     return recvmsg(msg);
                 }
-                // We always speculate here to optimize for throughput in a workload
-                // with multiple outstanding requests. This way the caller can consume
-                // all messages without resorting to epoll. However this adds extra
-                // recvmsg() call when we hit the empty queue condition, so it may
-                // hurt request-response workload in which the queue is empty when we
-                // initially enter recvmsg(). If that turns out to be a problem, we can
-                // improve speculation by using recvmmsg().
+// We always speculate here to optimize for throughput in a workload
+// with multiple outstanding requests. This way the caller can consume
+// all messages without resorting to epoll. However this adds extra
+// recvmsg() call when we hit the empty queue condition, so it may
+// hurt request-response workload in which the queue is empty when we
+// initially enter recvmsg(). If that turns out to be a problem, we can
+// improve speculation by using recvmmsg().
+#if BOOST_OS_LINUX
                 speculate_epoll(EPOLLIN);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                speculate_epoll(POLLIN);
+#endif
+
                 return make_ready_future<size_t>(*r);
             });
         };
@@ -495,7 +525,11 @@ namespace nil {
                 // or not, but most of the time there should be so the cost of mis-
                 // speculation is amortized.
                 if (size_t(*r) == iovec_len(msg->msg_iov, msg->msg_iovlen)) {
+#if BOOST_OS_LINUX
                     speculate_epoll(EPOLLOUT);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    speculate_epoll(POLLOUT);
+#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -510,7 +544,11 @@ namespace nil {
                 }
                 // See the comment about speculation in sendmsg().
                 if (size_t(*r) == len) {
+#if BOOST_OS_LINUX
                     speculate_epoll(EPOLLOUT);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    speculate_epoll(POLLOUT);
+#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -885,7 +923,7 @@ namespace nil {
             }
         }
 
-#ifdef BOOST_COMP_CLANG
+#if BOOST_COMP_CLANG
         __attribute__((no_sanitize("undefined")))    // multiplication below may overflow; we check for that
 #elif BOOST_COMP_GNUC
         [[gnu::no_sanitize_undefined]]
@@ -921,15 +959,20 @@ namespace nil {
         };
 
         reactor::reactor(unsigned id, reactor_backend_selector rbs, reactor_config cfg) :
-            _cfg(cfg), _notify_eventfd(file_desc::eventfd(0, EFD_CLOEXEC)),
-            _task_quota_timer(file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC)), _id(id)
+            _cfg(cfg),
+#if BOOST_OS_LINUX
+            _notify_eventfd(file_desc::eventfd(0, EFD_CLOEXEC)),
+            _task_quota_timer(file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC)),
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            _notify_eventfd(file_desc::eventfd(0, FD_CLOEXEC)),
+            _task_quota_timer(file_desc::timerfd_create(CLOCK_MONOTONIC, FD_CLOEXEC)),
+#endif
+            _id(id),
 #ifdef HAVE_OSV
-            ,
             _timer_thread([&] { timer_thread_func(); },
                           sched::thread::attr().stack(4096).name("timer_thread").pin(sched::cpu::current())),
-            _engine_thread(sched::thread::current())
+            _engine_thread(sched::thread::current()),
 #endif
-            ,
             _cpu_started(0), _cpu_stall_detector(std::make_unique<cpu_stall_detector>()),
             _reuseport(posix_reuseport_detect()),
             _thread_pool(std::make_unique<thread_pool>(this, nil::actor::format("syscall-{}", id))) {
@@ -1054,6 +1097,7 @@ namespace nil {
             // a safe place.
             backtrace([](frame) {});
             update_config(cfg);
+#if BOOST_OS_LINUX
             struct sigevent sev = {};
             sev.sigev_notify = SIGEV_THREAD_ID;
             sev.sigev_signo = signal_number();
@@ -1062,6 +1106,12 @@ namespace nil {
             if (err) {
                 throw std::system_error(std::error_code(err, std::system_category()));
             }
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+            dispatch_source_set_event_handler(_timer, ^{
+                raise(signal_number());
+            });
+#endif
 
             namespace sm = nil::actor::metrics;
 
@@ -1675,7 +1725,7 @@ namespace nil {
                                 ::close(fd);
                                 return maybe_ret;
                             }
-#ifdef BOOST_OS_LINUX
+#if BOOST_OS_LINUX
                             if (fd != -1) {
                                 fsxattr attr = {};
                                 if (options.extent_allocation_size_hint) {
@@ -1759,7 +1809,11 @@ namespace nil {
             });
         }
 
+#if BOOST_OS_LINUX
         directory_entry_type stat_to_entry_type(__mode_t type) {
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+        directory_entry_type stat_to_entry_type(mode_t type) {
+#endif
             if (S_ISDIR(type)) {
                 return directory_entry_type::directory;
             }
@@ -1856,9 +1910,16 @@ namespace nil {
                         sd.size = st.st_size;
                         sd.block_size = st.st_blksize;
                         sd.allocated_size = st.st_blocks * 512UL;
+#if BOOST_OS_LINUX
                         sd.time_accessed = timespec_to_time_point(st.st_atim);
                         sd.time_modified = timespec_to_time_point(st.st_mtim);
                         sd.time_changed = timespec_to_time_point(st.st_ctim);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                        sd.time_accessed = timespec_to_time_point(st.st_atimespec);
+                        sd.time_modified = timespec_to_time_point(st.st_mtimespec);
+                        sd.time_changed = timespec_to_time_point(st.st_ctimespec);
+
+#endif
                         return make_ready_future<stat_data>(std::move(sd));
                     });
             });
@@ -1904,10 +1965,15 @@ namespace nil {
                     })
                     .then([pathname = sstring(pathname)](syscall_result_extra<struct statfs> sr) {
                         static std::unordered_map<long int, fs_type> type_mapper = {
-                            {0x58465342, fs_type::xfs},          {EXT2_SUPER_MAGIC, fs_type::ext2},
-                            {EXT3_SUPER_MAGIC, fs_type::ext3},   {EXT4_SUPER_MAGIC, fs_type::ext4},
-                            {BTRFS_SUPER_MAGIC, fs_type::btrfs}, {0x4244, fs_type::hfs},
+                            {0x58465342, fs_type::xfs},
+#if BOOST_OS_LINUX
+                            {EXT2_SUPER_MAGIC, fs_type::ext2},
+                            {EXT3_SUPER_MAGIC, fs_type::ext3},
+                            {EXT4_SUPER_MAGIC, fs_type::ext4},
+                            {BTRFS_SUPER_MAGIC, fs_type::btrfs},
                             {TMPFS_MAGIC, fs_type::tmpfs},
+#endif
+                            {0x4244, fs_type::hfs}
                         };
                         sr.throw_fs_exception_if_error("statfs failed", pathname);
 
@@ -2033,7 +2099,14 @@ namespace nil {
                     return fut;
                 });
             }
-            return _thread_pool->submit<syscall_result<int>>([fd] { return wrap_syscall<int>(::fdatasync(fd)); })
+            return _thread_pool
+                ->submit<syscall_result<int>>([fd] {
+#if BOOST_OS_LINUX
+                    return wrap_syscall<int>(::fdatasync(fd));
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    return wrap_syscall<int>(fcntl(fd, F_FULLFSYNC));
+#endif
+                })
                 .then([](syscall_result<int> sr) {
                     sr.throw_if_error();
                     return make_ready_future<>();
@@ -2291,12 +2364,16 @@ namespace nil {
             while (!tasks.empty()) {
                 auto tsk = tasks.front();
                 tasks.pop_front();
+#if BOOST_OS_LINUX
                 STAP_PROBE(seastar, reactor_run_tasks_single_start);
+#endif
                 task_histogram_add_task(*tsk);
                 _current_task = tsk;
                 tsk->run_and_dispose();
                 _current_task = nullptr;
+#if BOOST_OS_LINUX
                 STAP_PROBE(seastar, reactor_run_tasks_single_end);
+#endif
                 ++tq._tasks_processed;
                 ++_global_tasks_processed;
                 // check at end of loop, to allow at least one task to run
@@ -2698,7 +2775,9 @@ namespace nil {
             reset_preemption_monitor();
 
             sched_clock::time_point t_run_completed = std::chrono::steady_clock::now();
+#if BOOST_OS_LINUX
             STAP_PROBE(seastar, reactor_run_tasks_start);
+#endif
             _cpu_stall_detector->start_task_run(t_run_completed);
             do {
                 auto t_run_started = t_run_completed;
@@ -2722,7 +2801,9 @@ namespace nil {
                 }
             } while (have_more_tasks() && !need_preempt());
             _cpu_stall_detector->end_task_run(t_run_completed);
+#if BOOST_OS_LINUX
             STAP_PROBE(seastar, reactor_run_tasks_end);
+#endif
             *detail::current_scheduling_group_ptr() =
                 default_scheduling_group();    // Prevent inheritance from last group run
             sched_print("run_some_tasks: end");
@@ -3309,7 +3390,11 @@ namespace nil {
 
         file_desc writeable_eventfd::try_create_eventfd(size_t initial) {
             assert(size_t(int(initial)) == initial);
+#if BOOST_OS_LINUX
             return file_desc::eventfd(initial, EFD_CLOEXEC);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            return file_desc::eventfd(initial, FD_CLOEXEC);
+#endif
         }
 
         void writeable_eventfd::signal(size_t count) {
@@ -3324,7 +3409,11 @@ namespace nil {
 
         file_desc readable_eventfd::try_create_eventfd(size_t initial) {
             assert(size_t(int(initial)) == initial);
+#if BOOST_OS_LINUX
             return file_desc::eventfd(initial, EFD_CLOEXEC | EFD_NONBLOCK);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            return file_desc::eventfd(initial, FD_CLOEXEC | O_NONBLOCK);
+#endif
         }
 
         future<size_t> readable_eventfd::wait() {
@@ -3665,7 +3754,7 @@ namespace nil {
 
         public:
             uint64_t per_io_group(uint64_t qty, unsigned nr_groups) const noexcept {
-                return std::max(qty / nr_groups, 1ul);
+                return std::max(qty / nr_groups, 1ull);
             }
 
             unsigned num_io_groups() const noexcept {
@@ -3811,7 +3900,9 @@ namespace nil {
 
         void smp::register_network_stacks() {
             register_posix_stack();
+#if BOOST_OS_LINUX
             register_native_stack();
+#endif
         }
 
         void smp::configure(boost::program_options::variables_map configuration, reactor_config reactor_cfg) {
@@ -4054,7 +4145,7 @@ namespace nil {
                                reactor_cfg] {
                     try {
                         auto thread_name = nil::actor::format("reactor-{}", i);
-                        pthread_setname_np(pthread_self(), thread_name.c_str());
+                        detail::set_thread_name(pthread_setname_np, thread_name.c_str());
                         if (thread_affinity) {
                             smp::pin(allocation.cpu_id);
                         }
@@ -4484,7 +4575,11 @@ namespace nil {
             private:
                 static ::rusage get_rusage() {
                     struct ::rusage ru;
+#if BOOST_OS_LINUX
                     ::getrusage(RUSAGE_THREAD, &ru);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    detail::getrusage_thread(&ru);
+#endif
                     return ru;
                 }
                 static std::chrono::steady_clock::duration cpu_time(const ::rusage &ru) {

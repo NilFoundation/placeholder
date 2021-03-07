@@ -57,7 +57,7 @@ namespace nil {
             }
 
             static bool usable(const linux_aio_ring *ring) {
-#if BOOST_OS_LINUX && defined(ACTOR_HAS_VALGRIND)
+#ifdef ACTOR_HAS_VALGRIND
                 return ring->magic == 0xa10a10a1 && ring->incompat_features == 0 && !RUNNING_ON_VALGRIND;
 #else
                 return ring->magic == 0xa10a10a1 && ring->incompat_features == 0;

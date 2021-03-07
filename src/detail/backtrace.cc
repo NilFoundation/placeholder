@@ -22,9 +22,14 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#include <boost/predef.h>
+
 #include <nil/actor/detail/backtrace.hh>
 
+#if BOOST_LIB_STD_GNU
 #include <link.h>
+#endif
+
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -37,7 +42,7 @@
 
 namespace nil {
     namespace actor {
-
+#if BOOST_LIB_STD_GNU
         static int dl_iterate_phdr_callback(struct dl_phdr_info *info, size_t size, void *data) {
             std::size_t total_size {0};
             for (int i = 0; i < info->dlpi_phnum; i++) {
@@ -54,10 +59,13 @@ namespace nil {
 
             return 0;
         }
+#endif
 
         static std::vector<shared_object> enumerate_shared_objects() {
             std::vector<shared_object> shared_objects;
+#if BOOST_LIB_STD_GNU
             dl_iterate_phdr(dl_iterate_phdr_callback, &shared_objects);
+#endif
 
             return shared_objects;
         }

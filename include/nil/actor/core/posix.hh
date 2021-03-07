@@ -48,11 +48,20 @@
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+#elif BOOST_OS_BSD
 
 #include <sys/event.h>
 #include <sys/time.h>
 #include <sys/sysctl.h>
+
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+
+#include <sys/event.h>
+#include <sys/time.h>
+#include <sys/sysctl.h>
+
+#include <mach/mach.h>
+#include <errno.h>
 
 #endif
 
@@ -89,6 +98,34 @@ struct itimerspec {
 
 namespace nil {
     namespace actor {
+        namespace detail {
+#if BOOST_OS_MACOS || BOOST_OS_IOS
+            int getrusage_thread(struct rusage *rusage) {
+                int ret = -1;
+                thread_basic_info_data_t info = {};
+                mach_msg_type_number_t info_count = THREAD_BASIC_INFO_COUNT;
+                kern_return_t kern_err;
+
+                mach_port_t port = mach_thread_self();
+                kern_err = thread_info(port, THREAD_BASIC_INFO, (thread_info_t)&info, &info_count);
+                mach_port_deallocate(mach_task_self(), port);
+
+                if (kern_err == KERN_SUCCESS) {
+                    memset(rusage, 0, sizeof(struct rusage));
+                    rusage->ru_utime.tv_sec = info.user_time.seconds;
+                    rusage->ru_utime.tv_usec = info.user_time.microseconds;
+                    rusage->ru_stime.tv_sec = info.system_time.seconds;
+                    rusage->ru_stime.tv_usec = info.system_time.microseconds;
+                    ret = 0;
+                } else {
+                    errno = EINVAL;
+                }
+
+                return ret;
+            }
+#endif
+
+        }    // namespace detail
 
         /// \file
         /// \defgroup posix-support POSIX Support

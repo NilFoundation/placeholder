@@ -22,7 +22,9 @@
 #include <ucontext.h>
 #include <algorithm>
 
+#ifdef ACTOR_HAS_VALGRIND
 #include <valgrind/valgrind.h>
+#endif
 
 /// \cond internal
 
@@ -186,6 +188,7 @@ namespace nil {
             if (mem == nullptr) {
                 throw std::bad_alloc();
             }
+
             int valgrind_id = VALGRIND_STACK_REGISTER(mem, reinterpret_cast<char *>(mem) + stack_size);
             auto stack = stack_holder(new (mem) char[stack_size], stack_deleter(valgrind_id));
 #ifdef ACTOR_ASAN_ENABLED
