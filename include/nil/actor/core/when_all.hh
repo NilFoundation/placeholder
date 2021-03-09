@@ -200,7 +200,7 @@ namespace nil {
 /// \cond internal
 #ifdef BOOST_HAS_CONCEPTS
 
-        namespace impl {
+        namespace detail {
             // Want: folds
 
             template<typename T>
@@ -212,10 +212,10 @@ namespace nil {
             template<typename... T, typename... Rest>
             struct is_tuple_of_futures<std::tuple<future<T...>, Rest...>> : is_tuple_of_futures<std::tuple<Rest...>> {
             };
-        }    // namespace impl
+        }    // namespace detail
 
         template<typename... Futs>
-        concept AllAreFutures = impl::is_tuple_of_futures<std::tuple<Futs...>>::value;
+        concept AllAreFutures = detail::is_tuple_of_futures<std::tuple<Futs...>>::value;
 
 #endif
 
