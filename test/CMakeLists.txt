@@ -90,9 +90,10 @@ function(seastar_add_test name)
 
     set(args "")
     if(parsed_args_KIND STREQUAL "ACTOR")
-      list (APPEND libraries
+      list(APPEND libraries
         ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_testing
-        ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_private)
+        ${CMAKE_WORKSPACE_NAME}::core
+        ${CMAKE_WORKSPACE_NAME}::network)
 
       if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
         list (APPEND args ${jenkins_args})
@@ -102,7 +103,8 @@ function(seastar_add_test name)
     elseif(parsed_args_KIND STREQUAL "BOOST")
       list (APPEND libraries
         Boost::unit_test_framework
-        seastar_private)
+        ${CMAKE_WORKSPACE_NAME}::core
+        ${CMAKE_WORKSPACE_NAME}::network)
 
       if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
         list (APPEND args ${jenkins_args})
