@@ -24,8 +24,11 @@
 
 #pragma once
 
+#include <boost/container/pmr/polymorphic_allocator.hpp>
+
 #include <nil/actor/core/resource.hh>
 #include <nil/actor/core/bitops.hh>
+
 #include <new>
 #include <functional>
 #include <vector>
@@ -208,7 +211,7 @@ namespace nil {
                 }
             };
 
-            extern std::pmr::polymorphic_allocator<char> *malloc_allocator;
+            extern boost::container::pmr::polymorphic_allocator<char> *malloc_allocator;
 
             // Call periodically to recycle objects that were freed
             // on cpu other than the one they were allocated on.

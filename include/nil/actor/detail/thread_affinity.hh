@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <boost/predef.h>
+
 #include <pthread.h>
 
 #include <cstdio>
@@ -37,7 +39,7 @@
 #include <sys/mman.h>
 #include <sys/uio.h>
 
-#if defined(__APPLE__)
+#if BOOST_OS_MACOS || BOOST_OS_IOS
 
 #include <sys/event.h>
 #include <sys/time.h>
@@ -46,10 +48,6 @@
 #include <mach/mach_init.h>
 #include <mach/thread_policy.h>
 #include <mach/thread_act.h>
-
-#endif
-
-#if defined(__APPLE__)
 
 #define SYSCTL_CORE_COUNT "machdep.cpu.core_count"
 
@@ -69,7 +67,7 @@ static inline int CPU_ISSET(int num, cpu_set_t *cs) {
     return (cs->count & (1 << num));
 }
 
-int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set) {
+[[maybe_unused]] static int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set) {
     int32_t core_count = 0;
     size_t len = sizeof(core_count);
     int ret = sysctlbyname(SYSCTL_CORE_COUNT, &core_count, &len, 0, 0);
@@ -85,7 +83,7 @@ int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set) {
     return 0;
 }
 
-int pthread_setaffinity_np(pthread_t thread, size_t cpu_size, cpu_set_t *cpu_set) {
+[[maybe_unused]] static int pthread_setaffinity_np(pthread_t thread, size_t cpu_size, cpu_set_t *cpu_set) {
     thread_port_t mach_thread;
     int core = 0;
 

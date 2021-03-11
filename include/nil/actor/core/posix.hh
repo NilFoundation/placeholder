@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include <boost/config.hpp>
 #include <boost/predef.h>
 
 #include <nil/actor/core/sstring.hh>
@@ -100,7 +99,7 @@ namespace nil {
     namespace actor {
         namespace detail {
 #if BOOST_OS_MACOS || BOOST_OS_IOS
-            int getrusage_thread(struct rusage *rusage) {
+            [[maybe_unused]] static int getrusage_thread(struct rusage *rusage) {
                 int ret = -1;
                 thread_basic_info_data_t info = {};
                 mach_msg_type_number_t info_count = THREAD_BASIC_INFO_COUNT;

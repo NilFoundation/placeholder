@@ -49,6 +49,9 @@
 
 #include <boost/predef.h>
 
+#include <boost/container/pmr/memory_resource.hpp>
+#include <boost/container/pmr/polymorphic_allocator.hpp>
+
 #include <nil/actor/core/cacheline.hh>
 #include <nil/actor/core/memory.hh>
 #include <nil/actor/core/print.hh>
@@ -100,9 +103,10 @@ namespace nil {
                 --abort_on_alloc_failure_suppressed;
             }
 
-            static std::pmr::polymorphic_allocator<char> static_malloc_allocator {std::pmr::get_default_resource()};
-            ;
-            std::pmr::polymorphic_allocator<char> *malloc_allocator {&static_malloc_allocator};
+            static boost::container::pmr::polymorphic_allocator<char> static_malloc_allocator {
+                boost::container::pmr::get_default_resource()};
+
+            boost::container::pmr::polymorphic_allocator<char> *malloc_allocator {&static_malloc_allocator};
 
             namespace detail {
 
@@ -125,6 +129,11 @@ namespace nil {
 #include <nil/actor/core/align.hh>
 #include <nil/actor/core/posix.hh>
 #include <nil/actor/core/shared_ptr.hh>
+
+#include <nil/actor/detail/defer.hh>
+#include <nil/actor/detail/backtrace.hh>
+#include <nil/actor/detail/std-compat.hh>
+
 #include <new>
 #include <cstdint>
 #include <algorithm>
@@ -132,13 +141,11 @@ namespace nil {
 #include <cassert>
 #include <atomic>
 #include <mutex>
-#include <nil/actor/detail/std-compat.hh>
 #include <functional>
 #include <cstring>
-#include <boost/intrusive/list.hpp>
 #include <sys/mman.h>
-#include <nil/actor/detail/defer.hh>
-#include <nil/actor/detail/backtrace.hh>
+
+#include <boost/intrusive/list.hpp>
 
 #ifdef ACTOR_HAVE_NUMA
 #include <numaif.h>
@@ -273,8 +280,6 @@ namespace nil {
                 reinterpret_cast<malloc_usable_size_type>(dlsym(RTLD_NEXT, "malloc_usable_size"));
 
             using allocate_system_memory_fn = std::function<mmap_area(void *where, size_t how_much)>;
-
-            namespace bi = boost::intrusive;
 
             static thread_local uintptr_t local_expected_cpu_id = std::numeric_limits<uintptr_t>::max();
 

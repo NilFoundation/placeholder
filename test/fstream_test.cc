@@ -154,7 +154,7 @@ ACTOR_TEST_CASE(test_consume_skip_bytes) {
              */
             future<consumption_result_type> operator()(tmp_buf buf) {
                 if (_count < 8000) {
-                    auto delta = std::min(buf.size(), 8000 - _count);
+                    auto delta = std::min(buf.size(), static_cast<unsigned long>(8000 - _count));
                     for (auto c : buf.share(0, delta)) {
                         BOOST_REQUIRE_EQUAL(c, 'a');
                     }
@@ -496,7 +496,7 @@ ACTOR_TEST_CASE(test_fstream_slow_start) {
                 buf = fstr.read().get0();
                 total_read += buf.size();
 
-                auto skip_by = std::min(file_size - total_read, buffer_size * 2);
+                auto skip_by = std::min(file_size - total_read, buffer_size * 2ull);
                 fstr.skip(skip_by).get();
                 total_read += skip_by;
             }

@@ -53,17 +53,9 @@
 #define ACTOR_INCLUDE_API_V3
 #endif
 
-#if ACTOR_API_LEVEL == 2
-#define ACTOR_INCLUDE_API_V2 inline
-#else
-#define ACTOR_INCLUDE_API_V2
-#endif
-
 // Declare them here so we don't have to use the macros everywhere
 namespace nil {
     namespace actor {
-        ACTOR_INCLUDE_API_V2 namespace api_v2 {
-        }
         ACTOR_INCLUDE_API_V3 namespace api_v3 {
             inline namespace and_newer { }
         }

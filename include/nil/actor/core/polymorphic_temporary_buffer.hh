@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <boost/container/pmr/polymorphic_allocator.hpp>
+
 #include <nil/actor/core/temporary_buffer.hh>
 #include <nil/actor/detail/std-compat.hh>
 
@@ -35,16 +37,15 @@ namespace nil {
         /// \param allocator allocator to use when allocating the temporary_buffer
         /// \param size      size of the temporary buffer
         template<typename CharType>
-        temporary_buffer<CharType> make_temporary_buffer(std::pmr::polymorphic_allocator<CharType> *allocator,
-                                                         std::size_t size) {
+        temporary_buffer<CharType>
+            make_temporary_buffer(boost::container::pmr::polymorphic_allocator<CharType> *allocator, std::size_t size) {
             if (allocator == memory::malloc_allocator) {
                 return temporary_buffer<CharType>(size);
             }
             CharType *buffer = allocator->allocate(size);
             return temporary_buffer<CharType>(
-                buffer, size, make_deleter(deleter(), [allocator, buffer, size]() mutable {
-                    allocator->deallocate(buffer, size);
-                }));
+                buffer, size,
+                make_deleter(deleter(), [allocator, buffer, size]() mutable { allocator->deallocate(buffer, size); }));
         }
 
     }    // namespace actor

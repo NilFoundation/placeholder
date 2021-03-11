@@ -26,7 +26,6 @@
 
 namespace nil {
     namespace actor {
-
         file_desc file_desc::temporary(sstring directory) {
             // FIXME: add O_TMPFILE support one day
             directory += "/XXXXXX";

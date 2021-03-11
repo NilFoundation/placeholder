@@ -25,9 +25,10 @@
 #define BOOST_TEST_MODULE core
 
 #include <boost/test/included/unit_test.hpp>
-#include "../../src/core/uname.hh"
 
-using namespace nil::actor::internal;
+#include <nil/actor/core/detail/uname.hh>
+
+using namespace nil::actor::detail;
 
 BOOST_AUTO_TEST_CASE(test_nowait_aio_fix) {
     auto check = [](const char *uname) {

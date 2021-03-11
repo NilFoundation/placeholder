@@ -30,6 +30,7 @@
 
 #include <nil/actor/core/future.hh>
 #include <nil/actor/detail/std-compat.hh>
+
 #include <nil/actor/testing/entry_point.hh>
 
 namespace nil {
@@ -37,7 +38,7 @@ namespace nil {
 
         namespace testing {
 
-            class seastar_test {
+            class BOOST_SYMBOL_EXPORT seastar_test {
             public:
                 seastar_test();
                 virtual ~seastar_test() {

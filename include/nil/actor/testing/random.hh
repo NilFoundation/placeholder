@@ -26,11 +26,13 @@
 
 #include <random>
 
+#include <boost/config.hpp>
+
 namespace nil {
     namespace actor {
         namespace testing {
 
-            extern thread_local std::default_random_engine local_random_engine;
+            BOOST_SYMBOL_EXPORT extern thread_local std::default_random_engine local_random_engine;
 
         }    // namespace testing
     }        // namespace actor

@@ -325,6 +325,7 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/dpdk_rte.hh
     include/nil/actor/core/enum.hh
     include/nil/actor/core/execution_stage.hh
+    include/nil/actor/core/exception_hacks.hh
     include/nil/actor/core/expiring_fifo.hh
     include/nil/actor/core/fair_queue.hh
     include/nil/actor/core/file.hh
@@ -432,6 +433,7 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/core/thread_pool.cc
     src/core/app-template.cc
     src/core/dpdk_rte.cc
+    src/core/exception_hacks.cc
     src/core/execution_stage.cc
     src/core/fsqual.cc
     src/core/fstream.cc
@@ -474,12 +476,6 @@ set(${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS
 
 if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang"))
     list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS -fdeclspec)
-elseif((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0))
-    list(APPEND ${CURRENT_PROJECT_NAME}_HEADERS
-        include/nil/actor/core/exception_hacks.hh)
-
-    list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES
-        src/core/exception_hacks.cc)
 endif()
 
 if(UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
@@ -843,12 +839,18 @@ if(BUILD_TESTS)
         PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
         PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
 
-    target_link_libraries(${CMAKE_WORKSPACE_NAME}_testing
-        PUBLIC ${CMAKE_WORKSPACE_NAME}::core ${Boost_LIBRARIES})
+    target_link_libraries(${CMAKE_WORKSPACE_NAME}_testing PUBLIC 
+        ${CMAKE_WORKSPACE_NAME}::core 
+        Boost::unit_test_framework
+        ${Boost_LIBRARIES})
+
+    target_compile_definitions(${CMAKE_WORKSPACE_NAME}_testing PRIVATE BOOST_TEST_DYN_LINK BOOST_TEST_NO_MAIN)
 
     add_library(${CMAKE_WORKSPACE_NAME}_perf_testing
         ${perf_testing_HEADERS}
         ${perf_testing_SOURCES})
+
+    target_compile_definitions(${CMAKE_WORKSPACE_NAME}_perf_testing PRIVATE BOOST_TEST_DYN_LINK BOOST_TEST_NO_MAIN)
 
     set_target_properties(${CMAKE_WORKSPACE_NAME}_perf_testing PROPERTIES
         LINKER_LANGUAGE CXX
@@ -873,8 +875,10 @@ if(BUILD_TESTS)
         PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
         PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
 
-    target_link_libraries(${CMAKE_WORKSPACE_NAME}_perf_testing
-        PUBLIC ${CMAKE_WORKSPACE_NAME}::core ${Boost_LIBRARIES})
+    target_link_libraries(${CMAKE_WORKSPACE_NAME}_perf_testing PUBLIC 
+        ${CMAKE_WORKSPACE_NAME}::core 
+        Boost::unit_test_framework
+        ${Boost_LIBRARIES})
 
     cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
         ${CMAKE_WORKSPACE_NAME}_testing

@@ -32,6 +32,7 @@
 // on sector boundaries.  The adapters in this file provide a byte stream
 // interface to files, while retaining the zero-copy characteristics of
 // seastar files.
+//
 
 #include <nil/actor/core/file.hh>
 #include <nil/actor/core/iostream.hh>
@@ -72,8 +73,8 @@ namespace nil {
         /// \param options A set of options controlling the stream.
         ///
         /// \note Multiple input streams may exist concurrently for the same file.
-        input_stream<char>
-            make_file_input_stream(file file, uint64_t offset, uint64_t len, file_input_stream_options options = {});
+        input_stream<char> make_file_input_stream(file file, uint64_t offset, uint64_t len,
+                                                  file_input_stream_options options = {});
 
         // Create an input_stream for a given file, with the specified options.
         // Multiple fibers of execution (continuations) may safely open
@@ -100,26 +101,6 @@ namespace nil {
             ::nil::actor::io_priority_class io_priority_class = default_priority_class();
         };
 
-        ACTOR_INCLUDE_API_V2 namespace api_v2 {
-
-            /// Create an output_stream for writing starting at the position zero of a
-            /// newly created file.
-            /// NOTE: flush() should be the last thing to be called on a file output stream.
-            [[deprecated("use =nil; Actor_API_LEVEL=3 instead")]] output_stream<char> make_file_output_stream(
-                file file, uint64_t buffer_size = 8192);
-
-            /// Create an output_stream for writing starting at the position zero of a
-            /// newly created file.
-            /// NOTE: flush() should be the last thing to be called on a file output stream.
-            [[deprecated("use =nil; Actor_API_LEVEL=3 instead")]] output_stream<char> make_file_output_stream(
-                file file, file_output_stream_options options);
-
-            /// Create a data_sink for writing starting at the position zero of a
-            /// newly created file.
-            [[deprecated("use =nil; Actor_API_LEVEL=3 instead")]] data_sink make_file_data_sink(
-                file, file_output_stream_options);
-        }
-
         ACTOR_INCLUDE_API_V3 namespace api_v3 {
             inline namespace and_newer {
 
@@ -127,19 +108,20 @@ namespace nil {
                 /// newly created file.
                 /// NOTE: flush() should be the last thing to be called on a file output stream.
                 /// Closes the file if the stream creation fails.
-                future<output_stream<char>> make_file_output_stream(file file, uint64_t buffer_size = 8192) noexcept;
+                BOOST_SYMBOL_EXPORT future<output_stream<char>>
+                    make_file_output_stream(file file, uint64_t buffer_size = 8192) noexcept;
 
                 /// Create an output_stream for writing starting at the position zero of a
                 /// newly created file.
                 /// NOTE: flush() should be the last thing to be called on a file output stream.
                 /// Closes the file if the stream creation fails.
-                future<output_stream<char>> make_file_output_stream(file file,
-                                                                    file_output_stream_options options) noexcept;
+                BOOST_SYMBOL_EXPORT future<output_stream<char>>
+                    make_file_output_stream(file file, file_output_stream_options options) noexcept;
 
                 /// Create a data_sink for writing starting at the position zero of a
                 /// newly created file.
                 /// Closes the file if the sink creation fails.
-                future<data_sink> make_file_data_sink(file, file_output_stream_options) noexcept;
+                BOOST_SYMBOL_EXPORT future<data_sink> make_file_data_sink(file, file_output_stream_options) noexcept;
 
             }    // namespace and_newer
         }

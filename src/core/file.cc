@@ -406,12 +406,13 @@ namespace nil {
 #if BOOST_OS_LINUX
                                     auto ret = ::syscall(__NR_getdents64, _fd,
                                                          reinterpret_cast<linux_dirent64 *>(w->buffer), buffer_size);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
-                                    long *basep = NULL;
-                                    long ret = getdirentries(_fd, w->buffer, buffer_size, basep);
-
-#endif
                                     return wrap_syscall(ret);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+                                    DIR *dir = fdopendir(_fd);
+                                    dirent *de = readdir(dir);
+                                    memcpy(w->buffer, de, buffer_size);
+                                    return wrap_syscall(0l);
+#endif
                                 })
                                 .then([w](syscall_result<long> ret) {
                                     ret.throw_if_error();

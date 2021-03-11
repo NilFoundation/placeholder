@@ -15,9 +15,6 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <boost/config.hpp>
-#include <boost/predef.h>
-
 #include <nil/actor/core/posix.hh>
 #include <nil/actor/core/linux-aio.hh>
 #include <nil/actor/core/fsqual.hh>

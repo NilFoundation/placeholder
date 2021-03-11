@@ -1227,7 +1227,7 @@ ACTOR_TEST_CASE(test_when_all_succeed_tuples) {
                                         make_ready_future<sstring>("hello world"),
                                         make_ready_future<int>(42),
                                         make_ready_future<>(),
-                                        make_ready_future<std::tuple<int, sstring>>(std::tuple(84, "hi")),
+                                        make_ready_future<std::tuple<int, sstring>>(std::make_tuple(84, "hi")),
                                         make_ready_future<bool>(true))
         .THEN_UNPACK([](sstring msg, int v, std::tuple<int, sstring> t, bool b) {
             BOOST_REQUIRE_EQUAL(msg, "hello world");
@@ -1457,7 +1457,7 @@ ACTOR_THREAD_TEST_CASE(test_then_unpack) {
     make_ready_future<std::tuple<int, long>>(std::tuple<int, long>(1, 2))
         .then_unpack([](int x, long y) { BOOST_REQUIRE(x == 1 && y == 2); })
         .get();
-    make_ready_future<std::tuple<std::unique_ptr<int>>>(std::tuple(std::make_unique<int>(42)))
+    make_ready_future<std::tuple<std::unique_ptr<int>>>(std::make_tuple(std::make_unique<int>(42)))
         .then_unpack([](std::unique_ptr<int> p1) { BOOST_REQUIRE(*p1 == 42); })
         .get();
 }

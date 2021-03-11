@@ -69,7 +69,7 @@ function(seastar_add_test name)
     BOOST
     CUSTOM)
 
-  cmake_parse_arguments (parsed_args
+  cmake_parse_arguments(parsed_args
     ""
     "WORKING_DIRECTORY;KIND"
     "RUN_ARGS;SOURCES;LIBRARIES;DEPENDS"
@@ -91,51 +91,52 @@ function(seastar_add_test name)
     set(args "")
     if(parsed_args_KIND STREQUAL "ACTOR")
       list(APPEND libraries
-        ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_testing
         ${CMAKE_WORKSPACE_NAME}::core
-        ${CMAKE_WORKSPACE_NAME}::network)
+        ${CMAKE_WORKSPACE_NAME}::network
+        ${CMAKE_WORKSPACE_NAME}::testing)
 
       if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
-        list (APPEND args ${jenkins_args})
+        list(APPEND args ${jenkins_args})
       endif()
 
-      list (APPEND args -- -c ${BUILD_WITH_UNIT_TEST_SMP})
+      list(APPEND args -- -c ${BUILD_WITH_UNIT_TEST_SMP})
     elseif(parsed_args_KIND STREQUAL "BOOST")
-      list (APPEND libraries
+      list(APPEND libraries
         Boost::unit_test_framework
         ${CMAKE_WORKSPACE_NAME}::core
-        ${CMAKE_WORKSPACE_NAME}::network)
+        ${CMAKE_WORKSPACE_NAME}::network
+        ${CMAKE_WORKSPACE_NAME}::testing)
 
       if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
-        list (APPEND args ${jenkins_args})
+        list(APPEND args ${jenkins_args})
       endif()
     endif()
 
-    list (APPEND args ${parsed_args_RUN_ARGS})
+    list(APPEND args ${parsed_args_RUN_ARGS})
 
     set(executable_target
         ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit_${name})
-    add_executable (${executable_target} ${parsed_args_SOURCES})
+    add_executable(${executable_target} ${parsed_args_SOURCES})
 
-    target_link_libraries (${executable_target}
-      PRIVATE ${libraries})
+    target_link_libraries(${executable_target} PRIVATE ${libraries})
 
-    target_compile_definitions (${executable_target}
-      PRIVATE ACTOR_TESTING_MAIN)
-
+    target_compile_definitions(${executable_target} PRIVATE ACTOR_TESTING_MAIN BOOST_TEST_DYN_LINK)
+    
     if((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
         ((BUILD_WITH_STACK_GUARDS STREQUAL "DEFAULT") AND
          (CMAKE_BUILD_TYPE IN_LIST Seastar_STACK_GUARD_MODES)))
-      target_compile_definitions (${executable_target}
-        PRIVATE
-          ACTOR_THREAD_STACK_GUARDS)
+      target_compile_definitions(${executable_target} 
+          PRIVATE ACTOR_THREAD_STACK_GUARDS)
     endif()
 
     target_include_directories(${executable_target} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${BUILD_WITH_SOURCE_DIR}/src)
 
-    set_target_properties(${executable_target} PROPERTIES OUTPUT_NAME ${name}_test)
+    set_target_properties(${executable_target} PROPERTIES 
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+        OUTPUT_NAME ${name}_test)
 
     add_dependencies(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_unit_tests ${executable_target})
     set(forwarded_args COMMAND ${executable_target} ${args})
@@ -154,7 +155,7 @@ function(seastar_add_test name)
   set(target ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit_${name}_run)
 
   if(parsed_args_WORKING_DIRECTORY)
-    list (APPEND forwarded_args WORKING_DIRECTORY ${parsed_args_WORKING_DIRECTORY})
+    list(APPEND forwarded_args WORKING_DIRECTORY ${parsed_args_WORKING_DIRECTORY})
   endif()
 
   if(parsed_args_DEPENDS)
@@ -187,7 +188,7 @@ endfunction()
 # `-c ${BUILD_WITH_UNIT_TEST_SMP}`.
 #
 function(seastar_add_app_test name)
-  cmake_parse_arguments (parsed_args
+  cmake_parse_arguments(parsed_args
     ""
     ""
     "RUN_ARGS;SOURCES;LIBRARIES"
@@ -197,7 +198,9 @@ function(seastar_add_app_test name)
     KIND CUSTOM
     SOURCES ${parsed_args_SOURCES}
     LIBRARIES
-      seastar_private
+      ${CMAKE_WORKSPACE_NAME}::core
+      ${CMAKE_WORKSPACE_NAME}::network
+      ${CMAKE_WORKSPACE_NAME}::testing
       ${parsed_args_LIBRARIES}
     RUN_ARGS
       -c ${BUILD_WITH_UNIT_TEST_SMP}
@@ -208,7 +211,7 @@ function(prepend_each var prefix)
   set(result "")
 
   foreach(x ${ARGN})
-    list (APPEND result ${prefix}/${x})
+    list(APPEND result ${prefix}/${x})
   endforeach()
 
   set(${var} ${result} PARENT_SCOPE)
@@ -236,8 +239,10 @@ seastar_add_test(allocator
   SOURCES allocator_test.cc
   RUN_ARGS ${allocator_test_args})
 
+if(UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
 seastar_add_app_test(alien
   SOURCES alien_test.cc)
+endif()
 
 seastar_add_test(checked_ptr
   SOURCES checked_ptr_test.cc)

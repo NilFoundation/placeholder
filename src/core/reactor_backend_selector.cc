@@ -36,6 +36,7 @@
 namespace nil {
     namespace actor {
 
+#if BOOST_OS_LINUX
         static bool detect_aio_poll() {
             auto fd = file_desc::eventfd(0, 0);
             detail::linux_abi::aio_context_t ioc {};
@@ -59,6 +60,7 @@ namespace nil {
             r = detail::io_pgetevents(ioc, 1, 1, ev, nullptr, nullptr, true);
             return r == 1;
         }
+#endif
 
         bool reactor_backend_selector::has_enough_aio_nr() {
 #if BOOST_OS_LINUX
@@ -97,7 +99,11 @@ namespace nil {
 
         std::vector<reactor_backend_selector> reactor_backend_selector::available() {
             std::vector<reactor_backend_selector> ret;
+#if BOOST_OS_LINUX
             if (detect_aio_poll() && has_enough_aio_nr()) {
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            if (has_enough_aio_nr()) {
+#endif
                 ret.push_back(reactor_backend_selector("linux-aio"));
             }
             ret.push_back(reactor_backend_selector("epoll"));

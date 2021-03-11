@@ -48,17 +48,24 @@
 // entirely. By calling the callback with old version of dl_phdr_info from
 // our dl_iterate_phdr we can effectively make libgcc callback thread safe.
 
-#include <link.h>
 #include <dlfcn.h>
 #include <cassert>
 #include <vector>
 #include <cstddef>
+
+#include <boost/predef.h>
+
 #include <nil/actor/core/exception_hacks.hh>
 #include <nil/actor/core/reactor.hh>
 #include <nil/actor/detail/backtrace.hh>
 
+#if BOOST_LIB_STD_GNU
+#include <link.h>
+#endif
+
 namespace nil {
     namespace actor {
+#if BOOST_LIB_STD_GNU
         using dl_iterate_fn = int (*)(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data);
 
         [[gnu::no_sanitize_address]] static dl_iterate_fn dl_iterate_phdr_org() {
@@ -87,6 +94,7 @@ namespace nil {
                 },
                 nullptr);
         }
+#endif
 
 #ifndef NO_EXCEPTION_INTERCEPT
         nil::actor::logger exception_logger("exception");
@@ -108,6 +116,8 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
+#if BOOST_LIB_STD_GNU
+
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] [[gnu::no_sanitize_address]] int
     dl_iterate_phdr(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data) {
     if (!nil::actor::local_engine || !nil::actor::phdrs_cache) {
@@ -127,6 +137,8 @@ extern "C" [[gnu::visibility("default")]] [[gnu::used]] [[gnu::no_sanitize_addre
     }
     return r;
 }
+
+#endif
 
 #ifndef NO_EXCEPTION_INTERCEPT
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] int _Unwind_RaiseException(struct _Unwind_Exception *h) {
