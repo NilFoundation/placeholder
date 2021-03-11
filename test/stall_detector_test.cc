@@ -28,7 +28,8 @@
 #include <nil/actor/detail/later.hh>
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
-#include <../../src/core/stall_detector.hh>
+#include <nil/actor/core/detail/stall_detector.hh>
+
 #include <atomic>
 #include <chrono>
 

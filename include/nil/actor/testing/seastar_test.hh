@@ -57,8 +57,10 @@ namespace nil {
             // BOOST_REQUIRE_EXCEPTION predicates
             namespace exception_predicate {
 
-                std::function<bool(const std::exception &)> message_equals(std::string_view expected_message);
-                std::function<bool(const std::exception &)> message_contains(std::string_view expected_message);
+                BOOST_SYMBOL_EXPORT std::function<bool(const std::exception &)>
+                    message_equals(std::string_view expected_message);
+                BOOST_SYMBOL_EXPORT std::function<bool(const std::exception &)>
+                    message_contains(std::string_view expected_message);
 
             }    // namespace exception_predicate
 

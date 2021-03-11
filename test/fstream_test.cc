@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
+
 #include <nil/actor/core/fstream.hh>
 #include <nil/actor/core/smp.hh>
 #include <nil/actor/core/shared_ptr.hh>
@@ -38,18 +39,19 @@
 #include <nil/actor/core/print.hh>
 #include <nil/actor/detail/defer.hh>
 #include <nil/actor/detail/tmp_file.hh>
+
+#include <boost/range/irange.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/algorithm/cxx11/any_of.hpp>
+
 #include "mock_file.hh"
-#include <boost/range/irange.hpp>
 
 using namespace nil::actor;
-namespace fs = std::filesystem;
 
 struct writer {
     output_stream<char> out;
     static future<shared_ptr<writer>> make(file f) {
-        return api_v3::and_newer::make_file_output_stream(std::move(f)).then([](output_stream<char> &&os) {
+        return make_file_output_stream(std::move(f)).then([](output_stream<char> &&os) {
             return make_shared<writer>(writer {std::move(os)});
         });
     }
@@ -234,7 +236,7 @@ future<> test_consume_until_end(uint64_t size) {
     return tmp_dir::do_with([size](tmp_dir &t) {
         auto filename = (t.get_path() / "testfile.tmp").native();
         return open_file_dma(filename, open_flags::rw | open_flags::create | open_flags::truncate).then([size](file f) {
-            return api_v3::and_newer::make_file_output_stream(f)
+            return make_file_output_stream(f)
                 .then([size](output_stream<char> &&os) {
                     return do_with(std::move(os), [size](output_stream<char> &out) {
                         std::vector<char> buf(size);
@@ -294,7 +296,7 @@ ACTOR_TEST_CASE(test_input_stream_esp_around_eof) {
             boost::irange<uint64_t>(0, flen) | boost::adaptors::transformed([&](int x) { return rdist(reng); }));
         auto filename = (t.get_path() / "testfile.tmp").native();
         auto f = open_file_dma(filename, open_flags::rw | open_flags::create | open_flags::truncate).get0();
-        auto out = api_v3::and_newer::make_file_output_stream(f).get0();
+        auto out = make_file_output_stream(f).get0();
         out.write(reinterpret_cast<const char *>(data.data()), data.size()).get();
         out.flush().get();
         // out.close().get();  // FIXME: closes underlying stream:?!

@@ -32,7 +32,7 @@
 #include <future>
 #include <iostream>
 
-#include <cmalloc>
+#include <cstdlib>
 
 using namespace nil::actor;
 

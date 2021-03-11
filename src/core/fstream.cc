@@ -454,43 +454,23 @@ namespace nil {
             }
         };
 
-        ACTOR_INCLUDE_API_V3 namespace api_v3 {
-            inline namespace and_newer {
-
-                future<data_sink> make_file_data_sink(file f, file_output_stream_options options) noexcept {
-                    try {
-                        return make_ready_future<data_sink>(std::make_unique<file_data_sink_impl>(f, options));
-                    } catch (...) {
-                        return f.close().then_wrapped([ex = std::current_exception(), f](future<> fut) mutable {
-                            if (fut.failed()) {
-                                try {
-                                    std::rethrow_exception(std::move(ex));
-                                } catch (...) {
-                                    std::throw_with_nested(std::runtime_error(fmt::format(
-                                        "While handling failed construction of data_sink, caught exception: {}",
-                                        fut.get_exception())));
-                                }
-                            }
-                            return make_exception_future<data_sink>(std::move(ex));
-                        });
+        future<data_sink> make_file_data_sink(file f, file_output_stream_options options) noexcept {
+            try {
+                return make_ready_future<data_sink>(std::make_unique<file_data_sink_impl>(f, options));
+            } catch (...) {
+                return f.close().then_wrapped([ex = std::current_exception(), f](future<> fut) mutable {
+                    if (fut.failed()) {
+                        try {
+                            std::rethrow_exception(std::move(ex));
+                        } catch (...) {
+                            std::throw_with_nested(std::runtime_error(
+                                fmt::format("While handling failed construction of data_sink, caught exception: {}",
+                                            fut.get_exception())));
+                        }
                     }
-                }
-
-                future<output_stream<char>> make_file_output_stream(file f, size_t buffer_size) noexcept {
-                    file_output_stream_options options;
-                    options.buffer_size = buffer_size;
-                    return api_v3::and_newer::make_file_output_stream(std::move(f), options);
-                }
-
-                future<output_stream<char>> make_file_output_stream(file f,
-                                                                    file_output_stream_options options) noexcept {
-                    return api_v3::and_newer::make_file_data_sink(std::move(f), options)
-                        .then([buffer_size = options.buffer_size](data_sink &&ds) {
-                            return output_stream<char>(std::move(ds), buffer_size, true);
-                        });
-                }
-
-            }    // namespace and_newer
+                    return make_exception_future<data_sink>(std::move(ex));
+                });
+            }
         }
 
         /*

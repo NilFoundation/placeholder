@@ -101,29 +101,32 @@ namespace nil {
             ::nil::actor::io_priority_class io_priority_class = default_priority_class();
         };
 
-        ACTOR_INCLUDE_API_V3 namespace api_v3 {
-            inline namespace and_newer {
+        /// Create a data_sink for writing starting at the position zero of a
+        /// newly created file.
+        /// Closes the file if the sink creation fails.
+        future<data_sink> make_file_data_sink(file, file_output_stream_options) noexcept;
 
-                /// Create an output_stream for writing starting at the position zero of a
-                /// newly created file.
-                /// NOTE: flush() should be the last thing to be called on a file output stream.
-                /// Closes the file if the stream creation fails.
-                BOOST_SYMBOL_EXPORT future<output_stream<char>>
-                    make_file_output_stream(file file, uint64_t buffer_size = 8192) noexcept;
+        /// Create an output_stream for writing starting at the position zero of a
+        /// newly created file.
+        /// NOTE: flush() should be the last thing to be called on a file output stream.
+        /// Closes the file if the stream creation fails.
+        [[maybe_unused]] static future<output_stream<char>>
+            make_file_output_stream(file file, file_output_stream_options options) noexcept {
+            return make_file_data_sink(std::move(file), options)
+                .then([buffer_size = options.buffer_size](data_sink &&ds) {
+                    return output_stream<char>(std::move(ds), buffer_size, true);
+                });
+        }
 
-                /// Create an output_stream for writing starting at the position zero of a
-                /// newly created file.
-                /// NOTE: flush() should be the last thing to be called on a file output stream.
-                /// Closes the file if the stream creation fails.
-                BOOST_SYMBOL_EXPORT future<output_stream<char>>
-                    make_file_output_stream(file file, file_output_stream_options options) noexcept;
-
-                /// Create a data_sink for writing starting at the position zero of a
-                /// newly created file.
-                /// Closes the file if the sink creation fails.
-                BOOST_SYMBOL_EXPORT future<data_sink> make_file_data_sink(file, file_output_stream_options) noexcept;
-
-            }    // namespace and_newer
+        /// Create an output_stream for writing starting at the position zero of a
+        /// newly created file.
+        /// NOTE: flush() should be the last thing to be called on a file output stream.
+        /// Closes the file if the stream creation fails.
+        [[maybe_unused]] static future<output_stream<char>>
+            make_file_output_stream(file file, uint64_t buffer_size = 8192) noexcept {
+            file_output_stream_options options;
+            options.buffer_size = buffer_size;
+            return make_file_output_stream(std::move(file), options);
         }
     }    // namespace actor
 }    // namespace nil
