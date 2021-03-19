@@ -27,7 +27,7 @@
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/thread.hh>
 
-#include <nil/actor/testing/seastar_test.hh>
+#include <nil/actor/testing/actor_test.hh>
 
 #define ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures)    \
     struct name : public nil::actor::testing::seastar_test {          \

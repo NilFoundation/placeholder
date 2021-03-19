@@ -794,7 +794,7 @@ if(BUILD_TESTS)
         include/nil/actor/testing/entry_point.hh
         include/nil/actor/testing/exchanger.hh
         include/nil/actor/testing/random.hh
-        include/nil/actor/testing/seastar_test.hh
+        include/nil/actor/testing/actor_test.hh
         include/nil/actor/testing/test_case.hh
         include/nil/actor/testing/test_runner.hh
         include/nil/actor/testing/thread_test_case.hh)
@@ -802,7 +802,7 @@ if(BUILD_TESTS)
     set(testing_SOURCES
         src/testing/entry_point.cc
         src/testing/random.cc
-        src/testing/seastar_test.cc
+        src/testing/actor_test.cc
         src/testing/test_runner.cc)
 
     set(perf_testing_HEADERS

@@ -26,7 +26,7 @@
 
 #include <nil/actor/core/future.hh>
 
-#include <nil/actor/testing/seastar_test.hh>
+#include <nil/actor/testing/actor_test.hh>
 
 #define ACTOR_TEST_CASE(name)                              \
     struct name : public nil::actor::testing::seastar_test { \

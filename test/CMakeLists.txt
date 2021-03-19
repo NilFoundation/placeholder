@@ -22,8 +22,7 @@
 # SOFTWARE.
 #---------------------------------------------------------------------------//
 
-# Logical target for all unit tests.
-add_custom_target(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_unit_tests)
+include(CMTest)
 
 set(BUILD_WITH_UNIT_TEST_SMP
   2
@@ -102,7 +101,6 @@ function(seastar_add_test name)
       list(APPEND args -- -c ${BUILD_WITH_UNIT_TEST_SMP})
     elseif(parsed_args_KIND STREQUAL "BOOST")
       list(APPEND libraries
-        Boost::unit_test_framework
         ${CMAKE_WORKSPACE_NAME}::core
         ${CMAKE_WORKSPACE_NAME}::network
         ${CMAKE_WORKSPACE_NAME}::testing)
@@ -114,32 +112,31 @@ function(seastar_add_test name)
 
     list(APPEND args ${parsed_args_RUN_ARGS})
 
-    set(executable_target
-        ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit_${name})
-    add_executable(${executable_target} ${parsed_args_SOURCES})
+    cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+        ${libraries}
+        ${Boost_LIBRARIES})
 
-    target_link_libraries(${executable_target} PRIVATE ${libraries})
+    cm_test(NAME ${CMAKE_WORKSPACE_NAME}_${name}_test SOURCES ${parsed_args_SOURCES})
 
-    target_compile_definitions(${executable_target} PRIVATE ACTOR_TESTING_MAIN BOOST_TEST_DYN_LINK)
+    target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${name}_test PRIVATE 
+        ACTOR_TESTING_MAIN BOOST_TEST_DYN_LINK)
     
     if((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
         ((BUILD_WITH_STACK_GUARDS STREQUAL "DEFAULT") AND
          (CMAKE_BUILD_TYPE IN_LIST Seastar_STACK_GUARD_MODES)))
-      target_compile_definitions(${executable_target} 
+      target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${name}_test 
           PRIVATE ACTOR_THREAD_STACK_GUARDS)
     endif()
 
-    target_include_directories(${executable_target} PRIVATE
+    target_include_directories(${CMAKE_WORKSPACE_NAME}_${name}_test PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${BUILD_WITH_SOURCE_DIR}/src)
 
-    set_target_properties(${executable_target} PROPERTIES 
+    set_target_properties(${CMAKE_WORKSPACE_NAME}_${name}_test PROPERTIES 
         CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED ON
-        OUTPUT_NAME ${name}_test)
+        CXX_STANDARD_REQUIRED TRUE)
 
-    add_dependencies(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_unit_tests ${executable_target})
-    set(forwarded_args COMMAND ${executable_target} ${args})
+    set(forwarded_args COMMAND ${CMAKE_WORKSPACE_NAME}_${name}_test ${args})
   else ()
     if(NOT (parsed_args_KIND STREQUAL "CUSTOM"))
       message (FATAL_ERROR "SOURCES are required for ${parsed_args_KIND} tests")
@@ -147,31 +144,6 @@ function(seastar_add_test name)
 
     set(forwarded_args COMMAND ${parsed_args_RUN_ARGS})
   endif()
-
-  #
-  # We expect `forwarded_args` to be populated correctly at this point.
-  #
-
-  set(target ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit_${name}_run)
-
-  if(parsed_args_WORKING_DIRECTORY)
-    list(APPEND forwarded_args WORKING_DIRECTORY ${parsed_args_WORKING_DIRECTORY})
-  endif()
-
-  if(parsed_args_DEPENDS)
-    add_dependencies(${executable_target} ${parsed_args_DEPENDS})
-  endif()
-
-  add_custom_target(${target}
-    ${forwarded_args}
-    USES_TERMINAL)
-
-  add_test(NAME Seastar.unit.${name}
-    COMMAND ${CMAKE_COMMAND} --build ${Seastar_BINARY_DIR} --target ${target})
-
-  set_tests_properties(Seastar.unit.${name} PROPERTIES
-      TIMEOUT ${BUILD_WITH_TEST_TIMEOUT}
-      ENVIRONMENT "${BUILD_WITH_TEST_ENVIRONMENT}")
 endfunction()
 
 #

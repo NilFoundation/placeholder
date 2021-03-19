@@ -26,7 +26,7 @@
 
 #include <boost/range/numeric.hpp>
 
-#include <nil/actor/testing/seastar_test.hh>
+#include <nil/actor/testing/actor_test.hh>
 #include <nil/actor/core/file.hh>
 
 namespace nil {

@@ -23,7 +23,7 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/testing/entry_point.hh>
-#include <nil/actor/testing/seastar_test.hh>
+#include <nil/actor/testing/actor_test.hh>
 #include <nil/actor/testing/test_runner.hh>
 
 namespace nil {

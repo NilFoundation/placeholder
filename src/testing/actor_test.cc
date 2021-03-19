@@ -26,7 +26,7 @@
 #include <iostream>
 
 #include <nil/actor/testing/entry_point.hh>
-#include <nil/actor/testing/seastar_test.hh>
+#include <nil/actor/testing/actor_test.hh>
 #include <nil/actor/testing/test_runner.hh>
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/on_internal_error.hh>
