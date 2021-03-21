@@ -283,7 +283,7 @@ set(BUILD_WITH_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(BUILD_WITH_GEN_BINARY_DIR ${BUILD_WITH_BINARY_DIR}/gen)
 
 include(ActorDependencies)
-seastar_find_dependencies()
+actor_find_dependencies()
 
 find_package(Valgrind REQUIRED)
 if (VALGRIND_FOUND)
@@ -735,8 +735,8 @@ if(BUILD_WITH_DEBUG_SHARED_PTR OR (CMAKE_BUILD_TYPE IN_LIST Seastar_DEBUG_SHARED
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_DEBUG_SHARED_PTR)
 endif()
 
-set(Seastar_STACK_GUARD_MODES "Debug" "Sanitize" "Dev")
-if(BUILD_WITH_STACK_GUARDS OR (CMAKE_BUILD_TYPE IN_LIST Seastar_STACK_GUARD_MODES))
+set(ACTOR_STACK_GUARD_MODES "Debug" "Sanitize" "Dev")
+if(BUILD_WITH_STACK_GUARDS OR (CMAKE_BUILD_TYPE IN_LIST ACTOR_STACK_GUARD_MODES))
     seastar_supports_flag("-fstack-clash-protection" StackClashProtection_FOUND)
     if(StackClashProtection_FOUND)
         list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS -fstack-clash-protection)

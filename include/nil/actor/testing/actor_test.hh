@@ -38,10 +38,10 @@ namespace nil {
 
         namespace testing {
 
-            class BOOST_SYMBOL_EXPORT seastar_test {
+            class BOOST_SYMBOL_EXPORT actor_test {
             public:
-                seastar_test();
-                virtual ~seastar_test() {
+                actor_test();
+                virtual ~actor_test() {
                 }
                 virtual const char *get_test_file() = 0;
                 virtual const char *get_name() = 0;
@@ -52,7 +52,7 @@ namespace nil {
                 void run();
             };
 
-            const std::vector<seastar_test *> &known_tests();
+            const std::vector<actor_test *> &known_tests();
 
             // BOOST_REQUIRE_EXCEPTION predicates
             namespace exception_predicate {

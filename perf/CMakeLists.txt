@@ -23,9 +23,9 @@
 #---------------------------------------------------------------------------//
 
 # Logical target for all perf tests.
-add_custom_target (perf_tests)
+add_custom_target(perf_tests)
 
-macro (seastar_add_test name)
+macro(actor_add_test name)
   set (args ${ARGN})
 
   cmake_parse_arguments (
@@ -35,35 +35,38 @@ macro (seastar_add_test name)
     "SOURCES"
     ${args})
 
-  set (target test_perf_${name})
-  add_executable (${target} ${parsed_args_SOURCES})
+  set(target test_perf_${name})
+  add_executable(${target} ${parsed_args_SOURCES})
 
-  if (parsed_args_NO_ACTOR_PERF_TESTING_LIBRARY)
-    set (libraries seastar_private)
-  else ()
-    set (libraries
-      seastar_private
-      seastar_perf_testing)
-  endif ()
+  if(parsed_args_NO_ACTOR_PERF_TESTING_LIBRARY)
+    set(libraries 
+        ${CMAKE_WORKSPACE_NAME}::core
+        ${CMAKE_WORKSPACE_NAME}::network)
+  else()
+    set(libraries
+        ${CMAKE_WORKSPACE_NAME}::core
+        ${CMAKE_WORKSPACE_NAME}::network
+        ${CMAKE_WORKSPACE_NAME}::testing)
+  endif()
 
-  target_link_libraries (${target}
+  target_link_libraries(${target}
     PRIVATE ${libraries})
 
-  target_include_directories (${target}
+  target_include_directories(${target}
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${Seastar_SOURCE_DIR}/src)
 
-  set_target_properties (${target}
+  set_target_properties(${target}
     PROPERTIES
       OUTPUT_NAME ${name}_perf)
 
-  add_dependencies (perf_tests ${target})
-  set (${name}_test ${target})
+  add_dependencies(perf_tests ${target})
+  set(${name}_test ${target})
 endmacro ()
 
-seastar_add_test(fstream SOURCES fstream_perf.cc NO_ACTOR_PERF_TESTING_LIBRARY)
+actor_add_test(fstream SOURCES fstream_perf.cc NO_ACTOR_PERF_TESTING_LIBRARY)
 
-seastar_add_test(fair_queue SOURCES fair_queue_perf.cc)
+actor_add_test(fair_queue SOURCES fair_queue_perf.cc)
 
-seastar_add_test(future_util SOURCES future_util_perf.cc)
+actor_add_test(future_util SOURCES future_util_perf.cc)

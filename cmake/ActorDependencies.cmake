@@ -19,7 +19,7 @@ find_package(Boost 1.64 MODULE)
 # Iterate through the dependency list defined below and execute `find_package`
 # with the corresponding configuration for each 3rd-party dependency.
 #
-macro(seastar_find_dependencies)
+macro(actor_find_dependencies)
     #
     # List of Seastar dependencies that is meant to be used
     # both in Seastar configuration and by clients which

@@ -43,7 +43,7 @@ namespace nil {
             exchanger_base::~exchanger_base() {
             }
 
-            void seastar_test::run() {
+            void actor_test::run() {
                 // HACK: please see https://github.com/cloudius-systems/seastar/issues/10
                 BOOST_REQUIRE(true);
 
@@ -60,18 +60,18 @@ namespace nil {
             // I use a primitive type, which is guaranteed to be initialized before any
             // dynamic initializer and lazily allocate the factor.
 
-            static std::vector<seastar_test *> *tests = nullptr;
+            static std::vector<actor_test *> *tests = nullptr;
 
-            const std::vector<seastar_test *> &known_tests() {
+            const std::vector<actor_test *> &known_tests() {
                 if (!tests) {
                     throw std::runtime_error("No tests registered");
                 }
                 return *tests;
             }
 
-            seastar_test::seastar_test() {
+            actor_test::actor_test() {
                 if (!tests) {
-                    tests = new std::vector<seastar_test *>();
+                    tests = new std::vector<actor_test *>();
                 }
                 tests->push_back(this);
             }

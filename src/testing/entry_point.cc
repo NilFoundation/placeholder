@@ -35,7 +35,7 @@ namespace nil {
                 auto &&ts = boost::unit_test::framework::master_test_suite();
                 ts.p_name.set(tests.size() ? (tests)[0]->get_test_file() : "seastar-tests");
 
-                for (seastar_test *test : tests) {
+                for (actor_test *test : tests) {
 #if BOOST_VERSION > 105800
                     ts.add(boost::unit_test::make_test_case([test] { test->run(); }, test->get_name(),
                                                             test->get_test_file(), 0),

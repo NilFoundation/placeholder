@@ -33,7 +33,7 @@ set(BUILD_WITH_UNIT_TEST_SMP
 #
 # Define a new unit test with the given name.
 #
-# seastar_add_test(name
+# actor_add_test(name
 #   [KIND {ACTOR,BOOST,CUSTOM}]
 #   [SOURCES source1 source2 ... sourcen]
 #   [WORKING_DIRECTORY dir]
@@ -62,7 +62,7 @@ set(BUILD_WITH_UNIT_TEST_SMP
 # CUSTOM tests with no SOURCES, this parameter can be used to specify the executable name as well as its arguments since
 # no executable is compiled.
 #
-function(seastar_add_test name)
+function(actor_add_test name)
   set(test_kinds
     ACTOR
     BOOST
@@ -94,20 +94,12 @@ function(seastar_add_test name)
         ${CMAKE_WORKSPACE_NAME}::network
         ${CMAKE_WORKSPACE_NAME}::testing)
 
-      if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
-        list(APPEND args ${jenkins_args})
-      endif()
-
       list(APPEND args -- -c ${BUILD_WITH_UNIT_TEST_SMP})
     elseif(parsed_args_KIND STREQUAL "BOOST")
       list(APPEND libraries
         ${CMAKE_WORKSPACE_NAME}::core
         ${CMAKE_WORKSPACE_NAME}::network
         ${CMAKE_WORKSPACE_NAME}::testing)
-
-      if(NOT (BUILD_WITH_JENKINS STREQUAL ""))
-        list(APPEND args ${jenkins_args})
-      endif()
     endif()
 
     list(APPEND args ${parsed_args_RUN_ARGS})
@@ -123,7 +115,7 @@ function(seastar_add_test name)
     
     if((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
         ((BUILD_WITH_STACK_GUARDS STREQUAL "DEFAULT") AND
-         (CMAKE_BUILD_TYPE IN_LIST Seastar_STACK_GUARD_MODES)))
+         (CMAKE_BUILD_TYPE IN_LIST ACTOR_STACK_GUARD_MODES)))
       target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${name}_test 
           PRIVATE ACTOR_THREAD_STACK_GUARDS)
     endif()
@@ -135,21 +127,17 @@ function(seastar_add_test name)
     set_target_properties(${CMAKE_WORKSPACE_NAME}_${name}_test PROPERTIES 
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED TRUE)
-
-    set(forwarded_args COMMAND ${CMAKE_WORKSPACE_NAME}_${name}_test ${args})
-  else ()
+  else()
     if(NOT (parsed_args_KIND STREQUAL "CUSTOM"))
       message (FATAL_ERROR "SOURCES are required for ${parsed_args_KIND} tests")
     endif()
-
-    set(forwarded_args COMMAND ${parsed_args_RUN_ARGS})
   endif()
 endfunction()
 
 #
 # Define a new custom unit test whose entry point is a Seastar application.
 #
-# seastar_add_app_test(name
+# actor_add_app_test(name
 #   [SOURCES source1 source2 ... sourcen]
 #   [LIBRARIES library1 library2 ... libraryn]
 #   [RUN_ARGS arg1 arg2 ... argn])
@@ -159,14 +147,14 @@ endfunction()
 # These tests always link against `seastar_private` and are always invoked with
 # `-c ${BUILD_WITH_UNIT_TEST_SMP}`.
 #
-function(seastar_add_app_test name)
+function(actor_add_app_test name)
   cmake_parse_arguments(parsed_args
     ""
     ""
     "RUN_ARGS;SOURCES;LIBRARIES"
     ${ARGN})
 
-  seastar_add_test(${name}
+  actor_add_test(${name}
     KIND CUSTOM
     SOURCES ${parsed_args_SOURCES}
     LIBRARIES
@@ -189,13 +177,9 @@ function(prepend_each var prefix)
   set(${var} ${result} PARENT_SCOPE)
 endfunction()
 
-add_custom_target(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_test_unit
-  COMMAND ctest --verbose -R Seastar.unit
-  USES_TERMINAL)
+actor_add_test(abort_source SOURCES abort_source_test.cc)
 
-seastar_add_test(abort_source SOURCES abort_source_test.cc)
-
-seastar_add_test(alloc SOURCES alloc_test.cc)
+actor_add_test(alloc SOURCES alloc_test.cc)
 
 if(NOT Seastar_EXECUTE_ONLY_FAST_TESTS)
   set(allocator_test_args "")
@@ -207,150 +191,150 @@ else ()
   endif()
 endif()
 
-seastar_add_test(allocator
+actor_add_test(allocator
   SOURCES allocator_test.cc
   RUN_ARGS ${allocator_test_args})
 
 if(UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
-seastar_add_app_test(alien
+actor_add_app_test(alien
   SOURCES alien_test.cc)
 endif()
 
-seastar_add_test(checked_ptr
+actor_add_test(checked_ptr
   SOURCES checked_ptr_test.cc)
 
-seastar_add_test(chunked_fifo
+actor_add_test(chunked_fifo
   SOURCES chunked_fifo_test.cc)
 
-seastar_add_test(circular_buffer
+actor_add_test(circular_buffer
   SOURCES circular_buffer_test.cc)
 
-seastar_add_test(circular_buffer_fixed_capacity
+actor_add_test(circular_buffer_fixed_capacity
   SOURCES circular_buffer_fixed_capacity_test.cc)
 
-seastar_add_test(coroutines
+actor_add_test(coroutines
   SOURCES coroutines_test.cc)
 
-seastar_add_test(defer
+actor_add_test(defer
   SOURCES defer_test.cc)
 
-seastar_add_test(deleter
+actor_add_test(deleter
   SOURCES deleter_test.cc)
 
-seastar_add_app_test(directory
+actor_add_app_test(directory
   SOURCES directory_test.cc)
 
-seastar_add_test(distributed
+actor_add_test(distributed
   SOURCES distributed_test.cc)
 
-seastar_add_test(execution_stage
+actor_add_test(execution_stage
   SOURCES execution_stage_test.cc)
 
-seastar_add_test(expiring_fifo
+actor_add_test(expiring_fifo
   SOURCES expiring_fifo_test.cc)
 
-seastar_add_test(io_queue
+actor_add_test(io_queue
   SOURCES io_queue_test.cc)
 
-seastar_add_test(fair_queue
+actor_add_test(fair_queue
   SOURCES fair_queue_test.cc)
 
-seastar_add_test(file_io
+actor_add_test(file_io
   SOURCES file_io_test.cc)
 
-seastar_add_test(file_utils
+actor_add_test(file_utils
   SOURCES file_utils_test.cc)
 
-seastar_add_test(foreign_ptr
+actor_add_test(foreign_ptr
   SOURCES foreign_ptr_test.cc)
 
-seastar_add_test(fstream
+actor_add_test(fstream
   SOURCES
     fstream_test.cc
     mock_file.hh)
 
-seastar_add_test(futures
+actor_add_test(futures
   SOURCES futures_test.cc)
 
-seastar_add_test(sharded
+actor_add_test(sharded
   SOURCES sharded_test.cc)
 
-seastar_add_test(locking
+actor_add_test(locking
   SOURCES locking_test.cc)
 
-seastar_add_test(lowres_clock
+actor_add_test(lowres_clock
   SOURCES lowres_clock_test.cc)
 
-seastar_add_test(metrics
+actor_add_test(metrics
   SOURCES metrics_test.cc)
 
-seastar_add_test(noncopyable_function
+actor_add_test(noncopyable_function
   KIND BOOST
   SOURCES noncopyable_function_test.cc)
 
-seastar_add_test(program_options
+actor_add_test(program_options
   KIND BOOST
   SOURCES program_options_test.cc)
 
-seastar_add_test(queue
+actor_add_test(queue
   SOURCES queue_test.cc)
 
-seastar_add_test(semaphore
+actor_add_test(semaphore
   SOURCES semaphore_test.cc)
 
-seastar_add_test(shared_ptr
+actor_add_test(shared_ptr
   KIND BOOST
   SOURCES shared_ptr_test.cc)
 
-seastar_add_test(signal
+actor_add_test(signal
   SOURCES signal_test.cc)
 
-seastar_add_test(simple_stream
+actor_add_test(simple_stream
   KIND BOOST
   SOURCES simple_stream_test.cc)
 
 # TODO: Disabled for now. See GH-520.
-# seastar_add_test(slab
+# actor_add_test(slab
 #   SOURCES slab_test.cc
 #   NO_ACTOR_TESTING_LIBRARY)
 
-seastar_add_app_test(smp
+actor_add_app_test(smp
   SOURCES smp_test.cc)
 
-seastar_add_test(sstring
+actor_add_test(sstring
   KIND BOOST
   SOURCES sstring_test.cc)
 
-seastar_add_test(stall_detector
+actor_add_test(stall_detector
   SOURCES stall_detector_test.cc)
 
-seastar_add_test(thread
+actor_add_test(thread
   SOURCES thread_test.cc)
 
-seastar_add_test(scheduling_group
+actor_add_test(scheduling_group
   SOURCES scheduling_group_test.cc)
 
-seastar_add_app_test(thread_context_switch
+actor_add_app_test(thread_context_switch
   SOURCES thread_context_switch_test.cc)
 
-seastar_add_app_test(timer
+actor_add_app_test(timer
   SOURCES timer_test.cc)
 
-seastar_add_test(uname
+actor_add_test(uname
   KIND BOOST
   SOURCES uname_test.cc)
 
-seastar_add_test(tuple_utils
+actor_add_test(tuple_utils
   KIND BOOST
   SOURCES tuple_utils_test.cc)
 
-seastar_add_test(unwind
+actor_add_test(unwind
   KIND BOOST
   SOURCES unwind_test.cc)
 
-seastar_add_test(weak_ptr
+actor_add_test(weak_ptr
   KIND BOOST
   SOURCES weak_ptr_test.cc)
 
-seastar_add_test(log_buf
+actor_add_test(log_buf
   SOURCES log_buf_test.cc)

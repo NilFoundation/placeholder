@@ -255,18 +255,18 @@ namespace perf_tests {
 // asynchronous cases respectively. The returned value shall be the number of iterations
 // done in a single test run.
 
-#define PERF_TEST_F(test_group, test_case)                                         \
-    struct test_##test_group##_##test_case : test_group {                          \
-        [[gnu::always_inline]] inline auto run();                                  \
-    };                                                                             \
+#define PERF_TEST_F(test_group, test_case)                                       \
+    struct test_##test_group##_##test_case : test_group {                        \
+        [[gnu::always_inline]] inline auto run();                                \
+    };                                                                           \
     static ::perf_tests::detail::test_registrar<test_##test_group##_##test_case> \
-        test_##test_group##_##test_case##_registrar(#test_group, #test_case);      \
+        test_##test_group##_##test_case##_registrar(#test_group, #test_case);    \
     [[gnu::always_inline]] auto test_##test_group##_##test_case::run()
 
-#define PERF_TEST(test_group, test_case)                                           \
-    struct test_##test_group##_##test_case {                                       \
-        [[gnu::always_inline]] inline auto run();                                  \
-    };                                                                             \
+#define PERF_TEST(test_group, test_case)                                         \
+    struct test_##test_group##_##test_case {                                     \
+        [[gnu::always_inline]] inline auto run();                                \
+    };                                                                           \
     static ::perf_tests::detail::test_registrar<test_##test_group##_##test_case> \
-        test_##test_group##_##test_case##_registrar(#test_group, #test_case);      \
+        test_##test_group##_##test_case##_registrar(#test_group, #test_case);    \
     [[gnu::always_inline]] auto test_##test_group##_##test_case::run()

@@ -157,7 +157,7 @@ ACTOR_TEST_CASE(test_thread_custom_stack_size) {
 // a command line option and fork/exec to run it after removing
 // detect_stack_use_after_return=1 from the environment.
 #if defined(ACTOR_THREAD_STACK_GUARDS) && defined(__x86_64__) && !defined(ACTOR_ASAN_ENABLED)
-struct test_thread_custom_stack_size_failure : public nil::actor::testing::seastar_test {
+struct test_thread_custom_stack_size_failure : public nil::actor::testing::actor_test {
     const char *get_test_file() override {
         return __FILE__;
     }

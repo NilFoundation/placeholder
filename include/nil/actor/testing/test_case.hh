@@ -29,7 +29,7 @@
 #include <nil/actor/testing/actor_test.hh>
 
 #define ACTOR_TEST_CASE(name)                              \
-    struct name : public nil::actor::testing::seastar_test { \
+    struct name : public nil::actor::testing::actor_test { \
         const char *get_test_file() override {               \
             return __FILE__;                                 \
         }                                                    \

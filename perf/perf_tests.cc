@@ -27,6 +27,7 @@
 #include <fstream>
 #include <regex>
 
+#include <boost/predef.h>
 #include <boost/range.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm.hpp>
@@ -42,6 +43,10 @@
 
 #include <csignal>
 
+#if BOOST_OS_MACOS || BOOST_OS_IOS
+#include <dispatch/dispatch.h>
+#endif
+
 namespace perf_tests {
     namespace detail {
 
@@ -52,10 +57,14 @@ namespace perf_tests {
             // This causes no overhead though since the timer is used only in a dry run.
             class signal_timer {
                 std::function<void()> _fn;
+#if BOOST_OS_LINUX
                 timer_t _timer;
-
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                dispatch_source_t _timer;
+#endif
             public:
                 explicit signal_timer(std::function<void()> fn) : _fn(fn) {
+#if BOOST_OS_LINUX
                     sigevent se {};
                     se.sigev_notify = SIGEV_SIGNAL;
                     se.sigev_signo = SIGALRM;
@@ -64,10 +73,23 @@ namespace perf_tests {
                     if (ret) {
                         throw std::system_error(ret, std::system_category());
                     }
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+                    if (!_timer) {
+                        throw std::system_error(1, std::system_category());
+                    }
+                    dispatch_source_set_event_handler(_timer, ^{
+                        raise(SIGALRM);
+                    });
+#endif
                 }
 
                 ~signal_timer() {
+#if BOOST_OS_LINUX
                     timer_delete(_timer);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    dispatch_source_cancel(_timer);
+#endif
                 }
 
                 void arm(std::chrono::steady_clock::duration dt) {
@@ -78,18 +100,26 @@ namespace perf_tests {
                     itimerspec ts {};
                     ts.it_value.tv_sec = sec;
                     ts.it_value.tv_nsec = nsec;
+#if BOOST_OS_LINUX
                     auto ret = timer_settime(_timer, 0, &ts, nullptr);
                     if (ret) {
                         throw std::system_error(ret, std::system_category());
                     }
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    dispatch_source_set_timer(_timer, dispatch_walltime(&ts.it_value, 0), 1ull * NSEC_PER_SEC, 0);
+#endif
                 }
 
                 void cancel() {
+#if BOOST_OS_LINUX
                     itimerspec ts {};
                     auto ret = timer_settime(_timer, 0, &ts, nullptr);
                     if (ret) {
                         throw std::system_error(ret, std::system_category());
                     }
+#elif BOOST_OS_IOS || BOOST_OS_MACOS
+                    dispatch_source_set_timer(_timer, dispatch_walltime(NULL, 0), 1ull * NSEC_PER_SEC, 0);
+#endif
                 }
 
             public:
@@ -315,7 +345,7 @@ namespace perf_tests {
 }    // namespace perf_tests
 
 int main(int ac, char **av) {
-    using namespace perf_tests::internal;
+    using namespace perf_tests::detail;
     namespace bpo = boost::program_options;
 
     app_template app;
