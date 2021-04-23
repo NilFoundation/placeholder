@@ -34,9 +34,10 @@
 #include <memory>
 #include <type_traits>
 
-#if BOOST_OS_LINUX
 #include <sys/epoll.h>
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+
+#if BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+
 #include <sys/event.h>
 
 #include <dispatch/dispatch.h>

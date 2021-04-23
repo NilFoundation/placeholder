@@ -26,12 +26,6 @@
 #include <nil/actor/detail/read_first_line.hh>
 
 #include <chrono>
-#include <sys/poll.h>
-#include <sys/syscall.h>
-
-#if BOOST_OS_MACOS || BOOST_OS_IOS
-#define TFD_TIMER_ABSTIME (1 << 0)
-#endif
 
 namespace nil {
     namespace actor {
@@ -39,22 +33,22 @@ namespace nil {
         using namespace std::chrono_literals;
         using namespace detail;
         using namespace detail::linux_abi;
-        namespace fs = std::filesystem;
 
         reactor_backend_epoll::reactor_backend_epoll(reactor *r) :
-            _r(r),
+            _r(r), _epollfd(file_desc::epoll_create(EPOLL_CLOEXEC))
 #if BOOST_OS_LINUX
-            _epollfd(file_desc::epoll_create(EPOLL_CLOEXEC)), _storage_context(_r) {
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            _epollfd(file_desc::epoll_create(FD_CLOEXEC)) {
+            ,
+            _storage_context(_r)
 #endif
-#if BOOST_OS_LINUX
+
+        {
             ::epoll_event event;
             event.events = EPOLLIN;
             event.data.ptr = nullptr;
             auto ret = ::epoll_ctl(_epollfd.get(), EPOLL_CTL_ADD, _r->_notify_eventfd.get(), &event);
             throw_system_error_on(ret == -1);
 
+#if BOOST_OS_LINUX
             struct sigevent sev { };
             sev.sigev_notify = SIGEV_THREAD_ID;
             sev._sigev_un._tid = syscall(SYS_gettid);
@@ -114,7 +108,6 @@ namespace nil {
         }
 
         bool reactor_backend_epoll::wait_and_process(int timeout, const sigset_t *active_sigmask) {
-#if BOOST_OS_LINUX
             std::array<epoll_event, 128> eevt;
             int nr = ::epoll_pwait(_epollfd.get(), eevt.data(), eevt.size(), timeout, active_sigmask);
             if (nr == -1 && errno == EINTR) {
@@ -155,9 +148,6 @@ namespace nil {
                 }
             }
             return nr;
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            return 0;
-#endif
         }
 
         bool reactor_backend_epoll::reap_kernel_completions() {
@@ -220,7 +210,6 @@ namespace nil {
                 pfd.events_known &= ~event;
                 return make_ready_future();
             }
-#if BOOST_OS_LINUX
             pfd.events_rw = event == (EPOLLIN | EPOLLOUT);
             pfd.events_requested |= event;
             if ((pfd.events_epoll & event) != event) {
@@ -233,44 +222,27 @@ namespace nil {
                 assert(r == 0);
                 _need_epoll_events = true;
             }
-#else
-
-#endif
 
             auto *fd = static_cast<epoll_pollable_fd_state *>(&pfd);
             return fd->get_completion_future(event);
         }
 
         future<> reactor_backend_epoll::readable(pollable_fd_state &fd) {
-#if BOOST_OS_LINUX
             return get_epoll_future(fd, EPOLLIN);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            return get_epoll_future(fd, POLLIN);
-#endif
         }
 
         future<> reactor_backend_epoll::writeable(pollable_fd_state &fd) {
-#if BOOST_OS_LINUX
             return get_epoll_future(fd, EPOLLOUT);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            return get_epoll_future(fd, POLLOUT);
-#endif
         }
 
         future<> reactor_backend_epoll::readable_or_writeable(pollable_fd_state &fd) {
-#if BOOST_OS_LINUX
             return get_epoll_future(fd, EPOLLIN | EPOLLOUT);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            return get_epoll_future(fd, POLLIN | POLLOUT);
-#endif
         }
 
         void reactor_backend_epoll::forget(pollable_fd_state &fd) noexcept {
-#if BOOST_OS_LINUX
             if (fd.events_epoll) {
                 ::epoll_ctl(_epollfd.get(), EPOLL_CTL_DEL, fd.fd.get(), nullptr);
             }
-#endif
             auto *efd = static_cast<epoll_pollable_fd_state *>(&fd);
             delete efd;
         }

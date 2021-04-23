@@ -32,7 +32,8 @@
 
 #endif
 
-#include <sys/poll.h>
+#include <sys/epoll.h>
+#include <sys/syscall.h>
 
 namespace nil {
     namespace actor {
@@ -41,15 +42,9 @@ namespace nil {
             pollable_fd_state_completion _pollout;
 
             pollable_fd_state_completion *get_desc(int events) {
-#if BOOST_OS_LINUX
                 if (events & EPOLLIN) {
                     return &_pollin;
                 }
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                if (events & POLLIN) {
-                    return &_pollin;
-                }
-#endif
                 return &_pollout;
             }
 

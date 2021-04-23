@@ -16,22 +16,20 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/core/detail/reactor_backend_aio.hh>
+#include <nil/actor/core/detail/buffer_allocator.hh>
 #include <nil/actor/core/detail/thread_pool.hh>
 #include <nil/actor/core/detail/syscall_result.hh>
+
 #include <nil/actor/core/print.hh>
 #include <nil/actor/core/reactor.hh>
-#include <nil/actor/core/detail/buffer_allocator.hh>
 
 #include <nil/actor/detail/defer.hh>
 #include <nil/actor/detail/read_first_line.hh>
 
 #include <chrono>
-#include <sys/poll.h>
+#include <sys/epoll.h>
+#include <sys/timerfd.h>
 #include <sys/syscall.h>
-
-#if BOOST_OS_MACOS || BOOST_OS_IOS
-#define TFD_TIMER_ABSTIME (1 << 0)
-#endif
 
 namespace nil {
     namespace actor {
@@ -337,11 +335,7 @@ namespace nil {
         }
 
         file_desc reactor_backend_aio::make_timerfd() {
-#if BOOST_OS_LINUX
             return file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            return file_desc::timerfd_create(CLOCK_MONOTONIC, FD_CLOEXEC | O_NONBLOCK);
-#endif
         }
 
         bool reactor_backend_aio::await_events(int timeout, const sigset_t *active_sigmask) {

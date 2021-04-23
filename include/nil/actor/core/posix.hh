@@ -41,28 +41,9 @@
 #include <sys/mman.h>
 #include <sys/uio.h>
 
-#if BOOST_OS_LINUX
-
 #include <sys/eventfd.h>
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
-
-#elif BOOST_OS_BSD
-
-#include <sys/event.h>
-#include <sys/time.h>
-#include <sys/sysctl.h>
-
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-
-#include <sys/event.h>
-#include <sys/time.h>
-#include <sys/sysctl.h>
-
-#include <mach/mach.h>
-#include <errno.h>
-
-#endif
 
 #include <cassert>
 #include <csignal>
@@ -73,10 +54,14 @@
 #include <utility>
 
 #include <nil/actor/net/socket_defs.hh>
+
 #include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/thread_affinity.hh>
 
 #if BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
+
+#include <mach/mach.h>
+#include <mach/mach_port.h>
 
 // https://github.com/freebsd/freebsd/blob/e79c62ff68fc74d88cb6f479859f6fae9baa5101/sys/sys/signal.h#L117
 
@@ -87,11 +72,6 @@
 #ifndef SIGRTMAX
 #define SIGRTMAX 126
 #endif
-
-struct itimerspec {
-    struct timespec it_interval; /* Timer interval */
-    struct timespec it_value;    /* Initial expiration */
-};
 
 #endif
 
@@ -179,6 +159,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "close");
                 _fd = -1;
             }
+
             int get() const {
                 return _fd;
             }
@@ -198,38 +179,18 @@ namespace nil {
                 return file_desc(fd);
             }
             static file_desc eventfd(unsigned initval, int flags) {
-#if BOOST_OS_LINUX
                 int fd = ::eventfd(initval, flags);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
-                int fd = ::kqueue();
-                if (fcntl(fd, F_SETFL, flags | EVFILT_USER) < 0) {
-                    ::close(fd);
-                }
-#endif
                 throw_system_error_on(fd == -1, "eventfd");
+
                 return file_desc(fd);
             }
             static file_desc epoll_create(int flags = 0) {
-#if BOOST_OS_LINUX
                 int fd = ::epoll_create1(flags);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
-                int fd = ::kqueue();
-                if (fcntl(fd, F_SETFL, flags) < 0) {
-                    ::close(fd);
-                }
-#endif
                 throw_system_error_on(fd == -1, "epoll_create1");
                 return file_desc(fd);
             }
             static file_desc timerfd_create(int clockid, int flags) {
-#if BOOST_OS_LINUX
                 int fd = ::timerfd_create(clockid, flags);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
-                int fd = ::kqueue();
-                if (fcntl(fd, F_SETFL, flags | EVFILT_TIMER) < 0) {
-                    ::close(fd);
-                }
-#endif
                 throw_system_error_on(fd == -1, "timerfd_create");
                 return file_desc(fd);
             }
@@ -429,14 +390,7 @@ namespace nil {
                 return size_t(r);
             }
             void timerfd_settime(int flags, const itimerspec &its) {
-#if BOOST_OS_LINUX
                 auto fd = ::timerfd_settime(_fd, flags, &its, NULL);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
-                int fd = ::kqueue();
-                if (fcntl(fd, F_SETFL, flags | EVFILT_TIMER) < 0) {
-                    ::close(fd);
-                }
-#endif
                 throw_system_error_on(fd == -1, "timerfd_settime");
             }
 

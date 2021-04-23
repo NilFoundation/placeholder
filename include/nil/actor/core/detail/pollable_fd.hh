@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <boost/intrusive_ptr.hpp>
+
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/posix.hh>
 
@@ -31,7 +33,6 @@
 #include <tuple>
 
 #include <nil/actor/core/detail/io_desc.hh>
-#include <boost/intrusive_ptr.hpp>
 
 namespace nil {
     namespace actor {
@@ -42,15 +43,11 @@ namespace nil {
         class socket_address;
 
         namespace detail {
-
             class buffer_allocator;
-
         }
 
         namespace net {
-
             class packet;
-
         }
 
         class pollable_fd_state;

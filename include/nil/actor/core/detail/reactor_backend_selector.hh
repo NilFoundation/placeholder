@@ -26,13 +26,11 @@
 
 #include <boost/predef.h>
 
+#include <nil/actor/core/detail/reactor_backend_epoll.hh>
+#include <nil/actor/core/detail/reactor_backend_osv.hh>
+
 #if BOOST_OS_LINUX
 #include <nil/actor/core/detail/reactor_backend_aio.hh>
-#include <nil/actor/core/detail/reactor_backend_epoll.hh>
-#include <nil/actor/core/detail/reactor_backend_osv.hh>
-#else
-#include <nil/actor/core/detail/reactor_backend_epoll.hh>
-#include <nil/actor/core/detail/reactor_backend_osv.hh>
 #endif
 
 namespace nil {

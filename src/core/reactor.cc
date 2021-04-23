@@ -21,6 +21,7 @@
 #include <boost/predef.h>
 
 #include <cinttypes>
+
 #include <sys/syscall.h>
 
 #if BOOST_OS_LINUX
@@ -100,11 +101,8 @@
 #define MSG_NOSIGNAL 0
 #endif
 
-#if BOOST_OS_LINUX
 #include <sys/eventfd.h>
-#endif
-
-#include <sys/poll.h>
+#include <sys/epoll.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/barrier.hpp>
@@ -140,7 +138,7 @@
 #include <exception>
 #include <regex>
 #include <fstream>
-#ifdef __GNUC__
+#if BOOST_COMP_GNUC
 #include <iostream>
 #include <system_error>
 #include <cxxabi.h>
@@ -159,13 +157,14 @@
 #include <nil/actor/detail/backtrace.hh>
 #include <nil/actor/detail/spinlock.hh>
 #include <nil/actor/detail/print_safe.hh>
+
 #include <sys/sdt.h>
 
 #ifdef HAVE_OSV
 #include <osv/newpoll.hh>
 #endif
 
-#if defined(BOOST_ARCH_X86)
+#if BOOST_ARCH_X86
 #include <xmmintrin.h>
 #endif
 
@@ -176,7 +175,7 @@
 #include <nil/actor/core/detail/stall_detector.hh>
 #include <nil/actor/detail/memory_diagnostics.hh>
 
-#if defined(BOOST_COMP_GNUC_AVAILABLE) && BOOST_COMP_GNUC >= BOOST_VERSION_NUMBER(7, 0, 0)
+#if BOOST_COMP_GNUC && BOOST_COMP_GNUC >= BOOST_VERSION_NUMBER(7, 0, 0)
 #include <nil/actor/core/exception_hacks.hh>
 #endif
 
@@ -281,13 +280,8 @@ namespace nil {
                 // a task-quota delay. Usually this will fail, but accept is a rare-enough operation
                 // that it is worth the false positive in order to withstand a connection storm
                 // without having to accept at a rate of 1 per task quota.
-#if BOOST_OS_LINUX
                 listenfd.speculate_epoll(EPOLLIN);
                 pollable_fd pfd(std::move(*maybe_fd), pollable_fd::speculation(EPOLLOUT));
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                listenfd.speculate_epoll(POLLIN);
-                pollable_fd pfd(std::move(*maybe_fd), pollable_fd::speculation(POLLOUT));
-#endif
                 return make_ready_future<std::tuple<pollable_fd, socket_address>>(
                     std::make_tuple(std::move(pfd), std::move(sa)));
             });
@@ -311,11 +305,7 @@ namespace nil {
                     return do_read_some(fd, buffer, len);
                 }
                 if (size_t(*r) == len) {
-#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLIN);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                    fd.speculate_epoll(POLLIN);
-#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -332,11 +322,7 @@ namespace nil {
                     return do_read_some(fd, ba);
                 }
                 if (size_t(*r) == buffer.size()) {
-#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLIN);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                    fd.speculate_epoll(POLLIN);
-#endif
                 }
                 buffer.trim(*r);
                 return make_ready_future<temporary_buffer<char>>(std::move(buffer));
@@ -353,11 +339,7 @@ namespace nil {
                     return do_read_some(fd, iov);
                 }
                 if (size_t(*r) == iovec_len(iov)) {
-#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLIN);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                    fd.speculate_epoll(POLLIN);
-#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -370,11 +352,7 @@ namespace nil {
                     return do_write_some(fd, buffer, len);
                 }
                 if (size_t(*r) == len) {
-#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLOUT);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                    fd.speculate_epoll(POLLOUT);
-#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -382,12 +360,13 @@ namespace nil {
 
         future<size_t> reactor::do_write_some(pollable_fd_state &fd, net::packet &p) {
             return writeable(fd).then([this, &fd, &p]() mutable {
-                static_assert(offsetof(iovec, iov_base) == offsetof(net::fragment, base) &&
-                                  sizeof(iovec::iov_base) == sizeof(net::fragment::base) &&
-                                  offsetof(iovec, iov_len) == offsetof(net::fragment, size) &&
-                                  sizeof(iovec::iov_len) == sizeof(net::fragment::size) &&
-                                  alignof(iovec) == alignof(net::fragment) && sizeof(iovec) == sizeof(net::fragment),
-                              "net::fragment and iovec should be equivalent");
+                BOOST_STATIC_ASSERT_MSG(offsetof(iovec, iov_base) == offsetof(net::fragment, base) &&
+                                            sizeof(iovec::iov_base) == sizeof(net::fragment::base) &&
+                                            offsetof(iovec, iov_len) == offsetof(net::fragment, size) &&
+                                            sizeof(iovec::iov_len) == sizeof(net::fragment::size) &&
+                                            alignof(iovec) == alignof(net::fragment) &&
+                                            sizeof(iovec) == sizeof(net::fragment),
+                                        "net::fragment and iovec should be equivalent");
 
                 iovec *iov = reinterpret_cast<iovec *>(p.fragment_array());
                 msghdr mh = {};
@@ -398,11 +377,7 @@ namespace nil {
                     return do_write_some(fd, p);
                 }
                 if (size_t(*r) == p.len()) {
-#if BOOST_OS_LINUX
                     fd.speculate_epoll(EPOLLOUT);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                    fd.speculate_epoll(POLLOUT);
-#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -497,18 +472,14 @@ namespace nil {
                 if (!r) {
                     return recvmsg(msg);
                 }
-// We always speculate here to optimize for throughput in a workload
-// with multiple outstanding requests. This way the caller can consume
-// all messages without resorting to epoll. However this adds extra
-// recvmsg() call when we hit the empty queue condition, so it may
-// hurt request-response workload in which the queue is empty when we
-// initially enter recvmsg(). If that turns out to be a problem, we can
-// improve speculation by using recvmmsg().
-#if BOOST_OS_LINUX
+                // We always speculate here to optimize for throughput in a workload
+                // with multiple outstanding requests. This way the caller can consume
+                // all messages without resorting to epoll. However this adds extra
+                // recvmsg() call when we hit the empty queue condition, so it may
+                // hurt request-response workload in which the queue is empty when we
+                // initially enter recvmsg(). If that turns out to be a problem, we can
+                // improve speculation by using recvmmsg().
                 speculate_epoll(EPOLLIN);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                speculate_epoll(POLLIN);
-#endif
 
                 return make_ready_future<size_t>(*r);
             });
@@ -525,11 +496,7 @@ namespace nil {
                 // or not, but most of the time there should be so the cost of mis-
                 // speculation is amortized.
                 if (size_t(*r) == iovec_len(msg->msg_iov, msg->msg_iovlen)) {
-#if BOOST_OS_LINUX
                     speculate_epoll(EPOLLOUT);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                    speculate_epoll(POLLOUT);
-#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -544,11 +511,7 @@ namespace nil {
                 }
                 // See the comment about speculation in sendmsg().
                 if (size_t(*r) == len) {
-#if BOOST_OS_LINUX
                     speculate_epoll(EPOLLOUT);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                    speculate_epoll(POLLOUT);
-#endif
                 }
                 return make_ready_future<size_t>(*r);
             });
@@ -758,7 +721,7 @@ namespace nil {
         void reactor::signals::failed_to_handle(int signo) {
             char tname[64];
             pthread_getname_np(pthread_self(), tname, sizeof(tname));
-            auto tid = syscall(SYS_gettid);
+            auto tid = ::syscall(SYS_gettid);
             seastar_logger.error("Failed to handle signal {} on thread {} ({}): engine not ready", signo, tid, tname);
         }
 
@@ -959,15 +922,8 @@ namespace nil {
         };
 
         reactor::reactor(unsigned id, reactor_backend_selector rbs, reactor_config cfg) :
-            _cfg(cfg),
-#if BOOST_OS_LINUX
-            _notify_eventfd(file_desc::eventfd(0, EFD_CLOEXEC)),
-            _task_quota_timer(file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC)),
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            _notify_eventfd(file_desc::eventfd(0, FD_CLOEXEC)),
-            _task_quota_timer(file_desc::timerfd_create(CLOCK_MONOTONIC, FD_CLOEXEC)),
-#endif
-            _id(id),
+            _cfg(cfg), _notify_eventfd(file_desc::eventfd(0, EFD_CLOEXEC)),
+            _task_quota_timer(file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC)), _id(id),
 #ifdef HAVE_OSV
             _timer_thread([&] { timer_thread_func(); },
                           sched::thread::attr().stack(4096).name("timer_thread").pin(sched::cpu::current())),
@@ -1718,7 +1674,7 @@ namespace nil {
 #if BOOST_OS_LINUX
                             int r = ::fcntl(fd, F_SETFL, open_flags | O_DIRECT);
 #elif BOOST_OS_MACOS || BOOST_OS_IOS
-                            int r = ::fcntl(fd, F_SETFL, open_flags | F_NOCACHE);
+                            int r = fcntl(fd, F_SETFL, open_flags | F_NOCACHE);
 #endif
                             auto maybe_ret = wrap_syscall<int>(r);    // capture errno (should be EINVAL)
                             if (r == -1 && strict_o_direct && !is_tmpfs(fd)) {
@@ -3390,11 +3346,7 @@ namespace nil {
 
         file_desc writeable_eventfd::try_create_eventfd(size_t initial) {
             assert(size_t(int(initial)) == initial);
-#if BOOST_OS_LINUX
             return file_desc::eventfd(initial, EFD_CLOEXEC);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            return file_desc::eventfd(initial, FD_CLOEXEC);
-#endif
         }
 
         void writeable_eventfd::signal(size_t count) {
@@ -3409,11 +3361,7 @@ namespace nil {
 
         file_desc readable_eventfd::try_create_eventfd(size_t initial) {
             assert(size_t(int(initial)) == initial);
-#if BOOST_OS_LINUX
             return file_desc::eventfd(initial, EFD_CLOEXEC | EFD_NONBLOCK);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            return file_desc::eventfd(initial, FD_CLOEXEC | O_NONBLOCK);
-#endif
         }
 
         future<size_t> readable_eventfd::wait() {

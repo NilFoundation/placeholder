@@ -29,10 +29,6 @@
 #include <sys/poll.h>
 #include <sys/syscall.h>
 
-#if BOOST_OS_MACOS || BOOST_OS_IOS
-#define TFD_TIMER_ABSTIME (1 << 0)
-#endif
-
 namespace nil {
     namespace actor {
 

@@ -18,6 +18,9 @@
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
+
 #include <regex>
 
 #include <nil/actor/core/resource.hh>
@@ -30,9 +33,6 @@
 
 #include <nil/actor/core/detail/cgroup.hh>
 #include <nil/actor/detail/log.hh>
-
-#include <boost/range/adaptor/map.hpp>
-#include <boost/range/algorithm/copy.hpp>
 
 namespace nil {
     namespace actor {
@@ -97,18 +97,24 @@ namespace nil {
             namespace fs = std::filesystem;
 
             optional<cpuset> cpu_set() {
+#if BOOST_OS_LINUX
                 auto cpuset = read_setting_V1V2_as<std::string>("cpuset/cpuset.cpus", "cpuset.cpus.effective");
                 if (cpuset) {
                     return nil::actor::parse_cpuset(*cpuset);
                 }
 
                 seastar_logger.warn("Unable to parse cgroup's cpuset. Ignoring.");
+#endif
                 return std::nullopt;
             }
 
             size_t memory_limit() {
+#if BOOST_OS_LINUX
                 return read_setting_V1V2_as<size_t>("memory/memory.limit_in_bytes", "memory.max")
                     .value_or(std::numeric_limits<size_t>::max());
+#else
+                return std::numeric_limits<size_t>::max();
+#endif
             }
 
             template<typename T>
@@ -123,6 +129,7 @@ namespace nil {
                 return std::nullopt;
             }
 
+#if BOOST_OS_LINUX
             /*
              * what cgroup do we belong to?
              *
@@ -214,7 +221,7 @@ namespace nil {
 
                 return std::nullopt;
             }
-
+#endif
         }    // namespace cgroup
 
         namespace resource {
