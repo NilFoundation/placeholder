@@ -63,16 +63,6 @@
 #include <mach/mach.h>
 #include <mach/mach_port.h>
 
-// https://github.com/freebsd/freebsd/blob/e79c62ff68fc74d88cb6f479859f6fae9baa5101/sys/sys/signal.h#L117
-
-#ifndef SIGRTMIN
-#define SIGRTMIN 65
-#endif
-
-#ifndef SIGRTMAX
-#define SIGRTMAX 126
-#endif
-
 #endif
 
 namespace nil {

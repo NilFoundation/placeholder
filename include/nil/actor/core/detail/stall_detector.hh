@@ -88,7 +88,11 @@ namespace nil {
                 explicit cpu_stall_detector(cpu_stall_detector_config cfg = {});
                 ~cpu_stall_detector();
                 static int signal_number() {
+#if BOOST_OS_LINUX
                     return SIGRTMIN + 1;
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    return SIGUSR2;
+#endif
                 }
                 void start_task_run(std::chrono::steady_clock::time_point now);
                 void end_task_run(std::chrono::steady_clock::time_point now);

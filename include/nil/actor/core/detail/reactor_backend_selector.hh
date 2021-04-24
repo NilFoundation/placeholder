@@ -53,7 +53,7 @@ namespace nil {
             friend void validate(boost::any &v, const std::vector<std::string> &values, reactor_backend_selector *rbs,
                                  int) {
                 boost::program_options::validators::check_first_occurrence(v);
-                auto s = boost::program_options::validators::get_single_string(values);
+                const auto& s = boost::program_options::validators::get_single_string(values);
                 for (auto &&x : available()) {
                     if (s == x._name) {
                         v = std::move(x);

@@ -47,7 +47,7 @@ namespace nil {
 
             smp::register_network_stacks();
             _opts_conf_file.add(reactor::get_options_description(reactor_config_from_app_config(_cfg)));
-            _opts_conf_file.add(nil::actor::metrics::get_options_description());
+            _opts_conf_file.add(metrics::get_options_description());
             _opts_conf_file.add(smp::get_options_description());
             _opts_conf_file.add(scollectd::get_options_description());
             _opts_conf_file.add(log_cli::get_options_description());
@@ -56,16 +56,18 @@ namespace nil {
         }
 
         app_template::configuration_reader app_template::get_default_configuration_reader() {
-            return [this](bpo::variables_map &configuration) {
+            return [this](boost::program_options::variables_map &configuration) {
                 auto home = std::getenv("HOME");
                 if (home) {
                     std::ifstream ifs(std::string(home) + "/.config/seastar/seastar.conf");
                     if (ifs) {
-                        bpo::store(bpo::parse_config_file(ifs, _opts_conf_file), configuration);
+                        boost::program_options::store(boost::program_options::parse_config_file(ifs, _opts_conf_file),
+                                                      configuration);
                     }
                     std::ifstream ifs_io(std::string(home) + "/.config/seastar/io.conf");
                     if (ifs_io) {
-                        bpo::store(bpo::parse_config_file(ifs_io, _opts_conf_file), configuration);
+                        boost::program_options::store(
+                            boost::program_options::parse_config_file(ifs_io, _opts_conf_file), configuration);
                     }
                 }
             };
@@ -89,7 +91,8 @@ namespace nil {
 
         void app_template::add_positional_options(std::initializer_list<positional_option> options) {
             for (auto &&o : options) {
-                _opts.add(boost::make_shared<bpo::option_description>(o.name, o.value_semantic, o.help));
+                _opts.add(
+                    boost::make_shared<boost::program_options::option_description>(o.name, o.value_semantic, o.help));
                 _pos_opts.add(o.name, o.max_count);
             }
         }
@@ -119,11 +122,13 @@ namespace nil {
 #ifdef ACTOR_DEBUG
             fmt::print("WARNING: debug mode. Not for benchmarking or production\n");
 #endif
-            bpo::variables_map configuration;
+            boost::program_options::variables_map configuration;
             try {
-                bpo::store(bpo::command_line_parser(ac, av).options(_opts).positional(_pos_opts).run(), configuration);
+                boost::program_options::store(
+                    boost::program_options::command_line_parser(ac, av).options(_opts).positional(_pos_opts).run(),
+                    configuration);
                 _conf_reader(configuration);
-            } catch (bpo::error &e) {
+            } catch (boost::program_options::error &e) {
                 fmt::print("error: {}\n\nTry --help.\n", e.what());
                 return 2;
             }
@@ -140,8 +145,8 @@ namespace nil {
             }
 
             try {
-                bpo::notify(configuration);
-            } catch (const bpo::required_option &ex) {
+                boost::program_options::notify(configuration);
+            } catch (const boost::program_options::required_option &ex) {
                 std::cout << ex.what() << std::endl;
                 return 1;
             }
@@ -167,7 +172,7 @@ namespace nil {
             (void)engine()
                 .when_started()
                 .then([this] {
-                    return nil::actor::metrics::configure(this->configuration()).then([this] {
+                    return metrics::configure(this->configuration()).then([this] {
                         // set scollectd use the metrics configuration, so the later
                         // need to be set first
                         scollectd::configure(this->configuration());

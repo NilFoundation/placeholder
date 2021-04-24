@@ -514,7 +514,7 @@ namespace nil {
             future<> update_shares_for_class(io_priority_class pc, uint32_t shares);
             static future<> rename_priority_class(io_priority_class pc, sstring new_name) noexcept;
 
-            void configure(boost::program_options::variables_map config);
+            void configure(const boost::program_options::variables_map& vm);
 
             server_socket listen(socket_address sa, listen_options opts = {});
 
@@ -803,7 +803,11 @@ namespace nil {
         inline int hrtimer_signal() {
             // We don't want to use SIGALRM, because the boost unit test library
             // also plays with it.
+#if BOOST_OS_LINUX
             return SIGRTMIN;
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            return SIGUSR1;
+#endif
         }
 
         extern logger seastar_logger;

@@ -24,11 +24,13 @@
 
 #pragma once
 
-#include <boost/program_options.hpp>
+#include <chrono>
 #include <functional>
+
+#include <boost/program_options.hpp>
+
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/sstring.hh>
-#include <chrono>
 
 namespace nil {
     namespace actor {

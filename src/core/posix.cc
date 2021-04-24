@@ -80,7 +80,7 @@ namespace nil {
                 mmap_anonymous(stack_start, stack_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED);
 #endif
             real_stack.release();    // protected by @_stack
-#if BOOST_OS_LINUX || BOOST_OS_BSD || BOOST_OS_MACOS
+#if BOOST_OS_LINUX || BOOST_OS_BSD
             ::madvise(stack_start, stack_size, MADV_HUGEPAGE);
 #endif
             r = pthread_attr_setstack(&pa, stack_start, stack_size);

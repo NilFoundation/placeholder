@@ -65,7 +65,19 @@ ACTOR_TEST_CASE(malloc_0_and_free_it) {
     return make_ready_future<>();
 }
 
-ACTOR_TEST_CASE(test_live_objects_counter_with_cross_cpu_free) {
+struct test_live_objects_counter_with_cross_cpu_free : public nil::actor::testing::actor_test {
+    const char *get_test_file() override {
+        return __FILE__;
+    }
+    const char *get_name() override {
+        return "test_live_objects_counter_with_cross_cpu_free";
+    }
+    nil::actor::future<> run_test_case() override;
+};
+
+static test_live_objects_counter_with_cross_cpu_free test_live_objects_counter_with_cross_cpu_free_instance;
+
+nil::actor::future<> test_live_objects_counter_with_cross_cpu_free::run_test_case() {
     return smp::submit_to(1,
                           [] {
                               auto ret = std::vector<std::unique_ptr<bool>>(1000000);

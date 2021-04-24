@@ -721,8 +721,9 @@ namespace nil {
 
         void reactor::signals::failed_to_handle(int signo) {
             char tname[64];
+            uint64_t tid;
             pthread_getname_np(pthread_self(), tname, sizeof(tname));
-            auto tid = ::syscall(SYS_gettid);
+            pthread_threadid_np(NULL, &tid);
             seastar_logger.error("Failed to handle signal {} on thread {} ({}): engine not ready", signo, tid, tname);
         }
 
@@ -1211,13 +1212,23 @@ namespace nil {
             // and only used during initialization we will avoid complicating the code.
             {
                 uint64_t events;
-                _task_quota_timer.read(&events, 8);
+#if BOOST_OS_LINUX
+                _task_quota_timer.read(&events, sizeof(uint64_t));
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                r = ::timerfd_read(_task_quota_timer.get(), &events, sizeof(uint64_t));
+                throw_system_error_on(r == -1);
+#endif
                 request_preemption();
             }
 
             while (!_dying.load(std::memory_order_relaxed)) {
                 uint64_t events;
-                _task_quota_timer.read(&events, 8);
+#if BOOST_OS_LINUX
+                _task_quota_timer.read(&events, sizeof(uint64_t));
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                r = ::timerfd_read(_task_quota_timer.get(), &events, sizeof(uint64_t));
+                throw_system_error_on(r == -1);
+#endif
                 request_preemption();
 
                 // We're in a different thread, but guaranteed to be on the same core, so even
@@ -1368,7 +1379,7 @@ namespace nil {
             static future<std::unique_ptr<network_stack>> create(const sstring &name, options opts);
         };
 
-        void reactor::configure(boost::program_options::variables_map vm) {
+        void reactor::configure(const boost::program_options::variables_map& vm) {
             _network_stack_ready =
                 vm.count("network-stack") ?
                     network_stack_registry::create(sstring(vm["network-stack"].as<std::string>()), vm) :
@@ -3460,39 +3471,38 @@ namespace nil {
         }
 
         boost::program_options::options_description reactor::get_options_description(reactor_config cfg) {
-            namespace bpo = boost::program_options;
-            bpo::options_description opts("Core options");
+            boost::program_options::options_description opts("Core options");
             auto net_stack_names = network_stack_registry::list();
-            opts.add_options()("network-stack", bpo::value<std::string>(),
+            opts.add_options()("network-stack", boost::program_options::value<std::string>(),
                                format("select network stack (valid values: {})",
                                       format_separated(net_stack_names.begin(), net_stack_names.end(), ", "))
                                    .c_str())("poll-mode", "poll continuously (100% cpu use)")(
-                "idle-poll-time-us", bpo::value<unsigned>()->default_value(calculate_poll_time() / 1us),
+                "idle-poll-time-us", boost::program_options::value<unsigned>()->default_value(calculate_poll_time() / 1us),
                 "idle polling time in microseconds (reduce for overprovisioned environments or laptops)")(
-                "poll-aio", bpo::value<bool>()->default_value(true),
+                "poll-aio", boost::program_options::value<bool>()->default_value(true),
                 "busy-poll for disk I/O (reduces latency and increases throughput)")(
-                "task-quota-ms", bpo::value<double>()->default_value(cfg.task_quota / 1ms),
-                "Max time (ms) between polls")("max-task-backlog", bpo::value<unsigned>()->default_value(1000),
+                "task-quota-ms", boost::program_options::value<double>()->default_value(cfg.task_quota / 1ms),
+                "Max time (ms) between polls")("max-task-backlog", boost::program_options::value<unsigned>()->default_value(1000),
                                                "Maximum number of task backlog to allow; above this we ignore I/O")(
-                "blocked-reactor-notify-ms", bpo::value<unsigned>()->default_value(200),
+                "blocked-reactor-notify-ms", boost::program_options::value<unsigned>()->default_value(200),
                 "threshold in miliseconds over which the reactor is considered blocked if no progress is made")(
-                "blocked-reactor-reports-per-minute", bpo::value<unsigned>()->default_value(5),
+                "blocked-reactor-reports-per-minute", boost::program_options::value<unsigned>()->default_value(5),
                 "Maximum number of backtraces reported by stall detector per minute")(
                 "relaxed-dma", "allow using buffered I/O if DMA is not available (reduces performance)")(
                 "linux-aio-nowait",
-                bpo::value<bool>()->default_value(aio_nowait_supported),
+                boost::program_options::value<bool>()->default_value(aio_nowait_supported),
                 "use the Linux NOWAIT AIO feature, which reduces reactor stalls due to aio (autodetected)")(
-                "unsafe-bypass-fsync", bpo::value<bool>()->default_value(false),
+                "unsafe-bypass-fsync", boost::program_options::value<bool>()->default_value(false),
                 "Bypass fsync(), may result in data loss. Use for testing on consumer drives")(
                 "overprovisioned",
                 "run in an overprovisioned environment (such as docker or a laptop); equivalent to --idle-poll-time-us "
                 "0 "
                 "--thread-affinity 0 --poll-aio 0")("abort-on-seastar-bad-alloc",
                                                     "abort when seastar allocator cannot allocate memory")(
-                "force-aio-syscalls", bpo::value<bool>()->default_value(false),
+                "force-aio-syscalls", boost::program_options::value<bool>()->default_value(false),
                 "Force io_getevents(2) to issue a system call, instead of bypassing the kernel when possible."
                 " This makes strace output more useful, but slows down the application")(
-                "dump-memory-diagnostics-on-alloc-failure-kind", bpo::value<std::string>()->default_value("critical"),
+                "dump-memory-diagnostics-on-alloc-failure-kind", boost::program_options::value<std::string>()->default_value("critical"),
                 "Dump diagnostics of the seastar allocator state on allocation failure."
                 " Accepted values: never, critical (default), always. When set to critical, only allocations marked as "
                 "critical will trigger diagnostics dump."
@@ -3501,9 +3511,9 @@ namespace nil {
                 "logged "
                 "irrespective of this setting.")(
                 "reactor-backend",
-                bpo::value<reactor_backend_selector>()->default_value(reactor_backend_selector::default_backend()),
+                boost::program_options::value<reactor_backend_selector>()->default_value(reactor_backend_selector::default_backend()),
                 format("Internal reactor implementation ({})", reactor_backend_selector::available()).c_str())(
-                "aio-fsync", bpo::value<bool>()->default_value(kernel_supports_aio_fsync()),
+                "aio-fsync", boost::program_options::value<bool>()->default_value(kernel_supports_aio_fsync()),
                 "Use Linux aio for fsync() calls. This reduces latency; requires Linux 4.18 or later.")
 #ifdef ACTOR_HEAPPROF
                 ("heapprof", "enable seastar heap profiling")
@@ -3633,7 +3643,7 @@ namespace nil {
         void smp::allocate_reactor(unsigned id, reactor_backend_selector rbs, reactor_config cfg) {
             assert(!reactor_holder);
 
-            // we cannot just write "local_engin = new reactor" since reactor's constructor
+            // we cannot just write "local_engine = new reactor" since reactor's constructor
             // uses local_engine
             void *buf;
             int r = posix_memalign(&buf, cache_line_size, sizeof(reactor));
@@ -4174,11 +4184,11 @@ namespace nil {
 
             reactors_registered.wait();
             smp::_qs = decltype(smp::_qs) {new smp_message_queue *[smp::count], qs_deleter {}};
-            for (unsigned i = 0; i < smp::count; i++) {
-                smp::_qs[i] =
+            for (unsigned k = 0; k < smp::count; k++) {
+                smp::_qs[k] =
                     reinterpret_cast<smp_message_queue *>(operator new[](sizeof(smp_message_queue) * smp::count));
                 for (unsigned j = 0; j < smp::count; ++j) {
-                    new (&smp::_qs[i][j]) smp_message_queue(_reactors[j], _reactors[i]);
+                    new (&smp::_qs[k][j]) smp_message_queue(_reactors[j], _reactors[k]);
                 }
             }
             alien::smp::_qs = alien::smp::create_qs(_reactors);
