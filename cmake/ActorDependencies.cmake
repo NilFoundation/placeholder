@@ -45,9 +45,9 @@ macro(actor_find_dependencies)
     if(UNIX AND NOT APPLE)
         list(APPEND _seastar_all_dependencies
 
-            lksctp-tools
-            numactl
-            rt)
+             lksctp-tools
+             numactl
+             rt)
     elseif(APPLE)
 
     endif()

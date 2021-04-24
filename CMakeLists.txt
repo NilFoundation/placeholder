@@ -6,8 +6,8 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0057 NEW)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/packages"
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/share/modules/cmake")
+     "${CMAKE_CURRENT_LIST_DIR}/cmake/packages"
+     "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/share/modules/cmake")
 
 cm_find_package(CM)
 
@@ -42,18 +42,18 @@ set(BUILD_WITH_DPDK_MACHINE
     "Configure DPDK for this processor architecture (if `BUILD_WITH_DPDK` is enabled). A DPDK code name abbreviation (e.g., ivb)")
 
 option(BUILD_WITH_ALLOC_FAILURE_INJECTION "Enable failure injection into the allocator." FALSE)
-    
+
 option(BUILD_WITH_TASK_BACKTRACE
-    "Collect backtrace at deferring points."
-    OFF)
+       "Collect backtrace at deferring points."
+       OFF)
 
 option(BUILD_WITH_DEBUG_ALLOCATIONS
-    "For now just writes 0xab to newly allocated memory"
-    OFF)
+       "For now just writes 0xab to newly allocated memory"
+       OFF)
 
 option(BUILD_WITH_SSTRING
-    "Use seastar's own string implementation"
-    ON)
+       "Use seastar's own string implementation"
+       ON)
 
 set(BUILD_WITH_API_LEVEL
     "6"
@@ -62,8 +62,8 @@ set(BUILD_WITH_API_LEVEL
     "Seastar compatibility API level (2=server_socket::accept() returns accept_result, 3=make_file_output_stream(), make_file_data_sink() returns future<...>, 4=when_all_succeed returns future<std::tuple<>>, 5=future<T>::get() returns T&&), 6=future is not variadic")
 
 set_property(CACHE BUILD_WITH_API_LEVEL
-    PROPERTY
-    STRINGS 2 3 4 5 6)
+             PROPERTY
+             STRINGS 2 3 4 5 6)
 
 #
 # Add a dev build type.
@@ -102,10 +102,10 @@ set(CMAKE_SHARED_LINKER_FLAGS_DEV
     FORCE)
 
 mark_as_advanced(
-    CMAKE_CXX_FLAGS_DEV
-    CMAKE_C_FLAGS_DEV
-    CMAKE_EXE_LINKER_FLAGS_DEV
-    CMAKE_SHARED_LINKER_FLAGS_DEV)
+        CMAKE_CXX_FLAGS_DEV
+        CMAKE_C_FLAGS_DEV
+        CMAKE_EXE_LINKER_FLAGS_DEV
+        CMAKE_SHARED_LINKER_FLAGS_DEV)
 
 set(CMAKE_CXX_FLAGS_SANITIZE
     "-Os -g"
@@ -136,9 +136,9 @@ set(CMAKE_SHARED_LINKER_FLAGS_SANITIZE
     FORCE)
 
 mark_as_advanced(CMAKE_CXX_FLAGS_SANITIZE
-    CMAKE_C_FLAGS_SANITIZE
-    CMAKE_EXE_LINKER_FLAGS_SANITIZE
-    CMAKE_SHARED_LINKER_FLAGS_SANITIZE)
+                 CMAKE_C_FLAGS_SANITIZE
+                 CMAKE_EXE_LINKER_FLAGS_SANITIZE
+                 CMAKE_SHARED_LINKER_FLAGS_SANITIZE)
 
 set(CMAKE_BUILD_TYPE
     "${CMAKE_BUILD_TYPE}"
@@ -176,28 +176,28 @@ set(BUILD_WITH_CXX_FLAGS
     "Semicolon-separated list of extra compilation flags for Seastar itself.")
 
 option(BUILD_WITH_DPDK
-    "Enable DPDK support."
-    OFF)
+       "Enable DPDK support."
+       OFF)
 
 option(BUILD_WITH_EXCLUDE_APPS_FROM_ALL
-    "When enabled alongside BUILD_WITH_APPS, do not build applications by default."
-    OFF)
+       "When enabled alongside BUILD_WITH_APPS, do not build applications by default."
+       OFF)
 
 option(BUILD_WITH_EXCLUDE_DEMOS_FROM_ALL
-    "When enabled alongside BUILD_WITH_DEMOS, do not build demonstrations by default."
-    OFF)
+       "When enabled alongside BUILD_WITH_DEMOS, do not build demonstrations by default."
+       OFF)
 
 option(BUILD_WITH_EXCLUDE_TESTS_FROM_ALL
-    "When enabled alongside BUILD_WITH_TESTING, do not build tests by default."
-    OFF)
+       "When enabled alongside BUILD_WITH_TESTING, do not build tests by default."
+       OFF)
 
 option(BUILD_WITH_EXECUTE_ONLY_FAST_TESTS
-    "Only execute tests which run quickly."
-    OFF)
+       "Only execute tests which run quickly."
+       OFF)
 
 option(BUILD_WITH_HWLOC
-    "Enable hwloc support."
-    ON)
+       "Enable hwloc support."
+       ON)
 
 set(BUILD_WITH_LD_FLAGS
     ""
@@ -212,8 +212,8 @@ option(BUILD_WITH_COMPRESS_DEBUG "Compress debug info." TRUE)
 option(BUILD_WITH_SPLIT_DWARF "Use split dwarf." FALSE)
 
 option(BUILD_WITH_HEAP_PROFILING
-    "Enable heap profiling. No effect when Seastar is compiled with the default allocator."
-    OFF)
+       "Enable heap profiling. No effect when Seastar is compiled with the default allocator."
+       OFF)
 
 set(BUILD_WITH_TEST_TIMEOUT
     "300"
@@ -238,7 +238,7 @@ set(BUILD_WITH_TEST_TIMEOUT
 # previous gcc.
 set(BUILD_WITH_USE_AFTER_RETURN "")
 if((NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")) OR
-    (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.2))
+(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10.2))
     set(BUILD_WITH_USE_AFTER_RETURN ":detect_stack_use_after_return=1")
 endif()
 
@@ -249,8 +249,8 @@ set(BUILD_WITH_TEST_ENVIRONMENT
     "Environment variables for running tests")
 
 option(BUILD_WITH_UNUSED_RESULT_ERROR
-    "Make [[nodiscard]] violations an error (instead of a warning)."
-    OFF)
+       "Make [[nodiscard]] violations an error (instead of a warning)."
+       OFF)
 
 set(BUILD_WITH_STACK_GUARDS
     "DEFAULT"
@@ -259,8 +259,8 @@ set(BUILD_WITH_STACK_GUARDS
     "Enable stack guards. Can be ON, OFF or DEFAULT (which enables it for non release builds)")
 
 option(BUILD_WITH_SANITIZE
-    "Enable ASAN and UBSAN. Can be ON, OFF or DEFAULT (which enables it for Debug and Sanitize)"
-    FALSE)
+       "Enable ASAN and UBSAN. Can be ON, OFF or DEFAULT (which enables it for Debug and Sanitize)"
+       FALSE)
 
 set(BUILD_WITH_DEBUG_SHARED_PTR
     "DEFAULT"
@@ -280,7 +280,7 @@ include(ActorDependencies)
 actor_find_dependencies()
 
 find_package(Valgrind REQUIRED)
-if (VALGRIND_FOUND)
+if(VALGRIND_FOUND)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_HAS_VALGRIND)
 endif()
 
@@ -296,7 +296,7 @@ endif()
 
 # get header files; only needed by CMake generators,
 # e.g., for creating proper Xcode projects
-set(${CURRENT_PROJECT_NAME}_HEADERS 
+set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/abort_source.hh
     include/nil/actor/core/alien.hh
     include/nil/actor/core/align.hh
@@ -474,45 +474,45 @@ endif()
 
 if(UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux"))
     list(APPEND ${CURRENT_PROJECT_NAME}_HEADERS
-        include/nil/actor/core/linux-aio.hh
-        include/nil/actor/core/detail/reactor_backend_aio.hh)
+         include/nil/actor/core/linux-aio.hh
+         include/nil/actor/core/detail/reactor_backend_aio.hh)
 
 
     list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES
-        src/core/linux-aio.cc
-        src/core/reactor_backend_aio.cc)
+         src/core/linux-aio.cc
+         src/core/reactor_backend_aio.cc)
 endif()
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${BUILD_WITH_GEN_BINARY_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+     $<BUILD_INTERFACE:${BUILD_WITH_GEN_BINARY_DIR}/include>
+     $<INSTALL_INTERFACE:include>)
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${BUILD_WITH_GEN_BINARY_DIR}/src
+     ${CMAKE_CURRENT_SOURCE_DIR}/src
+     ${BUILD_WITH_GEN_BINARY_DIR}/src
 
-    ${Boost_INCLUDE_DIRS})
+     ${Boost_INCLUDE_DIRS})
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES
-    ${Boost_LIBRARIES}
-    ${c-ares_LIBRARIES}
-    ${lz4_LIBRARIES}
-    fmt::fmt
-    libfswatch)
+     ${Boost_LIBRARIES}
+     ${c-ares_LIBRARIES}
+     ${lz4_LIBRARIES}
+     fmt::fmt
+     libfswatch)
 
-if(NOT(UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux")))
+if(NOT (UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux")))
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES epoll-shim)
 endif()
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES
-    ${CMAKE_DL_LIBS}
-    ${GnuTLS_LIBRARIES}
-    ${StdAtomic_LIBRARIES}
-    ${Protobuf_LIBRARIES}
-    ${yaml-cpp_LIBRARIES})
+     ${CMAKE_DL_LIBS}
+     ${GnuTLS_LIBRARIES}
+     ${StdAtomic_LIBRARIES}
+     ${Protobuf_LIBRARIES}
+     ${yaml-cpp_LIBRARIES})
 
 #if(BUILD_SHARED_LIBS)
 #    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES Threads::Threads)
@@ -520,19 +520,19 @@ list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES
 list(APPEND ${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES Threads::Threads)
 #endif()
 
-list(APPEND ${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES 
-    crypto3::block
-    crypto3::hash)
+list(APPEND ${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES
+     crypto3::block
+     crypto3::hash)
 
 set(BUILD_WITH_SANITIZE_MODES "Debug" "Sanitize")
 if(BUILD_WITH_SANITIZE OR (CMAKE_BUILD_TYPE IN_LIST BUILD_WITH_SANITIZE_MODES))
     if(NOT Sanitizers_FOUND)
         message(FATAL_ERROR "Sanitizers not found!")
     endif()
-    set(Seastar_Sanitizers_OPTIONS ${Sanitizers_COMPILER_OPTIONS})
+    set(ACTOR_Sanitizers_OPTIONS ${Sanitizers_COMPILER_OPTIONS})
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES
-        Sanitizers::address
-        Sanitizers::undefined_behavior)
+         Sanitizers::address
+         Sanitizers::undefined_behavior)
 endif()
 
 # We only need valgrind to find uninitialized memory uses, so disable
@@ -545,19 +545,19 @@ include(CTest)
 # We want asserts enabled on all modes, but cmake defaults to passing
 # -DNDEBUG in some modes. We add -UNDEBUG to our private options to
 # reenable it. To force asserts off pass -DNDEBUG in
-# Seastar_CXX_FLAGS.
+# ACTOR_CXX_FLAGS.
 #
-# To disable -Werror, pass -Wno-error to Seastar_CXX_FLAGS.
+# To disable -Werror, pass -Wno-error to ACTOR_CXX_FLAGS.
 #
 # We disable _FORTIFY_SOURCE because it generates false positives with longjmp() (src/core/thread.cc)
 #
 
-list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS 
-    -std=${BUILD_WITH_CXX_DIALECT}
-    -U_FORTIFY_SOURCE)
+list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS
+     -std=${BUILD_WITH_CXX_DIALECT}
+     -U_FORTIFY_SOURCE)
 
-list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS 
-    ACTOR_API_LEVEL=${BUILD_WITH_API_LEVEL})
+list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS
+     ACTOR_API_LEVEL=${BUILD_WITH_API_LEVEL})
 
 if(BUILD_WITH_COMPRESS_DEBUG)
     # -gz doesn't imply -g, so it is safe to add it regardless of debug
@@ -567,23 +567,23 @@ endif()
 
 function(seastar_supports_flag flag var)
     set(CMAKE_REQUIRED_FLAGS ${flag})
-    check_cxx_source_compiles ("int main() { return 0; }" result)
+    check_cxx_source_compiles("int main() { return 0; }" result)
     set(${var} ${result} PARENT_SCOPE)
-endfunction ()
+endfunction()
 
 seastar_supports_flag("-Wno-maybe-uninitialized -Werror" MaybeUninitialized_FOUND)
 if(MaybeUninitialized_FOUND)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS
-        # With std::experimental::optional it is easy to hit
-        # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88897.  We disable
-        # -Wmaybe-uninitialized in here since otherwise we would have to
-        # disable it on many types used inside optional<>.
-        -Wno-maybe-uninitialized)
+         # With std::experimental::optional it is easy to hit
+         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88897.  We disable
+         # -Wmaybe-uninitialized in here since otherwise we would have to
+         # disable it on many types used inside optional<>.
+         -Wno-maybe-uninitialized)
 endif()
 
 if(BUILD_WITH_SSTRING)
-    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS 
-        -DACTOR_SSTRING)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS
+         -DACTOR_SSTRING)
 endif()
 
 include(CheckFunctionExists)
@@ -593,37 +593,37 @@ if(ACTOR_HAS_POSIX_FALLOCATE)
 endif()
 
 if(LinuxMembarrier_FOUND)
-    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS 
-        ACTOR_HAS_MEMBARRIER)
-    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES 
-        LinuxMembarrier::membarrier)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS
+         ACTOR_HAS_MEMBARRIER)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES
+         LinuxMembarrier::membarrier)
 endif()
 
 set(BUILD_WITH_ALLOC_FAILURE_INJECTION_MODES "Dev")
 if(BUILD_WITH_ALLOC_FAILURE_INJECTION OR CMAKE_BUILD_TYPE IN_LIST
-        BUILD_WITH_ALLOC_FAILURE_INJECTION_MODES)
-    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS 
-        ACTOR_ENABLE_ALLOC_FAILURE_INJECTION)
+   BUILD_WITH_ALLOC_FAILURE_INJECTION_MODES)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS
+         ACTOR_ENABLE_ALLOC_FAILURE_INJECTION)
 endif()
 
 if(BUILD_WITH_TASK_BACKTRACE)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS
-        ACTOR_TASK_BACKTRACE)
+         ACTOR_TASK_BACKTRACE)
 endif()
 
 if(BUILD_WITH_DEBUG_ALLOCATIONS)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS
-        ACTOR_DEBUG_ALLOCATIONS)
+         ACTOR_DEBUG_ALLOCATIONS)
 endif()
 
 if(BUILD_WITH_FIBER_SUPPORT)
-    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS 
-        ACTOR_HAVE_ASAN_FIBER_SUPPORT)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS
+         ACTOR_HAVE_ASAN_FIBER_SUPPORT)
 endif()
 
 if(BUILD_WITH_ALLOC_PAGE_SIZE)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS
-        ACTOR_OVERRIDE_ALLOCATOR_PAGE_SIZE=${BUILD_WITH_ALLOC_PAGE_SIZE})
+         ACTOR_OVERRIDE_ALLOCATOR_PAGE_SIZE=${BUILD_WITH_ALLOC_PAGE_SIZE})
 endif()
 
 if(BUILD_WITH_CXX_FLAGS)
@@ -642,9 +642,8 @@ if(BUILD_WITH_SPLIT_DWARF AND (NOT (CMAKE_BUILD_TYPE STREQUAL "Dev")))
 endif()
 
 if(BUILD_WITH_HEAP_PROFILING)
-    set_property(
-        SOURCE "src/core/memory.cc"
-        PROPERTY COMPILE_DEFINITIONS ACTOR_HEAPPROF)
+    set_property(SOURCE "src/core/memory.cc"
+                 PROPERTY COMPILE_DEFINITIONS ACTOR_HEAPPROF)
 endif()
 
 if(BUILD_WITH_DPDK)
@@ -675,8 +674,8 @@ if(BUILD_WITH_DPDK)
     # avoid exposing that to seastar users, combine dpdk into a single
     # .o file.
     add_custom_command(OUTPUT seastar-dpdk.o
-        COMMAND ld -r -o seastar-dpdk.o --whole-archive ${dpdk_LIBRARIES}
-        --no-whole-archive)
+                       COMMAND ld -r -o seastar-dpdk.o --whole-archive ${dpdk_LIBRARIES}
+                       --no-whole-archive)
 
     # This just provides the include path to cmake
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES dpdk::dpdk)
@@ -710,7 +709,7 @@ if(BUILD_WITH_NUMA)
 endif()
 
 if(lz4_HAVE_COMPRESS_DEFAULT)
-    list (APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS ACTOR_HAVE_LZ4_COMPRESS_DEFAULT)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS ACTOR_HAVE_LZ4_COMPRESS_DEFAULT)
 endif()
 
 seastar_supports_flag("-Werror=unused-result" ErrorUnused_FOUND)
@@ -724,13 +723,13 @@ endif()
 
 if((CMAKE_BUILD_TYPE STREQUAL "Debug") OR (CMAKE_BUILD_TYPE STREQUAL "Sanitize"))
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS
-        ACTOR_DEBUG
-        ACTOR_DEFAULT_ALLOCATOR
-        ACTOR_SHUFFLE_TASK_QUEUE)
+         ACTOR_DEBUG
+         ACTOR_DEFAULT_ALLOCATOR
+         ACTOR_SHUFFLE_TASK_QUEUE)
 endif()
 
-set(Seastar_DEBUG_SHARED_PTR_MODES "Debug" "Sanitize")
-if(BUILD_WITH_DEBUG_SHARED_PTR OR (CMAKE_BUILD_TYPE IN_LIST Seastar_DEBUG_SHARED_PTR_MODES))
+set(ACTOR_DEBUG_SHARED_PTR_MODES "Debug" "Sanitize")
+if(BUILD_WITH_DEBUG_SHARED_PTR OR (CMAKE_BUILD_TYPE IN_LIST ACTOR_DEBUG_SHARED_PTR_MODES))
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_DEBUG_SHARED_PTR)
 endif()
 
@@ -749,44 +748,44 @@ endif()
 
 if(UNIX AND NOT APPLE)
     list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES
-        ${lksctp-tools_LIBRARIES}
-        ${numactl_LIBRARIES}
-        ${rt_LIBRARIES})
+         ${lksctp-tools_LIBRARIES}
+         ${numactl_LIBRARIES}
+         ${rt_LIBRARIES})
 elseif(APPLE)
 
 endif()
 
 add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} STATIC
-    ${${CURRENT_PROJECT_NAME}_HEADERS}
-    ${${CURRENT_PROJECT_NAME}_SOURCES})
+            ${${CURRENT_PROJECT_NAME}_HEADERS}
+            ${${CURRENT_PROJECT_NAME}_SOURCES})
 
 set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
-    LINKER_LANGUAGE CXX
-    EXPORT_NAME ${CURRENT_PROJECT_NAME})
+                      LINKER_LANGUAGE CXX
+                      EXPORT_NAME ${CURRENT_PROJECT_NAME})
 
 if(APPLE OR NOT ${CMAKE_TARGET_ARCHITECTURE} STREQUAL ${CMAKE_HOST_SYSTEM_PROCESSOR})
     set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${APPLE_CODE_SIGN_IDENTITY}"
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM}")
+                          XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${APPLE_CODE_SIGN_IDENTITY}"
+                          XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM}")
 endif()
 
 target_compile_options(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-    PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS}
-    PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS}
-    ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_OPTIONS})
+                       PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS}
+                       PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS}
+                       ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_OPTIONS})
 
 target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-    PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS}
-    PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS})
+                           PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS}
+                           PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS})
 
-target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} 
-    PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
-    PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
+target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+                           PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
+                           PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
 
-target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} 
-    PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES} ${CMAKE_WORKSPACE_NAME}::network
-    PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES} 
-    INTERFACE ${${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES})
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+                      PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES} ${CMAKE_WORKSPACE_NAME}::network
+                      PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES}
+                      INTERFACE ${${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES})
 
 if(BUILD_TESTS)
     set(testing_HEADERS
@@ -812,82 +811,82 @@ if(BUILD_TESTS)
         perf/perf_tests.cc)
 
     add_library(${CMAKE_WORKSPACE_NAME}_testing
-        ${testing_HEADERS}
-        ${testing_SOURCES})
+                ${testing_HEADERS}
+                ${testing_SOURCES})
 
     set_target_properties(${CMAKE_WORKSPACE_NAME}_testing PROPERTIES
-        LINKER_LANGUAGE CXX
-        EXPORT_NAME testing)
+                          LINKER_LANGUAGE CXX
+                          EXPORT_NAME testing)
 
     if(APPLE OR NOT ${CMAKE_TARGET_ARCHITECTURE} STREQUAL ${CMAKE_HOST_SYSTEM_PROCESSOR})
         set_target_properties(${CMAKE_WORKSPACE_NAME}_testing PROPERTIES
-            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${APPLE_CODE_SIGN_IDENTITY}"
-            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM}")
+                              XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${APPLE_CODE_SIGN_IDENTITY}"
+                              XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM}")
     endif()
 
     target_compile_options(${CMAKE_WORKSPACE_NAME}_testing
-        PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS}
-        PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS}
-        ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_OPTIONS})
+                           PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS}
+                           PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS}
+                           ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_OPTIONS})
 
     target_compile_definitions(${CMAKE_WORKSPACE_NAME}_testing
-        PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS}
-        PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS})
+                               PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS}
+                               PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS})
 
     target_include_directories(${CMAKE_WORKSPACE_NAME}_testing
-        PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
-        PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
+                               PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
+                               PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
 
-    target_link_libraries(${CMAKE_WORKSPACE_NAME}_testing PUBLIC 
-        ${CMAKE_WORKSPACE_NAME}::core 
-        Boost::unit_test_framework
-        ${Boost_LIBRARIES})
+    target_link_libraries(${CMAKE_WORKSPACE_NAME}_testing PUBLIC
+                          ${CMAKE_WORKSPACE_NAME}::core
+                          Boost::unit_test_framework
+                          ${Boost_LIBRARIES})
 
     target_compile_definitions(${CMAKE_WORKSPACE_NAME}_testing PRIVATE BOOST_TEST_DYN_LINK BOOST_TEST_NO_MAIN)
 
     add_library(${CMAKE_WORKSPACE_NAME}_perf_testing
-        ${perf_testing_HEADERS}
-        ${perf_testing_SOURCES})
+                ${perf_testing_HEADERS}
+                ${perf_testing_SOURCES})
 
     target_compile_definitions(${CMAKE_WORKSPACE_NAME}_perf_testing PRIVATE BOOST_TEST_DYN_LINK BOOST_TEST_NO_MAIN)
 
     set_target_properties(${CMAKE_WORKSPACE_NAME}_perf_testing PROPERTIES
-        LINKER_LANGUAGE CXX
-        EXPORT_NAME perf_testing)
+                          LINKER_LANGUAGE CXX
+                          EXPORT_NAME perf_testing)
 
     if(APPLE OR NOT ${CMAKE_TARGET_ARCHITECTURE} STREQUAL ${CMAKE_HOST_SYSTEM_PROCESSOR})
         set_target_properties(${CMAKE_WORKSPACE_NAME}_perf_testing PROPERTIES
-            XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${APPLE_CODE_SIGN_IDENTITY}"
-            XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM}")
+                              XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "${APPLE_CODE_SIGN_IDENTITY}"
+                              XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM}")
     endif()
 
     target_compile_options(${CMAKE_WORKSPACE_NAME}_perf_testing
-        PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS}
-        PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS}
-        ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_OPTIONS})
+                           PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS}
+                           PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS}
+                           ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_OPTIONS})
 
     target_compile_definitions(${CMAKE_WORKSPACE_NAME}_perf_testing
-        PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS}
-        PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS})
+                               PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS}
+                               PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS})
 
     target_include_directories(${CMAKE_WORKSPACE_NAME}_perf_testing
-        PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
-        PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
+                               PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_INCLUDES}
+                               PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_INCLUDES})
 
-    target_link_libraries(${CMAKE_WORKSPACE_NAME}_perf_testing PUBLIC 
-        ${CMAKE_WORKSPACE_NAME}::core 
-        Boost::unit_test_framework
-        ${Boost_LIBRARIES})
+    target_link_libraries(${CMAKE_WORKSPACE_NAME}_perf_testing PUBLIC
+                          ${CMAKE_WORKSPACE_NAME}::core
+                          Boost::unit_test_framework
+                          ${Boost_LIBRARIES})
 
     cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-        ${CMAKE_WORKSPACE_NAME}_testing
-        ${CMAKE_WORKSPACE_NAME}_perf_testing
-        INCLUDE include
-        NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
+              ${CMAKE_WORKSPACE_NAME}_testing
+              ${CMAKE_WORKSPACE_NAME}_perf_testing
+              INCLUDE include
+              NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
 
     add_subdirectory(test)
 else()
     cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-        INCLUDE include
-        NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
+              INCLUDE include
+              NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
 endif()

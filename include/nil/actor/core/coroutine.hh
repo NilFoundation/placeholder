@@ -239,8 +239,7 @@ namespace nil {
 namespace ACTOR_INTERNAL_COROUTINE_NAMESPACE {
 
     template<typename... T, typename... Args>
-    class coroutine_traits<nil::actor::future<T...>, Args...>
-        : public nil::actor::detail::coroutine_traits_base<T...> { };
+    class coroutine_traits<nil::actor::future<T...>, Args...> : public nil::actor::detail::coroutine_traits_base<T...> {
+    };
 
 }    // namespace ACTOR_INTERNAL_COROUTINE_NAMESPACE
-

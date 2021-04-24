@@ -140,8 +140,7 @@ namespace nil {
         template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer, Initial initial) {
-            { reducer(initial, mapper(specific_val)) }
-            ->std::convertible_to<Initial>;
+            { reducer(initial, mapper(specific_val)) } -> std::convertible_to<Initial>;
         }
 #endif
         future<typename function_traits<Reducer>::return_type>
@@ -176,8 +175,7 @@ namespace nil {
         template<typename SpecificValType, typename Reducer, typename Initial>
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
-            { reducer(initial, specific_val) }
-            ->std::convertible_to<Initial>;
+            { reducer(initial, specific_val) } -> std::convertible_to<Initial>;
         }
 #endif
         future<typename function_traits<Reducer>::return_type>

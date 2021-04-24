@@ -68,24 +68,24 @@ namespace nil {
 
 #endif
 
-                        size_t pending = _pending_io.size();
-                size_t drained = 0;
+                    size_t pending = _pending_io.size();
+                    size_t drained = 0;
 
-                while (pending > drained) {
-                    pending_io_request &req = _pending_io[drained];
+                    while (pending > drained) {
+                        pending_io_request &req = _pending_io[drained];
 
-                    if (!consume(req, req._completion)) {
-                        break;
+                        if (!consume(req, req._completion)) {
+                            break;
+                        }
+                        drained++;
                     }
-                    drained++;
-                }
 
-                _pending_io.erase(_pending_io.begin(), _pending_io.begin() + drained);
-                return drained;
-            }
-        };    // namespace detail
+                    _pending_io.erase(_pending_io.begin(), _pending_io.begin() + drained);
+                    return drained;
+                }
+            };    // namespace detail
+
+        }    // namespace detail
 
     }    // namespace actor
-
-}    // namespace nil
 }    // namespace nil

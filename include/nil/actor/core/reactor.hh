@@ -146,7 +146,7 @@ namespace nil {
     namespace actor {
 
         void register_network_stack(
-            sstring name, boost::program_options::options_description opts,
+            const sstring& name, const boost::program_options::options_description& opts,
             noncopyable_function<future<std::unique_ptr<network_stack>>(boost::program_options::variables_map opts)>
                 create,
             bool make_default = false);
@@ -723,8 +723,7 @@ namespace nil {
             template<typename SpecificValType, typename Mapper, typename Reducer, typename Initial>
 #ifdef BOOST_HAS_CONCEPTS
             requires requires(SpecificValType specific_val, Mapper mapper, Reducer reducer, Initial initial) {
-                { reducer(initial, mapper(specific_val)) }
-                ->std::convertible_to<Initial>;
+                { reducer(initial, mapper(specific_val)) } -> std::convertible_to<Initial>;
             }
 #endif
             friend future<typename function_traits<Reducer>::return_type>
@@ -733,8 +732,7 @@ namespace nil {
             template<typename SpecificValType, typename Reducer, typename Initial>
 #ifdef BOOST_HAS_CONCEPTS
             requires requires(SpecificValType specific_val, Reducer reducer, Initial initial) {
-                { reducer(initial, specific_val) }
-                ->std::convertible_to<Initial>;
+                { reducer(initial, specific_val) } -> std::convertible_to<Initial>;
             }
 #endif
             friend future<typename function_traits<Reducer>::return_type>

@@ -41,7 +41,7 @@ namespace nil {
             std::atomic<bool> _main_thread_idle = {false};
 
         public:
-            explicit thread_pool(reactor *r, sstring thread_name);
+            explicit thread_pool(reactor *r, const sstring &thread_name);
             ~thread_pool();
             template<typename T, typename Func>
             future<T> submit(Func func) noexcept {
@@ -80,7 +80,7 @@ namespace nil {
             }
 #endif
         private:
-            void work(sstring thread_name);
+            void work(const sstring &thread_name);
         };
 
     }    // namespace actor

@@ -81,7 +81,7 @@ namespace nil {
             } else if (_name == "epoll") {
                 return std::make_unique<reactor_backend_epoll>(r);
             }
-#elif BOOST_OS_UNIX
+#else
             if (_name == "epoll") {
                 return std::make_unique<reactor_backend_epoll>(r);
             }
@@ -97,11 +97,9 @@ namespace nil {
             std::vector<reactor_backend_selector> ret;
 #if BOOST_OS_LINUX
             if (detect_aio_poll() && has_enough_aio_nr()) {
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            if (has_enough_aio_nr()) {
-#endif
                 ret.push_back(reactor_backend_selector("linux-aio"));
             }
+#endif
             ret.push_back(reactor_backend_selector("epoll"));
             return ret;
         }

@@ -1,10 +1,13 @@
 # perf-tests
 
-`perf-tests` is a simple microbenchmarking framework. Its main purpose is to allow monitoring the impact that code changes have on performance.
+`perf-tests` is a simple microbenchmarking framework. Its main purpose is to allow monitoring the impact that code
+changes have on performance.
 
 ## Theory of operation
 
-The framework performs each test in several runs. During a run the microbenchmark code is executed in a loop and the average time of an iteration is computed. The shown results are median, median absolute deviation, maximum and minimum value of all the runs.
+The framework performs each test in several runs. During a run the microbenchmark code is executed in a loop and the
+average time of an iteration is computed. The shown results are median, median absolute deviation, maximum and minimum
+value of all the runs.
 
 ```
 single run iterations:    0
@@ -16,23 +19,30 @@ combined.one_row                    745336   691.218ns     0.175ns   689.073ns  
 combined.single_active                7871    85.271us    76.185ns    85.145us   108.316us
 ```
 
-`perf-tests` allows limiting the number of iterations or the duration of each run. In the latter case there is an additional dry run used to estimate how many iterations can be run in the specified time. The measured runs are limited by that number of iterations. This means that there is no overhead caused by timers and that each run consists of the same number of iterations.
+`perf-tests` allows limiting the number of iterations or the duration of each run. In the latter case there is an
+additional dry run used to estimate how many iterations can be run in the specified time. The measured runs are limited
+by that number of iterations. This means that there is no overhead caused by timers and that each run consists of the
+same number of iterations.
 
 ### Flags
 
 * `-i <n>` or `--iterations <n>` – limits the number of iterations in each run to no more than `n` (0 for unlimited)
 * `-d <t>` or `--duration <t>` – limits the duration of each run to no more than `t` seconds (0 for unlimited)
 * `-r <n>` or `--runs <n>` – the number of runs of each test to execute
-* `-t <regexs>` or `--tests <regexs>` – executes only tests which names match any regular expression in a comma-separated list `regexs`
+* `-t <regexs>` or `--tests <regexs>` – executes only tests which names match any regular expression in a
+  comma-separated list `regexs`
 * `--list` – lists all available tests
 
 ## Example usage
 
 ### Simple test
 
-Performance tests are defined in a similar manner to unit tests. Macro `PERF_TEST(test_group, test_case)` allows specifying the name of the test and the group it belongs to. Microbenchmark can either return nothing or a future.
+Performance tests are defined in a similar manner to unit tests. Macro `PERF_TEST(test_group, test_case)` allows
+specifying the name of the test and the group it belongs to. Microbenchmark can either return nothing or a future.
 
-Compiler may attempt to optimise too much of the test logic. A way of preventing this is passing the final result of all computations to a function `perf_tests::do_not_optimize()`. That function should introduce little to none overhead, but forces the compiler to actually compute the value.
+Compiler may attempt to optimise too much of the test logic. A way of preventing this is passing the final result of all
+computations to a function `perf_tests::do_not_optimize()`. That function should introduce little to none overhead, but
+forces the compiler to actually compute the value.
 
 ```c++
 PERF_TEST(example, simple1)
@@ -51,9 +61,12 @@ PERF_TEST(example, simple2)
 
 ### Fixtures
 
-As it is in case of unit tests, performance tests may benefit from using a fixture that would set up a proper environment. Such tests should use macro `PERF_TEST_F(test_group, test_case)`. The test itself will be a member function of a class derivative of `test_group`.
+As it is in case of unit tests, performance tests may benefit from using a fixture that would set up a proper
+environment. Such tests should use macro `PERF_TEST_F(test_group, test_case)`. The test itself will be a member function
+of a class derivative of `test_group`.
 
-The constructor and destructor of a fixture are executed in a context of Seastar thread, but the actual test logic is not. The same instance of a fixture will be used for multiple iterations of the test.
+The constructor and destructor of a fixture are executed in a context of Seastar thread, but the actual test logic is
+not. The same instance of a fixture will be used for multiple iterations of the test.
 
 ```c++
 class example {
@@ -84,7 +97,9 @@ PERF_TEST_F(example, fixture2)
 
 ### Custom time measurement
 
-Even with fixtures it may be necessary to do some costly initialisation during each iteration. Its impact can be reduced by specifying the exact part of the test that should be measured using functions `perf_tests::start_measuring_time()` and `perf_tests::stop_measuring_time()`.
+Even with fixtures it may be necessary to do some costly initialisation during each iteration. Its impact can be reduced
+by specifying the exact part of the test that should be measured using functions `perf_tests::start_measuring_time()`
+and `perf_tests::stop_measuring_time()`.
 
 ```c++
 PERF_TEST(example, custom_time_measurement2)

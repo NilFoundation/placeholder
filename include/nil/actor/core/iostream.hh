@@ -225,14 +225,12 @@ namespace nil {
 
         template<typename Consumer, typename CharType>
         concept InputStreamConsumer = requires(Consumer c) {
-            { c(temporary_buffer<CharType> {}) }
-            ->std::same_as<future<consumption_result<CharType>>>;
+            { c(temporary_buffer<CharType> {}) } -> std::same_as<future<consumption_result<CharType>>>;
         };
 
         template<typename Consumer, typename CharType>
         concept ObsoleteInputStreamConsumer = requires(Consumer c) {
-            { c(temporary_buffer<CharType> {}) }
-            ->std::same_as<future<std::optional<temporary_buffer<CharType>>>>;
+            { c(temporary_buffer<CharType> {}) } -> std::same_as<future<std::optional<temporary_buffer<CharType>>>>;
         };
 #endif
 
@@ -285,14 +283,14 @@ namespace nil {
 
             template<typename Consumer>
 #ifdef BOOST_HAS_CONCEPTS
-                requires InputStreamConsumer<Consumer, CharType> || ObsoleteInputStreamConsumer<Consumer, CharType>
+            requires InputStreamConsumer<Consumer, CharType> || ObsoleteInputStreamConsumer<Consumer, CharType>
 #endif
-                                                                        future<> consume(Consumer &&c);
+                future<> consume(Consumer &&c);
             template<typename Consumer>
 #ifdef BOOST_HAS_CONCEPTS
-                requires InputStreamConsumer<Consumer, CharType> || ObsoleteInputStreamConsumer<Consumer, CharType>
+            requires InputStreamConsumer<Consumer, CharType> || ObsoleteInputStreamConsumer<Consumer, CharType>
 #endif
-                                                                        future<> consume(Consumer &c);
+                future<> consume(Consumer &c);
             bool eof() const {
                 return _eof;
             }

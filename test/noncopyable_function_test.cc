@@ -102,4 +102,3 @@ BOOST_AUTO_TEST_CASE(small_move_tests) {
 BOOST_AUTO_TEST_CASE(large_move_tests) {
     do_move_tests<1000>();
 }
-

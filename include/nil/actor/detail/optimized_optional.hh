@@ -38,7 +38,7 @@ namespace nil {
 
         template<typename T>
         concept OptimizableOptional = std::is_default_constructible<T>::value &&
-            std::is_nothrow_move_assignable<T>::value &&requires(const T &obj) {
+            std::is_nothrow_move_assignable<T>::value && requires(const T &obj) {
             { bool(obj) }
             noexcept;
         };

@@ -133,4 +133,3 @@ ACTOR_TEST_CASE(foreign_ptr_move_assignment_test) {
             return nil::actor::sleep(100ms);
         });
 }
-

@@ -121,13 +121,13 @@ namespace nil {
         template<template<typename> class FilterClass, typename... Elements>
         auto tuple_filter_by_type(const std::tuple<Elements...> &t) {
             using sequence = typename detail::tuple_filter<FilterClass, std::tuple<Elements...>,
-                                                             std::index_sequence_for<Elements...>>::type;
+                                                           std::index_sequence_for<Elements...>>::type;
             return detail::tuple_filter_helper(t, sequence());
         }
         template<template<typename> class FilterClass, typename... Elements>
         auto tuple_filter_by_type(std::tuple<Elements...> &&t) {
             using sequence = typename detail::tuple_filter<FilterClass, std::tuple<Elements...>,
-                                                             std::index_sequence_for<Elements...>>::type;
+                                                           std::index_sequence_for<Elements...>>::type;
             return detail::tuple_filter_helper(std::move(t), sequence());
         }
 
@@ -146,7 +146,7 @@ namespace nil {
         template<typename Function, typename... Elements>
         auto tuple_map(std::tuple<Elements...> &&t, Function &&f) {
             return detail::tuple_map_helper(std::move(t), std::forward<Function>(f),
-                                              std::index_sequence_for<Elements...>());
+                                            std::index_sequence_for<Elements...>());
         }
 
         /// Iterate over all elements in tuple
@@ -158,18 +158,16 @@ namespace nil {
         /// \param f function to call for each tuple element
         template<typename Function, typename... Elements>
         void tuple_for_each(const std::tuple<Elements...> &t, Function &&f) {
-            return detail::tuple_for_each_helper(t, std::forward<Function>(f),
-                                                   std::index_sequence_for<Elements...>());
+            return detail::tuple_for_each_helper(t, std::forward<Function>(f), std::index_sequence_for<Elements...>());
         }
         template<typename Function, typename... Elements>
         void tuple_for_each(std::tuple<Elements...> &t, Function &&f) {
-            return detail::tuple_for_each_helper(t, std::forward<Function>(f),
-                                                   std::index_sequence_for<Elements...>());
+            return detail::tuple_for_each_helper(t, std::forward<Function>(f), std::index_sequence_for<Elements...>());
         }
         template<typename Function, typename... Elements>
         void tuple_for_each(std::tuple<Elements...> &&t, Function &&f) {
             return detail::tuple_for_each_helper(std::move(t), std::forward<Function>(f),
-                                                   std::index_sequence_for<Elements...>());
+                                                 std::index_sequence_for<Elements...>());
         }
 
         /// @}

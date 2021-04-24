@@ -1581,10 +1581,10 @@ namespace nil {
             ///         to the eventual value of this future.
             template<typename Func, typename Result = futurize_t<typename call_then_impl::template result_type<Func>>>
 #ifdef BOOST_HAS_CONCEPTS
-                requires std::invocable<Func, T ACTOR_ELLIPSIS> ||
-                detail::CanInvokeWhenAllSucceed<Func, T ACTOR_ELLIPSIS>
+            requires std::invocable<Func, T ACTOR_ELLIPSIS> || detail::CanInvokeWhenAllSucceed<Func, T ACTOR_ELLIPSIS>
 #endif
-                    Result then(Func &&func) noexcept {
+                Result then(Func &&func)
+            noexcept {
                 // The implementation of then() is customized via the call_then_impl helper
                 // template, in order to special case the results of when_all_succeed().
                 // when_all_succeed() used to return a variadic future, which is deprecated, so
@@ -1628,7 +1628,8 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
             requires ::nil::actor::CanApplyTuple<Func, T ACTOR_ELLIPSIS>
 #endif
-                Result then_unpack(Func &&func) noexcept {
+                Result then_unpack(Func &&func)
+            noexcept {
                 return then([func = std::forward<Func>(func)](T &&ACTOR_ELLIPSIS tuple) mutable {
                     // sizeof...(tuple) is required to be 1
                     return std::apply(func, std::move(tuple) ACTOR_ELLIPSIS);
@@ -1697,11 +1698,12 @@ namespace nil {
 ///         to the eventual value of this future.
 #ifdef BOOST_HAS_CONCEPTS
             template<typename Func, typename FuncResult = std::invoke_result_t<Func, future>>
-            requires std::invocable<Func, future> futurize_t<FuncResult> then_wrapped(Func &&func) &noexcept {
+            requires std::invocable<Func, future> futurize_t<FuncResult> then_wrapped(Func &&func)
+            &noexcept {
                 return then_wrapped_maybe_erase<false, FuncResult>(std::forward<Func>(func));
             }
             template<typename Func, typename FuncResult = std::invoke_result_t<Func, future &&>>
-            requires std::invocable<Func, future &&> futurize_t<FuncResult> then_wrapped(Func &&func) &&noexcept {
+            requires std::invocable<Func, future &&> futurize_t<FuncResult> then_wrapped(Func &&func) && noexcept {
                 return then_wrapped_maybe_erase<true, FuncResult>(std::forward<Func>(func));
             }
 #else
@@ -1814,7 +1816,8 @@ namespace nil {
              * nested will be propagated.
              */
             template<typename Func>
-            requires std::invocable<Func> future<T ACTOR_ELLIPSIS> finally(Func &&func) noexcept {
+            requires std::invocable<Func> future<T ACTOR_ELLIPSIS> finally(Func &&func)
+            noexcept {
                 return then_wrapped(
                     finally_body<Func, is_future<std::invoke_result_t<Func>>::value>(std::forward<Func>(func)));
             }
@@ -2110,7 +2113,8 @@ namespace nil {
             /// promise. This avoids creating a future if func() doesn't
             /// return one.
             template<typename Func>
-            requires std::invocable<Func> static void satisfy_with_result_of(promise_base_with_type &&, Func &&func);
+            requires std::invocable<Func>
+            static void satisfy_with_result_of(promise_base_with_type &&, Func &&func);
 #else
             /// Forwards the result of, or exception thrown by, func() to the
             /// promise. This avoids creating a future if func() doesn't
@@ -2205,8 +2209,8 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
         template<typename T>
         template<typename Func>
-        requires std::invocable<Func> void futurize<T>::satisfy_with_result_of(promise_base_with_type &&pr,
-                                                                               Func &&func) {
+        requires std::invocable<Func>
+        void futurize<T>::satisfy_with_result_of(promise_base_with_type &&pr, Func &&func) {
             using ret_t = decltype(func());
             if constexpr (std::is_void_v<ret_t>) {
                 func();

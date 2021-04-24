@@ -62,7 +62,6 @@ namespace nil {
                 dispatch_source_set_event_handler(_steady_clock_timer, ^{
                     raise(hrtimer_signal());
                 });
-                dispatch_resume(_steady_clock_timer);
             }
 
 #endif
@@ -103,12 +102,14 @@ namespace nil {
             auto ret = timer_settime(_steady_clock_timer, TIMER_ABSTIME, &its, NULL);
             throw_system_error_on(ret == -1);
 #elif BOOST_OS_MACOS || BOOST_OS_IOS
-
+            dispatch_source_set_timer(_steady_clock_timer, dispatch_walltime(&its.it_value, its.it_interval.tv_nsec),
+                                      1ull * NSEC_PER_SEC, 0);
+            dispatch_resume(_steady_clock_timer);
 #endif
         }
 
         bool reactor_backend_epoll::wait_and_process(int timeout, const sigset_t *active_sigmask) {
-            std::array<epoll_event, 128> eevt;
+            std::array<epoll_event, 128> eevt {};
             int nr = ::epoll_pwait(_epollfd.get(), eevt.data(), eevt.size(), timeout, active_sigmask);
             if (nr == -1 && errno == EINTR) {
                 return false;    // gdb can cause this

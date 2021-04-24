@@ -250,7 +250,8 @@ namespace nil {
             /// \return Future that becomes ready once all calls have completed
             template<typename Func, typename... Args>
             requires std::invocable<Func, Service &, Args...> future<> invoke_on_all(smp_submit_to_options options,
-                                                                                     Func func, Args... args) noexcept;
+                                                                                     Func func, Args... args)
+            noexcept;
 
             /// Invoke a function on all instances of `Service`.
             /// The return value becomes ready when all instances have processed
@@ -258,7 +259,8 @@ namespace nil {
             /// Passes the default \ref smp_submit_to_options to the
             /// \ref smp::submit_to() called behind the scenes.
             template<typename Func, typename... Args>
-            requires std::invocable<Func, Service &, Args...> future<> invoke_on_all(Func func, Args... args) noexcept {
+            requires std::invocable<Func, Service &, Args...> future<> invoke_on_all(Func func, Args... args)
+            noexcept {
                 try {
                     return invoke_on_all(smp_submit_to_options {}, std::move(func), std::move(args)...);
                 } catch (...) {
@@ -277,8 +279,9 @@ namespace nil {
             /// \return a `future<>` that becomes ready when all cores but the current one have
             ///         processed the message.
             template<typename Func, typename... Args>
-            requires std::invocable<Func, Service &, Args...> future<>
-                invoke_on_others(smp_submit_to_options options, Func func, Args... args) noexcept;
+            requires std::invocable<Func, Service &, Args...> future<> invoke_on_others(smp_submit_to_options options,
+                                                                                        Func func, Args... args)
+            noexcept;
 
             /// Invoke a callable on all instances of  \c Service except the instance
             /// which is allocated on current shard.
@@ -292,8 +295,8 @@ namespace nil {
             /// Passes the default \ref smp_submit_to_options to the
             /// \ref smp::submit_to() called behind the scenes.
             template<typename Func, typename... Args>
-            requires std::invocable<Func, Service &, Args...> future<> invoke_on_others(Func func,
-                                                                                        Args... args) noexcept {
+            requires std::invocable<Func, Service &, Args...> future<> invoke_on_others(Func func, Args... args)
+            noexcept {
                 try {
                     return invoke_on_others(smp_submit_to_options {}, std::move(func), std::move(args)...);
                 } catch (...) {
@@ -852,8 +855,9 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
         template<typename Service>
         template<typename Func, typename... Args>
-        requires std::invocable<Func, Service &, Args...> inline future<>
-            sharded<Service>::invoke_on_all(smp_submit_to_options options, Func func, Args... args) noexcept {
+        requires std::invocable<Func, Service &, Args...>
+        inline future<> sharded<Service>::invoke_on_all(smp_submit_to_options options, Func func,
+                                                        Args... args) noexcept {
             static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
                           "invoke_on_all()'s func must return void or future<>");
             try {
@@ -869,8 +873,9 @@ namespace nil {
 
         template<typename Service>
         template<typename Func, typename... Args>
-        requires std::invocable<Func, Service &, Args...> inline future<>
-            sharded<Service>::invoke_on_others(smp_submit_to_options options, Func func, Args... args) noexcept {
+        requires std::invocable<Func, Service &, Args...>
+        inline future<> sharded<Service>::invoke_on_others(smp_submit_to_options options, Func func,
+                                                           Args... args) noexcept {
             static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
                           "invoke_on_others()'s func must return void or future<>");
             try {

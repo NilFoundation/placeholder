@@ -144,8 +144,7 @@ namespace nil {
 
             future<size_t> queue_request(const io_priority_class &pc, size_t len, detail::io_request req,
                                          io_intent *intent) noexcept;
-            void submit_request(io_desc_read_write *desc, detail::io_request req,
-                                priority_class_data &pclass) noexcept;
+            void submit_request(io_desc_read_write *desc, detail::io_request req, priority_class_data &pclass) noexcept;
             void cancel_request(queued_io_request &req, priority_class_data &pclass) noexcept;
             void complete_cancelled_request(queued_io_request &req) noexcept;
 

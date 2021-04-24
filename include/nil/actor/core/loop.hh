@@ -118,10 +118,10 @@ namespace nil {
         ///         a call to to \c action failed.
         template<typename AsyncAction>
 #ifdef BOOST_HAS_CONCEPTS
-            requires nil::actor::InvokeReturns<AsyncAction, stop_iteration> ||
+        requires nil::actor::InvokeReturns<AsyncAction, stop_iteration> ||
             nil::actor::InvokeReturns<AsyncAction, future<stop_iteration>>
 #endif
-            inline future<> repeat(AsyncAction &&action) noexcept {
+        inline future<> repeat(AsyncAction &&action) noexcept {
             using futurator = futurize<std::result_of_t<AsyncAction()>>;
             static_assert(std::is_same<future<stop_iteration>, typename futurator::type>::value,
                           "bad AsyncAction signature");
@@ -355,9 +355,9 @@ namespace nil {
         ///         a call to to \c action or a call to \c stop_cond failed.
         template<typename AsyncAction, typename StopCondition>
 #ifdef BOOST_HAS_CONCEPTS
-        requires nil::actor::InvokeReturns<StopCondition, bool> &&nil::actor::InvokeReturns<AsyncAction, future<>>
+        requires nil::actor::InvokeReturns<StopCondition, bool> && nil::actor::InvokeReturns<AsyncAction, future<>>
 #endif
-            inline future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
+        inline future<> do_until(StopCondition stop_cond, AsyncAction action) noexcept {
             using namespace detail;
             for (;;) {
                 try {
@@ -395,7 +395,7 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
         requires nil::actor::InvokeReturns<AsyncAction, future<>>
 #endif
-            inline future<> keep_doing(AsyncAction action) noexcept {
+        inline future<> keep_doing(AsyncAction action) noexcept {
             return repeat(
                 [action = std::move(action)]() mutable { return action().then([] { return stop_iteration::no; }); });
         }
@@ -476,8 +476,7 @@ namespace nil {
         template<typename Iterator, typename AsyncAction>
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(Iterator i, AsyncAction aa) {
-            { futurize_invoke(aa, *i) }
-            ->std::same_as<future<>>;
+            { futurize_invoke(aa, *i) } -> std::same_as<future<>>;
         }
 #endif
         inline future<> do_for_each(Iterator begin, Iterator end, AsyncAction action) noexcept {
@@ -502,8 +501,7 @@ namespace nil {
         template<typename Container, typename AsyncAction>
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(Container c, AsyncAction aa) {
-            { futurize_invoke(aa, *c.begin()) }
-            ->std::same_as<future<>>;
+            { futurize_invoke(aa, *c.begin()) } -> std::same_as<future<>>;
         }
 #endif
         inline future<> do_for_each(Container &c, AsyncAction action) noexcept {
@@ -576,8 +574,7 @@ namespace nil {
         template<typename Iterator, typename Func>
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(Func f, Iterator i) {
-            { f(*i++) }
-            ->std::same_as<future<>>;
+            { f(*i++) } -> std::same_as<future<>>;
         }
 #endif
         inline future<> parallel_for_each(Iterator begin, Iterator end, Func &&func) noexcept {
@@ -639,8 +636,7 @@ namespace nil {
         template<typename Range, typename Func>
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(Func f, Range r) {
-            { f(*r.begin()) }
-            ->std::same_as<future<>>;
+            { f(*r.begin()) } -> std::same_as<future<>>;
         }
 #endif
         inline future<> parallel_for_each(Range &&range, Func &&func) noexcept {
@@ -669,8 +665,7 @@ namespace nil {
         template<typename Iterator, typename Func>
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(Func f, Iterator i) {
-            { f(*i++) }
-            ->std::same_as<future<>>;
+            { f(*i++) } -> std::same_as<future<>>;
         }
 #endif
         inline future<> max_concurrent_for_each(Iterator begin, Iterator end, size_t max_concurrent,
@@ -749,9 +744,8 @@ namespace nil {
         ///         contains one of the exceptions.
         template<typename Range, typename Func>
 #ifdef BOOST_HAS_CONCEPTS
-        requires std::ranges::range<Range> &&requires(Func f, Range r) {
-            { f(*r.begin()) }
-            ->std::same_as<future<>>;
+        requires std::ranges::range<Range> && requires(Func f, Range r) {
+            { f(*r.begin()) } -> std::same_as<future<>>;
         }
 #endif
         inline future<> max_concurrent_for_each(Range &&range, size_t max_concurrent, Func &&func) noexcept {

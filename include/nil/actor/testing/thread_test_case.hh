@@ -29,8 +29,8 @@
 
 #include <nil/actor/testing/actor_test.hh>
 
-#define ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures)    \
-    struct name : public nil::actor::testing::actor_test {          \
+#define ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures)      \
+    struct name : public nil::actor::testing::actor_test {            \
         const char *get_test_file() override {                        \
             return __FILE__;                                          \
         }                                                             \

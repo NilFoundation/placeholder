@@ -37,9 +37,10 @@ int main(int ac, char **av) {
     app_template at;
     namespace bpo = boost::program_options;
     at.add_options()("concurrency", bpo::value<unsigned>()->default_value(1), "Write operations to issue in parallel")(
-        "buffer-size", bpo::value<size_t>()->default_value(4096), "Write buffer size")(
-        "total-ops", bpo::value<unsigned>()->default_value(100000), "Total write operations to issue")(
-        "sloppy-size", bpo::value<bool>()->default_value(false), "Enable the sloppy-size optimization");
+        "buffer-size", bpo::value<size_t>()->default_value(4096),
+        "Write buffer size")("total-ops", bpo::value<unsigned>()->default_value(100000),
+                             "Total write operations to issue")("sloppy-size", bpo::value<bool>()->default_value(false),
+                                                                "Enable the sloppy-size optimization");
     return at.run(ac, av, [&at] {
         auto concurrency = at.configuration()["concurrency"].as<unsigned>();
         auto buffer_size = at.configuration()["buffer-size"].as<size_t>();

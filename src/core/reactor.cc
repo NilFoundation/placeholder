@@ -135,6 +135,7 @@
 #include <rte_launch.h>
 #endif
 #include <nil/actor/core/prefetch.hh>
+
 #include <exception>
 #include <regex>
 #include <fstream>
@@ -1358,13 +1359,13 @@ namespace nil {
                 return opts;
             }
             static void
-                register_stack(sstring name, boost::program_options::options_description opts,
+                register_stack(const sstring &name, const boost::program_options::options_description &opts,
                                noncopyable_function<future<std::unique_ptr<network_stack>>(options opts)> create,
                                bool make_default);
             static sstring default_stack();
             static std::vector<sstring> list();
             static future<std::unique_ptr<network_stack>> create(options opts);
-            static future<std::unique_ptr<network_stack>> create(sstring name, options opts);
+            static future<std::unique_ptr<network_stack>> create(const sstring &name, options opts);
         };
 
         void reactor::configure(boost::program_options::variables_map vm) {
@@ -1674,7 +1675,7 @@ namespace nil {
 #if BOOST_OS_LINUX
                             int r = ::fcntl(fd, F_SETFL, open_flags | O_DIRECT);
 #elif BOOST_OS_MACOS || BOOST_OS_IOS
-                            int r = fcntl(fd, F_SETFL, open_flags | F_NOCACHE);
+                            int r = ::fcntl(fd, F_SETFL, open_flags | F_NOCACHE);
 #endif
                             auto maybe_ret = wrap_syscall<int>(r);    // capture errno (should be EINVAL)
                             if (r == -1 && strict_o_direct && !is_tmpfs(fd)) {
@@ -2360,7 +2361,7 @@ namespace nil {
         }
 
         bool reactor::flush_tcp_batches() {
-            bool work = _flush_batching.size();
+            bool work = !_flush_batching.empty();
             while (!_flush_batching.empty()) {
                 auto os = std::move(_flush_batching.front());
                 _flush_batching.pop_front();
@@ -2658,7 +2659,11 @@ namespace nil {
 
         void reactor::wakeup() {
             uint64_t one = 1;
+#if BOOST_OS_LINUX
             ::write(_notify_eventfd.get(), &one, sizeof(one));
+#else
+            epoll_shim_write(_notify_eventfd.get(), &one, sizeof(one));
+#endif
         }
 
         void reactor::start_aio_eventfd_loop() {
@@ -2668,7 +2673,11 @@ namespace nil {
             future<> loop_done = repeat([this] {
                 return _aio_eventfd->readable().then([this] {
                     char garbage[8];
+#if BOOST_OS_LINUX
                     ::read(_aio_eventfd->get_fd(), garbage, 8);    // totally uninteresting
+#else
+                    epoll_shim_read(_aio_eventfd->get_fd(), garbage, 8);    // totally uninteresting
+#endif
                     return _stopping ? stop_iteration::yes : stop_iteration::no;
                 });
             });
@@ -2681,7 +2690,11 @@ namespace nil {
                 return;
             }
             uint64_t one = 1;
+#if BOOST_OS_LINUX
             ::write(_aio_eventfd->get_fd(), &one, 8);
+#else
+            epoll_shim_write(_aio_eventfd->get_fd(), &one, 8);
+#endif
         }
 
         inline bool reactor::have_more_tasks() const {
@@ -3351,7 +3364,11 @@ namespace nil {
 
         void writeable_eventfd::signal(size_t count) {
             uint64_t c = count;
+#if BOOST_OS_LINUX
             auto r = _fd.write(&c, sizeof(c));
+#else
+            auto r = epoll_shim_write(_fd.get(), &c, sizeof(c));
+#endif
             assert(r == sizeof(c));
         }
 
@@ -3367,7 +3384,11 @@ namespace nil {
         future<size_t> readable_eventfd::wait() {
             return engine().readable(*_fd._s).then([this] {
                 uint64_t count;
+#if BOOST_OS_LINUX
                 int r = ::read(_fd.get_fd(), &count, sizeof(count));
+#else
+                int r = epoll_shim_read(_fd.get_fd(), &count, sizeof(count));
+#endif
                 assert(r == sizeof(count));
                 return make_ready_future<size_t>(count);
             });
@@ -3392,7 +3413,7 @@ namespace nil {
     namespace actor {
 
         void network_stack_registry::register_stack(
-            sstring name, boost::program_options::options_description opts,
+            const sstring &name, const boost::program_options::options_description &opts,
             noncopyable_function<future<std::unique_ptr<network_stack>>(options opts)> create, bool make_default) {
             if (_map().count(name)) {
                 return;
@@ -3405,11 +3426,10 @@ namespace nil {
         }
 
         void register_network_stack(
-            sstring name, boost::program_options::options_description opts,
+            const sstring &name, const boost::program_options::options_description &opts,
             noncopyable_function<future<std::unique_ptr<network_stack>>(boost::program_options::variables_map)> create,
             bool make_default) {
-            return network_stack_registry::register_stack(std::move(name), std::move(opts), std::move(create),
-                                                          make_default);
+            return network_stack_registry::register_stack(std::move(name), opts, std::move(create), make_default);
         }
 
         sstring network_stack_registry::default_stack() {
@@ -3425,14 +3445,14 @@ namespace nil {
         }
 
         future<std::unique_ptr<network_stack>> network_stack_registry::create(options opts) {
-            return create(_default(), opts);
+            return create(_default(), std::move(opts));
         }
 
-        future<std::unique_ptr<network_stack>> network_stack_registry::create(sstring name, options opts) {
+        future<std::unique_ptr<network_stack>> network_stack_registry::create(const sstring &name, options opts) {
             if (!_map().count(name)) {
                 throw std::runtime_error(format("network stack {} not registered", name));
             }
-            return _map()[name](opts);
+            return _map()[name](std::move(opts));
         }
 
         static bool kernel_supports_aio_fsync() {
@@ -4220,7 +4240,7 @@ namespace nil {
                 open_flags flags;
                 std::function<future<>()> cleanup;
 
-                static w parse(sstring path, std::optional<directory_entry_type> type) {
+                static w parse(const sstring &path, std::optional<directory_entry_type> type) {
                     if (!type) {
                         throw std::invalid_argument(format("Could not open file at {}. Make sure it exists", path));
                     }

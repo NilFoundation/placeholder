@@ -75,4 +75,3 @@ namespace nil {
 }    // namespace nil
 
 #endif
-

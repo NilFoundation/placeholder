@@ -168,7 +168,7 @@ namespace nil {
                 return file_desc(fd);
             }
 
-            static file_desc open(sstring name, int flags, mode_t mode = 0) {
+            static file_desc open(const sstring &name, int flags, mode_t mode = 0) {
                 int fd = ::open(name.c_str(), flags, mode);
                 throw_system_error_on(fd == -1, "open");
                 return file_desc(fd);

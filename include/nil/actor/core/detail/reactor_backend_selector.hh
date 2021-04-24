@@ -50,18 +50,18 @@ namespace nil {
             friend std::ostream &operator<<(std::ostream &os, const reactor_backend_selector &rbs) {
                 return os << rbs._name;
             }
-            friend void validate(boost::any &v, const std::vector<std::string> values, reactor_backend_selector *rbs,
+            friend void validate(boost::any &v, const std::vector<std::string> &values, reactor_backend_selector *rbs,
                                  int) {
-                namespace bpo = boost::program_options;
-                bpo::validators::check_first_occurrence(v);
-                auto s = bpo::validators::get_single_string(values);
+                boost::program_options::validators::check_first_occurrence(v);
+                auto s = boost::program_options::validators::get_single_string(values);
                 for (auto &&x : available()) {
                     if (s == x._name) {
                         v = std::move(x);
                         return;
                     }
                 }
-                throw bpo::validation_error(bpo::validation_error::invalid_option_value);
+                throw boost::program_options::validation_error(
+                    boost::program_options::validation_error::invalid_option_value);
             }
         };
     }    // namespace actor

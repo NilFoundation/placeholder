@@ -126,4 +126,3 @@ BOOST_AUTO_TEST_CASE(test_checked_ptr_is_initialized_after_assignment_smart_ptr)
     BOOST_REQUIRE(!bool(cp1));
     BOOST_REQUIRE(!bool(cp2));
 }
-

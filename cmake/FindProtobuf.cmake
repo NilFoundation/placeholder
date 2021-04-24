@@ -119,198 +119,198 @@
 #   ``ARGN``
 #     ``.proto`` filess
 
-function(PROTOBUF_GENERATE_CPP SRCS HDRS)
-  cmake_parse_arguments(protobuf "" "EXPORT_MACRO;DESCRIPTORS" "" ${ARGN})
+function(protobuf_generate_cpp SRCS HDRS)
+    cmake_parse_arguments(protobuf "" "EXPORT_MACRO;DESCRIPTORS" "" ${ARGN})
 
-  set(PROTO_FILES "${protobuf_UNPARSED_ARGUMENTS}")
-  if(NOT PROTO_FILES)
-    message(SEND_ERROR "Error: PROTOBUF_GENERATE_CPP() called without any proto files")
-    return()
-  endif()
-
-  if(protobuf_EXPORT_MACRO)
-    set(DLL_EXPORT_DECL "dllexport_decl=${protobuf_EXPORT_MACRO}:")
-  endif()
-
-  if(PROTOBUF_GENERATE_CPP_APPEND_PATH)
-    # Create an include path for each file specified
-    foreach(FIL ${PROTO_FILES})
-      get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-      get_filename_component(ABS_PATH ${ABS_FIL} PATH)
-      list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
-      if(${_contains_already} EQUAL -1)
-          list(APPEND _protobuf_include_path -I ${ABS_PATH})
-      endif()
-    endforeach()
-  else()
-    set(_protobuf_include_path -I ${CMAKE_CURRENT_SOURCE_DIR})
-  endif()
-
-  if(DEFINED PROTOBUF_IMPORT_DIRS AND NOT DEFINED Protobuf_IMPORT_DIRS)
-    set(Protobuf_IMPORT_DIRS "${PROTOBUF_IMPORT_DIRS}")
-  endif()
-
-  if(DEFINED Protobuf_IMPORT_DIRS)
-    foreach(DIR ${Protobuf_IMPORT_DIRS})
-      get_filename_component(ABS_PATH ${DIR} ABSOLUTE)
-      list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
-      if(${_contains_already} EQUAL -1)
-          list(APPEND _protobuf_include_path -I ${ABS_PATH})
-      endif()
-    endforeach()
-  endif()
-
-  set(${SRCS})
-  set(${HDRS})
-  if (protobuf_DESCRIPTORS)
-    set(${protobuf_DESCRIPTORS})
-  endif()
-
-  foreach(FIL ${PROTO_FILES})
-    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-    get_filename_component(FIL_WE ${FIL} NAME_WE)
-    if(NOT PROTOBUF_GENERATE_CPP_APPEND_PATH)
-      get_filename_component(FIL_DIR ${FIL} DIRECTORY)
-      if(FIL_DIR)
-        set(FIL_WE "${FIL_DIR}/${FIL_WE}")
-      endif()
+    set(PROTO_FILES "${protobuf_UNPARSED_ARGUMENTS}")
+    if(NOT PROTO_FILES)
+        message(SEND_ERROR "Error: PROTOBUF_GENERATE_CPP() called without any proto files")
+        return()
     endif()
 
-    set(_protobuf_protoc_src "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc")
-    set(_protobuf_protoc_hdr "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h")
-    list(APPEND ${SRCS} "${_protobuf_protoc_src}")
-    list(APPEND ${HDRS} "${_protobuf_protoc_hdr}")
+    if(protobuf_EXPORT_MACRO)
+        set(DLL_EXPORT_DECL "dllexport_decl=${protobuf_EXPORT_MACRO}:")
+    endif()
 
-    if(protobuf_DESCRIPTORS)
-      set(_protobuf_protoc_desc "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.desc")
-      set(_protobuf_protoc_flags "--descriptor_set_out=${_protobuf_protoc_desc}")
-      list(APPEND ${protobuf_DESCRIPTORS} "${_protobuf_protoc_desc}")
+    if(PROTOBUF_GENERATE_CPP_APPEND_PATH)
+        # Create an include path for each file specified
+        foreach(FIL ${PROTO_FILES})
+            get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+            get_filename_component(ABS_PATH ${ABS_FIL} PATH)
+            list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
+            if(${_contains_already} EQUAL -1)
+                list(APPEND _protobuf_include_path -I ${ABS_PATH})
+            endif()
+        endforeach()
     else()
-      set(_protobuf_protoc_desc "")
-      set(_protobuf_protoc_flags "")
+        set(_protobuf_include_path -I ${CMAKE_CURRENT_SOURCE_DIR})
     endif()
 
-    add_custom_command(
-      OUTPUT "${_protobuf_protoc_src}"
-             "${_protobuf_protoc_hdr}"
-             ${_protobuf_protoc_desc}
-      COMMAND  protobuf::protoc
-               "--cpp_out=${DLL_EXPORT_DECL}${CMAKE_CURRENT_BINARY_DIR}"
-               ${_protobuf_protoc_flags}
-               ${_protobuf_include_path} ${ABS_FIL}
-      DEPENDS ${ABS_FIL} protobuf::protoc
-      COMMENT "Running C++ protocol buffer compiler on ${FIL}"
-      VERBATIM )
-  endforeach()
+    if(DEFINED PROTOBUF_IMPORT_DIRS AND NOT DEFINED Protobuf_IMPORT_DIRS)
+        set(Protobuf_IMPORT_DIRS "${PROTOBUF_IMPORT_DIRS}")
+    endif()
 
-  set(${SRCS} "${${SRCS}}" PARENT_SCOPE)
-  set(${HDRS} "${${HDRS}}" PARENT_SCOPE)
-  if(protobuf_DESCRIPTORS)
-    set(${protobuf_DESCRIPTORS} "${${protobuf_DESCRIPTORS}}" PARENT_SCOPE)
-  endif()
+    if(DEFINED Protobuf_IMPORT_DIRS)
+        foreach(DIR ${Protobuf_IMPORT_DIRS})
+            get_filename_component(ABS_PATH ${DIR} ABSOLUTE)
+            list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
+            if(${_contains_already} EQUAL -1)
+                list(APPEND _protobuf_include_path -I ${ABS_PATH})
+            endif()
+        endforeach()
+    endif()
+
+    set(${SRCS})
+    set(${HDRS})
+    if(protobuf_DESCRIPTORS)
+        set(${protobuf_DESCRIPTORS})
+    endif()
+
+    foreach(FIL ${PROTO_FILES})
+        get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+        get_filename_component(FIL_WE ${FIL} NAME_WE)
+        if(NOT PROTOBUF_GENERATE_CPP_APPEND_PATH)
+            get_filename_component(FIL_DIR ${FIL} DIRECTORY)
+            if(FIL_DIR)
+                set(FIL_WE "${FIL_DIR}/${FIL_WE}")
+            endif()
+        endif()
+
+        set(_protobuf_protoc_src "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc")
+        set(_protobuf_protoc_hdr "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h")
+        list(APPEND ${SRCS} "${_protobuf_protoc_src}")
+        list(APPEND ${HDRS} "${_protobuf_protoc_hdr}")
+
+        if(protobuf_DESCRIPTORS)
+            set(_protobuf_protoc_desc "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.desc")
+            set(_protobuf_protoc_flags "--descriptor_set_out=${_protobuf_protoc_desc}")
+            list(APPEND ${protobuf_DESCRIPTORS} "${_protobuf_protoc_desc}")
+        else()
+            set(_protobuf_protoc_desc "")
+            set(_protobuf_protoc_flags "")
+        endif()
+
+        add_custom_command(
+                OUTPUT "${_protobuf_protoc_src}"
+                "${_protobuf_protoc_hdr}"
+                ${_protobuf_protoc_desc}
+                COMMAND protobuf::protoc
+                "--cpp_out=${DLL_EXPORT_DECL}${CMAKE_CURRENT_BINARY_DIR}"
+                ${_protobuf_protoc_flags}
+                ${_protobuf_include_path} ${ABS_FIL}
+                DEPENDS ${ABS_FIL} protobuf::protoc
+                COMMENT "Running C++ protocol buffer compiler on ${FIL}"
+                VERBATIM)
+    endforeach()
+
+    set(${SRCS} "${${SRCS}}" PARENT_SCOPE)
+    set(${HDRS} "${${HDRS}}" PARENT_SCOPE)
+    if(protobuf_DESCRIPTORS)
+        set(${protobuf_DESCRIPTORS} "${${protobuf_DESCRIPTORS}}" PARENT_SCOPE)
+    endif()
 endfunction()
 
-function(PROTOBUF_GENERATE_PYTHON SRCS)
-  if(NOT ARGN)
-    message(SEND_ERROR "Error: PROTOBUF_GENERATE_PYTHON() called without any proto files")
-    return()
-  endif()
-
-  if(PROTOBUF_GENERATE_CPP_APPEND_PATH)
-    # Create an include path for each file specified
-    foreach(FIL ${ARGN})
-      get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-      get_filename_component(ABS_PATH ${ABS_FIL} PATH)
-      list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
-      if(${_contains_already} EQUAL -1)
-          list(APPEND _protobuf_include_path -I ${ABS_PATH})
-      endif()
-    endforeach()
-  else()
-    set(_protobuf_include_path -I ${CMAKE_CURRENT_SOURCE_DIR})
-  endif()
-
-  if(DEFINED PROTOBUF_IMPORT_DIRS AND NOT DEFINED Protobuf_IMPORT_DIRS)
-    set(Protobuf_IMPORT_DIRS "${PROTOBUF_IMPORT_DIRS}")
-  endif()
-
-  if(DEFINED Protobuf_IMPORT_DIRS)
-    foreach(DIR ${Protobuf_IMPORT_DIRS})
-      get_filename_component(ABS_PATH ${DIR} ABSOLUTE)
-      list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
-      if(${_contains_already} EQUAL -1)
-          list(APPEND _protobuf_include_path -I ${ABS_PATH})
-      endif()
-    endforeach()
-  endif()
-
-  set(${SRCS})
-  foreach(FIL ${ARGN})
-    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-    get_filename_component(FIL_WE ${FIL} NAME_WE)
-    if(NOT PROTOBUF_GENERATE_CPP_APPEND_PATH)
-      get_filename_component(FIL_DIR ${FIL} DIRECTORY)
-      if(FIL_DIR)
-        set(FIL_WE "${FIL_DIR}/${FIL_WE}")
-      endif()
+function(protobuf_generate_python SRCS)
+    if(NOT ARGN)
+        message(SEND_ERROR "Error: PROTOBUF_GENERATE_PYTHON() called without any proto files")
+        return()
     endif()
 
-    list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py")
-    add_custom_command(
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py"
-      COMMAND  protobuf::protoc --python_out ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL}
-      DEPENDS ${ABS_FIL} protobuf::protoc
-      COMMENT "Running Python protocol buffer compiler on ${FIL}"
-      VERBATIM )
-  endforeach()
+    if(PROTOBUF_GENERATE_CPP_APPEND_PATH)
+        # Create an include path for each file specified
+        foreach(FIL ${ARGN})
+            get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+            get_filename_component(ABS_PATH ${ABS_FIL} PATH)
+            list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
+            if(${_contains_already} EQUAL -1)
+                list(APPEND _protobuf_include_path -I ${ABS_PATH})
+            endif()
+        endforeach()
+    else()
+        set(_protobuf_include_path -I ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
 
-  set(${SRCS} ${${SRCS}} PARENT_SCOPE)
+    if(DEFINED PROTOBUF_IMPORT_DIRS AND NOT DEFINED Protobuf_IMPORT_DIRS)
+        set(Protobuf_IMPORT_DIRS "${PROTOBUF_IMPORT_DIRS}")
+    endif()
+
+    if(DEFINED Protobuf_IMPORT_DIRS)
+        foreach(DIR ${Protobuf_IMPORT_DIRS})
+            get_filename_component(ABS_PATH ${DIR} ABSOLUTE)
+            list(FIND _protobuf_include_path ${ABS_PATH} _contains_already)
+            if(${_contains_already} EQUAL -1)
+                list(APPEND _protobuf_include_path -I ${ABS_PATH})
+            endif()
+        endforeach()
+    endif()
+
+    set(${SRCS})
+    foreach(FIL ${ARGN})
+        get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+        get_filename_component(FIL_WE ${FIL} NAME_WE)
+        if(NOT PROTOBUF_GENERATE_CPP_APPEND_PATH)
+            get_filename_component(FIL_DIR ${FIL} DIRECTORY)
+            if(FIL_DIR)
+                set(FIL_WE "${FIL_DIR}/${FIL_WE}")
+            endif()
+        endif()
+
+        list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py")
+        add_custom_command(
+                OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py"
+                COMMAND protobuf::protoc --python_out ${CMAKE_CURRENT_BINARY_DIR} ${_protobuf_include_path} ${ABS_FIL}
+                DEPENDS ${ABS_FIL} protobuf::protoc
+                COMMENT "Running Python protocol buffer compiler on ${FIL}"
+                VERBATIM)
+    endforeach()
+
+    set(${SRCS} ${${SRCS}} PARENT_SCOPE)
 endfunction()
 
 
 if(Protobuf_DEBUG)
-  # Output some of their choices
-  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-                 "Protobuf_USE_STATIC_LIBS = ${Protobuf_USE_STATIC_LIBS}")
+    # Output some of their choices
+    message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+            "Protobuf_USE_STATIC_LIBS = ${Protobuf_USE_STATIC_LIBS}")
 endif()
 
 
 # Backwards compatibility
 # Define camel case versions of input variables
 foreach(UPPER
-    PROTOBUF_SRC_ROOT_FOLDER
-    PROTOBUF_IMPORT_DIRS
-    PROTOBUF_DEBUG
-    PROTOBUF_LIBRARY
-    PROTOBUF_PROTOC_LIBRARY
-    PROTOBUF_INCLUDE_DIR
-    PROTOBUF_PROTOC_EXECUTABLE
-    PROTOBUF_LIBRARY_DEBUG
-    PROTOBUF_PROTOC_LIBRARY_DEBUG
-    PROTOBUF_LITE_LIBRARY
-    PROTOBUF_LITE_LIBRARY_DEBUG
-    )
-    if (DEFINED ${UPPER})
+        PROTOBUF_SRC_ROOT_FOLDER
+        PROTOBUF_IMPORT_DIRS
+        PROTOBUF_DEBUG
+        PROTOBUF_LIBRARY
+        PROTOBUF_PROTOC_LIBRARY
+        PROTOBUF_INCLUDE_DIR
+        PROTOBUF_PROTOC_EXECUTABLE
+        PROTOBUF_LIBRARY_DEBUG
+        PROTOBUF_PROTOC_LIBRARY_DEBUG
+        PROTOBUF_LITE_LIBRARY
+        PROTOBUF_LITE_LIBRARY_DEBUG
+        )
+    if(DEFINED ${UPPER})
         string(REPLACE "PROTOBUF_" "Protobuf_" Camel ${UPPER})
-        if (NOT DEFINED ${Camel})
+        if(NOT DEFINED ${Camel})
             set(${Camel} ${${UPPER}})
         endif()
     endif()
 endforeach()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(_PROTOBUF_ARCH_DIR x64/)
+    set(_PROTOBUF_ARCH_DIR x64/)
 endif()
 
 
 # Support preference of static libs by adjusting CMAKE_FIND_LIBRARY_SUFFIXES
-if( Protobuf_USE_STATIC_LIBS )
-  set( _protobuf_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  if(WIN32)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  else()
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a )
-  endif()
+if(Protobuf_USE_STATIC_LIBS)
+    set(_protobuf_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    if(WIN32)
+        set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    else()
+        set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+    endif()
 endif()
 
 include(SelectLibraryConfigurations)
@@ -319,27 +319,27 @@ include(SelectLibraryConfigurations)
 #    if the debug one is specified also include debug/optimized keywords
 #    in *_LIBRARIES variable
 function(_protobuf_find_libraries name filename)
-  if(${name}_LIBRARIES)
-    # Use result recorded by a previous call.
-    return()
-  elseif(${name}_LIBRARY)
-    # Honor cache entry used by CMake 3.5 and lower.
-    set(${name}_LIBRARIES "${${name}_LIBRARY}" PARENT_SCOPE)
-  else()
-    find_library(${name}_LIBRARY_RELEASE
-      NAMES ${filename}
-      PATHS ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Release)
-    mark_as_advanced(${name}_LIBRARY_RELEASE)
+    if(${name}_LIBRARIES)
+        # Use result recorded by a previous call.
+        return()
+    elseif(${name}_LIBRARY)
+        # Honor cache entry used by CMake 3.5 and lower.
+        set(${name}_LIBRARIES "${${name}_LIBRARY}" PARENT_SCOPE)
+    else()
+        find_library(${name}_LIBRARY_RELEASE
+                     NAMES ${filename}
+                     PATHS ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Release)
+        mark_as_advanced(${name}_LIBRARY_RELEASE)
 
-    find_library(${name}_LIBRARY_DEBUG
-      NAMES ${filename}d ${filename}
-      PATHS ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Debug)
-    mark_as_advanced(${name}_LIBRARY_DEBUG)
+        find_library(${name}_LIBRARY_DEBUG
+                     NAMES ${filename}d ${filename}
+                     PATHS ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Debug)
+        mark_as_advanced(${name}_LIBRARY_DEBUG)
 
-    select_library_configurations(${name})
-    set(${name}_LIBRARY "${${name}_LIBRARY}" PARENT_SCOPE)
-    set(${name}_LIBRARIES "${${name}_LIBRARIES}" PARENT_SCOPE)
-  endif()
+        select_library_configurations(${name})
+        set(${name}_LIBRARY "${${name}_LIBRARY}" PARENT_SCOPE)
+        set(${name}_LIBRARIES "${${name}_LIBRARIES}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 # Internal function: find threads library
@@ -359,7 +359,7 @@ endfunction()
 # By default have PROTOBUF_GENERATE_CPP macro pass -I to protoc
 # for each directory where a proto file is referenced.
 if(NOT DEFINED PROTOBUF_GENERATE_CPP_APPEND_PATH)
-  set(PROTOBUF_GENERATE_CPP_APPEND_PATH TRUE)
+    set(PROTOBUF_GENERATE_CPP_APPEND_PATH TRUE)
 endif()
 
 
@@ -392,187 +392,187 @@ endif()
 
 # Find the include directory
 find_path(Protobuf_INCLUDE_DIR
-    google/protobuf/service.h
-    PATHS ${Protobuf_SRC_ROOT_FOLDER}/src
-)
+          google/protobuf/service.h
+          PATHS ${Protobuf_SRC_ROOT_FOLDER}/src
+          )
 mark_as_advanced(Protobuf_INCLUDE_DIR)
 
 # Find the protoc Executable
 find_program(Protobuf_PROTOC_EXECUTABLE
-    NAMES protoc
-    DOC "The Google Protocol Buffers Compiler"
-    PATHS
-    ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Release
-    ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Debug
-)
+             NAMES protoc
+             DOC "The Google Protocol Buffers Compiler"
+             PATHS
+             ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Release
+             ${Protobuf_SRC_ROOT_FOLDER}/vsprojects/${_PROTOBUF_ARCH_DIR}Debug
+             )
 mark_as_advanced(Protobuf_PROTOC_EXECUTABLE)
 
 if(Protobuf_DEBUG)
     message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-        "requested version of Google Protobuf is ${Protobuf_FIND_VERSION}")
+            "requested version of Google Protobuf is ${Protobuf_FIND_VERSION}")
 endif()
 
 if(Protobuf_INCLUDE_DIR)
-  set(_PROTOBUF_COMMON_HEADER ${Protobuf_INCLUDE_DIR}/google/protobuf/stubs/common.h)
+    set(_PROTOBUF_COMMON_HEADER ${Protobuf_INCLUDE_DIR}/google/protobuf/stubs/common.h)
 
-  if(Protobuf_DEBUG)
-    message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-                   "location of common.h: ${_PROTOBUF_COMMON_HEADER}")
-  endif()
+    if(Protobuf_DEBUG)
+        message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                "location of common.h: ${_PROTOBUF_COMMON_HEADER}")
+    endif()
 
-  set(Protobuf_VERSION "")
-  set(Protobuf_LIB_VERSION "")
-  file(STRINGS ${_PROTOBUF_COMMON_HEADER} _PROTOBUF_COMMON_H_CONTENTS REGEX "#define[ \t]+GOOGLE_PROTOBUF_VERSION[ \t]+")
-  if(_PROTOBUF_COMMON_H_CONTENTS MATCHES "#define[ \t]+GOOGLE_PROTOBUF_VERSION[ \t]+([0-9]+)")
-      set(Protobuf_LIB_VERSION "${CMAKE_MATCH_1}")
-  endif()
-  unset(_PROTOBUF_COMMON_H_CONTENTS)
+    set(Protobuf_VERSION "")
+    set(Protobuf_LIB_VERSION "")
+    file(STRINGS ${_PROTOBUF_COMMON_HEADER} _PROTOBUF_COMMON_H_CONTENTS REGEX "#define[ \t]+GOOGLE_PROTOBUF_VERSION[ \t]+")
+    if(_PROTOBUF_COMMON_H_CONTENTS MATCHES "#define[ \t]+GOOGLE_PROTOBUF_VERSION[ \t]+([0-9]+)")
+        set(Protobuf_LIB_VERSION "${CMAKE_MATCH_1}")
+    endif()
+    unset(_PROTOBUF_COMMON_H_CONTENTS)
 
-  math(EXPR _PROTOBUF_MAJOR_VERSION "${Protobuf_LIB_VERSION} / 1000000")
-  math(EXPR _PROTOBUF_MINOR_VERSION "${Protobuf_LIB_VERSION} / 1000 % 1000")
-  math(EXPR _PROTOBUF_SUBMINOR_VERSION "${Protobuf_LIB_VERSION} % 1000")
-  set(Protobuf_VERSION "${_PROTOBUF_MAJOR_VERSION}.${_PROTOBUF_MINOR_VERSION}.${_PROTOBUF_SUBMINOR_VERSION}")
+    math(EXPR _PROTOBUF_MAJOR_VERSION "${Protobuf_LIB_VERSION} / 1000000")
+    math(EXPR _PROTOBUF_MINOR_VERSION "${Protobuf_LIB_VERSION} / 1000 % 1000")
+    math(EXPR _PROTOBUF_SUBMINOR_VERSION "${Protobuf_LIB_VERSION} % 1000")
+    set(Protobuf_VERSION "${_PROTOBUF_MAJOR_VERSION}.${_PROTOBUF_MINOR_VERSION}.${_PROTOBUF_SUBMINOR_VERSION}")
 
-  if(Protobuf_DEBUG)
-    message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-        "${_PROTOBUF_COMMON_HEADER} reveals protobuf ${Protobuf_VERSION}")
-  endif()
+    if(Protobuf_DEBUG)
+        message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                "${_PROTOBUF_COMMON_HEADER} reveals protobuf ${Protobuf_VERSION}")
+    endif()
 
-  # Check Protobuf compiler version to be aligned with libraries version
-  execute_process(COMMAND ${Protobuf_PROTOC_EXECUTABLE} --version
-                  OUTPUT_VARIABLE _PROTOBUF_PROTOC_EXECUTABLE_VERSION)
+    # Check Protobuf compiler version to be aligned with libraries version
+    execute_process(COMMAND ${Protobuf_PROTOC_EXECUTABLE} --version
+                    OUTPUT_VARIABLE _PROTOBUF_PROTOC_EXECUTABLE_VERSION)
 
-  if("${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}" MATCHES "libprotoc ([0-9.]+)")
-    set(_PROTOBUF_PROTOC_EXECUTABLE_VERSION "${CMAKE_MATCH_1}")
-  endif()
+    if("${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}" MATCHES "libprotoc ([0-9.]+)")
+        set(_PROTOBUF_PROTOC_EXECUTABLE_VERSION "${CMAKE_MATCH_1}")
+    endif()
 
-  if(Protobuf_DEBUG)
-    message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-        "${Protobuf_PROTOC_EXECUTABLE} reveals version ${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}")
-  endif()
+    if(Protobuf_DEBUG)
+        message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                "${Protobuf_PROTOC_EXECUTABLE} reveals version ${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}")
+    endif()
 
-  if(NOT "${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}" VERSION_EQUAL "${Protobuf_VERSION}")
-      message(WARNING "Protobuf compiler version ${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}"
-          " doesn't match library version ${Protobuf_VERSION}")
-  endif()
+    if(NOT "${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}" VERSION_EQUAL "${Protobuf_VERSION}")
+        message(WARNING "Protobuf compiler version ${_PROTOBUF_PROTOC_EXECUTABLE_VERSION}"
+                " doesn't match library version ${Protobuf_VERSION}")
+    endif()
 
-  if(Protobuf_LIBRARY)
-      if(NOT TARGET protobuf::libprotobuf)
-          add_library(protobuf::libprotobuf UNKNOWN IMPORTED)
-          set_target_properties(protobuf::libprotobuf PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}")
-          if(EXISTS "${Protobuf_LIBRARY}")
+    if(Protobuf_LIBRARY)
+        if(NOT TARGET protobuf::libprotobuf)
+            add_library(protobuf::libprotobuf UNKNOWN IMPORTED)
             set_target_properties(protobuf::libprotobuf PROPERTIES
-              IMPORTED_LOCATION "${Protobuf_LIBRARY}")
-          endif()
-          if(EXISTS "${Protobuf_LIBRARY_RELEASE}")
-            set_property(TARGET protobuf::libprotobuf APPEND PROPERTY
-              IMPORTED_CONFIGURATIONS RELEASE)
-            set_target_properties(protobuf::libprotobuf PROPERTIES
-              IMPORTED_LOCATION_RELEASE "${Protobuf_LIBRARY_RELEASE}")
-          endif()
-          if(EXISTS "${Protobuf_LIBRARY_DEBUG}")
-            set_property(TARGET protobuf::libprotobuf APPEND PROPERTY
-              IMPORTED_CONFIGURATIONS DEBUG)
-            set_target_properties(protobuf::libprotobuf PROPERTIES
-              IMPORTED_LOCATION_DEBUG "${Protobuf_LIBRARY_DEBUG}")
-          endif()
-      endif()
-  endif()
+                                  INTERFACE_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}")
+            if(EXISTS "${Protobuf_LIBRARY}")
+                set_target_properties(protobuf::libprotobuf PROPERTIES
+                                      IMPORTED_LOCATION "${Protobuf_LIBRARY}")
+            endif()
+            if(EXISTS "${Protobuf_LIBRARY_RELEASE}")
+                set_property(TARGET protobuf::libprotobuf APPEND PROPERTY
+                             IMPORTED_CONFIGURATIONS RELEASE)
+                set_target_properties(protobuf::libprotobuf PROPERTIES
+                                      IMPORTED_LOCATION_RELEASE "${Protobuf_LIBRARY_RELEASE}")
+            endif()
+            if(EXISTS "${Protobuf_LIBRARY_DEBUG}")
+                set_property(TARGET protobuf::libprotobuf APPEND PROPERTY
+                             IMPORTED_CONFIGURATIONS DEBUG)
+                set_target_properties(protobuf::libprotobuf PROPERTIES
+                                      IMPORTED_LOCATION_DEBUG "${Protobuf_LIBRARY_DEBUG}")
+            endif()
+        endif()
+    endif()
 
-  if(Protobuf_LITE_LIBRARY)
-      if(NOT TARGET protobuf::libprotobuf-lite)
-          add_library(protobuf::libprotobuf-lite UNKNOWN IMPORTED)
-          set_target_properties(protobuf::libprotobuf-lite PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}")
-          if(EXISTS "${Protobuf_LITE_LIBRARY}")
+    if(Protobuf_LITE_LIBRARY)
+        if(NOT TARGET protobuf::libprotobuf-lite)
+            add_library(protobuf::libprotobuf-lite UNKNOWN IMPORTED)
             set_target_properties(protobuf::libprotobuf-lite PROPERTIES
-              IMPORTED_LOCATION "${Protobuf_LITE_LIBRARY}")
-          endif()
-          if(EXISTS "${Protobuf_LITE_LIBRARY_RELEASE}")
-            set_property(TARGET protobuf::libprotobuf-lite APPEND PROPERTY
-              IMPORTED_CONFIGURATIONS RELEASE)
-            set_target_properties(protobuf::libprotobuf-lite PROPERTIES
-              IMPORTED_LOCATION_RELEASE "${Protobuf_LITE_LIBRARY_RELEASE}")
-          endif()
-          if(EXISTS "${Protobuf_LITE_LIBRARY_DEBUG}")
-            set_property(TARGET protobuf::libprotobuf-lite APPEND PROPERTY
-              IMPORTED_CONFIGURATIONS DEBUG)
-            set_target_properties(protobuf::libprotobuf-lite PROPERTIES
-              IMPORTED_LOCATION_DEBUG "${Protobuf_LITE_LIBRARY_DEBUG}")
-          endif()
-      endif()
-  endif()
+                                  INTERFACE_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}")
+            if(EXISTS "${Protobuf_LITE_LIBRARY}")
+                set_target_properties(protobuf::libprotobuf-lite PROPERTIES
+                                      IMPORTED_LOCATION "${Protobuf_LITE_LIBRARY}")
+            endif()
+            if(EXISTS "${Protobuf_LITE_LIBRARY_RELEASE}")
+                set_property(TARGET protobuf::libprotobuf-lite APPEND PROPERTY
+                             IMPORTED_CONFIGURATIONS RELEASE)
+                set_target_properties(protobuf::libprotobuf-lite PROPERTIES
+                                      IMPORTED_LOCATION_RELEASE "${Protobuf_LITE_LIBRARY_RELEASE}")
+            endif()
+            if(EXISTS "${Protobuf_LITE_LIBRARY_DEBUG}")
+                set_property(TARGET protobuf::libprotobuf-lite APPEND PROPERTY
+                             IMPORTED_CONFIGURATIONS DEBUG)
+                set_target_properties(protobuf::libprotobuf-lite PROPERTIES
+                                      IMPORTED_LOCATION_DEBUG "${Protobuf_LITE_LIBRARY_DEBUG}")
+            endif()
+        endif()
+    endif()
 
-  if(Protobuf_PROTOC_LIBRARY)
-      if(NOT TARGET protobuf::libprotoc)
-          add_library(protobuf::libprotoc UNKNOWN IMPORTED)
-          set_target_properties(protobuf::libprotoc PROPERTIES
-            INTERFACE_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}")
-          if(EXISTS "${Protobuf_PROTOC_LIBRARY}")
+    if(Protobuf_PROTOC_LIBRARY)
+        if(NOT TARGET protobuf::libprotoc)
+            add_library(protobuf::libprotoc UNKNOWN IMPORTED)
             set_target_properties(protobuf::libprotoc PROPERTIES
-              IMPORTED_LOCATION "${Protobuf_PROTOC_LIBRARY}")
-          endif()
-          if(EXISTS "${Protobuf_PROTOC_LIBRARY_RELEASE}")
-            set_property(TARGET protobuf::libprotoc APPEND PROPERTY
-              IMPORTED_CONFIGURATIONS RELEASE)
-            set_target_properties(protobuf::libprotoc PROPERTIES
-              IMPORTED_LOCATION_RELEASE "${Protobuf_PROTOC_LIBRARY_RELEASE}")
-          endif()
-          if(EXISTS "${Protobuf_PROTOC_LIBRARY_DEBUG}")
-            set_property(TARGET protobuf::libprotoc APPEND PROPERTY
-              IMPORTED_CONFIGURATIONS DEBUG)
-            set_target_properties(protobuf::libprotoc PROPERTIES
-              IMPORTED_LOCATION_DEBUG "${Protobuf_PROTOC_LIBRARY_DEBUG}")
-          endif()
-      endif()
-  endif()
+                                  INTERFACE_INCLUDE_DIRECTORIES "${Protobuf_INCLUDE_DIR}")
+            if(EXISTS "${Protobuf_PROTOC_LIBRARY}")
+                set_target_properties(protobuf::libprotoc PROPERTIES
+                                      IMPORTED_LOCATION "${Protobuf_PROTOC_LIBRARY}")
+            endif()
+            if(EXISTS "${Protobuf_PROTOC_LIBRARY_RELEASE}")
+                set_property(TARGET protobuf::libprotoc APPEND PROPERTY
+                             IMPORTED_CONFIGURATIONS RELEASE)
+                set_target_properties(protobuf::libprotoc PROPERTIES
+                                      IMPORTED_LOCATION_RELEASE "${Protobuf_PROTOC_LIBRARY_RELEASE}")
+            endif()
+            if(EXISTS "${Protobuf_PROTOC_LIBRARY_DEBUG}")
+                set_property(TARGET protobuf::libprotoc APPEND PROPERTY
+                             IMPORTED_CONFIGURATIONS DEBUG)
+                set_target_properties(protobuf::libprotoc PROPERTIES
+                                      IMPORTED_LOCATION_DEBUG "${Protobuf_PROTOC_LIBRARY_DEBUG}")
+            endif()
+        endif()
+    endif()
 
-  if(Protobuf_PROTOC_EXECUTABLE)
-      if(NOT TARGET protobuf::protoc)
-          add_executable(protobuf::protoc IMPORTED)
-          if(EXISTS "${Protobuf_PROTOC_EXECUTABLE}")
-            set_target_properties(protobuf::protoc PROPERTIES
-              IMPORTED_LOCATION "${Protobuf_PROTOC_EXECUTABLE}")
-          endif()
-      endif()
-  endif()
+    if(Protobuf_PROTOC_EXECUTABLE)
+        if(NOT TARGET protobuf::protoc)
+            add_executable(protobuf::protoc IMPORTED)
+            if(EXISTS "${Protobuf_PROTOC_EXECUTABLE}")
+                set_target_properties(protobuf::protoc PROPERTIES
+                                      IMPORTED_LOCATION "${Protobuf_PROTOC_EXECUTABLE}")
+            endif()
+        endif()
+    endif()
 endif()
 
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(Protobuf
-    REQUIRED_VARS Protobuf_LIBRARIES Protobuf_INCLUDE_DIR
-    VERSION_VAR Protobuf_VERSION
-)
+find_package_handle_standard_args(Protobuf
+                                  REQUIRED_VARS Protobuf_LIBRARIES Protobuf_INCLUDE_DIR
+                                  VERSION_VAR Protobuf_VERSION
+                                  )
 
 if(Protobuf_FOUND)
     set(Protobuf_INCLUDE_DIRS ${Protobuf_INCLUDE_DIR})
 endif()
 
 # Restore the original find library ordering
-if( Protobuf_USE_STATIC_LIBS )
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ${_protobuf_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+if(Protobuf_USE_STATIC_LIBS)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${_protobuf_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
 endif()
 
 # Backwards compatibility
 # Define upper case versions of output variables
 foreach(Camel
-    Protobuf_SRC_ROOT_FOLDER
-    Protobuf_IMPORT_DIRS
-    Protobuf_DEBUG
-    Protobuf_INCLUDE_DIRS
-    Protobuf_LIBRARIES
-    Protobuf_PROTOC_LIBRARIES
-    Protobuf_LITE_LIBRARIES
-    Protobuf_LIBRARY
-    Protobuf_PROTOC_LIBRARY
-    Protobuf_INCLUDE_DIR
-    Protobuf_PROTOC_EXECUTABLE
-    Protobuf_LIBRARY_DEBUG
-    Protobuf_PROTOC_LIBRARY_DEBUG
-    Protobuf_LITE_LIBRARY
-    Protobuf_LITE_LIBRARY_DEBUG
-    )
+        Protobuf_SRC_ROOT_FOLDER
+        Protobuf_IMPORT_DIRS
+        Protobuf_DEBUG
+        Protobuf_INCLUDE_DIRS
+        Protobuf_LIBRARIES
+        Protobuf_PROTOC_LIBRARIES
+        Protobuf_LITE_LIBRARIES
+        Protobuf_LIBRARY
+        Protobuf_PROTOC_LIBRARY
+        Protobuf_INCLUDE_DIR
+        Protobuf_PROTOC_EXECUTABLE
+        Protobuf_LIBRARY_DEBUG
+        Protobuf_PROTOC_LIBRARY_DEBUG
+        Protobuf_LITE_LIBRARY
+        Protobuf_LITE_LIBRARY_DEBUG
+        )
     string(TOUPPER ${Camel} UPPER)
     set(${UPPER} ${${Camel}})
 endforeach()

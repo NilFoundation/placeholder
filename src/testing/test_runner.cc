@@ -62,11 +62,11 @@ namespace nil {
 
                 auto init_outcome = std::make_shared<exchanger<bool>>();
 
-                namespace bpo = boost::program_options;
                 _thread = std::make_unique<posix_thread>([this, ac, av, init_outcome]() mutable {
                     app_template app;
-                    app.add_options()("random-seed", bpo::value<unsigned>(), "Random number generator seed")(
-                        "fail-on-abandoned-failed-futures", bpo::value<bool>()->default_value(true),
+                    app.add_options()("random-seed", boost::program_options::value<unsigned>(),
+                                      "Random number generator seed")(
+                        "fail-on-abandoned-failed-futures", boost::program_options::value<bool>()->default_value(true),
                         "Fail the test if there are any abandoned failed futures");
                     // We guarantee that only one thread is running.
                     // We only read this after that one thread is joined, so this is safe.

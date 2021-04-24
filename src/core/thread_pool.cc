@@ -23,10 +23,11 @@ namespace nil {
 
 /* not yet implemented for OSv. TODO: do the notification like we do class smp. */
 #ifndef HAVE_OSV
-        thread_pool::thread_pool(reactor *r, sstring name) : _reactor(r), _worker_thread([this, name] { work(name); }) {
+        thread_pool::thread_pool(reactor *r, const sstring &name) :
+            _reactor(r), _worker_thread([this, name] { work(name); }) {
         }
 
-        void thread_pool::work(sstring name) {
+        void thread_pool::work(const sstring &name) {
             detail::set_thread_name(pthread_setname_np, name.c_str());
             sigset_t mask;
             sigfillset(&mask);
@@ -35,7 +36,11 @@ namespace nil {
             std::array<syscall_work_queue::work_item *, syscall_work_queue::queue_length> tmp_buf;
             while (true) {
                 uint64_t count;
-                auto r = ::read(inter_thread_wq._start_eventfd.get_read_fd(), &count, sizeof(count));
+#if BOOST_OS_LINUX
+                r = ::read(inter_thread_wq._start_eventfd.get_read_fd(), &count, sizeof(count));
+#else
+                r = epoll_shim_read(inter_thread_wq._start_eventfd.get_read_fd(), &count, sizeof(count));
+#endif
                 assert(r == sizeof(count));
                 if (_stopped.load(std::memory_order_relaxed)) {
                     break;
@@ -49,7 +54,11 @@ namespace nil {
                 }
                 if (_main_thread_idle.load(std::memory_order_seq_cst)) {
                     uint64_t one = 1;
+#if BOOST_OS_LINUX
                     ::write(_reactor->_notify_eventfd.get(), &one, 8);
+#else
+                    epoll_shim_write(_reactor->_notify_eventfd.get(), &one, 8);
+#endif
                 }
             }
         }

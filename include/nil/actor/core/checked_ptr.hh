@@ -110,7 +110,7 @@ namespace nil {
         template<typename Ptr, typename NullDerefAction = default_null_deref_action>
 #ifdef BOOST_HAS_CONCEPTS
         /// \cond ACTOR_CONCEPT_DOC
-        requires std::is_default_constructible<NullDerefAction>::value &&requires(NullDerefAction action) {
+        requires std::is_default_constructible<NullDerefAction>::value && requires(NullDerefAction action) {
             NullDerefAction();
         }
         /// \endcond

@@ -43,9 +43,9 @@
 /// rather then establishing a callback to be called with \ref future<>::then().
 ///
 /// =nil; Actor threads are not the same as operating system threads:
-///   - seastar threads are cooperative; they are never preempted except
+///   - =nil; Actor threads are cooperative; they are never preempted except
 ///     at blocking points (see below)
-///   - seastar threads always run on the same core they were launched on
+///   - =nil; Actor threads always run on the same core they were launched on
 ///
 /// Like other seastar code, seastar threads may not issue blocking system calls.
 ///

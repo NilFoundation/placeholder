@@ -160,10 +160,14 @@ void test_cpp17_aligned_allocator() {
 int main(int ac, char **av) {
     namespace bpo = boost::program_options;
     bpo::options_description opts("Allowed options");
-    opts.add_options()("help", "produce this help message")("iterations", bpo::value<unsigned>(),
-                                                            "run s specified number of iterations")(
-        "time", bpo::value<float>()->default_value(5.0), "run for a specified amount of time, in seconds")(
-        "random-seed", boost::program_options::value<unsigned>(), "Random number generator seed");
+    opts.add_options()("help", "produce this help message")(
+        "iterations",
+        bpo::value<unsigned>(), "run s specified number of iterations")("time", bpo::value<float>()->default_value(5.0),
+                                                                        "run for a specified amount of time, in "
+                                                                        "seconds")("random-seed",
+                                                                                   boost::program_options::value<
+                                                                                       unsigned>(),
+                                                                                   "Random number generator seed");
     ;
     bpo::variables_map vm;
     bpo::store(bpo::parse_command_line(ac, av, opts), vm);

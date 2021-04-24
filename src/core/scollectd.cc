@@ -540,13 +540,15 @@ namespace nil {
                 opts.add_options()("collectd", bpo::value<bool>()->default_value(false), "enable collectd daemon")(
                     "collectd-address",
                     bpo::value<std::string>()->default_value("239.192.74.66:25826"),
-                    "address to send/broadcast metrics to")(
-                    "collectd-poll-period",
-                    bpo::value<unsigned>()->default_value(1000),
-                    "poll period - frequency of sending counter metrics (default: 1000ms, 0 disables)")(
-                    "collectd-hostname",
-                    bpo::value<std::string>()->default_value(""),
-                    "Deprecated option, use metrics-hostname instead");
+                    "address to send/broadcast metrics to")("collectd-poll-period",
+                                                            bpo::value<unsigned>()->default_value(1000),
+                                                            "poll period - frequency of sending counter metrics "
+                                                            "(default: 1000ms, 0 disables)")("collectd-hostname",
+                                                                                             bpo::value<std::string>()
+                                                                                                 ->default_value(""),
+                                                                                             "Deprecated option, use "
+                                                                                             "metrics-hostname "
+                                                                                             "instead");
                 return opts;
             }
 

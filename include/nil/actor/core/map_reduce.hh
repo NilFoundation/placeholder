@@ -91,8 +91,7 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(Iterator i, Mapper mapper, Reducer reduce) {
             *i++;
-            { i != i }
-            ->std::convertible_to<bool>;
+            { i != i } -> std::convertible_to<bool>;
             mapper(*i);
             reduce(futurize_invoke(mapper, *i).get0());
         }
@@ -155,12 +154,10 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(Iterator i, Mapper mapper, Initial initial, Reduce reduce) {
             *i++;
-            { i != i }
-            ->std::convertible_to<bool>;
+            { i != i } -> std::convertible_to<bool>;
             mapper(*i);
             requires is_future<decltype(mapper(*i))>::value;
-            { reduce(std::move(initial), mapper(*i).get0()) }
-            ->std::convertible_to<Initial>;
+            { reduce(std::move(initial), mapper(*i).get0()) } -> std::convertible_to<Initial>;
         }
 #endif
         inline future<Initial> map_reduce(Iterator begin, Iterator end, Mapper &&mapper, Initial initial,
@@ -230,8 +227,7 @@ namespace nil {
             std::end(range);
             mapper(*std::begin(range));
             requires is_future<std::remove_reference_t<decltype(mapper(*std::begin(range)))>>::value;
-            { reduce(std::move(initial), mapper(*std::begin(range)).get0()) }
-            ->std::convertible_to<Initial>;
+            { reduce(std::move(initial), mapper(*std::begin(range)).get0()) } -> std::convertible_to<Initial>;
         }
 #endif
         inline future<Initial> map_reduce(Range &&range, Mapper &&mapper, Initial initial, Reduce reduce) {

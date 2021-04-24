@@ -236,7 +236,7 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
             requires nil::actor::AllAreFutures<Futs...>
 #endif
-                inline future<std::tuple<Futs...>> when_all_impl(Futs &&...futs) noexcept {
+            inline future<std::tuple<Futs...>> when_all_impl(Futs &&...futs) noexcept {
                 using state = when_all_state<identity_futures_tuple<Futs...>, Futs...>;
                 return state::wait_all(std::forward<Futs>(futs)...);
             }
@@ -520,7 +520,7 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
             requires nil::actor::AllAreFutures<Futures...>
 #endif
-                inline auto when_all_succeed_impl(Futures &&...futures) noexcept {
+            inline auto when_all_succeed_impl(Futures &&...futures) noexcept {
                 using state = when_all_state<extract_values_from_futures_tuple<Futures...>, Futures...>;
                 return state::wait_all(std::forward<Futures>(futures)...);
             }
@@ -556,8 +556,7 @@ namespace nil {
 #ifdef BOOST_HAS_CONCEPTS
         requires requires(FutureIterator i) {
             *i++;
-            { i != i }
-            ->std::convertible_to<bool>;
+            { i != i } -> std::convertible_to<bool>;
             requires is_future<std::remove_reference_t<decltype(*i)>>::value;
         }
 #endif
