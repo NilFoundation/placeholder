@@ -65,7 +65,7 @@ As it is in case of unit tests, performance tests may benefit from using a fixtu
 environment. Such tests should use macro `PERF_TEST_F(test_group, test_case)`. The test itself will be a member function
 of a class derivative of `test_group`.
 
-The constructor and destructor of a fixture are executed in a context of Seastar thread, but the actual test logic is
+The constructor and destructor of a fixture are executed in a context of Actor thread, but the actual test logic is
 not. The same instance of a fixture will be used for multiple iterations of the test.
 
 ```c++

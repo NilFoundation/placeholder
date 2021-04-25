@@ -139,14 +139,14 @@ function(actor_add_test name)
 endfunction()
 
 #
-# Define a new custom unit test whose entry point is a Seastar application.
+# Define a new custom unit test whose entry point is a Actor application.
 #
 # actor_add_app_test(name
 #   [SOURCES source1 source2 ... sourcen]
 #   [LIBRARIES library1 library2 ... libraryn]
 #   [RUN_ARGS arg1 arg2 ... argn])
 #
-# These kinds of tests are structured like Seastar applications.
+# These kinds of tests are structured like Actor applications.
 #
 # These tests always link against `seastar_private` and are always invoked with
 # `-c ${BUILD_WITH_UNIT_TEST_SMP}`.

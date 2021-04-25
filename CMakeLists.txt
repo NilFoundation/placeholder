@@ -14,6 +14,7 @@ cm_find_package(CM)
 include(CMConfig)
 include(CMDeploy)
 include(CMSetupVersion)
+include(ExternalProject)
 
 if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
     cm_workspace(actor)
@@ -30,8 +31,6 @@ endmacro()
 cm_project(core WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES CXX)
 
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME})
-
-include(Cooking OPTIONAL)
 
 # This variable impacts the way DPDK is configured by cmake-cooking (if DPDK is enabled), so its definition needs to
 # come before PROJECT.
@@ -59,7 +58,7 @@ set(BUILD_WITH_API_LEVEL
     "6"
     CACHE
     STRING
-    "Seastar compatibility API level (2=server_socket::accept() returns accept_result, 3=make_file_output_stream(), make_file_data_sink() returns future<...>, 4=when_all_succeed returns future<std::tuple<>>, 5=future<T>::get() returns T&&), 6=future is not variadic")
+    "Actor compatibility API level (2=server_socket::accept() returns accept_result, 3=make_file_output_stream(), make_file_data_sink() returns future<...>, 4=when_all_succeed returns future<std::tuple<>>, 5=future<T>::get() returns T&&), 6=future is not variadic")
 
 set_property(CACHE BUILD_WITH_API_LEVEL
              PROPERTY
@@ -155,25 +154,25 @@ set(BUILD_WITH_ALLOC_PAGE_SIZE
     ""
     CACHE
     STRING
-    "Override the Seastar allocator page size, in bytes.")
+    "Override the Actor allocator page size, in bytes.")
 
 set(BUILD_WITH_CXX_DIALECT
     "c++20"
     CACHE
     STRING
-    "Compile Seastar according to the named C++ standard.")
+    "Compile Actor according to the named C++ standard.")
 if(BUILD_WITH_CXX_DIALECT)
     # extract CXX standard (14/17/...) from BUILD_WITH_CXX_DIALECT
-    string(SUBSTRING ${BUILD_WITH_CXX_DIALECT} 5 2 STANDARD)
+    string(REGEX MATCH "[0-9]+" STANDARD ${BUILD_WITH_CXX_DIALECT})
     set(CMAKE_CXX_STANDARD ${STANDARD})
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 endif()
 
 set(BUILD_WITH_CXX_FLAGS
     ""
     CACHE
     STRING
-    "Semicolon-separated list of extra compilation flags for Seastar itself.")
+    "Semicolon-separated list of extra compilation flags for Actor itself.")
 
 option(BUILD_WITH_DPDK
        "Enable DPDK support."
@@ -203,7 +202,7 @@ set(BUILD_WITH_LD_FLAGS
     ""
     CACHE
     STRING
-    "Semicolon-separated list of extra linking flags for Seastar itself.")
+    "Semicolon-separated list of extra linking flags for Actor itself.")
 
 option(BUILD_WITH_NUMA "Enable NUMA support." TRUE)
 
@@ -212,7 +211,7 @@ option(BUILD_WITH_COMPRESS_DEBUG "Compress debug info." TRUE)
 option(BUILD_WITH_SPLIT_DWARF "Use split dwarf." FALSE)
 
 option(BUILD_WITH_HEAP_PROFILING
-       "Enable heap profiling. No effect when Seastar is compiled with the default allocator."
+       "Enable heap profiling. No effect when Actor is compiled with the default allocator."
        OFF)
 
 set(BUILD_WITH_TEST_TIMEOUT
@@ -500,6 +499,7 @@ list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES
      ${Boost_LIBRARIES}
      ${c-ares_LIBRARIES}
      ${lz4_LIBRARIES}
+     ${StdAtomic_LIBRARIES}
      fmt::fmt
      libfswatch)
 
@@ -510,7 +510,6 @@ endif()
 list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES
      ${CMAKE_DL_LIBS}
      ${GnuTLS_LIBRARIES}
-     ${StdAtomic_LIBRARIES}
      ${Protobuf_LIBRARIES}
      ${yaml-cpp_LIBRARIES})
 
@@ -565,13 +564,13 @@ if(BUILD_WITH_COMPRESS_DEBUG)
     list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS -gz)
 endif()
 
-function(seastar_supports_flag flag var)
+function(actor_supports_flag flag var)
     set(CMAKE_REQUIRED_FLAGS ${flag})
     check_cxx_source_compiles("int main() { return 0; }" result)
     set(${var} ${result} PARENT_SCOPE)
 endfunction()
 
-seastar_supports_flag("-Wno-maybe-uninitialized -Werror" MaybeUninitialized_FOUND)
+actor_supports_flag("-Wno-maybe-uninitialized -Werror" MaybeUninitialized_FOUND)
 if(MaybeUninitialized_FOUND)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS
          # With std::experimental::optional it is easy to hit
@@ -647,12 +646,44 @@ if(BUILD_WITH_HEAP_PROFILING)
 endif()
 
 if(BUILD_WITH_DPDK)
-    if(NOT dpdk_FOUND)
-        message(FATAL_ERROR "dpdk support is enabled but it is not available!")
+    if(NOT dpdk_FOUND AND NOT TARGET dpdk)
+        # Use the "native" profile that DPDK defines in `dpdk/config`, but in `dpdk_configure.cmake` we override
+        # CONFIG_RTE_MACHINE with `ACTOR_DPDK_MACHINE`.
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+            set(dpdk_quadruple arm64-armv8a-linuxapp-gcc)
+        else()
+            set(dpdk_quadruple ${CMAKE_SYSTEM_PROCESSOR}-native-linuxapp-gcc)
+        endif()
+
+        set(dpdk_args
+            # gcc 10 defaults to -fno-common, which dpdk is not prepared for
+            "EXTRA_CFLAGS=-Wno-error -fcommon"
+            O=<BINARY_DIR>
+            DESTDIR=<INSTALL_DIR>
+            T=${dpdk_quadruple})
+
+        externalproject_add(dpdk
+                            GIT_REPOSITORY https://github.com/DPDK/dpdk.git
+                            DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
+                            SOURCE_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
+                            CONFIGURE_COMMAND
+                            COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
+                            make ${dpdk_args} config
+                            COMMAND
+                            ${CMAKE_COMMAND}
+                            -DACTOR_DPDK_MACHINE=${ACTOR_DPDK_MACHINE}
+                            -DACTOR_DPDK_CONFIG_FILE_IN=<BINARY_DIR>/.config
+                            -DACTOR_DPDK_CONFIG_FILE_CHANGES=${CMAKE_CURRENT_SOURCE_DIR}/dpdk_config
+                            -DACTOR_DPDK_CONFIG_FILE_OUT=<BINARY_DIR>/${dpdk_quadruple}/.config
+                            -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dpdk_configure.cmake
+                            BUILD_COMMAND <DISABLE>
+                            INSTALL_COMMAND
+                            ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
+                            ${make_command} ${dpdk_args} install)
     endif()
 
     #
-    # The DPDK architecture needs to be transitively applied to consumers of Seastar as well.
+    # The DPDK architecture needs to be transitively applied to consumers of Actor as well.
     #
 
     set(${CURRENT_PROJECT_NAME}_ARCH_FOR_native "native")
@@ -678,7 +709,7 @@ if(BUILD_WITH_DPDK)
                        --no-whole-archive)
 
     # This just provides the include path to cmake
-    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES dpdk::dpdk)
+    list(APPEND ${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES dpdk)
 endif()
 
 if(BUILD_WITH_HWLOC)
@@ -712,7 +743,7 @@ if(lz4_HAVE_COMPRESS_DEFAULT)
     list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS ACTOR_HAVE_LZ4_COMPRESS_DEFAULT)
 endif()
 
-seastar_supports_flag("-Werror=unused-result" ErrorUnused_FOUND)
+actor_supports_flag("-Werror=unused-result" ErrorUnused_FOUND)
 if(ErrorUnused_FOUND)
     if(BUILD_WITH_UNUSED_RESULT_ERROR)
         list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_OPTIONS -Werror=unused-result)
@@ -735,7 +766,7 @@ endif()
 
 set(ACTOR_STACK_GUARD_MODES "Debug" "Sanitize" "Dev")
 if(BUILD_WITH_STACK_GUARDS OR (CMAKE_BUILD_TYPE IN_LIST ACTOR_STACK_GUARD_MODES))
-    seastar_supports_flag("-fstack-clash-protection" StackClashProtection_FOUND)
+    actor_supports_flag("-fstack-clash-protection" StackClashProtection_FOUND)
     if(StackClashProtection_FOUND)
         list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS -fstack-clash-protection)
     endif()
@@ -839,7 +870,7 @@ if(BUILD_TESTS)
 
     target_link_libraries(${CMAKE_WORKSPACE_NAME}_testing PUBLIC
                           ${CMAKE_WORKSPACE_NAME}::core
-                          Boost::unit_test_framework
+
                           ${Boost_LIBRARIES})
 
     target_compile_definitions(${CMAKE_WORKSPACE_NAME}_testing PRIVATE BOOST_TEST_DYN_LINK BOOST_TEST_NO_MAIN)
@@ -875,7 +906,9 @@ if(BUILD_TESTS)
 
     target_link_libraries(${CMAKE_WORKSPACE_NAME}_perf_testing PUBLIC
                           ${CMAKE_WORKSPACE_NAME}::core
+
                           Boost::unit_test_framework
+
                           ${Boost_LIBRARIES})
 
     cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
