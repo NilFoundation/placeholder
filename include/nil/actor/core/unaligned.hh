@@ -58,7 +58,7 @@ namespace nil {
         struct unaligned {
             // This is made to support only simple types, so it is fine to
             // require them to be trivially copy constructible.
-            static_assert(std::is_trivially_copy_constructible_v<T>);
+            static_assert(std::is_trivially_copy_constructible<T>::value);
             T raw;
             unaligned() noexcept = default;
             unaligned(T x) noexcept : raw(x) {

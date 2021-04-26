@@ -74,7 +74,7 @@ namespace nil {
             return true;
         }
 
-        std::unique_ptr<reactor_backend> reactor_backend_selector::create(reactor *r) {
+        std::unique_ptr<reactor_backend> reactor_backend_selector::create(reactor &r) {
 #if BOOST_OS_LINUX
             if (_name == "linux-aio") {
                 return std::make_unique<reactor_backend_aio>(r);

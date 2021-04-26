@@ -26,12 +26,6 @@
 
 #include <nil/actor/core/detail/reactor_backend.hh>
 
-#if BOOST_OS_MACOS || BOOST_OS_IOS
-
-#include <dispatch/dispatch.h>
-
-#endif
-
 #include <sys/epoll.h>
 #include <sys/syscall.h>
 
@@ -68,26 +62,35 @@ namespace nil {
         // (such as timers, signals, inter-thread notifications) into file descriptors
         // using mechanisms like timerfd, signalfd and eventfd respectively.
         class reactor_backend_epoll : public reactor_backend {
-            reactor *_r;
+            reactor &_r;
+            std::atomic<bool> _highres_timer_pending;
             std::thread _task_quota_timer_thread;
-#if BOOST_OS_MACOS || BOOST_OS_IOS
-            dispatch_source_t _steady_clock_timer = {};
-#else
-            timer_t _steady_clock_timer = {};
-#endif
+            ::itimerspec _steady_clock_timer_deadline = {};
+            // These two timers are used for high resolution timer<>s, one for
+            // the reactor thread (when sleeping) and one for the timer thread
+            // (when awake). We can't use one timer because of races between the
+            // timer thread and reactor thread.
+            //
+            // Only one of the two is active at any time.
+            file_desc _steady_clock_timer_reactor_thread;
+            file_desc _steady_clock_timer_timer_thread;
 
         private:
             file_desc _epollfd;
+            void task_quota_timer_thread_fn();
             future<> get_epoll_future(pollable_fd_state &fd, int event);
             void complete_epoll_event(pollable_fd_state &fd, int events, int event);
 #if BOOST_OS_LINUX
             aio_storage_context _storage_context;
 #endif
+            void switch_steady_clock_timers(file_desc &from, file_desc &to);
+            void maybe_switch_steady_clock_timers(int timeout, file_desc &from, file_desc &to);
             bool wait_and_process(int timeout, const sigset_t *active_sigmask);
+            bool complete_hrtimer();
             bool _need_epoll_events = false;
 
         public:
-            explicit reactor_backend_epoll(reactor *r);
+            explicit reactor_backend_epoll(reactor &r);
             virtual ~reactor_backend_epoll() override;
 
             virtual bool reap_kernel_completions() override;

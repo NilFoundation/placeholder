@@ -552,16 +552,21 @@ include(CTest)
 #
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS
-     -std=${BUILD_WITH_CXX_DIALECT}
      -U_FORTIFY_SOURCE)
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS
      ACTOR_API_LEVEL=${BUILD_WITH_API_LEVEL})
 
 if(BUILD_WITH_COMPRESS_DEBUG)
-    # -gz doesn't imply -g, so it is safe to add it regardless of debug
-    # info being enabled.
-    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS -gz)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
+        # -gz doesn't imply -g, so it is safe to add it regardless of debug
+        # info being enabled.
+        list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS -gz)
+    endif()
+endif()
+
+if(NOT ${BUILD_WITH_EXCEPTION_SCALABILITY_WORKAROUND})
+    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_NO_EXCEPTION_HACK)
 endif()
 
 function(actor_supports_flag flag var)
@@ -581,14 +586,13 @@ if(MaybeUninitialized_FOUND)
 endif()
 
 if(BUILD_WITH_SSTRING)
-    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS
-         -DACTOR_SSTRING)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS -DACTOR_SSTRING)
 endif()
 
 include(CheckFunctionExists)
 check_function_exists(posix_fallocate ACTOR_HAS_POSIX_FALLOCATE)
 if(ACTOR_HAS_POSIX_FALLOCATE)
-    add_definitions(-DACTOR_HAS_POSIX_FALLOCATE)
+    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS ACTOR_HAS_POSIX_FALLOCATE)
 endif()
 
 if(LinuxMembarrier_FOUND)
@@ -766,7 +770,9 @@ endif()
 
 set(ACTOR_STACK_GUARD_MODES "Debug" "Sanitize" "Dev")
 if(BUILD_WITH_STACK_GUARDS OR (CMAKE_BUILD_TYPE IN_LIST ACTOR_STACK_GUARD_MODES))
-    actor_supports_flag("-fstack-clash-protection" StackClashProtection_FOUND)
+    # check for -fstack-clash-protection together with -Werror, because
+    # otherwise clang can soft-fail (return 0 but emit a warning) instead.
+    actor_supports_flag("-fstack-clash-protection -Werror" StackClashProtection_FOUND)
     if(StackClashProtection_FOUND)
         list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_OPTIONS -fstack-clash-protection)
     endif()

@@ -452,7 +452,6 @@ namespace nil {
             void run_tasks(task_queue &tq);
             bool have_more_tasks() const;
             bool posix_reuseport_detect();
-            void task_quota_timer_thread_fn();
             void run_some_tasks();
             void activate(task_queue &tq);
             void insert_active_task_queue(task_queue *tq);

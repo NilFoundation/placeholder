@@ -34,8 +34,11 @@ namespace nil {
         using namespace detail;
         using namespace detail::linux_abi;
 
-        reactor_backend_epoll::reactor_backend_epoll(reactor *r) :
-            _r(r), _epollfd(file_desc::epoll_create(EPOLL_CLOEXEC))
+        reactor_backend_epoll::reactor_backend_epoll(reactor &r) :
+            _r(r),
+            _steady_clock_timer_reactor_thread(file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC)),
+            _steady_clock_timer_timer_thread(file_desc::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC)),
+            _epollfd(file_desc::epoll_create(EPOLL_CLOEXEC))
 #if BOOST_OS_LINUX
             ,
             _storage_context(_r)
@@ -45,45 +48,24 @@ namespace nil {
             ::epoll_event event;
             event.events = EPOLLIN;
             event.data.ptr = nullptr;
-            auto ret = ::epoll_ctl(_epollfd.get(), EPOLL_CTL_ADD, _r->_notify_eventfd.get(), &event);
+            auto ret = ::epoll_ctl(_epollfd.get(), EPOLL_CTL_ADD, _r._notify_eventfd.get(), &event);
             throw_system_error_on(ret == -1);
 
-#if BOOST_OS_LINUX
-            struct sigevent sev { };
-            sev.sigev_notify = SIGEV_THREAD_ID;
-            sev._sigev_un._tid = syscall(SYS_gettid);
-            sev.sigev_signo = hrtimer_signal();
-            ret = timer_create(CLOCK_MONOTONIC, &sev, &_steady_clock_timer);
-            assert(ret >= 0);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            _steady_clock_timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-            if (_steady_clock_timer) {
-                dispatch_source_set_timer(_steady_clock_timer, dispatch_walltime(NULL, 0), 1ull * NSEC_PER_SEC, 0);
-                dispatch_source_set_event_handler(_steady_clock_timer, ^{
-                    raise(hrtimer_signal());
-                });
-            }
-
-#endif
-
-            _r->_signals.handle_signal(hrtimer_signal(), [r = _r] { r->service_highres_timer(); });
+            event.events = EPOLLIN;
+            event.data.ptr = &_steady_clock_timer_reactor_thread;
+            ret = ::epoll_ctl(_epollfd.get(), EPOLL_CTL_ADD, _steady_clock_timer_reactor_thread.get(), &event);
+            throw_system_error_on(ret == -1);
         }
 
-        reactor_backend_epoll::~reactor_backend_epoll() {
-#if BOOST_OS_LINUX
-            timer_delete(_steady_clock_timer);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-            dispatch_source_cancel(_steady_clock_timer);
-#endif
-        }
+        reactor_backend_epoll::~reactor_backend_epoll() = default;
 
         void reactor_backend_epoll::start_tick() {
-            _task_quota_timer_thread = std::thread(&reactor::task_quota_timer_thread_fn, _r);
+            _task_quota_timer_thread = std::thread(&reactor_backend_epoll::task_quota_timer_thread_fn, this);
 
             ::sched_param sp;
             sp.sched_priority = 1;
             auto sched_ok = pthread_setschedparam(_task_quota_timer_thread.native_handle(), SCHED_FIFO, &sp);
-            if (sched_ok != 0 && _r->_id == 0) {
+            if (sched_ok != 0 && _r._id == 0) {
                 seastar_logger.warn(
                     "Unable to set SCHED_FIFO scheduling policy for timer thread; latency impact possible. Try adding "
                     "CAP_SYS_NICE");
@@ -91,24 +73,100 @@ namespace nil {
         }
 
         void reactor_backend_epoll::stop_tick() {
-            _r->_dying.store(true, std::memory_order_relaxed);
-            _r->_task_quota_timer.timerfd_settime(
+            _r._dying.store(true, std::memory_order_relaxed);
+            _r._task_quota_timer.timerfd_settime(
                 0, nil::actor::posix::to_relative_itimerspec(1ns, 1ms));    // Make the timer fire soon
             _task_quota_timer_thread.join();
         }
 
         void reactor_backend_epoll::arm_highres_timer(const ::itimerspec &its) {
+            _steady_clock_timer_deadline = its;
+            _steady_clock_timer_timer_thread.timerfd_settime(TFD_TIMER_ABSTIME, its);
+        }
+
+        void reactor_backend_epoll::switch_steady_clock_timers(file_desc &from, file_desc &to) {
+            auto &deadline = _steady_clock_timer_deadline;
+            if (deadline.it_value.tv_sec == 0 && deadline.it_value.tv_nsec == 0) {
+                return;
+            }
+            // Enable-then-disable, so the hardware timer doesn't have to be reprogrammed. Probably pointless.
+            to.timerfd_settime(TFD_TIMER_ABSTIME, _steady_clock_timer_deadline);
+            from.timerfd_settime(TFD_TIMER_ABSTIME, {});
+        }
+
+        void reactor_backend_epoll::maybe_switch_steady_clock_timers(int timeout, file_desc &from, file_desc &to) {
+            if (timeout != 0) {
+                switch_steady_clock_timers(from, to);
+            }
+        }
+
+        void reactor_backend_epoll::task_quota_timer_thread_fn() {
+            auto thread_name = nil::actor::format("timer-{}", _r._id);
+            detail::set_thread_name(pthread_setname_np, thread_name.c_str());
+
+            sigset_t mask;
+            sigfillset(&mask);
+            for (auto sig : {SIGSEGV}) {
+                sigdelset(&mask, sig);
+            }
+            auto r = ::pthread_sigmask(SIG_BLOCK, &mask, NULL);
+            if (r) {
+                seastar_logger.error("Thread {}: failed to block signals. Aborting.", thread_name.c_str());
+                abort();
+            }
+
+            // We need to wait until task quota is set before we can calculate how many ticks are to
+            // a minute. Technically task_quota is used from many threads, but since it is read-only here
+            // and only used during initialization we will avoid complicating the code.
+            {
+                uint64_t events;
 #if BOOST_OS_LINUX
-            auto ret = timer_settime(_steady_clock_timer, TIMER_ABSTIME, &its, NULL);
-            throw_system_error_on(ret == -1);
+                _task_quota_timer.read(&events, sizeof(uint64_t));
 #elif BOOST_OS_MACOS || BOOST_OS_IOS
-            dispatch_source_set_timer(_steady_clock_timer, dispatch_walltime(&its.it_value, its.it_interval.tv_nsec),
-                                      1ull * NSEC_PER_SEC, 0);
-            dispatch_resume(_steady_clock_timer);
+                r = ::timerfd_read(_r._task_quota_timer.get(), &events, sizeof(uint64_t));
+                throw_system_error_on(r == -1);
 #endif
+                request_preemption();
+            }
+
+            while (!_r._dying.load(std::memory_order_relaxed)) {
+                // Wait for either the task quota timer, or the high resolution timer, or both,
+                // to expire.
+                struct pollfd pfds[2] = {};
+                pfds[0].fd = _r._task_quota_timer.get();
+                pfds[0].events = POLL_IN;
+                pfds[1].fd = _steady_clock_timer_timer_thread.get();
+                pfds[1].events = POLL_IN;
+                int r = poll(pfds, 2, -1);
+                assert(r != -1);
+
+                uint64_t events;
+                if (pfds[0].revents & POLL_IN) {
+                    _r._task_quota_timer.read(&events, 8);
+                }
+                if (pfds[1].revents & POLL_IN) {
+                    _steady_clock_timer_timer_thread.read(&events, 8);
+                    _highres_timer_pending.store(true, std::memory_order_relaxed);
+                }
+                request_preemption();
+
+                // We're in a different thread, but guaranteed to be on the same core, so even
+                // a signal fence is overdoing it
+                std::atomic_signal_fence(std::memory_order_seq_cst);
+            }
         }
 
         bool reactor_backend_epoll::wait_and_process(int timeout, const sigset_t *active_sigmask) {
+            // If we plan to sleep, disable the timer thread steady clock timer (since it won't
+            // wake us up from sleep, and timer thread wakeup will just waste CPU time) and enable
+            // reactor thread steady clock timer.
+            maybe_switch_steady_clock_timers(
+                timeout, _steady_clock_timer_timer_thread, _steady_clock_timer_reactor_thread);
+            auto undo_timer_switch = defer([&] {
+                maybe_switch_steady_clock_timers(
+                    timeout, _steady_clock_timer_reactor_thread, _steady_clock_timer_timer_thread);
+            });
+
             std::array<epoll_event, 128> eevt {};
             int nr = ::epoll_pwait(_epollfd.get(), eevt.data(), eevt.size(), timeout, active_sigmask);
             if (nr == -1 && errno == EINTR) {
@@ -120,7 +178,14 @@ namespace nil {
                 auto pfd = reinterpret_cast<pollable_fd_state *>(evt.data.ptr);
                 if (!pfd) {
                     char dummy[8];
-                    _r->_notify_eventfd.read(dummy, 8);
+                    _r._notify_eventfd.read(dummy, 8);
+                    continue;
+                }
+                if (evt.data.ptr == &_steady_clock_timer_reactor_thread) {
+                    char dummy[8];
+                    _steady_clock_timer_reactor_thread.read(dummy, 8);
+                    _highres_timer_pending.store(true, std::memory_order_relaxed);
+                    _steady_clock_timer_deadline = {};
                     continue;
                 }
                 if (evt.events & (EPOLLHUP | EPOLLERR)) {
@@ -169,11 +234,26 @@ namespace nil {
         }
 
         bool reactor_backend_epoll::kernel_submit_work() {
+            bool result = false;
 #if BOOST_OS_LINUX
             _storage_context.submit_work();
 #endif
             if (_need_epoll_events) {
-                return wait_and_process(0, nullptr);
+                result |= wait_and_process(0, nullptr);
+            }
+
+            result |= complete_hrtimer();
+
+            return result;
+        }
+
+        bool reactor_backend_epoll::complete_hrtimer() {
+            // This can be set from either the task quota timer thread, or
+            // wait_and_process(), above.
+            if (_highres_timer_pending.load(std::memory_order_relaxed)) {
+                _highres_timer_pending.store(false, std::memory_order_relaxed);
+                _r.service_highres_timer();
+                return true;
             }
             return false;
         }
@@ -187,6 +267,7 @@ namespace nil {
 
         void reactor_backend_epoll::wait_and_process_events(const sigset_t *active_sigmask) {
             wait_and_process(-1, active_sigmask);
+            complete_hrtimer();
         }
 
         void reactor_backend_epoll::complete_epoll_event(pollable_fd_state &pfd, int events, int event) {
@@ -282,7 +363,7 @@ namespace nil {
         }
 
         void reactor_backend_epoll::request_preemption() {
-            _r->_preemption_monitor.head.store(1, std::memory_order_relaxed);
+            _r._preemption_monitor.head.store(1, std::memory_order_relaxed);
         }
 
         void reactor_backend_epoll::start_handling_signal() {
@@ -297,7 +378,7 @@ namespace nil {
         }
 
         void reactor_backend_epoll::reset_preemption_monitor() {
-            _r->_preemption_monitor.head.store(0, std::memory_order_relaxed);
+            _r._preemption_monitor.head.store(0, std::memory_order_relaxed);
         }
     }    // namespace actor
 }    // namespace nil

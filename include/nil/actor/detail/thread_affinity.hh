@@ -85,14 +85,14 @@ static inline int CPU_ISSET(int num, cpu_set_t *cs) {
 
 [[maybe_unused]] static int pthread_setaffinity_np(pthread_t thread, size_t cpu_size, cpu_set_t *cpu_set) {
     thread_port_t mach_thread;
-    int core = 0;
+    std::size_t core;
 
     for (core = 0; core < 8 * cpu_size; core++) {
         if (CPU_ISSET(core, cpu_set))
             break;
     }
-    printf("binding to core %d\n", core);
-    thread_affinity_policy_data_t policy = {core};
+    printf("binding to core %lu\n", core);
+    thread_affinity_policy_data_t policy = {static_cast<int>(core)};
     mach_thread = pthread_mach_thread_np(thread);
     thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1);
     return 0;

@@ -939,7 +939,7 @@ namespace nil {
              * the chosen backend constructor may want to handle signals and thus
              * needs the _signals._signal_handlers map to be initialized.
              */
-            _backend = rbs.create(this);
+            _backend = rbs.create(*this);
             *detail::get_scheduling_group_specific_thread_local_data_ptr() = &_scheduling_group_specific_data;
             _task_queues.push_back(std::make_unique<task_queue>(0, "main", 1000));
             _task_queues.push_back(std::make_unique<task_queue>(1, "atexit", 1000));
@@ -1192,50 +1192,6 @@ namespace nil {
         void cpu_stall_detector::end_sleep() {
         }
 
-        void reactor::task_quota_timer_thread_fn() {
-            auto thread_name = nil::actor::format("timer-{}", _id);
-            detail::set_thread_name(pthread_setname_np, thread_name.c_str());
-
-            sigset_t mask;
-            sigfillset(&mask);
-            for (auto sig : {SIGSEGV}) {
-                sigdelset(&mask, sig);
-            }
-            auto r = ::pthread_sigmask(SIG_BLOCK, &mask, NULL);
-            if (r) {
-                seastar_logger.error("Thread {}: failed to block signals. Aborting.", thread_name.c_str());
-                abort();
-            }
-
-            // We need to wait until task quota is set before we can calculate how many ticks are to
-            // a minute. Technically task_quota is used from many threads, but since it is read-only here
-            // and only used during initialization we will avoid complicating the code.
-            {
-                uint64_t events;
-#if BOOST_OS_LINUX
-                _task_quota_timer.read(&events, sizeof(uint64_t));
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                r = ::timerfd_read(_task_quota_timer.get(), &events, sizeof(uint64_t));
-                throw_system_error_on(r == -1);
-#endif
-                request_preemption();
-            }
-
-            while (!_dying.load(std::memory_order_relaxed)) {
-                uint64_t events;
-#if BOOST_OS_LINUX
-                _task_quota_timer.read(&events, sizeof(uint64_t));
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-                r = ::timerfd_read(_task_quota_timer.get(), &events, sizeof(uint64_t));
-                throw_system_error_on(r == -1);
-#endif
-                request_preemption();
-
-                // We're in a different thread, but guaranteed to be on the same core, so even
-                // a signal fence is overdoing it
-                std::atomic_signal_fence(std::memory_order_seq_cst);
-            }
-        }
         void reactor::update_blocked_reactor_notify_ms(std::chrono::milliseconds ms) {
             auto cfg = _cpu_stall_detector->get_config();
             if (ms != cfg.threshold) {
@@ -1379,7 +1335,7 @@ namespace nil {
             static future<std::unique_ptr<network_stack>> create(const sstring &name, options opts);
         };
 
-        void reactor::configure(const boost::program_options::variables_map& vm) {
+        void reactor::configure(const boost::program_options::variables_map &vm) {
             _network_stack_ready =
                 vm.count("network-stack") ?
                     network_stack_registry::create(sstring(vm["network-stack"].as<std::string>()), vm) :
