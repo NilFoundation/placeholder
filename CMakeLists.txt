@@ -499,7 +499,10 @@ list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES
      ${Boost_LIBRARIES}
      ${c-ares_LIBRARIES}
      ${lz4_LIBRARIES}
+
      ${StdAtomic_LIBRARIES}
+     ${CMAKE_DL_LIBS}
+
      fmt::fmt
      libfswatch)
 
@@ -508,7 +511,6 @@ if(NOT (UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux")))
 endif()
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES
-     ${CMAKE_DL_LIBS}
      ${GnuTLS_LIBRARIES}
      ${Protobuf_LIBRARIES}
      ${yaml-cpp_LIBRARIES})

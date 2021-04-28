@@ -59,13 +59,13 @@
 #include <nil/actor/core/reactor.hh>
 #include <nil/actor/detail/backtrace.hh>
 
-#if BOOST_LIB_STD_GNU
+#if BOOST_LIB_STD_GNU && BOOST_OS_LINUX
 #include <link.h>
 #endif
 
 namespace nil {
     namespace actor {
-#if BOOST_LIB_STD_GNU
+#if BOOST_LIB_STD_GNU && BOOST_OS_LINUX
         using dl_iterate_fn = int (*)(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data);
 
         [[gnu::no_sanitize_address]] static dl_iterate_fn dl_iterate_phdr_org() {
@@ -97,10 +97,10 @@ namespace nil {
 #endif
 
 #ifndef NO_EXCEPTION_INTERCEPT
-        nil::actor::logger exception_logger("exception");
+        logger exception_logger("exception");
 
         void log_exception_trace() noexcept {
-            nil::actor::engine()._cxx_exceptions++;
+            engine()._cxx_exceptions++;
             static thread_local bool nested = false;
             if (!nested && exception_logger.is_enabled(log_level::trace)) {
                 nested = true;
@@ -116,7 +116,7 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-#if BOOST_LIB_STD_GNU
+#if BOOST_LIB_STD_GNU && BOOST_OS_LINUX
 
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] [[gnu::no_sanitize_address]] int
     dl_iterate_phdr(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data) {

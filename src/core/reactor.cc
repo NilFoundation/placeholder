@@ -1048,7 +1048,7 @@ namespace nil {
             return _backend->start_handling_signal();
         }
 
-        cpu_stall_detector::cpu_stall_detector(cpu_stall_detector_config cfg) : _shard_id(this_shard_id()) {
+        cpu_stall_detector::cpu_stall_detector(const cpu_stall_detector_config &cfg) : _shard_id(this_shard_id()) {
             // glib's backtrace() calls dlopen("libgcc_s.so.1") once to resolve unwind related symbols.
             // If first stall detector invocation happens during another dlopen() call the calling thread
             // will deadlock. The dummy call here makes sure that backtrace's initialization happens in
@@ -1066,9 +1066,13 @@ namespace nil {
             }
 #elif BOOST_OS_MACOS || BOOST_OS_IOS
             _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+#if BOOST_COMP_CLANG
             dispatch_source_set_event_handler(_timer, ^{
                 raise(signal_number());
             });
+#else
+            dispatch_source_set_event_handler_f(_timer, &raise(signal_number()));
+#endif
 #endif
 
             namespace sm = nil::actor::metrics;
@@ -1094,7 +1098,7 @@ namespace nil {
             return _config;
         }
 
-        void cpu_stall_detector::update_config(cpu_stall_detector_config cfg) {
+        void cpu_stall_detector::update_config(const cpu_stall_detector_config &cfg) {
             _config = cfg;
             _threshold = std::chrono::duration_cast<std::chrono::steady_clock::duration>(cfg.threshold);
             _slack = std::chrono::duration_cast<std::chrono::steady_clock::duration>(cfg.threshold * cfg.slack);

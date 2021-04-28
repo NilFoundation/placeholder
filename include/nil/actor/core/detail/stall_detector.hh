@@ -85,7 +85,7 @@ namespace nil {
                 using clock_type = thread_cputime_clock;
 
             public:
-                explicit cpu_stall_detector(cpu_stall_detector_config cfg = {});
+                explicit cpu_stall_detector(const cpu_stall_detector_config& cfg = {});
                 ~cpu_stall_detector();
                 static int signal_number() {
 #if BOOST_OS_LINUX
@@ -97,7 +97,7 @@ namespace nil {
                 void start_task_run(std::chrono::steady_clock::time_point now);
                 void end_task_run(std::chrono::steady_clock::time_point now);
                 void generate_trace();
-                void update_config(cpu_stall_detector_config cfg);
+                void update_config(const cpu_stall_detector_config& cfg);
                 cpu_stall_detector_config get_config() const;
                 void on_signal();
                 void start_sleep();

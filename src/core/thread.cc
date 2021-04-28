@@ -261,16 +261,16 @@ namespace nil {
         }
 
         void thread_context::main() {
-#ifdef __x86_64__
+#if BOOST_OS_LINUX && defined(__x86_64__)
             // There is no caller of main() in this context. We need to annotate this frame like this so that
             // unwinders don't try to trace back past this frame.
             // See https://github.com/scylladb/scylla/issues/1909.
             asm(".cfi_undefined rip");
-#elif defined(__PPC__)
+#elif BOOST_OS_LINUX && defined(__PPC__)
             asm(".cfi_undefined lr");
-#elif defined(__aarch64__)
+#elif BOOST_OS_LINUX && defined(__aarch64__)
             asm(".cfi_undefined x30");
-#else
+#elif BOOST_OS_LINUX
 #warning "Backtracing from seastar threads may be broken"
 #endif
             _context.initial_switch_in_completed();
@@ -327,7 +327,6 @@ namespace nil {
                 tctx->yield();
             }
         }
-
     }    // namespace actor
 }    // namespace nil
 

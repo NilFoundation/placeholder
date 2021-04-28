@@ -26,7 +26,7 @@
 
 #include <nil/actor/detail/backtrace.hh>
 
-#if BOOST_LIB_STD_GNU
+#if BOOST_LIB_STD_GNU && BOOST_OS_LINUX
 #include <link.h>
 #endif
 
@@ -42,7 +42,7 @@
 
 namespace nil {
     namespace actor {
-#if BOOST_LIB_STD_GNU
+#if BOOST_LIB_STD_GNU && BOOST_OS_LINUX
         static int dl_iterate_phdr_callback(struct dl_phdr_info *info, size_t size, void *data) {
             std::size_t total_size {0};
             for (int i = 0; i < info->dlpi_phnum; i++) {
@@ -63,7 +63,7 @@ namespace nil {
 
         static std::vector<shared_object> enumerate_shared_objects() {
             std::vector<shared_object> shared_objects;
-#if BOOST_LIB_STD_GNU
+#if BOOST_LIB_STD_GNU && BOOST_OS_LINUX
             dl_iterate_phdr(dl_iterate_phdr_callback, &shared_objects);
 #endif
 
