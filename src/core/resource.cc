@@ -138,10 +138,10 @@ namespace nil {
              * Note: true only for V2-only systems, but there is no reason to support
              * a hybrid configuration.
              */
-            static optional<fs::path> cgroup2_path_my_pid() {
+            static optional<boost::filesystem::path> cgroup2_path_my_pid() {
                 nil::actor::sstring cline;
                 try {
-                    cline = read_first_line(fs::path {"/proc/self/cgroup"});
+                    cline = read_first_line(boost::filesystem::path {"/proc/self/cgroup"});
                 } catch (...) {
                     // '/proc/self/cgroup' must be there. If not - there is an issue
                     // with the system configuration.
@@ -158,20 +158,20 @@ namespace nil {
                 }
 
                 // the path is guaranteed to start with '0::/'
-                return fs::path {"/sys/fs/cgroup/" + cline.substr(4)};
+                return boost::filesystem::path {"/sys/fs/cgroup/" + cline.substr(4)};
             }
 
             /*
              * traverse the cgroups V2 hierarchy bottom-up, starting from our process'
              * specific cgroup up to /sys/fs/cgroup, looking for the named file.
              */
-            static optional<fs::path> locate_lowest_cgroup2(fs::path lowest_subdir, std::string filename) {
+            static optional<boost::filesystem::path> locate_lowest_cgroup2(boost::filesystem::path lowest_subdir, std::string filename) {
                 // locate the lowest subgroup containing the named file (i.e.
                 // handles the requested control by itself)
                 do {
                     //  does the cgroup settings file exist?
                     auto set_path = lowest_subdir / filename;
-                    if (fs::exists(set_path)) {
+                    if (boost::filesystem::exists(set_path)) {
                         return set_path;
                     }
 
@@ -191,7 +191,7 @@ namespace nil {
             optional<T> read_setting_V1V2_as(std::string cg1_path, std::string cg2_fname) {
                 // on v2-systems, cg2_path will be initialized with the leaf cgroup that
                 // controls this process
-                static optional<fs::path> cg2_path {cgroup2_path_my_pid()};
+                static optional<boost::filesystem::path> cg2_path {cgroup2_path_my_pid()};
 
                 if (cg2_path) {
                     // this is a v2 system
@@ -214,7 +214,7 @@ namespace nil {
 
                 // try cgroups v1:
                 try {
-                    auto line = read_first_line(fs::path {"/sys/fs/cgroup"} / cg1_path);
+                    auto line = read_first_line(boost::filesystem::path {"/sys/fs/cgroup"} / cg1_path);
                     return boost::lexical_cast<T>(line);
                 } catch (...) {
                     seastar_logger.warn("Could not parse cgroups v1 file ({}).", cg1_path);

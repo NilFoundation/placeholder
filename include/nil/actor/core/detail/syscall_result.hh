@@ -45,23 +45,26 @@ namespace nil {
                 }
             }
 
-            void throw_fs_exception(const sstring &reason, const fs::path &path) const {
-                throw fs::filesystem_error(reason, path, ec());
+            void throw_fs_exception(const sstring &reason, const boost::filesystem::path &path) const {
+                throw boost::filesystem::filesystem_error(
+                    reason, path, boost::system::error_code(error, boost::system::system_category()));
             }
 
-            void throw_fs_exception(const sstring &reason, const fs::path &path1, const fs::path &path2) const {
-                throw fs::filesystem_error(reason, path1, path2, ec());
+            void throw_fs_exception(const sstring &reason, const boost::filesystem::path &path1,
+                                    const boost::filesystem::path &path2) const {
+                throw boost::filesystem::filesystem_error(
+                    reason, path1, path2, boost::system::error_code(error, boost::system::system_category()));
             }
 
             void throw_fs_exception_if_error(const sstring &reason, const sstring &path) const {
                 if (long(result) == -1) {
-                    throw_fs_exception(reason, fs::path(path));
+                    throw_fs_exception(reason, boost::filesystem::path(path));
                 }
             }
 
             void throw_fs_exception_if_error(const sstring &reason, const sstring &path1, const sstring &path2) const {
                 if (long(result) == -1) {
-                    throw_fs_exception(reason, fs::path(path1), fs::path(path2));
+                    throw_fs_exception(reason, boost::filesystem::path(path1), boost::filesystem::path(path2));
                 }
             }
 

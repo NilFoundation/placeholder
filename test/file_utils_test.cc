@@ -107,9 +107,9 @@ ACTOR_THREAD_TEST_CASE(test_recursive_remove_directory) {
         test_dir(test_dir *parent, sstring name) : parent(parent), name(std::move(name)) {
         }
 
-        fs::path path() const {
+        boost::filesystem::path path() const {
             if (!parent) {
-                return fs::path(name.c_str());
+                return boost::filesystem::path(name.c_str());
             }
             return parent->path() / name.c_str();
         }
@@ -232,7 +232,7 @@ ACTOR_TEST_CASE(tmp_dir_with_thread_test) {
 
 ACTOR_TEST_CASE(tmp_dir_with_leftovers_test) {
     return tmp_dir::do_with_thread([](tmp_dir &td) {
-        fs::path path = td.get_path() / "testfile.tmp";
+        boost::filesystem::path path = td.get_path() / "testfile.tmp";
         touch_file(path.native()).get();
         BOOST_REQUIRE(file_exists(path.native()).get0());
     });

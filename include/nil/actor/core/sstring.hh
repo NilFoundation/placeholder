@@ -602,9 +602,9 @@ namespace nil {
         template<typename char_type, typename size_type, size_type Max, size_type N, bool NulTerminate>
         inline basic_sstring<char_type, size_type, Max, NulTerminate>
             operator+(const char (&s)[N], const basic_sstring<char_type, size_type, Max, NulTerminate> &t) {
-            using sstring = basic_sstring<char_type, size_type, Max, NulTerminate>;
+            using sstring_type = basic_sstring<char_type, size_type, Max, NulTerminate>;
             // don't copy the terminating NUL character
-            sstring ret(typename sstring::initialized_later(), N - 1 + t.size());
+            sstring_type ret(typename sstring_type::initialized_later(), N - 1 + t.size());
             auto p = std::copy(std::begin(s), std::end(s) - 1, ret.begin());
             std::copy(t.begin(), t.end(), p);
             return ret;

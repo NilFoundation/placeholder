@@ -27,6 +27,7 @@
 
 #include <nil/actor/core/core.hh>
 
+#include <nil/actor/detail/file.hh>
 #include <nil/actor/detail/exceptions.hh>
 #include <nil/actor/detail/tmp_file.hh>
 
@@ -37,8 +38,8 @@ namespace nil {
 
         static constexpr const char *default_tmp_name_template = "XXXXXX.tmp";
 
-        static fs::path generate_tmp_name(const fs::path &path_template) {
-            fs::path parent = path_template.parent_path();
+        static boost::filesystem::path generate_tmp_name(const boost::filesystem::path &path_template) {
+            boost::filesystem::path parent = path_template.parent_path();
             std::string filename = path_template.filename().native();
             if (parent.empty()) {
                 parent = ".";
@@ -61,9 +62,9 @@ namespace nil {
             return parent;
         }
 
-        static fs::path default_tmpdir_path;
+        static boost::filesystem::path default_tmpdir_path;
 
-        const fs::path &default_tmpdir() {
+        const boost::filesystem::path &default_tmpdir() {
             if (default_tmpdir_path.empty()) {
                 auto TMPDIR = getenv("TMPDIR");
                 default_tmpdir_path = TMPDIR ? TMPDIR : "/tmp";
@@ -71,7 +72,7 @@ namespace nil {
             return default_tmpdir_path;
         }
 
-        void set_default_tmpdir(fs::path path) {
+        void set_default_tmpdir(boost::filesystem::path path) {
             default_tmpdir_path = std::move(path);
         }
 
@@ -84,11 +85,13 @@ namespace nil {
             assert(!is_open());
         }
 
-        future<> tmp_file::open(fs::path path_template, open_flags oflags, file_open_options options) noexcept {
+        future<> tmp_file::open(boost::filesystem::path path_template,
+                                open_flags oflags,
+                                file_open_options options) noexcept {
             assert(!has_path());
             assert(!is_open());
             oflags |= open_flags::create | open_flags::exclusive;
-            fs::path path;
+            boost::filesystem::path path;
             try {
                 path = generate_tmp_name(std::move(path_template));
             } catch (...) {
@@ -117,7 +120,9 @@ namespace nil {
             return remove_file(get_path().native()).then([this] { _path.clear(); });
         }
 
-        future<tmp_file> make_tmp_file(fs::path path_template, open_flags oflags, file_open_options options) noexcept {
+        future<tmp_file> make_tmp_file(boost::filesystem::path path_template,
+                                       open_flags oflags,
+                                       file_open_options options) noexcept {
             return do_with(
                 tmp_file(),
                 [path_template = std::move(path_template), oflags, options = std::move(options)](tmp_file &t) mutable {
@@ -131,9 +136,9 @@ namespace nil {
             assert(!has_path());
         }
 
-        future<> tmp_dir::create(fs::path path_template, file_permissions create_permissions) noexcept {
+        future<> tmp_dir::create(boost::filesystem::path path_template, file_permissions create_permissions) noexcept {
             assert(!has_path());
-            fs::path path;
+            boost::filesystem::path path;
             try {
                 path = generate_tmp_name(std::move(path_template));
             } catch (...) {

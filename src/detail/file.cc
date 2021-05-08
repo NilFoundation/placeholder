@@ -144,12 +144,12 @@ namespace nil {
             return engine().chmod(name, permissions);
         }
 
-        static future<> do_recursive_remove_directory(const fs::path path) noexcept {
+        static future<> do_recursive_remove_directory(const boost::filesystem::path path) noexcept {
             struct work_entry {
-                const fs::path path;
+                const boost::filesystem::path path;
                 bool listed;
 
-                work_entry(const fs::path path, bool listed) : path(std::move(path)), listed(listed) {
+                work_entry(const boost::filesystem::path path, bool listed) : path(std::move(path)), listed(listed) {
                 }
             };
 
@@ -164,12 +164,12 @@ namespace nil {
                             return remove_file(ent.path.native());
                         } else {
                             work_queue.emplace_back(ent.path, true);
-                            return do_with(std::move(ent.path), [&work_queue](const fs::path &path) {
+                            return do_with(std::move(ent.path), [&work_queue](const boost::filesystem::path &path) {
                                 return open_directory(path.native()).then([&path, &work_queue](file dir) mutable {
                                     return do_with(std::move(dir), [&path, &work_queue](file &dir) mutable {
                                         return dir
                                             .list_directory([&path, &work_queue](directory_entry de) mutable {
-                                                const fs::path sub_path = path / de.name.c_str();
+                                                const boost::filesystem::path sub_path = path / de.name.c_str();
                                                 if (de.type && *de.type == directory_entry_type::directory) {
                                                     work_queue.emplace_back(std::move(sub_path), false);
                                                 } else {
@@ -187,7 +187,7 @@ namespace nil {
             });
         }
 
-        future<> recursive_remove_directory(fs::path path) noexcept {
+        future<> recursive_remove_directory(boost::filesystem::path path) noexcept {
             sstring parent;
             try {
                 parent = (path / "..").native();

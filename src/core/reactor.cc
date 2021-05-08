@@ -1731,7 +1731,7 @@ namespace nil {
                     .then([name = sstring(name), mode](syscall_result<int> sr) {
                         if (sr.result == -1) {
                             auto reason = format("chmod(0{:o}) failed", mode);
-                            sr.throw_fs_exception(reason, fs::path(name));
+                            sr.throw_fs_exception(reason, boost::filesystem::path(name));
                         }
                         return make_ready_future<>();
                     });
@@ -1875,7 +1875,7 @@ namespace nil {
                                 (sr.error == EACCES && flags != access_flags::exists)) {
                                 return make_ready_future<bool>(false);
                             }
-                            sr.throw_fs_exception("access failed", fs::path(pathname));
+                            sr.throw_fs_exception("access failed", boost::filesystem::path(pathname));
                         }
 
                         return make_ready_future<bool>(true);
@@ -1987,7 +1987,7 @@ namespace nil {
                     })
                     .then([name = sstring(name)](syscall_result<int> sr) {
                         if (sr.result == -1 && sr.error != EEXIST) {
-                            sr.throw_fs_exception("mkdir failed", fs::path(name));
+                            sr.throw_fs_exception("mkdir failed", boost::filesystem::path(name));
                         }
                         return make_ready_future<>();
                     });
@@ -4291,7 +4291,7 @@ namespace nil {
         }
 
         static bool virtualized() {
-            return fs::exists("/sys/hypervisor/type");
+            return boost::filesystem::exists("/sys/hypervisor/type");
         }
 
         std::chrono::nanoseconds reactor::calculate_poll_time() {
