@@ -10,3 +10,4 @@ find_package_handle_standard_args(PthreadSetName
                                   FOUND_VAR PthreadSetName_FOUND
                                   REQUIRED_VARS
                                   HAVE_PTHREAD_SETNAME_NP)
+set(CMAKE_REQUIRED_FLAGS "")
