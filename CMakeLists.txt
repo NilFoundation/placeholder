@@ -502,8 +502,7 @@ list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES
      ${StdAtomic_LIBRARIES}
      ${Protobuf_LIBRARIES}
 
-     fmt::fmt
-     libfswatch)
+     fmt::fmt)
 
 if(NOT (UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux")))
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES epoll-shim)
