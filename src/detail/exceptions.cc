@@ -27,15 +27,15 @@
 namespace nil {
     namespace actor {
 
-        std::filesystem::filesystem_error make_filesystem_error(const std::string &what, std::filesystem::path path,
+        boost::filesystem::filesystem_error make_filesystem_error(const std::string &what, boost::filesystem::path path,
                                                                 int error) {
-            return std::filesystem::filesystem_error(what, std::move(path),
+            return boost::filesystem::filesystem_error(what, std::move(path),
                                                      std::error_code(error, std::system_category()));
         }
 
-        std::filesystem::filesystem_error make_filesystem_error(const std::string &what, std::filesystem::path path1,
-                                                                std::filesystem::path path2, int error) {
-            return std::filesystem::filesystem_error(what, std::move(path1), std::move(path1),
+        boost::filesystem::filesystem_error make_filesystem_error(const std::string &what, boost::filesystem::path path1,
+                                                                boost::filesystem::path path2, int error) {
+            return boost::filesystem::filesystem_error(what, std::move(path1), std::move(path1),
                                                      std::error_code(error, std::system_category()));
         }
 

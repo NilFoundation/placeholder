@@ -24,8 +24,9 @@
 
 #pragma once
 
+#include <boost/filesystem.hpp>
+
 #include <nil/actor/core/future.hh>
-#include <nil/actor/detail/std-compat.hh>
 
 namespace nil {
     namespace actor {
@@ -43,7 +44,7 @@ namespace nil {
         /// The function bails out on first error. In that case, some files and/or sub-directories
         /// (and their contents) may be left behind at the level in which the error was detected.
         ///
-        future<> recursive_remove_directory(std::filesystem::path path) noexcept;
+        future<> recursive_remove_directory(boost::filesystem::path path) noexcept;
 
     }    // namespace actor
 }    // namespace nil

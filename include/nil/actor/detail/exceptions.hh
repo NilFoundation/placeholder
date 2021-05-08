@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <nil/actor/detail/std-compat.hh>
+#include <boost/filesystem.hpp>
 
 namespace nil {
     namespace actor {
@@ -35,8 +35,8 @@ namespace nil {
         /// \param path - path of the file that hit the error
         /// \param error - the system error number (see errno(3))
         ///
-        std::filesystem::filesystem_error make_filesystem_error(const std::string &what, std::filesystem::path path,
-                                                                int error);
+        boost::filesystem::filesystem_error make_filesystem_error(const std::string &what, boost::filesystem::path path,
+                                                                  int error);
 
         /// \brief make a filesystem_error for system calls with two file operands.
         ///
@@ -44,8 +44,9 @@ namespace nil {
         /// \param path1, path2 - paths of the files that hit the error
         /// \param error - the system error number (see errno(3))
         ///
-        std::filesystem::filesystem_error make_filesystem_error(const std::string &what, std::filesystem::path path1,
-                                                                std::filesystem::path path2, int error);
+        boost::filesystem::filesystem_error make_filesystem_error(const std::string &what,
+                                                                  boost::filesystem::path path1,
+                                                                  boost::filesystem::path path2, int error);
 
     }    // namespace actor
 }    // namespace nil

@@ -15,6 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -94,7 +95,7 @@ namespace nil {
 
         namespace cgroup {
 
-            namespace fs = std::filesystem;
+            namespace fs = boost::filesystem;
 
             optional<cpuset> cpu_set() {
 #if BOOST_OS_LINUX

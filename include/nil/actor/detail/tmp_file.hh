@@ -24,26 +24,28 @@
 
 #pragma once
 
+#include <boost/filesystem.hpp>
+
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/file.hh>
 #include <nil/actor/core/thread.hh>
-#include <nil/actor/detail/std-compat.hh>
+
 #include <nil/actor/detail/defer.hh>
 
 namespace nil {
     namespace actor {
 
-        const std::filesystem::path &default_tmpdir();
-        void set_default_tmpdir(std::filesystem::path);
+        const boost::filesystem::path &default_tmpdir();
+        void set_default_tmpdir(boost::filesystem::path);
 
         class tmp_file {
-            std::filesystem::path _path;
+            boost::filesystem::path _path;
             file _file;
             bool _is_open = false;
 
-            static_assert(std::is_nothrow_constructible<std::filesystem::path>::value,
+            static_assert(std::is_nothrow_constructible<boost::filesystem::path>::value,
                           "filesystem::path's constructor must not throw");
-            static_assert(std::is_nothrow_move_constructible<std::filesystem::path>::value,
+            static_assert(std::is_nothrow_move_constructible<boost::filesystem::path>::value,
                           "filesystem::path's move constructor must not throw");
 
         public:
@@ -55,14 +57,14 @@ namespace nil {
 
             ~tmp_file();
 
-            future<> open(std::filesystem::path path_template = default_tmpdir(),
+            future<> open(boost::filesystem::path path_template = default_tmpdir(),
                           open_flags oflags = open_flags::rw,
                           file_open_options options = {}) noexcept;
             future<> close() noexcept;
             future<> remove() noexcept;
 
             template<typename Func>
-            static future<> do_with(std::filesystem::path path_template, Func &&func,
+            static future<> do_with(boost::filesystem::path path_template, Func &&func,
                                     open_flags oflags = open_flags::rw, file_open_options options = {}) noexcept {
                 static_assert(std::is_nothrow_move_constructible<Func>::value,
                               "Func's move constructor must not throw");
@@ -88,7 +90,7 @@ namespace nil {
                 return _is_open;
             }
 
-            const std::filesystem::path &get_path() const {
+            const boost::filesystem::path &get_path() const {
                 return _path;
             }
 
@@ -115,11 +117,11 @@ namespace nil {
         ///
         ///    The parent directory must exist and be writable to the current process.
         ///
-        future<tmp_file> make_tmp_file(std::filesystem::path path_template = default_tmpdir(),
+        future<tmp_file> make_tmp_file(boost::filesystem::path path_template = default_tmpdir(),
                                        open_flags oflags = open_flags::rw, file_open_options options = {}) noexcept;
 
         class tmp_dir {
-            std::filesystem::path _path;
+            boost::filesystem::path _path;
 
         public:
             tmp_dir() = default;
@@ -130,7 +132,7 @@ namespace nil {
 
             ~tmp_dir();
 
-            future<> create(std::filesystem::path path_template = default_tmpdir(),
+            future<> create(boost::filesystem::path path_template = default_tmpdir(),
                             file_permissions create_permissions = file_permissions::default_dir_permissions) noexcept;
             future<> remove() noexcept;
 
@@ -139,7 +141,7 @@ namespace nil {
             requires std::is_nothrow_move_constructible<Func>::value
 #endif
                 static future<>
-                do_with(std::filesystem::path path_template, Func &&func,
+                do_with(boost::filesystem::path path_template, Func &&func,
                         file_permissions create_permissions = file_permissions::default_dir_permissions) noexcept {
                 static_assert(std::is_nothrow_move_constructible_v<Func>, "Func's move constructor must not throw");
                 return nil::actor::do_with(tmp_dir(), [func = std::move(func), path_template = std::move(path_template),
@@ -173,7 +175,7 @@ namespace nil {
                 return !_path.empty();
             }
 
-            const std::filesystem::path &get_path() const {
+            const boost::filesystem::path &get_path() const {
                 return _path;
             }
         };
@@ -196,7 +198,7 @@ namespace nil {
         ///    The parent directory must exist and be writable to the current process.
         ///
         future<tmp_dir>
-            make_tmp_dir(std::filesystem::path path_template = default_tmpdir(),
+            make_tmp_dir(boost::filesystem::path path_template = default_tmpdir(),
                          file_permissions create_permissions = file_permissions::default_dir_permissions) noexcept;
 
     }    // namespace actor

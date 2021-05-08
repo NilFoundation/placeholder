@@ -24,14 +24,14 @@
 
 #pragma once
 
-#include <filesystem>
+#include <boost/filesystem.hpp>
 
 #include <nil/actor/core/sstring.hh>
 
 namespace nil {
     namespace actor {
 
-        namespace fs = std::filesystem;
+        namespace fs = boost::filesystem;
 
         template<typename T>
         struct syscall_result {

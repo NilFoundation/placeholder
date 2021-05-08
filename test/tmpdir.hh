@@ -40,7 +40,7 @@ namespace nil {
             tmpdir(const tmpdir &) = delete;
 
             tmpdir(const sstring &name = sstring(nil::actor::default_tmpdir()) + "/testXXXX") {
-                _tmp.create(std::filesystem::path(name)).get();
+                _tmp.create(boost::filesystem::path(name)).get();
             }
             ~tmpdir() {
                 _tmp.remove().get();

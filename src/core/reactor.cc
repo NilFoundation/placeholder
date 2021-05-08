@@ -18,6 +18,7 @@
 #define __user /* empty */    // for xfs includes, below
 
 #include <boost/config.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/predef.h>
 
 #include <cinttypes>
@@ -560,7 +561,7 @@ namespace nil {
         }    // namespace detail
 
         using namespace std::chrono_literals;
-        namespace fs = std::filesystem;
+        namespace fs = boost::filesystem;
 
         using namespace net;
 

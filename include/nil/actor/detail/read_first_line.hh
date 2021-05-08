@@ -22,18 +22,18 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#include <nil/actor/detail/std-compat.hh>
-#include <nil/actor/core/sstring.hh>
-
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+
+#include <nil/actor/core/sstring.hh>
 
 namespace nil {
     namespace actor {
 
-        sstring read_first_line(std::filesystem::path sys_file);
+        sstring read_first_line(boost::filesystem::path sys_file);
 
         template<typename Type>
-        Type read_first_line_as(std::filesystem::path sys_file) {
+        Type read_first_line_as(boost::filesystem::path sys_file) {
             return boost::lexical_cast<Type>(read_first_line(sys_file));
         }
 

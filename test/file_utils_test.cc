@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
@@ -32,11 +32,12 @@
 #include <nil/actor/core/core.hh>
 #include <nil/actor/core/print.hh>
 #include <nil/actor/core/loop.hh>
+
 #include <nil/actor/detail/tmp_file.hh>
 #include <nil/actor/detail/file.hh>
 
 using namespace nil::actor;
-namespace fs = std::filesystem;
+namespace fs = boost::filesystem;
 
 class expected_exception : std::runtime_error {
 public:

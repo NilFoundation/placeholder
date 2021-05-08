@@ -26,14 +26,17 @@
 #include <list>
 #include <deque>
 
+#include <boost/filesystem.hpp>
+
 #include <nil/actor/core/reactor.hh>
 #include <nil/actor/core/core.hh>
+
 #include <nil/actor/detail/file.hh>
 
 namespace nil {
     namespace actor {
 
-        namespace fs = std::filesystem;
+        namespace fs = boost::filesystem;
 
         future<> make_directory(std::string_view name, file_permissions permissions) noexcept {
             return engine().make_directory(name, permissions);

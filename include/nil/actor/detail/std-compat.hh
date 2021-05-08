@@ -28,17 +28,6 @@
 #include <string_view>
 #include <variant>
 
-#include <filesystem>
-
-#if __has_include(<memory_resource>)
-#include <memory_resource>
-#else
-#include <experimental/memory_resource>
-namespace std::pmr {
-    using namespace std::experimental::pmr;
-}
-#endif
-
 #if defined(__cpp_impl_coroutine) || defined(__cpp_coroutines)
 #define ACTOR_COROUTINES_ENABLED
 #endif

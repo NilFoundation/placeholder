@@ -23,12 +23,12 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/core/posix.hh>
+
 #include <nil/actor/detail/read_first_line.hh>
 
 namespace nil {
     namespace actor {
-
-        sstring read_first_line(std::filesystem::path sys_file) {
+        sstring read_first_line(boost::filesystem::path sys_file) {
             auto file = file_desc::open(sys_file.string(), O_RDONLY | O_CLOEXEC);
             sstring buf;
             size_t n = 0;

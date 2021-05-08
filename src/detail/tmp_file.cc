@@ -26,15 +26,14 @@
 #include <random>
 
 #include <nil/actor/core/core.hh>
+
 #include <nil/actor/detail/exceptions.hh>
-#include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/tmp_file.hh>
-#include <nil/actor/detail/file.hh>
 
 namespace nil {
     namespace actor {
 
-        namespace fs = std::filesystem;
+        namespace fs = boost::filesystem;
 
         static constexpr const char *default_tmp_name_template = "XXXXXX.tmp";
 
@@ -153,7 +152,7 @@ namespace nil {
             return recursive_remove_directory(std::move(_path));
         }
 
-        future<tmp_dir> make_tmp_dir(std::filesystem::path path_template,
+        future<tmp_dir> make_tmp_dir(boost::filesystem::path path_template,
                                      file_permissions create_permissions) noexcept {
             return do_with(tmp_dir(),
                            [path_template = std::move(path_template), create_permissions](tmp_dir &t) mutable {
