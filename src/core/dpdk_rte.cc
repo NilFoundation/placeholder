@@ -18,7 +18,7 @@
 #ifdef ACTOR_HAVE_DPDK
 
 #include <cinttypes>
-#include <nil/actor/net/dpdk.hh>
+#include <nil/actor/network/dpdk.hh>
 #include <nil/actor/core/dpdk_rte.hh>
 #include <nil/actor/detail/conversions.hh>
 #include <nil/actor/detail/std-compat.hh>

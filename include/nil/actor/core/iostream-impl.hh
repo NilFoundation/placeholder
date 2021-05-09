@@ -26,7 +26,7 @@
 
 #include <nil/actor/core/do_with.hh>
 #include <nil/actor/core/loop.hh>
-#include <nil/actor/net/packet.hh>
+#include <nil/actor/network/packet.hh>
 #include <nil/actor/detail/variant_utils.hh>
 
 namespace nil {

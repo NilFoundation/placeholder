@@ -19,7 +19,7 @@
 
 #include <nil/actor/core/deleter.hh>
 #include <nil/actor/core/temporary_buffer.hh>
-#include <nil/actor/net/packet.hh>
+#include <nil/actor/network/packet.hh>
 #include <nil/actor/core/sstring.hh>
 #include <memory>
 #include <vector>

@@ -326,12 +326,12 @@ namespace nil {
             }
         }
 
-        log_level logger_registry::get_logger_level(sstring name) const {
+        log_level logger_registry::get_logger_level(const sstring &name) const {
             std::lock_guard<std::mutex> g(_mutex);
             return _loggers.at(name)->level();
         }
 
-        void logger_registry::set_logger_level(sstring name, log_level level) {
+        void logger_registry::set_logger_level(const sstring &name, log_level level) {
             std::lock_guard<std::mutex> g(_mutex);
             _loggers.at(name)->set_level(level);
         }
@@ -406,7 +406,7 @@ namespace nil {
         sstring pretty_type_name(const std::type_info &ti) {
             int status;
             std::unique_ptr<char[], void (*)(void *)> result(abi::__cxa_demangle(ti.name(), 0, 0, &status), std::free);
-            return result.get() ? result.get() : ti.name();
+            return result ? result.get() : ti.name();
         }
 
         logger_registry &global_logger_registry() {

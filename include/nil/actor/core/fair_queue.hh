@@ -133,16 +133,16 @@ namespace nil {
             friend class fair_queue;
 
             fair_queue_ticket _ticket;
-            bi::slist_member_hook<> _hook;
+            boost::intrusive::slist_member_hook<> _hook;
 
         public:
             fair_queue_entry(fair_queue_ticket t) noexcept : _ticket(std::move(t)) {
             }
             using container_list_t =
-                bi::slist<fair_queue_entry,
-                          bi::constant_time_size<false>,
-                          bi::cache_last<true>,
-                          bi::member_hook<fair_queue_entry, bi::slist_member_hook<>, &fair_queue_entry::_hook>>;
+                boost::intrusive::slist<fair_queue_entry,
+                          boost::intrusive::constant_time_size<false>,
+                          boost::intrusive::cache_last<true>,
+                          boost::intrusive::member_hook<fair_queue_entry, boost::intrusive::slist_member_hook<>, &fair_queue_entry::_hook>>;
 
             fair_queue_ticket ticket() const noexcept {
                 return _ticket;

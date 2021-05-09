@@ -74,7 +74,7 @@
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/posix.hh>
 #include <nil/actor/core/sstring.hh>
-#include <nil/actor/net/api.hh>
+#include <nil/actor/network/api.hh>
 #include <nil/actor/core/temporary_buffer.hh>
 #include <nil/actor/core/circular_buffer.hh>
 #include <nil/actor/core/file.hh>

@@ -26,7 +26,7 @@
 
 #include <nil/actor/core/scollectd.hh>
 #include <nil/actor/core/metrics_api.hh>
-#include <nil/actor/net/api.hh>
+#include <nil/actor/network/api.hh>
 
 namespace nil {
     namespace actor {

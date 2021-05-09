@@ -37,7 +37,7 @@
 #include <boost/program_options.hpp>
 
 #include <nil/actor/core/future.hh>
-#include <nil/actor/net/byteorder.hh>
+#include <nil/actor/network/byteorder.hh>
 #include <nil/actor/core/shared_ptr.hh>
 #include <nil/actor/core/sstring.hh>
 #include <nil/actor/detail/log.hh>

@@ -200,7 +200,7 @@ namespace nil {
                 _first = &il;
                 il._ref = this;
             } else {
-                new (&il._hook) bi::slist_member_hook<>();
+                new (&il._hook) boost::intrusive::slist_member_hook<>();
                 _rest.push_back(il);
             }
         }

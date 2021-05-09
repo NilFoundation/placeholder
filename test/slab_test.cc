@@ -34,7 +34,7 @@ static constexpr size_t max_object_size = 1024 * 1024;
 
 class item : public slab_item_base {
 public:
-    bi::list_member_hook<> _cache_link;
+    boost::intrusive::list_member_hook<> _cache_link;
     uint32_t _slab_page_index;
 
     item(uint32_t slab_page_index) : _slab_page_index(slab_page_index) {
@@ -100,7 +100,7 @@ static void test_allocation_2(const double growth_factor, const unsigned slab_li
 }
 
 static void test_allocation_with_lru(const double growth_factor, const unsigned slab_limit_size) {
-    bi::list<item, bi::member_hook<item, bi::list_member_hook<>, &item::_cache_link>> _cache;
+    boost::intrusive::list<item, boost::intrusive::member_hook<item, boost::intrusive::list_member_hook<>, &item::_cache_link>> _cache;
     unsigned evictions = 0;
 
     slab_allocator<item> slab(growth_factor, slab_limit_size, max_object_size, [&](item &item_ref) {

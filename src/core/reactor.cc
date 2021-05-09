@@ -48,12 +48,12 @@
 #include <nil/actor/core/memory.hh>
 #include <nil/actor/core/posix.hh>
 
-#include <nil/actor/net/packet.hh>
-#include <nil/actor/net/stack.hh>
-#include <nil/actor/net/posix-stack.hh>
+#include <nil/actor/network/packet.hh>
+#include <nil/actor/network/stack.hh>
+#include <nil/actor/network/posix-stack.hh>
 
 #if BOOST_OS_LINUX
-#include <nil/actor/net/native-stack.hh>
+#include <nil/actor/network/native-stack.hh>
 #endif
 
 #include <nil/actor/core/resource.hh>

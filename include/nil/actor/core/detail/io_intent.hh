@@ -53,7 +53,7 @@ namespace nil {
 
                     union {
                         cancellable_queue *_ref;
-                        bi::slist_member_hook<> _hook;
+                        boost::intrusive::slist_member_hook<> _hook;
                     };
 
                 public:
@@ -78,8 +78,8 @@ namespace nil {
 
             private:
                 static_assert(sizeof(link) == sizeof(void *), "cancellable_queue::link size is too big");
-                using list_of_links_t = bi::slist<link, bi::constant_time_size<false>, bi::cache_last<true>,
-                                                  bi::member_hook<link, bi::slist_member_hook<>, &link::_hook>>;
+                using list_of_links_t = boost::intrusive::slist<link, boost::intrusive::constant_time_size<false>, boost::intrusive::cache_last<true>,
+                                                  boost::intrusive::member_hook<link, boost::intrusive::slist_member_hook<>, &link::_hook>>;
 
                 link *_first;
                 list_of_links_t _rest;
@@ -103,9 +103,9 @@ namespace nil {
              * The retrieve() method brings the original intent back or throws
              * and exception if the intent was cancelled.
              */
-            class intent_reference : public bi::list_base_hook<bi::link_mode<bi::auto_unlink>> {
+            class intent_reference : public boost::intrusive::list_base_hook<boost::intrusive::link_mode<boost::intrusive::auto_unlink>> {
                 friend class nil::actor::io_intent;
-                using container_type = bi::list<intent_reference, bi::constant_time_size<false>>;
+                using container_type = boost::intrusive::list<intent_reference, boost::intrusive::constant_time_size<false>>;
                 static constexpr uintptr_t _cancelled_intent = 1;
                 io_intent *_intent;
 

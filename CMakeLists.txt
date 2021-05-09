@@ -41,18 +41,9 @@ set(BUILD_WITH_DPDK_MACHINE
     "Configure DPDK for this processor architecture (if `BUILD_WITH_DPDK` is enabled). A DPDK code name abbreviation (e.g., ivb)")
 
 option(BUILD_WITH_ALLOC_FAILURE_INJECTION "Enable failure injection into the allocator." FALSE)
-
-option(BUILD_WITH_TASK_BACKTRACE
-       "Collect backtrace at deferring points."
-       OFF)
-
-option(BUILD_WITH_DEBUG_ALLOCATIONS
-       "For now just writes 0xab to newly allocated memory"
-       OFF)
-
-option(BUILD_WITH_SSTRING
-       "Use seastar's own string implementation"
-       ON)
+option(BUILD_WITH_TASK_BACKTRACE "Collect backtrace at deferring points." FALSE)
+option(BUILD_WITH_DEBUG_ALLOCATIONS "For now just writes 0xab to newly allocated memory" FALSE)
+option(BUILD_WITH_SSTRING "Use own string implementation" TRUE)
 
 set(BUILD_WITH_API_LEVEL
     "6"
@@ -205,11 +196,8 @@ set(BUILD_WITH_LD_FLAGS
     "Semicolon-separated list of extra linking flags for Actor itself.")
 
 option(BUILD_WITH_NUMA "Enable NUMA support." TRUE)
-
 option(BUILD_WITH_COMPRESS_DEBUG "Compress debug info." TRUE)
-
 option(BUILD_WITH_SPLIT_DWARF "Use split dwarf." FALSE)
-
 option(BUILD_WITH_HEAP_PROFILING
        "Enable heap profiling. No effect when Actor is compiled with the default allocator."
        OFF)

@@ -401,14 +401,14 @@ namespace nil {
             /// Note: this method locks
             ///
             /// \return log_level for the given logger name
-            log_level get_logger_level(sstring name) const;
+            log_level get_logger_level(const sstring& name) const;
 
             /// Sets the log level for a given logger
             /// Note: this method locks
             ///
             /// \param name - name of logger
             /// \param level - desired level of logging
-            void set_logger_level(sstring name, log_level level);
+            void set_logger_level(const sstring& name, log_level level);
 
             /// Returns a list of registered loggers
             /// Note: this method locks

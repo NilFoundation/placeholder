@@ -32,8 +32,6 @@
 
 #include <exception>
 
-namespace bi = boost::intrusive;
-
 namespace nil {
     namespace actor {
 
@@ -59,7 +57,7 @@ namespace nil {
             /// Represents a handle to the callback registered by a given fiber. Ending the
             /// lifetime of the \c subscription will unregister the callback, if it hasn't
             /// been invoked yet.
-            class subscription : public bi::list_base_hook<bi::link_mode<bi::auto_unlink>> {
+            class subscription : public boost::intrusive::list_base_hook<boost::intrusive::link_mode<boost::intrusive::auto_unlink>> {
                 friend class abort_source;
 
                 subscription_callback_type _target;
@@ -100,7 +98,7 @@ namespace nil {
             };
 
         private:
-            using subscription_list_type = bi::list<subscription, bi::constant_time_size<false>>;
+            using subscription_list_type = boost::intrusive::list<subscription, boost::intrusive::constant_time_size<false>>;
             std::optional<subscription_list_type> _subscriptions = subscription_list_type();
 
         public:

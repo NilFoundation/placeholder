@@ -53,7 +53,7 @@
 #include <chrono>
 #include <utility>
 
-#include <nil/actor/net/socket_defs.hh>
+#include <nil/actor/network/socket_defs.hh>
 
 #include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/thread_affinity.hh>
