@@ -24,13 +24,20 @@
 
 #pragma once
 
+#include <boost/predef.h>
+
+#if BOOST_OS_LINUX
+#include <nil/actor/core/detail/reactor_backend_aio.hh>
+#else
 #include <nil/actor/core/detail/reactor_backend.hh>
+#endif
 
 #include <sys/epoll.h>
 #include <sys/syscall.h>
 
 namespace nil {
     namespace actor {
+
         class epoll_pollable_fd_state : public pollable_fd_state {
             pollable_fd_state_completion _pollin;
             pollable_fd_state_completion _pollout;

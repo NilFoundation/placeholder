@@ -27,6 +27,7 @@
 #include <nil/actor/detail/read_first_line.hh>
 
 #include <chrono>
+
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 #include <sys/syscall.h>
@@ -72,7 +73,7 @@ namespace nil {
             }
         }
 
-        aio_storage_context::aio_storage_context(reactor *r) : _r(r), _io_context(0) {
+        aio_storage_context::aio_storage_context(reactor &r) : _r(r), _io_context(0) {
             static_assert(max_aio >= reactor::max_queues * reactor::max_queues,
                           "Mismatch between maximum allowed io and what the IO queues can produce");
             detail::setup_aio_context(max_aio, &_io_context);
@@ -114,7 +115,7 @@ namespace nil {
                     return 1;
                 }
                 default:
-                    ++_r->_io_stats.aio_errors;
+                    ++_r._io_stats.aio_errors;
                     throw_system_error_on(true, "io_submit");
                     abort();
             }
@@ -126,7 +127,7 @@ namespace nil {
             bool did_work = false;
 
             _submission_queue.resize(0);
-            size_t to_submit = _r->_io_sink.drain([this](detail::io_request &req, io_completion *desc) -> bool {
+            size_t to_submit = _r._io_sink.drain([this](detail::io_request &req, io_completion *desc) -> bool {
                 if (!_iocb_pool.has_capacity()) {
                     return false;
                 }
@@ -134,8 +135,8 @@ namespace nil {
                 auto &io = _iocb_pool.get_one();
                 prepare_iocb(req, desc, io);
 
-                if (_r->_aio_eventfd) {
-                    set_eventfd_notification(io, _r->_aio_eventfd->get_fd());
+                if (_r._aio_eventfd) {
+                    set_eventfd_notification(io, _r._aio_eventfd->get_fd());
                 }
                 _submission_queue.push_back(&io);
                 return true;
@@ -167,7 +168,7 @@ namespace nil {
         void aio_storage_context::schedule_retry() {
             // FIXME: future is discarded
             (void)do_with(std::exchange(_pending_aio_retry, {}), [this](pending_aio_retry_t &retries) {
-                return _r->_thread_pool
+                return _r._thread_pool
                     ->submit<syscall_result<int>>([this, &retries]() mutable {
                         auto r = io_submit(_io_context, retries.size(), retries.data());
                         return wrap_syscall<int>(r);
@@ -187,7 +188,7 @@ namespace nil {
 
         bool aio_storage_context::reap_completions() {
             struct timespec timeout = {0, 0};
-            auto n = io_getevents(_io_context, 1, max_aio, _ev_buffer, &timeout, _r->_force_io_getevents_syscall);
+            auto n = io_getevents(_io_context, 1, max_aio, _ev_buffer, &timeout, _r._force_io_getevents_syscall);
             if (n == -1 && errno == EINTR) {
                 n = 0;
             }
@@ -212,7 +213,7 @@ namespace nil {
             //
             // Alternatively, if we enabled _aio_eventfd, we can always enter
             unsigned executing = _iocb_pool.outstanding();
-            return executing == 0 || _r->_aio_eventfd;
+            return executing == 0 || _r._aio_eventfd;
         }
 
         aio_general_context::aio_general_context(size_t nr) : iocbs(new iocb *[nr]) {
@@ -250,15 +251,15 @@ namespace nil {
             }
         }
 
-        hrtimer_aio_completion::hrtimer_aio_completion(reactor *r, file_desc &fd) :
+        hrtimer_aio_completion::hrtimer_aio_completion(reactor &r, file_desc &fd) :
             fd_kernel_completion(r, fd), completion_with_iocb(fd.get(), POLLIN, this) {
         }
 
-        task_quota_aio_completion::task_quota_aio_completion(reactor *r, file_desc &fd) :
+        task_quota_aio_completion::task_quota_aio_completion(reactor &r, file_desc &fd) :
             fd_kernel_completion(r, fd), completion_with_iocb(fd.get(), POLLIN, this) {
         }
 
-        smp_wakeup_aio_completion::smp_wakeup_aio_completion(reactor *r, file_desc &fd) :
+        smp_wakeup_aio_completion::smp_wakeup_aio_completion(reactor &r, file_desc &fd) :
             fd_kernel_completion(r, fd), completion_with_iocb(fd.get(), POLLIN, this) {
         }
 
@@ -266,7 +267,7 @@ namespace nil {
             uint64_t expirations = 0;
             (void)_fd.read(&expirations, 8);
             if (expirations) {
-                _r->service_highres_timer();
+                _r.service_highres_timer();
             }
             completion_with_iocb::completed();
         }
@@ -283,7 +284,7 @@ namespace nil {
             completion_with_iocb::completed();
         }
 
-        preempt_io_context::preempt_io_context(reactor *r, file_desc &task_quota, file_desc &hrtimer) :
+        preempt_io_context::preempt_io_context(reactor &r, file_desc &task_quota, file_desc &hrtimer) :
             _r(r), _task_quota_aio_completion(r, task_quota), _hrtimer_aio_completion(r, hrtimer) {
         }
 
@@ -295,7 +296,7 @@ namespace nil {
         }
 
         void preempt_io_context::stop_tick() {
-            g_need_preempt = &_r->_preemption_monitor;
+            g_need_preempt = &_r._preemption_monitor;
         }
 
         void preempt_io_context::request_preemption() {
@@ -377,13 +378,13 @@ namespace nil {
             engine()._signals.action(signo, siginfo, ignore);
         }
 
-        reactor_backend_aio::reactor_backend_aio(reactor *r) :
+        reactor_backend_aio::reactor_backend_aio(reactor &r) :
             _r(r), _hrtimer_timerfd(make_timerfd()), _storage_context(_r),
-            _preempting_io(_r, _r->_task_quota_timer, _hrtimer_timerfd), _hrtimer_poll_completion(_r, _hrtimer_timerfd),
-            _smp_wakeup_aio_completion(_r, _r->_notify_eventfd) {
+            _preempting_io(_r, _r._task_quota_timer, _hrtimer_timerfd), _hrtimer_poll_completion(_r, _hrtimer_timerfd),
+            _smp_wakeup_aio_completion(_r, _r._notify_eventfd) {
             // Protect against spurious wakeups - if we get notified that the timer has
             // expired when it really hasn't, we don't want to block in read(tfd, ...).
-            auto tfd = _r->_task_quota_timer.get();
+            auto tfd = _r._task_quota_timer.get();
             ::fcntl(tfd, F_SETFL, ::fcntl(tfd, F_GETFL) | O_NONBLOCK);
 
             sigset_t mask = make_sigset_mask(hrtimer_signal());
@@ -504,11 +505,7 @@ namespace nil {
         }
 
         void reactor_backend_aio::arm_highres_timer(const ::itimerspec &its) {
-#if BOOST_OS_LINUX
             _hrtimer_timerfd.timerfd_settime(TFD_TIMER_ABSTIME, its);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS
-
-#endif
         }
 
         void reactor_backend_aio::reset_preemption_monitor() {

@@ -146,7 +146,7 @@ namespace nil {
     namespace actor {
 
         void register_network_stack(
-            const sstring& name, const boost::program_options::options_description& opts,
+            const sstring &name, const boost::program_options::options_description &opts,
             noncopyable_function<future<std::unique_ptr<network_stack>>(boost::program_options::variables_map opts)>
                 create,
             bool make_default = false);
@@ -269,8 +269,12 @@ namespace nil {
 
         private:
             reactor_config _cfg;
+
+        public:
             file_desc _notify_eventfd;
             file_desc _task_quota_timer;
+
+        private:
 #ifdef HAVE_OSV
             reactor_backend_osv _backend;
             sched::thread _timer_thread;
@@ -513,7 +517,7 @@ namespace nil {
             future<> update_shares_for_class(io_priority_class pc, uint32_t shares);
             static future<> rename_priority_class(io_priority_class pc, sstring new_name) noexcept;
 
-            void configure(const boost::program_options::variables_map& vm);
+            void configure(const boost::program_options::variables_map &vm);
 
             server_socket listen(socket_address sa, listen_options opts = {});
 

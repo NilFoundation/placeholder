@@ -722,9 +722,13 @@ namespace nil {
 
         void reactor::signals::failed_to_handle(int signo) {
             char tname[64];
-            uint64_t tid;
             pthread_getname_np(pthread_self(), tname, sizeof(tname));
+#if BOOST_OS_LINUX
+            uint64_t tid = syscall(SYS_gettid);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+            uint64_t tid;
             pthread_threadid_np(NULL, &tid);
+#endif
             seastar_logger.error("Failed to handle signal {} on thread {} ({}): engine not ready", signo, tid, tname);
         }
 
@@ -3693,7 +3697,7 @@ namespace nil {
 
         public:
             uint64_t per_io_group(uint64_t qty, unsigned nr_groups) const noexcept {
-                return std::max(qty / nr_groups, 1ull);
+                return std::max(qty / nr_groups, uint64_t(1));
             }
 
             unsigned num_io_groups() const noexcept {

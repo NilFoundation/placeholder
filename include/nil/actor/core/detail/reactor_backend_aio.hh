@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <poll.h>
+
 #include <nil/actor/core/detail/reactor_backend.hh>
 
 namespace nil {
@@ -73,7 +75,7 @@ namespace nil {
                 bool has_capacity() const;
             };
 
-            reactor *_r;
+            reactor &_r;
             detail::linux_abi::aio_context_t _io_context;
             boost::container::static_vector<detail::linux_abi::iocb *, max_aio> _submission_queue;
             iocb_pool _iocb_pool;
@@ -83,7 +85,7 @@ namespace nil {
             detail::linux_abi::io_event _ev_buffer[max_aio];
 
         public:
-            explicit aio_storage_context(reactor *r);
+            explicit aio_storage_context(reactor &r);
             ~aio_storage_context();
 
             bool reap_completions();
@@ -120,9 +122,9 @@ namespace nil {
 
         class fd_kernel_completion : public kernel_completion {
         protected:
-            reactor *_r;
+            reactor &_r;
             file_desc &_fd;
-            fd_kernel_completion(reactor *r, file_desc &fd) : _r(r), _fd(fd) {
+            fd_kernel_completion(reactor &r, file_desc &fd) : _r(r), _fd(fd) {
             }
 
         public:
@@ -132,30 +134,30 @@ namespace nil {
         };
 
         struct hrtimer_aio_completion : public fd_kernel_completion, public completion_with_iocb {
-            hrtimer_aio_completion(reactor *r, file_desc &fd);
+            hrtimer_aio_completion(reactor &r, file_desc &fd);
             virtual void complete_with(ssize_t value) override;
         };
 
         struct task_quota_aio_completion : public fd_kernel_completion, public completion_with_iocb {
-            task_quota_aio_completion(reactor *r, file_desc &fd);
+            task_quota_aio_completion(reactor &r, file_desc &fd);
             virtual void complete_with(ssize_t value) override;
         };
 
         struct smp_wakeup_aio_completion : public fd_kernel_completion, public completion_with_iocb {
-            smp_wakeup_aio_completion(reactor *r, file_desc &fd);
+            smp_wakeup_aio_completion(reactor &r, file_desc &fd);
             virtual void complete_with(ssize_t value) override;
         };
 
         // Common aio-based Implementation of the task quota and hrtimer.
         class preempt_io_context {
-            reactor *_r;
+            reactor &_r;
             aio_general_context _context {2};
 
             task_quota_aio_completion _task_quota_aio_completion;
             hrtimer_aio_completion _hrtimer_aio_completion;
 
         public:
-            preempt_io_context(reactor *r, file_desc &task_quota, file_desc &hrtimer);
+            preempt_io_context(reactor &r, file_desc &task_quota, file_desc &hrtimer);
             bool service_preempting_io();
 
             size_t flush() {
@@ -170,7 +172,7 @@ namespace nil {
 
         class reactor_backend_aio : public reactor_backend {
             static constexpr size_t max_polls = 10000;
-            reactor *_r;
+            reactor &_r;
             file_desc _hrtimer_timerfd;
             aio_storage_context _storage_context;
             // We use two aio contexts, one for preempting events (the timer tick and
@@ -183,7 +185,7 @@ namespace nil {
             bool await_events(int timeout, const sigset_t *active_sigmask);
 
         public:
-            explicit reactor_backend_aio(reactor *r);
+            explicit reactor_backend_aio(reactor &r);
 
             virtual bool reap_kernel_completions() override;
             virtual bool kernel_submit_work() override;

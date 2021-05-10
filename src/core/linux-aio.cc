@@ -163,7 +163,7 @@ namespace nil {
                 auto r = io_setup(nr, io_context);
                 if (r < 0) {
                     char buf[1024];
-                    char *msg = strerror(errno, buf, sizeof(buf));
+                    char *msg = strerror_r(errno, buf, sizeof(buf));
                     throw std::runtime_error(fmt::format(
                         "Could not setup Async I/O: {}. The most common cause is not enough request capacity "
                         "in /proc/sys/fs/aio-max-nr. Try increasing that number or reducing the amount of "

@@ -27,6 +27,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <string>
+#include <memory>
 
 #include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/spinlock.hh>

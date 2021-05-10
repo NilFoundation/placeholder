@@ -24,7 +24,7 @@ macro(cm_find_package NAME)
     if(NOT "${NAME}" MATCHES "^${CMAKE_WORKSPACE_NAME}_.*$" AND NOT "${NAME}" STREQUAL CM)
         find_package(${ARGV})
     else()
-        set(${ARGV0}_FOUND ON CACHE BOOL "")
+        set(${ARGV0}_FOUND TRUE CACHE BOOL "")
     endif()
 endmacro()
 
@@ -167,27 +167,27 @@ set(BUILD_WITH_CXX_FLAGS
 
 option(BUILD_WITH_DPDK
        "Enable DPDK support."
-       OFF)
+       FALSE)
 
 option(BUILD_WITH_EXCLUDE_APPS_FROM_ALL
        "When enabled alongside BUILD_WITH_APPS, do not build applications by default."
-       OFF)
+       FALSE)
 
 option(BUILD_WITH_EXCLUDE_DEMOS_FROM_ALL
        "When enabled alongside BUILD_WITH_DEMOS, do not build demonstrations by default."
-       OFF)
+       FALSE)
 
 option(BUILD_WITH_EXCLUDE_TESTS_FROM_ALL
        "When enabled alongside BUILD_WITH_TESTING, do not build tests by default."
-       OFF)
+       FALSE)
 
 option(BUILD_WITH_EXECUTE_ONLY_FAST_TESTS
        "Only execute tests which run quickly."
-       OFF)
+       FALSE)
 
 option(BUILD_WITH_HWLOC
        "Enable hwloc support."
-       ON)
+       TRUE)
 
 set(BUILD_WITH_LD_FLAGS
     ""
@@ -200,7 +200,7 @@ option(BUILD_WITH_COMPRESS_DEBUG "Compress debug info." TRUE)
 option(BUILD_WITH_SPLIT_DWARF "Use split dwarf." FALSE)
 option(BUILD_WITH_HEAP_PROFILING
        "Enable heap profiling. No effect when Actor is compiled with the default allocator."
-       OFF)
+       FALSE)
 
 set(BUILD_WITH_TEST_TIMEOUT
     "300"
@@ -237,23 +237,23 @@ set(BUILD_WITH_TEST_ENVIRONMENT
 
 option(BUILD_WITH_UNUSED_RESULT_ERROR
        "Make [[nodiscard]] violations an error (instead of a warning)."
-       OFF)
+       FALSE)
 
 set(BUILD_WITH_STACK_GUARDS
     "DEFAULT"
     CACHE
     STRING
-    "Enable stack guards. Can be ON, OFF or DEFAULT (which enables it for non release builds)")
+    "Enable stack guards. Can be TRUE, FALSE or DEFAULT (which enables it for non release builds)")
 
 option(BUILD_WITH_SANITIZE
-       "Enable ASAN and UBSAN. Can be ON, OFF or DEFAULT (which enables it for Debug and Sanitize)"
+       "Enable ASAN and UBSAN. Can be TRUE, FALSE or DEFAULT (which enables it for Debug and Sanitize)"
        FALSE)
 
 set(BUILD_WITH_DEBUG_SHARED_PTR
     "DEFAULT"
     CACHE
     STRING
-    "Enable shared_ptr debugging. Can be ON, OFF or DEFAULT (which enables it for Debug and Sanitize)")
+    "Enable shared_ptr debugging. Can be TRUE, FALSE or DEFAULT (which enables it for Debug and Sanitize)")
 
 #
 # Useful (non-cache) variables.
@@ -453,7 +453,8 @@ set(${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS
     -Wall
     -Werror
     -Wno-array-bounds # Disabled because of https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93437
-    -Wno-error=deprecated-declarations)
+    -Wno-error=deprecated-declarations
+    -fPIC)
 
 if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang"))
     list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS -fdeclspec)
@@ -718,7 +719,7 @@ endif()
 
 if(BUILD_WITH_LD_FLAGS)
     # In newer versions of CMake, there is `target_link_options`.
-    list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES ${BUILD_WITH_LD_FLAGS})
+    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LINK_OPTIONS ${BUILD_WITH_LD_FLAGS})
 endif()
 
 if(BUILD_WITH_NUMA)
@@ -778,6 +779,8 @@ elseif(APPLE)
 
 endif()
 
+list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LINK_OPTIONS "-fPIC")
+
 add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} STATIC
             ${${CURRENT_PROJECT_NAME}_HEADERS}
             ${${CURRENT_PROJECT_NAME}_SOURCES})
@@ -809,6 +812,9 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                       PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES} ${CMAKE_WORKSPACE_NAME}::network
                       PRIVATE ${${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES}
                       INTERFACE ${${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES})
+
+target_link_options(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+                    PUBLIC ${${CURRENT_PROJECT_NAME}_PUBLIC_LINK_OPTIONS})
 
 if(BUILD_TESTS)
     set(testing_HEADERS
@@ -865,6 +871,8 @@ if(BUILD_TESTS)
 
                           ${Boost_LIBRARIES})
 
+    target_link_options(${CMAKE_WORKSPACE_NAME}_testing PUBLIC ${testing_PUBLIC_LINK_OPTIONS})
+
     target_compile_definitions(${CMAKE_WORKSPACE_NAME}_testing PRIVATE BOOST_TEST_DYN_LINK BOOST_TEST_NO_MAIN)
 
     add_library(${CMAKE_WORKSPACE_NAME}_perf_testing
@@ -902,6 +910,8 @@ if(BUILD_TESTS)
                           Boost::unit_test_framework
 
                           ${Boost_LIBRARIES})
+
+    target_link_options(${CMAKE_WORKSPACE_NAME}_perf_testing PUBLIC ${testing_PUBLIC_LINK_OPTIONS})
 
     cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
               ${CMAKE_WORKSPACE_NAME}_testing

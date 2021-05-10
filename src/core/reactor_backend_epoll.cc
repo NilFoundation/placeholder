@@ -16,11 +16,16 @@
 //---------------------------------------------------------------------------//
 
 #include <nil/actor/core/detail/reactor_backend_epoll.hh>
+#include <nil/actor/core/detail/buffer_allocator.hh>
 #include <nil/actor/core/detail/thread_pool.hh>
 #include <nil/actor/core/detail/syscall_result.hh>
+
+#if BOOST_OS_LINUX
+#include <nil/actor/core/detail/reactor_backend_aio.hh>
+#endif
+
 #include <nil/actor/core/print.hh>
 #include <nil/actor/core/reactor.hh>
-#include <nil/actor/core/detail/buffer_allocator.hh>
 
 #include <nil/actor/detail/defer.hh>
 #include <nil/actor/detail/read_first_line.hh>
@@ -121,7 +126,7 @@ namespace nil {
             {
                 uint64_t events;
 #if BOOST_OS_LINUX
-                _task_quota_timer.read(&events, sizeof(uint64_t));
+                _r._task_quota_timer.read(&events, sizeof(uint64_t));
 #elif BOOST_OS_MACOS || BOOST_OS_IOS
                 r = ::timerfd_read(_r._task_quota_timer.get(), &events, sizeof(uint64_t));
                 throw_system_error_on(r == -1);

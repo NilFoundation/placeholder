@@ -282,7 +282,7 @@ namespace nil {
             return engine()
                 ._thread_pool
                 ->submit<syscall_result<int>>([this, position, length]() mutable {
-                    auto ret = detail::fallocate(_fd, FALLOC_FL_ZERO_RANGE | FALLOC_FL_KEEP_SIZE, position, length);
+                    int ret = detail::fallocate(_fd, FALLOC_FL_ZERO_RANGE | FALLOC_FL_KEEP_SIZE, position, length);
                     if (ret == -1 && errno == EOPNOTSUPP) {
                         ret = 0;
                         supported = false;    // Racy, but harmless.  At most we issue an extra call or two.
