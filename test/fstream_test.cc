@@ -498,7 +498,7 @@ ACTOR_TEST_CASE(test_fstream_slow_start) {
                 buf = fstr.read().get0();
                 total_read += buf.size();
 
-                auto skip_by = std::min(file_size - total_read, buffer_size * 2ull);
+                auto skip_by = std::min(uint64_t(file_size - total_read), uint64_t(buffer_size * 2));
                 fstr.skip(skip_by).get();
                 total_read += skip_by;
             }
