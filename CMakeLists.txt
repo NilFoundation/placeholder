@@ -283,7 +283,7 @@ if(BUILD_WITH_DPDK AND NOT dpdk_FOUND AND NOT TARGET dpdk)
         T=${dpdk_quadruple})
 
     externalproject_add(dpdk
-                        GIT_REPOSITORY https://github.com/scylladb/dpdk.git
+                        GIT_REPOSITORY git@github.com:nilfoundation/dpdk.git
                         DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
                         SOURCE_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
                         CONFIGURE_COMMAND
@@ -302,8 +302,6 @@ if(BUILD_WITH_DPDK AND NOT dpdk_FOUND AND NOT TARGET dpdk)
                         ${make_command} ${dpdk_args} install)
 
     set(actor_dpdk_obj actor-dpdk.o)
-
-    #    find_package(dpdk REQUIRED)
 endif()
 
 find_package(Valgrind REQUIRED)
