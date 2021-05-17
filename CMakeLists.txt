@@ -14,6 +14,7 @@ cm_find_package(CM)
 include(CMConfig)
 include(CMDeploy)
 include(CMSetupVersion)
+include(ActorDependencies)
 include(ExternalProject)
 
 if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
@@ -263,26 +264,58 @@ set(BUILD_WITH_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(BUILD_WITH_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(BUILD_WITH_GEN_BINARY_DIR ${BUILD_WITH_BINARY_DIR}/gen)
 
-include(ActorDependencies)
 actor_find_dependencies()
+
+if(BUILD_WITH_DPDK AND NOT dpdk_FOUND AND NOT TARGET dpdk)
+    # Use the "native" profile that DPDK defines in `dpdk/config`, but in `dpdk_configure.cmake` we override
+    # CONFIG_RTE_MACHINE with `ACTOR_DPDK_MACHINE`.
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        set(dpdk_quadruple arm64-armv8a-linuxapp-gcc)
+    else()
+        set(dpdk_quadruple ${CMAKE_SYSTEM_PROCESSOR}-native-linuxapp-gcc)
+    endif()
+
+    set(dpdk_args
+        # gcc 10 defaults to -fno-common, which dpdk is not prepared for
+        "EXTRA_CFLAGS=-Wno-error -fcommon"
+        O=<BINARY_DIR>
+        DESTDIR=<INSTALL_DIR>
+        T=${dpdk_quadruple})
+
+    externalproject_add(dpdk
+                        GIT_REPOSITORY https://github.com/scylladb/dpdk.git
+                        DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
+                        SOURCE_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
+                        CONFIGURE_COMMAND
+                        COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
+                        make ${dpdk_args} config
+                        COMMAND
+                        ${CMAKE_COMMAND}
+                        -DACTOR_DPDK_MACHINE=${ACTOR_DPDK_MACHINE}
+                        -DACTOR_DPDK_CONFIG_FILE_IN=<BINARY_DIR>/.config
+                        -DACTOR_DPDK_CONFIG_FILE_CHANGES=${CMAKE_CURRENT_SOURCE_DIR}/dpdk_config
+                        -DACTOR_DPDK_CONFIG_FILE_OUT=<BINARY_DIR>/${dpdk_quadruple}/.config
+                        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dpdk_configure.cmake
+                        BUILD_COMMAND ""
+                        INSTALL_COMMAND
+                        ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
+                        ${make_command} ${dpdk_args} install)
+
+    set(actor_dpdk_obj actor-dpdk.o)
+
+    #    find_package(dpdk REQUIRED)
+endif()
 
 find_package(Valgrind REQUIRED)
 if(VALGRIND_FOUND)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_HAS_VALGRIND)
 endif()
 
-
 # Private build dependencies not visible to consumers
 find_package(ragel 6.10 REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PthreadSetName REQUIRED)
 
-if(BUILD_WITH_DPDK)
-    set(seastar_dpdk_obj seastar-dpdk.o)
-endif()
-
-# get header files; only needed by CMake generators,
-# e.g., for creating proper Xcode projects
 set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/abort_source.hh
     include/nil/actor/core/alien.hh
@@ -624,7 +657,7 @@ endif()
 # When using split dwarf --gdb-index is effectively required since
 # otherwise gdb is just too slow. We also want to use split dwarf in
 # as many compilation units as possible.  So while these flags don't
-# have to be public, we don't expect anyone to want to build seastar
+# have to be public, we don't expect anyone to want to build actor
 # with them and some client code without.
 if(BUILD_WITH_SPLIT_DWARF AND (NOT (CMAKE_BUILD_TYPE STREQUAL "Dev")))
     set(BUILD_WITH_SPLIT_DWARF_FLAG "-Wl,--gdb-index")
@@ -638,42 +671,6 @@ if(BUILD_WITH_HEAP_PROFILING)
 endif()
 
 if(BUILD_WITH_DPDK)
-    if(NOT dpdk_FOUND AND NOT TARGET dpdk)
-        # Use the "native" profile that DPDK defines in `dpdk/config`, but in `dpdk_configure.cmake` we override
-        # CONFIG_RTE_MACHINE with `ACTOR_DPDK_MACHINE`.
-        if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-            set(dpdk_quadruple arm64-armv8a-linuxapp-gcc)
-        else()
-            set(dpdk_quadruple ${CMAKE_SYSTEM_PROCESSOR}-native-linuxapp-gcc)
-        endif()
-
-        set(dpdk_args
-            # gcc 10 defaults to -fno-common, which dpdk is not prepared for
-            "EXTRA_CFLAGS=-Wno-error -fcommon"
-            O=<BINARY_DIR>
-            DESTDIR=<INSTALL_DIR>
-            T=${dpdk_quadruple})
-
-        externalproject_add(dpdk
-                            GIT_REPOSITORY https://github.com/DPDK/dpdk.git
-                            DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
-                            SOURCE_DIR ${CMAKE_SOURCE_DIR}/libs/dpdk
-                            CONFIGURE_COMMAND
-                            COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
-                            make ${dpdk_args} config
-                            COMMAND
-                            ${CMAKE_COMMAND}
-                            -DACTOR_DPDK_MACHINE=${ACTOR_DPDK_MACHINE}
-                            -DACTOR_DPDK_CONFIG_FILE_IN=<BINARY_DIR>/.config
-                            -DACTOR_DPDK_CONFIG_FILE_CHANGES=${CMAKE_CURRENT_SOURCE_DIR}/dpdk_config
-                            -DACTOR_DPDK_CONFIG_FILE_OUT=<BINARY_DIR>/${dpdk_quadruple}/.config
-                            -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/dpdk_configure.cmake
-                            BUILD_COMMAND <DISABLE>
-                            INSTALL_COMMAND
-                            ${CMAKE_COMMAND} -E chdir <SOURCE_DIR>
-                            ${make_command} ${dpdk_args} install)
-    endif()
-
     #
     # The DPDK architecture needs to be transitively applied to consumers of Actor as well.
     #
@@ -694,14 +691,14 @@ if(BUILD_WITH_DPDK)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_HAVE_DPDK)
 
     # No pmd driver code will be pulled in without "--whole-archive". To
-    # avoid exposing that to seastar users, combine dpdk into a single
+    # avoid exposing that to actor users, combine dpdk into a single
     # .o file.
-    add_custom_command(OUTPUT seastar-dpdk.o
-                       COMMAND ld -r -o seastar-dpdk.o --whole-archive ${dpdk_LIBRARIES}
+    add_custom_command(OUTPUT actor-dpdk.o
+                       COMMAND ld -r -o actor-dpdk.o --whole-archive ${dpdk_LIBRARIES}
                        --no-whole-archive)
 
     # This just provides the include path to cmake
-    list(APPEND ${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES dpdk)
+    #    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES dpdk::dpdk)
 endif()
 
 if(BUILD_WITH_HWLOC)
@@ -710,11 +707,7 @@ if(BUILD_WITH_HWLOC)
     endif()
 
     list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_COMPILE_DEFINITIONS ACTOR_HAVE_HWLOC)
-    #    if (BUILD_SHARED_LIBS)
-    #   list(APPEND ${CURRENT_PROJECT_NAME}_PRIVATE_LIBRARIES hwloc::hwloc)
-    #    else()
-    list(APPEND ${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES hwloc::hwloc)
-    #    endif()
+    list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LIBRARIES hwloc::hwloc)
 endif()
 
 if(BUILD_WITH_LD_FLAGS)

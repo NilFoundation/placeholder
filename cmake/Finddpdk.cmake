@@ -72,8 +72,7 @@ endif()
 
 find_package_handle_standard_args(dpdk
                                   REQUIRED_VARS
-                                  ${dpdk_REQUIRED}
-                                  )
+                                  ${dpdk_REQUIRED})
 
 if(dpdk_FOUND AND NOT (TARGET dpdk::dpdk))
     set(dpdk_LIBRARIES

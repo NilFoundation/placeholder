@@ -29,7 +29,6 @@ macro(actor_find_dependencies)
         # Public dependencies.
         Boost
         c-ares
-        dpdk # No version information published.
         fmt
         lz4
         # Private and private/public dependencies.
