@@ -47,6 +47,7 @@
 // Spans have a size that is a power-of-two and are naturally aligned (aka buddy
 // allocator)
 
+#include <boost/optional.hpp>
 #include <boost/predef.h>
 
 #include <boost/container/pmr/memory_resource.hpp>
@@ -57,7 +58,6 @@
 #include <nil/actor/core/print.hh>
 #include <nil/actor/detail/alloc_failure_injector.hh>
 #include <nil/actor/detail/memory_diagnostics.hh>
-#include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/log.hh>
 #include <nil/actor/core/aligned_buffer.hh>
 
@@ -207,7 +207,7 @@ namespace nil {
 
             static std::atomic<bool> live_cpus[max_cpus];
 
-            using std::optional;
+            using boost::optional;
 
             // is_reactor_thread gets set to true when memory::configure() gets called
             // it is used to identify seastar threads and hence use system memory allocator
@@ -2246,7 +2246,7 @@ namespace nil {
             void set_reclaim_hook(std::function<void(std::function<void()>)> hook) {
             }
 
-            void configure(std::vector<resource::memory> m, bool mbind, std::optional<std::string> hugepages_path) {
+            void configure(std::vector<resource::memory> m, bool mbind, boost::optional<std::string> hugepages_path) {
             }
 
             statistics stats() {

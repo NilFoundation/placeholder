@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
+
 #include <nil/actor/core/do_with.hh>
 #include <nil/actor/core/stream.hh>
 #include <nil/actor/core/sstring.hh>
@@ -31,7 +33,6 @@
 #include <nil/actor/core/align.hh>
 #include <nil/actor/core/io_priority_class.hh>
 #include <nil/actor/core/file-types.hh>
-#include <nil/actor/detail/std-compat.hh>
 
 #include <system_error>
 
@@ -51,7 +52,7 @@ namespace nil {
             /// Name of the file in a directory entry.  Will never be "." or "..".  Only the last component is included.
             sstring name;
             /// Type of the directory entry, if known.
-            std::optional<directory_entry_type> type;
+            boost::optional<directory_entry_type> type;
         };
 
         /// Filesystem object stat information

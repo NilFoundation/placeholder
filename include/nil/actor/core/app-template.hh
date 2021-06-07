@@ -27,6 +27,7 @@
 #include <chrono>
 #include <functional>
 
+#include <boost/optional.hpp>
 #include <boost/program_options.hpp>
 
 #include <nil/actor/core/future.hh>
@@ -72,7 +73,7 @@ namespace nil {
             boost::program_options::options_description _opts;
             boost::program_options::options_description _opts_conf_file;
             boost::program_options::positional_options_description _pos_opts;
-            std::optional<boost::program_options::variables_map> _configuration;
+            boost::optional<boost::program_options::variables_map> _configuration;
             configuration_reader _conf_reader;
 
             configuration_reader get_default_configuration_reader();

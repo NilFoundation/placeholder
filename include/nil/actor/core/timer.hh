@@ -28,6 +28,8 @@
 #include <atomic>
 #include <functional>
 
+#include <boost/optional.hpp>
+
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/timer-set.hh>
 #include <nil/actor/core/scheduling.hh>
@@ -92,12 +94,12 @@ namespace nil {
             scheduling_group _sg;
             callback_t _callback;
             time_point _expiry;
-            std::optional<duration> _period;
+            boost::optional<duration> _period;
             bool _armed = false;
             bool _queued = false;
             bool _expired = false;
             void readd_periodic() noexcept;
-            void arm_state(time_point until, std::optional<duration> period) noexcept {
+            void arm_state(time_point until, boost::optional<duration> period) noexcept {
                 assert(!_armed);
                 _period = period;
                 _armed = true;
@@ -162,7 +164,7 @@ namespace nil {
             /// \param period optional automatic rearm duration; if given the timer
             ///        will automatically rearm itself when it expires, using the period
             ///        to calculate the next expiration time.
-            void arm(time_point until, std::optional<duration> period = {}) noexcept;
+            void arm(time_point until, boost::optional<duration> period = {}) noexcept;
             /// Sets the timer expiration time. If the timer was already armed, it is
             /// canceled first.
             ///
@@ -170,7 +172,7 @@ namespace nil {
             /// \param period optional automatic rearm duration; if given the timer
             ///        will automatically rearm itself when it expires, using the period
             ///        to calculate the next expiration time.
-            void rearm(time_point until, std::optional<duration> period = {}) noexcept {
+            void rearm(time_point until, boost::optional<duration> period = {}) noexcept {
                 if (_armed) {
                     cancel();
                 }

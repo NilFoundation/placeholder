@@ -77,7 +77,7 @@ namespace nil {
             ///
             /// If this optional is engaged, timeout exception messages of the group's
             /// semaphores will indicate the group's name.
-            std::optional<sstring> group_name;
+            boost::optional<sstring> group_name;
         };
 
         /// A resource controller for cross-shard calls.
@@ -216,7 +216,7 @@ namespace nil {
                 using futurator = futurize<std::result_of_t<Func()>>;
                 using future_type = typename futurator::type;
                 using value_type = typename future_type::value_type;
-                std::optional<value_type> _result;
+                boost::optional<value_type> _result;
                 std::exception_ptr _ex;                       // if !_result
                 typename futurator::promise_type _promise;    // used on local side
                 async_work_item(smp_message_queue &queue, smp_service_group ssg, Func &&func) :
@@ -306,7 +306,7 @@ namespace nil {
         class smp {
             static std::vector<posix_thread> _threads;
             static std::vector<std::function<void()>> _thread_loops;    // for dpdk
-            static std::optional<boost::barrier> _all_event_loops_done;
+            static boost::optional<boost::barrier> _all_event_loops_done;
             static std::vector<reactor *> _reactors;
             struct qs_deleter {
                 void operator()(smp_message_queue **qs) const;

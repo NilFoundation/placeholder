@@ -51,7 +51,7 @@ namespace nil {
                                                      string2vector("-c"), string2vector(mask_str), string2vector("-n"),
                                                      string2vector("1")};
 
-                std::optional<std::string> hugepages_path;
+                boost::optional<std::string> hugepages_path;
                 if (opts.count("hugepages")) {
                     hugepages_path = opts["hugepages"].as<std::string>();
                 }

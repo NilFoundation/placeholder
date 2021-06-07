@@ -72,7 +72,7 @@ ACTOR_TEST_CASE(test_simple_coroutines) {
 }
 
 ACTOR_TEST_CASE(test_abandond_coroutine) {
-    std::optional<future<int>> f;
+    boost::optional<future<int>> f;
     {
         auto p1 = promise<>();
         auto p2 = promise<>();

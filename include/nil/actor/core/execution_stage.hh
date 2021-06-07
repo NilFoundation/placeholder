@@ -354,7 +354,7 @@ namespace nil {
 
             sstring _name;
             noncopyable_function<ReturnType(Args...)> _function;
-            std::vector<std::optional<per_group_stage_type>> _stage_for_group {max_scheduling_groups()};
+            std::vector<boost::optional<per_group_stage_type>> _stage_for_group {max_scheduling_groups()};
 
         private:
             per_group_stage_type make_stage_for_group(scheduling_group sg) {

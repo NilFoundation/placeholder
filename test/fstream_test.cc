@@ -259,7 +259,7 @@ future<> test_consume_until_end(uint64_t size) {
                         std::iota(expected.begin(), expected.end(), offset);
                         offset += buf.size();
                         BOOST_REQUIRE(std::equal(buf.begin(), buf.end(), expected.begin()));
-                        return make_ready_future<input_stream<char>::unconsumed_remainder>(std::nullopt);
+                        return make_ready_future<input_stream<char>::unconsumed_remainder>(boost::none);
                     };
                     return do_with(make_file_input_stream(f), std::move(consumer),
                                    [](input_stream<char> &in, auto &consumer) {
@@ -409,7 +409,7 @@ ACTOR_TEST_CASE(test_fstream_slow_start) {
         static constexpr size_t requests_at_slow_start = 2;                 // 1 request + 1 read-ahead
         static constexpr size_t requests_at_full_speed = read_ahead + 1;    // 1 request + read_ahead
 
-        std::optional<size_t> initial_read_size;
+        boost::optional<size_t> initial_read_size;
 
         auto read_whole_file_with_slow_start = [&](auto fstr) {
             uint64_t total_read = 0;

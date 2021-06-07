@@ -79,7 +79,7 @@ namespace nil {
         /// Class that holds attributes controling the behavior of a thread.
         class thread_attributes {
         public:
-            std::optional<nil::actor::scheduling_group> sched_group;
+            boost::optional<nil::actor::scheduling_group> sched_group;
             // For stack_size 0, a default value will be used (128KiB when writing this comment)
             size_t stack_size = 0;
         };

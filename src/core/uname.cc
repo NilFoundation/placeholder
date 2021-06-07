@@ -45,7 +45,7 @@ namespace nil {
             }
 
             // Can't use optional compares, C++17 only
-            static int cmp(const std::optional<int> &u1, const std::optional<int> &u2) {
+            static int cmp(const boost::optional<int> &u1, const boost::optional<int> &u2) {
                 return int(u1.value_or(0) - u2.value_or(0));
             }
 
@@ -79,16 +79,16 @@ namespace nil {
                 static std::regex re(R"XX((\d+)\.(\d+)(?:\.(\d+)(?:\.(\d+))?)?(?:-(\d*)(.+))?)XX");
                 std::cmatch m;
                 if (std::regex_match(u, m, re)) {
-                    auto num = [](std::csub_match sm) -> std::optional<int> {
+                    auto num = [](std::csub_match sm) -> boost::optional<int> {
                         if (sm.length() > 0) {
                             return std::atoi(sm.str().c_str());
                         } else {
-                            return std::nullopt;
+                            return boost::none;
                         }
                     };
                     return uname_t {*num(m[1]), *num(m[2]), num(m[3]), num(m[4]), num(m[5]), m[6].str()};
                 } else {
-                    return uname_t {0, 0, std::nullopt, std::nullopt, std::nullopt, ""};
+                    return uname_t {0, 0, boost::none, boost::none, boost::none, ""};
                 }
             }
 

@@ -33,7 +33,7 @@ namespace nil {
 
         namespace cgroup {
 
-            using std::optional;
+            using boost::optional;
             using cpuset = std::set<unsigned>;
 
             optional<cpuset> cpu_set();

@@ -24,10 +24,12 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
+
 #include <nil/actor/core/circular_buffer.hh>
 #include <nil/actor/core/future.hh>
+
 #include <queue>
-#include <nil/actor/detail/std-compat.hh>
 
 namespace nil {
     namespace actor {
@@ -39,8 +41,8 @@ namespace nil {
         class queue {
             std::queue<T, circular_buffer<T>> _q;
             size_t _max;
-            std::optional<promise<>> _not_empty;
-            std::optional<promise<>> _not_full;
+            boost::optional<promise<>> _not_empty;
+            boost::optional<promise<>> _not_full;
             std::exception_ptr _ex = nullptr;
 
         private:
@@ -133,11 +135,11 @@ namespace nil {
                 _ex = ex;
                 if (_not_full) {
                     _not_full->set_exception(ex);
-                    _not_full = std::nullopt;
+                    _not_full = boost::none;
                 }
                 if (_not_empty) {
                     _not_empty->set_exception(std::move(ex));
-                    _not_empty = std::nullopt;
+                    _not_empty = boost::none;
                 }
             }
 
@@ -157,7 +159,7 @@ namespace nil {
         inline void queue<T>::notify_not_empty() {
             if (_not_empty) {
                 _not_empty->set_value();
-                _not_empty = std::optional<promise<>>();
+                _not_empty = boost::optional<promise<>>();
             }
         }
 
@@ -165,7 +167,7 @@ namespace nil {
         inline void queue<T>::notify_not_full() {
             if (_not_full) {
                 _not_full->set_value();
-                _not_full = std::optional<promise<>>();
+                _not_full = boost::optional<promise<>>();
             }
         }
 

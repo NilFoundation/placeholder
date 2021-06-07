@@ -306,7 +306,7 @@ namespace nil {
             bool _finished_running_tasks = false;
             condition_variable _stop_requested;
             bool _handle_sigint = true;
-            std::optional<future<std::unique_ptr<network_stack>>> _network_stack_ready;
+            boost::optional<future<std::unique_ptr<network_stack>>> _network_stack_ready;
             int _return = 0;
             promise<> _start_promise;
             semaphore _cpu_started;
@@ -374,8 +374,8 @@ namespace nil {
             // _lowres_clock_impl will only be created on cpu 0
             std::unique_ptr<lowres_clock_impl> _lowres_clock_impl;
             lowres_clock::time_point _lowres_next_timeout;
-            std::optional<poller> _epoll_poller;
-            std::optional<pollable_fd> _aio_eventfd;
+            boost::optional<poller> _epoll_poller;
+            boost::optional<pollable_fd> _aio_eventfd;
             const bool _reuseport;
             circular_buffer<double> _loads;
             double _load = 0;
@@ -543,7 +543,7 @@ namespace nil {
                                     file_permissions permissions = file_permissions::default_dir_permissions) noexcept;
             future<> touch_directory(std::string_view name,
                                      file_permissions permissions = file_permissions::default_dir_permissions) noexcept;
-            future<std::optional<directory_entry_type>> file_type(std::string_view name,
+            future<boost::optional<directory_entry_type>> file_type(std::string_view name,
                                                                   follow_symlink = follow_symlink::yes) noexcept;
             future<stat_data> file_stat(std::string_view pathname, follow_symlink) noexcept;
             future<uint64_t> file_size(std::string_view pathname) noexcept;

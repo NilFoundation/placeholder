@@ -66,7 +66,7 @@ namespace nil {
 
         private:
             struct entry {
-                std::optional<T> payload;    // disengaged means that it's expired
+                boost::optional<T> payload;    // disengaged means that it's expired
                 timer<Clock> tr;
                 entry(T &&payload_) : payload(std::move(payload_)) {
                 }
@@ -75,7 +75,7 @@ namespace nil {
                 entry(T payload_, expiring_fifo &ef, time_point timeout) :
                     payload(std::move(payload_)), tr([this, &ef] {
                         ef._on_expiry(*payload);
-                        payload = std::nullopt;
+                        payload = boost::none;
                         --ef._size;
                         ef.drop_expired_front();
                     }) {

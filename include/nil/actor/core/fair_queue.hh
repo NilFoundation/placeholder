@@ -24,6 +24,7 @@
 //
 #pragma once
 
+#include <boost/optional.hpp>
 #include <boost/intrusive/slist.hpp>
 
 #include <nil/actor/core/shared_ptr.hh>
@@ -298,7 +299,7 @@ namespace nil {
                 }
             };
 
-            std::optional<pending> _pending;
+            boost::optional<pending> _pending;
 
             priority_class_ptr peek_priority_class();
             void push_priority_class(priority_class_ptr pc);

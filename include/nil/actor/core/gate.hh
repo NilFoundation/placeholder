@@ -24,10 +24,11 @@
 
 #pragma once
 
-#include <nil/actor/core/future.hh>
-#include <nil/actor/detail/std-compat.hh>
-
 #include <exception>
+
+#include <boost/optional.hpp>
+
+#include <nil/actor/core/future.hh>
 
 namespace nil {
     namespace actor {
@@ -51,7 +52,7 @@ namespace nil {
         /// requests have completed.  The \c gate class provides a solution.
         class gate {
             size_t _count = 0;
-            std::optional<promise<>> _stopped;
+            boost::optional<promise<>> _stopped;
 
         public:
             /// Tries to register an in-progress request.
@@ -105,7 +106,7 @@ namespace nil {
             /// made ready.
             future<> close() noexcept {
                 assert(!_stopped && "nil::actor::gate::close() cannot be called more than once");
-                _stopped = std::make_optional(promise<>());
+                _stopped = boost::make_optional(promise<>());
                 if (!_count) {
                     _stopped->set_value();
                 }

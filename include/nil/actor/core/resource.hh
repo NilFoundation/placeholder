@@ -28,18 +28,17 @@
 #include <cstdlib>
 #include <string>
 #include <memory>
-
-#include <nil/actor/detail/std-compat.hh>
-#include <nil/actor/detail/spinlock.hh>
-#include <nil/actor/detail/thread_affinity.hh>
-
 #include <vector>
 #include <set>
+#include <unordered_map>
+
 #include <sched.h>
 
 #include <boost/any.hpp>
+#include <boost/optional.hpp>
 
-#include <unordered_map>
+#include <nil/actor/detail/spinlock.hh>
+#include <nil/actor/detail/thread_affinity.hh>
 
 namespace nil {
     namespace actor {
@@ -50,7 +49,7 @@ namespace nil {
 
         namespace resource {
 
-            using std::optional;
+            using boost::optional;
 
             using cpuset = std::set<unsigned>;
 

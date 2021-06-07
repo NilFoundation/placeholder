@@ -713,7 +713,7 @@ if(BUILD_WITH_LD_FLAGS)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_LINK_OPTIONS ${BUILD_WITH_LD_FLAGS})
 endif()
 
-if(BUILD_WITH_NUMA)
+if(BUILD_WITH_NUMA AND NOT APPLE)
     if(NOT numactl_FOUND)
         message(FATAL_ERROR "NUMA support is enabled but `numactl` is not available!")
     endif()

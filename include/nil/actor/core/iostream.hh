@@ -179,7 +179,7 @@ namespace nil {
             using consumption_variant = std::variant<continue_consuming, stop_consuming_type, skip_bytes>;
             using tmp_buf = typename stop_consuming_type::tmp_buf;
 
-            /*[[deprecated]]*/ consumption_result(std::optional<tmp_buf> opt_buf) {
+            /*[[deprecated]]*/ consumption_result(boost::optional<tmp_buf> opt_buf) {
                 if (opt_buf) {
                     _result = stop_consuming_type {std::move(opt_buf.value())};
                 }
@@ -230,7 +230,7 @@ namespace nil {
 
         template<typename Consumer, typename CharType>
         concept ObsoleteInputStreamConsumer = requires(Consumer c) {
-            { c(temporary_buffer<CharType> {}) } -> std::same_as<future<std::optional<temporary_buffer<CharType>>>>;
+            { c(temporary_buffer<CharType> {}) } -> std::same_as<future<boost::optional<temporary_buffer<CharType>>>>;
         };
 #endif
 
@@ -262,7 +262,7 @@ namespace nil {
         public:
             using consumption_result_type = consumption_result<CharType>;
             // unconsumed_remainder is mapped for compatibility only; new code should use consumption_result_type
-            using unconsumed_remainder = std::optional<tmp_buf>;
+            using unconsumed_remainder = boost::optional<tmp_buf>;
             using char_type = CharType;
             input_stream() noexcept = default;
             explicit input_stream(data_source fd) noexcept : _fd(std::move(fd)), _buf() {
@@ -354,7 +354,7 @@ namespace nil {
             size_t _end = 0;
             bool _trim_to_size = false;
             bool _batch_flushes = false;
-            std::optional<promise<>> _in_batch;
+            boost::optional<promise<>> _in_batch;
             bool _flush = false;
             bool _flushing = false;
             std::exception_ptr _ex;

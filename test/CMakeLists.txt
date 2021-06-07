@@ -131,6 +131,9 @@ function(actor_add_test name)
         set_target_properties(${CMAKE_WORKSPACE_NAME}_${name}_test PROPERTIES
                               CXX_STANDARD 17
                               CXX_STANDARD_REQUIRED TRUE)
+
+        target_compile_options(${CMAKE_WORKSPACE_NAME}_${name}_test PRIVATE
+                               ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS})
     else()
         if(NOT (parsed_args_KIND STREQUAL "CUSTOM"))
             message(FATAL_ERROR "SOURCES are required for ${parsed_args_KIND} tests")

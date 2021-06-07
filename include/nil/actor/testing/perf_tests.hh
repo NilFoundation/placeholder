@@ -155,7 +155,7 @@ namespace perf_tests {
 
         template<typename Test>
         class concrete_performance_test final : public performance_test {
-            std::optional<Test> _test;
+            boost::optional<Test> _test;
 
         private:
             template<typename... Args>
@@ -169,7 +169,7 @@ namespace perf_tests {
             }
 
             virtual void tear_down() noexcept override {
-                _test = std::nullopt;
+                _test = boost::none;
             }
 
             [[gnu::hot]] virtual future<clock_type::duration> do_single_run() override {

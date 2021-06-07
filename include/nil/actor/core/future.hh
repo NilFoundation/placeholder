@@ -87,7 +87,7 @@ namespace nil {
         /// \ingroup future-module
         ///
         /// A future has a stored value. Semantically, the value is a
-        /// std::optional<std::variant<T, std::exception_ptr>>. The actual
+        /// boost::optional<std::variant<T, std::exception_ptr>>. The actual
         /// type of the value in the implementation is future_state<T>.
         ///
         /// A future without an initial value can be created by first creating
@@ -294,7 +294,7 @@ namespace nil {
 
             /// \brief Wrapper for keeping uninitialized values of non default constructible types.
             ///
-            /// This is similar to a std::optional<T>, but it doesn't know if it is holding a value or not, so the user
+            /// This is similar to a boost::optional<T>, but it doesn't know if it is holding a value or not, so the user
             /// is responsible for calling constructors and destructors.
             ///
             /// The advantage over just using a union directly is that this uses inheritance when possible and so

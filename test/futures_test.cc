@@ -117,7 +117,7 @@ ACTOR_TEST_CASE(test_stream) {
 
 ACTOR_TEST_CASE(test_stream_drop_sub) {
     auto s = make_lw_shared<stream<int>>();
-    std::optional<future<>> ret;
+    boost::optional<future<>> ret;
     {
         auto sub = s->listen([](int x) { return make_ready_future<>(); });
         ret = sub.done();
@@ -988,12 +988,12 @@ ACTOR_TEST_CASE(test_futurize_from_tuple) {
 
 ACTOR_TEST_CASE(test_repeat_until_value) {
     return do_with(int(), [](int &counter) {
-        return repeat_until_value([&counter]() -> future<std::optional<int>> {
+        return repeat_until_value([&counter]() -> future<boost::optional<int>> {
                    if (counter == 10000) {
-                       return make_ready_future<std::optional<int>>(counter);
+                       return make_ready_future<boost::optional<int>>(counter);
                    } else {
                        ++counter;
-                       return make_ready_future<std::optional<int>>(std::nullopt);
+                       return make_ready_future<boost::optional<int>>(boost::none);
                    }
                })
             .then([&counter](int result) {
@@ -1004,14 +1004,14 @@ ACTOR_TEST_CASE(test_repeat_until_value) {
 }
 
 ACTOR_TEST_CASE(test_repeat_until_value_implicit_future) {
-    // Same as above, but returning std::optional<int> instead of future<std::optional<int>>
+    // Same as above, but returning boost::optional<int> instead of future<boost::optional<int>>
     return do_with(int(), [](int &counter) {
         return repeat_until_value([&counter] {
                    if (counter == 10000) {
-                       return std::optional<int>(counter);
+                       return boost::optional<int>(counter);
                    } else {
                        ++counter;
-                       return std::optional<int>(std::nullopt);
+                       return boost::optional<int>(boost::none);
                    }
                })
             .then([&counter](int result) {
@@ -1024,7 +1024,7 @@ ACTOR_TEST_CASE(test_repeat_until_value_implicit_future) {
 ACTOR_TEST_CASE(test_repeat_until_value_exception) {
     return repeat_until_value([] {
                throw expected_exception();
-               return std::optional<int>(43);
+               return boost::optional<int>(43);
            })
         .then_wrapped([](future<int> f) { check_fails_with_expected(std::move(f)); });
 }
@@ -1338,8 +1338,8 @@ ACTOR_TEST_CASE(test_futurize_mutable) {
 }
 
 ACTOR_THREAD_TEST_CASE(test_broken_promises) {
-    std::optional<future<>> f;
-    std::optional<future<>> f2;
+    boost::optional<future<>> f;
+    boost::optional<future<>> f2;
     {    // Broken after attaching a continuation
         auto p = promise<>();
         f = p.get_future();

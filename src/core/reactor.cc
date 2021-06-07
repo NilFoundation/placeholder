@@ -631,7 +631,7 @@ namespace nil {
         }
 
         template<typename Clock>
-        inline void timer<Clock>::arm(time_point until, std::optional<duration> period) noexcept {
+        inline void timer<Clock>::arm(time_point until, boost::optional<duration> period) noexcept {
             arm_state(until, period);
             engine().add_timer(this);
         }
@@ -1385,7 +1385,7 @@ namespace nil {
                 specific_protocol = 0;
             }
             static auto somaxconn = [] {
-                std::optional<int> result;
+                boost::optional<int> result;
                 std::ifstream ifs("/proc/sys/net/core/somaxconn");
                 if (ifs) {
                     result = 0;
@@ -1771,7 +1771,7 @@ namespace nil {
             return directory_entry_type::unknown;
         }
 
-        future<std::optional<directory_entry_type>> reactor::file_type(std::string_view name,
+        future<boost::optional<directory_entry_type>> reactor::file_type(std::string_view name,
                                                                        follow_symlink follow) noexcept {
             // Allocating memory for a sstring can throw, hence the futurize_invoke
             return futurize_invoke([name, follow, this] {
@@ -1787,16 +1787,16 @@ namespace nil {
                             if (sr.error != ENOENT && sr.error != ENOTDIR) {
                                 sr.throw_fs_exception_if_error("stat failed", name);
                             }
-                            return make_ready_future<std::optional<directory_entry_type>>(
-                                std::optional<directory_entry_type>());
+                            return make_ready_future<boost::optional<directory_entry_type>>(
+                                boost::optional<directory_entry_type>());
                         }
-                        return make_ready_future<std::optional<directory_entry_type>>(
-                            std::optional<directory_entry_type>(stat_to_entry_type(sr.extra.st_mode)));
+                        return make_ready_future<boost::optional<directory_entry_type>>(
+                            boost::optional<directory_entry_type>(stat_to_entry_type(sr.extra.st_mode)));
                     });
             });
         }
 
-        future<std::optional<directory_entry_type>> file_type(std::string_view name, follow_symlink follow) noexcept {
+        future<boost::optional<directory_entry_type>> file_type(std::string_view name, follow_symlink follow) noexcept {
             return engine().file_type(name, follow);
         }
 
@@ -3554,7 +3554,7 @@ namespace nil {
 
         std::vector<posix_thread> smp::_threads;
         std::vector<std::function<void()>> smp::_thread_loops;
-        std::optional<boost::barrier> smp::_all_event_loops_done;
+        boost::optional<boost::barrier> smp::_all_event_loops_done;
         std::vector<reactor *> smp::_reactors;
         std::unique_ptr<smp_message_queue *[], smp::qs_deleter> smp::_qs;
         std::thread::id smp::_tmain;
@@ -3691,7 +3691,7 @@ namespace nil {
         class disk_config_params {
         private:
             unsigned _num_io_groups = 0;
-            std::optional<unsigned> _capacity;
+            boost::optional<unsigned> _capacity;
             std::unordered_map<dev_t, mountpoint_params> _mountpoints;
             std::chrono::duration<double> _latency_goal;
 
@@ -3735,7 +3735,7 @@ namespace nil {
                         "Both io-properties and io-properties-file specified. Don't know which to trust!");
                 }
 
-                std::optional<YAML::Node> doc;
+                boost::optional<YAML::Node> doc;
                 if (configuration.count("io-properties-file")) {
                     doc = YAML::LoadFile(configuration["io-properties-file"].as<std::string>());
                 } else if (configuration.count("io-properties")) {
@@ -3960,7 +3960,7 @@ namespace nil {
             if (configuration.count("reserve-memory")) {
                 rc.reserve_memory = parse_memory_size(configuration["reserve-memory"].as<std::string>());
             }
-            std::optional<std::string> hugepages_path;
+            boost::optional<std::string> hugepages_path;
             if (configuration.count("hugepages")) {
                 hugepages_path = configuration["hugepages"].as<std::string>();
             }
@@ -4215,7 +4215,7 @@ namespace nil {
                 open_flags flags;
                 std::function<future<>()> cleanup;
 
-                static w parse(const sstring &path, std::optional<directory_entry_type> type) {
+                static w parse(const sstring &path, boost::optional<directory_entry_type> type) {
                     if (!type) {
                         throw std::invalid_argument(format("Could not open file at {}. Make sure it exists", path));
                     }

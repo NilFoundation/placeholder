@@ -41,7 +41,7 @@ namespace nil {
 
         static named_semaphore_exception_factory
             make_service_group_semaphore_exception_factory(unsigned id, shard_id client_cpu, shard_id this_cpu,
-                                                           std::optional<sstring> smp_group_name) {
+                                                           boost::optional<sstring> smp_group_name) {
             if (smp_group_name) {
                 return named_semaphore_exception_factory {
                     format("smp_service_group:'{}' (#{}) {}->{} semaphore", *smp_group_name, id, client_cpu, this_cpu)};
@@ -111,7 +111,8 @@ namespace nil {
             ssg0.clients.reserve(smp::count);
             for (unsigned i = 0; i != smp::count; ++i) {
                 ssg0.clients.emplace_back(smp_service_group_semaphore::max_counter(),
-                                          make_service_group_semaphore_exception_factory(0, i, cpu, {"default"}));
+                                          make_service_group_semaphore_exception_factory(
+                                              0, i, cpu, boost::make_optional<sstring>("default")));
             }
         }
 

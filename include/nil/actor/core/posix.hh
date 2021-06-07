@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <boost/optional.hpp>
 #include <boost/predef.h>
 
 #include <nil/actor/core/sstring.hh>
@@ -55,7 +56,6 @@
 
 #include <nil/actor/network/socket_defs.hh>
 
-#include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/detail/thread_affinity.hh>
 
 #if BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
@@ -203,7 +203,7 @@ namespace nil {
                 return file_desc(ret);
             }
             // return nullopt if no connection is availbale to be accepted
-            std::optional<file_desc> try_accept(socket_address &sa, int flags = 0) {
+            boost::optional<file_desc> try_accept(socket_address &sa, int flags = 0) {
 #if BOOST_OS_LINUX
                 auto ret = ::accept4(_fd, &sa.as_posix_sockaddr(), &sa.addr_length, flags);
 #elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
@@ -289,7 +289,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "fstat");
                 return buf.st_size;
             }
-            std::optional<size_t> read(void *buffer, size_t len) {
+            boost::optional<size_t> read(void *buffer, size_t len) {
                 auto r = ::read(_fd, buffer, len);
                 if (r == -1 && errno == EAGAIN) {
                     return {};
@@ -297,7 +297,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "read");
                 return {size_t(r)};
             }
-            std::optional<ssize_t> recv(void *buffer, size_t len, int flags) {
+            boost::optional<ssize_t> recv(void *buffer, size_t len, int flags) {
                 auto r = ::recv(_fd, buffer, len, flags);
                 if (r == -1 && errno == EAGAIN) {
                     return {};
@@ -305,7 +305,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "recv");
                 return {ssize_t(r)};
             }
-            std::optional<size_t> recvmsg(msghdr *mh, int flags) {
+            boost::optional<size_t> recvmsg(msghdr *mh, int flags) {
                 auto r = ::recvmsg(_fd, mh, flags);
                 if (r == -1 && errno == EAGAIN) {
                     return {};
@@ -313,7 +313,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "recvmsg");
                 return {size_t(r)};
             }
-            std::optional<size_t> send(const void *buffer, size_t len, int flags) {
+            boost::optional<size_t> send(const void *buffer, size_t len, int flags) {
                 auto r = ::send(_fd, buffer, len, flags);
                 if (r == -1 && errno == EAGAIN) {
                     return {};
@@ -321,7 +321,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "send");
                 return {size_t(r)};
             }
-            std::optional<size_t> sendto(socket_address &addr, const void *buf, size_t len, int flags) {
+            boost::optional<size_t> sendto(socket_address &addr, const void *buf, size_t len, int flags) {
                 auto r = ::sendto(_fd, buf, len, flags, &addr.u.sa, addr.length());
                 if (r == -1 && errno == EAGAIN) {
                     return {};
@@ -329,7 +329,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "sendto");
                 return {size_t(r)};
             }
-            std::optional<size_t> sendmsg(const msghdr *msg, int flags) {
+            boost::optional<size_t> sendmsg(const msghdr *msg, int flags) {
                 auto r = ::sendmsg(_fd, msg, flags);
                 if (r == -1 && errno == EAGAIN) {
                     return {};
@@ -358,7 +358,7 @@ namespace nil {
                 auto fd = ::listen(_fd, backlog);
                 throw_system_error_on(fd == -1, "listen");
             }
-            std::optional<size_t> write(const void *buf, size_t len) {
+            boost::optional<size_t> write(const void *buf, size_t len) {
                 auto r = ::write(_fd, buf, len);
                 if (r == -1 && errno == EAGAIN) {
                     return {};
@@ -366,7 +366,7 @@ namespace nil {
                 throw_system_error_on(r == -1, "write");
                 return {size_t(r)};
             }
-            std::optional<size_t> writev(const iovec *iov, int iovcnt) {
+            boost::optional<size_t> writev(const iovec *iov, int iovcnt) {
                 auto r = ::writev(_fd, iov, iovcnt);
                 if (r == -1 && errno == EAGAIN) {
                     return {};

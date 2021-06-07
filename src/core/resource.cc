@@ -42,7 +42,7 @@ namespace nil {
 
         // This function was made optional because of validate. It needs to
         // throw an error when a non parseable input is given.
-        std::optional<resource::cpuset> parse_cpuset(std::string value) {
+        boost::optional<resource::cpuset> parse_cpuset(std::string value) {
             static std::regex r("(\\d+-)?(\\d+)(,(\\d+-)?(\\d+))*");
 
             std::smatch match;
@@ -62,7 +62,7 @@ namespace nil {
                     auto e = boost::lexical_cast<unsigned>(end);
 
                     if (b > e) {
-                        return std::nullopt;
+                        return boost::none;
                     }
 
                     for (auto i = b; i <= e; ++i) {
@@ -71,7 +71,7 @@ namespace nil {
                 }
                 return ret;
             }
-            return std::nullopt;
+            return boost::none;
         }
 
         // Overload for boost program options parsing/validation
@@ -106,7 +106,7 @@ namespace nil {
 
                 seastar_logger.warn("Unable to parse cgroup's cpuset. Ignoring.");
 #endif
-                return std::nullopt;
+                return boost::none;
             }
 
             size_t memory_limit() {
@@ -127,7 +127,7 @@ namespace nil {
                     seastar_logger.warn("Couldn't read cgroup file {}.", path);
                 }
 
-                return std::nullopt;
+                return boost::none;
             }
 
 #if BOOST_OS_LINUX
@@ -154,7 +154,7 @@ namespace nil {
                     // This is either a v1 system, or system configured with a hybrid of v1 & v2.
                     // We do not support such combinations of v1 and v2 at this point.
                     seastar_logger.debug("Not a cgroups-v2-only system");
-                    return std::nullopt;
+                    return boost::none;
                 }
 
                 // the path is guaranteed to start with '0::/'
@@ -178,7 +178,7 @@ namespace nil {
                     lowest_subdir = lowest_subdir.parent_path();
                 } while (lowest_subdir.compare("/sys/fs"));
 
-                return std::nullopt;
+                return boost::none;
             }
 
             /*
@@ -200,7 +200,7 @@ namespace nil {
                         line = read_first_line(locate_lowest_cgroup2(*cg2_path, cg2_fname).value());
                     } catch (...) {
                         seastar_logger.warn("Could not read cgroups v2 file ({}).", cg2_fname);
-                        return std::nullopt;
+                        return boost::none;
                     }
                     if (line.compare("max")) {
                         try {
@@ -209,7 +209,7 @@ namespace nil {
                             seastar_logger.warn("Malformed cgroups file ({}) contents.", cg2_fname);
                         }
                     }
-                    return std::nullopt;
+                    return boost::none;
                 }
 
                 // try cgroups v1:
@@ -220,7 +220,7 @@ namespace nil {
                     seastar_logger.warn("Could not parse cgroups v1 file ({}).", cg1_path);
                 }
 
-                return std::nullopt;
+                return boost::none;
             }
 #endif
         }    // namespace cgroup

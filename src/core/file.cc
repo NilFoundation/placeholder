@@ -430,7 +430,7 @@ namespace nil {
 #elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                         auto de = reinterpret_cast<bsd_dirent *>(start);
 #endif
-                        std::optional<directory_entry_type> type;
+                        boost::optional<directory_entry_type> type;
                         switch (de->d_type) {
                             case DT_BLK:
                                 type = directory_entry_type::block_device;

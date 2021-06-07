@@ -152,11 +152,11 @@ namespace nil {
 
         /// Type helper for repeat_until_value()
         template<typename T>
-        struct repeat_until_value_type_helper<future<std::optional<T>>> {
+        struct repeat_until_value_type_helper<future<boost::optional<T>>> {
             /// The type of the value we are computing
             using value_type = T;
             /// Type used by \c AsyncAction while looping
-            using optional_type = std::optional<T>;
+            using optional_type = boost::optional<T>;
             /// Return type of repeat_until_value()
             using future_type = future<value_type>;
         };
@@ -171,14 +171,14 @@ namespace nil {
         namespace detail {
 
             template<typename AsyncAction, typename T>
-            class repeat_until_value_state final : public continuation_base<std::optional<T>> {
+            class repeat_until_value_state final : public continuation_base<boost::optional<T>> {
                 promise<T> _promise;
                 AsyncAction _action;
 
             public:
                 explicit repeat_until_value_state(AsyncAction action) : _action(std::move(action)) {
                 }
-                repeat_until_value_state(std::optional<T> st, AsyncAction action) :
+                repeat_until_value_state(boost::optional<T> st, AsyncAction action) :
                     repeat_until_value_state(std::move(action)) {
                     this->_state.set(std::move(st));
                 }
@@ -221,7 +221,7 @@ namespace nil {
                         delete this;
                         return;
                     }
-                    this->_state.set(std::nullopt);
+                    this->_state.set(boost::none);
                     schedule(this);
                 }
             };
@@ -229,11 +229,11 @@ namespace nil {
         }    // namespace detail
 
         /// Invokes given action until it fails or the function requests iteration to stop by returning
-        /// an engaged \c future<std::optional<T>> or std::optional<T>.  The value is extracted
+        /// an engaged \c future<boost::optional<T>> or boost::optional<T>.  The value is extracted
         /// from the \c optional, and returned, as a future, from repeat_until_value().
         ///
-        /// \param action a callable taking no arguments, returning a future<std::optional<T>>
-        ///               or std::optional<T>.  Will be called again as soon as the future
+        /// \param action a callable taking no arguments, returning a future<boost::optional<T>>
+        ///               or boost::optional<T>.  Will be called again as soon as the future
         ///               resolves, unless the future fails, action throws, or it resolves with
         ///               an engaged \c optional.  If \c action is an r-value it can be moved
         ///               in the middle of iteration.
@@ -277,7 +277,7 @@ namespace nil {
 
             try {
                 auto state =
-                    new detail::repeat_until_value_state<AsyncAction, value_type>(std::nullopt, std::move(action));
+                    new detail::repeat_until_value_state<AsyncAction, value_type>(boost::none, std::move(action));
                 auto f = state->get_future();
                 schedule(state);
                 return f;

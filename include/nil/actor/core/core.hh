@@ -47,12 +47,14 @@
 /// View the [Compatibility statement](./md_compatibility.html) for
 /// information about library evolution.
 
+#include <boost/optional.hpp>
+
 #include <nil/actor/core/sstring.hh>
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/file-types.hh>
-#include <nil/actor/detail/bool_class.hh>
-#include <nil/actor/detail/std-compat.hh>
 #include <nil/actor/core/detail/api-level.hh>
+
+#include <nil/actor/detail/bool_class.hh>
 
 namespace nil {
     namespace actor {
@@ -357,7 +359,7 @@ namespace nil {
         /// \return a engaged optional with the file type if lookup was successful; a disengaged optional
         ///      if the file (or one of its parent directories) does not exist; an exceptional future on
         ///      other errors.
-        future<std::optional<directory_entry_type>> file_type(std::string_view name,
+        future<boost::optional<directory_entry_type>> file_type(std::string_view name,
                                                               follow_symlink follow = follow_symlink::yes) noexcept;
 
         /// Creates a hard link for a file

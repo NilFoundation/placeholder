@@ -35,7 +35,7 @@ namespace nil {
         inline future<temporary_buffer<char>> data_source_impl::skip(uint64_t n) {
             return do_with(uint64_t(n), [this](uint64_t &n) {
                 return repeat_until_value([&] {
-                    return get().then([&](temporary_buffer<char> buffer) -> std::optional<temporary_buffer<char>> {
+                    return get().then([&](temporary_buffer<char> buffer) -> boost::optional<temporary_buffer<char>> {
                         if (buffer.size() >= n) {
                             buffer.trim_front(n);
                             return buffer;
@@ -420,7 +420,7 @@ namespace nil {
                 // flush was canceled, do nothing
                 _flushing = false;
                 _in_batch.value().set_value();
-                _in_batch = std::nullopt;
+                _in_batch = boost::none;
                 return;
             }
 
@@ -484,7 +484,7 @@ namespace nil {
             struct stream_copy_consumer {
             private:
                 output_stream<CharType> &_os;
-                using unconsumed_remainder = std::optional<temporary_buffer<CharType>>;
+                using unconsumed_remainder = boost::optional<temporary_buffer<CharType>>;
 
             public:
                 stream_copy_consumer(output_stream<CharType> &os) : _os(os) {

@@ -86,14 +86,14 @@ namespace nil {
             template<typename T>
             class pipe_buffer {
             private:
-                queue<std::optional<T>> _buf;
+                queue<boost::optional<T>> _buf;
                 bool _read_open = true;
                 bool _write_open = true;
 
             public:
                 pipe_buffer(size_t size) : _buf(size) {
                 }
-                future<std::optional<T>> read() {
+                future<boost::optional<T>> read() {
                     return _buf.pop_eventually();
                 }
                 future<> write(T &&data) {
@@ -140,7 +140,7 @@ namespace nil {
         class pipe_reader {
         private:
             detail::pipe_buffer<T> *_bufp;
-            std::optional<T> _unread;
+            boost::optional<T> _unread;
             pipe_reader(detail::pipe_buffer<T> *bufp) : _bufp(bufp) {
             }
             friend class pipe<T>;
@@ -152,16 +152,16 @@ namespace nil {
             /// becomes non-empty, or the write side is closed. The value returned
             /// is an optional<T>, which is disengaged to mark and end of file
             /// (i.e., the write side was closed, and we've read everything it sent).
-            future<std::optional<T>> read() {
+            future<boost::optional<T>> read() {
                 if (_unread) {
                     auto ret = std::move(*_unread);
                     _unread = {};
-                    return make_ready_future<std::optional<T>>(std::move(ret));
+                    return make_ready_future<boost::optional<T>>(std::move(ret));
                 }
                 if (_bufp->readable()) {
                     return _bufp->read();
                 } else {
-                    return make_ready_future<std::optional<T>>();
+                    return make_ready_future<boost::optional<T>>();
                 }
             }
             /// \brief Return an item to the front of the pipe

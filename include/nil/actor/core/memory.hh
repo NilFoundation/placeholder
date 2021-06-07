@@ -140,7 +140,7 @@ namespace nil {
 #error "Huge page size is not defined for this architecture"
 #endif
 
-            void configure(std::vector<resource::memory> m, bool mbind, std::optional<std::string> hugetlbfs_path = {});
+            void configure(std::vector<resource::memory> m, bool mbind, boost::optional<std::string> hugetlbfs_path = {});
 
             void enable_abort_on_allocation_failure();
 

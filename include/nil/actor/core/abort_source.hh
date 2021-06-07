@@ -99,7 +99,7 @@ namespace nil {
 
         private:
             using subscription_list_type = boost::intrusive::list<subscription, boost::intrusive::constant_time_size<false>>;
-            std::optional<subscription_list_type> _subscriptions = subscription_list_type();
+            boost::optional<subscription_list_type> _subscriptions = subscription_list_type();
 
         public:
             /// Delays the invocation of the callback \c f until \ref request_abort() is called.

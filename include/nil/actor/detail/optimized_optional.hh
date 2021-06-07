@@ -55,13 +55,13 @@ namespace nil {
 
         public:
             optimized_optional() = default;
-            optimized_optional(std::nullopt_t) noexcept {
+            optimized_optional(boost::none_t) noexcept {
             }
             optimized_optional(const T &obj) : _object(obj) {
             }
             optimized_optional(T &&obj) noexcept : _object(std::move(obj)) {
             }
-            optimized_optional(std::optional<T> &&obj) noexcept {
+            optimized_optional(boost::optional<T> &&obj) noexcept {
                 if (obj) {
                     _object = std::move(*obj);
                 }
@@ -69,7 +69,7 @@ namespace nil {
             optimized_optional(const optimized_optional &) = default;
             optimized_optional(optimized_optional &&) = default;
 
-            optimized_optional &operator=(std::nullopt_t) noexcept {
+            optimized_optional &operator=(boost::none_t) noexcept {
                 _object = T();
                 return *this;
             }

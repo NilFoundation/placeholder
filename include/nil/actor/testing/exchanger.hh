@@ -55,7 +55,7 @@ namespace nil {
             template<typename T>
             class exchanger : public exchanger_base {
             private:
-                std::optional<T> _element;
+                boost::optional<T> _element;
 
             public:
                 template<typename Exception>

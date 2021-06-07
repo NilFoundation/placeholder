@@ -24,14 +24,17 @@
 
 #pragma once
 
-#include <nil/actor/core/sstring.hh>
-#include <nil/actor/core/temporary_buffer.hh>
-#include <nil/actor/detail/eclipse.hh>
 #include <algorithm>
 #include <memory>
 #include <cassert>
-#include <nil/actor/detail/std-compat.hh>
+
+#include <boost/optional.hpp>
+
+#include <nil/actor/core/sstring.hh>
+#include <nil/actor/core/temporary_buffer.hh>
 #include <nil/actor/core/future.hh>
+
+#include <nil/actor/detail/eclipse.hh>
 
 namespace nil {
     namespace actor {
@@ -132,7 +135,7 @@ namespace nil {
             }
 
         public:
-            using unconsumed_remainder = std::optional<temporary_buffer<char>>;
+            using unconsumed_remainder = boost::optional<temporary_buffer<char>>;
             future<unconsumed_remainder> operator()(temporary_buffer<char> buf) {
                 char *p = buf.get_write();
                 char *pe = p + buf.size();

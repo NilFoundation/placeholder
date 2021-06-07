@@ -63,12 +63,12 @@ ACTOR_TEST_CASE(test_semaphore_1) {
 }
 
 ACTOR_THREAD_TEST_CASE(test_semaphore_2) {
-    auto sem = std::make_optional<semaphore>(0);
+    auto sem = boost::make_optional<semaphore>(0);
     int x = 0;
     auto fut = sem->wait().then([&x] { x++; });
     sleep(10ms).get();
     BOOST_REQUIRE_EQUAL(x, 0);
-    sem = std::nullopt;
+    sem = boost::none;
     BOOST_CHECK_THROW(fut.get(), broken_promise);
 }
 

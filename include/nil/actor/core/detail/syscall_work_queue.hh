@@ -55,7 +55,7 @@ namespace nil {
             struct work_item_returning : work_item {
                 noncopyable_function<T()> _func;
                 promise<T> _promise;
-                std::optional<T> _result;
+                boost::optional<T> _result;
                 work_item_returning(noncopyable_function<T()> func) : _func(std::move(func)) {
                 }
                 virtual void process() override {
