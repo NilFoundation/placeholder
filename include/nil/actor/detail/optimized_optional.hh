@@ -25,6 +25,7 @@
 #pragma once
 
 #include <boost/config.hpp>
+#include <boost/optional.hpp>
 
 #include <nil/actor/detail/std-compat.hh>
 
