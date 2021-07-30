@@ -160,34 +160,15 @@ if(BUILD_WITH_CXX_DIALECT)
     set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 endif()
 
-set(BUILD_WITH_CXX_FLAGS
-    ""
-    CACHE
-    STRING
+set(BUILD_WITH_CXX_FLAGS "" CACHE STRING
     "Semicolon-separated list of extra compilation flags for Actor itself.")
 
-option(BUILD_WITH_DPDK
-       "Enable DPDK support."
-       FALSE)
+option(BUILD_WITH_DPDK "Enable DPDK support." FALSE)
 
-option(BUILD_WITH_EXCLUDE_APPS_FROM_ALL
-       "When enabled alongside BUILD_WITH_APPS, do not build applications by default."
-       FALSE)
+option(BUILD_WITH_HWLOC "Enable hwloc support." TRUE)
 
-option(BUILD_WITH_EXCLUDE_DEMOS_FROM_ALL
-       "When enabled alongside BUILD_WITH_DEMOS, do not build demonstrations by default."
-       FALSE)
-
-option(BUILD_WITH_EXCLUDE_TESTS_FROM_ALL
-       "When enabled alongside BUILD_WITH_TESTING, do not build tests by default."
-       FALSE)
-
-option(BUILD_WITH_EXECUTE_ONLY_FAST_TESTS
-       "Only execute tests which run quickly."
-       FALSE)
-
-option(BUILD_WITH_HWLOC
-       "Enable hwloc support."
+option(BUILD_WITH_EXCEPTION_SCALABILITY_WORKAROUND
+       "Override the dl_iterate_phdr symbol to workaround C++ exception scalability issues."
        TRUE)
 
 set(BUILD_WITH_LD_FLAGS
@@ -584,7 +565,7 @@ if(BUILD_WITH_COMPRESS_DEBUG)
     endif()
 endif()
 
-if(NOT ${BUILD_WITH_EXCEPTION_SCALABILITY_WORKAROUND})
+if(NOT BUILD_WITH_EXCEPTION_SCALABILITY_WORKAROUND)
     list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_COMPILE_DEFINITIONS ACTOR_NO_EXCEPTION_HACK)
 endif()
 

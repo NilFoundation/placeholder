@@ -597,10 +597,9 @@ namespace nil {
                 _at_destroy_tasks->_q.push_back(make_task(default_scheduling_group(), std::forward<Func>(func)));
             }
 
-#ifdef current_task
+#if (BOOST_OS_MACOS || BOOST_OS_IOS) && defined(current_task)
 #undef current_task
 #endif
-
             task *current_task() const {
                 return _current_task;
             }

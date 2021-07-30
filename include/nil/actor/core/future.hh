@@ -32,6 +32,7 @@
 #include <cstdlib>
 
 #include <boost/config.hpp>
+#include <boost/predef.h>
 
 #include <nil/actor/core/task.hh>
 #include <nil/actor/core/thread_impl.hh>
@@ -498,14 +499,17 @@ namespace nil {
                     return ret;
                 }
                 void move_it(any &&x) noexcept {
-#ifdef __GLIBCXX__
-                    // Unfortunally gcc cannot fully optimize the regular
+                    // The explanation to such a version number limitation is that
+                    // g++ of a version 10.3.0 for some reason considers
+                    // sizeof(any) == 16 and sizeof(&x) == 8.
+#if BOOST_LIB_C_GNU && BOOST_COMP_GNUC < BOOST_VERSION_NUMBER(10, 3, 0)
+                    // Unfortunately gcc cannot fully optimize the regular
                     // implementation:
                     // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95014
                     // Given what we know about the libstdc++ implementation
                     // (see the comment in take_exception), we can just
                     // memmove and zero x.  We use memmove to guarantee
-                    // vaild results if &x == this.
+                    // valid results if &x == this.
                     memmove(static_cast<void *>(this), &x, sizeof(any));
                     x.st = state::invalid;
 #else

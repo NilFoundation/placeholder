@@ -97,10 +97,10 @@ namespace nil {
 #endif
 
 #ifndef NO_EXCEPTION_INTERCEPT
-        logger exception_logger("exception");
+        nil::actor::logger exception_logger("exception");
 
         void log_exception_trace() noexcept {
-            engine()._cxx_exceptions++;
+            nil::actor::engine()._cxx_exceptions++;
             static thread_local bool nested = false;
             if (!nested && exception_logger.is_enabled(log_level::trace)) {
                 nested = true;
@@ -117,7 +117,6 @@ namespace nil {
 }    // namespace nil
 
 #if BOOST_LIB_STD_GNU && BOOST_OS_LINUX
-
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] [[gnu::no_sanitize_address]] int
     dl_iterate_phdr(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data) {
     if (!nil::actor::local_engine || !nil::actor::phdrs_cache) {
@@ -139,7 +138,6 @@ extern "C" [[gnu::visibility("default")]] [[gnu::used]] [[gnu::no_sanitize_addre
 }
 
 #endif
-
 #ifndef NO_EXCEPTION_INTERCEPT
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] int _Unwind_RaiseException(struct _Unwind_Exception *h) {
     using throw_fn = int (*)(void *);
