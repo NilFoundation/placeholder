@@ -349,6 +349,7 @@ namespace nil {
         subscription<directory_entry>
             posix_file_impl::list_directory(std::function<future<>(directory_entry de)> next) {
             static constexpr size_t buffer_size = 8192;
+
             struct work {
                 stream<directory_entry> s;
                 unsigned current = 0;
@@ -358,38 +359,52 @@ namespace nil {
                 char buffer[buffer_size];
             };
 
+#if BOOST_OS_LINUX
             // While it would be natural to use fdopendir()/readdir(),
             // our syscall thread pool doesn't support malloc(), which is
             // required for this to work.  So resort to using getdents()
             // instead.
 
             // From getdents(2):
-            struct linux_dirent64 {
-                ino64_t d_ino; /* 64-bit inode number */
-#if BOOST_OS_LINUX
-                off64_t d_off; /* 64-bit offset to next structure */
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
-                off_t d_off;
-#endif
+            struct host_dirent {
+                long d_ino;
+                unsigned long d_off;
+                unsigned short d_reclen;
+                char d_name[256]; /* We must not include limits.h! */
+            };
+
+            struct host_dirent64 {
+                ino64_t d_ino;           /* 64-bit inode number */
+                off64_t d_off;           /* 64-bit offset to next structure */
                 unsigned short d_reclen; /* Size of this dirent */
                 unsigned char d_type;    /* File type */
                 char d_name[];           /* Filename (null-terminated) */
             };
+#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
 
 #ifndef MAXNAMELEN
 #define MAXNAMELEN 255
 #endif
 
             // From GETDIRENTRIES(2):
-            struct bsd_dirent {
-                uint32_t d_fileno;
+            struct host_dirent {
+                uint32_t d_ino; /* aka d_fileno */
                 uint16_t d_reclen;
                 uint8_t d_type;
                 uint8_t d_namlen;
-                char d_name[MAXNAMELEN + 1]; /* see below	*/
+                char d_name[256];
+            };
+            struct host_dirent64 {
+                uint32_t d_ino; /* aka d_fileno */
+                uint16_t d_reclen;
+                uint8_t d_type;
+                uint8_t d_namlen;
+                char d_name[256];
             };
 
 #undef MAXNAMELEN
+
+#endif
 
             auto w = make_lw_shared<work>();
             auto ret = w->s.listen(std::move(next));
@@ -405,12 +420,12 @@ namespace nil {
                                 ->submit<syscall_result<long>>([w, this]() {
 #if BOOST_OS_LINUX
                                     auto ret = ::syscall(__NR_getdents64, _fd,
-                                                         reinterpret_cast<linux_dirent64 *>(w->buffer), buffer_size);
+                                                         reinterpret_cast<host_dirent64 *>(w->buffer), buffer_size);
                                     return wrap_syscall(ret);
 #elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
                                     DIR *dir = fdopendir(_fd);
                                     dirent *de = readdir(dir);
-                                    memcpy(w->buffer, de, buffer_size);
+                                    memcpy(w->buffer, de, sizeof(dirent));
                                     return wrap_syscall(0l);
 #endif
                                 })
@@ -425,11 +440,9 @@ namespace nil {
                                 });
                         }
                         auto start = w->buffer + w->current;
-#if BOOST_OS_LINUX
-                        auto de = reinterpret_cast<linux_dirent64 *>(start);
-#elif BOOST_OS_MACOS || BOOST_OS_IOS || BOOST_OS_BSD
-                        auto de = reinterpret_cast<bsd_dirent *>(start);
-#endif
+
+                        auto de = reinterpret_cast<host_dirent64 *>(start);
+
                         boost::optional<directory_entry_type> type;
                         switch (de->d_type) {
                             case DT_BLK:

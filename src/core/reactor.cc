@@ -1772,7 +1772,7 @@ namespace nil {
         }
 
         future<boost::optional<directory_entry_type>> reactor::file_type(std::string_view name,
-                                                                       follow_symlink follow) noexcept {
+                                                                         follow_symlink follow) noexcept {
             // Allocating memory for a sstring can throw, hence the futurize_invoke
             return futurize_invoke([name, follow, this] {
                 return _thread_pool

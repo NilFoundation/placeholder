@@ -544,7 +544,7 @@ namespace nil {
             future<> touch_directory(std::string_view name,
                                      file_permissions permissions = file_permissions::default_dir_permissions) noexcept;
             future<boost::optional<directory_entry_type>> file_type(std::string_view name,
-                                                                  follow_symlink = follow_symlink::yes) noexcept;
+                                                                    follow_symlink = follow_symlink::yes) noexcept;
             future<stat_data> file_stat(std::string_view pathname, follow_symlink) noexcept;
             future<uint64_t> file_size(std::string_view pathname) noexcept;
             future<bool> file_accessible(std::string_view pathname, access_flags flags) noexcept;

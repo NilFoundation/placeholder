@@ -50,6 +50,8 @@ namespace nil {
 #endif
 
         {
+            _highres_timer_pending.store(false, std::memory_order_relaxed);
+
             ::epoll_event event;
             event.events = EPOLLIN;
             event.data.ptr = nullptr;
@@ -147,10 +149,20 @@ namespace nil {
 
                 uint64_t events;
                 if (pfds[0].revents & POLL_IN) {
-                    _r._task_quota_timer.read(&events, 8);
+#if BOOST_OS_LINUX
+                    _r._task_quota_timer.read(&events, sizeof(uint64_t));
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    r = ::timerfd_read(_r._task_quota_timer.get(), &events, sizeof(uint64_t));
+                    throw_system_error_on(r == -1);
+#endif
                 }
                 if (pfds[1].revents & POLL_IN) {
-                    _steady_clock_timer_timer_thread.read(&events, 8);
+#if BOOST_OS_LINUX
+                    _steady_clock_timer_timer_thread.read(&events, sizeof(uint64_t));
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    r = ::timerfd_read(_steady_clock_timer_timer_thread.get(), &events, sizeof(uint64_t));
+                    throw_system_error_on(r == -1);
+#endif
                     _highres_timer_pending.store(true, std::memory_order_relaxed);
                 }
                 request_preemption();
@@ -183,12 +195,21 @@ namespace nil {
                 auto pfd = reinterpret_cast<pollable_fd_state *>(evt.data.ptr);
                 if (!pfd) {
                     char dummy[8];
+#if BOOST_OS_LINUX
                     _r._notify_eventfd.read(dummy, 8);
+#elif BOOST_OS_MACOS || BOOST_OS_IOS
+                    ::eventfd_read(_r._notify_eventfd.get(), reinterpret_cast<uint64_t *>(&dummy));
+#endif
                     continue;
                 }
                 if (evt.data.ptr == &_steady_clock_timer_reactor_thread) {
                     char dummy[8];
-                    _steady_clock_timer_reactor_thread.read(dummy, 8);
+#if BOOST_OS_LINUX
+                    _steady_clock_timer_reactor_thread.read(dummy, sizeof(uint64_t));
+#else
+                    int r = ::timerfd_read(_steady_clock_timer_timer_thread.get(), &dummy, sizeof(uint64_t));
+                    throw_system_error_on(r == -1);
+#endif
                     _highres_timer_pending.store(true, std::memory_order_relaxed);
                     _steady_clock_timer_deadline = {};
                     continue;

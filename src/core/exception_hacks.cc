@@ -120,7 +120,7 @@ namespace nil {
 
 extern "C" [[gnu::visibility("default")]] [[gnu::used]] [[gnu::no_sanitize_address]] int
     dl_iterate_phdr(int (*callback)(struct dl_phdr_info *info, size_t size, void *data), void *data) {
-    if (nil::actor::local_engine == nullptr || nil::actor::phdrs_cache == nullptr) {
+    if (!nil::actor::local_engine || !nil::actor::phdrs_cache) {
         // Cache is not yet populated, pass through to original function
         return nil::actor::dl_iterate_phdr_org()(callback, data);
     }
