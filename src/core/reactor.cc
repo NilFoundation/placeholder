@@ -3849,7 +3849,7 @@ namespace nil {
         }
 
         void smp::configure(boost::program_options::variables_map configuration, reactor_config reactor_cfg) {
-#ifndef ACTOR_NO_EXCEPTION_HACK
+#if !defined(ACTOR_NO_EXCEPTION_HACK) && BOOST_OS_LINUX || BOOST_OS_BSD_FREE > BOOST_VERSION_NUMBER(9, 1, 0)
             if (configuration["enable-glibc-exception-scaling-workaround"].as<bool>()) {
                 init_phdr_cache();
             }
@@ -4215,7 +4215,7 @@ namespace nil {
                 open_flags flags;
                 std::function<future<>()> cleanup;
 
-                static w parse(const sstring &path, boost::optional<directory_entry_type> type) {
+                static w parse(const actor::sstring &path, boost::optional<directory_entry_type> type) {
                     if (!type) {
                         throw std::invalid_argument(format("Could not open file at {}. Make sure it exists", path));
                     }
