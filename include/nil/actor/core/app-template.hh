@@ -43,7 +43,7 @@ namespace nil {
                 ///
                 /// Will be used in the --help output to distinguish command line args
                 /// registered by the application, as opposed to those registered by
-                /// seastar and its subsystems.
+                /// actor and its subsystems.
                 sstring name = "App";
                 /// The description of the application.
                 ///

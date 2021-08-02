@@ -41,16 +41,16 @@ enum {
 };
 
 int main(int argc, char **argv) {
-    // we need a protocol that both seastar and alien understand.
-    // and on which, a seastar future can wait.
+    // we need a protocol that both actor and alien understand.
+    // and on which, a actor future can wait.
     int engine_ready_fd = eventfd(0, 0);
     auto alien_done = file_desc::eventfd(0, 0);
 
-    // use the raw fd, because seastar engine want to take over the fds, if it
+    // use the raw fd, because actor engine want to take over the fds, if it
     // polls on them.
     auto zim = std::async([engine_ready_fd, alien_done = alien_done.get()] {
         eventfd_t result = 0;
-        // wait until the seastar engine is ready
+        // wait until the actor engine is ready
         int r = ::eventfd_read(engine_ready_fd, &result);
         if (r < 0) {
             return -EINVAL;

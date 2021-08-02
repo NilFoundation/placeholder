@@ -48,7 +48,7 @@ namespace nil {
                     return true;
                 }
 
-                // Don't interfere with seastar signal handling
+                // Don't interfere with actor signal handling
                 sigset_t mask;
                 sigfillset(&mask);
                 for (auto sig : {SIGSEGV}) {

@@ -33,7 +33,7 @@ namespace nil {
             static bool init_unit_test_suite() {
                 const auto &tests = known_tests();
                 auto &&ts = boost::unit_test::framework::master_test_suite();
-                ts.p_name.set(tests.size() ? (tests)[0]->get_test_file() : "seastar-tests");
+                ts.p_name.set(tests.size() ? (tests)[0]->get_test_file() : "actor-tests");
 
                 for (actor_test *test : tests) {
 #if BOOST_VERSION > 105800
@@ -77,9 +77,9 @@ namespace nil {
 #endif
 
                 const int boost_exit_code = ::boost::unit_test::unit_test_main(&init_unit_test_suite, argc, argv);
-                const int seastar_exit_code = nil::actor::testing::global_test_runner().finalize();
+                const int actor_exit_code = nil::actor::testing::global_test_runner().finalize();
 
-                return boost_exit_code ? boost_exit_code : seastar_exit_code;
+                return boost_exit_code ? boost_exit_code : actor_exit_code;
             }
         }    // namespace testing
     }        // namespace actor

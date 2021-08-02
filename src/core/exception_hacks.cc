@@ -33,7 +33,7 @@
 //
 // To get rid of the second one we can use the fact that we do not
 // load/unload objects dynamically (at least for now). To do that we
-// can mirror all elf header information in seastar and provide our
+// can mirror all elf header information in actor and provide our
 // own dl_iterate_phdr symbol which uses this mirror without locking.
 //
 // Unfortunately there is another gotcha in this approach: dl_iterate_phdr

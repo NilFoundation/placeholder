@@ -29,7 +29,7 @@ namespace nil {
 
         /**
          * Temp dir helper for RAII usage when doing tests
-         * in seastar threads. Will not work in "normal" mode.
+         * in actor threads. Will not work in "normal" mode.
          * Just use tmp_dir::do_with for that.
          */
         class tmpdir {

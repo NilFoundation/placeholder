@@ -52,7 +52,7 @@ namespace nil {
         /// \brief Conditional variable.
         ///
         /// This is a standard computer science condition variable sans locking,
-        /// since in seastar access to variables is atomic anyway, adapted
+        /// since in actor access to variables is atomic anyway, adapted
         /// for futures.  You can wait for variable to be notified.
         ///
         /// To support exceptional conditions, a \ref broken() method

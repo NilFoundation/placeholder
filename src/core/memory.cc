@@ -76,7 +76,7 @@
 namespace nil {
     namespace actor {
 
-        extern nil::actor::logger seastar_logger;
+        extern nil::actor::logger actor_logger;
 
         void *detail::allocate_aligned_buffer_impl(size_t size, size_t align) {
             void *ret;
@@ -190,7 +190,7 @@ namespace nil {
 
         namespace memory {
 
-            nil::actor::logger seastar_memory_logger("seastar_memory");
+            nil::actor::logger actor_memory_logger("actor_memory");
 
             [[gnu::unused]] static allocation_site_ptr get_allocation_site();
 
@@ -210,7 +210,7 @@ namespace nil {
             using boost::optional;
 
             // is_reactor_thread gets set to true when memory::configure() gets called
-            // it is used to identify seastar threads and hence use system memory allocator
+            // it is used to identify actor threads and hence use system memory allocator
             // for those threads
             static thread_local bool is_reactor_thread = false;
 
@@ -261,7 +261,7 @@ namespace nil {
             }    // namespace alloc_stats
 
             // original memory allocator support
-            // note: allocations before calling the constructor would use seastar allocator
+            // note: allocations before calling the constructor would use actor allocator
             using malloc_func_type = void *(*)(size_t);
             using free_func_type = void *(*)(void *);
             using realloc_func_type = void *(*)(void *, size_t);
@@ -319,7 +319,7 @@ namespace nil {
                 return known;
             }
 
-            bool is_seastar_memory(void *ptr) {
+            bool is_actor_memory(void *ptr) {
                 auto begin = mem_base();
                 auto end = begin + mem_base_alloc;
                 return ptr >= begin && ptr < end;
@@ -612,11 +612,11 @@ namespace nil {
                 bool is_enabled = cpu_mem.collect_backtrace;
                 if (enable) {
                     if (!is_enabled) {
-                        seastar_logger.info("Enabling heap profiler");
+                        actor_logger.info("Enabling heap profiler");
                     }
                 } else {
                     if (is_enabled) {
-                        seastar_logger.info("Disabling heap profiler");
+                        actor_logger.info("Disabling heap profiler");
                     }
                 }
                 cpu_mem.collect_backtrace = enable;
@@ -638,7 +638,7 @@ namespace nil {
 #else
 
             void set_heap_profiling_enabled(bool enable) {
-                seastar_logger.warn(
+                actor_logger.warn(
                     "=nil; Actor compiled without heap profiling support, heap profiler not supported;"
                     " compile with the =nil; Actor_HEAP_PROFILING=ON CMake option to add heap profiling support");
             }
@@ -797,7 +797,7 @@ namespace nil {
 
             void cpu_pages::warn_large_allocation(size_t size) {
                 alloc_stats::increment(alloc_stats::types::large_allocs);
-                seastar_memory_logger.warn(
+                actor_memory_logger.warn(
                     "oversized allocation: {} bytes. This is non-fatal, but could lead to latency and/or fragmentation "
                     "issues. Please report: at {}",
                     size, current_backtrace());
@@ -985,7 +985,7 @@ namespace nil {
                         (reinterpret_cast<uintptr_t>(ptr) & cpu_id_and_mem_base_mask) == local_expected_cpu_id, true)) {
                     return false;
                 }
-                if (!is_seastar_memory(ptr)) {
+                if (!is_actor_memory(ptr)) {
                     if (is_reactor_thread) {
                         alloc_stats::increment(alloc_stats::types::foreign_cross_frees);
                     } else {
@@ -1616,8 +1616,8 @@ namespace nil {
                 } else if (str == "all") {
                     set_dump_memory_diagnostics_on_alloc_failure_kind(alloc_failure_kind::all);
                 } else {
-                    seastar_logger.error(
-                        "Ignoring invalid option '{}' for the allocation failure kind to dump seastar memory "
+                    actor_logger.error(
+                        "Ignoring invalid option '{}' for the allocation failure kind to dump actor memory "
                         "diagnostics "
                         "for, valid options are: none, critical and all",
                         str);
@@ -1679,7 +1679,7 @@ namespace nil {
                 do_dump_memory_diagnostics(nil::actor::detail::log_buf::inserter_iterator it) {
                 auto free_mem = cpu_mem.nr_free_pages * page_size;
                 auto total_mem = cpu_mem.nr_pages * page_size;
-                it = fmt::format_to(it, "Dumping seastar memory diagnostics\n");
+                it = fmt::format_to(it, "Dumping actor memory diagnostics\n");
 
                 it = fmt::format_to(it, "Used memory:  {}\n", to_hr_size(total_mem - free_mem));
                 it = fmt::format_to(it, "Free memory:  {}\n", to_hr_size(free_mem));
@@ -1771,7 +1771,7 @@ namespace nil {
                 }
 
                 disable_report_on_alloc_failure_temporarily guard;
-                seastar_memory_logger.debug("Failed to allocate {} bytes at {}", size, current_backtrace());
+                actor_memory_logger.debug("Failed to allocate {} bytes at {}", size, current_backtrace());
 
                 static thread_local logger::rate_limit rate_limit(std::chrono::seconds(10));
 
@@ -1790,14 +1790,14 @@ namespace nil {
 
                 logger::lambda_log_writer writer(
                     [](nil::actor::detail::log_buf::inserter_iterator it) { return do_dump_memory_diagnostics(it); });
-                seastar_memory_logger.log(lvl, rate_limit, writer);
+                actor_memory_logger.log(lvl, rate_limit, writer);
             }
 
             void on_allocation_failure(size_t size) {
                 maybe_dump_memory_diagnostics(size);
 
                 if (!abort_on_alloc_failure_suppressed && abort_on_allocation_failure.load(std::memory_order_relaxed)) {
-                    seastar_logger.error("Failed to allocate {} bytes", size);
+                    actor_logger.error("Failed to allocate {} bytes", size);
                     abort();
                 }
             }
@@ -1894,7 +1894,7 @@ extern "C" [[gnu::visibility("default")]] void *realloc(void *ptr, size_t size) 
     if (try_trigger_error_injector()) {
         return nullptr;
     }
-    if (ptr != nullptr && !is_seastar_memory(ptr)) {
+    if (ptr != nullptr && !is_actor_memory(ptr)) {
         // we can't realloc foreign memory on a shard
         if (is_reactor_thread) {
             abort();
@@ -1904,9 +1904,9 @@ extern "C" [[gnu::visibility("default")]] void *realloc(void *ptr, size_t size) 
             return original_realloc_func(ptr, size);
         }
     }
-    // if we're here, it's either ptr is a seastar memory ptr
+    // if we're here, it's either ptr is a actor memory ptr
     // or a nullptr, or, original functions aren't available
-    // at any rate, using the seastar allocator is OK now.
+    // at any rate, using the actor allocator is OK now.
     auto old_size = ptr ? object_size(ptr) : 0;
     if (size == old_size) {
         return ptr;
@@ -2035,7 +2035,7 @@ extern "C" [[gnu::alias("cfree")]] [[gnu::visibility("default")]] void __libc_cf
 #endif
 
 extern "C" [[gnu::visibility("default")]] size_t malloc_usable_size(void *obj) {
-    if (!is_seastar_memory(obj)) {
+    if (!is_actor_memory(obj)) {
         return original_malloc_usable_size_func(obj);
     }
     return object_size(obj);
@@ -2220,7 +2220,7 @@ namespace nil {
             }
 
             void set_heap_profiling_enabled(bool enabled) {
-                seastar_logger.warn("=nil; Actor compiled with default allocator, heap profiler not supported");
+                actor_logger.warn("=nil; Actor compiled with default allocator, heap profiler not supported");
             }
 
             scoped_heap_profiling::scoped_heap_profiling() noexcept {
@@ -2231,7 +2231,7 @@ namespace nil {
             }
 
             void enable_abort_on_allocation_failure() {
-                seastar_logger.warn("=nil; Actor compiled with default allocator, will not abort on bad_alloc");
+                actor_logger.warn("=nil; Actor compiled with default allocator, will not abort on bad_alloc");
             }
 
             reclaimer::reclaimer(std::function<reclaiming_result()> reclaim, reclaimer_scope) {

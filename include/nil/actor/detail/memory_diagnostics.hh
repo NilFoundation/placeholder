@@ -32,7 +32,7 @@ namespace nil {
 
             /// \brief The kind of allocation failures to dump diagnostics report for.
             ///
-            /// Note that if the seastar_memory logger is set to level debug, there will
+            /// Note that if the actor_memory logger is set to level debug, there will
             /// be a report dumped for any allocation failure, regardless of this
             /// configuration.
             enum class alloc_failure_kind {
@@ -62,7 +62,7 @@ namespace nil {
 
             /// \brief Set a producer of additional diagnostic information.
             ///
-            /// This allows the application running on top of seastar to add its own part to
+            /// This allows the application running on top of actor to add its own part to
             /// the diagnostics dump. The application can supply higher level diagnostics
             /// information, that might help explain how the memory was consumed.
             ///

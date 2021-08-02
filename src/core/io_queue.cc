@@ -247,7 +247,7 @@ namespace nil {
         io_queue::io_queue(io_group_ptr group, detail::io_sink &sink, io_queue::config cfg) :
             _priority_classes(), _group(std::move(group)), _fq(_group->_fg, make_fair_queue_config(cfg)), _sink(sink),
             _config(std::move(cfg)) {
-            seastar_logger.debug("Created io queue, multipliers {}:{}",
+            actor_logger.debug("Created io queue, multipliers {}:{}",
                                  cfg.disk_req_write_to_read_multiplier,
                                  cfg.disk_bytes_write_to_read_multiplier);
         }
@@ -270,7 +270,7 @@ namespace nil {
 
         io_group::io_group(config cfg) noexcept :
             _fg(make_fair_group_config(cfg)), _maximum_request_size(cfg.max_bytes_count / 2) {
-            seastar_logger.debug("Created io group, limits {}:{}", cfg.max_req_count, cfg.max_bytes_count);
+            actor_logger.debug("Created io group, limits {}:{}", cfg.max_req_count, cfg.max_bytes_count);
         }
 
         io_queue::~io_queue() {

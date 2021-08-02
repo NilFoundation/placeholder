@@ -23,7 +23,7 @@ macro(actor_find_dependencies)
     #
     # List of Actor dependencies that is meant to be used
     # both in Actor configuration and by clients which
-    # consume Actor via SeastarConfig.cmake.
+    # consume Actor via ActorConfig.cmake.
     #
     set(_actor_all_dependencies
         # Public dependencies.

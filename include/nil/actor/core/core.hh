@@ -33,7 +33,7 @@
 ///
 /// Please see:
 ///   - \ref future-module Documentation on futures and promises, which are
-///          the seastar building blocks.
+///          the actor building blocks.
 ///   - \ref future-util Utililty functions for working with futures
 ///   - \ref memory-module Memory management
 ///   - \ref networking-module TCP/IP networking
@@ -90,9 +90,9 @@ namespace nil {
         /// =nil; Actor provides a simple networking API, backed by two
         /// TCP/IP stacks: the POSIX stack, utilizing the kernel's
         /// BSD socket APIs, and the native stack, implement fully
-        /// within seastar and able to drive network cards directly.
+        /// within actor and able to drive network cards directly.
         /// The native stack supports zero-copy on both transmit
-        /// and receive, and is implemented using seastar's high
+        /// and receive, and is implemented using actor's high
         /// performance, lockless sharded design.  The network stack
         /// can be selected with the \c \--network-stack command-line
         /// parameter.
@@ -168,7 +168,7 @@ namespace nil {
         /// \defgroup fileio-module File Input/Output
         ///
         /// =nil; Actor provides a file API to deal with persistent storage.
-        /// Unlike most file APIs, seastar offers unbuffered file I/O
+        /// Unlike most file APIs, actor offers unbuffered file I/O
         /// (similar to, and based on, \c O_DIRECT).  Unbuffered I/O means
         /// that the application is required to do its own caching, but
         /// delivers better performance if this caching is done correctly.
@@ -213,7 +213,7 @@ namespace nil {
         /// Checks if a given directory supports direct io
         ///
         /// =nil; Actor bypasses the Operating System caches and issues direct io to the
-        /// underlying block devices. Projects using seastar should check if the directory
+        /// underlying block devices. Projects using actor should check if the directory
         /// lies in a filesystem that support such operations. This function can be used
         /// to do that.
         ///

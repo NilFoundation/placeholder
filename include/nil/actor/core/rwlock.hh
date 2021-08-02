@@ -63,7 +63,7 @@ namespace nil {
         /// @{
 
         /// Implements a read-write lock mechanism. Beware: this is not a cross-CPU
-        /// lock, due to seastar's sharded architecture.
+        /// lock, due to actor's sharded architecture.
         /// Instead, it can be used to achieve rwlock semantics between two (or more)
         /// fibers running in the same CPU that may use the same resource.
         /// Acquiring the write lock will effectively cause all readers not to be executed

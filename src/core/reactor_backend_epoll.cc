@@ -73,7 +73,7 @@ namespace nil {
             sp.sched_priority = 1;
             auto sched_ok = pthread_setschedparam(_task_quota_timer_thread.native_handle(), SCHED_FIFO, &sp);
             if (sched_ok != 0 && _r._id == 0) {
-                seastar_logger.warn(
+                actor_logger.warn(
                     "Unable to set SCHED_FIFO scheduling policy for timer thread; latency impact possible. Try adding "
                     "CAP_SYS_NICE");
             }
@@ -118,7 +118,7 @@ namespace nil {
             }
             auto r = ::pthread_sigmask(SIG_BLOCK, &mask, NULL);
             if (r) {
-                seastar_logger.error("Thread {}: failed to block signals. Aborting.", thread_name.c_str());
+                actor_logger.error("Thread {}: failed to block signals. Aborting.", thread_name.c_str());
                 abort();
             }
 

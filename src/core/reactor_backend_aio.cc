@@ -61,7 +61,7 @@ namespace nil {
                     set_nowait(iocb, true);
                     break;
                 default:
-                    seastar_logger.error("Invalid operation for iocb: {}", req.opname());
+                    actor_logger.error("Invalid operation for iocb: {}", req.opname());
                     std::abort();
             }
             set_user_data(iocb, desc);

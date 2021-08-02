@@ -41,8 +41,8 @@ namespace nil {
         /// shared resource concurrently, while exclusive access allows just
         /// one task to access the resource at a time.
         ///
-        /// Note that many seastar tasks do not require protection at all,
-        /// since the seastar scheduler is not preemptive; however tasks that do
+        /// Note that many actor tasks do not require protection at all,
+        /// since the actor scheduler is not preemptive; however tasks that do
         /// (by waiting on a future) may require explicit locking.
         ///
         /// The \ref with_shared(shared_mutex&, Func&&) and

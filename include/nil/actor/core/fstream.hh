@@ -31,7 +31,7 @@
 // =nil; Actor files are block-based due to the reliance on DMA - you must read
 // on sector boundaries.  The adapters in this file provide a byte stream
 // interface to files, while retaining the zero-copy characteristics of
-// seastar files.
+// actor files.
 //
 
 #include <nil/actor/core/file.hh>

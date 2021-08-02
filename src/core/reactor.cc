@@ -223,7 +223,7 @@ namespace YAML {
 namespace nil {
     namespace actor {
 
-        nil::actor::logger seastar_logger("seastar");
+        nil::actor::logger actor_logger("actor");
         nil::actor::logger sched_logger("scheduler");
 
         shard_id reactor::cpu_id() const {
@@ -729,7 +729,7 @@ namespace nil {
             uint64_t tid;
             pthread_threadid_np(NULL, &tid);
 #endif
-            seastar_logger.error("Failed to handle signal {} on thread {} ({}): engine not ready", signo, tid, tname);
+            actor_logger.error("Failed to handle signal {} on thread {} ({}): engine not ready", signo, tid, tname);
         }
 
         void reactor::handle_signal(int signo, noncopyable_function<void()> &&handler) {
@@ -826,7 +826,7 @@ namespace nil {
                     throw_system_error_on(r == -1);
                 } catch (...) {
                     mem.release();    // We failed to restore previous stack, must leak it.
-                    seastar_logger.error("Failed to restore signal stack: {}", std::current_exception());
+                    actor_logger.error("Failed to restore signal stack: {}", std::current_exception());
                 }
             });
         }
@@ -1206,7 +1206,7 @@ namespace nil {
             if (ms != cfg.threshold) {
                 cfg.threshold = ms;
                 _cpu_stall_detector->update_config(cfg);
-                seastar_logger.info("updated: blocked-reactor-notify-ms={}", ms.count());
+                actor_logger.info("updated: blocked-reactor-notify-ms={}", ms.count());
             }
         }
 
@@ -1266,7 +1266,7 @@ namespace nil {
                         *detail::current_scheduling_group_ptr() = t->_sg;
                         t->_callback();
                     } catch (...) {
-                        seastar_logger.error("Timer callback failed: {}", std::current_exception());
+                        actor_logger.error("Timer callback failed: {}", std::current_exception());
                     }
                 }
             }
@@ -2298,14 +2298,14 @@ namespace nil {
                 auto tsk = tasks.front();
                 tasks.pop_front();
 #if BOOST_OS_LINUX
-                STAP_PROBE(seastar, reactor_run_tasks_single_start);
+                STAP_PROBE(actor, reactor_run_tasks_single_start);
 #endif
                 task_histogram_add_task(*tsk);
                 _current_task = tsk;
                 tsk->run_and_dispose();
                 _current_task = nullptr;
 #if BOOST_OS_LINUX
-                STAP_PROBE(seastar, reactor_run_tasks_single_end);
+                STAP_PROBE(actor, reactor_run_tasks_single_end);
 #endif
                 ++tq._tasks_processed;
                 ++_global_tasks_processed;
@@ -2721,7 +2721,7 @@ namespace nil {
 
             sched_clock::time_point t_run_completed = std::chrono::steady_clock::now();
 #if BOOST_OS_LINUX
-            STAP_PROBE(seastar, reactor_run_tasks_start);
+            STAP_PROBE(actor, reactor_run_tasks_start);
 #endif
             _cpu_stall_detector->start_task_run(t_run_completed);
             do {
@@ -2747,7 +2747,7 @@ namespace nil {
             } while (have_more_tasks() && !need_preempt());
             _cpu_stall_detector->end_task_run(t_run_completed);
 #if BOOST_OS_LINUX
-            STAP_PROBE(seastar, reactor_run_tasks_end);
+            STAP_PROBE(actor, reactor_run_tasks_end);
 #endif
             *detail::current_scheduling_group_ptr() =
                 default_scheduling_group();    // Prevent inheritance from last group run
@@ -3462,17 +3462,17 @@ namespace nil {
                 "overprovisioned",
                 "run in an overprovisioned environment (such as docker or a laptop); equivalent to --idle-poll-time-us "
                 "0 "
-                "--thread-affinity 0 --poll-aio 0")("abort-on-seastar-bad-alloc",
-                                                    "abort when seastar allocator cannot allocate memory")(
+                "--thread-affinity 0 --poll-aio 0")("abort-on-actor-bad-alloc",
+                                                    "abort when actor allocator cannot allocate memory")(
                 "force-aio-syscalls", boost::program_options::value<bool>()->default_value(false),
                 "Force io_getevents(2) to issue a system call, instead of bypassing the kernel when possible."
                 " This makes strace output more useful, but slows down the application")(
                 "dump-memory-diagnostics-on-alloc-failure-kind", boost::program_options::value<std::string>()->default_value("critical"),
-                "Dump diagnostics of the seastar allocator state on allocation failure."
+                "Dump diagnostics of the actor allocator state on allocation failure."
                 " Accepted values: never, critical (default), always. When set to critical, only allocations marked as "
                 "critical will trigger diagnostics dump."
-                " The diagnostics will be written to the seastar_memory logger, with error level."
-                " Note that if the seastar_memory logger is set to debug or trace level, the diagnostics will be "
+                " The diagnostics will be written to the actor_memory logger, with error level."
+                " Note that if the actor_memory logger is set to debug or trace level, the diagnostics will be "
                 "logged "
                 "irrespective of this setting.")(
                 "reactor-backend",
@@ -3481,7 +3481,7 @@ namespace nil {
                 "aio-fsync", boost::program_options::value<bool>()->default_value(kernel_supports_aio_fsync()),
                 "Use Linux aio for fsync() calls. This reduces latency; requires Linux 4.18 or later.")
 #ifdef ACTOR_HEAPPROF
-                ("heapprof", "enable seastar heap profiling")
+                ("heapprof", "enable actor heap profiling")
 #endif
                 ;
             if (cfg.auto_handle_sigint_sigterm) {
@@ -3709,10 +3709,10 @@ namespace nil {
             }
 
             void parse_config(boost::program_options::variables_map &configuration) {
-                seastar_logger.debug("smp::count: {}", smp::count);
+                actor_logger.debug("smp::count: {}", smp::count);
                 _latency_goal = std::chrono::duration_cast<std::chrono::duration<double>>(
                     configuration["task-quota-ms"].as<double>() * 1.5 * 1ms);
-                seastar_logger.debug("latency_goal: {}", latency_goal().count());
+                actor_logger.debug("latency_goal: {}", latency_goal().count());
 
                 if (configuration.count("max-io-requests")) {
                     _capacity = configuration["max-io-requests"].as<unsigned>();
@@ -3724,7 +3724,7 @@ namespace nil {
                         throw std::runtime_error("num-io-groups must be greater than zero");
                     }
                 } else if (configuration.count("num-io-queues")) {
-                    seastar_logger.warn("the --num-io-queues option is deprecated, switch to --num-io-groups instead");
+                    actor_logger.warn("the --num-io-queues option is deprecated, switch to --num-io-groups instead");
                     _num_io_groups = configuration["num-io-queues"].as<unsigned>();
                     if (!_num_io_groups) {
                         throw std::runtime_error("num-io-queues must be greater than zero");
@@ -3769,7 +3769,7 @@ namespace nil {
                                 throw std::runtime_error(fmt::format("R/W bytes and req rates must not be zero"));
                             }
 
-                            seastar_logger.debug("dev_id: {} mountpoint: {}", buf.st_dev, d.mountpoint);
+                            actor_logger.debug("dev_id: {} mountpoint: {}", buf.st_dev, d.mountpoint);
                             _mountpoints.emplace(buf.st_dev, d);
                         }
                     }
@@ -3781,7 +3781,7 @@ namespace nil {
             }
 
             struct io_group::config generate_group_config(dev_t devid, unsigned nr_groups) const noexcept {
-                seastar_logger.debug("generate_group_config dev_id: {}", devid);
+                actor_logger.debug("generate_group_config dev_id: {}", devid);
                 const mountpoint_params &p = _mountpoints.at(devid);
                 struct io_group::config cfg;
                 uint64_t max_bandwidth = std::max(p.read_bytes_rate, p.write_bytes_rate);
@@ -3807,7 +3807,7 @@ namespace nil {
             }
 
             struct io_queue::config generate_config(dev_t devid) const {
-                seastar_logger.debug("generate_config dev_id: {}", devid);
+                actor_logger.debug("generate_config dev_id: {}", devid);
                 const mountpoint_params &p = _mountpoints.at(devid);
                 struct io_queue::config cfg;
                 uint64_t max_bandwidth = std::max(p.read_bytes_rate, p.write_bytes_rate);
@@ -3918,7 +3918,7 @@ namespace nil {
                         for (auto cpu_id : not_available_cpus) {
                             not_available_cpus_list << " " << cpu_id;
                         }
-                        seastar_logger.error("Bad value for --cpuset:{} not allowed. Shutting down.",
+                        actor_logger.error("Bad value for --cpuset:{} not allowed. Shutting down.",
                                              not_available_cpus_list.str());
                         exit(1);
                     }
@@ -4009,7 +4009,7 @@ namespace nil {
             }
             memory::configure(allocations[0].mem, mbind, hugepages_path);
 
-            if (configuration.count("abort-on-seastar-bad-alloc")) {
+            if (configuration.count("abort-on-actor-bad-alloc")) {
                 memory::enable_abort_on_allocation_failure();
             }
 
@@ -4060,7 +4060,7 @@ namespace nil {
                     if (iog.attached == 0) {
                         struct io_group::config gcfg = disk_config.generate_group_config(id, topology.groups.size());
                         iog.g = std::make_shared<io_group>(std::move(gcfg));
-                        seastar_logger.debug("allocate {} IO group", group_idx);
+                        actor_logger.debug("allocate {} IO group", group_idx);
                     }
                     iog.attached++;
                     group = iog.g;
@@ -4068,7 +4068,7 @@ namespace nil {
 
                 struct io_queue::config cfg = disk_config.generate_config(id);
                 topology.queues[shard] = new io_queue(std::move(group), engine()._io_sink, std::move(cfg));
-                seastar_logger.debug("attached {} queue to {} IO group", shard, group_idx);
+                actor_logger.debug("attached {} queue to {} IO group", shard, group_idx);
             };
 
             auto assign_io_queue = [&devices_topology](shard_id shard_id, dev_t dev_id) {
@@ -4119,7 +4119,7 @@ namespace nil {
                         engine().configure(configuration);
                         engine().run();
                     } catch (const std::exception &e) {
-                        seastar_logger.error(e.what());
+                        actor_logger.error(e.what());
                         _exit(1);
                     }
                 });
@@ -4129,7 +4129,7 @@ namespace nil {
             try {
                 allocate_reactor(0, backend_selector, reactor_cfg);
             } catch (const std::exception &e) {
-                seastar_logger.error(e.what());
+                actor_logger.error(e.what());
                 _exit(1);
             }
 
@@ -4206,7 +4206,7 @@ namespace nil {
         __thread reactor *local_engine;
 
         void report_exception(std::string_view message, std::exception_ptr eptr) noexcept {
-            seastar_logger.error("{}: {}", message, eptr);
+            actor_logger.error("{}: {}", message, eptr);
         }
 
         future<> check_direct_io_support(std::string_view path) noexcept {
@@ -4337,7 +4337,7 @@ namespace nil {
             // polling while idle), we should be accumulating thread runtime. If we are not, that's because
             // someone stole it from us.
             //
-            // Because this is totally in userspace we can miss some events. For instance, if the seastar
+            // Because this is totally in userspace we can miss some events. For instance, if the actor
             // process is ready to run but the kernel hasn't scheduled us yet, that would be technically
             // steal time but we have no ways to account it.
             //

@@ -52,7 +52,7 @@ namespace perf_tests {
 
         namespace {
 
-            // We need to use signal-based timer instead of seastar ones so that
+            // We need to use signal-based timer instead of actor ones so that
             // tests that do not suspend can be interrupted.
             // This causes no overhead though since the timer is used only in a dry run.
             class signal_timer {
@@ -254,7 +254,7 @@ namespace perf_tests {
 
             // dry run, estimate the number of iterations
             if (conf.single_run_duration.count()) {
-                // switch out of seastar thread
+                // switch out of actor thread
                 later()
                     .then([&] {
                         tmr.arm(conf.single_run_duration);
@@ -269,7 +269,7 @@ namespace perf_tests {
             auto results = std::vector<double>(conf.number_of_runs);
             uint64_t total_iterations = 0;
             for (auto i = 0u; i < conf.number_of_runs; i++) {
-                // switch out of seastar thread
+                // switch out of actor thread
                 later()
                     .then([&] {
                         _single_run_iterations = 0;

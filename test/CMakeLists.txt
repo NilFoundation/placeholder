@@ -151,7 +151,7 @@ endfunction()
 #
 # These kinds of tests are structured like Actor applications.
 #
-# These tests always link against `seastar_private` and are always invoked with
+# These tests always link against `actor_private` and are always invoked with
 # `-c ${BUILD_WITH_UNIT_TEST_SMP}`.
 #
 function(actor_add_app_test name)

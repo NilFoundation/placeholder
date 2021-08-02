@@ -27,13 +27,13 @@
 namespace nil {
     namespace actor {
 
-        /// Determines whether seastar should throw or abort when operation made by
-        /// seastar fails because the target file descriptor is not valid. This is
+        /// Determines whether actor should throw or abort when operation made by
+        /// actor fails because the target file descriptor is not valid. This is
         /// detected when underlying system calls return EBADF or ENOTSOCK.
         /// The default behavior is to throw std::system_error.
         void set_abort_on_ebadf(bool do_abort);
 
-        /// Queries the current setting for seastar's behavior on invalid file descriptor access.
+        /// Queries the current setting for actor's behavior on invalid file descriptor access.
         /// See set_abort_on_ebadf().
         bool is_abort_on_ebadf_enabled();
 

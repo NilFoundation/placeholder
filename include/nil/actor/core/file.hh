@@ -165,7 +165,7 @@ namespace nil {
         /// A data file on persistent storage.
         ///
         /// File objects represent uncached, unbuffered files.  As such great care
-        /// must be taken to cache data at the application layer; neither seastar
+        /// must be taken to cache data at the application layer; neither actor
         /// nor the OS will cache these file.
         ///
         /// Data is transferred using direct memory access (DMA).  This imposes

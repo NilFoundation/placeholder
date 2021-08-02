@@ -44,10 +44,10 @@ namespace nil {
             }
 
             void actor_test::run() {
-                // HACK: please see https://github.com/cloudius-systems/seastar/issues/10
+                // HACK: please see https://github.com/cloudius-systems/actor/issues/10
                 BOOST_REQUIRE(true);
 
-                // HACK: please see https://github.com/cloudius-systems/seastar/issues/10
+                // HACK: please see https://github.com/cloudius-systems/actor/issues/10
                 boost::program_options::variables_map()["dummy"];
 
                 set_abort_on_internal_error(true);

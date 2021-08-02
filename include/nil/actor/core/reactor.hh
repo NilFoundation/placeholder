@@ -812,7 +812,7 @@ namespace nil {
 #endif
         }
 
-        extern logger seastar_logger;
+        extern logger actor_logger;
 
     }    // namespace actor
 }    // namespace nil

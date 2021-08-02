@@ -73,7 +73,7 @@ namespace nil {
          *instance. The structure and interpretation is up to the producer/consumer
          *
          * There is a single "scollectd" instance per cpu, and values should be bound locally
-         * to this cpu. Polling is done at a frequency set in the seastar config (def once per s),
+         * to this cpu. Polling is done at a frequency set in the actor config (def once per s),
          * and all registered values will be sent via UDP packages to the destination host(s)
          *
          * Note that the tuple { plugin, plugin_instance, type, type_instance } is considered a
@@ -96,7 +96,7 @@ namespace nil {
                 // from types.db. Defined collectd types (type_id) selection.
                 // This enum omits the very application specific types, such
                 // as mysql_* etc, since if you really are re-writing mysql
-                // in seastar, you probably know how to look the type up manually...
+                // in actor, you probably know how to look the type up manually...
 
                 absolute,
                 backends,

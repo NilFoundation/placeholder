@@ -271,7 +271,7 @@ namespace nil {
 #elif BOOST_OS_LINUX && defined(__aarch64__)
             asm(".cfi_undefined x30");
 #elif BOOST_OS_LINUX
-#warning "Backtracing from seastar threads may be broken"
+#warning "Backtracing from actor threads may be broken"
 #endif
             _context.initial_switch_in_completed();
             if (group() != current_scheduling_group()) {

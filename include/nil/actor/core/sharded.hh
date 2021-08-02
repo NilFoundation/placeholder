@@ -964,7 +964,7 @@ namespace nil {
         /// \ref shared_ptr and \ref lw_shared_ptr, is safe to move to a
         /// different core.
         ///
-        /// As seastar avoids locking, any but the most trivial objects must
+        /// As actor avoids locking, any but the most trivial objects must
         /// be destroyed on the same core they were created on, so that,
         /// for example, their destructors can unlink references to the
         /// object from various containers.  In addition, for performance

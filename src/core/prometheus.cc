@@ -38,7 +38,7 @@
 namespace nil {
     namespace actor {
 
-        extern nil::actor::logger seastar_logger;
+        extern nil::actor::logger actor_logger;
 
         namespace prometheus {
             namespace pm = io::prometheus::client;
@@ -626,7 +626,7 @@ namespace nil {
                     metric_family.foreach_metric(
                         [&mtf, &ctx](auto value, auto value_info) { fill_metric(mtf, value, value_info.id, ctx); });
                     if (!write_delimited_to(mtf, &os)) {
-                        seastar_logger.warn("Failed to write protobuf metrics");
+                        actor_logger.warn("Failed to write protobuf metrics");
                     }
                     return out.write(s);
                 });

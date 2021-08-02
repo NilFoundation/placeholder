@@ -38,7 +38,7 @@
 namespace nil {
     namespace actor {
 
-        extern logger seastar_logger;
+        extern logger actor_logger;
 
         // This function was made optional because of validate. It needs to
         // throw an error when a non parseable input is given.
@@ -104,7 +104,7 @@ namespace nil {
                     return nil::actor::parse_cpuset(*cpuset);
                 }
 
-                seastar_logger.warn("Unable to parse cgroup's cpuset. Ignoring.");
+                actor_logger.warn("Unable to parse cgroup's cpuset. Ignoring.");
 #endif
                 return boost::none;
             }
@@ -124,7 +124,7 @@ namespace nil {
                     auto line = read_first_line(path);
                     return boost::lexical_cast<T>(line);
                 } catch (...) {
-                    seastar_logger.warn("Couldn't read cgroup file {}.", path);
+                    actor_logger.warn("Couldn't read cgroup file {}.", path);
                 }
 
                 return boost::none;
@@ -153,7 +153,7 @@ namespace nil {
                 if (cline.at(0) != '0') {
                     // This is either a v1 system, or system configured with a hybrid of v1 & v2.
                     // We do not support such combinations of v1 and v2 at this point.
-                    seastar_logger.debug("Not a cgroups-v2-only system");
+                    actor_logger.debug("Not a cgroups-v2-only system");
                     return boost::none;
                 }
 
@@ -199,14 +199,14 @@ namespace nil {
                     try {
                         line = read_first_line(locate_lowest_cgroup2(*cg2_path, cg2_fname).value());
                     } catch (...) {
-                        seastar_logger.warn("Could not read cgroups v2 file ({}).", cg2_fname);
+                        actor_logger.warn("Could not read cgroups v2 file ({}).", cg2_fname);
                         return boost::none;
                     }
                     if (line.compare("max")) {
                         try {
                             return boost::lexical_cast<T>(line);
                         } catch (...) {
-                            seastar_logger.warn("Malformed cgroups file ({}) contents.", cg2_fname);
+                            actor_logger.warn("Malformed cgroups file ({}) contents.", cg2_fname);
                         }
                     }
                     return boost::none;
@@ -217,7 +217,7 @@ namespace nil {
                     auto line = read_first_line(boost::filesystem::path {"/sys/fs/cgroup"} / cg1_path);
                     return boost::lexical_cast<T>(line);
                 } catch (...) {
-                    seastar_logger.warn("Could not parse cgroups v1 file ({}).", cg1_path);
+                    actor_logger.warn("Could not parse cgroups v1 file ({}).", cg1_path);
                 }
 
                 return boost::none;
@@ -369,7 +369,7 @@ namespace nil {
                 //
                 // The first is to find out how many nodes we have in the system. We can't use
                 // hwloc for that, because at this point we are not longer talking about the physical system,
-                // but the actual booted seastar server instead. So if we have restricted the run to a subset
+                // but the actual booted actor server instead. So if we have restricted the run to a subset
                 // of the available processors, counting topology nodes won't spur the same result.
                 //
                 // Secondly, we need to find out which processors live in each node. For a reason similar to the
@@ -391,7 +391,7 @@ namespace nil {
                 if (num_io_groups == 0) {
                     num_io_groups = numa_nodes.size();
                     assert(num_io_groups != 0);
-                    seastar_logger.debug("Auto-configure {} IO groups", num_io_groups);
+                    actor_logger.debug("Auto-configure {} IO groups", num_io_groups);
                 } else if (num_io_groups > cpus.size()) {
                     // User may be playing with --smp option, but num_io_groups was independently
                     // determined by iotune, so adjust for any conflicts.
@@ -520,19 +520,19 @@ namespace nil {
                         orphan_pus.push_back(cpu_id);
                     } else {
                         cpu_to_node[cpu_id] = node;
-                        seastar_logger.debug("Assign CPU{} to NUMA{}", cpu_id, node->os_index);
+                        actor_logger.debug("Assign CPU{} to NUMA{}", cpu_id, node->os_index);
                     }
                 }
 
                 if (!orphan_pus.empty()) {
                     if (!c.assign_orphan_cpus) {
-                        seastar_logger.error(
+                        actor_logger.error(
                             "CPUs without local NUMA nodes are disabled by the "
                             "--allow-cpus-in-remote-numa-nodes=false option.\n");
                         throw std::runtime_error("no NUMA node for CPU");
                     }
 
-                    seastar_logger.warn("Assigning some CPUs to remote NUMA nodes");
+                    actor_logger.warn("Assigning some CPUs to remote NUMA nodes");
 
                     // Get the list of NUMA nodes available
                     std::vector<hwloc_obj_t> nodes;
@@ -555,7 +555,7 @@ namespace nil {
                     for (auto &&gb : group_by) {
                         grouped = break_cpus_into_groups(topology, orphan_pus, gb);
                         if (grouped.size() >= nodes.size()) {
-                            seastar_logger.debug("Grouped orphan CPUs by {}", hwloc_obj_type_string(gb));
+                            actor_logger.debug("Grouped orphan CPUs by {}", hwloc_obj_type_string(gb));
                             break;
                         }
                         // Try to scatter orphans into as much NUMA nodes as possible
@@ -567,7 +567,7 @@ namespace nil {
                     for (auto &&grp : grouped) {
                         for (auto &&cpu_id : grp.second) {
                             cpu_to_node[cpu_id] = nodes[nid];
-                            seastar_logger.debug("Assign orphan CPU{} to NUMA{}", cpu_id, nodes[nid]->os_index);
+                            actor_logger.debug("Assign orphan CPU{} to NUMA{}", cpu_id, nodes[nid]->os_index);
                         }
                         nid = (nid + 1) % nodes.size();
                     }

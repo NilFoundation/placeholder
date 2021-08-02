@@ -47,11 +47,11 @@
 ///     at blocking points (see below)
 ///   - =nil; Actor threads always run on the same core they were launched on
 ///
-/// Like other seastar code, seastar threads may not issue blocking system calls.
+/// Like other actor code, actor threads may not issue blocking system calls.
 ///
-/// A seastar thread blocking point is any function that returns a \ref future.
+/// A actor thread blocking point is any function that returns a \ref future.
 /// you block by calling \ref future<>::get(); this waits for the future to become
-/// available, and in the meanwhile, other seastar threads and seastar non-threaded
+/// available, and in the meanwhile, other actor threads and actor non-threaded
 /// code may execute.
 ///
 /// Example:
@@ -141,7 +141,7 @@ namespace nil {
 
         /// \brief thread - stateful thread of execution
         ///
-        /// Threads allow using seastar APIs in a blocking manner,
+        /// Threads allow using actor APIs in a blocking manner,
         /// by calling future::get() on a non-ready future.  When
         /// this happens, the thread is put to sleep until the future
         /// becomes ready.
@@ -217,7 +217,7 @@ namespace nil {
             return _context->_done.get_future();
         }
 
-        /// Executes a callable in a seastar thread.
+        /// Executes a callable in a actor thread.
         ///
         /// Runs a block of code in a threaded context,
         /// which allows it to block (using \ref future::get()).  The
@@ -268,7 +268,7 @@ namespace nil {
             }
         }
 
-        /// Executes a callable in a seastar thread.
+        /// Executes a callable in a actor thread.
         ///
         /// Runs a block of code in a threaded context,
         /// which allows it to block (using \ref future::get()).  The

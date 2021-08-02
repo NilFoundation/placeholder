@@ -111,7 +111,7 @@ namespace nil {
             _maximum_capacity(cfg.max_req_count, cfg.max_bytes_count) {
             assert(!_capacity_tail.load(std::memory_order_relaxed)
                         .maybe_ahead_of(_capacity_head.load(std::memory_order_relaxed)));
-            seastar_logger.debug("Created fair group, capacity {}:{}", cfg.max_req_count, cfg.max_bytes_count);
+            actor_logger.debug("Created fair group, capacity {}:{}", cfg.max_req_count, cfg.max_bytes_count);
         }
 
         fair_group_rover fair_group::grab_capacity(fair_queue_ticket cap) noexcept {
@@ -129,7 +129,7 @@ namespace nil {
 
         fair_queue::fair_queue(fair_group &group, config cfg) :
             _config(std::move(cfg)), _group(group), _base(std::chrono::steady_clock::now()) {
-            seastar_logger.debug("Created fair queue, ticket pace {}:{}", cfg.ticket_weight_pace, cfg.ticket_size_pace);
+            actor_logger.debug("Created fair queue, ticket pace {}:{}", cfg.ticket_weight_pace, cfg.ticket_size_pace);
         }
 
         void fair_queue::push_priority_class(priority_class_ptr pc) {

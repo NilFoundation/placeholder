@@ -44,7 +44,7 @@ namespace nil {
 
         class reactor;
 
-        /// \brief Integration with non-seastar applications.
+        /// \brief Integration with non-actor applications.
         namespace alien {
 
             class message_queue {

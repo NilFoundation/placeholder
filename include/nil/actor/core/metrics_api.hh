@@ -77,7 +77,7 @@ namespace nil {
                  * Inherit type allows customizing one of the basic types (gauge, counter, derive).
                  *
                  * Instance_id is used to differentiate multiple instance of the metrics.
-                 * In the seastar environment it is typical to have a metric per shard.
+                 * In the actor environment it is typical to have a metric per shard.
                  *
                  */
 

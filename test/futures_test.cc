@@ -1432,7 +1432,7 @@ ACTOR_TEST_CASE(test_async_throw_on_move) {
 }
 
 future<> func4() {
-    return later().then([] { seastar_logger.info("backtrace: {}", current_backtrace()); });
+    return later().then([] { actor_logger.info("backtrace: {}", current_backtrace()); });
 }
 
 void func3() {

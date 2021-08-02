@@ -308,7 +308,7 @@ namespace nil {
 
         future<> posix_file_impl::close() noexcept {
             if (_fd == -1) {
-                seastar_logger.warn("double close() detected, contact support");
+                actor_logger.warn("double close() detected, contact support");
                 return make_ready_future<>();
             }
             auto fd = _fd;

@@ -64,7 +64,7 @@ namespace nil {
         ///
         /// \brief
         /// Futures and promises are the basic tools for asynchronous
-        /// programming in seastar.  A future represents a result that
+        /// programming in actor.  A future represents a result that
         /// may not have been computed yet, for example a buffer that
         /// is being read from the disk, or the result of a function
         /// that is executed on another cpu.  A promise object allows
@@ -900,7 +900,7 @@ namespace nil {
                         // We get here if promise::get_future is called and the
                         // returned future is destroyed without creating a
                         // continuation.
-                        // In older versions of seastar we would store a local
+                        // In older versions of actor we would store a local
                         // copy of ex and warn in the promise destructor.
                         // Since there isn't any way for the user to clear
                         // the exception, we issue the warning from here.

@@ -40,7 +40,7 @@ namespace nil {
         ///
         /// Functions and classes for managing memory.
         ///
-        /// Memory management in seastar consists of the following:
+        /// Memory management in actor consists of the following:
         ///
         ///   - Low-level memory management in the \ref memory namespace.
         ///   - Various smart pointers: \ref shared_ptr, \ref lw_shared_ptr,
@@ -50,9 +50,9 @@ namespace nil {
         /// Low-level memory management support
         ///
         /// The \c memory namespace provides functions and classes for interfacing
-        /// with the seastar memory allocator.
+        /// with the actor memory allocator.
         ///
-        /// The seastar memory allocator splits system memory into a pool per
+        /// The actor memory allocator splits system memory into a pool per
         /// logical core (lcore).  Memory allocated one an lcore should be freed
         /// on the same lcore; failing to do so carries a severe performance
         /// penalty.  It is possible to share memory with another core, but this
@@ -80,7 +80,7 @@ namespace nil {
         /// Large allocations put great pressure on the allocator which might be unable
         /// to serve them even if there is enough memory available, due to memory
         /// fragmentation. This is especially relevant for long-running applications,
-        /// the kind of applications that are typically built with seastar. This feature
+        /// the kind of applications that are typically built with actor. This feature
         /// allows finding these large by logging a warning on large allocations, with
         /// the stacktrace of the. See:
         /// * \ref set_large_allocation_warning_threshold()
@@ -100,13 +100,13 @@ namespace nil {
         /// Often, the best way to debug an allocation failure is a coredump. This
         /// feature allows dumping core on allocation failures, containing the stack of
         /// the failed allocation, by means of aborting. To enable set the
-        /// `abort_on_seastar_bad_alloc` configuration option or the respective command
+        /// `abort_on_actor_bad_alloc` configuration option or the respective command
         /// line flag.
         ///
         /// ### Dump diagnostics report
         ///
-        /// Dump a diagnostic report of the state of the seastar allocator upon allocation
-        /// failure. The report is dumped with the `seastar_memory` logger, with debug
+        /// Dump a diagnostic report of the state of the actor allocator upon allocation
+        /// failure. The report is dumped with the `actor_memory` logger, with debug
         /// level.
         /// You can configure a report to be dumped with error level on certain allocation
         /// kinds, see:
@@ -318,7 +318,7 @@ namespace nil {
             };
 
             // Discover virtual address range used by the allocator on current shard.
-            // Supported only when seastar allocator is enabled.
+            // Supported only when actor allocator is enabled.
             memory::memory_layout get_memory_layout();
 
             /// Returns the value of free memory low water mark in bytes.

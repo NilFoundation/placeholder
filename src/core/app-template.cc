@@ -59,12 +59,12 @@ namespace nil {
             return [this](boost::program_options::variables_map &configuration) {
                 auto home = std::getenv("HOME");
                 if (home) {
-                    std::ifstream ifs(std::string(home) + "/.config/seastar/seastar.conf");
+                    std::ifstream ifs(std::string(home) + "/.config/actor/actor.conf");
                     if (ifs) {
                         boost::program_options::store(boost::program_options::parse_config_file(ifs, _opts_conf_file),
                                                       configuration);
                     }
-                    std::ifstream ifs_io(std::string(home) + "/.config/seastar/io.conf");
+                    std::ifstream ifs_io(std::string(home) + "/.config/actor/io.conf");
                     if (ifs_io) {
                         boost::program_options::store(
                             boost::program_options::parse_config_file(ifs_io, _opts_conf_file), configuration);
@@ -163,7 +163,7 @@ namespace nil {
             try {
                 smp::configure(configuration, reactor_config_from_app_config(_cfg));
             } catch (...) {
-                std::cerr << "Could not initialize seastar: " << std::current_exception() << std::endl;
+                std::cerr << "Could not initialize actor: " << std::current_exception() << std::endl;
                 return 1;
             }
             _configuration = {std::move(configuration)};
