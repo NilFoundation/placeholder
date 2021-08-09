@@ -311,7 +311,7 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/chunked_fifo.hh
     include/nil/actor/core/circular_buffer.hh
     include/nil/actor/core/circular_buffer_fixed_capacity.hh
-    include/nil/actor/core/condition-variable.hh
+    include/nil/actor/core/condition_variable.hh
     include/nil/actor/core/deleter.hh
     include/nil/actor/core/distributed.hh
     include/nil/actor/core/do_with.hh

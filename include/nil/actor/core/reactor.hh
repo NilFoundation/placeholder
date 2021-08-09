@@ -86,7 +86,7 @@
 #include <nil/actor/core/thread_cputime_clock.hh>
 #include <boost/range/irange.hpp>
 #include <nil/actor/core/timer.hh>
-#include <nil/actor/core/condition-variable.hh>
+#include <nil/actor/core/condition_variable.hh>
 #include <nil/actor/detail/log.hh>
 #include <nil/actor/core/lowres_clock.hh>
 #include <nil/actor/core/manual_clock.hh>

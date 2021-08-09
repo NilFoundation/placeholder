@@ -15,7 +15,7 @@
 // <https://github.com/NilFoundation/dbms/blob/master/LICENSE_1_0.txt>.
 //---------------------------------------------------------------------------//
 
-#include <nil/actor/core/condition-variable.hh>
+#include <nil/actor/core/condition_variable.hh>
 
 namespace nil {
     namespace actor {

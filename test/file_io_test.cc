@@ -28,7 +28,7 @@
 
 #include <nil/actor/core/core.hh>
 #include <nil/actor/core/semaphore.hh>
-#include <nil/actor/core/condition-variable.hh>
+#include <nil/actor/core/condition_variable.hh>
 #include <nil/actor/core/file.hh>
 #include <nil/actor/core/layered_file.hh>
 #include <nil/actor/core/thread.hh>
