@@ -24,7 +24,7 @@
 
 #include <nil/actor/core/reactor.hh>
 #include <nil/actor/core/smp.hh>
-#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/app_template.hh>
 #include <nil/actor/core/print.hh>
 
 using namespace nil::actor;

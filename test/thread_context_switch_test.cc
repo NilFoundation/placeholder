@@ -24,7 +24,7 @@
 
 #include <nil/actor/core/thread.hh>
 #include <nil/actor/core/semaphore.hh>
-#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/app_template.hh>
 #include <nil/actor/core/do_with.hh>
 #include <nil/actor/core/distributed.hh>
 #include <nil/actor/core/sleep.hh>

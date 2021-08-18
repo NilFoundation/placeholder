@@ -28,7 +28,7 @@
 #include <iostream>
 #include <nil/actor/core/alien.hh>
 #include <nil/actor/core/smp.hh>
-#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/app_template.hh>
 #include <nil/actor/core/posix.hh>
 #include <nil/actor/core/reactor.hh>
 #include <nil/actor/detail/later.hh>

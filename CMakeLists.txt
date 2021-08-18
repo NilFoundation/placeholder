@@ -300,7 +300,7 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/alien.hh
     include/nil/actor/core/align.hh
     include/nil/actor/core/aligned_buffer.hh
-    include/nil/actor/core/app-template.hh
+    include/nil/actor/core/app_template.hh
     include/nil/actor/core/apply.hh
     include/nil/actor/core/array_map.hh
     include/nil/actor/core/bitops.hh
@@ -364,7 +364,7 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/shared_ptr.hh
     include/nil/actor/core/shared_ptr_debug_helper.hh
     include/nil/actor/core/shared_ptr_incomplete.hh
-    include/nil/actor/core/simple-stream.hh
+    include/nil/actor/core/simple_stream.hh
     include/nil/actor/core/slab.hh
     include/nil/actor/core/sleep.hh
     include/nil/actor/core/sstring.hh
@@ -424,7 +424,7 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/core/reactor_backend_osv.cc
     src/core/reactor_backend_selector.cc
     src/core/thread_pool.cc
-    src/core/app-template.cc
+    src/core/app_template.cc
     src/core/dpdk_rte.cc
     src/core/exception_hacks.cc
     src/core/execution_stage.cc

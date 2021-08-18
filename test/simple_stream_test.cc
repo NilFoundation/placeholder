@@ -26,7 +26,7 @@
 
 #include <boost/test/included/unit_test.hpp>
 
-#include <nil/actor/core/simple-stream.hh>
+#include <nil/actor/core/simple_stream.hh>
 
 using namespace nil::actor;
 

@@ -34,7 +34,7 @@
 
 #include <fmt/ostream.h>
 
-#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/app_template.hh>
 #include <nil/actor/core/thread.hh>
 #include <nil/actor/core/sharded.hh>
 #include <nil/actor/json/formatter.hh>

@@ -29,7 +29,7 @@
 #include <nil/actor/core/fstream.hh>
 #include <nil/actor/core/smp.hh>
 #include <nil/actor/core/shared_ptr.hh>
-#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/app_template.hh>
 #include <nil/actor/core/do_with.hh>
 #include <nil/actor/core/core.hh>
 #include <nil/actor/core/semaphore.hh>

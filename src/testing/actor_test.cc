@@ -30,7 +30,7 @@
 #include <nil/actor/testing/test_runner.hh>
 #include <nil/actor/core/future.hh>
 #include <nil/actor/core/on_internal_error.hh>
-#include <nil/actor/core/app-template.hh>
+#include <nil/actor/core/app_template.hh>
 #include <nil/actor/testing/on_internal_error.hh>
 
 namespace nil {
