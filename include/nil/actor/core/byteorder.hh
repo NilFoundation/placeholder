@@ -32,17 +32,6 @@
 
 namespace nil {
     namespace actor {
-
-        template<typename T>
-        inline T cpu_to_le(const unaligned<T> &v) noexcept {
-            return boost::endian::native_to_little(T(v));
-        }
-
-        template<typename T>
-        inline T le_to_cpu(const unaligned<T> &v) noexcept {
-            return boost::endian::little_to_native(T(v));
-        }
-
         template<typename T>
         inline T read_le(const char *p) noexcept {
             T datum;
@@ -81,6 +70,5 @@ namespace nil {
             write_be<T>(p, datum);
             p += sizeof(T);
         }
-
     }    // namespace actor
 }    // namespace nil
