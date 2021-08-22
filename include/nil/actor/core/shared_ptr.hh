@@ -539,6 +539,14 @@ namespace nil {
                     ++_b->count;
                 }
             }
+
+            template<typename U, typename = std::enable_if_t<std::is_base_of<T, U>::value>>
+            shared_ptr(const shared_ptr<const U> &x) noexcept : _b(x._b), _p(const_cast<U *>(x._p)) {
+                if (_b) {
+                    ++_b->count;
+                }
+            }
+
             template<typename U, typename = std::enable_if_t<std::is_base_of<T, U>::value>>
             shared_ptr(shared_ptr<U> &&x) noexcept : _b(x._b), _p(x._p) {
                 x._b = nullptr;
