@@ -24,6 +24,8 @@
 
 #ifdef ACTOR_HAS_VALGRIND
 #include <valgrind/valgrind.h>
+#else
+#define VALGRIND_STACK_DEREGISTER(...)
 #endif
 
 /// \cond internal
@@ -174,8 +176,13 @@ namespace nil {
             _all_threads.erase(_all_threads.iterator_to(*this));
         }
 
+#ifdef ACTOR_HAS_VALGRIND
         thread_context::stack_deleter::stack_deleter(int valgrind_id) : valgrind_id(valgrind_id) {
         }
+#else
+        thread_context::stack_deleter::stack_deleter(int) {
+        }
+#endif
 
         thread_context::stack_holder thread_context::make_stack(size_t stack_size) {
 #ifdef ACTOR_THREAD_STACK_GUARDS
@@ -189,7 +196,11 @@ namespace nil {
                 throw std::bad_alloc();
             }
 
+#ifdef ACTOR_HAS_VALGRIND
             int valgrind_id = VALGRIND_STACK_REGISTER(mem, reinterpret_cast<char *>(mem) + stack_size);
+#else
+            int valgrind_id = 0;
+#endif
             auto stack = stack_holder(new (mem) char[stack_size], stack_deleter(valgrind_id));
 #ifdef ACTOR_ASAN_ENABLED
             // Avoid ASAN false positive due to garbage on stack

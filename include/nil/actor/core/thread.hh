@@ -93,8 +93,12 @@ namespace nil {
         class thread_context final : private task {
             struct stack_deleter {
                 void operator()(char *ptr) const noexcept;
+#ifdef ACTOR_HAS_VALGRIND
                 int valgrind_id;
                 stack_deleter(int valgrind_id);
+#else
+                stack_deleter(int);
+#endif
             };
             using stack_holder = std::unique_ptr<char[], stack_deleter>;
 

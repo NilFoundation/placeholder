@@ -34,7 +34,9 @@
 #include <sys/mman.h>
 #include <sys/signal.h>
 
+#ifdef ACTOR_HAS_VALGRIND
 #include <valgrind/valgrind.h>
+#endif
 
 using namespace nil::actor;
 using namespace std::chrono_literals;
