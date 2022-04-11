@@ -464,6 +464,7 @@ set(${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS
     -Werror
     -Wno-array-bounds # Disabled because of https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93437
     -Wno-error=deprecated-declarations
+    -Wno-unused-but-set-variable
     -fPIC)
 
 if((CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang"))
