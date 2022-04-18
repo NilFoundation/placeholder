@@ -1254,14 +1254,14 @@ namespace nil {
 
             template<typename Func, typename... T>
             struct future_result {
-                using type = std::invoke_result_t<Func, T...>;
+                using type = typename std::invoke_result<Func, T...>::type;
                 using future_type = futurize_t<type>;
                 using func_type = future_type(T &&...);
             };
 
             template<typename Func>
             struct future_result<Func, void> {
-                using type = std::invoke_result_t<Func>;
+                using type = typename std::invoke_result<Func>::type;
                 using future_type = futurize_t<type>;
                 using func_type = future_type();
             };
