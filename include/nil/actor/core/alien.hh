@@ -139,7 +139,7 @@ namespace nil {
 
             namespace detail {
                 template<typename Func>
-                using return_value_t = typename futurize<std::invoke_result_t<Func>>::value_type;
+                using return_value_t = typename futurize<typename std::invoke_result<Func>::type>::value_type;
 
                 template<typename Func, bool = std::is_empty_v<return_value_t<Func>>>
                 struct return_type_of {
@@ -150,7 +150,7 @@ namespace nil {
                 };
                 template<typename Func>
                 struct return_type_of<Func, false> {
-                    using return_tuple_t = typename futurize<std::invoke_result_t<Func>>::tuple_type;
+                    using return_tuple_t = typename futurize<typename std::invoke_result_t<Func>::type>::tuple_type;
                     using type = std::tuple_element_t<0, return_tuple_t>;
                     static void set(std::promise<type> &p, return_value_t<Func> &&t) {
 #if ACTOR_API_LEVEL < 5

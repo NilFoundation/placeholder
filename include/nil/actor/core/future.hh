@@ -295,8 +295,8 @@ namespace nil {
 
             /// \brief Wrapper for keeping uninitialized values of non default constructible types.
             ///
-            /// This is similar to a boost::optional<T>, but it doesn't know if it is holding a value or not, so the user
-            /// is responsible for calling constructors and destructors.
+            /// This is similar to a boost::optional<T>, but it doesn't know if it is holding a value or not, so the
+            /// user is responsible for calling constructors and destructors.
             ///
             /// The advantage over just using a union directly is that this uses inheritance when possible and so
             /// benefits from the empty base optimization.
@@ -1307,7 +1307,7 @@ namespace nil {
             template<typename... T>
             struct call_then_impl<future<when_all_succeed_tuple<T...>>> {
                 template<typename Func>
-                using result_type = futurize_t<std::invoke_result_t<Func, T &&...>>;
+                using result_type = futurize_t<typename std::invoke_result<Func, T &&...>::type>;
 
                 template<typename Func>
                 using func_type = result_type<Func>(T &&...);
@@ -1701,21 +1701,21 @@ namespace nil {
 /// \return a \c future representing the return value of \c func, applied
 ///         to the eventual value of this future.
 #ifdef BOOST_HAS_CONCEPTS
-            template<typename Func, typename FuncResult = std::invoke_result_t<Func, future>>
+            template<typename Func, typename FuncResult = typename std::invoke_result<Func, future>::type>
             requires std::invocable<Func, future> futurize_t<FuncResult> then_wrapped(Func &&func)
             &noexcept {
                 return then_wrapped_maybe_erase<false, FuncResult>(std::forward<Func>(func));
             }
-            template<typename Func, typename FuncResult = std::invoke_result_t<Func, future &&>>
+            template<typename Func, typename FuncResult = typename std::invoke_result<Func, future &&>::type>
             requires std::invocable<Func, future &&> futurize_t<FuncResult> then_wrapped(Func &&func) && noexcept {
                 return then_wrapped_maybe_erase<true, FuncResult>(std::forward<Func>(func));
             }
 #else
-            template<typename Func, typename FuncResult = std::invoke_result_t<Func, future>>
+            template<typename Func, typename FuncResult = typename std::invoke_result<Func, future>::type>
             futurize_t<FuncResult> then_wrapped(Func &&func) &noexcept {
                 return then_wrapped_maybe_erase<false, FuncResult>(std::forward<Func>(func));
             }
-            template<typename Func, typename FuncResult = std::invoke_result_t<Func, future &&>>
+            template<typename Func, typename FuncResult = typename std::invoke_result<Func, future &&>::type>
             futurize_t<FuncResult> then_wrapped(Func &&func) &&noexcept {
                 return then_wrapped_maybe_erase<true, FuncResult>(std::forward<Func>(func));
             }
@@ -1822,8 +1822,8 @@ namespace nil {
             template<typename Func>
             requires std::invocable<Func> future<T ACTOR_ELLIPSIS> finally(Func &&func)
             noexcept {
-                return then_wrapped(
-                    finally_body<Func, is_future<std::invoke_result_t<Func>>::value>(std::forward<Func>(func)));
+                return then_wrapped(finally_body<Func, is_future<typename std::invoke_result<Func>::type>::value>(
+                    std::forward<Func>(func)));
             }
 #else
             /**
@@ -1843,8 +1843,8 @@ namespace nil {
              */
             template<typename Func>
             future<T ACTOR_ELLIPSIS> finally(Func &&func) noexcept {
-                return then_wrapped(
-                    finally_body<Func, is_future<std::invoke_result_t<Func>>::value>(std::forward<Func>(func)));
+                return then_wrapped(finally_body<Func, is_future<typename std::invoke_result<Func>::type>::value>(
+                    std::forward<Func>(func)));
             }
 #endif
 
@@ -2276,7 +2276,7 @@ namespace nil {
 
         template<typename Func, typename... Args>
         auto futurize_invoke(Func &&func, Args &&...args) noexcept {
-            using futurator = futurize<std::invoke_result_t<Func, Args &&...>>;
+            using futurator = futurize<typename std::invoke_result<Func, Args &&...>::type>;
             return futurator::invoke(std::forward<Func>(func), std::forward<Args>(args)...);
         }
 
@@ -2287,7 +2287,7 @@ namespace nil {
 
         template<typename Func, typename... Args>
         auto futurize_apply(Func &&func, std::tuple<Args...> &&args) noexcept {
-            using futurator = futurize<std::invoke_result_t<Func, Args &&...>>;
+            using futurator = futurize<typename std::invoke_result<Func, Args &&...>::type>;
             return futurator::apply(std::forward<Func>(func), std::move(args));
         }
 

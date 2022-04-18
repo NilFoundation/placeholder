@@ -317,7 +317,7 @@ namespace nil {
             ///
             /// \return result of calling `func(instance)` on the designated instance
             template<typename Func, typename... Args,
-                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args...>>>
+                     typename Ret = futurize_t<typename std::invoke_result<Func, Service &, Args...>::type>>
             requires std::invocable<Func, Service &, Args &&...>
                 Ret invoke_on(unsigned id, smp_submit_to_options options, Func &&func, Args &&...args) {
                 return smp::submit_to(
@@ -338,7 +338,7 @@ namespace nil {
             /// \param args parameters to the callable
             /// \return result of calling `func(instance)` on the designated instance
             template<typename Func, typename... Args,
-                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args &&...>>>
+                     typename Ret = futurize_t<typename std::invoke_result<Func, Service &, Args &&...>::type>>
             requires std::invocable<Func, Service &, Args &&...> Ret invoke_on(unsigned id, Func &&func,
                                                                                Args &&...args) {
                 return invoke_on(id, smp_submit_to_options(), std::forward<Func>(func), std::forward<Args>(args)...);
@@ -421,7 +421,7 @@ namespace nil {
             ///
             /// \return result of calling `func(instance)` on the designated instance
             template<typename Func, typename... Args,
-                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args...>>>
+                     typename Ret = futurize_t<typename std::invoke_result<Func, Service &, Args...>::type>>
             Ret invoke_on(unsigned id, smp_submit_to_options options, Func &&func, Args &&...args) {
                 return smp::submit_to(
                     id, options,
@@ -441,7 +441,7 @@ namespace nil {
             /// \param args parameters to the callable
             /// \return result of calling `func(instance)` on the designated instance
             template<typename Func, typename... Args,
-                     typename Ret = futurize_t<std::invoke_result_t<Func, Service &, Args &&...>>>
+                     typename Ret = futurize_t<typename std::invoke_result<Func, Service &, Args &&...>::type>>
             Ret invoke_on(unsigned id, Func &&func, Args &&...args) {
                 return invoke_on(id, smp_submit_to_options(), std::forward<Func>(func), std::forward<Args>(args)...);
             }
@@ -858,8 +858,9 @@ namespace nil {
         requires std::invocable<Func, Service &, Args...>
         inline future<> sharded<Service>::invoke_on_all(smp_submit_to_options options, Func func,
                                                         Args... args) noexcept {
-            static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
-                          "invoke_on_all()'s func must return void or future<>");
+            static_assert(
+                std::is_same_v<futurize_t<typename std::invoke_result<Func, Service &, Args...>::type>, future<>>,
+                "invoke_on_all()'s func must return void or future<>");
             try {
                 return invoke_on_all(
                     options,
@@ -876,8 +877,9 @@ namespace nil {
         requires std::invocable<Func, Service &, Args...>
         inline future<> sharded<Service>::invoke_on_others(smp_submit_to_options options, Func func,
                                                            Args... args) noexcept {
-            static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
-                          "invoke_on_others()'s func must return void or future<>");
+            static_assert(
+                std::is_same<futurize_t<typename std::invoke_result<Func, Service &, Args...>::type>, future<>>::value,
+                "invoke_on_others()'s func must return void or future<>");
             try {
                 return invoke_on_all(options,
                                      [orig = this_shard_id(), func = std::move(func),
@@ -897,8 +899,9 @@ namespace nil {
         template<typename Func, typename... Args>
         inline future<> sharded<Service>::invoke_on_all(smp_submit_to_options options, Func func,
                                                         Args... args) noexcept {
-            static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
-                          "invoke_on_all()'s func must return void or future<>");
+            static_assert(
+                std::is_same<futurize_t<typename std::invoke_result<Func, Service &, Args...>::type>, future<>>::value,
+                "invoke_on_all()'s func must return void or future<>");
             try {
                 return invoke_on_all(
                     options,
@@ -914,8 +917,9 @@ namespace nil {
         template<typename Func, typename... Args>
         inline future<> sharded<Service>::invoke_on_others(smp_submit_to_options options, Func func,
                                                            Args... args) noexcept {
-            static_assert(std::is_same_v<futurize_t<std::invoke_result_t<Func, Service &, Args...>>, future<>>,
-                          "invoke_on_others()'s func must return void or future<>");
+            static_assert(
+                std::is_same<futurize_t<typename std::invoke_result<Func, Service &, Args...>::type>, future<>>::value,
+                "invoke_on_others()'s func must return void or future<>");
             try {
                 return invoke_on_all(options,
                                      [orig = this_shard_id(), func = std::move(func),
