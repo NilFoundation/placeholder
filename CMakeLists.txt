@@ -339,6 +339,7 @@ set(${CURRENT_PROJECT_NAME}_HEADERS
     include/nil/actor/core/metrics_api.hh
     include/nil/actor/core/metrics_registration.hh
     include/nil/actor/core/metrics_types.hh
+    include/nil/actor/core/network_stack_registry.hh
     include/nil/actor/core/pipe.hh
     include/nil/actor/core/posix.hh
     include/nil/actor/core/preempt.hh
@@ -432,6 +433,7 @@ set(${CURRENT_PROJECT_NAME}_SOURCES
     src/core/future-util.cc
     src/core/memory.cc
     src/core/metrics.cc
+    src/core/network_stack_registry.cc
     src/core/on_internal_error.cc
     src/core/posix.cc
     src/core/reactor.cc

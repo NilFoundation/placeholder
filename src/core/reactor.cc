@@ -70,6 +70,7 @@
 #include <nil/actor/core/abort_on_ebadf.hh>
 #include <nil/actor/core/io_queue.hh>
 #include <nil/actor/core/scheduling_specific.hh>
+#include <nil/actor/core/network_stack_registry.hh>
 
 #include <nil/actor/core/detail/io_desc.hh>
 #include <nil/actor/core/detail/buffer_allocator.hh>
@@ -1310,39 +1311,6 @@ namespace nil {
             tmr.set(wall::time_point(std::chrono::nanoseconds(t)));
         }
 #endif
-
-        class network_stack_registry {
-        public:
-            using options = boost::program_options::variables_map;
-
-        private:
-            static std::unordered_map<sstring,
-                                      noncopyable_function<future<std::unique_ptr<network_stack>>(options opts)>> &
-                _map() {
-                static std::unordered_map<sstring,
-                                          noncopyable_function<future<std::unique_ptr<network_stack>>(options opts)>>
-                    map;
-                return map;
-            }
-            static sstring &_default() {
-                static sstring def;
-                return def;
-            }
-
-        public:
-            static boost::program_options::options_description &options_description() {
-                static boost::program_options::options_description opts;
-                return opts;
-            }
-            static void
-                register_stack(const sstring &name, const boost::program_options::options_description &opts,
-                               noncopyable_function<future<std::unique_ptr<network_stack>>(options opts)> create,
-                               bool make_default);
-            static sstring default_stack();
-            static std::vector<sstring> list();
-            static future<std::unique_ptr<network_stack>> create(options opts);
-            static future<std::unique_ptr<network_stack>> create(const sstring &name, options opts);
-        };
 
         void reactor::configure(const boost::program_options::variables_map &vm) {
             _network_stack_ready =
@@ -3388,47 +3356,11 @@ bool operator==(const ::sockaddr_in a, const ::sockaddr_in b) {
 namespace nil {
     namespace actor {
 
-        void network_stack_registry::register_stack(
-            const sstring &name, const boost::program_options::options_description &opts,
-            noncopyable_function<future<std::unique_ptr<network_stack>>(options opts)> create, bool make_default) {
-            if (_map().count(name)) {
-                return;
-            }
-            _map()[name] = std::move(create);
-            options_description().add(opts);
-            if (make_default) {
-                _default() = name;
-            }
-        }
-
         void register_network_stack(
             const sstring &name, const boost::program_options::options_description &opts,
             noncopyable_function<future<std::unique_ptr<network_stack>>(boost::program_options::variables_map)> create,
             bool make_default) {
             return network_stack_registry::register_stack(std::move(name), opts, std::move(create), make_default);
-        }
-
-        sstring network_stack_registry::default_stack() {
-            return _default();
-        }
-
-        std::vector<sstring> network_stack_registry::list() {
-            std::vector<sstring> ret;
-            for (auto &&ns : _map()) {
-                ret.push_back(ns.first);
-            }
-            return ret;
-        }
-
-        future<std::unique_ptr<network_stack>> network_stack_registry::create(options opts) {
-            return create(_default(), std::move(opts));
-        }
-
-        future<std::unique_ptr<network_stack>> network_stack_registry::create(const sstring &name, options opts) {
-            if (!_map().count(name)) {
-                throw std::runtime_error(format("network stack {} not registered", name));
-            }
-            return _map()[name](std::move(opts));
         }
 
         static bool kernel_supports_aio_fsync() {

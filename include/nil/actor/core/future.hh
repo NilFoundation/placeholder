@@ -2023,7 +2023,7 @@ namespace nil {
 
                 /// Convert a value or a future to a future
                 static inline type convert(T &&value) {
-                    return make_ready_future<T>(std::move(value));
+                    return nil::actor::make_ready_future<T>(std::move(value));
                 }
                 static inline type convert(type &&value) {
                     return std::move(value);
