@@ -56,12 +56,12 @@ namespace nil {
                 //                }
 
                 template<typename T, std::size_t Arity, typename LeafIterator>
-                containers::detail::merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first, LeafIterator last) {
+                nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first, LeafIterator last) {
                     typedef T node_type;
                     typedef typename node_type::hash_type hash_type;
                     typedef typename node_type::value_type value_type;
 
-                    containers::detail::merkle_tree_impl<T, Arity> ret(std::distance(first, last));
+                    nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> ret(std::distance(first, last));
 
                     ret.reserve(ret.complete_size());
 
@@ -72,7 +72,7 @@ namespace nil {
                     //                    ret.resize(ret.complete_size());
 
                     std::size_t row_size = ret.leaves() / Arity;
-                    typename containers::detail::merkle_tree_impl<T, Arity>::iterator it = ret.begin();
+                    typename nil::crypto3::containers::detail::merkle_tree_impl<T, Arity>::iterator it = ret.begin();
 
                     for (size_t row_number = 1; row_number < ret.row_count(); ++row_number, row_size /= Arity) {
                         std::vector<nil::actor::future<std::vector<typename hash_type::digest_type>>> fut;

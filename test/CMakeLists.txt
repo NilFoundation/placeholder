@@ -33,7 +33,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
         ${CMAKE_WORKSPACE_NAME}::core
         ${CMAKE_WORKSPACE_NAME}::network
         ${CMAKE_WORKSPACE_NAME}::testing
-        epoll-shim
+#        epoll-shim
 
         crypto3::algebra
         crypto3::hash

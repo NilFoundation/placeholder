@@ -44,7 +44,7 @@
 #include <nil/actor/container/merkle/tree.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::crypto3::containers_actor;
+using namespace nil::crypto3::containers;
 
 struct config {
     nil::actor::sstring name = "App";

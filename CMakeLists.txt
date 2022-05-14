@@ -82,9 +82,9 @@ set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
         EXPORT_NAME ${CURRENT_PROJECT_NAME})
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-        epoll-shim
         ${CMAKE_WORKSPACE_NAME}::network
         ${CMAKE_WORKSPACE_NAME}::core
+#        epoll-shim
 
         crypto3::algebra
         crypto3::hash
