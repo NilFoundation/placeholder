@@ -29,56 +29,10 @@ if (NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
     cm_find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 endif ()
 
-cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-        ${CMAKE_WORKSPACE_NAME}::core
-        ${CMAKE_WORKSPACE_NAME}::network
-        ${CMAKE_WORKSPACE_NAME}::testing
-#        epoll-shim
-
-        crypto3::algebra
-        crypto3::hash
-        crypto3::containers
-
-        ${Boost_LIBRARIES})
-
-macro(define_storage_test test)
-    get_filename_component(name ${test} NAME)
-    string(REPLACE "-" "_" target_name ${CURRENT_PROJECT_NAME}_${name}_test)
-
-    while (TARGET ${target_name})
-        get_filename_component(TEST_DIRECTORY ${test} DIRECTORY)
-        get_filename_component(PARENT_DIR ${TEST_DIRECTORY} DIRECTORY)
-        set(target_name ${PARENT_DIR}_${target_name})
-    endwhile ()
-
-    cm_test(NAME ${target_name} SOURCES ${test}.cpp)
-
-    target_include_directories(${target_name} PRIVATE
-            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-            "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
-
-            ${Boost_INCLUDE_DIRS})
-
-    set_target_properties(${target_name} PROPERTIES CXX_STANDARD 17)
-
-    get_target_property(target_type Boost::unit_test_framework TYPE)
-    if (target_type STREQUAL "SHARED_LIB")
-        target_compile_definitions(${target_name} PRIVATE BOOST_TEST_DYN_LINK)
-    elseif (target_type STREQUAL "STATIC_LIB")
-
-    endif ()
-endmacro()
-
-set(TESTS_NAMES
-        "merkle/merkle"
-        )
-
-foreach (TEST_NAME ${TESTS_NAMES})
-    define_storage_test(${TEST_NAME})
-endforeach ()
-
-
 function(actor_add_test name)
+    get_filename_component(test_name ${name} NAME)
+    set(target_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${test_name}_test)
+
     set(test_kinds
             ACTOR
             BOOST
@@ -102,20 +56,20 @@ function(actor_add_test name)
         #
 
         set(libraries "${parsed_args_LIBRARIES}")
+        list(APPEND libraries
+                ${CMAKE_WORKSPACE_NAME}::core
+                ${CMAKE_WORKSPACE_NAME}::network
+                ${CMAKE_WORKSPACE_NAME}::testing
+#               epoll-shim
+
+                crypto3::algebra
+                crypto3::hash
+                crypto3::containers)
+
 
         set(args "")
         if(parsed_args_KIND STREQUAL "ACTOR")
-            list(APPEND libraries
-                    actor::core
-                    actor::network
-                    ${CMAKE_WORKSPACE_NAME}::testing)
-
             list(APPEND args -- -c ${BUILD_WITH_UNIT_TEST_SMP})
-        elseif(parsed_args_KIND STREQUAL "BOOST")
-            list(APPEND libraries
-                    ${CMAKE_WORKSPACE_NAME}::core
-                    ${CMAKE_WORKSPACE_NAME}::network
-                    ${CMAKE_WORKSPACE_NAME}::testing)
         endif()
 
         if(NOT (UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux")))
@@ -128,33 +82,48 @@ function(actor_add_test name)
                 ${libraries}
                 ${Boost_LIBRARIES})
 
-        cm_test(NAME ${CMAKE_WORKSPACE_NAME}_${name}_test SOURCES ${parsed_args_SOURCES})
+        cm_test(NAME ${target_name} SOURCES ${parsed_args_SOURCES})
 
-        target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${name}_test PRIVATE
+        target_compile_definitions(${target_name} PRIVATE
                 ACTOR_TESTING_MAIN BOOST_TEST_DYN_LINK)
 
         if((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
         ((BUILD_WITH_STACK_GUARDS STREQUAL "DEFAULT") AND
         (CMAKE_BUILD_TYPE IN_LIST ACTOR_STACK_GUARD_MODES)))
-            target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${name}_test
+            target_compile_definitions(${target_name}
                     PRIVATE ACTOR_THREAD_STACK_GUARDS)
         endif()
 
-        target_include_directories(${CMAKE_WORKSPACE_NAME}_${name}_test PRIVATE
+        target_include_directories(${target_name} PRIVATE
                 ${CMAKE_CURRENT_SOURCE_DIR}
                 ${BUILD_WITH_SOURCE_DIR}/src)
 
-        set_target_properties(${CMAKE_WORKSPACE_NAME}_${name}_test PROPERTIES
+        set_target_properties(${target_name} PROPERTIES
                 CXX_STANDARD 17
                 CXX_STANDARD_REQUIRED TRUE)
 
-        target_compile_options(${CMAKE_WORKSPACE_NAME}_${name}_test PRIVATE
+        target_compile_options(${target_name} PRIVATE
                 ${${CURRENT_PROJECT_NAME}_PRIVATE_CXX_FLAGS})
+
+        get_target_property(target_type Boost::unit_test_framework TYPE)
+        if (target_type STREQUAL "SHARED_LIB")
+            target_compile_definitions(${target_name} PRIVATE BOOST_TEST_DYN_LINK)
+        elseif (target_type STREQUAL "STATIC_LIB")
+
+        endif ()
     else()
         if(NOT (parsed_args_KIND STREQUAL "CUSTOM"))
             message(FATAL_ERROR "SOURCES are required for ${parsed_args_KIND} tests")
         endif()
     endif()
+
+
 endfunction()
 
-actor_add_test(merkle_actor_zerg SOURCES merkle/merkle.cpp)
+set(TESTS_NAMES
+        "merkle/merkle"
+        )
+
+foreach (TEST_NAME ${TESTS_NAMES})
+    actor_add_test(${TEST_NAME} SOURCES ${TEST_NAME}.cpp)
+endforeach ()
