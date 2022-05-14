@@ -79,9 +79,12 @@ namespace nil {
                         std::size_t parallels = std::min((std::size_t)nil::actor::smp::count, row_size);
                         std::size_t node_per_shard = row_size / parallels;
 
-                        for (auto c = 0; c < parallels; ++c) {
+                        for (std::size_t c = 0; c < parallels; ++c) {
                             auto begin_row = node_per_shard * c;
-                            auto end_row = std::min(node_per_shard * (c + 1), row_size);
+                            auto end_row = node_per_shard * (c + 1);
+                            if (c == parallels - 1) {
+                                end_row = row_size;
+                            }
                             auto it_c = it + node_per_shard * c * Arity;
 
                             fut.push_back(nil::actor::smp::submit_to(c, [begin_row, end_row, it_c] {
@@ -100,7 +103,6 @@ namespace nil {
                             std::vector<typename hash_type::digest_type> v = i.get();
                             for (std::size_t j = 0; j < v.size(); ++j) {
                                 ret.emplace_back(v[j]);
-                                std::cout << v[j] << std::endl;
                             }
                         }
                     }

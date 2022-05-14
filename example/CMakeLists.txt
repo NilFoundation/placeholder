@@ -24,21 +24,21 @@
 #---------------------------------------------------------------------------//
 
 
-#include_directories("../include"
-#        "${CMAKE_CURRENT_BINARY_DIR}/include"
-#
-#        ${Boost_INCLUDE_DIRS})
+include_directories("../include"
+        "${CMAKE_CURRENT_BINARY_DIR}/include"
+
+        ${Boost_INCLUDE_DIRS})
 
 macro(define_containers_example example)
     get_filename_component(name ${example} NAME)
-    string(REPLACE "-" "_" target_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${name}_example)
+    set(target_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${test_name}_example)
 
     add_executable(${target_name} ${example}.cpp)
     target_link_libraries(${target_name} PRIVATE
             ${CMAKE_WORKSPACE_NAME}::core
             ${CMAKE_WORKSPACE_NAME}::network
             ${CMAKE_WORKSPACE_NAME}::containers
-            epoll-shim
+#            epoll-shim
 
             crypto3::algebra
             crypto3::hash
