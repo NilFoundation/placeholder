@@ -56,7 +56,8 @@ namespace nil {
                 //                }
 
                 template<typename T, std::size_t Arity, typename LeafIterator>
-                nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first, LeafIterator last) {
+                nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first,
+                                                                                              LeafIterator last) {
                     typedef T node_type;
                     typedef typename node_type::hash_type hash_type;
                     typedef typename node_type::value_type value_type;
