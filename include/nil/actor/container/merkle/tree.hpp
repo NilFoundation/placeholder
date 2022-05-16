@@ -48,16 +48,9 @@ namespace nil {
     namespace actor {
         namespace containers {
             namespace detail {
-
-                //                nil::actor::future<> f() {
-                //                    return nil::actor::parallel_for_each(
-                //                        boost::irange<unsigned>(0, nil::actor::smp::count),
-                //                        [](unsigned c) { return nil::actor::smp::submit_to(c, service_loop); });
-                //                }
-
                 template<typename T, std::size_t Arity, typename LeafIterator>
-                nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first,
-                                                                                              LeafIterator last) {
+                nil::actor::future<nil::crypto3::containers::detail::merkle_tree_impl<T, Arity>>
+                    make_merkle_tree(LeafIterator first, LeafIterator last) {
                     typedef T node_type;
                     typedef typename node_type::hash_type hash_type;
                     typedef typename node_type::value_type value_type;
@@ -69,8 +62,6 @@ namespace nil {
                     while (first != last) {
                         ret.emplace_back(crypto3::hash<hash_type>(*first++));
                     }
-
-                    //                    ret.resize(ret.complete_size());
 
                     std::size_t row_size = ret.leaves() / Arity;
                     typename nil::crypto3::containers::detail::merkle_tree_impl<T, Arity>::iterator it = ret.begin();
@@ -107,12 +98,13 @@ namespace nil {
                             }
                         }
                     }
-                    return ret;
+                    return nil::actor::make_ready_future<nil::crypto3::containers::detail::merkle_tree_impl<T, Arity>>(ret);
                 }
             }    // namespace detail
 
             template<typename T, std::size_t Arity, typename LeafIterator>
-            nil::crypto3::containers::merkle_tree<T, Arity> make_merkle_tree(LeafIterator first, LeafIterator last) {
+            nil::actor::future<nil::crypto3::containers::merkle_tree<T, Arity>> make_merkle_tree(LeafIterator first,
+                                                                                                 LeafIterator last) {
                 return detail::make_merkle_tree<
                     typename std::conditional<nil::crypto3::detail::is_hash<T>::value,
                                               nil::crypto3::containers::detail::merkle_tree_node<T>, T>::type,

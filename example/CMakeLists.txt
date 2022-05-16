@@ -30,7 +30,7 @@ include_directories("../include"
         ${Boost_INCLUDE_DIRS})
 
 macro(define_containers_example example)
-    get_filename_component(name ${example} NAME)
+    get_filename_component(test_name ${example} NAME)
     set(target_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${test_name}_example)
 
     add_executable(${target_name} ${example}.cpp)
@@ -38,7 +38,7 @@ macro(define_containers_example example)
             ${CMAKE_WORKSPACE_NAME}::core
             ${CMAKE_WORKSPACE_NAME}::network
             ${CMAKE_WORKSPACE_NAME}::containers
-#            epoll-shim
+            epoll-shim
 
             crypto3::algebra
             crypto3::hash
@@ -49,8 +49,8 @@ macro(define_containers_example example)
 endmacro()
 
 set(EXAMPLES_NAMES
-    "merkle/merkle")
+        "merkle/merkle")
 
-foreach(EXAMPLE_NAME ${EXAMPLES_NAMES})
+foreach (EXAMPLE_NAME ${EXAMPLES_NAMES})
     define_containers_example(${EXAMPLE_NAME})
-endforeach()
+endforeach ()

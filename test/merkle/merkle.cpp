@@ -26,8 +26,7 @@
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/md5.hpp>
 #include <nil/crypto3/hash/blake2b.hpp>
-//#include <nil/crypto3/hash/pedersen.hpp>
-//#include <nil/crypto3/hash/find_group_hash.hpp>
+#include <nil/crypto3/hash/pedersen.hpp>
 
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
@@ -60,7 +59,7 @@ template<typename Hash, size_t Arity, typename ValueType, std::size_t N>
 void testing_validate_template_random_data(std::size_t leaf_number) {
     std::array<ValueType, N> data_not_in_tree = {0};
     auto data = generate_random_data<ValueType, N>(leaf_number);
-    auto tree = nil::actor::containers::make_merkle_tree<Hash, Arity>(data.begin(), data.end());
+    auto tree = nil::actor::containers::make_merkle_tree<Hash, Arity>(data.begin(), data.end()).get();
 
     std::size_t proof_idx = std::rand() % leaf_number;
     nil::crypto3::containers::merkle_proof<Hash, Arity> proof(tree, proof_idx);
@@ -75,7 +74,7 @@ void testing_validate_template_random_data(std::size_t leaf_number) {
 template<typename Hash, size_t Arity, typename Element>
 void testing_validate_template(std::vector<Element> data) {
     std::array<uint8_t, 7> data_not_in_tree = {'\x6d', '\x65', '\x73', '\x73', '\x61', '\x67', '\x65'};
-    nil::crypto3::containers::merkle_tree<Hash, Arity> tree = nil::actor::containers::make_merkle_tree<Hash, Arity>(data.begin(), data.end());
+    nil::crypto3::containers::merkle_tree<Hash, Arity> tree = nil::actor::containers::make_merkle_tree<Hash, Arity>(data.begin(), data.end()).get();
     nil::crypto3::containers::merkle_proof<Hash, Arity> proof(tree, 0);
     bool good_validate = proof.validate(data[0]);
     bool wrong_leaf_validate = proof.validate(data[1]);
@@ -87,7 +86,7 @@ void testing_validate_template(std::vector<Element> data) {
 
 template<typename Hash, size_t Arity, typename Element>
 void testing_hash_template(std::vector<Element> data, std::string result) {
-    nil::crypto3::containers::merkle_tree<Hash, Arity> tree = nil::actor::containers::make_merkle_tree<Hash, Arity>(data.begin(), data.end());
+    nil::crypto3::containers::merkle_tree<Hash, Arity> tree = nil::actor::containers::make_merkle_tree<Hash, Arity>(data.begin(), data.end()).get();
     BOOST_CHECK(result == std::to_string(tree.root()));
 }
 
@@ -124,7 +123,6 @@ ACTOR_THREAD_TEST_CASE(merkletree_validate_test_2) {
 //                                                  nil::crypto3::algebra::curves::forms::twisted_edwards>>;
 //    std::size_t leaf_number = 8;
 //    testing_validate_template_random_data<hash_type, 2, bool, hash_type::digest_bits>(leaf_number);
-//    return make_ready_future<>();
 //}
 
 ACTOR_THREAD_TEST_CASE(merkletree_hash_test_1) {

@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
             std::array<char, 1> element_not_in_tree = {'9'};
             nil::crypto3::containers::merkle_tree<hashes::blake2b<224>, 3> tree =
                 nil::actor::containers::make_merkle_tree<hashes::blake2b<224>, 3>(data_on_leafs.begin(),
-                                                                                  data_on_leafs.end());
+                                                                                  data_on_leafs.end()).get();
 
             nil::crypto3::containers::merkle_proof<hashes::blake2b<224>, 3> proof_leaf_3(tree, 3);
             nil::crypto3::containers::merkle_proof<hashes::blake2b<224>, 3> proof_leaf_0(tree, 0);
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
             std::vector<std::array<char, 7>> simple_binary_tree_data = {left, right};
             nil::crypto3::containers::merkle_tree<hashes::blake2b<224>, 2> simple_binary_tree =
                 nil::actor::containers::make_merkle_tree<hashes::blake2b<224>, 2>(simple_binary_tree_data.begin(),
-                                                                                  simple_binary_tree_data.end());
+                                                                                  simple_binary_tree_data.end()).get();
             nil::crypto3::containers::merkle_proof<hashes::blake2b<224>, 2> simple_binary_proof_leaf_1(
                 simple_binary_tree, 1);
             //    std::cout << "Tree simple binary structure:" << std::endl;
