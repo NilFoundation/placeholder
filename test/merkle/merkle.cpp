@@ -30,8 +30,6 @@
 
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
-#include <nil/actor/core/memory.hh>
-#include <nil/actor/core/smp.hh>
 #include <nil/actor/detail/memory_diagnostics.hh>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
@@ -41,6 +39,10 @@
 #include <vector>
 
 #include <cstdlib>
+#include <chrono>
+
+#include <nil/actor/core/shared_ptr.hh>
+#include <nil/actor/core/thread.hh>
 
 template<typename ValueType, std::size_t N>
 typename std::enable_if<std::is_unsigned<ValueType>::value, std::vector<std::array<ValueType, N>>>::type
@@ -116,25 +118,11 @@ ACTOR_THREAD_TEST_CASE(merkletree_validate_test_2) {
     testing_validate_template_random_data<nil::crypto3::hashes::blake2b<224>, 3, std::uint8_t, 1>(leaf_number);
 }
 
-//ACTOR_THREAD_TEST_CASE(merkletree_validate_test_3) {
-//    using hash_type = nil::crypto3::hashes::pedersen<
-//        nil::crypto3::hashes::find_group_hash_default_params, nil::crypto3::hashes::sha2<256>,
-//        nil::crypto3::algebra::curves::jubjub::template g1_type<nil::crypto3::algebra::curves::coordinates::affine,
-//                                                  nil::crypto3::algebra::curves::forms::twisted_edwards>>;
-//    std::size_t leaf_number = 8;
-//    testing_validate_template_random_data<hash_type, 2, bool, hash_type::digest_bits>(leaf_number);
-//}
-
-ACTOR_THREAD_TEST_CASE(merkletree_hash_test_1) {
-    std::vector<std::array<char, 1>> v = {{'0'}, {'1'}, {'2'}, {'3'}, {'4'}, {'5'}, {'6'}, {'7'}};
-    testing_hash_template<nil::crypto3::hashes::sha2<256>, 2>(v, "3b828c4f4b48c5d4cb5562a474ec9e2fd8d5546fae40e90732ef635892e42720");
-    testing_hash_template<nil::crypto3::hashes::md5, 2>(v, "11ee8b50825ce6f816a1ae06d4aa0045");
-    testing_hash_template<nil::crypto3::hashes::blake2b<224>, 2>(v, "0ed2a2145cae554ca57f08420d6cb58629ca1e89dc92f819c6c1d13d");
-}
-
-ACTOR_THREAD_TEST_CASE(merkletree_hash_test_2) {
-    std::vector<std::array<char, 1>> v = {{'0'}, {'1'}, {'2'}, {'3'}, {'4'}, {'5'}, {'6'}, {'7'}, {'8'}};
-    testing_hash_template<nil::crypto3::hashes::sha2<256>, 3>(v, "6831d4d32538bedaa7a51970ac10474d5884701c840781f0a434e5b6868d4b73");
-    testing_hash_template<nil::crypto3::hashes::md5, 3>(v, "0733c4cd580b1523cfbb9751f42e9420");
-    testing_hash_template<nil::crypto3::hashes::blake2b<224>, 3>(v, "d9d0ff26d10aaac2882c08eb2b55e78690c949d1a73b1cfc0eb322ee");
+ACTOR_THREAD_TEST_CASE(merkletree_validate_test_3) {
+    using hash_type = nil::crypto3::hashes::pedersen<
+        nil::crypto3::hashes::find_group_hash_default_params, nil::crypto3::hashes::sha2<256>,
+        nil::crypto3::algebra::curves::jubjub::template g1_type<nil::crypto3::algebra::curves::coordinates::affine,
+                                                  nil::crypto3::algebra::curves::forms::twisted_edwards>>;
+    std::size_t leaf_number = 8;
+    testing_validate_template_random_data<hash_type, 2, bool, hash_type::digest_bits>(leaf_number);
 }
