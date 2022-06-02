@@ -68,8 +68,8 @@ namespace nil {
 
                 while (!is_zero(V3)) {
                     division(Q, R, G, V3);
-                    multiplication(G, V1, Q);
-                    subtraction(T, U, G);
+                    multiplication(G, V1, Q).get();
+                    subtraction(T, U, G).get();
 
                     U = V1;
                     G = V3;
@@ -77,8 +77,8 @@ namespace nil {
                     V3 = R;
                 }
 
-                multiplication(V3, a, U);
-                subtraction(V3, G, V3);
+                multiplication(V3, a, U).get();
+                subtraction(V3, G, V3).get();
                 division(V1, R, V3, b);
 
                 value_type lead_coeff = G.back().inversed();

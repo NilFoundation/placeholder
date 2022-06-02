@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -28,13 +29,9 @@
 
 #include <vector>
 
-#include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 
 #include <nil/actor/math/polynomial/basis_change.hpp>
-
-#ifdef MULTICORE
-#include <omp.h>
-#endif
 
 namespace nil {
     namespace actor {
@@ -43,10 +40,7 @@ namespace nil {
             using namespace nil::crypto3::algebra;
 
             template<typename FieldType>
-            class evaluation_domain;
-
-            template<typename FieldType>
-            class arithmetic_sequence_domain : public evaluation_domain<FieldType> {
+            class arithmetic_sequence_domain : public nil::crypto3::math::evaluation_domain<FieldType> {
                 typedef typename FieldType::value_type value_type;
 
             public:
@@ -57,7 +51,7 @@ namespace nil {
                 std::vector<value_type> arithmetic_sequence;
                 value_type arithmetic_generator;
 
-                void do_precomputation() {
+                future<> do_precomputation() {
                     std::cout << "do_precomputation" << std::endl;
                     compute_subproduct_tree<FieldType>(this->subproduct_tree, log2(this->m));
 
@@ -72,23 +66,22 @@ namespace nil {
                     for (auto i = 0; i < cpu_usage; ++i) {
                         auto begin = element_per_cpu * i;
                         auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, &arithmetic_sequence]() {
+                        fut.emplace_back(smp::submit_to(i, [begin, end, this]() {
                             for (std::size_t i = begin; i < end; i++) {
                                 arithmetic_sequence[i] = arithmetic_generator * value_type(i);
                             }
-                            return nil::actor::make_ready_future<>(); }));
+                            return nil::actor::make_ready_future<>();
+                        }));
                     }
-
-//                    for (std::size_t i = 0; i < this->m; i++) {
-//                        arithmetic_sequence[i] = arithmetic_generator * value_type(i);
-//                    }
 
                     when_all(fut.begin(), fut.end()).get();
 
                     precomputation_sentinel = true;
+
+                    return nil::actor::make_ready_future<>();
                 }
 
-                arithmetic_sequence_domain(const std::size_t m) : evaluation_domain<FieldType>(m) {
+                arithmetic_sequence_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
                     BOOST_ASSERT_MSG(m > 1, "Arithmetic(): expected m > 1");
                     BOOST_ASSERT_MSG(
                         value_type(fields::arithmetic_params<FieldType>::arithmetic_generator).is_zero(),
@@ -98,7 +91,7 @@ namespace nil {
                     precomputation_sentinel = false;
                 }
 
-                void fft(std::vector<value_type> &a) {
+                future<> fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
                         BOOST_ASSERT_MSG(a.size() >= this->m, "Arithmetic: expected a.size() == this->m");
 
@@ -125,12 +118,24 @@ namespace nil {
                     multiplication(a, a, S);
                     a.resize(this->m);
 
-#ifdef MULTICORE
-#pragma omp parallel for
-#endif
-                    for (std::size_t i = 0; i < this->m; i++) {
-                        a[i] *= S[i].inversed();
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(this->m, smp::count);
+                    size_t element_per_cpu = this->m / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, &a, &S]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                a[i] *= S[i].inversed();
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
                     }
+
+                    when_all(fut.begin(), fut.end()).get();
+
+                    return nil::actor::make_ready_future<>();
                 }
 
                 void inverse_fft(std::vector<value_type> &a) {
@@ -165,7 +170,7 @@ namespace nil {
                     newton_to_monomial_basis<FieldType>(a, subproduct_tree, this->m);
                 }
 
-                std::vector<value_type> evaluate_all_lagrange_polynomials(const value_type &t) {
+                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(const value_type &t) {
                     /* Compute Lagrange polynomial of size m, with m+1 points (x_0, y_0), ... ,(x_m, y_m) */
                     /* Evaluate for x = t */
                     /* Return coeffs for each l_j(x) = (l / l_i[j]) * w[j] */
@@ -196,11 +201,24 @@ namespace nil {
                     value_type l_vanish = l[0];
                     value_type g_vanish = value_type::one();
 
-                    for (std::size_t i = 1; i < this->m; i++) {
-                        l[i] = t - this->arithmetic_sequence[i];
-                        l_vanish *= l[i];
-                        g_vanish *= -this->arithmetic_sequence[i];
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(this->m, smp::count);
+                    size_t element_per_cpu = this->m / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, t, &l, &l_vanish, &g_vanish, this]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                l[i] = t - this->arithmetic_sequence[i];
+                                l_vanish *= l[i];
+                                g_vanish *= -this->arithmetic_sequence[i];
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
                     }
+
+                    when_all(fut.begin(), fut.end()).get();
 
                     std::vector<value_type> w(this->m);
                     w[0] = g_vanish.inversed() * (this->arithmetic_generator.pow(this->m - 1));
@@ -212,14 +230,17 @@ namespace nil {
                         l[i] = l_vanish * l[i].inversed() * w[i];
                     }
 
-                    return l;
+                    //                    return l;
+                    return nil::actor::make_ready_future<std::vector<value_type>>(l);
                 }
+
                 value_type get_domain_element(const std::size_t idx) {
                     if (!this->precomputation_sentinel)
                         do_precomputation();
 
                     return this->arithmetic_sequence[idx];
                 }
+
                 value_type compute_vanishing_polynomial(const value_type &t) {
                     if (!this->precomputation_sentinel)
                         do_precomputation();
@@ -231,7 +252,8 @@ namespace nil {
                     }
                     return Z;
                 }
-                void add_poly_z(const value_type &coeff, std::vector<value_type> &H) {
+
+                future<> add_poly_z(const value_type &coeff, std::vector<value_type> &H) {
                     BOOST_ASSERT_MSG(H.size() == this->m + 1, "Arithmetic: expected H.size() == this->m+1");
 
                     if (!this->precomputation_sentinel)
@@ -250,19 +272,47 @@ namespace nil {
                         multiplication(x, x, t);
                     }
 
-#ifdef MULTICORE
-#pragma omp parallel for
-#endif
-                    for (std::size_t i = 0; i < this->m + 1; i++) {
-                        H[i] += (x[i] * coeff);
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(this->m, smp::count);
+                    size_t element_per_cpu = this->m / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, &H, &x, coeff, this]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                H[i] += (x[i] * coeff);
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
                     }
+
+                    when_all(fut.begin(), fut.end()).get();
+
+                    return nil::actor::make_ready_future<>();
                 }
-                void divide_by_z_on_coset(std::vector<value_type> &P) {
+                future<> divide_by_z_on_coset(std::vector<value_type> &P) {
                     const value_type coset = this->arithmetic_generator; /* coset in arithmetic sequence? */
                     const value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
-                    for (std::size_t i = 0; i < this->m; ++i) {
-                        P[i] *= Z_inverse_at_coset;
+
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(this->m, smp::count);
+                    size_t element_per_cpu = this->m / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, &P, Z_inverse_at_coset, this]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                P[i] *= Z_inverse_at_coset;
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
                     }
+
+                    when_all(fut.begin(), fut.end()).get();
+
+                    return nil::actor::make_ready_future<>();
                 }
             };
         }    // namespace math

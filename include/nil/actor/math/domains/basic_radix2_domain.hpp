@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -28,11 +29,11 @@
 
 #include <vector>
 
-#include <nil/actor/math/detail/field_utils.hpp>
+#include <nil/crypto3/math/detail/field_utils.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/unity_root.hpp>
 
-#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/domains/detail/basic_radix2_domain_aux.hpp>
-#include <nil/actor/math/algorithms/unity_root.hpp>
 
 namespace nil {
     namespace actor {
@@ -41,10 +42,7 @@ namespace nil {
             using namespace nil::crypto3::algebra;
 
             template<typename FieldType>
-            class evaluation_domain;
-
-            template<typename FieldType>
-            class basic_radix2_domain : public evaluation_domain<FieldType> {
+            class basic_radix2_domain : public crypto3::math::evaluation_domain<FieldType> {
                 typedef typename FieldType::value_type value_type;
 
             public:
@@ -52,46 +50,57 @@ namespace nil {
 
                 value_type omega;
 
-                basic_radix2_domain(const std::size_t m) : evaluation_domain<FieldType>(m) {
+                basic_radix2_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
                     BOOST_ASSERT_MSG(m > 1, "basic_radix2(): expected m > 1");
 
                     if (!std::is_same<value_type, std::complex<double>>::value) {
                         const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                        if (logm > (fields::arithmetic_params<FieldType>::s))
-                            throw std::invalid_argument(
-                                "basic_radix2(): expected logm <= fields::arithmetic_params<FieldType>::s");
+                        BOOST_ASSERT_MSG(logm <= (fields::arithmetic_params<FieldType>::s),
+                                         "basic_radix2(): expected logm <= fields::arithmetic_params<FieldType>::s");
                     }
 
-                    omega = unity_root<FieldType>(m);
+                    omega = crypto3::math::unity_root<FieldType>(m);
                 }
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
-                        } else {
-                            throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
-                        }
+                        BOOST_ASSERT_MSG(a.size() >= this->m, "basic_radix2: expected a.size() == this->m");
+
+                        a.resize(this->m, value_type(0));
                     }
 
                     detail::basic_radix2_fft<FieldType>(a, omega);
                 }
 
-                void inverse_fft(std::vector<value_type> &a) {
+                future<> inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
-                        } else {
-                            throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
-                        }
+                        BOOST_ASSERT_MSG(a.size() >= this->m, "basic_radix2: expected a.size() == this->m");
+
+                        a.resize(this->m, value_type(0));
                     }
 
                     detail::basic_radix2_fft<FieldType>(a, omega.inversed());
 
                     const value_type sconst = value_type(a.size()).inversed();
-                    for (std::size_t i = 0; i < a.size(); ++i) {
-                        a[i] *= sconst;
+
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(this->m, smp::count);
+                    size_t element_per_cpu = this->m / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, sconst, &a]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                a[i] *= sconst;
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
                     }
+
+                    when_all(fut.begin(), fut.end()).get();
+
+                    return make_ready_future<>();
                 }
 
                 std::vector<value_type> evaluate_all_lagrange_polynomials(const value_type &t) {
@@ -107,19 +116,34 @@ namespace nil {
                 }
 
                 void add_poly_z(const value_type &coeff, std::vector<value_type> &H) {
-                    if (H.size() != this->m + 1)
-                        throw std::invalid_argument("basic_radix2: expected H.size() == this->m+1");
+                    BOOST_ASSERT_MSG(H.size() == this->m + 1, "basic_radix2: expected H.size() == this->m+1");
 
                     H[this->m] += coeff;
                     H[0] -= coeff;
                 }
 
-                void divide_by_z_on_coset(std::vector<value_type> &P) {
+                future<> divide_by_z_on_coset(std::vector<value_type> &P) {
                     const value_type coset = fields::arithmetic_params<FieldType>::multiplicative_generator;
                     const value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
-                    for (std::size_t i = 0; i < this->m; ++i) {
-                        P[i] *= Z_inverse_at_coset;
+
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(this->m, smp::count);
+                    size_t element_per_cpu = this->m / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, &P]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                P[i] *= Z_inverse_at_coset;
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
                     }
+
+                    when_all(fut.begin(), fut.end()).get();
+
+                    return make_ready_future<>();
                 }
 
                 bool operator==(const basic_radix2_domain &rhs) const {

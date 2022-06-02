@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -28,9 +29,10 @@
 
 #include <vector>
 
-#include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/unity_root.hpp>
+
 #include <nil/actor/math/domains/detail/basic_radix2_domain_aux.hpp>
-#include <nil/actor/math/algorithms/unity_root.hpp>
 
 namespace nil {
     namespace actor {
@@ -39,10 +41,7 @@ namespace nil {
             using namespace nil::crypto3::algebra;
 
             template<typename FieldType>
-            class evaluation_domain;
-
-            template<typename FieldType>
-            class extended_radix2_domain : public evaluation_domain<FieldType> {
+            class extended_radix2_domain : public crypto3::math::evaluation_domain<FieldType> {
                 typedef typename FieldType::value_type value_type;
 
             public:
@@ -52,31 +51,27 @@ namespace nil {
                 value_type omega;
                 value_type shift;
 
-                extended_radix2_domain(const std::size_t m) : evaluation_domain<FieldType>(m) {
+                extended_radix2_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
                     if (m <= 1)
                         throw std::invalid_argument("extended_radix2(): expected m > 1");
 
                     if (!std::is_same<value_type, std::complex<double>>::value) {
                         const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                        if (logm != (fields::arithmetic_params<FieldType>::s + 1))
-                            throw std::invalid_argument(
-                                "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
+                        BOOST_ASSERT_MSG(logm == (fields::arithmetic_params<FieldType>::s + 1), "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
                     }
 
                     small_m = m / 2;
 
-                    omega = unity_root<FieldType>(small_m);
+                    omega = crypto3::math::unity_root<FieldType>(small_m);
 
-                    shift = detail::coset_shift<FieldType>();
+                    shift = crypto3::math::detail::coset_shift<FieldType>();
                 }
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
-                        } else {
-                            throw std::invalid_argument("extended_radix2: expected a.size() == this->m");
-                        }
+                        BOOST_ASSERT_MSG(a.size() >= this->m, "extended_radix2: expected a.size() == this->m");
+
+                        a.resize(this->m, value_type(0));
                     }
 
                     std::vector<value_type> a0(small_m, value_type::zero());
@@ -103,11 +98,9 @@ namespace nil {
 
                 void inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
-                        } else {
-                            throw std::invalid_argument("extended_radix2: expected a.size() == this->m");
-                        }
+                        BOOST_ASSERT_MSG(a.size() >= this->m, "extended_radix2: expected a.size() == this->m");
+
+                        a.resize(this->m, value_type(0));
                     }
 
                     // note: this is not in-place

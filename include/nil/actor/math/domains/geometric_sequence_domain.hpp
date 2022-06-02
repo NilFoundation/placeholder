@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -28,7 +29,7 @@
 
 #include <vector>
 
-#include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 
 #include <nil/actor/math/polynomial/basis_change.hpp>
 
@@ -43,10 +44,7 @@ namespace nil {
             using namespace nil::crypto3::algebra;
 
             template<typename FieldType>
-            class evaluation_domain;
-
-            template<typename FieldType>
-            class geometric_sequence_domain : public evaluation_domain<FieldType> {
+            class geometric_sequence_domain : public crypto3::math::evaluation_domain<FieldType> {
                 typedef typename FieldType::value_type value_type;
 
             public:
@@ -73,28 +71,20 @@ namespace nil {
                     precomputation_sentinel = true;
                 }
 
-                geometric_sequence_domain(const std::size_t m) : evaluation_domain<FieldType>(m) {
-                    if (m <= 1) {
-                        throw std::invalid_argument("geometric(): expected m > 1");
-                    }
-
-                    if (value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero()) {
-                        throw std::invalid_argument(
-                            "geometric(): expected "
-                            "value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero() != "
-                            "true");
-                    }
+                geometric_sequence_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
+                    BOOST_ASSERT_MSG(m > 1, "geometric(): expected m > 1");
+                    BOOST_ASSERT_MSG(!value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero(), "geometric(): expected "
+                                     "value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero() != "
+                                     "true");
 
                     precomputation_sentinel = false;
                 }
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
-                        } else {
-                            throw std::invalid_argument("geometric: expected a.size() == this->m");
-                        }
+                        BOOST_ASSERT_MSG(a.size() >= this->m, "geometric: expected a.size() == this->m");
+
+                        a.resize(this->m, value_type(0));
                     }
 
                     if (!precomputation_sentinel)
@@ -127,11 +117,9 @@ namespace nil {
                 }
                 void inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
-                        } else {
-                            throw std::invalid_argument("geometric: expected a.size() == this->m");
-                        }
+                        BOOST_ASSERT_MSG(a.size() >= this->m, "geometric: expected a.size() == this->m");
+
+                        a.resize(this->m, value_type(0));
                     }
 
                     if (!precomputation_sentinel)
@@ -245,8 +233,7 @@ namespace nil {
                     return Z;
                 }
                 void add_poly_z(const value_type &coeff, std::vector<value_type> &H) {
-                    if (H.size() != this->m + 1)
-                        throw std::invalid_argument("geometric: expected H.size() == this->m+1");
+                    BOOST_ASSERT_MSG(H.size() == this->m + 1, "geometric: expected H.size() == this->m+1");
 
                     if (!precomputation_sentinel)
                         do_precomputation();

@@ -346,7 +346,7 @@ namespace nil {
                     BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
                     typedef typename value_type::field_type FieldType;
 
-                    value_type omega = unity_root<FieldType>(this->size());
+                    value_type omega = crypto3::math::unity_root<FieldType>(this->size());
 
                     detail::basic_radix2_fft<FieldType>(val, omega.inversed());
 
@@ -356,7 +356,7 @@ namespace nil {
                                    val.begin(),
                                    std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
 
-                    value_type omega_new = unity_root<FieldType>(_sz);
+                    value_type omega_new = crypto3::math::unity_root<FieldType>(_sz);
                     val.resize(_sz);
 
                     detail::basic_radix2_fft<FieldType>(val, omega_new);
@@ -455,7 +455,7 @@ namespace nil {
                 polynomial_dfs operator*(const polynomial_dfs& other) const {
                     polynomial_dfs result(this->_d + other._d, this->begin(), this->end());
                     size_t polynomial_s =
-                        detail::power_of_two(std::max({this->size(), other.size(), this->_d + other._d + 1}));
+                        crypto3::math::detail::power_of_two(std::max({this->size(), other.size(), this->_d + other._d + 1}));
                     if (result.size() < polynomial_s) {
                         result.resize(polynomial_s);
                     }

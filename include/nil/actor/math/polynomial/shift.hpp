@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -47,7 +48,7 @@ namespace nil {
             }
 
             template<typename FieldValueType>
-            static inline polynomial_dfs<FieldValueType>
+            static inline future<polynomial_dfs<FieldValueType>>
                 polynomial_shift(const polynomial_dfs<FieldValueType> &f,
                                  const int shift,
                                  std::size_t domain_size = 0) {
@@ -59,11 +60,24 @@ namespace nil {
 
                 polynomial_dfs<FieldValueType> f_shifted(f.degree(), f.size());
 
-                for (std::size_t index = 0; index < f.size(); index++){
-                    f_shifted[index] = f[(domain_size + 1 + index + shift) % (domain_size + 1)];
+                std::vector<future<>> fut;
+                size_t cpu_usage = std::min(f.size(), (std::size_t)smp::count);
+                size_t element_per_cpu = f.size() / smp::count;
+
+                for (auto i = 0; i < cpu_usage; ++i) {
+                    auto begin = element_per_cpu * i;
+                    auto end = (i == cpu_usage - 1) ? f.size() : element_per_cpu * (i + 1);
+                    fut.emplace_back(smp::submit_to(i, [begin, end, domain_size, shift, &f_shifted, &f]() {
+                        for (std::size_t index = begin; index < end; index++) {
+                            f_shifted[index] = f[(domain_size + 1 + index + shift) % (domain_size + 1)];
+                        }
+                        return nil::actor::make_ready_future<>();
+                    }));
                 }
 
-                return f_shifted;
+                when_all(fut.begin(), fut.end()).get();
+
+                return make_ready_future<polynomial_dfs<FieldValueType>>(f_shifted);
             }
         }    // namespace math
     }        // namespace actor

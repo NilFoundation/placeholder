@@ -387,7 +387,7 @@ namespace nil {
                  */
                 polynomial operator+(const polynomial& other) const {
                     polynomial result;
-                    addition(result, *this, other);
+                    addition(result, *this, other).get();
                     return result;
                 }
 
@@ -405,7 +405,7 @@ namespace nil {
                  */
                 polynomial operator-(const polynomial& other) const {
                     polynomial result;
-                    subtraction(result, *this, other);
+                    subtraction(result, *this, other).get();
                     return result;
                 }
 
@@ -415,7 +415,7 @@ namespace nil {
                  */
                 polynomial operator*(const polynomial& other) const {
                     polynomial result;
-                    fft_multiplication(result, *this, other);
+                    multiplication(result, *this, other).get();
                     return result;
                 }
 

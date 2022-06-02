@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -63,11 +64,13 @@ namespace nil {
              */
             template<typename Range>
             void condense(Range &a) {
-                while (std::distance(std::cbegin(a), std::cend(a)) > 1 &&
-                       a.back() ==
+                std::size_t i = std::distance(std::cbegin(a), std::cend(a));
+                while (i > 1 &&
+                       a[i - 1] ==
                            typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type()) {
-                    a.pop_back();
+                    --i;
                 }
+                a.resize(i);
             }
 
             /**
@@ -75,7 +78,7 @@ namespace nil {
              * polynomial C.
              */
             template<typename Range>
-            void addition(Range &c, const Range &a, const Range &b) {
+            future<> addition(Range &c, const Range &a, const Range &b) {
 
                 typedef
                     typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
@@ -87,21 +90,37 @@ namespace nil {
                 } else {
                     std::size_t a_size = std::distance(std::begin(a), std::end(a));
                     std::size_t b_size = std::distance(std::begin(b), std::end(b));
+                    std::size_t min_size = std::min(a_size, b_size);
 
                     if (a_size > b_size) {
                         c.resize(a_size);
-                        std::transform(
-                            std::begin(b), std::end(b), std::begin(a), std::begin(c), std::plus<value_type>());
                         std::copy(std::begin(a) + b_size, std::end(a), std::begin(c) + b_size);
                     } else {
                         c.resize(b_size);
-                        std::transform(
-                            std::begin(a), std::end(a), std::begin(b), std::begin(c), std::plus<value_type>());
                         std::copy(std::begin(b) + a_size, std::end(b), std::begin(c) + a_size);
                     }
+
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(min_size, (std::size_t)smp::count);
+                    size_t element_per_cpu = min_size / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? min_size : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, &c, &a, &b]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                c[i] = a[i] + b[i];
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
+                    }
+
+                    when_all(fut.begin(), fut.end()).get();
+
                 }
 
                 condense(c);
+                return make_ready_future<>();
             }
 
             /**
@@ -109,7 +128,7 @@ namespace nil {
              * polynomial C.
              */
             template<typename Range>
-            void subtraction(Range &c, const Range &a, const Range &b) {
+            future<> subtraction(Range &c, const Range &a, const Range &b) {
 
                 typedef
                     typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
@@ -122,19 +141,36 @@ namespace nil {
                 } else {
                     std::size_t a_size = a.size();
                     std::size_t b_size = b.size();
+                    std::size_t min_size = std::min(a_size, b_size);
 
                     if (a_size > b_size) {
                         c.resize(a_size);
-                        std::transform(a.begin(), a.begin() + b_size, b.begin(), c.begin(), std::minus<value_type>());
                         std::copy(a.begin() + b_size, a.end(), c.begin() + b_size);
                     } else {
                         c.resize(b_size);
-                        std::transform(a.begin(), a.end(), b.begin(), c.begin(), std::minus<value_type>());
                         std::transform(b.begin() + a_size, b.end(), c.begin() + a_size, std::negate<value_type>());
                     }
+
+                    std::vector<future<>> fut;
+                    size_t cpu_usage = std::min(min_size, (std::size_t)smp::count);
+                    size_t element_per_cpu = min_size / smp::count;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? min_size : element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [begin, end, &c, &a, &b]() {
+                            for (std::size_t i = begin; i < end; i++) {
+                                c[i] = a[i] - b[i];
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
+                    }
+
+                    when_all(fut.begin(), fut.end()).get();
                 }
 
                 condense(c);
+                return make_ready_future<>();
             }
 
             /**
@@ -142,7 +178,7 @@ namespace nil {
              * result in polynomial C.
              */
             template<typename Range>
-            void fft_multiplication(Range &c, const Range &a, const Range &b) {
+            future<> multiplication(Range &c, const Range &a, const Range &b) {
 
                 typedef
                     typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
@@ -154,8 +190,7 @@ namespace nil {
                 const std::size_t n = crypto3::math::detail::power_of_two(a.size() + b.size() - 1);
                 value_type omega = crypto3::math::unity_root<FieldType>(n);
 
-                Range u(a);
-                Range v(b);
+                Range u(a), v(b);
                 u.resize(n, value_type::zero());
                 v.resize(n, value_type::zero());
                 c.resize(n, value_type::zero());
@@ -163,25 +198,45 @@ namespace nil {
                 detail::basic_radix2_fft<FieldType>(u, omega).get();
                 detail::basic_radix2_fft<FieldType>(v, omega).get();
 
-                std::transform(u.begin(), u.end(), v.begin(), c.begin(), std::multiplies<value_type>());
+                std::vector<future<>> fut;
+                size_t cpu_usage = std::min(n, (std::size_t)smp::count);
+                size_t element_per_cpu = n / smp::count;
+
+                for (auto i = 0; i < cpu_usage; ++i) {
+                    auto begin = element_per_cpu * i;
+                    auto end = (i == cpu_usage - 1) ? n : element_per_cpu * (i + 1);
+                    fut.emplace_back(smp::submit_to(i, [begin, end, &c, &u, &v]() {
+                        for (std::size_t i = begin; i < end; i++) {
+                            c[i] = u[i] * v[i];
+                        }
+                        return nil::actor::make_ready_future<>();
+                    }));
+                }
+
+                when_all(fut.begin(), fut.end()).get();
 
                 detail::basic_radix2_fft<FieldType>(c, omega.inversed()).get();
 
                 const value_type sconst = value_type(n).inversed();
-                std::transform(c.begin(),
-                               c.end(),
-                               c.begin(),
-                               std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
-                condense(c);
-            }
 
-            /**
-             * Perform the multiplication of two polynomials, polynomial A * polynomial B, and stores result
-             * in polynomial C.
-             */
-            template<typename Range>
-            void multiplication(Range &c, const Range &a, const Range &b) {
-                fft_multiplication(c, a, b);
+                fut.clear();
+
+                for (auto i = 0; i < cpu_usage; ++i) {
+                    auto begin = element_per_cpu * i;
+                    auto end = (i == cpu_usage - 1) ? n : element_per_cpu * (i + 1);
+                    fut.emplace_back(smp::submit_to(i, [begin, end, &c, sconst]() {
+                        for (std::size_t i = begin; i < end; i++) {
+                            c[i] *= sconst;
+                        }
+                        return nil::actor::make_ready_future<>();
+                    }));
+                }
+
+                when_all(fut.begin(), fut.end()).get();
+
+                condense(c);
+
+                return make_ready_future<>();
             }
 
             /**

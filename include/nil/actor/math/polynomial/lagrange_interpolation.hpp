@@ -2,6 +2,7 @@
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2021 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -28,8 +29,6 @@
 #define ACTOR_MATH_LAGRANGE_INTERPOLATION_HPP
 
 #include <nil/actor/math/polynomial/polynomial.hpp>
-#include <nil/actor/math/domains/evaluation_domain.hpp>
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 
 namespace nil {
     namespace actor {
