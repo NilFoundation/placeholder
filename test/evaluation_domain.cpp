@@ -31,17 +31,17 @@
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/algebra/fields/bls12/base_field.hpp>
-#include <nil/actor/algebra/fields/bls12/scalar_field.hpp>
-#include <nil/actor/algebra/fields/arithmetic_params/bls12.hpp>
+#include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
+#include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
-#include <nil/actor/algebra/fields/mnt4/scalar_field.hpp>
-#include <nil/actor/algebra/fields/mnt4/base_field.hpp>
-#include <nil/actor/algebra/fields/arithmetic_params/mnt4.hpp>
+#include <nil/crypto3/algebra/fields/mnt4/scalar_field.hpp>
+#include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/mnt4.hpp>
 
-#include <nil/actor/algebra/fields/mnt6/scalar_field.hpp>
-#include <nil/actor/algebra/fields/mnt6/base_field.hpp>
-#include <nil/actor/algebra/fields/arithmetic_params/mnt6.hpp>
+#include <nil/crypto3/algebra/fields/mnt6/scalar_field.hpp>
+#include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/mnt6.hpp>
 
 #include <nil/actor/math/coset.hpp>
 #include <nil/actor/math/domains/arithmetic_sequence_domain.hpp>
@@ -50,14 +50,14 @@
 #include <nil/actor/math/domains/geometric_sequence_domain.hpp>
 #include <nil/actor/math/domains/step_radix2_domain.hpp>
 
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/actor/math/polynomial/evaluate.hpp>
 
 #include <typeinfo>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::crypto3::math;
+using namespace nil::actor::math;
 
 /**
  * Note: Templatized type referenced with FieldType (instead of canonical FieldType)
@@ -71,9 +71,9 @@ void test_fft() {
     const std::size_t m = 4;
     std::vector<value_type> f = {2, 5, 3, 8};
 
-    std::shared_ptr<evaluation_domain<FieldType>> domain;
+    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
 
-    domain = make_evaluation_domain<FieldType>(m);
+    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
 
@@ -92,11 +92,11 @@ void test_fft() {
         std::cout << "e = " << e.data << std::endl;
         BOOST_CHECK_EQUAL(e.data, a[i].data);
     }
-    std::cout << "is_basic_radix2_domain = " << detail::is_basic_radix2_domain<FieldType>(m) << std::endl;
-    std::cout << "is_extended_radix2_domain = " << detail::is_extended_radix2_domain<FieldType>(m) << std::endl;
-    std::cout << "is_step_radix2_domain = " << detail::is_step_radix2_domain<FieldType>(m) << std::endl;
-    std::cout << "is_geometric_sequence_domain = " << detail::is_geometric_sequence_domain<FieldType>(m) << std::endl;
-    std::cout << "is_arithmetic_sequence_domain = " << detail::is_arithmetic_sequence_domain<FieldType>(m) << std::endl;
+    std::cout << "is_basic_radix2_domain = " << nil::crypto3::math::detail::is_basic_radix2_domain<FieldType>(m) << std::endl;
+    std::cout << "is_extended_radix2_domain = " << nil::crypto3::math::detail::is_extended_radix2_domain<FieldType>(m) << std::endl;
+    std::cout << "is_step_radix2_domain = " << nil::crypto3::math::detail::is_step_radix2_domain<FieldType>(m) << std::endl;
+    std::cout << "is_geometric_sequence_domain = " << nil::crypto3::math::detail::is_geometric_sequence_domain<FieldType>(m) << std::endl;
+    std::cout << "is_arithmetic_sequence_domain = " << nil::crypto3::math::detail::is_arithmetic_sequence_domain<FieldType>(m) << std::endl;
 }
 
 template<typename FieldType>
@@ -105,9 +105,9 @@ void test_inverse_fft_of_fft() {
     const std::size_t m = 4;
     std::vector<value_type> f = {2, 5, 3, 8};
 
-    std::shared_ptr<evaluation_domain<FieldType>> domain;
+    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
 
-    domain = make_evaluation_domain<FieldType>(m);
+    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
     domain->fft(a);
@@ -128,9 +128,9 @@ void test_inverse_coset_ftt_of_coset_fft() {
 
     value_type coset = value_type(fields::arithmetic_params<FieldType>::multiplicative_generator);
 
-    std::shared_ptr<evaluation_domain<FieldType>> domain;
+    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
 
-    domain = make_evaluation_domain<FieldType>(m);
+    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
     multiply_by_coset(a, coset);
@@ -150,9 +150,9 @@ void test_lagrange_coefficients() {
     const std::size_t m = 8;
     value_type t = value_type(10);
 
-    std::shared_ptr<evaluation_domain<FieldType>> domain;
+    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
 
-    domain = make_evaluation_domain<FieldType>(m);
+    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a;
     a = domain->evaluate_all_lagrange_polynomials(t);
@@ -178,8 +178,8 @@ void test_compute_z() {
     const std::size_t m = 8;
     value_type t = value_type(10);
 
-    std::shared_ptr<evaluation_domain<FieldType>> domain;
-    domain = make_evaluation_domain<FieldType>(m);
+    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
+    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
 
     value_type a;
     a = domain->compute_vanishing_polynomial(t);

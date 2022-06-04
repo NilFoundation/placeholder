@@ -29,53 +29,16 @@
 
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
-#include <nil/actor/detail/memory_diagnostics.hh>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
 #include <nil/actor/math/polynomial/polynomial.hpp>
 
-#include <nil/actor/core/smp.hh>
-#include <nil/actor/core/when_all.hh>
-#include <nil/actor/core/future.hh>
-
-#include <chrono>
 using namespace nil::crypto3::algebra;
 using namespace nil::actor::math;
 
 typedef fields::bls12_fr<381> FieldType;
-//
-//const size_t V_SIZE = 1e5;
-//
-//ACTOR_THREAD_TEST_CASE(zerg) {
-//    auto start = std::chrono::high_resolution_clock::now();
-//    std::vector<int> v(V_SIZE, 228);
-//    std::vector<int> z(V_SIZE, 0);
-//    for (int i = 0; i < v.size(); ++i) {
-//        z[i] = v[i];
-//    }
-//    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start);
-//    std::cout << "zerg: " << duration.count() << "ms" << std::endl;
-//}
-//
-//ACTOR_THREAD_TEST_CASE(zerg2) {
-//    auto start = std::chrono::high_resolution_clock::now();
-//    std::vector<int> v(V_SIZE, 228);
-//    std::vector<int> z(V_SIZE, 0);
-//    std::cout << nil::actor::smp::count << std::endl;
-//    std::vector<nil::actor::future<>> fut;
-//    for (int i = 0; i < 2; ++i) {
-//        fut.emplace_back(nil::actor::smp::submit_to(i, [i, &v, &z]() {
-//            for (int j = v.size() / 4 * i; j < v.size() / 4 * (i + 1); ++j) {
-//                z[j] = v[j];
-//            }
-//            return nil::actor::make_ready_future<>();
-//        }));
-//    }
-//    nil::actor::when_all(fut.begin(), fut.end()).get();
-//    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start);
-//    std::cout << "zerg2: " << duration.count() << "ms" << std::endl;
-//}
+
 ACTOR_THREAD_TEST_CASE(polynomial_constructor) {
 
     polynomial<typename FieldType::value_type> a(FieldType::value_type::one(), 5);
@@ -235,19 +198,28 @@ ACTOR_THREAD_TEST_CASE(polynomial_subtraction_zero_b) {
     }
 }
 
+#include <chrono>
+
 ACTOR_THREAD_TEST_CASE(polynomial_multiplication_long_a) {
 
-    polynomial<typename FieldType::value_type> a = {5, 0, 0, 13, 0, 1};
-    polynomial<typename FieldType::value_type> b = {13, 0, 1};
+//    polynomial<typename FieldType::value_type> a = {5, 0, 0, 13, 0, 1};
+//    polynomial<typename FieldType::value_type> b = {13, 0, 1};
+polynomial<typename FieldType::value_type> a, b;
+    for (std::size_t i = 0; i < 1e6; ++i) {
+        a.push_back(1);
+        b.push_back(2);
+    }
     polynomial<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
+    auto start = std::chrono::high_resolution_clock::now();
     c = a * b;
-
-    polynomial<typename FieldType::value_type> c_ans = {65, 0, 5, 169, 0, 26, 0, 1};
-
-    for (std::size_t i = 0; i < c.size(); i++) {
-        BOOST_CHECK_EQUAL(c_ans[i].data, c[i].data);
-    }
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+    std::cout << "base_endo_scalar_mul: " << duration.count() << "ms" << std::endl;
+//    polynomial<typename FieldType::value_type> c_ans = {65, 0, 5, 169, 0, 26, 0, 1};
+//
+//    for (std::size_t i = 0; i < c.size(); i++) {
+//        BOOST_CHECK_EQUAL(c_ans[i].data, c[i].data);
+//    }
 }
 
 ACTOR_THREAD_TEST_CASE(polynomial_multiplication_long_b) {
