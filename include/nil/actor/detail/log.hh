@@ -103,9 +103,7 @@ namespace nil {
             };
             template<typename Func>
 #ifdef BOOST_HAS_CONCEPTS
-            requires requires(Func fn, detail::log_buf::inserter_iterator it) {
-                it = fn(it);
-            }
+                requires requires(Func fn, detail::log_buf::inserter_iterator it) { it = fn(it); }
 #endif
             class lambda_log_writer : public log_writer {
                 Func _func;
@@ -195,7 +193,11 @@ namespace nil {
                 if (is_enabled(level)) {
                     try {
                         lambda_log_writer writer([&](detail::log_buf::inserter_iterator it) {
+#if FMT_VERSION >= 80000
+                            return fmt::format_to(it, fmt::runtime(fmt), std::forward<Args>(args)...);
+#else
                             return fmt::format_to(it, fmt, std::forward<Args>(args)...);
+#endif
                         });
                         do_log(level, writer);
                     } catch (...) {
@@ -226,7 +228,11 @@ namespace nil {
                                 it = fmt::format_to(it, "(rate limiting dropped {} similar messages) ",
                                                     rl.get_and_reset_dropped_messages());
                             }
+#if FMT_VERSION >= 80000
+                            return fmt::format_to(it, fmt::runtime(fmt), std::forward<Args>(args)...);
+#else
                             return fmt::format_to(it, fmt, std::forward<Args>(args)...);
+#endif
                         });
                         do_log(level, writer);
                     } catch (...) {
@@ -401,14 +407,14 @@ namespace nil {
             /// Note: this method locks
             ///
             /// \return log_level for the given logger name
-            log_level get_logger_level(const sstring& name) const;
+            log_level get_logger_level(const sstring &name) const;
 
             /// Sets the log level for a given logger
             /// Note: this method locks
             ///
             /// \param name - name of logger
             /// \param level - desired level of logging
-            void set_logger_level(const sstring& name, log_level level);
+            void set_logger_level(const sstring &name, log_level level);
 
             /// Returns a list of registered loggers
             /// Note: this method locks

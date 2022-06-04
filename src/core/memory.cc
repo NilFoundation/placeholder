@@ -1686,7 +1686,13 @@ namespace nil {
                 it = fmt::format_to(it, "Total memory: {}\n\n", to_hr_size(total_mem));
 
                 if (additional_diagnostics_producer) {
-                    additional_diagnostics_producer([&it](std::string_view v) mutable { it = fmt::format_to(it, v); });
+                    additional_diagnostics_producer([&it](std::string_view v) mutable {
+#if FMT_VERSION >= 80000
+                        it = fmt::format_to(it, fmt::runtime(v));
+#else
+                        it = fmt::format_to(it, v);
+#endif
+                    });
                 }
 
                 it = fmt::format_to(it, "Small pools:\n");
