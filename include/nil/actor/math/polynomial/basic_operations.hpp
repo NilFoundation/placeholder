@@ -30,9 +30,13 @@
 #include <algorithm>
 #include <vector>
 
-#include <nil/crypto3/math/algorithms/unity_root.hpp>
+
 #include <nil/actor/math/domains/detail/basic_radix2_domain_aux.hpp>
+#include <nil/actor/math/detail/utility.hpp>
+
+#include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
+
 
 namespace nil {
     namespace actor {
@@ -100,23 +104,11 @@ namespace nil {
                         std::copy(std::begin(b) + a_size, std::end(b), std::begin(c) + a_size);
                     }
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(min_size, (std::size_t)smp::count);
-                    size_t element_per_cpu = min_size / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? min_size : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, &c, &a, &b]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                c[i] = a[i] + b[i];
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
-
+                    detail::xx(min_size, smp::count, [&c, &a, &b](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            c[i] = a[i] + b[i];
+                        }
+                    });
                 }
 
                 condense(c);
@@ -151,22 +143,11 @@ namespace nil {
                         std::transform(b.begin() + a_size, b.end(), c.begin() + a_size, std::negate<value_type>());
                     }
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(min_size, (std::size_t)smp::count);
-                    size_t element_per_cpu = min_size / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? min_size : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, &c, &a, &b]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                c[i] = a[i] - b[i];
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::xx(min_size, smp::count, [&c, &a, &b](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            c[i] = a[i] - b[i];
+                        }
+                    });
                 }
 
                 condense(c);
@@ -198,41 +179,21 @@ namespace nil {
                 detail::basic_radix2_fft<FieldType>(u, omega).get();
                 detail::basic_radix2_fft<FieldType>(v, omega).get();
 
-                std::vector<future<>> fut;
-                size_t cpu_usage = std::min(n, (std::size_t)smp::count);
-                size_t element_per_cpu = n / smp::count;
-
-                for (auto i = 0; i < cpu_usage; ++i) {
-                    auto begin = element_per_cpu * i;
-                    auto end = (i == cpu_usage - 1) ? n : element_per_cpu * (i + 1);
-                    fut.emplace_back(smp::submit_to(i, [begin, end, &c, &u, &v]() {
-                        for (std::size_t i = begin; i < end; i++) {
-                            c[i] = u[i] * v[i];
-                        }
-                        return nil::actor::make_ready_future<>();
-                    }));
-                }
-
-                when_all(fut.begin(), fut.end()).get();
+                detail::xx(n, smp::count, [&c, &u, &v](std::size_t begin, std::size_t end) {
+                    for (std::size_t i = begin; i < end; i++) {
+                        c[i] = u[i] * v[i];
+                    }
+                });
 
                 detail::basic_radix2_fft<FieldType>(c, omega.inversed()).get();
 
                 const value_type sconst = value_type(n).inversed();
 
-                fut.clear();
-
-                for (auto i = 0; i < cpu_usage; ++i) {
-                    auto begin = element_per_cpu * i;
-                    auto end = (i == cpu_usage - 1) ? n : element_per_cpu * (i + 1);
-                    fut.emplace_back(smp::submit_to(i, [begin, end, &c, sconst]() {
-                        for (std::size_t i = begin; i < end; i++) {
-                            c[i] *= sconst;
-                        }
-                        return nil::actor::make_ready_future<>();
-                    }));
-                }
-
-                when_all(fut.begin(), fut.end()).get();
+                detail::xx(n, smp::count, [&c, sconst](std::size_t begin, std::size_t end) {
+                    for (std::size_t i = begin; i < end; i++) {
+                        c[i] *= sconst;
+                    }
+                });
 
                 condense(c);
 
@@ -245,7 +206,7 @@ namespace nil {
              * [Bostan, Lecerf, & Schost, 2003. Tellegen's Principle in Practice, on page 39].
              */
             template<typename Range>
-            Range transpose_multiplication(const std::size_t &n, const Range &a, const Range &c) {
+            future<Range> transpose_multiplication(const std::size_t &n, const Range &a, const Range &c) {
 
                 typedef
                     typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
@@ -256,14 +217,14 @@ namespace nil {
 
                 Range r(a);
                 reverse(r, m);
-                multiplication(r, r, c);
+                multiplication(r, r, c).get();
 
                 /* Determine Middle Product */
                 Range result;
                 for (std::size_t i = m - 1; i < n + m; i++) {
                     result.emplace_back(r[i]);
                 }
-                return result;
+                return make_ready_future<Range>(result);
             }
 
             /**

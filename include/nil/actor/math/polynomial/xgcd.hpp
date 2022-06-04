@@ -45,7 +45,7 @@ namespace nil {
              */
             template<typename Range1, typename Range2, typename Range3, typename Range4,
                      typename Range5>
-            void extended_euclidean(const Range1 &a, const Range2 &b, Range3 &g, Range4 &u, Range5 &v) {
+            future<> extended_euclidean(const Range1 &a, const Range2 &b, Range3 &g, Range4 &u, Range5 &v) {
 
                 typedef
                     typename std::iterator_traits<decltype(std::begin(std::declval<Range1>()))>::value_type value_type;
@@ -54,7 +54,7 @@ namespace nil {
                     g = a;
                     u = std::vector<value_type>(1, value_type::one());
                     v = std::vector<value_type>(1, value_type::zero());
-                    return;
+                    return make_ready_future<>();;
                 }
 
                 std::vector<value_type> U(1, value_type::one());
@@ -92,6 +92,8 @@ namespace nil {
                 g = G;
                 u = U;
                 v = V1;
+
+                return make_ready_future<>();
             }
         }    // namespace math
     }        // namespace actor

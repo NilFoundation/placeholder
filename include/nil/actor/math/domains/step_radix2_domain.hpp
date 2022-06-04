@@ -54,14 +54,12 @@ namespace nil {
                 value_type small_omega;
 
                 step_radix2_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
-                    if (m <= 1)
-                        throw std::invalid_argument("step_radix2(): expected m > 1");
+                    BOOST_ASSERT_MSG(m > 1, "step_radix2(): expected m > 1");
 
                     big_m = 1ul << (static_cast<std::size_t>(std::ceil(std::log2(m))) - 1);
                     small_m = m - big_m;
 
-                    if (small_m != 1ul << static_cast<std::size_t>(std::ceil(std::log2(small_m))))
-                        throw std::invalid_argument("step_radix2(): expected small_m == 1ul<<log2(small_m)");
+                    BOOST_ASSERT_MSG(small_m != 1ul << static_cast<std::size_t>(std::ceil(std::log2(small_m))), "step_radix2(): expected small_m == 1ul<<log2(small_m)");
 
                     omega = crypto3::math::unity_root<FieldType>(1ul << static_cast<std::size_t>(std::ceil(std::log2(m))));
 
@@ -71,11 +69,9 @@ namespace nil {
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
-                        } else {
-                            throw std::invalid_argument("step_radix2: expected a.size() == this->m");
-                        }
+                        BOOST_ASSERT_MSG(a.size() >= this->m,"step_radix2: expected a.size() == this->m");
+
+                        a.resize(this->m, value_type(0));
                     }
 
                     std::vector<value_type> c(big_m, value_type::zero());
@@ -109,14 +105,13 @@ namespace nil {
                     }
                 }
                 void inverse_fft(std::vector<value_type> &a) {
-                    if (a.size() != this->m)
-                        throw std::invalid_argument("step_radix2: expected a.size() == this->m");
+                    BOOST_ASSERT_MSG(a.size() == this->m, "step_radix2: expected a.size() == this->m");
 
                     std::vector<value_type> U0(a.begin(), a.begin() + big_m);
                     std::vector<value_type> U1(a.begin() + big_m, a.end());
 
-                    detail::basic_radix2_fft<FieldType>(U0, omega.squared().inversed());
-                    detail::basic_radix2_fft<FieldType>(U1, crypto3::math::unity_root<FieldType>(small_m).inversed());
+                    detail::basic_radix2_fft<FieldType>(U0, omega.squared().inversed()).get();
+                    detail::basic_radix2_fft<FieldType>(U1, crypto3::math::unity_root<FieldType>(small_m).inversed()).get();
 
                     const value_type U0_size_inv = value_type(big_m).inversed();
                     for (std::size_t i = 0; i < big_m; ++i) {

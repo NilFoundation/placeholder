@@ -368,7 +368,7 @@ namespace nil {
                  * polynomial C.
                  */
                 polynomial_view operator*=(polynomial_view other) {
-                    fft_multiplication(*this, *this, other);
+                    multiplication(*this, *this, other);
                     return *this;
                 }
 

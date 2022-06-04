@@ -59,22 +59,11 @@ namespace nil {
 
                     arithmetic_sequence = std::vector<value_type>(this->m);
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(this->m, smp::count);
-                    size_t element_per_cpu = this->m / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, this]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                arithmetic_sequence[i] = arithmetic_generator * value_type(i);
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::xx(this->m, smp::count, [this](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            arithmetic_sequence[i] = arithmetic_generator * value_type(i);
+                        }
+                    });
 
                     precomputation_sentinel = true;
 
@@ -115,25 +104,14 @@ namespace nil {
                         S[i] = (factorial * arithmetic_generator).inversed();
                     }
 
-                    multiplication(a, a, S);
+                    multiplication(a, a, S).get();
                     a.resize(this->m);
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(this->m, smp::count);
-                    size_t element_per_cpu = this->m / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, &a, &S]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                a[i] *= S[i].inversed();
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::xx(this->m, smp::count, [&a, &S](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            a[i] *= S[i].inversed();
+                        }
+                    });
 
                     return nil::actor::make_ready_future<>();
                 }
@@ -201,24 +179,13 @@ namespace nil {
                     value_type l_vanish = l[0];
                     value_type g_vanish = value_type::one();
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(this->m, smp::count);
-                    size_t element_per_cpu = this->m / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, t, &l, &l_vanish, &g_vanish, this]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                l[i] = t - this->arithmetic_sequence[i];
-                                l_vanish *= l[i];
-                                g_vanish *= -this->arithmetic_sequence[i];
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::xx(this->m, smp::count, [t, &l, &l_vanish, &g_vanish, this](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            l[i] = t - this->arithmetic_sequence[i];
+                            l_vanish *= l[i];
+                            g_vanish *= -this->arithmetic_sequence[i];
+                        }
+                    });
 
                     std::vector<value_type> w(this->m);
                     w[0] = g_vanish.inversed() * (this->arithmetic_generator.pow(this->m - 1));
@@ -269,25 +236,14 @@ namespace nil {
                         t[0] = -this->arithmetic_sequence[i];
                         t[1] = value_type::one();
 
-                        multiplication(x, x, t);
+                        multiplication(x, x, t).get();
                     }
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(this->m, smp::count);
-                    size_t element_per_cpu = this->m / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, &H, &x, coeff, this]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                H[i] += (x[i] * coeff);
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::xx(this->m, smp::count, [&H, &x, coeff, this](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            H[i] += (x[i] * coeff);
+                        }
+                    });
 
                     return nil::actor::make_ready_future<>();
                 }
@@ -295,22 +251,11 @@ namespace nil {
                     const value_type coset = this->arithmetic_generator; /* coset in arithmetic sequence? */
                     const value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(this->m, smp::count);
-                    size_t element_per_cpu = this->m / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, &P, Z_inverse_at_coset, this]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                P[i] *= Z_inverse_at_coset;
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::xx(this->m, smp::count, [&P, Z_inverse_at_coset, this](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            P[i] *= Z_inverse_at_coset;
+                        }
+                    });
 
                     return nil::actor::make_ready_future<>();
                 }

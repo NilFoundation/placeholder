@@ -62,32 +62,32 @@ namespace nil {
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n) : val(n), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynom size must be power of two");
+                    BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n), "DFS optimal polynom size must be power of two");
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n, const allocator_type& a) : val(n, a), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynom size must be power of two");
+                    BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n), "DFS optimal polynom size must be power of two");
                 }
 
                 polynomial_dfs(size_t d, size_type n, const value_type& x) : val(n, x), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynom size must be power of two");
+                    BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n), "DFS optimal polynom size must be power of two");
                 }
 
                 polynomial_dfs(size_t d, size_type n, const value_type& x, const allocator_type& a) :
                     val(n, x, a), _d(d) {
-                    BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynom size must be power of two");
+                    BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n), "DFS optimal polynom size must be power of two");
                 }
 
                 template<typename InputIterator>
                 polynomial_dfs(size_t d, InputIterator first, InputIterator last) : val(first, last), _d(d) {
-                    BOOST_ASSERT_MSG(std::distance(first, last) == detail::power_of_two(std::distance(first, last)),
+                    BOOST_ASSERT_MSG(std::distance(first, last) == crypto3::math::detail::power_of_two(std::distance(first, last)),
                                      "DFS optimal polynom size must be power of two");
                 }
 
                 template<typename InputIterator>
                 polynomial_dfs(size_t d, InputIterator first, InputIterator last, const allocator_type& a) :
                     val(first, last, a), _d(d) {
-                    BOOST_ASSERT_MSG(std::distance(first, last) == detail::power_of_two(std::distance(first, last)),
+                    BOOST_ASSERT_MSG(std::distance(first, last) == crypto3::math::detail::power_of_two(std::distance(first, last)),
                                      "DFS optimal polynom size must be power of two");
                 }
 
@@ -104,7 +104,7 @@ namespace nil {
 
                 polynomial_dfs(size_t d, std::initializer_list<value_type> il, const allocator_type& a) :
                     val(il, a), _d(d) {
-                    BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
+                    BOOST_ASSERT_MSG(val.size() == crypto3::math::detail::power_of_two(val.size()),
                                      "DFS optimal polynom size must be power of two");
                 }
                 // TODO: add constructor with omega
@@ -119,12 +119,12 @@ namespace nil {
                 }
 
                 polynomial_dfs(size_t d, const container_type& c) : val(c), _d(d) {
-                    BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
+                    BOOST_ASSERT_MSG(val.size() == crypto3::math::detail::power_of_two(val.size()),
                                      "DFS optimal polynom size must be power of two");
                 }
 
                 polynomial_dfs(size_t d, container_type&& c) : val(c), _d(d) {
-                    BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
+                    BOOST_ASSERT_MSG(val.size() == crypto3::math::detail::power_of_two(val.size()),
                                      "DFS optimal polynom size must be power of two");
                 }
 
@@ -342,24 +342,28 @@ namespace nil {
                     val.clear();
                 }
 
-                void resize(size_type _sz) {
+                future<> resize(size_type _sz) {
                     BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
                     typedef typename value_type::field_type FieldType;
 
                     value_type omega = crypto3::math::unity_root<FieldType>(this->size());
 
-                    detail::basic_radix2_fft<FieldType>(val, omega.inversed());
+                    detail::basic_radix2_fft<FieldType>(val, omega.inversed()).get();
 
                     const value_type sconst = value_type(this->size()).inversed();
-                    std::transform(val.begin(),
-                                   val.end(),
-                                   val.begin(),
-                                   std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
+
+                    detail::xx(this->size(), smp::count, [this, sconst](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            val[i] *= sconst;
+                        }
+                    });
 
                     value_type omega_new = crypto3::math::unity_root<FieldType>(_sz);
                     val.resize(_sz);
 
-                    detail::basic_radix2_fft<FieldType>(val, omega_new);
+                    detail::basic_radix2_fft<FieldType>(val, omega_new).get();
+
+                    return make_ready_future<>();
                 }
 
                 //                void resize(size_type _sz, const_reference _x) {
@@ -411,19 +415,35 @@ namespace nil {
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(this->size());
-                        std::transform(tmp.begin(), tmp.end(), result.begin(), result.begin(),
-                                       std::plus<FieldValueType>());
+                        tmp.resize(this->size()).get();
+                        detail::xx(result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] += tmp[i];
+                            }
+                        });
+//                        std::transform(tmp.begin(), tmp.end(), result.begin(), result.begin(),
+//                                       std::plus<FieldValueType>());
                         return result;
                     }
-                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
-                                   std::plus<FieldValueType>());
+//                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
+//                                   std::plus<FieldValueType>());
+                    detail::xx(result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] += other[i];
+                        }
+                    });
+
                     return result;
                 }
 
                 polynomial_dfs operator-() const {
                     polynomial_dfs result(this->_d, this->begin(), this->end());
-                    std::transform(this->begin(), this->end(), result.begin(), std::negate<FieldValueType>());
+                    detail::xx(result.size(), smp::count, [&result](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] = -result[i];
+                        }
+                    });
+//                    std::transform(this->begin(), this->end(), result.begin(), std::negate<FieldValueType>());
                     return result;
                 }
 
@@ -438,13 +458,23 @@ namespace nil {
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(this->size());
-                        std::transform(result.begin(), result.end(), tmp.begin(), result.begin(),
-                                       std::minus<FieldValueType>());
+                        tmp.resize(this->size()).get();
+                        detail::xx(result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] -= tmp[i];
+                            }
+                        });
+//                        std::transform(result.begin(), result.end(), tmp.begin(), result.begin(),
+//                                       std::minus<FieldValueType>());
                         return result;
                     }
-                    std::transform(result.begin(), result.end(), other.begin(), result.begin(),
-                                   std::minus<FieldValueType>());
+//                    std::transform(result.begin(), result.end(), other.begin(), result.begin(),
+//                                   std::minus<FieldValueType>());
+                    detail::xx(result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] -= other[i];
+                        }
+                    });
                     return result;
                 }
 
@@ -462,12 +492,22 @@ namespace nil {
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
-                        std::transform(result.begin(), result.end(), tmp.begin(), result.begin(),
-                                       std::multiplies<FieldValueType>());
+//                        std::transform(result.begin(), result.end(), tmp.begin(), result.begin(),
+//                                       std::multiplies<FieldValueType>());
+                        detail::xx(result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] = result[i] * tmp[i];
+                            }
+                        });
                         return result;
                     }
-                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
-                                   std::multiplies<FieldValueType>());
+//                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
+//                                   std::multiplies<FieldValueType>());
+                    detail::xx(result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] = result[i] * other[i];
+                        }
+                    });
                     return result;
                 }
 
@@ -524,7 +564,7 @@ namespace nil {
 
                     typedef typename value_type::field_type FieldType;
                     size_t n = this->size();
-                    value_type omega = unity_root<FieldType>(n);
+                    value_type omega = crypto3::math::unity_root<FieldType>(n);
                     q.resize(n);
                     detail::basic_radix2_fft<FieldType>(q, omega);
                     return polynomial_dfs(new_s - 1, q);
@@ -575,7 +615,7 @@ namespace nil {
 
                     typedef typename value_type::field_type FieldType;
                     size_t n = this->size();
-                    value_type omega = unity_root<FieldType>(n);
+                    value_type omega = crypto3::math::unity_root<FieldType>(n);
                     r.resize(n);
                     detail::basic_radix2_fft<FieldType>(r, omega);
                     return polynomial_dfs(r_deg, r);
@@ -583,8 +623,8 @@ namespace nil {
 
                 void from_coefficients(const container_type &tmp) {
                     typedef typename value_type::field_type FieldType;
-                    size_t n = detail::power_of_two(tmp.size());
-                    value_type omega = unity_root<FieldType>(n);
+                    size_t n = crypto3::math::detail::power_of_two(tmp.size());
+                    value_type omega = crypto3::math::unity_root<FieldType>(n);
                     _d = tmp.size() - 1;
                     val.assign(tmp.begin(), tmp.end());
                     val.resize(n, FieldValueType::zero());
@@ -594,7 +634,7 @@ namespace nil {
                 std::vector<FieldValueType> coefficients() const {
                     typedef typename value_type::field_type FieldType;
 
-                    value_type omega = unity_root<FieldType>(this->size());
+                    value_type omega = crypto3::math::unity_root<FieldType>(this->size());
                     std::vector<FieldValueType> tmp(this->begin(), this->end());
 
                     detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
@@ -614,7 +654,7 @@ namespace nil {
             };
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator+(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
@@ -622,7 +662,7 @@ namespace nil {
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator+(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
 
@@ -630,7 +670,7 @@ namespace nil {
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator-(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
@@ -638,7 +678,7 @@ namespace nil {
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator-(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
 
@@ -646,7 +686,7 @@ namespace nil {
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator*(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
@@ -654,7 +694,7 @@ namespace nil {
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator*(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
 
@@ -662,7 +702,7 @@ namespace nil {
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator/(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
@@ -670,7 +710,7 @@ namespace nil {
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+                     typename = typename std::enable_if<crypto3::math::detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator/(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
 

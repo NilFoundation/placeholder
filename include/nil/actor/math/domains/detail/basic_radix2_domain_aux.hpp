@@ -52,12 +52,7 @@ namespace nil {
                     std::size_t num_cpus = nil::actor::smp::count;
 
                     const std::size_t log_cpus =
-                        ((num_cpus & (num_cpus - 1)) == 0 ? log2(num_cpus) : log2(num_cpus) - 1);
-
-                    if (log_cpus == 0) {
-                        crypto3::math::detail::basic_radix2_fft<FieldType>(a, omega);
-                        return make_ready_future<>();
-                    }
+                        (num_cpus & (num_cpus - 1)) == 0 ? log2(num_cpus) : log2(num_cpus) - 1;
 
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;
@@ -72,13 +67,14 @@ namespace nil {
 
                     BOOST_ASSERT_MSG(m == 1ul << log_m, "Expected m == 1ul<<log_m");
 
-                    if (log_m < log_cpus) {
+                    if (log_m < log_cpus || log_cpus == 0) {
                         crypto3::math::detail::basic_radix2_fft<FieldType>(a, omega);
                         return make_ready_future<>();
                     }
 
                     std::vector<std::vector<value_type>> tmp(
                         num_cpus, std::vector<value_type>(1ul << (log_m - log_cpus), value_type::zero()));
+
 
                     std::vector<future<>> fut;
 
