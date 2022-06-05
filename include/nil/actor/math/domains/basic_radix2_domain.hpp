@@ -51,12 +51,14 @@ namespace nil {
                 value_type omega;
 
                 basic_radix2_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
-                    BOOST_ASSERT_MSG(m > 1, "basic_radix2(): expected m > 1");
+                    if (m <= 1)
+                        throw std::invalid_argument("basic_radix2(): expected m > 1");
 
                     if (!std::is_same<value_type, std::complex<double>>::value) {
                         const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                        BOOST_ASSERT_MSG(logm <= (fields::arithmetic_params<FieldType>::s),
-                                         "basic_radix2(): expected logm <= fields::arithmetic_params<FieldType>::s");
+                        if (logm > (fields::arithmetic_params<FieldType>::s))
+                            throw std::invalid_argument(
+                                "basic_radix2(): expected logm <= fields::arithmetic_params<FieldType>::s");
                     }
 
                     omega = crypto3::math::unity_root<FieldType>(m);
@@ -64,9 +66,11 @@ namespace nil {
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        BOOST_ASSERT_MSG(a.size() >= this->m, "basic_radix2: expected a.size() == this->m");
-
-                        a.resize(this->m, value_type(0));
+                        if (a.size() < this->m) {
+                            a.resize(this->m, value_type(0));
+                        } else {
+                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                        }
                     }
 
                     detail::basic_radix2_fft<FieldType>(a, omega);
@@ -74,9 +78,11 @@ namespace nil {
 
                 future<> inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        BOOST_ASSERT_MSG(a.size() >= this->m, "basic_radix2: expected a.size() == this->m");
-
-                        a.resize(this->m, value_type(0));
+                        if (a.size() < this->m) {
+                            a.resize(this->m, value_type(0));
+                        } else {
+                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                        }
                     }
 
                     detail::basic_radix2_fft<FieldType>(a, omega.inversed());
@@ -105,7 +111,8 @@ namespace nil {
                 }
 
                 void add_poly_z(const value_type &coeff, std::vector<value_type> &H) {
-                    BOOST_ASSERT_MSG(H.size() == this->m + 1, "basic_radix2: expected H.size() == this->m+1");
+                    if (H.size() != this->m + 1)
+                        throw std::invalid_argument("basic_radix2: expected H.size() == this->m+1");
 
                     H[this->m] += coeff;
                     H[0] -= coeff;

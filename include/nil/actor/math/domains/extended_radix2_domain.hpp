@@ -57,9 +57,9 @@ namespace nil {
 
                     if (!std::is_same<value_type, std::complex<double>>::value) {
                         const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                        BOOST_ASSERT_MSG(
-                            logm == (fields::arithmetic_params<FieldType>::s + 1),
-                            "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
+                        if (logm != (fields::arithmetic_params<FieldType>::s + 1))
+                            throw std::invalid_argument(
+                                "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
                     }
 
                     small_m = m / 2;
@@ -71,9 +71,11 @@ namespace nil {
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        BOOST_ASSERT_MSG(a.size() >= this->m, "extended_radix2: expected a.size() == this->m");
-
-                        a.resize(this->m, value_type(0));
+                        if (a.size() < this->m) {
+                            a.resize(this->m, value_type(0));
+                        } else {
+                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                        }
                     }
 
                     std::vector<value_type> a0(small_m, value_type::zero());
@@ -100,9 +102,11 @@ namespace nil {
 
                 void inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        BOOST_ASSERT_MSG(a.size() >= this->m, "extended_radix2: expected a.size() == this->m");
-
-                        a.resize(this->m, value_type(0));
+                        if (a.size() < this->m) {
+                            a.resize(this->m, value_type(0));
+                        } else {
+                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                        }
                     }
 
                     // note: this is not in-place

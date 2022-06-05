@@ -72,19 +72,27 @@ namespace nil {
                 }
 
                 geometric_sequence_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
-                    BOOST_ASSERT_MSG(m > 1, "geometric(): expected m > 1");
-                    BOOST_ASSERT_MSG(!value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero(), "geometric(): expected "
-                                     "value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero() != "
-                                     "true");
+                    if (m <= 1) {
+                        throw std::invalid_argument("geometric(): expected m > 1");
+                    }
+
+                    if (value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero()) {
+                        throw std::invalid_argument(
+                            "geometric(): expected "
+                            "value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero() != "
+                            "true");
+                    }
 
                     precomputation_sentinel = false;
                 }
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        BOOST_ASSERT_MSG(a.size() >= this->m, "geometric: expected a.size() == this->m");
-
-                        a.resize(this->m, value_type(0));
+                        if (a.size() < this->m) {
+                            a.resize(this->m, value_type(0));
+                        } else {
+                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                        }
                     }
 
                     if (!precomputation_sentinel)
@@ -116,9 +124,11 @@ namespace nil {
                 }
                 void inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        BOOST_ASSERT_MSG(a.size() >= this->m, "geometric: expected a.size() == this->m");
-
-                        a.resize(this->m, value_type(0));
+                        if (a.size() < this->m) {
+                            a.resize(this->m, value_type(0));
+                        } else {
+                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                        }
                     }
 
                     if (!precomputation_sentinel)
@@ -231,7 +241,8 @@ namespace nil {
                     return Z;
                 }
                 void add_poly_z(const value_type &coeff, std::vector<value_type> &H) {
-                    BOOST_ASSERT_MSG(H.size() == this->m + 1, "geometric: expected H.size() == this->m+1");
+                    if (H.size() != this->m + 1)
+                        throw std::invalid_argument("geometric: expected H.size() == this->m+1");
 
                     if (!precomputation_sentinel)
                         do_precomputation();

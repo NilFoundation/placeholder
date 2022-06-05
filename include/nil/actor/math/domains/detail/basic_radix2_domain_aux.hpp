@@ -64,7 +64,8 @@ namespace nil {
                     const std::size_t m = a.size();
                     const std::size_t log_m = log2(m);
 
-                    BOOST_ASSERT_MSG(m == 1ul << log_m, "Expected m == 1ul<<log_m");
+                    if (m != (1u << log_m))
+                        throw std::invalid_argument("expected m == (1u << log_m)");
 
                     if (log_m < log_cpus || log_cpus == 0) {
                         crypto3::math::detail::basic_radix2_fft<FieldType>(a, omega);
@@ -133,8 +134,8 @@ namespace nil {
                         return std::vector<value_type>(1, value_type::one());
                     }
 
-                    BOOST_ASSERT_MSG(m == (1u << static_cast<std::size_t>(std::ceil(std::log2(m)))),
-                                     "Expected m == (1u << log2(m))");
+                    if (m != (1u << static_cast<std::size_t>(std::ceil(std::log2(m)))))
+                        throw std::invalid_argument("expected m == (1u << log2(m))");
 
                     const value_type omega = crypto3::math::unity_root<FieldType>(m);
 
