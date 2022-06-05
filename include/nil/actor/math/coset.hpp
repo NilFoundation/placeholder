@@ -41,7 +41,7 @@ namespace nil {
                     u *= g;
                 }
             }
-        }    // namespace fft
+        }    // namespace math
     }        // namespace actor
 }    // namespace nil
 

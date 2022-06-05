@@ -59,9 +59,11 @@ namespace nil {
                     big_m = 1ul << (static_cast<std::size_t>(std::ceil(std::log2(m))) - 1);
                     small_m = m - big_m;
 
-                    BOOST_ASSERT_MSG(small_m != 1ul << static_cast<std::size_t>(std::ceil(std::log2(small_m))), "step_radix2(): expected small_m == 1ul<<log2(small_m)");
+                    BOOST_ASSERT_MSG(small_m != 1ul << static_cast<std::size_t>(std::ceil(std::log2(small_m))),
+                                     "step_radix2(): expected small_m == 1ul<<log2(small_m)");
 
-                    omega = crypto3::math::unity_root<FieldType>(1ul << static_cast<std::size_t>(std::ceil(std::log2(m))));
+                    omega =
+                        crypto3::math::unity_root<FieldType>(1ul << static_cast<std::size_t>(std::ceil(std::log2(m))));
 
                     big_omega = omega.squared();
                     small_omega = crypto3::math::unity_root<FieldType>(small_m);
@@ -69,7 +71,7 @@ namespace nil {
 
                 void fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
-                        BOOST_ASSERT_MSG(a.size() >= this->m,"step_radix2: expected a.size() == this->m");
+                        BOOST_ASSERT_MSG(a.size() >= this->m, "step_radix2: expected a.size() == this->m");
 
                         a.resize(this->m, value_type(0));
                     }
@@ -111,7 +113,8 @@ namespace nil {
                     std::vector<value_type> U1(a.begin() + big_m, a.end());
 
                     detail::basic_radix2_fft<FieldType>(U0, omega.squared().inversed()).get();
-                    detail::basic_radix2_fft<FieldType>(U1, crypto3::math::unity_root<FieldType>(small_m).inversed()).get();
+                    detail::basic_radix2_fft<FieldType>(U1, crypto3::math::unity_root<FieldType>(small_m).inversed())
+                        .get();
 
                     const value_type U0_size_inv = value_type(big_m).inversed();
                     for (std::size_t i = 0; i < big_m; ++i) {

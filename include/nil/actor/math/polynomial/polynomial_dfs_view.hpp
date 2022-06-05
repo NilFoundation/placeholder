@@ -57,7 +57,7 @@ namespace nil {
                 typedef typename container_type::reverse_iterator reverse_iterator;
                 typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
-                std::vector<element_type> &it;
+                std::vector<element_type>& it;
                 size_t _d;
 
                 polynomial_dfs_view(size_t d, std::vector<element_type>& vec) : it(vec), _d(d) {
@@ -295,7 +295,8 @@ namespace nil {
                                                 for (std::size_t i = begin; i < end; i++) {
                                                     this->it[i] *= sconst;
                                                 }
-                                            }).get();
+                                            })
+                        .get();
                     value_type omega_new = crypto3::math::unity_root<FieldType>(_sz);
                     it.resize(_sz);
                     detail::basic_radix2_fft<FieldType>(it, omega_new).get();
@@ -372,24 +373,22 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs_view tmp(other);
                         tmp.resize(this->size());
-//                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(),
-//                                       std::plus<FieldValueType>());
                         detail::block_execution(this->size(), smp::count,
                                                 [this, &tmp](std::size_t begin, std::size_t end) {
                                                     for (std::size_t i = begin; i < end; i++) {
                                                         this->it[i] += tmp[i];
                                                     }
-                                                }).get();
+                                                })
+                            .get();
                         return *this;
                     }
-//                    std::transform(other.begin(), other.end(), this->begin(), this->begin(),
-//                                   std::plus<FieldValueType>());
                     detail::block_execution(this->size(), smp::count,
                                             [this, &other](std::size_t begin, std::size_t end) {
                                                 for (std::size_t i = begin; i < end; i++) {
                                                     this->it[i] += other[i];
                                                 }
-                                            }).get();
+                                            })
+                        .get();
                     return *this;
                 }
 
@@ -399,7 +398,6 @@ namespace nil {
                             this->it[i] = -this->it[i];
                         }
                     }).get();
-//                    std::transform(this->begin(), this->end(), this->begin(), std::negate<FieldValueType>());
                 }
 
                 /**
@@ -419,19 +417,17 @@ namespace nil {
                                                     for (std::size_t i = begin; i < end; i++) {
                                                         this->it[i] -= tmp[i];
                                                     }
-                                                }).get();
-//                        std::transform(this->begin(), this->end(), tmp.begin(), this->begin(),
-//                                       std::minus<FieldValueType>());
+                                                })
+                            .get();
                         return *this;
                     }
-//                    std::transform(this->begin(), this->end(), other.begin(), this->begin(),
-//                                   std::minus<FieldValueType>());
                     detail::block_execution(this->size(), smp::count,
                                             [this, &other](std::size_t begin, std::size_t end) {
                                                 for (std::size_t i = begin; i < end; i++) {
                                                     this->it[i] -= other[i];
                                                 }
-                                            }).get();
+                                            })
+                        .get();
                     return *this;
                 }
 
@@ -441,32 +437,30 @@ namespace nil {
                  */
                 polynomial_dfs_view operator*=(const polynomial_dfs_view& other) {
                     this->_d = this->_d + other._d;
-                    size_t polynomial_s =
-                        crypto3::math::detail::power_of_two(std::max({this->size(), other.size(), this->_d + other._d + 1}));
+                    size_t polynomial_s = crypto3::math::detail::power_of_two(
+                        std::max({this->size(), other.size(), this->_d + other._d + 1}));
                     if (this->size() < polynomial_s) {
                         this->resize(polynomial_s);
                     }
                     if (other.size() < polynomial_s) {
                         polynomial_dfs_view tmp(other);
                         tmp.resize(polynomial_s);
-//                        std::transform(this->begin(), this->end(), tmp.begin(), this->begin(),
-//                                       std::multiplies<FieldValueType>());
                         detail::block_execution(this->size(), smp::count,
                                                 [this, &tmp](std::size_t begin, std::size_t end) {
                                                     for (std::size_t i = begin; i < end; i++) {
                                                         this->it[i] *= tmp[i];
                                                     }
-                                                }).get();
+                                                })
+                            .get();
                         return *this;
                     }
-//                    std::transform(other.begin(), other.end(), this->begin(), this->begin(),
-//                                   std::multiplies<FieldValueType>());
                     detail::block_execution(this->size(), smp::count,
                                             [this, &other](std::size_t begin, std::size_t end) {
                                                 for (std::size_t i = begin; i < end; i++) {
                                                     this->it[i] *= other[i];
                                                 }
-                                            }).get();
+                                            })
+                        .get();
                     return *this;
                 }
 
@@ -587,7 +581,7 @@ namespace nil {
                     return *this;
                 }
 
-                void from_coefficients(const container_type &tmp) {
+                void from_coefficients(const container_type& tmp) {
                     typedef typename value_type::field_type FieldType;
                     size_t n = crypto3::math::detail::power_of_two(tmp.size());
                     value_type omega = crypto3::math::unity_root<FieldType>(n);
@@ -609,11 +603,8 @@ namespace nil {
                                                 for (std::size_t i = begin; i < end; i++) {
                                                     tmp[i] *= sconst;
                                                 }
-                                            }).get();
-//                    std::transform(tmp.begin(),
-//                                   tmp.end(),
-//                                   tmp.begin(),
-//                                   std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
+                                            })
+                        .get();
                     size_t r_size = tmp.size();
                     while (r_size > 0 && tmp[r_size - 1] == FieldValueType(0)) {
                         --r_size;

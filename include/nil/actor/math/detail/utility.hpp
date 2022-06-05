@@ -53,9 +53,9 @@ namespace nil {
 
                     return make_ready_future<>();
                 }
-            }
-        }    // namespace math
-    }        // namespace actor
+            }    // namespace detail
+        }        // namespace math
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // ACTOR_MATH_DETAIL_HPP

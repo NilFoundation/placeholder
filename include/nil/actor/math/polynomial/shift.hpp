@@ -34,9 +34,8 @@ namespace nil {
     namespace actor {
         namespace math {
             template<typename FieldValueType>
-            static inline polynomial<FieldValueType>
-                polynomial_shift(const polynomial<FieldValueType> &f,
-                                 const FieldValueType &x) {
+            static inline polynomial<FieldValueType> polynomial_shift(const polynomial<FieldValueType> &f,
+                                                                      const FieldValueType &x) {
                 polynomial<FieldValueType> f_shifted(f);
                 FieldValueType x_power = x;
                 for (int i = 1; i < f.size(); i++) {

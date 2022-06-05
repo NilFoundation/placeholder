@@ -30,13 +30,11 @@
 #include <algorithm>
 #include <vector>
 
-
 #include <nil/actor/math/domains/detail/basic_radix2_domain_aux.hpp>
 #include <nil/actor/math/detail/utility.hpp>
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
-
 
 namespace nil {
     namespace actor {

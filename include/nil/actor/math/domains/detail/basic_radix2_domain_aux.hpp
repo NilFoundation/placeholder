@@ -51,8 +51,7 @@ namespace nil {
 
                     std::size_t num_cpus = nil::actor::smp::count;
 
-                    const std::size_t log_cpus =
-                        (num_cpus & (num_cpus - 1)) == 0 ? log2(num_cpus) : log2(num_cpus) - 1;
+                    const std::size_t log_cpus = (num_cpus & (num_cpus - 1)) == 0 ? log2(num_cpus) : log2(num_cpus) - 1;
 
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;
@@ -74,7 +73,6 @@ namespace nil {
 
                     std::vector<std::vector<value_type>> tmp(
                         num_cpus, std::vector<value_type>(1ul << (log_m - log_cpus), value_type::zero()));
-
 
                     std::vector<future<>> fut;
 

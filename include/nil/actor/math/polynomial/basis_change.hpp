@@ -90,7 +90,8 @@ namespace nil {
              * 12 and 14.
              */
             template<typename FieldType, typename Range>
-            void monomial_to_newton_basis(Range &a,
+            void
+                monomial_to_newton_basis(Range &a,
                                          const std::vector<std::vector<std::vector<typename FieldType::value_type>>> &T,
                                          size_t n) {
 

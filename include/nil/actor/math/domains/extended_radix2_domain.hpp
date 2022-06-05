@@ -57,7 +57,9 @@ namespace nil {
 
                     if (!std::is_same<value_type, std::complex<double>>::value) {
                         const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
-                        BOOST_ASSERT_MSG(logm == (fields::arithmetic_params<FieldType>::s + 1), "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
+                        BOOST_ASSERT_MSG(
+                            logm == (fields::arithmetic_params<FieldType>::s + 1),
+                            "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
                     }
 
                     small_m = m / 2;

@@ -88,8 +88,7 @@ namespace nil {
                 polynomial(std::initializer_list<value_type> il, const allocator_type& a) : val(il, a) {
                 }
 
-                polynomial(polynomial&& x) BOOST_NOEXCEPT
-                    (std::is_nothrow_move_constructible<allocator_type>::value) :
+                polynomial(polynomial&& x) BOOST_NOEXCEPT(std::is_nothrow_move_constructible<allocator_type>::value) :
                     val(x.val) {
                 }
 
@@ -100,12 +99,10 @@ namespace nil {
                     this->operator[](power) = value;
                 }
 
-                explicit polynomial(const container_type &c) : val(c) {
-
+                explicit polynomial(const container_type& c) : val(c) {
                 }
 
-                explicit polynomial(container_type &&c) : val(c) {
-
+                explicit polynomial(container_type&& c) : val(c) {
                 }
 
                 polynomial& operator=(const polynomial& x) {
@@ -425,7 +422,7 @@ namespace nil {
                  * Output: Polynomial Q, such that A = (Q * B) + R.
                  */
                 polynomial operator/(const polynomial& other) const {
-                    polynomial r,q;
+                    polynomial r, q;
                     division(q, r, *this, other);
                     return q;
                 }
@@ -436,76 +433,84 @@ namespace nil {
                  * Output: Polynomial R, such that A = (Q * B) + R.
                  */
                 polynomial operator%(const polynomial& other) const {
-                    polynomial r,q;
+                    polynomial r, q;
                     division(q, r, *this, other);
                     return r;
                 }
             };
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator+(const polynomial<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
                 return A + polynomial<FieldValueType>(B);
             }
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator+(const FieldValueType& A,
                                                             const polynomial<FieldValueType, Allocator>& B) {
 
                 return polynomial<FieldValueType>(A) + B;
             }
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator-(const polynomial<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
                 return A - polynomial<FieldValueType>(B);
             }
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator-(const FieldValueType& A,
                                                             const polynomial<FieldValueType, Allocator>& B) {
 
                 return polynomial<FieldValueType>(A) - B;
             }
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator*(const polynomial<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
                 return A * polynomial<FieldValueType>(B);
             }
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator*(const FieldValueType& A,
                                                             const polynomial<FieldValueType, Allocator>& B) {
 
                 return polynomial<FieldValueType>(A) * B;
             }
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator/(const polynomial<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
 
                 return A / polynomial<FieldValueType>(B);
             }
 
-            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
-                     typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
+            template<
+                typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                typename = typename std::enable_if<crypto3::algebra::is_field_element<FieldValueType>::value>::type>
             polynomial<FieldValueType, Allocator> operator/(const FieldValueType& A,
                                                             const polynomial<FieldValueType, Allocator>& B) {
 
                 return polynomial<FieldValueType>(A) / B;
             }
-        }        // namespace actor
-    }            // namespace nil
-}
+        }    // namespace math
+    }        // namespace actor
+}    // namespace nil
 #endif    // ACTOR_MATH_POLYNOMIAL_POLYNOM_HPP

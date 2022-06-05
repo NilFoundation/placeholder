@@ -184,18 +184,18 @@ namespace nil {
                 }
 
                 /**
-                 * Perform the multiplication of two polynomials, polynomial A * polynomial B, using Kronecker Substitution,
-                 * and stores result in polynomial C.
+                 * Perform the multiplication of two polynomials, polynomial A * polynomial B, using Kronecker
+                 * Substitution, and stores result in polynomial C.
                  */
                 template<typename FieldType>
                 void multiplication_on_kronecker(std::vector<typename FieldType::value_type>& c,
-                                                             const std::vector<typename FieldType::value_type>& a,
-                                                             const std::vector<typename FieldType::value_type>& b) {
+                                                 const std::vector<typename FieldType::value_type>& a,
+                                                 const std::vector<typename FieldType::value_type>& b) {
                     kronecker_substitution<FieldType>(c, a, b);
                 }
-            }    // namespace polynomial    
-        }    // namespace fft
-    }        // namespace actor
+            }    // namespace polynomial
+        }        // namespace math
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // ALGEBRA_FFT_KRONECKER_SUBSTITUTION_HPP
