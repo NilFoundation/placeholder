@@ -287,25 +287,18 @@ namespace nil {
                     BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
                     typedef typename value_type::field_type FieldType;
 
-                    value_type omega = unity_root<FieldType>(this->size());
-#ifdef MULTICORE
-                    detail::basic_parallel_radix2_fft<FieldType>(val, omega.inversed());
-#else
-                    detail::basic_serial_radix2_fft<FieldType>(it, omega.inversed());
-#endif
+                    value_type omega = crypto3::math::unity_root<FieldType>(this->size());
+                    detail::basic_radix2_fft<FieldType>(it, omega.inversed()).get();
                     const value_type sconst = value_type(this->size()).inversed();
-                    std::transform(it.begin(),
-                                   it.end(),
-                                   it.begin(),
-                                   std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
-
-                    value_type omega_new = unity_root<FieldType>(_sz);
+                    detail::block_execution(this->size(), smp::count,
+                                            [this, sconst](std::size_t begin, std::size_t end) {
+                                                for (std::size_t i = begin; i < end; i++) {
+                                                    this->it[i] *= sconst;
+                                                }
+                                            }).get();
+                    value_type omega_new = crypto3::math::unity_root<FieldType>(_sz);
                     it.resize(_sz);
-#ifdef MULTICORE
-                    detail::basic_parallel_radix2_fft<FieldType>(val, omega_new);
-#else
-                    detail::basic_serial_radix2_fft<FieldType>(it, omega_new);
-#endif
+                    detail::basic_radix2_fft<FieldType>(it, omega_new).get();
                 }
 
                 //                void resize(size_type _sz, const_reference _x) {
@@ -379,17 +372,34 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs_view tmp(other);
                         tmp.resize(this->size());
-                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(),
-                                       std::plus<FieldValueType>());
+//                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(),
+//                                       std::plus<FieldValueType>());
+                        detail::block_execution(this->size(), smp::count,
+                                                [this, &tmp](std::size_t begin, std::size_t end) {
+                                                    for (std::size_t i = begin; i < end; i++) {
+                                                        this->it[i] += tmp[i];
+                                                    }
+                                                }).get();
                         return *this;
                     }
-                    std::transform(other.begin(), other.end(), this->begin(), this->begin(),
-                                   std::plus<FieldValueType>());
+//                    std::transform(other.begin(), other.end(), this->begin(), this->begin(),
+//                                   std::plus<FieldValueType>());
+                    detail::block_execution(this->size(), smp::count,
+                                            [this, &other](std::size_t begin, std::size_t end) {
+                                                for (std::size_t i = begin; i < end; i++) {
+                                                    this->it[i] += other[i];
+                                                }
+                                            }).get();
                     return *this;
                 }
 
                 void neg() const {
-                    std::transform(this->begin(), this->end(), this->begin(), std::negate<FieldValueType>());
+                    detail::block_execution(this->size(), smp::count, [this](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            this->it[i] = -this->it[i];
+                        }
+                    }).get();
+//                    std::transform(this->begin(), this->end(), this->begin(), std::negate<FieldValueType>());
                 }
 
                 /**
@@ -404,12 +414,24 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs_view tmp(other);
                         tmp.resize(this->size());
-                        std::transform(this->begin(), this->end(), tmp.begin(), this->begin(),
-                                       std::minus<FieldValueType>());
+                        detail::block_execution(this->size(), smp::count,
+                                                [this, &tmp](std::size_t begin, std::size_t end) {
+                                                    for (std::size_t i = begin; i < end; i++) {
+                                                        this->it[i] -= tmp[i];
+                                                    }
+                                                }).get();
+//                        std::transform(this->begin(), this->end(), tmp.begin(), this->begin(),
+//                                       std::minus<FieldValueType>());
                         return *this;
                     }
-                    std::transform(this->begin(), this->end(), other.begin(), this->begin(),
-                                   std::minus<FieldValueType>());
+//                    std::transform(this->begin(), this->end(), other.begin(), this->begin(),
+//                                   std::minus<FieldValueType>());
+                    detail::block_execution(this->size(), smp::count,
+                                            [this, &other](std::size_t begin, std::size_t end) {
+                                                for (std::size_t i = begin; i < end; i++) {
+                                                    this->it[i] -= other[i];
+                                                }
+                                            }).get();
                     return *this;
                 }
 
@@ -420,19 +442,31 @@ namespace nil {
                 polynomial_dfs_view operator*=(const polynomial_dfs_view& other) {
                     this->_d = this->_d + other._d;
                     size_t polynomial_s =
-                        detail::power_of_two(std::max({this->size(), other.size(), this->_d + other._d + 1}));
+                        crypto3::math::detail::power_of_two(std::max({this->size(), other.size(), this->_d + other._d + 1}));
                     if (this->size() < polynomial_s) {
                         this->resize(polynomial_s);
                     }
                     if (other.size() < polynomial_s) {
                         polynomial_dfs_view tmp(other);
                         tmp.resize(polynomial_s);
-                        std::transform(this->begin(), this->end(), tmp.begin(), this->begin(),
-                                       std::multiplies<FieldValueType>());
+//                        std::transform(this->begin(), this->end(), tmp.begin(), this->begin(),
+//                                       std::multiplies<FieldValueType>());
+                        detail::block_execution(this->size(), smp::count,
+                                                [this, &tmp](std::size_t begin, std::size_t end) {
+                                                    for (std::size_t i = begin; i < end; i++) {
+                                                        this->it[i] *= tmp[i];
+                                                    }
+                                                }).get();
                         return *this;
                     }
-                    std::transform(other.begin(), other.end(), this->begin(), this->begin(),
-                                   std::multiplies<FieldValueType>());
+//                    std::transform(other.begin(), other.end(), this->begin(), this->begin(),
+//                                   std::multiplies<FieldValueType>());
+                    detail::block_execution(this->size(), smp::count,
+                                            [this, &other](std::size_t begin, std::size_t end) {
+                                                for (std::size_t i = begin; i < end; i++) {
+                                                    this->it[i] *= other[i];
+                                                }
+                                            }).get();
                     return *this;
                 }
 
@@ -489,9 +523,9 @@ namespace nil {
 
                     typedef typename value_type::field_type FieldType;
                     size_t n = this->size();
-                    value_type omega = unity_root<FieldType>(n);
+                    value_type omega = crypto3::math::unity_root<FieldType>(n);
                     q.resize(n);
-                    detail::basic_serial_radix2_fft<FieldType>(q, omega);
+                    detail::basic_radix2_fft<FieldType>(q, omega).get();
                     this->_d = new_s - 1;
                     this->assign(q.begin(), q.end());
                     return *this;
@@ -545,9 +579,9 @@ namespace nil {
 
                     typedef typename value_type::field_type FieldType;
                     size_t n = this->size();
-                    value_type omega = unity_root<FieldType>(n);
+                    value_type omega = crypto3::math::unity_root<FieldType>(n);
                     r.resize(n);
-                    detail::basic_serial_radix2_fft<FieldType>(r, omega);
+                    detail::basic_radix2_fft<FieldType>(r, omega).get();
                     this->_d = r_deg;
                     this->assign(r.begin(), r.end());
                     return *this;
@@ -555,29 +589,31 @@ namespace nil {
 
                 void from_coefficients(const container_type &tmp) {
                     typedef typename value_type::field_type FieldType;
-                    size_t n = detail::power_of_two(tmp.size());
-                    value_type omega = unity_root<FieldType>(n);
+                    size_t n = crypto3::math::detail::power_of_two(tmp.size());
+                    value_type omega = crypto3::math::unity_root<FieldType>(n);
                     _d = tmp.size() - 1;
                     it.assign(tmp.begin(), tmp.end());
                     it.resize(n, FieldValueType::zero());
-                    detail::basic_serial_radix2_fft<FieldType>(it, omega);
+                    detail::basic_radix2_fft<FieldType>(it, omega).get();
                 }
 
                 std::vector<FieldValueType> coefficients() const {
                     typedef typename value_type::field_type FieldType;
 
-                    value_type omega = unity_root<FieldType>(this->size());
+                    value_type omega = crypto3::math::unity_root<FieldType>(this->size());
                     std::vector<FieldValueType> tmp(this->begin(), this->end());
-#ifdef MULTICORE
-                    detail::basic_parallel_radix2_fft<FieldType>(c, omega.inversed());
-#else
-                    detail::basic_serial_radix2_fft<FieldType>(tmp, omega.inversed());
-#endif
+                    detail::basic_radix2_fft<FieldType>(tmp, omega.inversed()).get();
                     const value_type sconst = value_type(this->size()).inversed();
-                    std::transform(tmp.begin(),
-                                   tmp.end(),
-                                   tmp.begin(),
-                                   std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
+                    detail::block_execution(this->size(), smp::count,
+                                            [&tmp, sconst](std::size_t begin, std::size_t end) {
+                                                for (std::size_t i = begin; i < end; i++) {
+                                                    tmp[i] *= sconst;
+                                                }
+                                            }).get();
+//                    std::transform(tmp.begin(),
+//                                   tmp.end(),
+//                                   tmp.begin(),
+//                                   std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
                     size_t r_size = tmp.size();
                     while (r_size > 0 && tmp[r_size - 1] == FieldValueType(0)) {
                         --r_size;

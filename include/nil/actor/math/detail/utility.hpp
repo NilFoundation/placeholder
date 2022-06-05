@@ -35,7 +35,7 @@ namespace nil {
         namespace math {
             namespace detail {
                 template<typename Func>
-                void xx(std::size_t elements_count, std::size_t smp_count, Func &&func) {
+                future<> block_execution(std::size_t elements_count, std::size_t smp_count, Func &&func) {
                     std::vector<future<>> fut;
                     std::size_t cpu_usage = std::min(elements_count, smp_count);
                     std::size_t element_per_cpu = elements_count / smp_count;
@@ -50,6 +50,8 @@ namespace nil {
                     }
 
                     when_all(fut.begin(), fut.end()).get();
+
+                    return make_ready_future<>();
                 }
             }
         }    // namespace math

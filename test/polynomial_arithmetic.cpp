@@ -27,9 +27,8 @@
 #include <vector>
 #include <cstdint>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 

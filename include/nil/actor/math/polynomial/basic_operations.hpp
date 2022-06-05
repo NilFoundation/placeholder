@@ -104,11 +104,11 @@ namespace nil {
                         std::copy(std::begin(b) + a_size, std::end(b), std::begin(c) + a_size);
                     }
 
-                    detail::xx(min_size, smp::count, [&c, &a, &b](std::size_t begin, std::size_t end) {
+                    detail::block_execution(min_size, smp::count, [&c, &a, &b](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
                             c[i] = a[i] + b[i];
                         }
-                    });
+                    }).get();
                 }
 
                 condense(c);
@@ -143,11 +143,11 @@ namespace nil {
                         std::transform(b.begin() + a_size, b.end(), c.begin() + a_size, std::negate<value_type>());
                     }
 
-                    detail::xx(min_size, smp::count, [&c, &a, &b](std::size_t begin, std::size_t end) {
+                    detail::block_execution(min_size, smp::count, [&c, &a, &b](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
                             c[i] = a[i] - b[i];
                         }
-                    });
+                    }).get();
                 }
 
                 condense(c);
@@ -179,21 +179,21 @@ namespace nil {
                 detail::basic_radix2_fft<FieldType>(u, omega).get();
                 detail::basic_radix2_fft<FieldType>(v, omega).get();
 
-                detail::xx(n, smp::count, [&c, &u, &v](std::size_t begin, std::size_t end) {
+                detail::block_execution(n, smp::count, [&c, &u, &v](std::size_t begin, std::size_t end) {
                     for (std::size_t i = begin; i < end; i++) {
                         c[i] = u[i] * v[i];
                     }
-                });
+                }).get();
 
                 detail::basic_radix2_fft<FieldType>(c, omega.inversed()).get();
 
                 const value_type sconst = value_type(n).inversed();
 
-                detail::xx(n, smp::count, [&c, sconst](std::size_t begin, std::size_t end) {
+                detail::block_execution(n, smp::count, [&c, sconst](std::size_t begin, std::size_t end) {
                     for (std::size_t i = begin; i < end; i++) {
                         c[i] *= sconst;
                     }
-                });
+                }).get();
 
                 condense(c);
 

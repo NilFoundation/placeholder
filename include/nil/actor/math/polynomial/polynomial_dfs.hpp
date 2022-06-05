@@ -352,11 +352,12 @@ namespace nil {
 
                     const value_type sconst = value_type(this->size()).inversed();
 
-                    detail::xx(this->size(), smp::count, [this, sconst](std::size_t begin, std::size_t end) {
-                        for (std::size_t i = begin; i < end; i++) {
-                            val[i] *= sconst;
-                        }
-                    });
+                    detail::block_execution(
+                        this->size(), smp::count, [this, sconst](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                val[i] *= sconst;
+                            }
+                        }).get();
 
                     value_type omega_new = crypto3::math::unity_root<FieldType>(_sz);
                     val.resize(_sz);
@@ -411,38 +412,36 @@ namespace nil {
                 polynomial_dfs operator+(const polynomial_dfs& other) const {
                     polynomial_dfs result(std::max(this->_d, other._d), this->begin(), this->end());
                     if (other.size() > this->size()) {
-                        result.resize(other.size());
+                        result.resize(other.size()).get();
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size()).get();
-                        detail::xx(result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                result[i] += tmp[i];
-                            }
-                        });
-//                        std::transform(tmp.begin(), tmp.end(), result.begin(), result.begin(),
-//                                       std::plus<FieldValueType>());
+                        detail::block_execution(
+                            result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    result[i] += tmp[i];
+                                }
+                            }).get();
                         return result;
                     }
-//                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
-//                                   std::plus<FieldValueType>());
-                    detail::xx(result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
-                        for (std::size_t i = begin; i < end; i++) {
-                            result[i] += other[i];
-                        }
-                    });
+                    detail::block_execution(
+                        result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] += other[i];
+                            }
+                        }).get();
 
                     return result;
                 }
 
                 polynomial_dfs operator-() const {
                     polynomial_dfs result(this->_d, this->begin(), this->end());
-                    detail::xx(result.size(), smp::count, [&result](std::size_t begin, std::size_t end) {
+                    detail::block_execution(result.size(), smp::count, [&result](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
                             result[i] = -result[i];
                         }
-                    });
+                    }).get();
 //                    std::transform(this->begin(), this->end(), result.begin(), std::negate<FieldValueType>());
                     return result;
                 }
@@ -454,27 +453,25 @@ namespace nil {
                 polynomial_dfs operator-(const polynomial_dfs& other) const {
                     polynomial_dfs result(std::max(_d, other._d), this->begin(), this->end());
                     if (other.size() > this->size()) {
-                        result.resize(other.size());
+                        result.resize(other.size()).get();
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size()).get();
-                        detail::xx(result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                result[i] -= tmp[i];
-                            }
-                        });
-//                        std::transform(result.begin(), result.end(), tmp.begin(), result.begin(),
-//                                       std::minus<FieldValueType>());
+                        detail::block_execution(
+                            result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    result[i] -= tmp[i];
+                                }
+                            }).get();
                         return result;
                     }
-//                    std::transform(result.begin(), result.end(), other.begin(), result.begin(),
-//                                   std::minus<FieldValueType>());
-                    detail::xx(result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
-                        for (std::size_t i = begin; i < end; i++) {
-                            result[i] -= other[i];
-                        }
-                    });
+                    detail::block_execution(
+                        result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] -= other[i];
+                            }
+                        }).get();
                     return result;
                 }
 
@@ -487,27 +484,25 @@ namespace nil {
                     size_t polynomial_s =
                         crypto3::math::detail::power_of_two(std::max({this->size(), other.size(), this->_d + other._d + 1}));
                     if (result.size() < polynomial_s) {
-                        result.resize(polynomial_s);
+                        result.resize(polynomial_s).get();
                     }
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(polynomial_s);
-//                        std::transform(result.begin(), result.end(), tmp.begin(), result.begin(),
-//                                       std::multiplies<FieldValueType>());
-                        detail::xx(result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                result[i] = result[i] * tmp[i];
-                            }
-                        });
+                        tmp.resize(polynomial_s).get();
+                        detail::block_execution(
+                            result.size(), smp::count, [&result, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    result[i] = result[i] * tmp[i];
+                                }
+                            }).get();
                         return result;
                     }
-//                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
-//                                   std::multiplies<FieldValueType>());
-                    detail::xx(result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
-                        for (std::size_t i = begin; i < end; i++) {
-                            result[i] = result[i] * other[i];
-                        }
-                    });
+                    detail::block_execution(
+                        result.size(), smp::count, [&result, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] = result[i] * other[i];
+                            }
+                        }).get();
                     return result;
                 }
 
@@ -566,7 +561,7 @@ namespace nil {
                     size_t n = this->size();
                     value_type omega = crypto3::math::unity_root<FieldType>(n);
                     q.resize(n);
-                    detail::basic_radix2_fft<FieldType>(q, omega);
+                    detail::basic_radix2_fft<FieldType>(q, omega).get();
                     return polynomial_dfs(new_s - 1, q);
                 }
 
@@ -617,7 +612,7 @@ namespace nil {
                     size_t n = this->size();
                     value_type omega = crypto3::math::unity_root<FieldType>(n);
                     r.resize(n);
-                    detail::basic_radix2_fft<FieldType>(r, omega);
+                    detail::basic_radix2_fft<FieldType>(r, omega).get();
                     return polynomial_dfs(r_deg, r);
                 }
 
@@ -628,7 +623,7 @@ namespace nil {
                     _d = tmp.size() - 1;
                     val.assign(tmp.begin(), tmp.end());
                     val.resize(n, FieldValueType::zero());
-                    detail::basic_radix2_fft<FieldType>(val, omega);
+                    detail::basic_radix2_fft<FieldType>(val, omega).get();
                 }
 
                 std::vector<FieldValueType> coefficients() const {
@@ -637,13 +632,15 @@ namespace nil {
                     value_type omega = crypto3::math::unity_root<FieldType>(this->size());
                     std::vector<FieldValueType> tmp(this->begin(), this->end());
 
-                    detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
+                    detail::basic_radix2_fft<FieldType>(tmp, omega.inversed()).get();
 
                     const value_type sconst = value_type(this->size()).inversed();
-                    std::transform(tmp.begin(),
-                                   tmp.end(),
-                                   tmp.begin(),
-                                   std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
+                    detail::block_execution(
+                        this->size(), smp::count, [&tmp, sconst](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                tmp[i] *= sconst;
+                            }
+                        }).get();
                     size_t r_size = tmp.size();
                     while (r_size > 0 && tmp[r_size - 1] == FieldValueType(0)) {
                         --r_size;

@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -22,10 +23,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-
-#define BOOST_TEST_MODULE fft_evaluation_domain_test
-
-#include <boost/test/unit_test.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <memory>
 #include <vector>
@@ -51,8 +50,7 @@
 #include <nil/actor/math/domains/step_radix2_domain.hpp>
 
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
-
-#include <nil/actor/math/polynomial/evaluate.hpp>
+#include <nil/crypto3/math/polynomial/evaluate.hpp>
 
 #include <typeinfo>
 
@@ -87,7 +85,7 @@ void test_fft() {
 
     std::cout << "FFT: key = " << typeid(*domain).name() << std::endl;
     for (std::size_t i = 0; i < m; i++) {
-        value_type e = evaluate_polynomial(f, idx[i], m);
+        value_type e = nil::crypto3::math::evaluate_polynomial(f, idx[i], m);
         std::cout << "idx[" << i << "] = " << idx[i].data << std::endl;
         std::cout << "e = " << e.data << std::endl;
         BOOST_CHECK_EQUAL(e.data, a[i].data);
@@ -165,7 +163,7 @@ void test_lagrange_coefficients() {
     }
 
     for (std::size_t i = 0; i < m; i++) {
-        value_type e = evaluate_lagrange_polynomial(d, t, m, i);
+        value_type e = nil::crypto3::math::evaluate_lagrange_polynomial(d, t, m, i);
         BOOST_CHECK_EQUAL(e.data, a[i].data);
         std::cout << "e = " << e.data << std::endl;
     }
@@ -194,31 +192,27 @@ void test_compute_z() {
     BOOST_CHECK_EQUAL(Z.data, a.data);
 }
 
-BOOST_AUTO_TEST_SUITE(fft_evaluation_domain_test_suite)
-
-BOOST_AUTO_TEST_CASE(fft) {
+ACTOR_THREAD_TEST_CASE(fft) {
     test_fft<fields::bls12<381>>();
     test_fft<fields::mnt4<298>>();
 }
 
-BOOST_AUTO_TEST_CASE(inverse_fft_to_fft) {
+ACTOR_THREAD_TEST_CASE(inverse_fft_to_fft) {
     test_inverse_fft_of_fft<fields::bls12<381>>();
     test_inverse_fft_of_fft<fields::mnt4<298>>();
 }
 
-BOOST_AUTO_TEST_CASE(inverse_coset_ftt_to_coset_fft) {
+ACTOR_THREAD_TEST_CASE(inverse_coset_ftt_to_coset_fft) {
     test_inverse_coset_ftt_of_coset_fft<fields::bls12<381>>();
     test_inverse_coset_ftt_of_coset_fft<fields::mnt4<298>>();
 }
 
-BOOST_AUTO_TEST_CASE(lagrange_coefficients) {
+ACTOR_THREAD_TEST_CASE(lagrange_coefficients) {
     test_lagrange_coefficients<fields::bls12<381>>();
     test_lagrange_coefficients<fields::mnt4<298>>();
 }
 
-BOOST_AUTO_TEST_CASE(compute_z) {
+ACTOR_THREAD_TEST_CASE(compute_z) {
     test_compute_z<fields::bls12<381>>();
     test_compute_z<fields::mnt4<298>>();
 }
-
-BOOST_AUTO_TEST_SUITE_END()

@@ -59,11 +59,11 @@ namespace nil {
 
                     arithmetic_sequence = std::vector<value_type>(this->m);
 
-                    detail::xx(this->m, smp::count, [this](std::size_t begin, std::size_t end) {
+                    detail::block_execution(this->m, smp::count, [this](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
                             arithmetic_sequence[i] = arithmetic_generator * value_type(i);
                         }
-                    });
+                    }).get();
 
                     precomputation_sentinel = true;
 
@@ -107,11 +107,11 @@ namespace nil {
                     multiplication(a, a, S).get();
                     a.resize(this->m);
 
-                    detail::xx(this->m, smp::count, [&a, &S](std::size_t begin, std::size_t end) {
+                    detail::block_execution(this->m, smp::count, [&a, &S](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
                             a[i] *= S[i].inversed();
                         }
-                    });
+                    }).get();
 
                     return nil::actor::make_ready_future<>();
                 }
@@ -179,13 +179,14 @@ namespace nil {
                     value_type l_vanish = l[0];
                     value_type g_vanish = value_type::one();
 
-                    detail::xx(this->m, smp::count, [t, &l, &l_vanish, &g_vanish, this](std::size_t begin, std::size_t end) {
-                        for (std::size_t i = begin; i < end; i++) {
-                            l[i] = t - this->arithmetic_sequence[i];
-                            l_vanish *= l[i];
-                            g_vanish *= -this->arithmetic_sequence[i];
-                        }
-                    });
+                    detail::block_execution(
+                        this->m, smp::count, [t, &l, &l_vanish, &g_vanish, this](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                l[i] = t - this->arithmetic_sequence[i];
+                                l_vanish *= l[i];
+                                g_vanish *= -this->arithmetic_sequence[i];
+                            }
+                        }).get();
 
                     std::vector<value_type> w(this->m);
                     w[0] = g_vanish.inversed() * (this->arithmetic_generator.pow(this->m - 1));
@@ -239,11 +240,12 @@ namespace nil {
                         multiplication(x, x, t).get();
                     }
 
-                    detail::xx(this->m, smp::count, [&H, &x, coeff, this](std::size_t begin, std::size_t end) {
-                        for (std::size_t i = begin; i < end; i++) {
-                            H[i] += (x[i] * coeff);
-                        }
-                    });
+                    detail::block_execution(
+                        this->m, smp::count, [&H, &x, coeff, this](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                H[i] += (x[i] * coeff);
+                            }
+                        }).get();
 
                     return nil::actor::make_ready_future<>();
                 }
@@ -251,11 +253,12 @@ namespace nil {
                     const value_type coset = this->arithmetic_generator; /* coset in arithmetic sequence? */
                     const value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
 
-                    detail::xx(this->m, smp::count, [&P, Z_inverse_at_coset, this](std::size_t begin, std::size_t end) {
-                        for (std::size_t i = begin; i < end; i++) {
-                            P[i] *= Z_inverse_at_coset;
-                        }
-                    });
+                    detail::block_execution(
+                        this->m, smp::count, [&P, Z_inverse_at_coset, this](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                P[i] *= Z_inverse_at_coset;
+                            }
+                        }).get();
 
                     return nil::actor::make_ready_future<>();
                 }

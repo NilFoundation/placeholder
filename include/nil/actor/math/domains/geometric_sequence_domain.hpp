@@ -105,15 +105,14 @@ namespace nil {
                         g[i] = geometric_triangular_sequence[i] * a[i];
                     }
 
-                    multiplication(a, g, T);
-                    a.resize(this->m);
+                    multiplication(a, g, T).get();
+                    a.resize(this->m).get();
 
-#ifdef MULTICORE
-#pragma omp parallel for
-#endif
-                    for (std::size_t i = 0; i < this->m; i++) {
-                        a[i] *= T[i].inversed();
-                    }
+                    detail::block_execution(this->m, smp::count, [&a, &T](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            a[i] *= T[i].inversed();
+                        }
+                    }).get();
                 }
                 void inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
@@ -145,12 +144,11 @@ namespace nil {
                     multiplication(a, W, T);
                     a.resize(this->m);
 
-#ifdef MULTICORE
-#pragma omp parallel for
-#endif
-                    for (std::size_t i = 0; i < this->m; i++) {
-                        a[i] *= geometric_triangular_sequence[i].inversed();
-                    }
+                    detail::block_execution(this->m, smp::count, [&a, this](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            a[i] *= geometric_triangular_sequence[i].inversed();
+                        }
+                    }).get();
 
                     newton_to_monomial_basis_geometric<FieldType>(a, geometric_sequence, geometric_triangular_sequence,
                                                                   this->m);
@@ -251,21 +249,23 @@ namespace nil {
                         multiplication(x, x, t);
                     }
 
-#ifdef MULTICORE
-#pragma omp parallel for
-#endif
-                    for (std::size_t i = 0; i < this->m + 1; i++) {
-                        H[i] += (x[i] * coeff);
-                    }
+                    detail::block_execution(this->m, smp::count, [&H, &x, &coeff](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            H[i] += (x[i] * coeff);
+                        }
+                    }).get();
                 }
                 void divide_by_z_on_coset(std::vector<value_type> &P) {
                     const value_type coset = value_type(
                         fields::arithmetic_params<FieldType>::multiplicative_generator); /* coset in geometric
                                                                                             sequence? */
                     const value_type Z_inverse_at_coset = compute_vanishing_polynomial(coset).inversed();
-                    for (std::size_t i = 0; i < this->m; ++i) {
-                        P[i] *= Z_inverse_at_coset;
-                    }
+                    detail::block_execution(this->m, smp::count,
+                                            [&P, Z_inverse_at_coset](std::size_t begin, std::size_t end) {
+                                                for (std::size_t i = begin; i < end; i++) {
+                                                    P[i] *= Z_inverse_at_coset;
+                                                }
+                                            }).get();
                 }
             };
         }    // namespace math

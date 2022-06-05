@@ -83,22 +83,11 @@ namespace nil {
 
                     const value_type sconst = value_type(a.size()).inversed();
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(this->m, smp::count);
-                    size_t element_per_cpu = this->m / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, sconst, &a]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                a[i] *= sconst;
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::block_execution(this->m, smp::count, [sconst, &a](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            a[i] *= sconst;
+                        }
+                    }).get();
 
                     return make_ready_future<>();
                 }
@@ -126,22 +115,11 @@ namespace nil {
                     const value_type coset = fields::arithmetic_params<FieldType>::multiplicative_generator;
                     const value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
 
-                    std::vector<future<>> fut;
-                    size_t cpu_usage = std::min(this->m, smp::count);
-                    size_t element_per_cpu = this->m / smp::count;
-
-                    for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? this->m : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, &P]() {
-                            for (std::size_t i = begin; i < end; i++) {
-                                P[i] *= Z_inverse_at_coset;
-                            }
-                            return nil::actor::make_ready_future<>();
-                        }));
-                    }
-
-                    when_all(fut.begin(), fut.end()).get();
+                    detail::block_execution(this->m, smp::count, [&P](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            P[i] *= Z_inverse_at_coset;
+                        }
+                    }).get();
 
                     return make_ready_future<>();
                 }
