@@ -58,6 +58,7 @@ namespace nil {
                 optional<size_t> reserve_memory;    // if total_memory not specified
                 optional<size_t> cpus;
                 optional<cpuset> cpu_set;
+                size_t shard0scale;  // The ratio of how much the zero shard memory is larger than the rest
                 bool assign_orphan_cpus = false;
                 std::vector<dev_t> devices;
                 unsigned num_io_groups;

@@ -178,9 +178,10 @@
 #include <nil/actor/core/detail/stall_detector.hh>
 #include <nil/actor/detail/memory_diagnostics.hh>
 
-#if BOOST_COMP_GNUC && BOOST_COMP_GNUC >= BOOST_VERSION_NUMBER(7, 0, 0)
+//#if BOOST_COMP_GNUC && BOOST_COMP_GNUC >= BOOST_VERSION_NUMBER(7, 0, 0)
+//#include <nil/actor/core/exception_hacks.hh>
+//#endif
 #include <nil/actor/core/exception_hacks.hh>
-#endif
 
 #include <yaml-cpp/yaml.h>
 
@@ -2527,7 +2528,7 @@ namespace nil {
             smp_pollfn(reactor &r) : _r(r) {
             }
             virtual bool poll() final override {
-                return (smp::poll_queues() | alien::smp::poll_queues());
+                return (smp::poll_queues() || alien::smp::poll_queues());
             }
             virtual bool pure_poll() final override {
                 return (smp::pure_poll_queues() || alien::smp::pure_poll_queues());
@@ -3381,7 +3382,7 @@ namespace nil {
                 "task-quota-ms", boost::program_options::value<double>()->default_value(cfg.task_quota / 1ms),
                 "Max time (ms) between polls")("max-task-backlog", boost::program_options::value<unsigned>()->default_value(1000),
                                                "Maximum number of task backlog to allow; above this we ignore I/O")(
-                "blocked-reactor-notify-ms", boost::program_options::value<unsigned>()->default_value(200),
+                "blocked-reactor-notify-ms", boost::program_options::value<unsigned>()->default_value(20000),
                 "threshold in miliseconds over which the reactor is considered blocked if no progress is made")(
                 "blocked-reactor-reports-per-minute", boost::program_options::value<unsigned>()->default_value(5),
                 "Maximum number of backtraces reported by stall detector per minute")(
@@ -3406,8 +3407,10 @@ namespace nil {
                 " The diagnostics will be written to the actor_memory logger, with error level."
                 " Note that if the actor_memory logger is set to debug or trace level, the diagnostics will be "
                 "logged "
-                "irrespective of this setting.")(
-                "reactor-backend",
+                "irrespective of this setting.")
+                ("shard0-mem-scale", boost::program_options::value<std::size_t>()->default_value(1),
+                 "The ratio of how much the zero shard memory is larger than the rest")
+                ("reactor-backend",
                 boost::program_options::value<reactor_backend_selector>()->default_value(reactor_backend_selector::default_backend()),
                 format("Internal reactor implementation ({})", reactor_backend_selector::available()).c_str())(
                 "aio-fsync", boost::program_options::value<bool>()->default_value(kernel_supports_aio_fsync()),
@@ -3933,6 +3936,7 @@ namespace nil {
                 rc.assign_orphan_cpus = true;
             }
 #endif
+            rc.shard0scale = configuration["shard0-mem-scale"].as<size_t>();
 
             auto resources = resource::allocate(rc);
             std::vector<resource::cpu> allocations = std::move(resources.cpus);
