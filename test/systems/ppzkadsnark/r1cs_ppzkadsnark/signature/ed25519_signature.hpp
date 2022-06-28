@@ -23,13 +23,13 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_ED25519SIG_HPP
-#define CRYPTO3_ZK_ED25519SIG_HPP
+#ifndef ACTOR_ZK_ED25519SIG_HPP
+#define ACTOR_ZK_ED25519SIG_HPP
 
-#include <nil/crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/r1cs_ppzkadsnark_signature.hpp>
+#include <nil/actor/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/r1cs_ppzkadsnark_signature.hpp>
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
 
@@ -172,7 +172,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_ZK_ED25519SIG_HPP
+#endif    // ACTOR_ZK_ED25519SIG_HPP

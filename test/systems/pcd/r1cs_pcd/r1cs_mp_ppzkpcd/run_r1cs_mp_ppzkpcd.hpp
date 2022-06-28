@@ -34,10 +34,10 @@
 
 #include "tally_cp.hpp"
 
-#include <nil/crypto3/zk/snark/systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/r1cs_mp_ppzkpcd.hpp>
+#include <nil/actor/zk/snark/systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/r1cs_mp_ppzkpcd.hpp>
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
 
@@ -191,7 +191,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // CRYPTO3_RUN_R1CS_MP_PPZKPCD_HPP

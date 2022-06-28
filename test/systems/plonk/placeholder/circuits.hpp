@@ -25,30 +25,31 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP
-#define CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP
+#ifndef ACTOR_ZK_TEST_PLONK_CIRCUITS_HPP
+#define ACTOR_ZK_TEST_PLONK_CIRCUITS_HPP
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/crypto3/zk/math/permutation.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
+#include <nil/actor/zk/math/permutation.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/params.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/copy_constraint.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/actor/zk/transcript/fiat_shamir.hpp>
+#include <nil/actor/zk/commitments/polynomial/fri.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
+
+#include <nil/actor/math/polynomial/polynomial.hpp>
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
                 template<typename FieldType, typename ParamsType, std::size_t rows_log, std::size_t permutation_size>
@@ -63,7 +64,7 @@ namespace nil {
                 public:
                     const std::size_t table_rows = 1 << rows_log;
 
-                    std::shared_ptr<math::evaluation_domain<FieldType>> domain;
+                    std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> domain;
 
                     typename FieldType::value_type omega;
                     typename FieldType::value_type delta;
@@ -75,10 +76,10 @@ namespace nil {
                     std::vector<plonk_gate<FieldType, plonk_lookup_constraint<FieldType>>> lookup_gates;
 
                     circuit_description() {
-                        domain = math::make_evaluation_domain<FieldType>(table_rows);
+                        domain = crypto3::math::make_evaluation_domain<FieldType>(table_rows);
 
                         omega = domain->get_domain_element(1);
-                        delta = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+                        delta = crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
                     }
 
                     void init() {
@@ -130,16 +131,16 @@ namespace nil {
                     }
 
                     // init values
-                    table[0][0] = algebra::random_element<FieldType>();
-                    table[0][1] = algebra::random_element<FieldType>();
-                    table[0][2] = algebra::random_element<FieldType>();
+                    table[0][0] = crypto3::algebra::random_element<FieldType>();
+                    table[0][1] = crypto3::algebra::random_element<FieldType>();
+                    table[0][2] = crypto3::algebra::random_element<FieldType>();
                     q_add[0] = FieldType::value_type::zero();
                     q_mul[0] = FieldType::value_type::zero();
 
                     // fill rows with ADD gate
                     for (std::size_t i = 1; i < test_circuit.table_rows - 5; i++) {
-                        table[0][i] = algebra::random_element<FieldType>();
-                        table[1][i] = algebra::random_element<FieldType>();
+                        table[0][i] = crypto3::algebra::random_element<FieldType>();
+                        table[1][i] = crypto3::algebra::random_element<FieldType>();
                         table[2][i] = table[0][i] + table[1][i];
                         q_add[i] = FieldType::value_type::one();
                         q_mul[i] = FieldType::value_type::zero();
@@ -147,8 +148,8 @@ namespace nil {
 
                     // fill rows with MUL gate
                     for (std::size_t i = test_circuit.table_rows - 5; i < test_circuit.table_rows - 3; i++) {
-                        table[0][i] = algebra::random_element<FieldType>();
-                        table[1][i] = algebra::random_element<FieldType>();
+                        table[0][i] = crypto3::algebra::random_element<FieldType>();
+                        table[1][i] = crypto3::algebra::random_element<FieldType>();
                         table[2][i] = table[0][i] * table[1][i];
                         q_add[i] = FieldType::value_type::zero();
                         q_mul[i] = FieldType::value_type::one();
@@ -256,16 +257,16 @@ namespace nil {
 
                     // init values
                     typename FieldType::value_type one = FieldType::value_type::one();
-                    table[0][0] = algebra::random_element<FieldType>();
-                    table[1][0] = algebra::random_element<FieldType>();
-                    table[2][0] = algebra::random_element<FieldType>();
-                    table[3][0] = algebra::random_element<FieldType>();
+                    table[0][0] = crypto3::algebra::random_element<FieldType>();
+                    table[1][0] = crypto3::algebra::random_element<FieldType>();
+                    table[2][0] = crypto3::algebra::random_element<FieldType>();
+                    table[3][0] = crypto3::algebra::random_element<FieldType>();
                     q_add[0] = FieldType::value_type::zero();
                     q_mul[0] = FieldType::value_type::zero();
 
                     // fill rows with ADD gate
                     for (std::size_t i = 1; i < test_circuit.table_rows - 5; i++) {
-                        table[0][i] = algebra::random_element<FieldType>();
+                        table[0][i] = crypto3::algebra::random_element<FieldType>();
                         table[1][i] = table[2][i - 1];
                         table[2][i] = table[0][i] + table[1][i];
                         table[3][i] = FieldType::value_type::zero();
@@ -281,7 +282,7 @@ namespace nil {
 
                     // fill rows with MUL gate
                     for (std::size_t i = test_circuit.table_rows - 5; i < test_circuit.table_rows - 3; i++) {
-                        table[0][i] = algebra::random_element<FieldType>();
+                        table[0][i] = crypto3::algebra::random_element<FieldType>();
                         table[1][i] = table[3][0];
                         table[2][i] = table[0][i] * table[1][i] + table[0][i - 1];
                         table[3][i] = FieldType::value_type::zero();
@@ -456,7 +457,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP
+#endif    // ACTOR_ZK_TEST_PLONK_CIRCUITS_HPP

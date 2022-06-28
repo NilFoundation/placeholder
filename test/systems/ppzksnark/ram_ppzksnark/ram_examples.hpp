@@ -26,13 +26,13 @@
 // RAM examples with prescribed parameters (according to some distribution).
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_RAM_EXAMPLES_HPP
-#define CRYPTO3_ZK_RAM_EXAMPLES_HPP
+#ifndef ACTOR_ZK_RAM_EXAMPLES_HPP
+#define ACTOR_ZK_RAM_EXAMPLES_HPP
 
-#include <nil/crypto3/zk/snark/arithmetization/ram_computations/rams/ram_params.hpp>
+#include <nil/actor/zk/snark/arithmetization/ram_computations/rams/ram_params.hpp>
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
 
@@ -166,7 +166,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // RAM_EXAMPLES_HPP

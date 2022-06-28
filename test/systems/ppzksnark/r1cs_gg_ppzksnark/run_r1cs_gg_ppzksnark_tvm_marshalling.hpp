@@ -31,18 +31,18 @@
 
 #include <tuple>
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
-#include <nil/crypto3/zk/snark/algorithms/generate.hpp>
-#include <nil/crypto3/zk/snark/algorithms/verify.hpp>
-#include <nil/crypto3/zk/snark/algorithms/prove.hpp>
+#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
+#include <nil/actor/zk/snark/algorithms/generate.hpp>
+#include <nil/actor/zk/snark/algorithms/verify.hpp>
+#include <nil/actor/zk/snark/algorithms/prove.hpp>
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/marshalling.hpp>
+#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/marshalling.hpp>
 
 #include <nil/marshalling/status_type.hpp>
 #include "../r1cs_examples.hpp"
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
 
@@ -288,7 +288,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // CRYPTO3_RUN_R1CS_GG_PPZKSNARK_TVM_MARSHALLING_HPP

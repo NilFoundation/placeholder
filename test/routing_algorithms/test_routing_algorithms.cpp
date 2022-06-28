@@ -31,8 +31,8 @@
 
 #include <cassert>
 
-#include <nil/crypto3/zk/snark/routing/as_waksman.hpp>
-#include <nil/crypto3/zk/snark/routing/benes.hpp>
+#include <nil/actor/zk/snark/routing/as_waksman.hpp>
+#include <nil/actor/zk/snark/routing/benes.hpp>
 
 using namespace nil::crypto3::zk::snark;
 

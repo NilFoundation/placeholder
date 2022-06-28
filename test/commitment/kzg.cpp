@@ -29,22 +29,21 @@
 
 #include <string>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/pairing/mnt4.hpp>
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
+#include <nil/actor/zk/commitments/polynomial/kzg.hpp>
 
-using namespace nil::crypto3;
-using namespace nil::crypto3::zk::snark;
-using namespace nil::crypto3::math;
+using namespace nil::actor;
+using namespace nil::actor::zk::snark;
+using namespace nil::actor::math;
 
 BOOST_AUTO_TEST_SUITE(kzg_test_suite)
 

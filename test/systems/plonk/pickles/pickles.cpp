@@ -36,9 +36,9 @@
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/proof.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/verifier_index.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/verifier_index.hpp>
 
 using namespace nil::crypto3;
 

@@ -29,7 +29,7 @@
 #include <nil/crypto3/algebra/random_element.hpp>
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
 
@@ -72,7 +72,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // CRYPTO3_SIMPLE_EXAMPLE_HPP

@@ -34,7 +34,7 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/detail.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk::snark;

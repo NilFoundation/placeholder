@@ -25,13 +25,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE placeholder_test
+//#define BOOST_TEST_MODULE placeholder_test
 
 #include <string>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -47,23 +46,23 @@
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/permutation_argument.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/lookup_argument.hpp>
-// #include <nil/crypto3/zk/snark/systems/plonk/placeholder/gates_argument.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/prover.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/verifier.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/permutation_argument.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/lookup_argument.hpp>
+// #include <nil/actor/zk/snark/systems/plonk/placeholder/gates_argument.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/actor/zk/transcript/fiat_shamir.hpp>
+#include <nil/actor/zk/commitments/polynomial/fri.hpp>
 
 #include "circuits.hpp"
 
-using namespace nil::crypto3;
-using namespace nil::crypto3::zk;
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor;
+using namespace nil::actor::zk;
+using namespace nil::actor::zk::snark;
 
 template<typename fri_type, typename FieldType>
 typename fri_type::params_type create_fri_params(std::size_t degree_log) {
@@ -74,8 +73,8 @@ typename fri_type::params_type create_fri_params(std::size_t degree_log) {
 
     std::size_t r = degree_log - 1;
 
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> domain_set =
-        math::calculate_domain_set<FieldType>(degree_log + expand_factor, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> domain_set =
+        nil::crypto3::math::calculate_domain_set<FieldType>(degree_log + expand_factor, r);
 
     params.r = r;
     params.D = domain_set;
@@ -84,10 +83,10 @@ typename fri_type::params_type create_fri_params(std::size_t degree_log) {
     return params;
 }
 
-BOOST_AUTO_TEST_SUITE(placeholder_prover_test_suite)
+//BOOST_AUTO_TEST_SUITE(placeholder_prover_test_suite)
 
 // using curve_type = algebra::curves::bls12<381>;
-using curve_type = algebra::curves::pallas;
+using curve_type = nil::crypto3::algebra::curves::pallas;
 using FieldType = typename curve_type::base_field_type;
 
 // lpc params
@@ -99,8 +98,8 @@ constexpr static const std::size_t permutation_size = 4;
 constexpr static const std::size_t usable_rows = (1 << table_rows_log) - 3;
 
 struct placeholder_test_params {
-    using merkle_hash_type = hashes::keccak_1600<512>;
-    using transcript_hash_type = hashes::keccak_1600<512>;
+    using merkle_hash_type = nil::crypto3::hashes::keccak_1600<512>;
+    using transcript_hash_type = nil::crypto3::hashes::keccak_1600<512>;
 
     constexpr static const std::size_t witness_columns = 3;
     constexpr static const std::size_t public_input_columns = 1;
@@ -116,8 +115,8 @@ struct placeholder_test_params {
 };
 
 struct placeholder_test_params_lookups {
-    using merkle_hash_type = hashes::keccak_1600<512>;
-    using transcript_hash_type = hashes::keccak_1600<512>;
+    using merkle_hash_type = nil::crypto3::hashes::keccak_1600<512>;
+    using transcript_hash_type = nil::crypto3::hashes::keccak_1600<512>;
 
     constexpr static const std::size_t witness_columns = 3;
     constexpr static const std::size_t public_input_columns = 0;
@@ -143,7 +142,7 @@ typedef placeholder_params<FieldType, typename placeholder_test_params::arithmet
 typedef placeholder_params<FieldType, typename placeholder_test_params_lookups::arithmetization_params>
     circuit_3_params;
 
-BOOST_AUTO_TEST_CASE(placeholder_split_polynomial_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_split_polynomial_test) {
 
     math::polynomial<typename FieldType::value_type> f = {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 5, 6, 1, 2, 1, 1};
     std::size_t expected_size = 4;
@@ -154,7 +153,7 @@ BOOST_AUTO_TEST_CASE(placeholder_split_polynomial_test) {
 
     BOOST_CHECK(f_splitted.size() == expected_size);
 
-    typename FieldType::value_type y = algebra::random_element<FieldType>();
+    typename FieldType::value_type y = nil::crypto3::algebra::random_element<FieldType>();
 
     typename FieldType::value_type f_at_y = f.evaluate(y);
     typename FieldType::value_type f_splitted_at_y = FieldType::value_type::zero();
@@ -165,7 +164,7 @@ BOOST_AUTO_TEST_CASE(placeholder_split_polynomial_test) {
     BOOST_CHECK(f_at_y == f_splitted_at_y);
 }
 
-BOOST_AUTO_TEST_CASE(placeholder_permutation_polynomials_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_permutation_polynomials_test) {
 
     circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
         circuit_test_2<FieldType>();
@@ -204,7 +203,7 @@ BOOST_AUTO_TEST_CASE(placeholder_permutation_polynomials_test) {
     auto polynomial_table = plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
         preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table);
 
-    std::shared_ptr<math::evaluation_domain<FieldType>> domain = preprocessed_public_data.common_data.basic_domain;
+    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain = preprocessed_public_data.common_data.basic_domain;
     typename FieldType::value_type id_res = FieldType::value_type::one();
     typename FieldType::value_type sigma_res = FieldType::value_type::one();
     for (std::size_t i = 0; i < table_rows; i++) {
@@ -218,8 +217,8 @@ BOOST_AUTO_TEST_CASE(placeholder_permutation_polynomials_test) {
     }
     BOOST_CHECK_MESSAGE(id_res == sigma_res, "Simple check");
 
-    typename FieldType::value_type beta = algebra::random_element<FieldType>();
-    typename FieldType::value_type gamma = algebra::random_element<FieldType>();
+    typename FieldType::value_type beta = nil::crypto3::algebra::random_element<FieldType>();
+    typename FieldType::value_type gamma = nil::crypto3::algebra::random_element<FieldType>();
 
     id_res = FieldType::value_type::one();
     sigma_res = FieldType::value_type::one();
@@ -243,7 +242,7 @@ BOOST_AUTO_TEST_CASE(placeholder_permutation_polynomials_test) {
     BOOST_CHECK_MESSAGE(id_res == sigma_res, "Complex check");
 }
 
-BOOST_AUTO_TEST_CASE(placeholder_permutation_argument_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
 
     circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
         circuit_test_2<FieldType>();
@@ -294,7 +293,7 @@ BOOST_AUTO_TEST_CASE(placeholder_permutation_argument_test) {
             fri_params, prover_transcript);
 
     // Challenge phase
-    typename FieldType::value_type y = algebra::random_element<FieldType>();
+    typename FieldType::value_type y = nil::crypto3::algebra::random_element<FieldType>();
     std::vector<typename FieldType::value_type> f_at_y(permutation_size);
     for (int i = 0; i < permutation_size; i++) {
         f_at_y[i] = polynomial_table[i].evaluate(y);
@@ -317,7 +316,7 @@ BOOST_AUTO_TEST_CASE(placeholder_permutation_argument_test) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(placeholder_lookup_argument_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
 
     circuit_description<FieldType, circuit_3_params, table_rows_log, 0> circuit = circuit_test_3<FieldType>();
 
@@ -366,7 +365,7 @@ BOOST_AUTO_TEST_CASE(placeholder_lookup_argument_test) {
             fri_params, prover_transcript);
 
     // Challenge phase
-    typename FieldType::value_type y = algebra::random_element<FieldType>();
+    typename FieldType::value_type y = nil::crypto3::algebra::random_element<FieldType>();
     typename policy_type::evaluation_map columns_at_y;
     for (std::size_t i = 0; i < placeholder_test_params::witness_columns; i++) {
 
@@ -425,7 +424,7 @@ BOOST_AUTO_TEST_CASE(placeholder_lookup_argument_test) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(placeholder_gate_argument_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
     circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
         circuit_test_2<FieldType>();
@@ -472,7 +471,7 @@ BOOST_AUTO_TEST_CASE(placeholder_gate_argument_test) {
             constraint_system, polynomial_table, preprocessed_public_data.common_data.basic_domain, prover_transcript);
 
     // Challenge phase
-    typename FieldType::value_type y = algebra::random_element<FieldType>();
+    typename FieldType::value_type y = nil::crypto3::algebra::random_element<FieldType>();
     typename FieldType::value_type omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
 
     typename policy_type::evaluation_map columns_at_y;
@@ -531,7 +530,7 @@ BOOST_AUTO_TEST_CASE(placeholder_gate_argument_test) {
     BOOST_CHECK(prover_res[0].evaluate(y) == verifier_res[0]);
 }
 
-BOOST_AUTO_TEST_CASE(placeholder_prover_basic_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_prover_basic_test) {
 
     circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
         circuit_test_2<FieldType>();
@@ -574,4 +573,4 @@ BOOST_AUTO_TEST_CASE(placeholder_prover_basic_test) {
     BOOST_CHECK(verifier_res);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()

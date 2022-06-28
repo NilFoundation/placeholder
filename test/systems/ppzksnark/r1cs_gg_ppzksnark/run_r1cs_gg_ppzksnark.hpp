@@ -31,16 +31,16 @@
 
 #include <boost/config.hpp>
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
+#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
 
 #include "../r1cs_examples.hpp"
 
-#include <nil/crypto3/zk/algorithms/generate.hpp>
-#include <nil/crypto3/zk/algorithms/verify.hpp>
-#include <nil/crypto3/zk/algorithms/prove.hpp>
+#include <nil/actor/zk/algorithms/generate.hpp>
+#include <nil/actor/zk/algorithms/verify.hpp>
+#include <nil/actor/zk/algorithms/prove.hpp>
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
 
@@ -139,7 +139,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // CRYPTO3_RUN_R1CS_GG_PPZKSNARK_HPP

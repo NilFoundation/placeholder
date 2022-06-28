@@ -38,16 +38,16 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/params.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
 
 using namespace nil::crypto3;
 

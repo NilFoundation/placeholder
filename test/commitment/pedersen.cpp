@@ -24,15 +24,14 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE pedersen_test
+//#define BOOST_TEST_MODULE pedersen_test
 
 #include <vector>
 #include <iostream>
 #include <random>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -40,15 +39,15 @@
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/actor/math/polynomial/polynomial.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/pedersen.hpp>
+#include <nil/actor/zk/commitments/polynomial/pedersen.hpp>
 
-using namespace nil::crypto3;
+using namespace nil::actor;
 
-BOOST_AUTO_TEST_SUITE(pedersen_test_suite)
+//BOOST_AUTO_TEST_SUITE(pedersen_test_suite)
 
-BOOST_AUTO_TEST_CASE(pedersen_basic_test) {
+ACTOR_THREAD_TEST_CASE(pedersen_basic_test) {
 
     // setup
     using curve_type = algebra::curves::bls12<381>;
@@ -105,7 +104,7 @@ BOOST_AUTO_TEST_CASE(pedersen_basic_test) {
     BOOST_CHECK(w == secret);
 }
 
-BOOST_AUTO_TEST_CASE(pedersen_short_test) {
+ACTOR_THREAD_TEST_CASE(pedersen_short_test) {
 
     // setup
     using curve_type = algebra::curves::bls12<381>;
@@ -162,7 +161,7 @@ BOOST_AUTO_TEST_CASE(pedersen_short_test) {
     BOOST_CHECK(w == secret);
 }
 
-BOOST_AUTO_TEST_CASE(pedersen_long_test) {
+ACTOR_THREAD_TEST_CASE(pedersen_long_test) {
 
     // setup
     using curve_type = algebra::curves::bls12<381>;
@@ -219,4 +218,4 @@ BOOST_AUTO_TEST_CASE(pedersen_long_test) {
     BOOST_CHECK(w == secret);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()

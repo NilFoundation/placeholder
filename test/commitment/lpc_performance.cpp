@@ -24,13 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE lpc_test
+//#define BOOST_TEST_MODULE lpc_test
 
 #include <string>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -43,21 +42,21 @@
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/actor/zk/commitments/polynomial/lpc.hpp>
+#include <nil/actor/zk/commitments/polynomial/fri.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/params.hpp>
 
-using namespace nil::crypto3;
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor;
+using namespace nil::actor::zk::snark;
 
 namespace boost {
     namespace test_tools {
         namespace tt_detail {
             template<>
-            struct print_log_value<nil::crypto3::math::polynomial<
+            struct print_log_value<polynomial<
                 algebra::fields::detail::element_fp<algebra::fields::params<algebra::fields::bls12_base_field<381>>>>> {
                 void operator()(std::ostream &,
-                                const nil::crypto3::math::polynomial<algebra::fields::detail::element_fp<
+                                const math::polynomial<algebra::fields::detail::element_fp<
                                     algebra::fields::params<algebra::fields::bls12_base_field<381>>>> &) {
                 }
             };
@@ -93,9 +92,9 @@ std::vector<math::polynomial<typename FieldType::value_type>> generate(NumberTyp
     return res;
 }
 
-BOOST_AUTO_TEST_SUITE(lpc_performance_test_suite)
+//BOOST_AUTO_TEST_SUITE(lpc_performance_test_suite)
 
-BOOST_AUTO_TEST_CASE(lpc_performance_test) {
+ACTOR_THREAD_TEST_CASE(lpc_performance_test) {
     typedef algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
@@ -168,4 +167,4 @@ BOOST_AUTO_TEST_CASE(lpc_performance_test) {
     }
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()

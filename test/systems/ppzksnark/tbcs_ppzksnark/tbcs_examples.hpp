@@ -26,14 +26,14 @@
 // TBCS examples with prescribed parameters (according to some distribution).
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_TBCS_EXAMPLES_HPP
-#define CRYPTO3_ZK_TBCS_EXAMPLES_HPP
+#ifndef ACTOR_ZK_TBCS_EXAMPLES_HPP
+#define ACTOR_ZK_TBCS_EXAMPLES_HPP
 
-#include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark.hpp>
+#include <nil/actor/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
+#include <nil/actor/zk/snark/systems/ppzksnark/tbcs_ppzksnark.hpp>
 
 namespace nil {
-    namespace crypto3 {
+    namespace actor {
         namespace zk {
             namespace snark {
 
@@ -125,7 +125,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace crypto3
+    }            // namespace actor
 }    // namespace nil
 
 #endif    // TBCS_EXAMPLES_HPP

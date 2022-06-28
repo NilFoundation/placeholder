@@ -23,14 +23,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-
-#define BOOST_TEST_MODULE fri_test
-
 #include <string>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/mnt4.hpp>
@@ -38,31 +34,35 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+//#include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/commitments/type_traits.hpp>
+#include <nil/actor/zk/transcript/fiat_shamir.hpp>
+#include <nil/actor/zk/commitments/polynomial/fri.hpp>
+#include <nil/actor/zk/commitments/type_traits.hpp>
 
-using namespace nil::crypto3;
+#include <nil/actor/math/polynomial/polynomial.hpp>
 
-BOOST_AUTO_TEST_SUITE(fri_test_suite)
+#include <nil/actor/container/merkle/tree.hpp>
 
-BOOST_AUTO_TEST_CASE(fri_basic_test) {
+using namespace nil::actor;
+
+//BOOST_AUTO_TEST_SUITE(fri_test_suite)
+
+ACTOR_THREAD_TEST_CASE(fri_basic_test) {
 
     // setup
-    using curve_type = algebra::curves::pallas;
+    using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -81,8 +81,8 @@ BOOST_AUTO_TEST_CASE(fri_basic_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -112,16 +112,16 @@ BOOST_AUTO_TEST_CASE(fri_basic_test) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-BOOST_AUTO_TEST_CASE(fri_steps_count_test) {
+ACTOR_THREAD_TEST_CASE(fri_steps_count_test) {
 
     // fri params
-    using curve_type = algebra::curves::mnt4<298>;
+    using curve_type = nil::crypto3::algebra::curves::mnt4<298>;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -137,8 +137,8 @@ BOOST_AUTO_TEST_CASE(fri_steps_count_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -156,20 +156,20 @@ BOOST_AUTO_TEST_CASE(fri_steps_count_test) {
     BOOST_CHECK_EQUAL(proof.final_polynomials[0].degree(), 1);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
+//
+//BOOST_AUTO_TEST_SUITE(batched_fri_test_suite)
 
-BOOST_AUTO_TEST_SUITE(batched_fri_test_suite)
-
-BOOST_AUTO_TEST_CASE(batched_fri_basic_compile_time_size_test) {
+ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_test) {
 
     // setup
-    using curve_type = algebra::curves::pallas;
+    using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -189,8 +189,8 @@ BOOST_AUTO_TEST_CASE(batched_fri_basic_compile_time_size_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -222,16 +222,16 @@ BOOST_AUTO_TEST_CASE(batched_fri_basic_compile_time_size_test) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-BOOST_AUTO_TEST_CASE(batched_fri_basic_runtime_size_test) {
+ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_test) {
 
     // setup
-    using curve_type = algebra::curves::pallas;
+    using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -250,8 +250,8 @@ BOOST_AUTO_TEST_CASE(batched_fri_basic_runtime_size_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -283,20 +283,20 @@ BOOST_AUTO_TEST_CASE(batched_fri_basic_runtime_size_test) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
+//
+//BOOST_AUTO_TEST_SUITE(fri_dfs_test_suite)
 
-BOOST_AUTO_TEST_SUITE(fri_dfs_test_suite)
-
-BOOST_AUTO_TEST_CASE(fri_dfs_basic_test) {
+ACTOR_THREAD_TEST_CASE(fri_dfs_basic_test) {
 
     // setup
-    using curve_type = algebra::curves::pallas;
+    using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -315,8 +315,8 @@ BOOST_AUTO_TEST_CASE(fri_dfs_basic_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -348,16 +348,16 @@ BOOST_AUTO_TEST_CASE(fri_dfs_basic_test) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-BOOST_AUTO_TEST_CASE(fri_dfs_test_2) {
+ACTOR_THREAD_TEST_CASE(fri_dfs_test_2) {
 
     // setup
-    using curve_type = algebra::curves::pallas;
+    using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -376,8 +376,8 @@ BOOST_AUTO_TEST_CASE(fri_dfs_test_2) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -409,20 +409,20 @@ BOOST_AUTO_TEST_CASE(fri_dfs_test_2) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
+//
+//BOOST_AUTO_TEST_SUITE(batched_fri_dfs_test_suite)
 
-BOOST_AUTO_TEST_SUITE(batched_fri_dfs_test_suite)
-
-BOOST_AUTO_TEST_CASE(batched_fri_dfs_basic_test) {
+ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_test) {
 
     // setup
-    using curve_type = algebra::curves::pallas;
+    using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -442,8 +442,8 @@ BOOST_AUTO_TEST_CASE(batched_fri_dfs_basic_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -485,16 +485,16 @@ BOOST_AUTO_TEST_CASE(batched_fri_dfs_basic_test) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-BOOST_AUTO_TEST_CASE(batched_fri_dfs_test_2) {
+ACTOR_THREAD_TEST_CASE(batched_fri_dfs_test_2) {
 
     // setup
-    using curve_type = algebra::curves::pallas;
+    using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t d = 16;
 
@@ -514,8 +514,8 @@ BOOST_AUTO_TEST_CASE(batched_fri_dfs_test_2) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     params.r = r;
     params.D = D;
@@ -562,4 +562,4 @@ BOOST_AUTO_TEST_CASE(batched_fri_dfs_test_2) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()

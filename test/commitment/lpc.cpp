@@ -24,13 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE lpc_test
+//#define BOOST_TEST_MODULE lpc_test
 
 #include <string>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -43,24 +42,24 @@
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/commitments/type_traits.hpp>
+#include <nil/actor/zk/commitments/polynomial/lpc.hpp>
+#include <nil/actor/zk/commitments/polynomial/fri.hpp>
+#include <nil/actor/zk/commitments/type_traits.hpp>
 
-using namespace nil::crypto3;
+using namespace nil::actor;
 
-BOOST_AUTO_TEST_SUITE(lpc_test_suite)
+//BOOST_AUTO_TEST_SUITE(lpc_test_suite)
 
-BOOST_AUTO_TEST_CASE(lpc_basic_test) {
+ACTOR_THREAD_TEST_CASE(lpc_basic_test) {
 
     // setup
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 40;
     constexpr static const std::size_t k = 1;
@@ -85,8 +84,8 @@ BOOST_AUTO_TEST_CASE(lpc_basic_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 
@@ -102,7 +101,7 @@ BOOST_AUTO_TEST_CASE(lpc_basic_test) {
 
     // TODO: take a point outside of the basic domain
     std::vector<typename FieldType::value_type> evaluation_points = {
-        algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
+        nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
 
     std::array<std::uint8_t, 96> x_data {};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(x_data);
@@ -115,16 +114,16 @@ BOOST_AUTO_TEST_CASE(lpc_basic_test) {
     BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
 }
 
-BOOST_AUTO_TEST_CASE(lpc_dfs_basic_test) {
+ACTOR_THREAD_TEST_CASE(lpc_dfs_basic_test) {
 
     // setup
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 40;
     constexpr static const std::size_t k = 1;
@@ -149,8 +148,8 @@ BOOST_AUTO_TEST_CASE(lpc_dfs_basic_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 
@@ -168,7 +167,7 @@ BOOST_AUTO_TEST_CASE(lpc_dfs_basic_test) {
 
     // TODO: take a point outside of the basic domain
     std::vector<typename FieldType::value_type> evaluation_points = {
-        algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
+        nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
 
     std::array<std::uint8_t, 96> x_data {};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(x_data);
@@ -181,20 +180,20 @@ BOOST_AUTO_TEST_CASE(lpc_dfs_basic_test) {
     BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
+//
+//BOOST_AUTO_TEST_SUITE(batched_lpc_test_suite)
 
-BOOST_AUTO_TEST_SUITE(batched_lpc_test_suite)
-
-BOOST_AUTO_TEST_CASE(batched_lpc_basic_test) {
+ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test) {
 
     // setup
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t leaf_size = 1;
     constexpr static const std::size_t lambda = 40;
@@ -214,8 +213,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 
@@ -235,7 +234,7 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test) {
     // TODO: take a point outside of the basic domain
     std::array<std::vector<typename FieldType::value_type>, leaf_size> evaluation_points =
         {{
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
         }};
 
     std::array<std::uint8_t, 96> x_data {};
@@ -249,16 +248,16 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test) {
     BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
 }
 
-BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_2) {
+ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_2) {
 
     // setup
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t leaf_size = 2;
     constexpr static const std::size_t lambda = 40;
@@ -278,8 +277,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_2) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 
@@ -300,8 +299,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_2) {
     // TODO: take a point outside of the basic domain
     std::array<std::vector<typename FieldType::value_type>, leaf_size> evaluation_points =
         {{
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
         }};
 
     std::array<std::uint8_t, 96> x_data {};
@@ -315,16 +314,16 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_2) {
     BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
 }
 
-BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_2) {
+ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_2) {
 
     // setup
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t leaf_size = 2;
     constexpr static const std::size_t lambda = 40;
@@ -344,8 +343,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_2) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 
@@ -369,8 +368,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_2) {
     // TODO: take a point outside of the basic domain
     std::array<std::vector<typename FieldType::value_type>, leaf_size> evaluation_points =
         {{
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
         }};
 
     std::array<std::uint8_t, 96> x_data {};
@@ -384,16 +383,16 @@ BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_2) {
     BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
 }
 
-BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_runtime_size) {
+ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size) {
 
     // setup
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t leaf_size = 2;
     constexpr static const std::size_t lambda = 40;
@@ -413,8 +412,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_runtime_size) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 
@@ -435,8 +434,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_runtime_size) {
     // TODO: take a point outside of the basic domain
     std::vector<std::vector<typename FieldType::value_type>> evaluation_points =
         {
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
         };
 
     std::array<std::uint8_t, 96> x_data {};
@@ -450,16 +449,16 @@ BOOST_AUTO_TEST_CASE(batched_lpc_basic_test_runtime_size) {
     BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
 }
 
-BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
+ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
 
     // setup
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef hashes::sha2<256> merkle_hash_type;
-    typedef hashes::sha2<256> transcript_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
 
-    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t leaf_size = 2;
     constexpr static const std::size_t lambda = 40;
@@ -479,8 +478,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
+        nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 
@@ -506,8 +505,8 @@ BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
     // TODO: take a point outside of the basic domain
     std::vector<std::vector<typename FieldType::value_type>> evaluation_points =
         {
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
-            {algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
+            {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}
         };
 
     std::array<std::uint8_t, 96> x_data {};
@@ -521,4 +520,4 @@ BOOST_AUTO_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
     BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
