@@ -193,12 +193,12 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_polynomials_test) {
         preprocessed_public_data =
         placeholder_public_preprocessor<FieldType, circuit_2_params>::process(
             constraint_system, assignments.public_table(), desc,
-            fri_params, columns_with_copy_constraints.size());
+            fri_params, columns_with_copy_constraints.size()).get();
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data =
         placeholder_private_preprocessor<FieldType, circuit_2_params>::process(constraint_system,
-                                                                               assignments.private_table(), desc, fri_params);
+                                                                               assignments.private_table(), desc, fri_params).get();
 
     auto polynomial_table = plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
         preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table);
@@ -271,12 +271,12 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
         preprocessed_public_data =
         placeholder_public_preprocessor<FieldType, circuit_2_params>::process(
             constraint_system, assignments.public_table(), desc,
-            fri_params, columns_with_copy_constraints.size());
+            fri_params, columns_with_copy_constraints.size()).get();
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data =
         placeholder_private_preprocessor<FieldType, circuit_2_params>::process(constraint_system,
-                                                                               assignments.private_table(), desc, fri_params);
+                                                                               assignments.private_table(), desc, fri_params).get();
 
     auto polynomial_table = plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
         preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table);
@@ -290,7 +290,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
     typename placeholder_permutation_argument<FieldType, circuit_2_params>::prover_result_type
         prover_res = placeholder_permutation_argument<FieldType, circuit_2_params>::prove_eval(
             constraint_system, preprocessed_public_data, desc, polynomial_table,
-            fri_params, prover_transcript);
+            fri_params, prover_transcript).get();
 
     // Challenge phase
     typename FieldType::value_type y = nil::crypto3::algebra::random_element<FieldType>();
@@ -342,12 +342,12 @@ ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
     typename placeholder_public_preprocessor<FieldType, circuit_3_params>::preprocessed_data_type
         preprocessed_public_data =
         placeholder_public_preprocessor<FieldType, circuit_3_params>::process(
-            constraint_system, assignments.public_table(), desc, fri_params, 0);
+            constraint_system, assignments.public_table(), desc, fri_params, 0).get();
 
     typename placeholder_private_preprocessor<FieldType, circuit_3_params>::preprocessed_data_type
         preprocessed_private_data =
         placeholder_private_preprocessor<FieldType, circuit_3_params>::process(constraint_system,
-                                                                               assignments.private_table(), desc, fri_params);
+                                                                               assignments.private_table(), desc, fri_params).get();
 
     auto polynomial_table =
         plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params_lookups::arithmetization_params>(
@@ -362,7 +362,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
     typename placeholder_lookup_argument<FieldType, lpc_type, circuit_3_params>::prover_lookup_result prover_res =
         placeholder_lookup_argument<FieldType, lpc_type, circuit_3_params>::prove_eval(
             constraint_system, preprocessed_public_data, assignments,
-            fri_params, prover_transcript);
+            fri_params, prover_transcript).get();
 
     // Challenge phase
     typename FieldType::value_type y = nil::crypto3::algebra::random_element<FieldType>();
@@ -450,12 +450,12 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
         preprocessed_public_data =
         placeholder_public_preprocessor<FieldType, circuit_2_params>::process(
             constraint_system, assignments.public_table(), desc,
-            fri_params, columns_with_copy_constraints.size());
+            fri_params, columns_with_copy_constraints.size()).get();
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data =
         placeholder_private_preprocessor<FieldType, circuit_2_params>::process(constraint_system,
-                                                                               assignments.private_table(), desc, fri_params);
+                                                                               assignments.private_table(), desc, fri_params).get();
 
     auto polynomial_table = plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
         preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table);
@@ -468,7 +468,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
     std::array<math::polynomial<typename FieldType::value_type>, 1> prover_res =
         placeholder_gates_argument<FieldType, circuit_2_params>::prove_eval(
-            constraint_system, polynomial_table, preprocessed_public_data.common_data.basic_domain, prover_transcript);
+            constraint_system, polynomial_table, preprocessed_public_data.common_data.basic_domain, prover_transcript).get();
 
     // Challenge phase
     typename FieldType::value_type y = nil::crypto3::algebra::random_element<FieldType>();
@@ -558,12 +558,12 @@ ACTOR_THREAD_TEST_CASE(placeholder_prover_basic_test) {
         preprocessed_public_data =
         placeholder_public_preprocessor<FieldType, circuit_2_params>::process(
             constraint_system, assignments.public_table(), desc,
-            fri_params, columns_with_copy_constraints.size());
+            fri_params, columns_with_copy_constraints.size()).get();
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data =
         placeholder_private_preprocessor<FieldType, circuit_2_params>::process(constraint_system,
-                                                                               assignments.private_table(), desc, fri_params);
+                                                                               assignments.private_table(), desc, fri_params).get();
 
     auto proof = placeholder_prover<FieldType, circuit_2_params>::process(
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, assignments, fri_params);

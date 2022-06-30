@@ -61,7 +61,7 @@ namespace nil {
 
                     constexpr static const std::size_t argument_size = 1;
 
-                    static inline std::array<math::polynomial<typename FieldType::value_type>, argument_size>
+                    static inline future<std::array<math::polynomial<typename FieldType::value_type>, argument_size>>
                         prove_eval(typename policy_type::constraint_system_type &constraint_system,
                                    const plonk_polynomial_dfs_table<FieldType,
                                         typename ParamsType::arithmetization_params> &column_polynomials,
@@ -82,7 +82,7 @@ namespace nil {
 
                             for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
                                 gate_result =
-                                    gate_result + gates[i].constraints[j].evaluate(column_polynomials, domain) * theta_acc;
+                                    gate_result + gates[i].constraints[j].evaluate(column_polynomials, domain).get() * theta_acc;
                                 theta_acc *= theta;
                             }
 
@@ -91,7 +91,7 @@ namespace nil {
                             F[0] = F[0] + math::polynomial<typename FieldType::value_type>(gate_result.coefficients());
                         }
 
-                        return F;
+                        return make_ready_future<std::array<math::polynomial<typename FieldType::value_type>, argument_size>>(F);
                     }
 
                     static inline std::array<typename FieldType::value_type, argument_size>

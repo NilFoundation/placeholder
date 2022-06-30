@@ -69,7 +69,7 @@ namespace nil {
                         math::polynomial<typename FieldType::value_type> V_L_polynomial;
                         typename CommitmentSchemeTypePermutation::precommitment_type V_L_precommitment;
                     };
-                    static inline prover_lookup_result
+                    static inline future<prover_lookup_result>
                         prove_eval(plonk_constraint_system<FieldType,
                                         typename ParamsType::arithmetization_params> &constraint_system,
                                    const typename placeholder_public_preprocessor<FieldType, ParamsType>::
@@ -180,13 +180,13 @@ namespace nil {
                             math::polynomial<typename FieldType::value_type>(F_perm_value.coefficients());
                         
                         typename CommitmentSchemeTypePermutation::precommitment_type F_perm_input_tree =
-                            algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_input, fri_params.D[0]);
+                            algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_input, fri_params.D[0]).get();
                         typename CommitmentSchemeTypePermutation::commitment_type F_perm_input_commitment =
                             algorithms::commit<CommitmentSchemeTypePermutation>(F_perm_input_tree);
                         transcript(F_perm_input_commitment);
 
                         typename CommitmentSchemeTypePermutation::precommitment_type F_perm_value_tree =
-                            algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_value, fri_params.D[0]);
+                            algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_value, fri_params.D[0]).get();
                         typename CommitmentSchemeTypePermutation::commitment_type F_perm_value_commitment =
                             algorithms::commit<CommitmentSchemeTypePermutation>(F_perm_value_tree);
                         transcript(F_perm_value_commitment);
@@ -210,7 +210,7 @@ namespace nil {
                             math::polynomial<typename FieldType::value_type>(V_L.coefficients());
 
                         typename CommitmentSchemeTypePermutation::precommitment_type V_L_tree =
-                            algorithms::precommit<CommitmentSchemeTypePermutation>(V_L, fri_params.D[0]);
+                            algorithms::precommit<CommitmentSchemeTypePermutation>(V_L, fri_params.D[0]).get();
                         typename CommitmentSchemeTypePermutation::commitment_type V_L_commitment =
                             algorithms::commit<CommitmentSchemeTypePermutation>(V_L_tree);
                         transcript(V_L_commitment);
@@ -247,7 +247,7 @@ namespace nil {
                             F,   F_perm_input_normal, F_perm_input_tree, F_perm_value_normal, F_perm_value_tree,
                             V_L_normal, V_L_tree};
 
-                        return res;
+                        return make_ready_future<prover_lookup_result>(res);
                     }
 
                     static inline std::array<typename FieldType::value_type, argument_size> verify_eval(

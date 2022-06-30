@@ -199,7 +199,7 @@ namespace nil {
                                                                                     FRI::leaf_size>,
                                              FRI>::value,
                              bool>::type = true>
-                static typename FRI::precommitment_type
+                static future<typename FRI::precommitment_type>
                     precommit(math::polynomial_dfs<typename FRI::field_type::value_type> f,
                               const std::shared_ptr<crypto3::math::evaluation_domain<typename FRI::field_type>> &D) {
 
@@ -216,7 +216,7 @@ namespace nil {
                     }
 
                     return containers::make_merkle_tree<typename FRI::merkle_tree_hash_type, FRI::m>(y_data.begin(),
-                                                                                                     y_data.end()).get();
+                                                                                                     y_data.end());
                 }
 
                 template<typename FRI,
@@ -227,7 +227,7 @@ namespace nil {
                                                                                     FRI::m, FRI::leaf_size>,
                                              FRI>::value,
                              bool>::type = true>
-                static typename FRI::precommitment_type
+                static future<typename FRI::precommitment_type>
                     precommit(const math::polynomial<typename FRI::field_type::value_type> &f,
                               const std::shared_ptr<crypto3::math::evaluation_domain<typename FRI::field_type>> &D) {
 
@@ -245,10 +245,10 @@ namespace nil {
                                                                                     FRI::m, FRI::leaf_size>,
                                              FRI>::value,
                              bool>::type = true>
-                static typename std::enable_if<
+                static future<typename std::enable_if<
                     (std::is_same<typename ContainerType::value_type,
                                   math::polynomial_dfs<typename FRI::field_type::value_type>>::value),
-                    typename FRI::precommitment_type>::type
+                    typename FRI::precommitment_type>::type>
                     precommit(ContainerType poly,
                               const std::shared_ptr<crypto3::math::evaluation_domain<typename FRI::field_type>> &D) {
 
@@ -279,7 +279,7 @@ namespace nil {
                     }
 
                     return containers::make_merkle_tree<typename FRI::merkle_tree_hash_type, FRI::m>(y_data.begin(),
-                                                                                                     y_data.end()).get();
+                                                                                                     y_data.end());
                 }
 
                 template<typename FRI, typename ContainerType,
@@ -291,10 +291,10 @@ namespace nil {
                                                                                     FRI::leaf_size>,
                                              FRI>::value,
                              bool>::type = true>
-                static typename std::enable_if<
+                static future<typename std::enable_if<
                     (std::is_same<typename ContainerType::value_type,
                                   math::polynomial<typename FRI::field_type::value_type>>::value),
-                    typename FRI::precommitment_type>::type
+                    typename FRI::precommitment_type>::type>
                     precommit(const ContainerType &poly,
                               const std::shared_ptr<crypto3::math::evaluation_domain<typename FRI::field_type>> &D) {
 
@@ -317,7 +317,7 @@ namespace nil {
                                         FRI>::value &&
                             (!std::is_same_v<typename ContainerType::value_type, typename FRI::field_type::value_type>),
                         bool>::type = true>
-                static typename FRI::proof_type
+                static future<typename FRI::proof_type>
                     proof_eval(ContainerType f,
                                ContainerType g,
                                typename FRI::precommitment_type &T,
@@ -435,7 +435,7 @@ namespace nil {
                             }
                         }
 
-                        T_next = precommit<FRI>(f, fri_params.D[i + 1]);    // new merkle tree
+                        T_next = precommit<FRI>(f, fri_params.D[i + 1]).get();    // new merkle tree
                         transcript(commit<FRI>(T_next));
 
                         typename FRI::merkle_proof_type colinear_path =
@@ -466,7 +466,7 @@ namespace nil {
                         }
                     }
 
-                    return typename FRI::proof_type({round_proofs, final_polynomials, commit<FRI>(T)});
+                    return make_ready_future<typename FRI::proof_type>(typename FRI::proof_type({round_proofs, final_polynomials, commit<FRI>(T)}));
                 }
 
                 template<typename FRI, typename PolynomType,
@@ -478,7 +478,7 @@ namespace nil {
                                         FRI>::value &&
                             (std::is_same_v<typename PolynomType::value_type, typename FRI::field_type::value_type>),
                         bool>::type = true>
-                static typename FRI::proof_type
+                static future<typename FRI::proof_type>
                     proof_eval(PolynomType f,
                                const PolynomType &g,
                                typename FRI::precommitment_type &T,

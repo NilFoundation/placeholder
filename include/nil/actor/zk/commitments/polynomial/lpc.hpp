@@ -141,7 +141,7 @@ namespace nil {
                                              LPC>::value  &&
                                  std::is_same_v<typename ContainerType::value_type, std::vector<typename LPC::field_type::value_type>>,
                              bool>::type = true>
-                static typename LPC::proof_type proof_eval(
+                static future<typename LPC::proof_type> proof_eval(
                     const ContainerType &evaluation_points,
                     typename LPC::precommitment_type &T,
                     const typename select_container<LPC::const_size,
@@ -220,10 +220,10 @@ namespace nil {
                     std::array<typename LPC::basic_fri::proof_type, LPC::lambda> fri_proof;
 
                     for (std::size_t round_id = 0; round_id <= LPC::lambda - 1; round_id++) {
-                        fri_proof[round_id] = proof_eval<typename LPC::basic_fri>(Q, g, T, fri_params, transcript);
+                        fri_proof[round_id] = proof_eval<typename LPC::basic_fri>(Q, g, T, fri_params, transcript).get();
                     }
 
-                    return typename LPC::proof_type({z, commit<typename LPC::basic_fri>(T), fri_proof});
+                    return make_ready_future<typename LPC::proof_type>(typename LPC::proof_type({z, commit<typename LPC::basic_fri>(T), fri_proof}));
                 }
 
                 template<typename LPC, typename ContainerType, // TODO: check for value_type == std::vector<typename LPC::field_type::value_type>?
@@ -233,7 +233,7 @@ namespace nil {
                                              LPC>::value &&
                              std::is_same_v<typename ContainerType::value_type, std::vector<typename LPC::field_type::value_type>>,
                              bool>::type = true>
-                static typename LPC::proof_type proof_eval(
+                static future<typename LPC::proof_type> proof_eval(
                     const ContainerType &evaluation_points,
 
                     typename LPC::precommitment_type &T,
@@ -264,7 +264,7 @@ namespace nil {
                                                                                              typename LPC::lpc_params>,
                                              LPC>::value,
                              bool>::type = true>
-                static typename LPC::proof_type proof_eval(
+                static future<typename LPC::proof_type> proof_eval(
                     const std::vector<typename LPC::field_type::value_type> &evaluation_points,
                     typename LPC::precommitment_type &T,
                     const typename select_container<LPC::const_size,
@@ -348,10 +348,10 @@ namespace nil {
                     }
 
                     for (std::size_t round_id = 0; round_id <= LPC::lambda - 1; round_id++) {
-                        fri_proof[round_id] = proof_eval<typename LPC::basic_fri>(Q, g, T, fri_params, transcript);
+                        fri_proof[round_id] = proof_eval<typename LPC::basic_fri>(Q, g, T, fri_params, transcript).get();
                     }
 
-                    return typename LPC::proof_type({z, commit<typename LPC::basic_fri>(T), fri_proof});
+                    return make_ready_future<typename LPC::proof_type>(typename LPC::proof_type({z, commit<typename LPC::basic_fri>(T), fri_proof}));
                 }
 
                 template<typename LPC,
@@ -360,7 +360,7 @@ namespace nil {
                                                                                              typename LPC::lpc_params>,
                                              LPC>::value,
                              bool>::type = true>
-                static typename LPC::proof_type proof_eval(
+                static future<typename LPC::proof_type> proof_eval(
                     const std::vector<typename LPC::field_type::value_type> &evaluation_points,
                     typename LPC::precommitment_type &T,
                     const typename select_container<LPC::const_size,
@@ -482,7 +482,7 @@ namespace nil {
                                                                                              typename LPC::lpc_params>,
                                              LPC>::value,
                              bool>::type = true>
-                static typename LPC::proof_type proof_eval(
+                static future<typename LPC::proof_type> proof_eval(
                     const std::vector<typename LPC::field_type::value_type> &evaluation_points,
                     typename LPC::precommitment_type &T,
                     const math::polynomial<typename LPC::field_type::value_type> &g,
@@ -520,10 +520,10 @@ namespace nil {
                     std::array<typename LPC::basic_fri::proof_type, LPC::lambda> fri_proof;
 
                     for (std::size_t round_id = 0; round_id <= LPC::lambda - 1; round_id++) {
-                        fri_proof[round_id] = proof_eval<typename LPC::basic_fri>(Q, g, T, fri_params, transcript);
+                        fri_proof[round_id] = proof_eval<typename LPC::basic_fri>(Q, g, T, fri_params, transcript).get();
                     }
 
-                    return typename LPC::proof_type({z, commit<typename LPC::basic_fri>(T), fri_proof});
+                    return make_ready_future<typename LPC::proof_type>(typename LPC::proof_type({z, commit<typename LPC::basic_fri>(T), fri_proof}));
                 }
 
                 template<typename LPC,
@@ -532,7 +532,7 @@ namespace nil {
                                                                                              typename LPC::lpc_params>,
                                              LPC>::value,
                              bool>::type = true>
-                static typename LPC::proof_type proof_eval(
+                static future<typename LPC::proof_type> proof_eval(
                     const std::vector<typename LPC::field_type::value_type> &evaluation_points,
                     typename LPC::precommitment_type &T,
                     const math::polynomial_dfs<typename LPC::field_type::value_type> &g,

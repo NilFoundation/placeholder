@@ -88,7 +88,7 @@ namespace nil {
                     }
 
                     template<typename FieldType>
-                    math::polynomial_dfs<typename FieldType::value_type>
+                    future<math::polynomial_dfs<typename FieldType::value_type>>
                         column_polynomial_dfs(const plonk_column<FieldType> &column_assignment,
                                           const std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> &domain) {
 
@@ -99,7 +99,7 @@ namespace nil {
 
                         res.resize(domain->size()).get();
                         
-                        return res;
+                        return make_ready_future<math::polynomial_dfs<typename FieldType::value_type>>(res);
                     }
 
                     template<typename FieldType>
@@ -119,7 +119,7 @@ namespace nil {
                     }
 
                     template<typename FieldType, std::size_t columns_amount>
-                    std::array<math::polynomial_dfs<typename FieldType::value_type>, columns_amount>
+                    future<std::array<math::polynomial_dfs<typename FieldType::value_type>, columns_amount>>
                         column_range_polynomial_dfs(
                             const std::array<plonk_column<FieldType>, columns_amount> &column_range_assignment,
                             const std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> &domain) {
@@ -128,10 +128,10 @@ namespace nil {
 
                         for (std::size_t column_index = 0; column_index < columns_amount; column_index++) {
                             columns[column_index] =
-                                column_polynomial_dfs<FieldType>(column_range_assignment[column_index], domain);
+                                column_polynomial_dfs<FieldType>(column_range_assignment[column_index], domain).get();
                         }
 
-                        return columns;
+                        return make_ready_future<std::array<math::polynomial_dfs<typename FieldType::value_type>, columns_amount>>(columns);
                     }
 
                 }    // namespace detail

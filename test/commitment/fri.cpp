@@ -94,13 +94,13 @@ ACTOR_THREAD_TEST_CASE(fri_basic_test) {
     // commit
     math::polynomial<typename FieldType::value_type> f = {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 5, 6, 1, 2, 1, 1};
 
-    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(init_blob);
 
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
@@ -145,12 +145,12 @@ ACTOR_THREAD_TEST_CASE(fri_steps_count_test) {
     params.max_degree = d - 1;
 
     BOOST_CHECK(D[1]->m == D[0]->m / 2);
-    merkle_tree_type commit_merkle =zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle =zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(init_blob);
 
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     math::polynomial<typename FieldType::value_type> final_polynomial = proof.final_polynomials[0];
     BOOST_CHECK_EQUAL(proof.final_polynomials[0].degree(), 1);
@@ -204,13 +204,13 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_test) {
         {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 5, 6, 1, 2, 1, 1},
         {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 5, 6, 1, 2, 1, 1}}};
 
-    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(init_blob);
 
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
@@ -265,13 +265,13 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_test) {
         {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 5, 6, 1, 2, 1, 1},
         {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 6, 1, 2, 1, 1}};
 
-    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(init_blob);
 
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
@@ -330,13 +330,13 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_basic_test) {
     math::polynomial_dfs<typename FieldType::value_type> f;
     f.from_coefficients(f_data);
 
-    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(init_blob);
 
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
@@ -391,13 +391,13 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_test_2) {
     math::polynomial_dfs<typename FieldType::value_type> f;
     f.from_coefficients(f_data);
 
-    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(init_blob);
 
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
@@ -462,7 +462,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_test) {
         f[polynom_index].from_coefficients(f_data[polynom_index]);
     }
 
-    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -473,7 +473,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_test) {
                                           math::polynomial<typename FieldType::value_type>>::value);
     static_assert(std::is_same<typename ContainerType::value_type,
                                           math::polynomial_dfs<typename FieldType::value_type>>::value);
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
@@ -539,7 +539,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_test_2) {
         f[polynom_index].from_coefficients(f_data[polynom_index]);
     }
 
-    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]);
+    merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
 
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -550,7 +550,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_test_2) {
                                           math::polynomial<typename FieldType::value_type>>::value);
     static_assert(std::is_same<typename ContainerType::value_type,
                                           math::polynomial_dfs<typename FieldType::value_type>>::value);
-    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript);
+    proof_type proof = zk::algorithms::proof_eval<fri_type>(f, commit_merkle, params, transcript).get();
 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);

@@ -359,7 +359,7 @@ namespace nil {
                         return q_blind;
                     }
 
-                    static inline typename preprocessed_data_type::public_precommitments_type precommitments(
+                    static inline future<typename preprocessed_data_type::public_precommitments_type> precommitments(
                         const plonk_public_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>
                             &public_table,
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> &id_perm_polys,
@@ -369,31 +369,31 @@ namespace nil {
 
 
                         typename runtime_size_commitment_scheme_type::precommitment_type id_permutation =
-                            algorithms::precommit<runtime_size_commitment_scheme_type>(id_perm_polys, commitment_params.D[0]);
+                            algorithms::precommit<runtime_size_commitment_scheme_type>(id_perm_polys, commitment_params.D[0]).get();
 
                         typename runtime_size_commitment_scheme_type::precommitment_type sigma_permutation =
                             algorithms::precommit<runtime_size_commitment_scheme_type>(
-                                sigma_perm_polys, commitment_params.D[0]);
+                                sigma_perm_polys, commitment_params.D[0]).get();
 
                         typename public_input_commitment_scheme_type::precommitment_type public_input_precommitment =
                             algorithms::precommit<public_input_commitment_scheme_type>(
-                                public_table.public_inputs(), commitment_params.D[0]);
+                                public_table.public_inputs(), commitment_params.D[0]).get();
 
                         typename constant_commitment_scheme_type::precommitment_type constant_precommitment =
                             algorithms::precommit<constant_commitment_scheme_type>(
-                                public_table.constants(), commitment_params.D[0]);
+                                public_table.constants(), commitment_params.D[0]).get();
 
                         typename selector_commitment_scheme_type::precommitment_type selector_precommitment =
                             algorithms::precommit<selector_commitment_scheme_type>(
-                                public_table.selectors(), commitment_params.D[0]);
+                                public_table.selectors(), commitment_params.D[0]).get();
 
                         typename special_commitment_scheme_type::precommitment_type special_selector_precommitment =
                             algorithms::precommit<special_commitment_scheme_type>(
-                                q_last_q_blind, commitment_params.D[0]);
+                                q_last_q_blind, commitment_params.D[0]).get();
 
-                        return typename preprocessed_data_type::public_precommitments_type {
+                        return make_ready_future<typename preprocessed_data_type::public_precommitments_type>(typename preprocessed_data_type::public_precommitments_type {
                             id_permutation,          sigma_permutation,       public_input_precommitment,
-                            constant_precommitment, selector_precommitment, special_selector_precommitment};
+                            constant_precommitment, selector_precommitment, special_selector_precommitment});
                     }
 
                     static inline typename preprocessed_data_type::public_commitments_type
@@ -423,7 +423,7 @@ namespace nil {
                                                         selector_commitment,     special_selector_commitment};
                     }
 
-                    static inline preprocessed_data_type process(
+                    static inline future<preprocessed_data_type> process(
                         plonk_constraint_system<FieldType,
                             typename ParamsType::arithmetization_params> &constraint_system,
                         const typename policy_type::variable_assignment_type::public_table_type &public_assignment,
@@ -473,11 +473,11 @@ namespace nil {
                             public_polynomial_table =
                                 plonk_public_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>(
                                     detail::column_range_polynomial_dfs<FieldType>(public_assignment.public_inputs(),
-                                                                                basic_domain),
+                                                                                basic_domain).get(),
                                     detail::column_range_polynomial_dfs<FieldType>(public_assignment.constants(),
-                                                                                basic_domain),
+                                                                                basic_domain).get(),
                                     detail::column_range_polynomial_dfs<FieldType>(public_assignment.selectors(),
-                                                                                basic_domain));
+                                                                                basic_domain).get());
 
                         std::vector<typename FieldType::value_type> Z(N_rows + 1,
                             FieldType::value_type::zero());
@@ -487,7 +487,7 @@ namespace nil {
                         // prepare commitments for short verifier
                         typename preprocessed_data_type::public_precommitments_type public_precommitments =
                             precommitments(public_polynomial_table, id_perm_polys, sigma_perm_polys,
-                                           q_last_q_blind, commitment_params);
+                                           q_last_q_blind, commitment_params).get();
 
                         typename preprocessed_data_type::public_commitments_type public_commitments = commitments(public_precommitments);
 
@@ -507,7 +507,7 @@ namespace nil {
                         elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - begin);
                         std::cout << "Placeholder_public_preprocessor_total_time: " << std::fixed << std::setprecision(3) << elapsed.count() * 1e-6 << "ms" << std::endl;
 #endif
-                        return preprocessed_data;
+                        return make_ready_future<preprocessed_data_type>(preprocessed_data);
                     }
                 };
 
@@ -525,7 +525,7 @@ namespace nil {
                             typename ParamsType::arithmetization_params> private_polynomial_table;
                     };
 
-                    static inline preprocessed_data_type process(
+                    static inline future<preprocessed_data_type> process(
                         const plonk_constraint_system<FieldType,
                             typename ParamsType::arithmetization_params> &constraint_system,
                         const typename policy_type::variable_assignment_type::private_table_type &private_assignment,
@@ -542,8 +542,8 @@ namespace nil {
                             private_polynomial_table =
                                 plonk_private_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>(
                                     detail::column_range_polynomial_dfs<FieldType>(private_assignment.witnesses(),
-                                                                                basic_domain));
-                        return preprocessed_data_type({basic_domain, private_polynomial_table});
+                                                                                basic_domain).get());
+                        return make_ready_future<preprocessed_data_type>(preprocessed_data_type({basic_domain, private_polynomial_table}));
                     }
                 };
 

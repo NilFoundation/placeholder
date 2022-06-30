@@ -93,7 +93,7 @@ namespace nil {
                                                                                   FRI::m,FRI::leaf_size>,
                                                                  FRI>::value,
                                                  bool>::type = true>
-                static typename FRI::basic_fri::proof_type proof_eval(
+                static future<typename FRI::basic_fri::proof_type> proof_eval(
                     const PolynomialType &g,
                     typename FRI::precommitment_type &T,
                     const typename FRI::basic_fri::params_type &fri_params,

@@ -43,6 +43,10 @@
 #include <nil/actor/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
 #include <nil/actor/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
 
+#include <nil/actor/core/smp.hh>
+#include <nil/actor/core/when_all.hh>
+#include <nil/actor/core/future.hh>
+
 namespace nil {
     namespace actor {
         namespace zk {
@@ -69,7 +73,7 @@ namespace nil {
                             permutation_poly_precommitment;
                     };
 
-                    static inline prover_result_type prove_eval(
+                    static inline future<prover_result_type> prove_eval(
                         plonk_constraint_system<FieldType,
                             typename ParamsType::arithmetization_params> &constraint_system,
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::
@@ -81,6 +85,10 @@ namespace nil {
                         typename ParamsType::commitment_params_type fri_params,
                         transcript_type &transcript = transcript_type()) {
 
+#ifdef ZK_PLACEHOLDER_PROFILING_ENABLED
+                        auto last = std::chrono::high_resolution_clock::now();
+                        auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - last);
+#endif
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_sigma =
                             preprocessed_data.permutation_polynomials;
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_id =
@@ -90,26 +98,63 @@ namespace nil {
                         // 1. $\beta_1, \gamma_1 = \challenge$
                         typename FieldType::value_type beta = transcript.template challenge<FieldType>();
                         typename FieldType::value_type gamma = transcript.template challenge<FieldType>();
-                        
                         // 2. Calculate id_binding, sigma_binding for j from 1 to N_rows
                         // 3. Calculate $V_P$
                         math::polynomial_dfs<typename FieldType::value_type> V_P(
                             basic_domain->size() - 1, basic_domain->size());
-
                         V_P[0] = FieldType::value_type::one();
-                        for (std::size_t j = 1; j < basic_domain->size(); j++) {
-                            typename FieldType::value_type coeff = FieldType::value_type::one();
 
-                            for (std::size_t i = 0; i < S_id.size(); i++) {
-                                assert(column_polynomials[i].size() == basic_domain->size());
-                                assert(S_id[i].size() == basic_domain->size());
-                                assert(S_sigma[i].size() == basic_domain->size());
+                        std::vector<future<>> fut;
+                        std::size_t cpu_usage = std::min(basic_domain->size(), (std::size_t)smp::count - 1);
+                        std::size_t element_per_cpu = basic_domain->size() / (smp::count - 1);
+                        std::cout << "Count=" << smp::count << std::endl;
+                        std::vector<typename FieldType::value_type> V_P_coeff(basic_domain->size());
+                        std::cout << "cpu_usage=" << cpu_usage << std::endl;
+                        for (auto shard_id = cpu_usage; shard_id > 0; --shard_id) {
+                            auto begin = (shard_id - 1 != 0) ? element_per_cpu * (shard_id  - 1) : 1;
+                            auto end = (shard_id - 1 == cpu_usage - 1) ? basic_domain->size() : element_per_cpu * (shard_id - 1 + 1);
+                            std::cout << "shard_id=" << shard_id - 1 << ' ' << begin << ' ' << end << std::endl;
+                            fut.emplace_back(smp::submit_to(shard_id, [begin, end, beta, gamma, &basic_domain, &S_id, &S_sigma, &V_P_coeff, &column_polynomials]() {
+                                for (std::size_t j = begin; j < end; ++j) {
+                                    typename FieldType::value_type coeff = FieldType::value_type::one();
+                                    for (std::size_t i = 0; i < S_id.size(); i++) {
+                                        assert(column_polynomials[i].size() == basic_domain->size());
+                                        assert(S_id[i].size() == basic_domain->size());
+                                        assert(S_sigma[i].size() == basic_domain->size());
 
-                                coeff *= (column_polynomials[i][j - 1] + beta * S_id[i][j - 1] + gamma) /
-                                    (column_polynomials[i][j - 1] + beta * S_sigma[i][j - 1] + gamma);
-                            }
-                            V_P[j] = V_P[j - 1] * coeff;
+                                        coeff *= (column_polynomials[i][j - 1] + beta * S_id[i][j - 1] + gamma) /
+                                                 (column_polynomials[i][j - 1] + beta * S_sigma[i][j - 1] + gamma);
+                                    }
+                                    V_P_coeff[j] = coeff;
+                                    if (j % 100 == 0) {
+                                        std::cout << "j=" << j << " shard=" << this_shard_id() << std::endl;
+//                                        print("j=%d, core=%d", j, this_shard_id());
+                                    }
+                                }
+                                return make_ready_future<>();
+                            }));
                         }
+
+                        fut[1].get();
+                        fut[2].get();
+                        fut[0].get();
+                        for (std::size_t i = 1; i < V_P_coeff.size(); ++i) {
+                            V_P[i] = V_P[i - 1] * V_P_coeff[i];
+                        }
+
+//                        for (std::size_t j = 1; j < basic_domain->size(); j++) {
+//                            typename FieldType::value_type coeff = FieldType::value_type::one();
+//
+//                            for (std::size_t i = 0; i < S_id.size(); i++) {
+//                                assert(column_polynomials[i].size() == basic_domain->size());
+//                                assert(S_id[i].size() == basic_domain->size());
+//                                assert(S_sigma[i].size() == basic_domain->size());
+//
+//                                coeff *= (column_polynomials[i][j - 1] + beta * S_id[i][j - 1] + gamma) /
+//                                    (column_polynomials[i][j - 1] + beta * S_sigma[i][j - 1] + gamma);
+//                            }
+//                            V_P[j] = V_P[j - 1] * coeff;
+//                        }
                         
                         V_P.resize(fri_params.D[0]->m).get();
 
@@ -117,10 +162,15 @@ namespace nil {
                             math::polynomial<typename FieldType::value_type>(V_P.coefficients());
                         // 4. Compute and add commitment to $V_P$ to $\text{transcript}$.
                         typename permutation_commitment_scheme_type::precommitment_type V_P_tree =
-                            algorithms::precommit<permutation_commitment_scheme_type>(V_P, fri_params.D[0]);
+                            algorithms::precommit<permutation_commitment_scheme_type>(V_P, fri_params.D[0]).get();
                         typename permutation_commitment_scheme_type::commitment_type V_P_commitment =
                             algorithms::commit<permutation_commitment_scheme_type>(V_P_tree);
                         transcript(V_P_commitment);
+#ifdef ZK_PLACEHOLDER_PROFILING_ENABLED
+                        elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - last);
+                        std::cout << "4. Compute and add commitment to $V_P$ to $\\text{transcript}$.: " << std::fixed << std::setprecision(3) << elapsed.count() * 1e-6 << "ms" << std::endl;
+                        last = std::chrono::high_resolution_clock::now();
+#endif
                         // 5. Calculate g_perm, h_perm
                         math::polynomial_dfs<typename FieldType::value_type> g;
                         math::polynomial_dfs<typename FieldType::value_type> h;
@@ -150,7 +200,7 @@ namespace nil {
                             (preprocessed_data.q_last * (V_P * V_P - V_P)).coefficients());
                         prover_result_type res = {F, V_P_normal, V_P_tree};
 
-                        return res;
+                        return make_ready_future<prover_result_type>(res);
                     }
 
                     static inline std::array<typename FieldType::value_type, argument_size>

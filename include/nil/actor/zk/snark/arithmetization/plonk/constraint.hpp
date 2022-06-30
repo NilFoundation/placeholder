@@ -145,7 +145,7 @@ namespace nil {
                     }
 
                     template<typename ArithmetizationParams>
-                    math::polynomial_dfs<typename VariableType::assignment_type>
+                    future<math::polynomial_dfs<typename VariableType::assignment_type>>
                         evaluate(const plonk_polynomial_dfs_table<FieldType, ArithmetizationParams> &assignments,
                             std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> domain) const {
                         math::polynomial_dfs<typename VariableType::assignment_type> acc (
@@ -180,7 +180,7 @@ namespace nil {
                             }
                             acc = acc + term_value;
                         }
-                        return acc;
+                        return make_ready_future<math::polynomial_dfs<typename VariableType::assignment_type>>(acc);
                     }
 
                     typename VariableType::assignment_type evaluate(detail::plonk_evaluation_map<VariableType> &assignments) const {
