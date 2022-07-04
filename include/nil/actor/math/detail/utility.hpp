@@ -38,7 +38,7 @@ namespace nil {
                 future<> block_execution(std::size_t elements_count, std::size_t smp_count, Func &&func) {
                     std::vector<future<>> fut;
                     std::size_t cpu_usage = std::min(elements_count, smp_count);
-                    std::size_t element_per_cpu = elements_count / smp_count;
+                    std::size_t element_per_cpu = elements_count / cpu_usage;
 
                     for (auto i = 0; i < cpu_usage; ++i) {
                         auto begin = element_per_cpu * i;

@@ -51,24 +51,32 @@ namespace nil {
                 polynomial_shift(const polynomial_dfs<FieldValueType> &f,
                                  const int shift,
                                  std::size_t domain_size = 0) {
-                if ((domain_size == 0) && (f.size() > 0)) {
-                    domain_size = f.size() - 1;
+                if (domain_size == 0) {
+                    domain_size = f.size();
                 }
 
-                assert(domain_size <= f.size() - 1);
+                const std::size_t extended_domain_size = f.size();
 
-                polynomial_dfs<FieldValueType> f_shifted(f.degree(), f.size());
+                assert((extended_domain_size % domain_size) == 0);
+
+                const std::size_t domain_scale = extended_domain_size/domain_size;
+
+                polynomial_dfs<FieldValueType> f_shifted(f.degree(), extended_domain_size);
+
+//                for (std::size_t index = 0; index < extended_domain_size; index++){
+//                    f_shifted[index] = f[(extended_domain_size + index + domain_scale * shift) % (extended_domain_size)];
+//                }
 
                 std::vector<future<>> fut;
-                size_t cpu_usage = std::min(f.size(), (std::size_t)smp::count);
-                size_t element_per_cpu = f.size() / smp::count;
+                size_t cpu_usage = std::min(extended_domain_size, (std::size_t)smp::count);
+                size_t element_per_cpu = extended_domain_size / cpu_usage;
 
                 for (auto i = 0; i < cpu_usage; ++i) {
                     auto begin = element_per_cpu * i;
                     auto end = (i == cpu_usage - 1) ? f.size() : element_per_cpu * (i + 1);
-                    fut.emplace_back(smp::submit_to(i, [begin, end, domain_size, shift, &f_shifted, &f]() {
+                    fut.emplace_back(smp::submit_to(i, [begin, end, domain_size, shift, extended_domain_size, domain_scale, &f_shifted, &f]() {
                         for (std::size_t index = begin; index < end; index++) {
-                            f_shifted[index] = f[(domain_size + 1 + index + shift) % (domain_size + 1)];
+                            f_shifted[index] = f[(extended_domain_size + index + domain_scale * shift) % (extended_domain_size)];
                         }
                         return nil::actor::make_ready_future<>();
                     }));

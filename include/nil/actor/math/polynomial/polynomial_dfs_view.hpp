@@ -581,7 +581,8 @@ namespace nil {
                     return *this;
                 }
 
-                void from_coefficients(const container_type& tmp) {
+                template<typename ContainerType>
+                void from_coefficients(const ContainerType &tmp) {
                     typedef typename value_type::field_type FieldType;
                     size_t n = crypto3::math::detail::power_of_two(tmp.size());
                     value_type omega = crypto3::math::unity_root<FieldType>(n);

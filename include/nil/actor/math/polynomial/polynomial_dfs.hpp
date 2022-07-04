@@ -637,7 +637,8 @@ namespace nil {
                     return polynomial_dfs(r_deg, r);
                 }
 
-                void from_coefficients(const container_type& tmp) {
+                template<typename ContainerType>
+                void from_coefficients(const ContainerType &tmp) {
                     typedef typename value_type::field_type FieldType;
                     size_t n = crypto3::math::detail::power_of_two(tmp.size());
                     value_type omega = crypto3::math::unity_root<FieldType>(n);
@@ -656,7 +657,7 @@ namespace nil {
                     detail::basic_radix2_fft<FieldType>(tmp, omega.inversed()).get();
 
                     const value_type sconst = value_type(this->size()).inversed();
-                    detail::block_execution(this->size(),
+                    detail::block_execution(tmp.size(),
                                             smp::count,
                                             [&tmp, sconst](std::size_t begin, std::size_t end) {
                                                 for (std::size_t i = begin; i < end; i++) {
@@ -665,7 +666,7 @@ namespace nil {
                                             })
                         .get();
                     size_t r_size = tmp.size();
-                    while (r_size > 0 && tmp[r_size - 1] == FieldValueType(0)) {
+                    while (r_size > 1 && tmp[r_size - 1] == FieldValueType(0)) {
                         --r_size;
                     }
                     tmp.resize(r_size);

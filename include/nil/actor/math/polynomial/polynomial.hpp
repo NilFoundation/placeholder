@@ -339,12 +339,44 @@ namespace nil {
                 }
 
                 FieldValueType evaluate(const FieldValueType& value) const {
-                    FieldValueType result = 0;
-                    auto end = this->end();
-                    while (end != this->begin()) {
-                        result = result * value + *--end;
+
+                    std::vector<future<>> fut;
+                    std::size_t cpu_usage = std::min(this->size(), (std::size_t)smp::count);
+                    std::size_t element_per_cpu = this->size() / cpu_usage;
+
+                    std::vector<std::size_t> pow;
+                    std::vector<FieldValueType> result_v(cpu_usage);
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->size() : element_per_cpu * (i + 1);
+                        pow.push_back(end - begin);
+                        fut.emplace_back(smp::submit_to(i, [k = i, begin, end, value, this, &result_v]() {
+                            FieldValueType result = 0;
+                            for (std::size_t i = end; i > begin; --i) {
+                                result = result * value + this->val[i - 1];
+                            }
+                            result_v[k] = result;
+                            return make_ready_future<>();
+                        }));
                     }
-                    return result;
+
+                    FieldValueType res = 0;
+                    FieldValueType pow_cur = 1;
+                    for (auto i = 0; i < fut.size(); ++i) {
+                        fut[i].get();
+                        res += result_v[i] * pow_cur;
+                        for (std::size_t j = 0; j < pow[i]; ++j) {
+                            pow_cur *= value;
+                        }
+                    }
+                    return res;
+
+//                    FieldValueType result = 0;
+//                    auto end = this->end();
+//                    while (end != this->begin()) {
+//                        result = result * value + *--end;
+//                    }
+//                    return result;
                 }
 
                 /**
