@@ -42,14 +42,23 @@ namespace nil {
             /**
              * Returns true if polynomial A is a zero polynomial.
              */
+            template<typename Iter>
+            bool is_zero(const Iter &begin, const Iter &end) {
+                typename Iter::value_type zero = typename std::iterator_traits<Iter>::value_type();
+                return !std::any_of(begin, end, [zero](typename Iter::value_type i) { return i != zero; });
+            }
+            /**
+             * Returns true if polynomial A is a zero polynomial.
+             */
             template<typename Range>
             bool is_zero(const Range &a) {
-                return std::all_of(
+                typename Range::value_type zero =
+                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type();
+                return !std::any_of(
                     std::begin(a),
                     std::end(a),
-                    [](typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type i) {
-                        return i ==
-                               typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type();
+                    [zero](typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type i) {
+                        return i != zero;
                     });
             }
 
@@ -67,9 +76,9 @@ namespace nil {
             template<typename Range>
             void condense(Range &a) {
                 std::size_t i = std::distance(std::cbegin(a), std::cend(a));
-                while (i > 1 &&
-                       a[i - 1] ==
-                           typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type()) {
+                typename Range::value_type zero =
+                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type();
+                while (i > 1 && a[i - 1] == zero) {
                     --i;
                 }
                 a.resize(i);
@@ -236,32 +245,52 @@ namespace nil {
                 typedef
                     typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
 
-                std::size_t d = b.size() - 1;       /* Degree of B */
-                value_type c = b.back().inversed(); /* Inverse of Leading Coefficient of B */
+                std::size_t d = b.size() - 1; /* Degree of B */
 
-                r = Range(a);
-                q = Range(r.size(), value_type::zero());
+                if (b.back() == value_type::one() && is_zero(b.begin() + 1, b.end() - 1) && a.size() >= b.size()) {
+                    q = Range(a.size() - b.size() + 1, value_type::zero());
+                    r = Range(a.begin(), a.end() - (a.size() - b.size() + 1));
 
-                std::size_t r_deg = r.size() - 1;
-                std::size_t shift;
-
-                while (r_deg >= d && !is_zero(r)) {
-                    if (r_deg >= d)
-                        shift = r_deg - d;
-                    else
-                        shift = 0;
-
-                    value_type lead_coeff = r.back() * c;
-
-                    q[shift] += lead_coeff;
-
-                    if (b.size() + shift + 1 > r.size())
-                        r.resize(b.size() + shift + 1);
-                    auto glambda = [=](value_type x, value_type y) { return y - (x * lead_coeff); };
-                    std::transform(b.begin(), b.end(), r.begin() + shift, r.begin() + shift, glambda);
+                    value_type x = -b[0];
+                    auto end = a.end() - 1;
+                    for (std::size_t t = q.size(); t != 0; --t, --end) {
+                        q[t - 1] += *end;
+                        if (t - 1 >= d) {
+                            q[t - 1 - d] = q[t - 1] * x;
+                        } else {
+                            r[t - 1] += q[t - 1] * x;
+                        }
+                    }
                     condense(r);
+                } else {
+                    value_type c = b.back().inversed(); /* Inverse of Leading Coefficient of B */
+                    r = Range(a);
+                    q = Range(r.size(), value_type::zero());
 
-                    r_deg = r.size() - 1;
+                    std::size_t r_deg = r.size() - 1;
+                    std::size_t shift;
+
+                    while (r_deg >= d && !is_zero(r)) {
+                        shift = r_deg - d;
+
+                        value_type lead_coeff = r.back() * c;
+
+                        q[shift] = lead_coeff;
+
+                        if (b.size() + shift + 1 > r.size())
+                            r.resize(b.size() + shift + 1);
+                        detail::block_execution(b.size(),
+                                                smp::count,
+                                                [lead_coeff, shift, &b, &r](std::size_t begin, std::size_t end) {
+                                                    for (std::size_t i = begin; i < end; i++) {
+                                                        r[shift + i] -= b[i] * lead_coeff;
+                                                    }
+                                                })
+                            .get();
+
+                        condense(r);
+                        r_deg = r.size() - 1;
+                    }
                 }
                 condense(q);
             }
