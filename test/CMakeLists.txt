@@ -31,7 +31,7 @@ endif ()
 
 function(actor_add_test name)
     get_filename_component(test_name ${name} NAME)
-    set(target_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${test_name}_test)
+    string(REPLACE "/" "_" target_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${test_name}_test)
 
     set(test_kinds
             ACTOR

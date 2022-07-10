@@ -41,19 +41,9 @@
 #include <nil/crypto3/container/merkle/tree.hpp>
 
 #include <nil/actor/core/when_all.hh>
-
-#include <nil/actor/core/alien.hh>
-
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
-#include <nil/actor/core/memory.hh>
 #include <nil/actor/core/smp.hh>
-#include <nil/actor/detail/memory_diagnostics.hh>
-#include <nil/actor/core/reactor.hh>
-
 #include <nil/actor/core/distributed.hh>
 #include <nil/actor/core/shared_ptr.hh>
-#include <nil/actor/core/thread.hh>
 
 namespace nil {
     namespace actor {
