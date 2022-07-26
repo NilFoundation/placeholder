@@ -100,6 +100,17 @@ namespace nil {
                         // 3. Calculate $V_P$
                         math::polynomial_dfs<typename FieldType::value_type> V_P(
                             basic_domain->size() - 1, basic_domain->size());
+
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_v;
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_v;
+                        for (std::size_t i = 0; i < S_id.size(); i++) {
+                            assert(column_polynomials[i].size() == basic_domain->size());
+                            assert(S_id[i].size() == basic_domain->size());
+                            assert(S_sigma[i].size() == basic_domain->size());
+                            g_v.push_back(column_polynomials[i] + beta * S_id[i] + gamma);
+                            h_v.push_back(column_polynomials[i] + beta * S_sigma[i] + gamma);
+                        }
+
                         V_P[0] = FieldType::value_type::one();
 
                         std::vector<future<>> fut;
@@ -109,16 +120,11 @@ namespace nil {
                         for (auto shard_id = 0; shard_id < cpu_usage; ++shard_id) {
                             auto begin = (shard_id != 0) ? element_per_cpu * (shard_id) : 1;
                             auto end = (shard_id == cpu_usage - 1) ? basic_domain->size() : element_per_cpu * (shard_id + 1);
-                            fut.emplace_back(smp::submit_to(shard_id + 1, [begin, end, beta, gamma, &basic_domain, &S_id, &S_sigma, &V_P_coeff, &column_polynomials]() {
+                            fut.emplace_back(smp::submit_to(shard_id + 1, [begin, end, &g_v, &h_v, &S_id, &V_P_coeff]() {
                                 for (std::size_t j = begin; j < end; ++j) {
                                     typename FieldType::value_type coeff = FieldType::value_type::one();
                                     for (std::size_t i = 0; i < S_id.size(); i++) {
-                                        assert(column_polynomials[i].size() == basic_domain->size());
-                                        assert(S_id[i].size() == basic_domain->size());
-                                        assert(S_sigma[i].size() == basic_domain->size());
-
-                                        coeff *= (column_polynomials[i][j - 1] + beta * S_id[i][j - 1] + gamma) /
-                                                 (column_polynomials[i][j - 1] + beta * S_sigma[i][j - 1] + gamma);
+                                        coeff *= g_v[i][j - 1] / h_v[i][j - 1];
                                     }
                                     V_P_coeff[j] = coeff;
                                 }
@@ -148,11 +154,11 @@ namespace nil {
 
                         for (std::size_t i = 0; i < S_id.size(); i++) {
                             if (i == 0) {
-                                g = (column_polynomials[0] + beta * S_id[0] + gamma);
-                                h = (column_polynomials[0] + beta * S_sigma[0] + gamma);
+                                g = g_v[0];
+                                h = h_v[0];
                             } else {
-                                g = g * (column_polynomials[i] + beta * S_id[i] + gamma);
-                                h = h * (column_polynomials[i] + beta * S_sigma[i] + gamma);
+                                g = g * g_v[i];
+                                h = h * h_v[i];
                             }
                         }
 
