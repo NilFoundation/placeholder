@@ -3,6 +3,7 @@
 // Copyright (c) 2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2022 Ilia Shirobokov <i.shirobokov@nil.foundation>
 // Copyright (c) 2022 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -93,7 +94,7 @@ ACTOR_THREAD_TEST_CASE(fri_basic_test) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1, true> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -153,7 +154,7 @@ ACTOR_THREAD_TEST_CASE(fri_basic_skipping_layers_test) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1, true> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -214,7 +215,7 @@ ACTOR_THREAD_TEST_CASE(fri_steps_count_test) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1, true> fri_type;
     typedef typename fri_type::proof_type proof_type;
     typedef typename fri_type::params_type params_type;
 
@@ -262,8 +263,9 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_test) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
     constexpr static const std::size_t leaf_size = 2;
+    constexpr static const bool is_const_size = true;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size, is_const_size> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -322,8 +324,9 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_skipping_layers_test)
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
     constexpr static const std::size_t leaf_size = 10;
+    constexpr static const bool is_const_size = true;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size, is_const_size> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -387,7 +390,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_test) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -447,7 +450,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_skipping_layers_test) {
     constexpr static const std::size_t m = 2;
     const std::size_t leaf_size = 10;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -515,7 +518,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_basic_test) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1, true> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -575,7 +578,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_basic_skipping_layers_test) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1, true> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -638,7 +641,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_test_2) {
     constexpr static const std::size_t r = boost::static_log2<d>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 1, true> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -703,7 +706,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_test) {
     constexpr static const std::size_t m = 2;
     constexpr static const std::size_t leaf_size = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -773,7 +776,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_skipping_layers_test) {
     constexpr static const std::size_t m = 2;
     constexpr static const std::size_t leaf_size = 10;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);
@@ -848,7 +851,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_test_2) {
     constexpr static const std::size_t m = 2;
     constexpr static const std::size_t leaf_size = 7;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     static_assert(zk::is_commitment<fri_type>::value);
     static_assert(!zk::is_commitment<merkle_hash_type>::value);

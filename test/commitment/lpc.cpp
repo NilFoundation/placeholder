@@ -3,6 +3,7 @@
 // Copyright (c) 2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2022 Ilia Shirobokov <i.shirobokov@nil.foundation>
 // Copyright (c) 2022 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -95,7 +96,7 @@ ACTOR_THREAD_TEST_CASE(lpc_basic_test) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 0,
                                                                false>
@@ -162,7 +163,7 @@ ACTOR_THREAD_TEST_CASE(lpc_basic_skipping_layers_test) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 0,
                                                                false>
@@ -232,7 +233,7 @@ ACTOR_THREAD_TEST_CASE(lpc_dfs_basic_test) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 0,
                                                                false>
@@ -298,6 +299,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test) {
     typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t leaf_size = 1;
+    constexpr static const bool is_const_size = true;
     constexpr static const std::size_t lambda = 40;
     constexpr static const std::size_t k = 1;
 
@@ -306,10 +308,10 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size, is_const_size> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m,
-                                                               leaf_size, true>
+                                                               leaf_size, is_const_size>
         lpc_params_type;
     typedef zk::commitments::batched_list_polynomial_commitment<FieldType, lpc_params_type> lpc_type;
 
@@ -369,7 +371,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_skipping_layers_test) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size, true> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m,
                                                                leaf_size, true>
@@ -404,7 +406,8 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_skipping_layers_test) {
 
     // TODO: take a point outside of the basic domain
     std::array<std::vector<typename FieldType::value_type>, leaf_size> evaluation_points = {
-        {{nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}}};
+            {{nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator},
+             {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator}}};
 
     std::array<std::uint8_t, 96> x_data {};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(x_data);
@@ -437,7 +440,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_2) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size, true> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m,
                                                                leaf_size, true>
@@ -501,7 +504,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_2) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, leaf_size, true> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m,
                                                                leaf_size, true>
@@ -570,7 +573,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 0,
                                                                false>
@@ -634,7 +637,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size_skipping_layers) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 0,
                                                                false>
@@ -703,7 +706,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 0,
                                                                false>
@@ -772,7 +775,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size_skipping_layers) 
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0, false> fri_type;
 
     typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 0,
                                                                false>

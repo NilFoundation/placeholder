@@ -20,7 +20,7 @@ if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
 endif()
 
 option(ZK_PLACEHOLDER_PROFILING_ENABLED "Build with placeholder profiling" FALSE)
-option(ZK_PLACEHOLDER_DEBUG_ENABLED "Build with placeholder profiling" FALSE)
+option(ZK_PLACEHOLDER_DEBUG_ENABLED "Build with placeholder testing inside" FALSE)
 
 if(ZK_PLACEHOLDER_PROFILING)
     add_definitions(-DZK_PLACEHOLDER_PROFILING_ENABLED)
