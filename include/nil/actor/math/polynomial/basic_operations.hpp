@@ -47,19 +47,21 @@ namespace nil {
                 typename Iter::value_type zero = typename std::iterator_traits<Iter>::value_type();
                 return !std::any_of(begin, end, [zero](typename Iter::value_type i) { return i != zero; });
             }
+
             /**
              * Returns true if polynomial A is a zero polynomial.
              */
             template<typename Range>
             bool is_zero(const Range &a) {
                 typename Range::value_type zero =
-                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type();
+                        typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type();
                 return !std::any_of(
-                    std::begin(a),
-                    std::end(a),
-                    [zero](typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type i) {
-                        return i != zero;
-                    });
+                        std::begin(a),
+                        std::end(a),
+                        [zero](typename std::iterator_traits<decltype(std::begin(
+                                std::declval<Range>()))>::value_type i) {
+                            return i != zero;
+                        });
             }
 
             template<typename Range>
@@ -77,7 +79,7 @@ namespace nil {
             void condense(Range &a) {
                 std::size_t i = std::distance(std::cbegin(a), std::cend(a));
                 typename Range::value_type zero =
-                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type();
+                        typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type();
                 while (i > 1 && a[i - 1] == zero) {
                     --i;
                 }
@@ -92,7 +94,7 @@ namespace nil {
             future<> addition(Range &c, const Range &a, const Range &b) {
 
                 typedef
-                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
+                typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
 
                 if (is_zero(a)) {
                     c = b;
@@ -130,7 +132,7 @@ namespace nil {
             future<> subtraction(Range &c, const Range &a, const Range &b) {
 
                 typedef
-                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
+                typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
 
                 if (is_zero(b)) {
                     c = a;
@@ -165,23 +167,28 @@ namespace nil {
              * Perform the multiplication of two polynomials, polynomial A * polynomial B, using FFT, and stores
              * result in polynomial C.
              */
-            template<typename Range>
-            future<> multiplication(Range &c, const Range &a, const Range &b) {
+            template<typename AlgebraicRange, typename FieldRange>
+            future<> multiplication(AlgebraicRange &c, const AlgebraicRange &a, const FieldRange &b) {
 
                 typedef
-                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
+                typename std::iterator_traits<decltype(std::begin(
+                        std::declval<AlgebraicRange>()))>::value_type algebraic_value_type;
+                typedef
+                typename std::iterator_traits<decltype(std::begin(
+                        std::declval<FieldRange>()))>::value_type field_value_type;
 
-                typedef typename value_type::field_type FieldType;
+                typedef typename field_value_type::field_type FieldType;
                 BOOST_STATIC_ASSERT(crypto3::algebra::is_field<FieldType>::value);
-                BOOST_STATIC_ASSERT(std::is_same<typename FieldType::value_type, value_type>::value);
+                BOOST_STATIC_ASSERT(std::is_same<typename FieldType::value_type, field_value_type>::value);
 
                 const std::size_t n = crypto3::math::detail::power_of_two(a.size() + b.size() - 1);
-                value_type omega = crypto3::math::unity_root<FieldType>(n);
+                field_value_type omega = crypto3::math::unity_root<FieldType>(n);
 
-                Range u(a), v(b);
-                u.resize(n, value_type::zero());
-                v.resize(n, value_type::zero());
-                c.resize(n, value_type::zero());
+                AlgebraicRange u(a);
+                FieldRange v(b);
+                u.resize(n, algebraic_value_type::zero());
+                v.resize(n, field_value_type::zero());
+                c.resize(n, algebraic_value_type::zero());
 
                 detail::basic_radix2_fft<FieldType>(u, omega).get();
                 detail::basic_radix2_fft<FieldType>(v, omega).get();
@@ -194,11 +201,11 @@ namespace nil {
 
                 detail::basic_radix2_fft<FieldType>(c, omega.inversed()).get();
 
-                const value_type sconst = value_type(n).inversed();
+                const field_value_type sconst = field_value_type(n).inversed();
 
                 detail::block_execution(n, smp::count, [&c, sconst](std::size_t begin, std::size_t end) {
                     for (std::size_t i = begin; i < end; i++) {
-                        c[i] *= sconst;
+                        c[i] = c[i] * sconst;
                     }
                 }).get();
 
@@ -212,26 +219,26 @@ namespace nil {
              * Below we make use of the transposed multiplication definition from
              * [Bostan, Lecerf, & Schost, 2003. Tellegen's Principle in Practice, on page 39].
              */
-            template<typename Range>
-            future<Range> transpose_multiplication(const std::size_t &n, const Range &a, const Range &c) {
+            template<typename AlgebraicRange, typename FieldRange>
+            future<AlgebraicRange> transpose_multiplication(const std::size_t &n, const AlgebraicRange &a, const FieldRange &c) {
 
                 typedef
-                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
+                typename std::iterator_traits<decltype(std::begin(std::declval<AlgebraicRange>()))>::value_type value_type;
 
                 const std::size_t m = a.size();
                 // if (c.size() - 1 > m + n)
                 // throw InvalidSizeException("expected c.size() - 1 <= m + n");
 
-                Range r(a);
+                AlgebraicRange r(a);
                 reverse(r, m);
                 multiplication(r, r, c).get();
 
                 /* Determine Middle Product */
-                Range result;
+                AlgebraicRange result;
                 for (std::size_t i = m - 1; i < n + m; i++) {
                     result.emplace_back(r[i]);
                 }
-                return make_ready_future<Range>(result);
+                return make_ready_future<AlgebraicRange>(result);
             }
 
             /**
@@ -243,7 +250,7 @@ namespace nil {
             void division(Range &q, Range &r, const Range &a, const Range &b) {
 
                 typedef
-                    typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
+                typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type value_type;
 
                 std::size_t d = b.size() - 1; /* Degree of B */
 
@@ -286,7 +293,7 @@ namespace nil {
                                                         r[shift + i] -= b[i] * lead_coeff;
                                                     }
                                                 })
-                            .get();
+                                .get();
 
                         condense(r);
                         r_deg = r.size() - 1;

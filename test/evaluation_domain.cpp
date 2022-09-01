@@ -29,10 +29,12 @@
 #include <memory>
 #include <vector>
 #include <cstdint>
+#include <algorithm>
 
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
+#include <nil/crypto3/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/algebra/fields/mnt4/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
@@ -48,14 +50,28 @@
 #include <nil/actor/math/domains/extended_radix2_domain.hpp>
 #include <nil/actor/math/domains/geometric_sequence_domain.hpp>
 #include <nil/actor/math/domains/step_radix2_domain.hpp>
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/polynomial/evaluate.hpp>
 
 #include <typeinfo>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::actor::math;
+
+template<typename EvaluationDomainType>
+std::size_t find_m() {
+    for(std::size_t m = 4; m < 100; ++m) {
+        try{
+            EvaluationDomainType d(m);
+            return m;
+        } catch(std::invalid_argument &e) {
+            // continute;
+        }
+    }
+    BOOST_FAIL(std::string("Could not find m below 100 for ") + typeid(EvaluationDomainType).name());
+    return 4;
+}
 
 /**
  * Note: Templatized type referenced with FieldType (instead of canonical FieldType)
@@ -69,13 +85,13 @@ void test_fft() {
     const std::size_t m = 4;
     std::vector<value_type> f = {2, 5, 3, 8};
 
-    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
+    std::shared_ptr<evaluation_domain<FieldType>> domain;
 
-    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
+    domain = make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
 
-    domain->fft(a);
+    domain->fft(a).get();
 
     std::vector<value_type> idx(m);
 
@@ -103,13 +119,13 @@ void test_inverse_fft_of_fft() {
     const std::size_t m = 4;
     std::vector<value_type> f = {2, 5, 3, 8};
 
-    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
+    std::shared_ptr<evaluation_domain<FieldType>> domain;
 
-    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
+    domain = make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
-    domain->fft(a);
-    domain->inverse_fft(a);
+    domain->fft(a).get();
+    domain->inverse_fft(a).get();
 
     std::cout << "inverse FFT of FFT: key = " << typeid(*domain).name() << std::endl;
     for (std::size_t i = 0; i < m; i++) {
@@ -126,14 +142,14 @@ void test_inverse_coset_ftt_of_coset_fft() {
 
     value_type coset = value_type(fields::arithmetic_params<FieldType>::multiplicative_generator);
 
-    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
+    std::shared_ptr<evaluation_domain<FieldType>> domain;
 
-    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
+    domain = make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
     multiply_by_coset(a, coset);
-    domain->fft(a);
-    domain->inverse_fft(a);
+    domain->fft(a).get();
+    domain->inverse_fft(a).get();
     multiply_by_coset(a, coset.inversed());
 
     for (std::size_t i = 0; i < m; i++) {
@@ -148,12 +164,12 @@ void test_lagrange_coefficients() {
     const std::size_t m = 8;
     value_type t = value_type(10);
 
-    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
+    std::shared_ptr<evaluation_domain<FieldType>> domain;
 
-    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
+    domain = make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a;
-    a = domain->evaluate_all_lagrange_polynomials(t);
+    a = domain->evaluate_all_lagrange_polynomials(t).get();
 
     std::cout << "LagrangeCoefficients: key = " << typeid(*domain).name() << std::endl;
     std::vector<value_type> d(m);
@@ -176,8 +192,8 @@ void test_compute_z() {
     const std::size_t m = 8;
     value_type t = value_type(10);
 
-    std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain;
-    domain = nil::crypto3::math::make_evaluation_domain<FieldType>(m);
+    std::shared_ptr<evaluation_domain<FieldType>> domain;
+    domain = make_evaluation_domain<FieldType>(m);
 
     value_type a;
     a = domain->compute_vanishing_polynomial(t);
@@ -190,6 +206,78 @@ void test_compute_z() {
     }
 
     BOOST_CHECK_EQUAL(Z.data, a.data);
+}
+
+template<typename FieldType, typename GroupType, typename EvaluationDomainType, typename GroupEvaluationDomainType>
+void test_fft_curve_elements() {
+    typedef typename GroupType::value_type value_type;
+    typedef typename FieldType::value_type field_value_type;
+
+    std::size_t m = find_m<EvaluationDomainType>();
+
+    // Make sure the results are reproducible.
+    std::srand(0);
+    std::vector<field_value_type> f(m);
+    std::generate(f.begin(), f.end(), std::rand);
+    std::vector<value_type> g(m);
+    for(std::size_t i = 0; i < m; ++i) {
+        g[i] = value_type::one() * f[i];
+    }
+
+    std::shared_ptr<evaluation_domain<FieldType>> domain;
+
+    domain.reset(new EvaluationDomainType(m));
+
+    std::shared_ptr<evaluation_domain<FieldType, value_type>> curve_element_domain;
+
+    curve_element_domain.reset(new GroupEvaluationDomainType(m));
+
+    domain->fft(f).get();
+    curve_element_domain->fft(g).get();
+
+    BOOST_CHECK_EQUAL(f.size(), g.size());
+
+    for(std::size_t i = 0; i < f.size(); ++i) {
+        BOOST_CHECK(f[i] * value_type::one() == g[i]);
+    }
+
+    std::cout << "type name " << typeid(EvaluationDomainType).name() << std::endl;
+}
+
+template<typename FieldType, typename GroupType, typename EvaluationDomainType, typename GroupEvaluationDomainType>
+void test_inverse_fft_curve_elements() {
+    typedef typename GroupType::value_type value_type;
+    typedef typename FieldType::value_type field_value_type;
+
+    std::size_t m = find_m<EvaluationDomainType>();
+
+    // Make sure the results are reproducible.
+    std::srand(0);
+    std::vector<field_value_type> f(m);
+    std::generate(f.begin(), f.end(), std::rand);
+    std::vector<value_type> g(m);
+    for(std::size_t i = 0; i < m; ++i) {
+        g[i] = value_type::one() * f[i];
+    }
+
+    std::shared_ptr<evaluation_domain<FieldType>> domain;
+
+    domain.reset(new EvaluationDomainType(m));
+
+    std::shared_ptr<evaluation_domain<FieldType, value_type>> curve_element_domain;
+
+    curve_element_domain.reset(new GroupEvaluationDomainType(m));
+
+    domain->inverse_fft(f).get();
+    curve_element_domain->inverse_fft(g).get();
+
+    BOOST_CHECK_EQUAL(f.size(), g.size());
+
+    for(std::size_t i = 0; i < f.size(); ++i) {
+        BOOST_CHECK(f[i] * value_type::one() == g[i]);
+    }
+
+    std::cout << "type name " << typeid(EvaluationDomainType).name() << std::endl;
 }
 
 ACTOR_THREAD_TEST_CASE(fft) {
@@ -215,4 +303,62 @@ ACTOR_THREAD_TEST_CASE(lagrange_coefficients) {
 ACTOR_THREAD_TEST_CASE(compute_z) {
     test_compute_z<fields::bls12<381>>();
     test_compute_z<fields::mnt4<298>>();
+}
+
+ACTOR_THREAD_TEST_CASE(curve_elements_fft) {
+    typedef curves::bls12<381>::scalar_field_type field_type;
+    typedef curves::bls12<381>::g1_type<> group_type;
+    using group_value_type = group_type::value_type;
+
+    test_fft_curve_elements<field_type,
+            group_type,
+            basic_radix2_domain<field_type>,
+            basic_radix2_domain<field_type, group_value_type>>();
+    // not applicable for any m < 100 for this field
+    // test_fft_curve_elements<field_type,
+    //                         group_type,
+    //                         extended_radix2_domain<field_type>,
+    //                         extended_radix2_domain<field_type, group_value_type>>();
+    test_fft_curve_elements<field_type,
+            group_type,
+            step_radix2_domain<field_type>,
+            step_radix2_domain<field_type, group_value_type>>();
+    test_fft_curve_elements<field_type,
+            group_type,
+            geometric_sequence_domain<field_type>,
+            geometric_sequence_domain<field_type, group_value_type>>();
+    // not applicable  for this field
+    // test_fft_curve_elements<field_type,
+    //                         group_type,
+    //                         arithmetic_sequence_domain<field_type>,
+    //                         arithmetic_sequence_domain<field_type, group_value_type>>();
+}
+
+ACTOR_THREAD_TEST_CASE(curve_elements_inverse_fft) {
+    typedef curves::bls12<381>::scalar_field_type field_type;
+    typedef curves::bls12<381>::g1_type<> group_type;
+    using group_value_type = group_type::value_type;
+
+    test_inverse_fft_curve_elements<field_type,
+            group_type,
+            basic_radix2_domain<field_type>,
+            basic_radix2_domain<field_type, group_value_type>>();
+    // not applicable for any m < 100 for this field
+    // test_inverse_fft_curve_elements<field_type,
+    //                         group_type,
+    //                         extended_radix2_domain<field_type>,
+    //                         extended_radix2_domain<field_type, group_value_type>>();
+    test_inverse_fft_curve_elements<field_type,
+            group_type,
+            step_radix2_domain<field_type>,
+            step_radix2_domain<field_type, group_value_type>>();
+    test_inverse_fft_curve_elements<field_type,
+            group_type,
+            geometric_sequence_domain<field_type>,
+            geometric_sequence_domain<field_type, group_value_type>>();
+    // not applicable for this field
+    // test_inverse_fft_curve_elements<field_type,
+    //                         group_type,
+    //                         arithmetic_sequence_domain<field_type>,
+    //                         arithmetic_sequence_domain<field_type, group_value_type>>();
 }

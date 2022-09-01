@@ -56,8 +56,11 @@ namespace nil {
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;
 
+                    typedef typename FieldType::value_type field_value_type;
                     BOOST_STATIC_ASSERT(crypto3::algebra::is_field<FieldType>::value);
-                    BOOST_STATIC_ASSERT(std::is_same<typename FieldType::value_type, value_type>::value);
+
+                    // It now supports curve elements too, should probably some other assertion about the field type and value type
+                    // BOOST_STATIC_ASSERT(std::is_same<typename FieldType::value_type, value_type>::value);
 
                     num_cpus = 1ul << log_cpus;
 
@@ -77,23 +80,23 @@ namespace nil {
 
                     std::vector<future<>> fut;
 
-                    const value_type omega_num_cpus = omega.pow(num_cpus);
+                    const field_value_type omega_num_cpus = omega.pow(num_cpus);
 
                     for (std::size_t j = 0; j < num_cpus; ++j) {
-                        const value_type omega_j = omega.pow(j);
-                        const value_type omega_step = omega.pow(j << (log_m - log_cpus));
+                        const field_value_type omega_j = omega.pow(j);
+                        const field_value_type omega_step = omega.pow(j << (log_m - log_cpus));
 
                         fut.emplace_back(smp::submit_to(
                             j, [j, omega_num_cpus, omega_j, omega_step, log_m, log_cpus, num_cpus, &tmp, &a]() {
-                                value_type elt = value_type::one();
+                                    field_value_type elt = field_value_type::one();
                                 for (std::size_t i = 0; i < 1ul << (log_m - log_cpus); ++i) {
                                     for (std::size_t s = 0; s < num_cpus; ++s) {
                                         // invariant: elt is omega^(j*idx)
                                         const std::size_t idx = (i + (s << (log_m - log_cpus))) % (1u << log_m);
-                                        tmp[j][i] += a[idx] * elt;
+                                        tmp[j][i] = tmp[j][i] + elt * a[idx];
                                         elt *= omega_step;
                                     }
-                                    elt *= omega_j;
+                                    elt = elt * omega_j;
                                 }
 
                                 crypto3::math::detail::basic_radix2_fft<FieldType>(tmp[j], omega_num_cpus);

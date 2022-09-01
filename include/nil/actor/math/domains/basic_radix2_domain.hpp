@@ -30,9 +30,9 @@
 #include <vector>
 
 #include <nil/crypto3/math/detail/field_utils.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/domains/detail/basic_radix2_domain_aux.hpp>
 
 namespace nil {
@@ -41,20 +41,21 @@ namespace nil {
 
             using namespace nil::crypto3::algebra;
 
-            template<typename FieldType>
-            class basic_radix2_domain : public crypto3::math::evaluation_domain<FieldType> {
-                typedef typename FieldType::value_type value_type;
+            template<typename FieldType, typename ValueType = typename FieldType::value_type>
+            class basic_radix2_domain : public evaluation_domain<FieldType, ValueType> {
+                typedef typename FieldType::value_type field_value_type;
+                typedef ValueType value_type;
 
             public:
                 typedef FieldType field_type;
 
-                value_type omega;
+                field_value_type omega;
 
-                basic_radix2_domain(const std::size_t m) : crypto3::math::evaluation_domain<FieldType>(m) {
+                basic_radix2_domain(const std::size_t m) : evaluation_domain<FieldType, ValueType>(m) {
                     if (m <= 1)
                         throw std::invalid_argument("basic_radix2(): expected m > 1");
 
-                    if (!std::is_same<value_type, std::complex<double>>::value) {
+                    if (!std::is_same<field_value_type, std::complex<double>>::value) {
                         const std::size_t logm = static_cast<std::size_t>(std::ceil(std::log2(m)));
                         if (logm > (fields::arithmetic_params<FieldType>::s))
                             throw std::invalid_argument(
@@ -64,65 +65,67 @@ namespace nil {
                     omega = crypto3::math::unity_root<FieldType>(m);
                 }
 
-                void fft(std::vector<value_type> &a) {
+                future<> fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
+                            a.resize(this->m, value_type::zero());
                         } else {
                             throw std::invalid_argument("arithmetic: expected a.size() == this->m");
                         }
                     }
 
-                    detail::basic_radix2_fft<FieldType>(a, omega);
+                    detail::basic_radix2_fft<FieldType>(a, omega).get();
+                    return make_ready_future<>();
                 }
 
                 future<> inverse_fft(std::vector<value_type> &a) {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
-                            a.resize(this->m, value_type(0));
+                            a.resize(this->m, value_type::zero());
                         } else {
                             throw std::invalid_argument("arithmetic: expected a.size() == this->m");
                         }
                     }
 
-                    detail::basic_radix2_fft<FieldType>(a, omega.inversed());
+                    detail::basic_radix2_fft<FieldType>(a, omega.inversed()).get();
 
-                    const value_type sconst = value_type(a.size()).inversed();
+                    const field_value_type sconst = field_value_type(a.size()).inversed();
 
                     detail::block_execution(this->m, smp::count, [sconst, &a](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
-                            a[i] *= sconst;
+                            a[i] = a[i] * sconst;
                         }
                     }).get();
 
                     return make_ready_future<>();
                 }
 
-                std::vector<value_type> evaluate_all_lagrange_polynomials(const value_type &t) {
-                    return detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType>(this->m, t);
+                future<std::vector<field_value_type>> evaluate_all_lagrange_polynomials(const field_value_type &t) {
+                    return make_ready_future<std::vector<field_value_type>>(detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType>(this->m, t));
                 }
 
-                value_type get_domain_element(const std::size_t idx) {
+                field_value_type get_domain_element(const std::size_t idx) {
                     return omega.pow(idx);
                 }
 
-                value_type compute_vanishing_polynomial(const value_type &t) {
-                    return (t.pow(this->m)) - value_type::one();
+                field_value_type compute_vanishing_polynomial(const field_value_type &t) {
+                    return (t.pow(this->m)) - field_value_type::one();
                 }
 
-                void add_poly_z(const value_type &coeff, std::vector<value_type> &H) {
+                future<> add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) {
                     if (H.size() != this->m + 1)
                         throw std::invalid_argument("basic_radix2: expected H.size() == this->m+1");
 
                     H[this->m] += coeff;
                     H[0] -= coeff;
+                    return make_ready_future<>();
                 }
 
-                future<> divide_by_z_on_coset(std::vector<value_type> &P) {
-                    const value_type coset = fields::arithmetic_params<FieldType>::multiplicative_generator;
-                    const value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
+                future<> divide_by_z_on_coset(std::vector<field_value_type> &P) {
+                    const field_value_type coset = fields::arithmetic_params<FieldType>::multiplicative_generator;
+                    const field_value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
 
-                    detail::block_execution(this->m, smp::count, [&P](std::size_t begin, std::size_t end) {
+                    detail::block_execution(this->m, smp::count, [&P, &Z_inverse_at_coset](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
                             P[i] *= Z_inverse_at_coset;
                         }
