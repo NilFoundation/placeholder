@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -113,7 +114,7 @@ namespace nil {
 
                 I.resize(n);
 
-                std::vector<field_value_type> Q(transpose_multiplication(n - 1, a, I).get());
+                std::vector<value_type> Q(transpose_multiplication(n - 1, a, I).get());
                 reverse(Q, n);
 
                 /* TNewtonToMonomial */

@@ -104,12 +104,29 @@ namespace nil {
                     return make_ready_future<std::vector<field_value_type>>(detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType>(this->m, t));
                 }
 
+                std::vector<value_type> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                                                                          const typename std::vector<value_type>::const_iterator &t_powers_end) {
+                    if (std::distance(t_powers_begin, t_powers_end) < this->m) {
+                        throw std::invalid_argument("basic_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
+                    }
+                    std::vector<value_type> tmp(t_powers_begin, t_powers_begin + this->m);
+                    this->inverse_fft(tmp).get();
+                    return tmp;
+                }
+
                 field_value_type get_domain_element(const std::size_t idx) {
                     return omega.pow(idx);
                 }
 
                 field_value_type compute_vanishing_polynomial(const field_value_type &t) {
                     return (t.pow(this->m)) - field_value_type::one();
+                }
+
+                polynomial<field_value_type> get_vanishing_polynomial() {
+                    polynomial<field_value_type> z(this->m + 1, field_value_type::zero());
+                    z[this->m] = field_value_type::one();
+                    z[0] = -field_value_type::one();
+                    return z;
                 }
 
                 future<> add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) {

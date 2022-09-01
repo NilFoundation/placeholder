@@ -31,6 +31,7 @@
 
 #include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/polynomial/basis_change.hpp>
+#include <nil/actor/math/polynomial/polynomial.hpp>
 
 namespace nil {
     namespace actor {
@@ -75,7 +76,7 @@ namespace nil {
                         throw std::invalid_argument("arithmetic(): expected m > 1");
                     }
 
-                    if (!(field_value_type(fields::arithmetic_params<FieldType>::arithmetic_generator).is_zero())) {
+                    if (field_value_type(fields::arithmetic_params<FieldType>::arithmetic_generator).is_zero()) {
                         throw std::invalid_argument(
                             "arithmetic(): expected arithmetic_params<FieldType>::arithmetic_generator.is_zero() "
                             "!= true");
@@ -189,18 +190,37 @@ namespace nil {
                     field_value_type l_vanish = l[0];
                     field_value_type g_vanish = field_value_type::one();
 
-                    detail::block_execution(
-                        this->m, smp::count, [t, &l, &l_vanish, &g_vanish, this](std::size_t begin, std::size_t end) {
+                    std::vector<future<>> fut;
+                    std::size_t cpu_usage = std::min(this->m - 1, (std::size_t)smp::count);
+                    std::size_t element_per_cpu = (this->m - 1) / cpu_usage;
+                    std::vector<field_value_type> l_vanish_v(cpu_usage);
+                    std::vector<field_value_type> g_vanish_v(cpu_usage);
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto begin = 1 + element_per_cpu * i;
+                        auto end = (i == cpu_usage - 1) ? this->m : 1 +  element_per_cpu * (i + 1);
+                        fut.emplace_back(smp::submit_to(i, [cpu = i, begin, end, t, &l, &l_vanish_v, &g_vanish_v, this]() {
+                            field_value_type l_vanish = field_value_type::one();
+                            field_value_type g_vanish = field_value_type::one();
                             for (std::size_t i = begin; i < end; i++) {
                                 l[i] = t - this->arithmetic_sequence[i];
                                 l_vanish *= l[i];
                                 g_vanish *= -this->arithmetic_sequence[i];
                             }
-                        }).get();
+                            l_vanish_v[cpu] = l_vanish;
+                            g_vanish_v[cpu] = g_vanish;
+                            return make_ready_future<>();
+                        }));
+                    }
+
+                    when_all(fut.begin(), fut.end()).get();
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        l_vanish *= l_vanish_v[i];
+                        g_vanish *= g_vanish_v[i];
+                    }
 
                     std::vector<field_value_type> w(this->m);
                     w[0] = g_vanish.inversed() * (this->arithmetic_generator.pow(this->m - 1));
-
                     l[0] = l_vanish * l[0].inversed() * w[0];
                     for (std::size_t i = 1; i < this->m; i++) {
                         field_value_type num = this->arithmetic_sequence[i - 1] - this->arithmetic_sequence[this->m - 1];
@@ -208,8 +228,76 @@ namespace nil {
                         l[i] = l_vanish * l[i].inversed() * w[i];
                     }
 
-                    //                    return l;
                     return nil::actor::make_ready_future<std::vector<field_value_type>>(l);
+                }
+
+                std::vector<value_type> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                                                                          const typename std::vector<value_type>::const_iterator &t_powers_end) {
+                    if(std::distance(t_powers_begin, t_powers_end) < this->m) {
+                        throw std::invalid_argument("arithmetic_sequence_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
+                    }
+
+                    /* Compute Lagrange polynomial of size m, with m+1 points (x_0, y_0), ... ,(x_m, y_m) */
+                    /* Evaluate for x = t */
+                    /* Return coeffs for each l_j(x) = (l / l_i[j]) * w[j] */
+
+                    if (!precomputation_sentinel)
+                        do_precomputation().get();
+
+                    /**
+                     * If t equals one of the arithmetic progression values,
+                     * then output 1 at the right place, and 0 elsewhere.
+                     */
+                    for (std::size_t i = 0; i < this->m; ++i) {
+                        if (arithmetic_sequence[i] * t_powers_begin[0] == t_powers_begin[1])    // i.e., t equals a[i]
+                        {
+                            std::vector<value_type> res(this->m, value_type::zero());
+                            res[i] = t_powers_begin[0];
+                            return res;
+                        }
+                    }
+
+                    /**
+                     * Otherwise, if t does not equal any of the arithmetic progression values,
+                     * then compute each Lagrange coefficient.
+                     */
+                    std::vector<polynomial<field_value_type>> l(this->m);
+                    l[0] = polynomial<field_value_type>({-arithmetic_sequence[0], field_value_type::one()});;
+
+                    polynomial<field_value_type> l_vanish = l[0];
+                    field_value_type g_vanish = field_value_type::one();
+
+                    for (std::size_t i = 1; i < this->m; i++) {
+                        l[i] = polynomial<field_value_type>({-arithmetic_sequence[i], field_value_type::one()});
+                        l_vanish = l_vanish * l[i];
+                        g_vanish *= -this->arithmetic_sequence[i];
+                    }
+
+                    std::vector<field_value_type> w(this->m);
+                    w[0] = g_vanish.inversed() * (this->arithmetic_generator.pow(this->m - 1));
+
+                    for (std::size_t i = 0; i < this->m; i++) {
+                        l[i] = l_vanish / l[i];
+                    }
+
+                    std::vector<value_type> result(this->m, value_type::zero());
+
+                    for(std::size_t j = 0; j < l[0].size(); ++j) {
+                        result[0] = result[0] + t_powers_begin[j] * l[0][j];
+                    }
+                    result[0] = result[0] * w[0];
+
+                    for (std::size_t i = 1; i < this->m; i++) {
+                        field_value_type num = this->arithmetic_sequence[i - 1] - this->arithmetic_sequence[this->m - 1];
+                        w[i] = w[i - 1] * num * this->arithmetic_sequence[i].inversed();
+
+                        for(std::size_t j = 0; j < l[i].size(); ++j) {
+                            result[i] = result[i] + t_powers_begin[j] * l[i][j];
+                        }
+                        result[i] = result[i] * w[i];
+                    }
+
+                    return result;
                 }
 
                 field_value_type get_domain_element(const std::size_t idx) {
@@ -229,6 +317,17 @@ namespace nil {
                         Z *= (t - this->arithmetic_sequence[i]);
                     }
                     return Z;
+                }
+
+                polynomial<field_value_type> get_vanishing_polynomial() {
+                    if (!precomputation_sentinel)
+                        do_precomputation().get();
+
+                    polynomial<field_value_type> z({field_value_type::one()});
+                    for (std::size_t i = 0; i < this->m; i++) {
+                        z = z * polynomial<field_value_type>({-arithmetic_sequence[i], field_value_type::one()});
+                    }
+                    return z;
                 }
 
                 future<> add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) {
