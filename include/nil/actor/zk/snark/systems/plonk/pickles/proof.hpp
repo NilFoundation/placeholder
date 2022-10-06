@@ -95,4 +95,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_PROOF_HPP
+#endif    // ACTOR_PROOF_HPP

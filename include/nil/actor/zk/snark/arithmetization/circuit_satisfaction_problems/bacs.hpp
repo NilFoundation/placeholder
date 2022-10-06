@@ -249,4 +249,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_BACS_HPP
+#endif    // ACTOR_BACS_HPP

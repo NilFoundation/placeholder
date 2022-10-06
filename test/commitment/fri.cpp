@@ -120,8 +120,6 @@ ACTOR_THREAD_TEST_CASE(fri_basic_test) {
     // commit
     math::polynomial<typename FieldType::value_type> f = {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 5, 6, 1, 2, 1, 1};
 
-    // merkle_tree_type commit_merkle = zk::algorithms::precommit<fri_type>(f, D[0]).get();
-
     // eval
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(init_blob);
@@ -131,7 +129,7 @@ ACTOR_THREAD_TEST_CASE(fri_basic_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -192,7 +190,7 @@ ACTOR_THREAD_TEST_CASE(fri_basic_skipping_layers_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -301,7 +299,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -367,7 +365,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_skipping_layers_test)
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -426,7 +424,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root,transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -491,7 +489,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_skipping_layers_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -555,7 +553,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_basic_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -618,7 +616,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_basic_skipping_layers_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -678,7 +676,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_test_2) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -752,7 +750,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -827,7 +825,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_skipping_layers_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
@@ -903,7 +901,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_test_2) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(init_blob);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<fri_type>(proof, params, proof.round_proofs[0].T_root, transcript_verifier));
 
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();

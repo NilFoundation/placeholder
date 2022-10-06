@@ -141,7 +141,7 @@ ACTOR_THREAD_TEST_CASE(lpc_basic_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree) ,fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(lpc_basic_skipping_layers_test) {
@@ -211,7 +211,7 @@ ACTOR_THREAD_TEST_CASE(lpc_basic_skipping_layers_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(lpc_dfs_basic_test) {
@@ -280,7 +280,13 @@ ACTOR_THREAD_TEST_CASE(lpc_dfs_basic_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(
+        evaluation_points, 
+        proof, 
+        zk::algorithms::commit<lpc_type>(tree), 
+        fri_params, 
+        transcript_verifier
+    ));
 }
 
 //BOOST_AUTO_TEST_SUITE_END()
@@ -348,7 +354,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(batched_lpc_basic_skipping_layers_test) {
@@ -417,7 +423,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_skipping_layers_test) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_2) {
@@ -481,7 +487,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_2) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof,zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_2) {
@@ -550,7 +556,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_2) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size) {
@@ -614,7 +620,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size_skipping_layers) {
@@ -683,7 +689,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size_skipping_layers) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
@@ -752,7 +758,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size_skipping_layers) {
@@ -826,7 +832,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size_skipping_layers) 
     // verify
     zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
-    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, fri_params, transcript_verifier));
+    BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(evaluation_points, proof, zk::algorithms::commit<lpc_type>(tree), fri_params, transcript_verifier));
 }
 
 //BOOST_AUTO_TEST_SUITE_END()

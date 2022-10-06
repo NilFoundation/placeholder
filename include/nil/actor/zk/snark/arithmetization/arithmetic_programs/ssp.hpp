@@ -303,4 +303,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_SSP_HPP
+#endif    // ACTOR_SSP_HPP

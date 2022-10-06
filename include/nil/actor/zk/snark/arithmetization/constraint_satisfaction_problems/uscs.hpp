@@ -156,4 +156,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_USCS_HPP
+#endif    // ACTOR_USCS_HPP

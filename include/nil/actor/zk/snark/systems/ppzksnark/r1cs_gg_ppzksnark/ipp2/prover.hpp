@@ -24,8 +24,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_PROVE_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_PROVE_HPP
+#ifndef ACTOR_R1CS_GG_PPZKSNARK_IPP2_PROVE_HPP
+#define ACTOR_R1CS_GG_PPZKSNARK_IPP2_PROVE_HPP
 
 #include <algorithm>
 #include <vector>
@@ -654,4 +654,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP
+#endif    // ACTOR_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP

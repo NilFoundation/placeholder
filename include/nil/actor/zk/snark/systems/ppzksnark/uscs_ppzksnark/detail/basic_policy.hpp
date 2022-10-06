@@ -59,8 +59,8 @@
 // <http://eprint.iacr.org/2014/718>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
-#define CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
+#ifndef ACTOR_USCS_PPZKSNARK_TYPES_POLICY_HPP
+#define ACTOR_USCS_PPZKSNARK_TYPES_POLICY_HPP
 
 #include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 #include <nil/actor/zk/snark/arithmetization/arithmetic_programs/ssp.hpp>
@@ -138,4 +138,4 @@ namespace nil {
     }                // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
+#endif    // ACTOR_USCS_PPZKSNARK_TYPES_POLICY_HPP

@@ -54,8 +54,8 @@
 // <https://eprint.iacr.org/2016/260>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
+#ifndef ACTOR_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
+#define ACTOR_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
 
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/modes.hpp>
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/proving_key.hpp>
@@ -304,4 +304,4 @@ namespace nil {
     }                // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP
+#endif    // ACTOR_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP

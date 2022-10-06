@@ -59,8 +59,8 @@
 // <https://eprint.iacr.org/2013/279>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_PPZKSNARK_TYPES_POLICY_HPP
-#define CRYPTO3_R1CS_PPZKSNARK_TYPES_POLICY_HPP
+#ifndef ACTOR_R1CS_PPZKSNARK_TYPES_POLICY_HPP
+#define ACTOR_R1CS_PPZKSNARK_TYPES_POLICY_HPP
 
 #include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_ppzksnark/proving_key.hpp>
@@ -139,4 +139,4 @@ namespace nil {
     }                // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKSNARK_TYPES_POLICY_HPP
+#endif    // ACTOR_R1CS_PPZKSNARK_TYPES_POLICY_HPP

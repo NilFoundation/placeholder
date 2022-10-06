@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_PPZKADSNARK_POLICY_HPP
-#define CRYPTO3_R1CS_PPZKADSNARK_POLICY_HPP
+#ifndef ACTOR_R1CS_PPZKADSNARK_POLICY_HPP
+#define ACTOR_R1CS_PPZKADSNARK_POLICY_HPP
 
 #include <nil/actor/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/detail/basic_policy.hpp>
 
@@ -75,4 +75,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKADSNARK_POLICY_HPP
+#endif    // ACTOR_R1CS_PPZKADSNARK_POLICY_HPP

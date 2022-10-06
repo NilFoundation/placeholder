@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_PPZKSNARK_BASIC_VERIFIER_HPP
-#define CRYPTO3_R1CS_PPZKSNARK_BASIC_VERIFIER_HPP
+#ifndef ACTOR_R1CS_PPZKSNARK_BASIC_VERIFIER_HPP
+#define ACTOR_R1CS_PPZKSNARK_BASIC_VERIFIER_HPP
 
 #include <nil/crypto3/algebra/algorithms/pair.hpp>
 
@@ -366,4 +366,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKSNARK_BASIC_VERIFIER_HPP
+#endif    // ACTOR_R1CS_PPZKSNARK_BASIC_VERIFIER_HPP

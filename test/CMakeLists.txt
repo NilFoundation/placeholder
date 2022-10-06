@@ -17,6 +17,11 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
         crypto3::math
         crypto3::multiprecision
 
+        marshalling::core
+        marshalling::crypto3_multiprecision
+        marshalling::crypto3_algebra
+        marshalling::crypto3_zk
+
         ${Boost_LIBRARIES})
 
 function(actor_add_test test)
@@ -33,11 +38,11 @@ function(actor_add_test test)
             "RUN_ARGS;SOURCES;LIBRARIES;DEPENDS"
             ${ARGN})
 
-    if(NOT parsed_args_KIND)
+    if (NOT parsed_args_KIND)
         set(parsed_args_KIND ACTOR)
-    elseif(NOT (parsed_args_KIND IN_LIST test_kinds))
+    elseif (NOT (parsed_args_KIND IN_LIST test_kinds))
         message(FATAL_ERROR "Invalid test kind. KIND must be one of ${test_kinds}")
-    endif()
+    endif ()
 
     set(libraries "${parsed_args_LIBRARIES}")
     list(APPEND libraries
@@ -57,13 +62,13 @@ function(actor_add_test test)
 
 
     set(args "")
-    if(parsed_args_KIND STREQUAL "ACTOR")
+    if (parsed_args_KIND STREQUAL "ACTOR")
         list(APPEND args -- -c ${BUILD_WITH_UNIT_TEST_SMP})
-    endif()
+    endif ()
 
-    if(NOT (UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux")))
+    if (NOT (UNIX AND (CMAKE_SYSTEM_NAME STREQUAL "Linux")))
         list(APPEND libraries epoll-shim)
-    endif()
+    endif ()
 
     list(APPEND args ${parsed_args_RUN_ARGS})
 
@@ -76,12 +81,12 @@ function(actor_add_test test)
     target_compile_definitions(${full_test_name} PRIVATE
             ACTOR_TESTING_MAIN BOOST_TEST_DYN_LINK)
 
-    if((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
+    if ((BUILD_WITH_STACK_GUARDS STREQUAL "ON") OR
     ((BUILD_WITH_STACK_GUARDS STREQUAL "DEFAULT") AND
     (CMAKE_BUILD_TYPE IN_LIST ACTOR_STACK_GUARD_MODES)))
         target_compile_definitions(${full_test_name}
                 PRIVATE ACTOR_THREAD_STACK_GUARDS)
-    endif()
+    endif ()
 
     target_include_directories(${full_test_name} PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
@@ -118,17 +123,17 @@ macro(define_zk_test test)
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
-    if(target_type STREQUAL "SHARED_LIB")
+    if (target_type STREQUAL "SHARED_LIB")
         target_compile_definitions(${full_test_name} PRIVATE BOOST_TEST_DYN_LINK)
-    elseif(target_type STREQUAL "STATIC_LIB")
+    elseif (target_type STREQUAL "STATIC_LIB")
 
-    endif()
+    endif ()
 
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-steps=2147483647")
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
-    endif()
+    endif ()
 
 endmacro()
 
@@ -136,47 +141,49 @@ set(TESTS_NAMES
         "commitment/lpc"
         "commitment/fri"
         "commitment/fold_polynomial"
-#        "commitment/lpc_performance"
+        "commitment/lpc_performance"
         "commitment/pedersen"
+        "commitment/proof_of_knowledge"
+        "commitment/powers_of_tau"
+        "commitment/r1cs_gg_ppzksnark_mpc"
         "commitment/type_traits"
-#
-#
-#        "routing_algorithms/test_routing_algorithms"
-#
-#        "relations/numeric/qap"
-#        "relations/numeric/sap"
-#        "relations/numeric/ssp"
-#
-#        "systems/plonk/pickles/pickles"
-#        "systems/plonk/pickles/kimchi"
-#        "systems/plonk/pickles/oracles"
-#        "systems/plonk/pickles/to_field"
-#
-        "systems/plonk/placeholder/placeholder"
-#
-#        "systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/r1cs_mp_ppzkpcd"
-#        "systems/pcd/r1cs_pcd/r1cs_sp_ppzkpcd/r1cs_sp_ppzkpcd"
-#
-#        "systems/ppzksnark/bacs_ppzksnark/bacs_ppzksnark"
-#        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark"
-#        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark_marshalling"
-#        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark_tvm_marshalling"
-#        "systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark"
-#        "systems/ppzksnark/r1cs_se_ppzksnark/r1cs_se_ppzksnark"
-#        "systems/ppzksnark/ram_ppzksnark/ram_ppzksnark"
-#        "systems/ppzksnark/tbcs_ppzksnark/tbcs_ppzksnark"
-#        "systems/ppzksnark/uscs_ppzksnark/uscs_ppzksnark"
-#        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark_aggregation_conformity"
-#
-#        "transcript/transcript"
-#        "transcript/sponge_transcript"
-#
-#        "systems/plonk/plonk_constraint")
-        )
 
-foreach(TEST_NAME ${TESTS_NAMES})
+
+        "routing_algorithms/test_routing_algorithms"
+
+        "relations/numeric/qap"
+        "relations/numeric/sap"
+        "relations/numeric/ssp"
+
+        "systems/plonk/pickles/pickles"
+        "systems/plonk/pickles/kimchi"
+        "systems/plonk/pickles/oracles"
+        "systems/plonk/pickles/to_field"
+
+        "systems/plonk/placeholder/placeholder"
+
+        "systems/pcd/r1cs_pcd/r1cs_mp_ppzkpcd/r1cs_mp_ppzkpcd"
+        "systems/pcd/r1cs_pcd/r1cs_sp_ppzkpcd/r1cs_sp_ppzkpcd"
+
+        "systems/ppzksnark/bacs_ppzksnark/bacs_ppzksnark"
+        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark"
+        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark_marshalling"
+        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark_tvm_marshalling"
+        "systems/ppzksnark/r1cs_ppzksnark/r1cs_ppzksnark"
+        "systems/ppzksnark/r1cs_se_ppzksnark/r1cs_se_ppzksnark"
+        "systems/ppzksnark/ram_ppzksnark/ram_ppzksnark"
+        "systems/ppzksnark/tbcs_ppzksnark/tbcs_ppzksnark"
+        "systems/ppzksnark/uscs_ppzksnark/uscs_ppzksnark"
+        "systems/ppzksnark/r1cs_gg_ppzksnark/r1cs_gg_ppzksnark_aggregation_conformity"
+
+        "transcript/transcript"
+        "transcript/kimchi_transcript"
+
+        "systems/plonk/plonk_constraint")
+
+foreach (TEST_NAME ${TESTS_NAMES})
     actor_add_test(${TEST_NAME})
-endforeach()
+endforeach ()
 
 #string(CONCAT TEST_DATA ${CMAKE_CURRENT_SOURCE_DIR} "/systems/plonk/pickles/data/kimchi.json")
 #target_compile_definitions(actor_zk_systems_plonk_pickles_kimchi_test PRIVATE TEST_DATA="${TEST_DATA}")

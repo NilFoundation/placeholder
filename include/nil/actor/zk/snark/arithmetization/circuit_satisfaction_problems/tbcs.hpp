@@ -274,4 +274,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_TBCS_HPP
+#endif    // ACTOR_TBCS_HPP

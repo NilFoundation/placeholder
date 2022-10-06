@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_TBCS_PPZKSNARK_KEYPAIR_HPP
-#define CRYPTO3_TBCS_PPZKSNARK_KEYPAIR_HPP
+#ifndef ACTOR_TBCS_PPZKSNARK_KEYPAIR_HPP
+#define ACTOR_TBCS_PPZKSNARK_KEYPAIR_HPP
 
 #include <tuple>
 
@@ -42,4 +42,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP
+#endif    // ACTOR_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP

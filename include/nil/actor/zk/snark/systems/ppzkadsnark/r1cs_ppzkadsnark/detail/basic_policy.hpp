@@ -56,8 +56,8 @@
 // <http://eprint.iacr.org/2014/617>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_PPZKADSNARK_BASIC_POLICY_HPP
-#define CRYPTO3_R1CS_PPZKADSNARK_BASIC_POLICY_HPP
+#ifndef ACTOR_R1CS_PPZKADSNARK_BASIC_POLICY_HPP
+#define ACTOR_R1CS_PPZKADSNARK_BASIC_POLICY_HPP
 
 #include <memory>
 
@@ -1279,4 +1279,4 @@ namespace nil {
     }                // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKADSNARK_BASIC_POLICY_HPP
+#endif    // ACTOR_R1CS_PPZKADSNARK_BASIC_POLICY_HPP

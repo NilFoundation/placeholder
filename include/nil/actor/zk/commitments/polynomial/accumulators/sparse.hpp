@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ACCUMULATORS_ZK_SPARSE_HPP
-#define CRYPTO3_ACCUMULATORS_ZK_SPARSE_HPP
+#ifndef ACTOR_ACCUMULATORS_ZK_SPARSE_HPP
+#define ACTOR_ACCUMULATORS_ZK_SPARSE_HPP
 
 #include <boost/container/static_vector.hpp>
 
@@ -157,4 +157,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_ACCUMULATORS_SNARK_HPP
+#endif    // ACTOR_ACCUMULATORS_SNARK_HPP

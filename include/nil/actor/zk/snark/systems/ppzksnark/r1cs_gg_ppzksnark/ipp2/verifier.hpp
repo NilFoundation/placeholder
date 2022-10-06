@@ -24,8 +24,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFY_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFY_HPP
+#ifndef ACTOR_R1CS_GG_PPZKSNARK_IPP2_VERIFY_HPP
+#define ACTOR_R1CS_GG_PPZKSNARK_IPP2_VERIFY_HPP
 
 #include <nil/crypto3/algebra/algorithms/pair.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
@@ -710,4 +710,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP
+#endif    // ACTOR_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP

@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_PPZKSNARK_BASIC_PROVER_HPP
-#define CRYPTO3_R1CS_PPZKSNARK_BASIC_PROVER_HPP
+#ifndef ACTOR_R1CS_PPZKSNARK_BASIC_PROVER_HPP
+#define ACTOR_R1CS_PPZKSNARK_BASIC_PROVER_HPP
 
 #ifdef MULTICORE
 #include <omp.h>
@@ -136,4 +136,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKSNARK_BASIC_PROVER_HPP
+#endif    // ACTOR_R1CS_PPZKSNARK_BASIC_PROVER_HPP

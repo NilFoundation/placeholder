@@ -27,8 +27,8 @@
 //
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_PLONK_PLACEHOLDER_TYPES_POLICY_HPP
-#define CRYPTO3_PLONK_PLACEHOLDER_TYPES_POLICY_HPP
+#ifndef ACTOR_PLONK_PLACEHOLDER_TYPES_POLICY_HPP
+#define ACTOR_PLONK_PLACEHOLDER_TYPES_POLICY_HPP
 
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
@@ -79,4 +79,4 @@ namespace nil {
     }                // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_PLONK_PLACEHOLDER_TYPES_POLICY_HPP
+#endif    // ACTOR_PLONK_PLACEHOLDER_TYPES_POLICY_HPP

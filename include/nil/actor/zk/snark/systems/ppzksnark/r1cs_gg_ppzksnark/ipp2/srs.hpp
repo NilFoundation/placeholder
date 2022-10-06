@@ -24,8 +24,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_SRS_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_SRS_HPP
+#ifndef ACTOR_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_SRS_HPP
+#define ACTOR_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_SRS_HPP
 
 #include <vector>
 #include <tuple>
@@ -208,4 +208,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_SRS_HPP
+#endif    // ACTOR_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_SRS_HPP

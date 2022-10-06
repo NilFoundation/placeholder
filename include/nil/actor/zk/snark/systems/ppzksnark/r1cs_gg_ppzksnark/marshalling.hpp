@@ -53,8 +53,8 @@
 // <https://eprint.iacr.org/2016/260>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
-#define CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
+#ifndef ACTOR_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
+#define ACTOR_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
 
 #include <vector>
 #include <tuple>
@@ -1245,4 +1245,4 @@ namespace nil {
     }    // namespace marshalling
 }    // namespace nil
 
-#endif    // CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
+#endif    // ACTOR_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP

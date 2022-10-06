@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_PPZKSNARK_BASIC_GENERATOR_HPP
-#define CRYPTO3_R1CS_PPZKSNARK_BASIC_GENERATOR_HPP
+#ifndef ACTOR_R1CS_PPZKSNARK_BASIC_GENERATOR_HPP
+#define ACTOR_R1CS_PPZKSNARK_BASIC_GENERATOR_HPP
 
 #ifdef MULTICORE
 #include <omp.h>
@@ -229,4 +229,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKSNARK_BASIC_GENERATOR_HPP
+#endif    // ACTOR_R1CS_PPZKSNARK_BASIC_GENERATOR_HPP

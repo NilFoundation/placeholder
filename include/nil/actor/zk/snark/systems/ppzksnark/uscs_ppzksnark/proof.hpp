@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_USCS_PPZKSNARK_PROOF_HPP
-#define CRYPTO3_USCS_PPZKSNARK_PROOF_HPP
+#ifndef ACTOR_USCS_PPZKSNARK_PROOF_HPP
+#define ACTOR_USCS_PPZKSNARK_PROOF_HPP
 
 namespace nil {
     namespace actor {
@@ -87,4 +87,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKSNARK_BASIC_PROVER_HPP
+#endif    // ACTOR_R1CS_PPZKSNARK_BASIC_PROVER_HPP

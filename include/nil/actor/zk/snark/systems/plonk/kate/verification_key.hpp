@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
-#define CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
+#ifndef ACTOR_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
+#define ACTOR_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
 
 #include <nil/actor/zk/snark/commitments/batched_kate_commitment.hpp>
 #include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
@@ -151,4 +151,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
+#endif    // ACTOR_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP

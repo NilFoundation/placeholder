@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_USCS_PPZKSNARK_HPP
-#define CRYPTO3_USCS_PPZKSNARK_HPP
+#ifndef ACTOR_USCS_PPZKSNARK_HPP
+#define ACTOR_USCS_PPZKSNARK_HPP
 
 #include <nil/actor/zk/snark/systems/ppzksnark/uscs_ppzksnark/detail/basic_policy.hpp>
 
@@ -106,4 +106,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_USCS_PPZKSNARK_HPP
+#endif    // ACTOR_USCS_PPZKSNARK_HPP

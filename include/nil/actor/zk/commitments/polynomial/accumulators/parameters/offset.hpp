@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
-#define CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
+#ifndef ACTOR_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
+#define ACTOR_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
 
 #include <boost/parameter/keyword.hpp>
 
@@ -39,4 +39,4 @@ namespace nil {
     }        // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
+#endif    // ACTOR_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP

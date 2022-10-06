@@ -51,8 +51,8 @@
 // Alessandro Chiesa, Eran Tromer, Madars Virza,
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_MP_PPZKPCD_HPP
-#define CRYPTO3_R1CS_MP_PPZKPCD_HPP
+#ifndef ACTOR_R1CS_MP_PPZKPCD_HPP
+#define ACTOR_R1CS_MP_PPZKPCD_HPP
 
 #include <memory>
 #include <vector>
@@ -711,4 +711,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_MP_PPZKPCD_HPP
+#endif    // ACTOR_R1CS_MP_PPZKPCD_HPP

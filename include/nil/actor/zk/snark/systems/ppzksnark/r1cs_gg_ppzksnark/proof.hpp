@@ -24,8 +24,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_PROOF_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_PROOF_HPP
+#ifndef ACTOR_R1CS_GG_PPZKSNARK_PROOF_HPP
+#define ACTOR_R1CS_GG_PPZKSNARK_PROOF_HPP
 
 #include <nil/actor/zk/commitments/polynomial/knowledge_commitment.hpp>
 #include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
@@ -92,4 +92,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP
+#endif    // ACTOR_R1CS_GG_PPZKSNARK_TYPES_POLICY_HPP

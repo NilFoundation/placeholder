@@ -326,4 +326,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_SAP_HPP
+#endif    // ACTOR_SAP_HPP

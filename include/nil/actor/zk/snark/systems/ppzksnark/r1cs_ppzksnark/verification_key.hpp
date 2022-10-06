@@ -23,8 +23,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_PPZKSNARK_VERIFICATION_KEY_HPP
-#define CRYPTO3_R1CS_PPZKSNARK_VERIFICATION_KEY_HPP
+#ifndef ACTOR_R1CS_PPZKSNARK_VERIFICATION_KEY_HPP
+#define ACTOR_R1CS_PPZKSNARK_VERIFICATION_KEY_HPP
 
 #include <nil/crypto3/container/accumulation_vector.hpp>
 
@@ -130,4 +130,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_R1CS_PPZKSNARK_BASIC_PROVER_HPP
+#endif    // ACTOR_R1CS_PPZKSNARK_BASIC_PROVER_HPP
