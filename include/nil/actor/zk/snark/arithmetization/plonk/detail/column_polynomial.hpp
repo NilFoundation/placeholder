@@ -133,7 +133,6 @@ namespace nil {
 
                         return make_ready_future<std::array<math::polynomial_dfs<typename FieldType::value_type>, columns_amount>>(columns);
                     }
-
                 }    // namespace detail
             }    // namespace snark
         }        // namespace zk

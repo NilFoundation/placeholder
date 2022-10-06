@@ -45,26 +45,23 @@ namespace nil {
                     typedef MerkleTreeHashType merkle_hash_type;
                     typedef TranscriptHashType transcript_hash_type;
 
-                    constexpr static const std::size_t witness_columns =
-                        ArithmetizationParams::WitnessColumns;
-                    constexpr static const std::size_t public_input_columns =
-                        ArithmetizationParams::PublicInputColumns;
-                    constexpr static const std::size_t constant_columns =
-                        ArithmetizationParams::ConstantColumns;
-                    constexpr static const std::size_t selector_columns =
-                        ArithmetizationParams::SelectorColumns;
+                    constexpr static const std::size_t witness_columns = ArithmetizationParams::witness_columns;
+                    constexpr static const std::size_t public_input_columns = ArithmetizationParams::public_input_columns;
+                    constexpr static const std::size_t constant_columns = ArithmetizationParams::constant_columns;
+                    constexpr static const std::size_t selector_columns = ArithmetizationParams::selector_columns;
 
                     using arithmetization_params = ArithmetizationParams;
 
                     constexpr static const typename FieldType::value_type delta =
                         crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
 
-                    typedef typename commitments::fri<FieldType, MerkleTreeHashType,
-                        TranscriptHashType, M, 1>::params_type commitment_params_type;
-                    
-                    typedef commitments::list_polynomial_commitment_params<MerkleTreeHashType, 
-                            TranscriptHashType, Lambda, R, M>
-                            batched_commitment_params_type;
+                    typedef
+                        typename commitments::fri<FieldType, MerkleTreeHashType, TranscriptHashType, M, 1>::params_type
+                            commitment_params_type;
+
+                    typedef commitments::list_polynomial_commitment_params<MerkleTreeHashType, TranscriptHashType,
+                                                                           Lambda, R, M>
+                        batched_commitment_params_type;
 
                     using runtime_size_commitment_scheme_type =
                         commitments::batched_lpc<FieldType, batched_commitment_params_type, 0, false>;

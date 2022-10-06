@@ -606,10 +606,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_prover_basic_test) {
     BOOST_CHECK(verifier_res);
 }
 
-<<<<<<< HEAD
-//BOOST_AUTO_TEST_SUITE_END()
-=======
-BOOST_AUTO_TEST_CASE(placeholder_prover_lookup_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_prover_lookup_test) {
     circuit_description<FieldType, circuit_3_params, table_rows_log, 3> circuit =
         circuit_test_3<FieldType>();
 
@@ -650,5 +647,3 @@ BOOST_AUTO_TEST_CASE(placeholder_prover_lookup_test) {
                                                                                    constraint_system, fri_params);
     BOOST_CHECK(verifier_res);
 }
-BOOST_AUTO_TEST_SUITE_END()
->>>>>>> 80efd7ec682b8a04487cf8a5852d5739fd1f42ef

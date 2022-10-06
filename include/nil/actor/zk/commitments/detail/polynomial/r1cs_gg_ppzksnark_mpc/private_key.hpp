@@ -38,10 +38,10 @@ namespace nil {
 
                         field_value_type delta;
                     };
-                } // detail
-            }   // commitments
-        }   // zk
-    }   // crypto3
-}   // nil
+                }    // namespace detail
+            }        // namespace commitments
+        }            // namespace zk
+    }                // namespace actor
+}    // namespace nil
 
 #endif  // ACTOR_ZK_R1CS_GG_PPZKSNARK_MPC_PRIVATE_KEY_HPP
