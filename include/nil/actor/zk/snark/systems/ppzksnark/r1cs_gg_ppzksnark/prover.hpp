@@ -89,8 +89,8 @@ namespace nil {
                         BOOST_ASSERT(qap_wit.coefficients_for_H[qap_wit.degree].is_zero());
 
                         /* Choose two random field elements for prover zero-knowledge. */
-                        const typename scalar_field_type::value_type r = algebra::random_element<scalar_field_type>();
-                        const typename scalar_field_type::value_type s = algebra::random_element<scalar_field_type>();
+                        const typename scalar_field_type::value_type r = crypto3::algebra::random_element<scalar_field_type>();
+                        const typename scalar_field_type::value_type s = crypto3::algebra::random_element<scalar_field_type>();
 #ifdef MULTICORE
                         const std::size_t chunks = omp_get_max_threads();    // to override, set OMP_NUM_THREADS env
                                                                              // var or call omp_set_num_threads()

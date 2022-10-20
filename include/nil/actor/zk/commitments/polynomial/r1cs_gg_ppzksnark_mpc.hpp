@@ -69,7 +69,7 @@ namespace nil {
                     // The result of this function is considered toxic wast
                     // and should thus be destroyed
                     static private_key_type generate_private_key() {
-                        typename scalar_field_type::value_type delta = algebra::random_element<scalar_field_type>();
+                        typename scalar_field_type::value_type delta = crypto3::algebra::random_element<scalar_field_type>();
                         return private_key_type {std::move(delta)};
                     }
 

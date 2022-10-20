@@ -51,7 +51,22 @@ namespace nil {
         }    // namespace math
         namespace zk {
             namespace snark {
-
+//                template<typename FieldType>
+//                struct plonk_variable_test {
+//
+//                public:
+//                    using field_type = FieldType;
+//                    using assignment_type = typename FieldType::value_type;
+//
+//                    /**
+//                     * Mnemonic typedefs.
+//                     */
+//                    std::int32_t rotation = 0;
+//                    enum column_type : std::uint8_t { witness, public_input, constant, selector } type = column_type::witness;
+//                    std::size_t index = 0;
+//                    bool relative = false;
+//                    plonk_variable_test() : index(0), rotation(0), relative(false), type(column_type::witness) {};
+//                };
                 /********************************* Variable **********************************/
 
                 /**

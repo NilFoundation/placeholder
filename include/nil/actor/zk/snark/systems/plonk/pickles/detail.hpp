@@ -28,7 +28,7 @@
 #define ACTOR_ZK_PLONK_BATCHED_PICKLES_DETAIL_HPP
 
 #include <nil/actor/zk/commitments/polynomial/kimchi_pedersen.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/proof.hpp>
 #include <nil/actor/zk/snark/systems/plonk/pickles/permutation.hpp>
 #include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>

@@ -74,9 +74,9 @@ namespace nil {
                                                      const primary_input_type &primary_input,
                                                      const auxiliary_input_type &auxiliary_input) {
 
-                        const typename scalar_field_type::value_type d1 = algebra::random_element<scalar_field_type>(),
-                                                                     d2 = algebra::random_element<scalar_field_type>(),
-                                                                     d3 = algebra::random_element<scalar_field_type>();
+                        const typename scalar_field_type::value_type d1 = crypto3::algebra::random_element<scalar_field_type>(),
+                                                                     d2 = crypto3::algebra::random_element<scalar_field_type>(),
+                                                                     d3 = crypto3::algebra::random_element<scalar_field_type>();
 
                         const qap_witness<scalar_field_type> qap_wit =
                             reductions::r1cs_to_qap<scalar_field_type>::witness_map(

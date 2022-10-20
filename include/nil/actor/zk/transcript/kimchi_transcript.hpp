@@ -81,7 +81,7 @@ namespace nil {
 
                 template <typename CurveType>
                 struct BaseSponge{
-                    typedef typename CurveType::template g1_type<algebra::curves::coordinates::affine> group_type;
+                    typedef typename CurveType::template g1_type<crypto3::algebra::curves::coordinates::affine> group_type;
                     typedef typename CurveType::base_field_type base_field_type;
                     typedef typename CurveType::scalar_field_type scalar_field_type;
                     typedef nil::crypto3::hashes::detail::base_poseidon_policy<base_field_type, 2, 1, 7, 55, 0, true> policy_type;
@@ -89,7 +89,7 @@ namespace nil {
                     constexpr static const int CHALLENGE_LENGTH_IN_LIMBS = 2;
                     constexpr static const int HIGH_ENTROPY_LIMBS = 2;
                     
-                    typedef snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
+                    typedef crypto3::zk::snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
 
                     typedef std::uint64_t limb_type;
 
@@ -108,7 +108,7 @@ namespace nil {
                     
                     typedef nil::crypto3::hashes::detail::base_poseidon_policy<scalar_field_type, 2, 1, 7, 55, 0, true> policy_type;
                     typename nil::crypto3::hashes::detail::poseidon_sponge_construction<policy_type> sponge;
-                    typedef snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
+                    typedef crypto3::zk::snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
 
                     constexpr static const int CHALLENGE_LENGTH_IN_LIMBS = BaseSponge<CurveType>::CHALLENGE_LENGTH_IN_LIMBS;
                     constexpr static const int HIGH_ENTROPY_LIMBS = BaseSponge<CurveType>::HIGH_ENTROPY_LIMBS;

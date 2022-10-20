@@ -51,7 +51,7 @@
 
 using namespace nil::crypto3;
 using curve_type = algebra::curves::vesta;
-using group_type = typename curve_type::template g1_type<algebra::curves::coordinates::affine>;
+using group_type = typename curve_type::template g1_type<crypto3::algebra::curves::coordinates::affine>;
 using scalar_field_type = typename curve_type::scalar_field_type;
 using value_type = typename scalar_field_type::value_type;
 using base_field_type = typename curve_type::base_field_type;

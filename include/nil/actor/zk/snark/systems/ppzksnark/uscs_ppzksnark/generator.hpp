@@ -69,7 +69,7 @@ namespace nil {
 
                         /* draw random element at which the SSP is evaluated */
 
-                        const typename scalar_field_type::value_type t = algebra::random_element<scalar_field_type>();
+                        const typename scalar_field_type::value_type t = crypto3::algebra::random_element<scalar_field_type>();
 
                         /* perform USCS-to-SSP reduction */
 

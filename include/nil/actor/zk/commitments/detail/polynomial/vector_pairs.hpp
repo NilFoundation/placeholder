@@ -39,7 +39,7 @@ namespace nil {
                         std::size_t size = std::distance(v1_begin, v1_end);
                         std::vector<scalar_field_value_type> r;
                         for(std::size_t i = 0; i < size; ++i) {
-                            r.emplace_back(algebra::random_element<scalar_field_type>());
+                            r.emplace_back(crypto3::algebra::random_element<scalar_field_type>());
                         }
 
                         typename PointIterator::value_type res1 =

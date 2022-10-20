@@ -1,8 +1,8 @@
 #ifndef CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
 #define CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/permutation.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/permutation.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/detail.hpp>
 #include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
 
 #include <cassert>
@@ -12,7 +12,7 @@ namespace nil {
         namespace zk {
             namespace snark {
                 template <typename FieldType>
-                typename FieldType::value_type unnormalized_lagrange_basis(math::basic_radix2_domain<FieldType> domain, int i, 
+                typename FieldType::value_type unnormalized_lagrange_basis(crypto3::math::basic_radix2_domain<FieldType> domain, int i,
                                                                     typename FieldType::value_type pt){
                     typename FieldType::value_type omega_i = i < 0 ? domain.omega.pow(-i).inversed() : domain.omega.pow(i);
 
@@ -151,7 +151,7 @@ namespace nil {
                             unnormalized_lagrange_basis_value(unnormalized_lagrange_basis_value) {} 
                     
                     static typename FieldType::value_type evaluate(std::vector<PolishToken<FieldType>>& toks,
-                                                            math::basic_radix2_domain<FieldType>& domain,
+                                                            crypto3::math::basic_radix2_domain<FieldType>& domain,
                                                             typename FieldType::value_type pt, 
                                                             std::vector<proof_evaluation_type<typename FieldType::value_type>>& evals,
                                                             Constants<FieldType>& c){

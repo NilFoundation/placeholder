@@ -52,8 +52,8 @@ namespace nil {
                 // hashes::detail::poseidon_constants_kimchi<base_field_type> fq_sponge_params;
                 template<
                     typename CurveType, 
-                    typename PoseidonKimchiScalarConstants = hashes::detail::poseidon_constants_kimchi<typename CurveType::scalar_field_type>,
-                    typename PoseidonKimchiBaseConstants = hashes::detail::poseidon_constants_kimchi<typename CurveType::base_field_type>,
+                    typename PoseidonKimchiScalarConstants = crypto3::hashes::detail::poseidon_constants_kimchi<typename CurveType::scalar_field_type>,
+                    typename PoseidonKimchiBaseConstants = crypto3::hashes::detail::poseidon_constants_kimchi<typename CurveType::base_field_type>,
                     std::size_t WiresAmount = kimchi_constant::COLUMNS, 
                     std::size_t Permuts = kimchi_constant::PERMUTES
                 >
@@ -64,7 +64,7 @@ namespace nil {
                     using scalar_field_type = typename CurveType::scalar_field_type;
                     using base_field_type = typename CurveType::base_field_type;
 
-                    math::basic_radix2_domain<scalar_field_type> domain;
+                    crypto3::math::basic_radix2_domain<scalar_field_type> domain;
                     size_t max_poly_size;
                     size_t max_quot_size;
                     typename commitment_scheme::params_type srs;

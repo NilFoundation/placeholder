@@ -32,8 +32,6 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
-using namespace nil::crypto3;
-
 namespace nil {
     namespace actor {
         namespace zk {
@@ -43,7 +41,7 @@ namespace nil {
                 class pedersen {
                 public:
                     typedef typename CurveType::scalar_field_type field_type;
-                    typedef typename CurveType::template g1_type<algebra::curves::coordinates::affine> group_type;
+                    typedef typename CurveType::template g1_type<crypto3::algebra::curves::coordinates::affine> group_type;
                     typedef typename field_type::value_type evaluation_type;
                     typedef typename group_type::value_type commitment_type;
 

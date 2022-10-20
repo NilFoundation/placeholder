@@ -22,7 +22,7 @@
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk;
 using curve_type = algebra::curves::vesta;
-using group_type = curve_type::template g1_type<algebra::curves::coordinates::affine>;
+using group_type = curve_type::template g1_type<crypto3::algebra::curves::coordinates::affine>;
 using scalar_field_type = curve_type::scalar_field_type;
 using base_field_type = curve_type::base_field_type;
 using scalar_value_type = scalar_field_type::value_type;
@@ -147,8 +147,8 @@ BOOST_AUTO_TEST_CASE(kimchi_commitment_test_opening_proof){
     blinded_commitment_type commitment = kimchi_pedersen::commitment(params, poly1, -1);
     blinded_commitment_type bounded_commitment = kimchi_pedersen::commitment(params, poly2, poly2.degree() + 1);
 
-    scalar_value_type u = algebra::random_element<scalar_field_type>();
-    scalar_value_type v = algebra::random_element<scalar_field_type>();
+    scalar_value_type u = crypto3::algebra::random_element<scalar_field_type>();
+    scalar_value_type v = crypto3::algebra::random_element<scalar_field_type>();
 
     poly_type polys{{poly1, -1, std::get<1>(commitment)},
                     {poly2, poly2.degree() + 1, std::get<1>(bounded_commitment)}};
@@ -218,8 +218,8 @@ BOOST_AUTO_TEST_CASE(kimchi_commitment_test_case){
             polynomials.emplace_back(c.poly, c.eval_commit.commit.bound, c.chunked_blinding);
         }
 
-        scalar_value_type polymask = algebra::random_element<scalar_field_type>();
-        scalar_value_type evalmask = algebra::random_element<scalar_field_type>();
+        scalar_value_type polymask = crypto3::algebra::random_element<scalar_field_type>();
+        scalar_value_type evalmask = crypto3::algebra::random_element<scalar_field_type>();
 
         proof_type proof = kimchi_pedersen::proof_eval(params, 
                                                         g_map, 

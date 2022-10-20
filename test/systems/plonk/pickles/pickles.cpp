@@ -48,7 +48,7 @@
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk::snark;
 using curve_type = algebra::curves::vesta;
-using group_type = curve_type::template g1_type<algebra::curves::coordinates::affine>;
+using group_type = curve_type::template g1_type<crypto3::algebra::curves::coordinates::affine>;
 using scalar_field_type = curve_type::scalar_field_type;
 using base_field_type = curve_type::base_field_type;
 
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(pickles_proof_struct_test_suite) {
 
     proof.ft_eval1 = 0x01AEC83A8925441906ED7C843289815B1F2098EBE21BA2EC9C9BDE738323A79C_cppui256;
     
-    index.domain = math::basic_radix2_domain<scalar_field_type>(64);
+    index.domain = crypto3::math::basic_radix2_domain<scalar_field_type>(64);
     index.domain.omega = 0x1868CA50534A180D97FF23A878E088B0B9569C85B0A15D666C23DED157FCEEBA_cppui256;
     // std::cout << "index domain size " << index.domain.size() << '\n';
     index.max_poly_size = 64;

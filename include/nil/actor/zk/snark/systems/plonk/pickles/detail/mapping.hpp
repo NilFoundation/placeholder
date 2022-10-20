@@ -11,7 +11,7 @@ namespace nil{
                 struct group_map{
                     typedef typename CurveType::scalar_field_type scalar_field_type;
                     typedef typename CurveType::base_field_type base_field_type;
-                    typedef typename CurveType::template g1_type<algebra::curves::coordinates::affine> group_type;
+                    typedef typename CurveType::template g1_type<crypto3::algebra::curves::coordinates::affine> group_type;
                     typedef typename base_field_type::value_type value_type;
                     constexpr static const typename base_field_type::integral_type a = CurveType::template g1_type<>::params_type::a;
                     constexpr static const typename base_field_type::integral_type b = CurveType::template g1_type<>::params_type::b;

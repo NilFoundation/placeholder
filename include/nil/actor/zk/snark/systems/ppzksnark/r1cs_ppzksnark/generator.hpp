@@ -69,7 +69,7 @@ namespace nil {
                         cs_copy.swap_AB_if_beneficial();
 
                         /* draw random element at which the QAP is evaluated */
-                        const typename scalar_field_type::value_type t = algebra::random_element<scalar_field_type>();
+                        const typename scalar_field_type::value_type t = crypto3::algebra::random_element<scalar_field_type>();
 
                         qap_instance_evaluation<scalar_field_type> qap_inst =
                             reductions::r1cs_to_qap<scalar_field_type>::instance_map_with_evaluation(cs_copy, t);
@@ -112,8 +112,8 @@ namespace nil {
                                                                          algebra::random_element<scalar_field_type>(),
                                                                      alphaC =
                                                                          algebra::random_element<scalar_field_type>(),
-                                                                     rA = algebra::random_element<scalar_field_type>(),
-                                                                     rB = algebra::random_element<scalar_field_type>(),
+                                                                     rA = crypto3::algebra::random_element<scalar_field_type>(),
+                                                                     rB = crypto3::algebra::random_element<scalar_field_type>(),
                                                                      beta =
                                                                          algebra::random_element<scalar_field_type>(),
                                                                      gamma =

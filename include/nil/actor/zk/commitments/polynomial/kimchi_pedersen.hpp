@@ -51,14 +51,14 @@ namespace nil {
                 struct kimchi_pedersen {
                     typedef typename CurveType::scalar_field_type scalar_field_type;
                     typedef typename CurveType::base_field_type base_field_type;
-                    typedef typename CurveType::template g1_type<algebra::curves::coordinates::affine> group_type;
+                    typedef typename CurveType::template g1_type<crypto3::algebra::curves::coordinates::affine> group_type;
 
-                    typedef algebra::policies::multiexp_method_BDLO12 multiexp_method;
+                    typedef crypto3::algebra::policies::multiexp_method_BDLO12 multiexp_method;
 
                     typedef zk::transcript::DefaultFqSponge<CurveType> sponge_type;
-                    typedef snark::group_map<CurveType> group_map_type;
-                    typedef snark::kimchi_functions<CurveType> functions;
-                    // using multiexp = algebra::multiexp_with_mixed_addition<multiexp_method>;
+                    typedef crypto3::zk::snark::group_map<CurveType> group_map_type;
+                    typedef actor::zk::snark::kimchi_functions<CurveType> functions;
+                    // using multiexp = crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>;
 
                     struct params_type {
                         // vector of n distinct curve points of unknown discrete logarithm
@@ -77,17 +77,17 @@ namespace nil {
                                     std::unordered_map<std::size_t, std::vector<typename group_type::value_type> >& lagrange_bases) :
                                     g(g), h(h), endo_r(endo_r), endo_q(endo_q), lagrange_bases(lagrange_bases) {}
 
-                        params_type(std::size_t depth) : h(algebra::random_element<group_type>()), 
-                                    endo_r(algebra::random_element<scalar_field_type>()), 
-                                    endo_q(algebra::random_element<base_field_type>()){
+                        params_type(std::size_t depth) : h(crypto3::algebra::random_element<group_type>()),
+                                    endo_r(crypto3::algebra::random_element<scalar_field_type>()),
+                                    endo_q(crypto3::algebra::random_element<base_field_type>()){
                             for (int i = 0; i < depth; ++i) {
-                                g.push_back(algebra::random_element<group_type>());
+                                g.push_back(crypto3::algebra::random_element<group_type>());
                             }
                         }
 
                         params_type() = default;
 
-                        void add_lagrange_basis(math::basic_radix2_domain<scalar_field_type>& domain){
+                        void add_lagrange_basis(crypto3::math::basic_radix2_domain<scalar_field_type>& domain){
                             std::size_t n = domain.size();
                             BOOST_ASSERT_MSG(n <= g.size(), "add lagrange basis: Domain size {} larger than SRS size {}");
 
@@ -123,7 +123,7 @@ namespace nil {
                             for(auto& commit : commits){
                                 points.push_back(commit.shifted);
                             }
-                            value_type shifted = algebra::multiexp_with_mixed_addition<multiexp_method>(
+                            value_type shifted = crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                     points.begin(), points.end(), elm.begin(), elm.end(), 1);
 
                             std::vector<value_type> unshifted;
@@ -147,7 +147,7 @@ namespace nil {
                                     }
                                 }
 
-                                unshifted.push_back(algebra::multiexp_with_mixed_addition<multiexp_method>(
+                                unshifted.push_back(crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                     points_for_unshifted.begin(), points_for_unshifted.end(), 
                                     scalars_for_unshifted.begin(), scalars_for_unshifted.end(), 1));
                             }
@@ -342,20 +342,20 @@ namespace nil {
                         // non-hiding part
                         std::size_t len = poly.size();
                         while (len > g_len) {
-                            res.unshifted.push_back(algebra::multiexp_with_mixed_addition<multiexp_method>(
+                            res.unshifted.push_back(crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                 params.g.begin(), params.g.end(), left, left + g_len, 1));
                             left += g_len;
                             len -= g_len;
                         }
                         if (len > 0) {
-                            res.unshifted.push_back(algebra::multiexp_with_mixed_addition<multiexp_method>(
+                            res.unshifted.push_back(crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                 params.g.begin(), params.g.begin() + len, left, left + len, 1));
                         }
 
                         if (bound >= 0) {
                             auto start = bound - bound % g_len;
                             if (!poly.is_zero() && start < poly.size()) {
-                                res.shifted = algebra::multiexp_with_mixed_addition<multiexp_method>(
+                                res.shifted = crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                     params.g.end() - bound % g_len, params.g.end(), poly.begin() + start, poly.end(),
                                     1);
                             }
@@ -365,12 +365,12 @@ namespace nil {
                         typename scalar_field_type::value_type w;
                         
                         for (auto &i : res.unshifted) {
-                            w = algebra::random_element<scalar_field_type>();
+                            w = crypto3::algebra::random_element<scalar_field_type>();
                             i = i + w * params.h;
                             blind_res.unshifted.push_back(w);
                         }
 
-                        w = algebra::random_element<scalar_field_type>();
+                        w = crypto3::algebra::random_element<scalar_field_type>();
 
                         if (res.shifted != group_type::value_type::zero()) {
                             res.shifted = res.shifted + w * params.h;
@@ -465,7 +465,7 @@ namespace nil {
                             scale *= evalscale;
                         }
 
-                        typename scalar_field_type::value_type inner_product_in_vec = algebra::inner_product(a.begin(), a.end(), b.begin(), b.end());
+                        typename scalar_field_type::value_type inner_product_in_vec = crypto3::algebra::inner_product(a.begin(), a.end(), b.begin(), b.end());
                         sponge.absorb_fr(functions::shift_scalar(inner_product_in_vec));
                         typename group_type::value_type u = group_map.to_group(sponge.challenge_fq());
 
@@ -484,17 +484,17 @@ namespace nil {
                             b_low.assign(b.begin(), b.begin() + power_of_two);
                             b_high.assign(b.begin() + power_of_two, b.end());
 
-                            typename scalar_field_type::value_type rand_l = algebra::random_element<scalar_field_type>();
-                            typename scalar_field_type::value_type rand_r = algebra::random_element<scalar_field_type>();
+                            typename scalar_field_type::value_type rand_l = crypto3::algebra::random_element<scalar_field_type>();
+                            typename scalar_field_type::value_type rand_r = crypto3::algebra::random_element<scalar_field_type>();
 
-                            typename group_type::value_type l = algebra::multiexp_with_mixed_addition<multiexp_method>(
+                            typename group_type::value_type l = crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                         g_low.begin(), g_low.end(), a_high.begin(), a_high.end(), 1) +
                                         rand_l * params.h +
-                                        algebra::inner_product(a_high.begin(), a_high.end(), b_low.begin(), b_low.end()) * u;
-                            typename group_type::value_type r = algebra::multiexp_with_mixed_addition<multiexp_method>(
+                                        crypto3::algebra::inner_product(a_high.begin(), a_high.end(), b_low.begin(), b_low.end()) * u;
+                            typename group_type::value_type r = crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                         g_high.begin(), g_high.end(), a_low.begin(), a_low.end(), 1) +
                                         rand_r * params.h +
-                                        algebra::inner_product(a_low.begin(), a_low.end(), b_high.begin(), b_high.end()) * u;
+                                        crypto3::algebra::inner_product(a_low.begin(), a_low.end(), b_high.begin(), b_high.end()) * u;
 
                             res.lr.emplace_back(l, r);
                             blinders.emplace_back(rand_l, rand_r);
@@ -530,8 +530,8 @@ namespace nil {
                             const auto &[l, r] = blinders[i];
                             r_prime += l * chal_invs[i] + r * chals[i];
                         }
-                        typename scalar_field_type::value_type d = algebra::random_element<scalar_field_type>();
-                        typename scalar_field_type::value_type r_delta = algebra::random_element<scalar_field_type>();
+                        typename scalar_field_type::value_type d = crypto3::algebra::random_element<scalar_field_type>();
+                        typename scalar_field_type::value_type r_delta = crypto3::algebra::random_element<scalar_field_type>();
 
                         typename group_type::value_type delta = (g0 + u * b0) * d + params.h * r_delta;
                         sponge.absorb_g(delta);
@@ -640,8 +640,8 @@ namespace nil {
 
                         std::vector<typename scalar_field_type::value_type> scalars(power_of_two + 1, scalar_field_type::value_type::zero());                        
 
-                        typename scalar_field_type::value_type rand_base = algebra::random_element<scalar_field_type>();
-                        typename scalar_field_type::value_type sg_rand_base = algebra::random_element<scalar_field_type>();
+                        typename scalar_field_type::value_type rand_base = crypto3::algebra::random_element<scalar_field_type>();
+                        typename scalar_field_type::value_type sg_rand_base = crypto3::algebra::random_element<scalar_field_type>();
                         typename scalar_field_type::value_type rand_base_i = scalar_field_type::value_type::one();
                         typename scalar_field_type::value_type sg_rand_base_i = scalar_field_type::value_type::one();
 
@@ -732,7 +732,7 @@ namespace nil {
                             sg_rand_base_i *= sg_rand_base;
                         }
 
-                        return (algebra::multiexp_with_mixed_addition<multiexp_method>(
+                        return (crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>(
                                     points.begin(), points.end(), scalars.begin(), scalars.end(), 1) ==
                                 group_type::value_type::zero());
                     }

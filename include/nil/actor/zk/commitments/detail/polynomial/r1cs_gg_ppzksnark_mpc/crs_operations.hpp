@@ -30,8 +30,6 @@ namespace nil {
                         using g2_value_type = typename g2_type::value_type;
                         using kc_value_type = typename kc_type::value_type;
 
-                        using namespace nil::crypto3::zk::snark;
-
                         using proving_scheme_type = r1cs_gg_ppzksnark<CurveType>;
 
                         typename proving_scheme_type::constraint_system_type r1cs_copy(constraint_system);
