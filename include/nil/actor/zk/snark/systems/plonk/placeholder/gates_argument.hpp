@@ -83,8 +83,7 @@ namespace nil {
                                 0, domain->m, FieldType::value_type::zero());
 
                             for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
-                                gate_result = gate_result +
-                                              gates[i].constraints[j].evaluate(column_polynomials, domain).get() * theta_acc;
+                                gate_result = gate_result + gates[i].constraints[j].evaluate(column_polynomials, domain).get() * theta_acc;
                                 theta_acc *= theta;
                             }
 

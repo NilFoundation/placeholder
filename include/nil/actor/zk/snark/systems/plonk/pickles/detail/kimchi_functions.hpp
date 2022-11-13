@@ -1,5 +1,5 @@
-#ifndef CRYPTO3_ZK_KIMCHI_FUNCTIONS
-#define CRYPTO3_ZK_KIMCHI_FUNCTIONS
+#ifndef ACTOR_ZK_KIMCHI_FUNCTIONS
+#define ACTOR_ZK_KIMCHI_FUNCTIONS
 
 namespace nil{
     namespace actor{

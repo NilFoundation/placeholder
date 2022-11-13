@@ -1,7 +1,7 @@
-#ifndef CRYPTO3_ZK_SNARK_PICKLES_TO_GROUP_MAP
-#define CRYPTO3_ZK_SNARK_PICKLES_TO_GROUP_MAP
+#ifndef ACTOR_ZK_SNARK_PICKLES_TO_GROUP_MAP
+#define ACTOR_ZK_SNARK_PICKLES_TO_GROUP_MAP
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/constants.hpp>
 
 namespace nil{
     namespace actor{
@@ -96,14 +96,14 @@ namespace nil{
                             a = a.doubled();
                             b = b.doubled();
 
-                            bool r_2i = multiprecision::bit_test(rep, 2 * i);
+                            bool r_2i = crypto3::multiprecision::bit_test(rep, 2 * i);
                             typename FieldType::value_type s;
                             if (r_2i) {
                                 s = one;
                             } else {
                                 s = neg_one;
                             }
-                            if (multiprecision::bit_test(rep, 2 * i + 1) == 0) {
+                            if (crypto3::multiprecision::bit_test(rep, 2 * i + 1) == 0) {
                                 b += s;
                             } else {
                                 a += s;

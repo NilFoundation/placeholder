@@ -16,8 +16,8 @@
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
+#include <nil/actor/zk/commitments/polynomial/kimchi_pedersen.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk;

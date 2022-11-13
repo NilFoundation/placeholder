@@ -1,5 +1,5 @@
-#ifndef CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
-#define CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
+#ifndef ACTOR_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
+#define ACTOR_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
 
 #include <nil/actor/zk/snark/systems/plonk/pickles/permutation.hpp>
 #include <nil/actor/zk/snark/systems/plonk/pickles/detail.hpp>
@@ -237,4 +237,4 @@ namespace nil {
     }            // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
+#endif    // ACTOR_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP

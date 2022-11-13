@@ -51,4 +51,4 @@ namespace nil {
     }                // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_PUBLIC_KEY_HPP
+#endif    // ACTOR_ZK_R1CS_GG_PPZKSNARK_MPC_PUBLIC_KEY_HPP

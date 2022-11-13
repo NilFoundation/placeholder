@@ -37,8 +37,8 @@
 #include <nil/marshalling/algorithms/pack.hpp>
 #include <nil/marshalling/status_type.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
-// #include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/actor/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
+// #include <nil/actor/zk/snark/systems/plonk/pickles/proof.hpp>
 
 #include <nil/crypto3/multiprecision/cpp_int.hpp>
 #include <nil/crypto3/multiprecision/number.hpp>
@@ -89,7 +89,7 @@ namespace nil {
                     constexpr static const int CHALLENGE_LENGTH_IN_LIMBS = 2;
                     constexpr static const int HIGH_ENTROPY_LIMBS = 2;
                     
-                    typedef crypto3::zk::snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
+                    typedef zk::snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
 
                     typedef std::uint64_t limb_type;
 
@@ -108,7 +108,7 @@ namespace nil {
                     
                     typedef nil::crypto3::hashes::detail::base_poseidon_policy<scalar_field_type, 2, 1, 7, 55, 0, true> policy_type;
                     typename nil::crypto3::hashes::detail::poseidon_sponge_construction<policy_type> sponge;
-                    typedef crypto3::zk::snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
+                    typedef zk::snark::ScalarChallenge<scalar_field_type> scalar_challenge_type;
 
                     constexpr static const int CHALLENGE_LENGTH_IN_LIMBS = BaseSponge<CurveType>::CHALLENGE_LENGTH_IN_LIMBS;
                     constexpr static const int HIGH_ENTROPY_LIMBS = BaseSponge<CurveType>::HIGH_ENTROPY_LIMBS;

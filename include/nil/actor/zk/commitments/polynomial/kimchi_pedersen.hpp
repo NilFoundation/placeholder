@@ -56,7 +56,7 @@ namespace nil {
                     typedef crypto3::algebra::policies::multiexp_method_BDLO12 multiexp_method;
 
                     typedef zk::transcript::DefaultFqSponge<CurveType> sponge_type;
-                    typedef crypto3::zk::snark::group_map<CurveType> group_map_type;
+                    typedef zk::snark::group_map<CurveType> group_map_type;
                     typedef actor::zk::snark::kimchi_functions<CurveType> functions;
                     // using multiexp = crypto3::algebra::multiexp_with_mixed_addition<multiexp_method>;
 
