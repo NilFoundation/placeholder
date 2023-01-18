@@ -52,7 +52,7 @@
 
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_examples.hpp>
 
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor::zk::snark;
 using namespace nil::crypto3::algebra;
 
 template<typename FieldType>

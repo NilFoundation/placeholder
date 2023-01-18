@@ -39,7 +39,7 @@
 #include <nil/actor/zk/transcript/fiat_shamir.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor::zk::snark;
 
 BOOST_AUTO_TEST_SUITE(zk_transcript_test_suite)
 

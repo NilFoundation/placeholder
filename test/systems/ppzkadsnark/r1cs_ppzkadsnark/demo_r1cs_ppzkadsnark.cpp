@@ -31,7 +31,7 @@
 
 #include <nil/actor/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/examples/run_r1cs_ppzkadsnark.hpp>
 
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor::zk::snark;
 
 int main(int argc, const char *argv[]) {
     if (argc == 2 && strcmp(argv[1], "-v") == 0) {

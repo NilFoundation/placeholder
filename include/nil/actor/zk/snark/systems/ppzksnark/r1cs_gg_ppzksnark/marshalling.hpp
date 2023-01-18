@@ -89,7 +89,7 @@
 namespace nil {
     namespace marshalling {
 
-        using namespace nil::crypto3::zk::snark;
+        using namespace nil::actor::zk::snark;
         using namespace nil::crypto3;
 
         /************************ TON Virtual Machine compatible serialization *************************/
@@ -99,10 +99,10 @@ namespace nil {
 
         template<>
         struct verifier_input_deserializer_tvm<
-            nil::crypto3::zk::snark::r1cs_gg_ppzksnark<algebra::curves::bls12<381>>> {
+            nil::actor::zk::snark::r1cs_gg_ppzksnark<algebra::curves::bls12<381>>> {
 
             using CurveType = typename algebra::curves::bls12<381>;
-            using scheme_type = nil::crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType>;
+            using scheme_type = nil::actor::zk::snark::r1cs_gg_ppzksnark<CurveType>;
 
             using chunk_type = std::uint8_t;
             constexpr static const std::size_t chunk_size = 8;
@@ -884,10 +884,10 @@ namespace nil {
         struct verifier_input_serializer_tvm;
 
         template<>
-        struct verifier_input_serializer_tvm<nil::crypto3::zk::snark::r1cs_gg_ppzksnark<algebra::curves::bls12<381>>> {
+        struct verifier_input_serializer_tvm<nil::actor::zk::snark::r1cs_gg_ppzksnark<algebra::curves::bls12<381>>> {
 
             using CurveType = typename algebra::curves::bls12<381>;
-            using scheme_type = nil::crypto3::zk::snark::r1cs_gg_ppzksnark<CurveType>;
+            using scheme_type = nil::actor::zk::snark::r1cs_gg_ppzksnark<CurveType>;
 
             using chunk_type = std::uint8_t;
             constexpr static const std::size_t chunk_size = 8;

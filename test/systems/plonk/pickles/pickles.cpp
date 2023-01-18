@@ -46,7 +46,7 @@
 #include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor::zk::snark;
 using curve_type = algebra::curves::vesta;
 using group_type = curve_type::template g1_type<crypto3::algebra::curves::coordinates::affine>;
 using scalar_field_type = curve_type::scalar_field_type;

@@ -50,17 +50,17 @@
 #include <nil/actor/zk/snark/systems/plonk/pickles/verifier.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor::zk::snark;
 
 BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
 
 using curve_type = nil::crypto3::algebra::curves::vesta;
 using vesta_verifier_index_type = zk::snark::verifier_index<
     curve_type,
-    nil::crypto3::zk::snark::arithmetic_sponge_params<curve_type::scalar_field_type::value_type>,
-    nil::crypto3::zk::snark::arithmetic_sponge_params<curve_type::base_field_type::value_type>,
-    nil::crypto3::zk::snark::kimchi_constant::COLUMNS, 
-    nil::crypto3::zk::snark::kimchi_constant::PERMUTES
+    nil::actor::zk::snark::arithmetic_sponge_params<curve_type::scalar_field_type::value_type>,
+    nil::actor::zk::snark::arithmetic_sponge_params<curve_type::base_field_type::value_type>,
+    nil::actor::zk::snark::kimchi_constant::COLUMNS,
+    nil::actor::zk::snark::kimchi_constant::PERMUTES
 >;
 
 template<typename Iterator>

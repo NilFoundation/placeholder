@@ -32,8 +32,9 @@
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
-//#include <nil/actor/zk/commitments/polynomial/kzg.hpp>
+// #include <nil/actor/zk/commitments/polynomial/kzg.hpp>
 #include <nil/actor/zk/commitments/polynomial/fri.hpp>
+#include <nil/actor/zk/commitments/polynomial/batched_fri.hpp>
 #include <nil/actor/zk/commitments/polynomial/lpc.hpp>
 #include <nil/actor/zk/commitments/polynomial/kimchi_pedersen.hpp>
 #include <nil/actor/zk/commitments/polynomial/pedersen.hpp>
@@ -51,30 +52,20 @@ ACTOR_THREAD_TEST_CASE(commitments_type_traits_basic_test) {
     typedef hashes::sha2<256> merkle_hash_type;
     typedef hashes::sha2<256> transcript_hash_type;
 
-//    static_assert(zk::is_commitment<
-//            zk::commitments::kzg<curve_type>>::value);
-    static_assert(zk::is_commitment<
-            zk::commitments::fri<field_type,
-                   merkle_hash_type,
-                   transcript_hash_type, 2, 1>>::value);
-    static_assert(zk::is_commitment<
-            zk::commitments::fri<field_type,
-                   merkle_hash_type,
-                   transcript_hash_type, 2, 0>>::value);
-    static_assert(zk::is_commitment<
-            zk::commitments::lpc<field_type,
-                   zk::commitments::list_polynomial_commitment_params<
-                        merkle_hash_type,
-                        transcript_hash_type>, 1, true>>::value);
-    static_assert(zk::is_commitment<
-            zk::commitments::lpc<field_type,
-                   zk::commitments::list_polynomial_commitment_params<
-                        merkle_hash_type,
-                        transcript_hash_type>, 0, false>>::value);
-    static_assert(zk::is_commitment<
-            zk::commitments::pedersen<curve_type>>::value);
-    static_assert(zk::is_commitment<
-          zk::commitments::kimchi_pedersen<curve_type>>::value);
+    //    static_assert(zk::is_commitment<
+    //            zk::commitments::kzg<curve_type>>::value);
+    static_assert(zk::is_commitment<zk::commitments::fri<field_type, merkle_hash_type, transcript_hash_type>>::value);
+    static_assert(
+        zk::is_commitment<zk::commitments::batched_fri<field_type, merkle_hash_type, transcript_hash_type>>::value);
+    static_assert(
+        zk::is_commitment<zk::commitments::lpc<field_type, zk::commitments::list_polynomial_commitment_params<
+                                                               merkle_hash_type, transcript_hash_type>>>::value);
+    static_assert(
+        zk::is_commitment<zk::commitments::batched_lpc<
+            field_type,
+            zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type>>>::value);
+    static_assert(zk::is_commitment<zk::commitments::pedersen<curve_type>>::value);
+    static_assert(zk::is_commitment<zk::commitments::kimchi_pedersen<curve_type>>::value);
 }
 
 //BOOST_AUTO_TEST_SUITE_END()

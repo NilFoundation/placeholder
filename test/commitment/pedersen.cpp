@@ -98,7 +98,7 @@ ACTOR_THREAD_TEST_CASE(pedersen_basic_test) {
     for (int i = 0; i < k; ++i) {
         idx.push_back(idx_base[i]);
     }
-    
+
     BOOST_CHECK(idx.size() >= k);
     field_type::value_type secret = pedersen_type::message_eval(params, proof, idx);
     BOOST_CHECK(w == secret);
@@ -155,7 +155,7 @@ ACTOR_THREAD_TEST_CASE(pedersen_short_test) {
     for (int i = 0; i < k; ++i) {
         idx.push_back(idx_base[i]);
     }
-    
+
     BOOST_CHECK(idx.size() >= k);
     field_type::value_type secret = pedersen_type::message_eval(params, proof, idx);
     BOOST_CHECK(w == secret);
@@ -212,7 +212,7 @@ ACTOR_THREAD_TEST_CASE(pedersen_long_test) {
     for (int i = 0; i < k; ++i) {
         idx.push_back(idx_base[i]);
     }
-    
+
     BOOST_CHECK(idx.size() >= k);
     field_type::value_type secret = pedersen_type::message_eval(params, proof, idx);
     BOOST_CHECK(w == secret);

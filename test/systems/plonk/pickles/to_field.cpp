@@ -37,7 +37,7 @@
 #include <nil/actor/zk/snark/systems/plonk/pickles/detail.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::crypto3::zk::snark;
+using namespace nil::actor::zk::snark;
 
 BOOST_AUTO_TEST_SUITE(pickles_kimchi_to_field_test_suite)
 
