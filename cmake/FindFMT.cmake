@@ -1,11 +1,14 @@
+foreach(ITERATOR RANGE 1 9)
+    list(APPEND fmt_PATHS /usr/local/include/libfmt${ITERATOR})
+    list(APPEND fmt_PATHS /opt/local/include/libfmt${ITERATOR})
+endforeach()
+
 find_path(fmt_INCLUDE_DIR
           NAMES fmt/format.h
           PATHS /usr/include
           /usr/local/include
           /opt/local/include
-          /opt/local/include/libfmt7
-          /opt/local/include/libfmt8
-          /opt/local/include/libfmt9)
+          ${fmt_PATHS})
 
 if(fmt_INCLUDE_DIR)
     set(_fmt_version_file "${fmt_INCLUDE_DIR}/fmt/core.h")
