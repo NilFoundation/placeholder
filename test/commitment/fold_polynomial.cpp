@@ -39,10 +39,11 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/polynomial_dfs.hpp>
-#include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
-#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
+#include <nil/actor/math/polynomial/lagrange_interpolation.hpp>
+#include <nil/actor/math/algorithms/calculate_domain_set.hpp>
 
 #include <nil/actor/zk/commitments/detail/polynomial/fold_polynomial.hpp>
 

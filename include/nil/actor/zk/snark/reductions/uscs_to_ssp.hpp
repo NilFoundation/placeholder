@@ -75,7 +75,7 @@ namespace nil {
                          */
                         static ssp_instance<FieldType> instance_map(const uscs_constraint_system<FieldType> &cs) {
                             const std::shared_ptr<evaluation_domain<FieldType>> domain =
-                                math::make_evaluation_domain<FieldType>(cs.num_constraints());
+                                nil::crypto3::math::make_evaluation_domain<FieldType>(cs.num_constraints());
                             std::vector<std::map<std::size_t, typename FieldType::value_type>> V_in_Lagrange_basis(
                                 cs.num_variables() + 1);
                             for (std::size_t i = 0; i < cs.num_constraints(); ++i) {
@@ -109,7 +109,7 @@ namespace nil {
                             instance_map_with_evaluation(const uscs_constraint_system<FieldType> &cs,
                                                          const typename FieldType::value_type &t) {
                             const std::shared_ptr<evaluation_domain<FieldType>> domain =
-                                math::make_evaluation_domain<FieldType>(cs.num_constraints());
+                                nil::crypto3::math::make_evaluation_domain<FieldType>(cs.num_constraints());
 
                             std::vector<typename FieldType::value_type> Vt(cs.num_variables() + 1,
                                                                            FieldType::value_type::zero());

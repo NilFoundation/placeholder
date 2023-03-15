@@ -30,8 +30,8 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/actor/zk/math/permutation.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/params.hpp>
@@ -64,7 +64,7 @@ namespace nil {
                 public:
                     const std::size_t table_rows = 1 << rows_log;
 
-                    std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> domain;
+                    std::shared_ptr<math::evaluation_domain<FieldType>> domain;
 
                     typename FieldType::value_type omega;
                     typename FieldType::value_type delta;

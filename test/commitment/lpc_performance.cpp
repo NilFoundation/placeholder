@@ -38,10 +38,10 @@
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
+#include <nil/actor/math/algorithms/calculate_domain_set.hpp>
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/zk/commitments/polynomial/lpc.hpp>
 #include <nil/actor/zk/commitments/polynomial/fri.hpp>
 #include <nil/actor/zk/snark/systems/plonk/placeholder/params.hpp>
@@ -139,8 +139,8 @@ ACTOR_THREAD_TEST_CASE(lpc_performance_test) {
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
-            nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
+            math::calculate_domain_set<FieldType>(extended_log, r);
 
     typename fri_type::params_type fri_params;
 

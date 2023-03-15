@@ -29,19 +29,16 @@
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 
-//#include <nil/actor/math/polynomial/polynomial.hpp>
-//#include <nil/actor/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
+#include <nil/actor/math/polynomial/polynomial.hpp>
+#include <nil/actor/math/polynomial/polynomial_dfs.hpp>
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/container/merkle/tree.hpp>
 #include <nil/crypto3/container/merkle/proof.hpp>
 
 #include <nil/actor/zk/transcript/fiat_shamir.hpp>
-
-#include <nil/actor/math/polynomial/polynomial.hpp>
-#include <nil/actor/math/polynomial/polynomial_dfs.hpp>
 
 namespace nil {
     namespace actor {
@@ -72,7 +69,7 @@ namespace nil {
                     math::polynomial_dfs<typename FieldType::value_type>
                         fold_polynomial(math::polynomial_dfs<typename FieldType::value_type> &f,
                                         const typename FieldType::value_type &alpha,
-                                        std::shared_ptr<crypto3::math::evaluation_domain<FieldType>>
+                                        std::shared_ptr<math::evaluation_domain<FieldType>>
                                             domain) {
 
                         std::size_t d = f.degree();
