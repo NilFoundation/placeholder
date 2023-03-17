@@ -70,7 +70,7 @@ namespace nil {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
                         } else {
-                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                            throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
                         }
                     }
 
@@ -83,7 +83,7 @@ namespace nil {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
                         } else {
-                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                            throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
                         }
                     }
 
