@@ -80,7 +80,7 @@ namespace nil {
                         static qap_instance<FieldType> instance_map(const r1cs_constraint_system<FieldType> &cs) {
 
                             const std::shared_ptr<math::evaluation_domain<FieldType>> domain =
-                                nil::crypto3::math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
+                                nil::math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
 
                             std::vector<std::map<std::size_t, typename FieldType::value_type>> A_in_Lagrange_basis(
                                 cs.num_variables() + 1);
@@ -139,7 +139,7 @@ namespace nil {
                             instance_map_with_evaluation(const r1cs_constraint_system<FieldType> &cs,
                                                          const typename FieldType::value_type &t) {
                             const std::shared_ptr<math::evaluation_domain<FieldType>> domain = 
-                                nil::crypto3::math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
+                                nil::math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
 
                             std::vector<typename FieldType::value_type> At, Bt, Ct, Ht;
 
@@ -227,7 +227,7 @@ namespace nil {
                             assert(cs.is_satisfied(primary_input, auxiliary_input));
 
                             const std::shared_ptr<math::evaluation_domain<FieldType>> domain =
-                                nil::crypto3::math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
+                                math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
 
                             r1cs_variable_assignment<FieldType> full_variable_assignment = primary_input;
                             full_variable_assignment.insert(full_variable_assignment.end(), auxiliary_input.begin(),

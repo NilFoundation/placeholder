@@ -76,7 +76,7 @@ namespace nil {
                     std::vector<plonk_gate<FieldType, plonk_lookup_constraint<FieldType>>> lookup_gates;
 
                     circuit_description() {
-                        domain = crypto3::math::make_evaluation_domain<FieldType>(table_rows);
+                        domain = math::make_evaluation_domain<FieldType>(table_rows);
 
                         omega = domain->get_domain_element(1);
                         delta = crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;

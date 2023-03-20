@@ -141,7 +141,7 @@ namespace nil {
                             V_P[i] = V_P[i - 1] * V_P_coeff[i];
                         }
                         
-                        V_P.resize(fri_params.D[0]->m).get();
+                        V_P.resize(fri_params.D[0]->m);
 
                         // 4. Compute and add commitment to $V_P$ to $\text{transcript}$.
                         typename permutation_commitment_scheme_type::precommitment_type V_P_tree =

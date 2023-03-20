@@ -97,7 +97,7 @@ namespace nil {
                         math::polynomial_dfs<typename FieldType::value_type> res (d,
                             column_assignment.begin(), column_assignment.end());
 
-                        res.resize(domain->size()).get();
+                        res.resize(domain->size());
                         
                         return make_ready_future<math::polynomial_dfs<typename FieldType::value_type>>(res);
                     }

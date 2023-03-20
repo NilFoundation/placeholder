@@ -235,7 +235,7 @@ namespace nil {
                               const std::size_t fri_step) {
 
                     if (f.size() != D->size()) {
-                        f.resize(D->size()).get();
+                        f.resize(D->size());
                     }
                     std::size_t domain_size = D->size();
                     std::size_t coset_size = 1 << fri_step;
@@ -323,7 +323,7 @@ namespace nil {
 #endif
                     for (int i = 0; i < poly.size(); ++i) {
                         if (poly[i].size() != D->size()) {
-                            poly[i].resize(D->size()).get();
+                            poly[i].resize(D->size());
                         }
                     }
 
@@ -393,7 +393,7 @@ namespace nil {
                     std::vector<math::polynomial_dfs<typename FRI::field_type::value_type>> poly_dfs(list_size);
                     for (std::size_t i = 0; i < list_size; i++) {
                         poly_dfs[i].from_coefficients(poly[i]);
-                        poly_dfs[i].resize(D->size()).get();
+                        poly_dfs[i].resize(D->size());
                     }
 
                     return precommit<FRI>(poly_dfs, D, fri_step);
@@ -554,7 +554,7 @@ namespace nil {
                             for (int i = 0; i < g[k].size(); ++i ){
                                 // If LPC works properly this if is never executed.
                                 if (g[k][i].size() != fri_params.D[0]->size()) {
-                                    g[k][i].resize(fri_params.D[0]->size()).get();
+                                    g[k][i].resize(fri_params.D[0]->size());
                                 }
                             }
                         }
@@ -590,7 +590,7 @@ namespace nil {
                             }
                         }
                         if( i!= fri_params.step_list.size() - 1)
-                            precommitment = precommit<FRI>(f, fri_params.D[t], fri_params.step_list[i+1]);
+                            precommitment = precommit<FRI>(f, fri_params.D[t], fri_params.step_list[i+1]).get();
                     }
                     fs.push_back(f);
                     math::polynomial<typename FRI::field_type::value_type> final_polynomial;
@@ -615,7 +615,7 @@ namespace nil {
                         //Initial proof
                         std::array<typename FRI::initial_proof_type, FRI::batches_num> initial_proof;
                         for( std::size_t k = 0; k < FRI::batches_num; k++ ){
-                            initial_proof[k].values.resize(g[k].size()).get();
+                            initial_proof[k].values.resize(g[k].size());
                             std::size_t coset_size = 1 << fri_params.step_list[0];
                             BOOST_ASSERT(coset_size / FRI::m == s.size());
                             BOOST_ASSERT(coset_size / FRI::m == s_indices.size());
@@ -623,7 +623,7 @@ namespace nil {
                             //Fill values
                             t = 0;
                             for (std::size_t polynomial_index = 0; polynomial_index < g[k].size(); ++polynomial_index) {
-                                initial_proof[k].values[polynomial_index].resize(coset_size / FRI::m).get();
+                                initial_proof[k].values[polynomial_index].resize(coset_size / FRI::m);
                                 for (std::size_t j = 0; j < coset_size / FRI::m; j++) {
                                     if constexpr (std::is_same<
                                         math::polynomial_dfs<typename FRI::field_type::value_type>,
@@ -668,7 +668,7 @@ namespace nil {
                                 BOOST_ASSERT(coset_size / FRI::m == s.size());
                                 BOOST_ASSERT(coset_size / FRI::m == s_indices.size());
 
-                                round_proofs[i].y.resize(coset_size / FRI::m).get();
+                                round_proofs[i].y.resize(coset_size / FRI::m);
                                 for (std::size_t j = 0; j < coset_size / FRI::m; j++) {
                                     if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>,
                                                                 PolynomialType>::value) {
@@ -683,7 +683,7 @@ namespace nil {
                                 x_index %= fri_params.D[t-1]->size();
                                 x = fri_params.D[t-1]->get_domain_element(x_index);
                                 x = x * x;
-                                round_proofs[i].y.resize(1).get();
+                                round_proofs[i].y.resize(1);
                                 round_proofs[i].y[0][0] = final_polynomial.evaluate(x);
                                 round_proofs[i].y[0][1] = final_polynomial.evaluate(-x);
                             }

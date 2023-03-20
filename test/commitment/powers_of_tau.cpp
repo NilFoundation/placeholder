@@ -8,6 +8,8 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 #include <nil/crypto3/algebra/pairing/bls12.hpp>
 
+#include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/actor/zk/commitments/polynomial/powers_of_tau.hpp>
 
 using namespace nil::crypto3::algebra;
@@ -47,7 +49,7 @@ BOOST_AUTO_TEST_CASE(powers_of_tau_result_basic_test) {
     BOOST_CHECK_EQUAL(result.alpha_coeffs_g1.size(), tau_powers);
     BOOST_CHECK_EQUAL(result.beta_coeffs_g1.size(), tau_powers);
 
-    auto domain = nil::crypto3::math::make_evaluation_domain<scalar_field_type>(tau_powers);
+    auto domain = math::make_evaluation_domain<scalar_field_type>(tau_powers);
     auto u = domain->evaluate_all_lagrange_polynomials(sk.tau);
 
     for (std::size_t i = 0; i < domain->m; ++i) {
@@ -66,7 +68,7 @@ BOOST_AUTO_TEST_CASE(powers_of_tau_result_basic_test) {
     }
 
     auto result_16 = scheme_type::result_type::from_accumulator(acc2, 16);
-    auto domain_16 = nil::crypto3::math::make_evaluation_domain<scalar_field_type>(16);
+    auto domain_16 = math::make_evaluation_domain<scalar_field_type>(16);
     auto u_16 = domain_16->evaluate_all_lagrange_polynomials(sk.tau);
 
     BOOST_CHECK_EQUAL(u_16.size(), 16);
@@ -97,7 +99,7 @@ BOOST_AUTO_TEST_CASE(powers_of_tau_result_basic_test) {
     }
 
     auto result_24 = scheme_type::result_type::from_accumulator(acc2, 24);
-    auto domain_24 = nil::crypto3::math::make_evaluation_domain<scalar_field_type>(24);
+    auto domain_24 = math::make_evaluation_domain<scalar_field_type>(24);
     auto u_24 = domain_24->evaluate_all_lagrange_polynomials(sk.tau);
 
     BOOST_CHECK_EQUAL(u_24.size(), 24);

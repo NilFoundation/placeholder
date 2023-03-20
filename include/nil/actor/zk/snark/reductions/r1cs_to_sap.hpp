@@ -51,6 +51,7 @@
 
 #include <nil/crypto3/math/coset.hpp>
 
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/zk/snark/arithmetization/arithmetic_programs/sap.hpp>
 #include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
@@ -87,7 +88,7 @@ namespace nil {
                              * see comments in instance_map for details on where these
                              * constraints come from.
                              */
-                            return crypto3::math::make_evaluation_domain<FieldType>(2 * cs.num_constraints() +
+                            return math::make_evaluation_domain<FieldType>(2 * cs.num_constraints() +
                                                                            2 * cs.num_inputs() + 1);
                         }
 

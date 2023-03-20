@@ -30,11 +30,13 @@
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>
 
 #include <nil/actor/zk/math/permutation.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/actor/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/copy_constraint.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/table_description.hpp>
@@ -89,13 +91,13 @@ namespace nil {
                             // not marshalled. They can be derived from other fields.
                             math::polynomial_dfs<typename FieldType::value_type> lagrange_0;
                             math::polynomial<typename FieldType::value_type> Z;
-                            std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> basic_domain;
+                            std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain;
                             std::uint32_t max_gates_degree;
 
 
                             // Constructor with pregenerated domain
                             common_data_type(
-                                std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> D, 
+                                std::shared_ptr<math::evaluation_domain<FieldType>> D, 
                                 public_commitments_type commts, 
                                 std::array<std::vector<int>, ParamsType::arithmetization_params::total_columns> col_rotations,
                                 std::size_t rows,
@@ -136,7 +138,7 @@ namespace nil {
                                 // lagrange_0:  0,0,...,1,0,0,...,0
                                 lagrange_0[usable_rows] = FieldType::value_type::one();
 
-                                basic_domain = crypto3::math::make_evaluation_domain<FieldType>(rows);
+                                basic_domain = math::make_evaluation_domain<FieldType>(rows);
                             }
 
                             // These operators are useful for marshalling
@@ -176,7 +178,7 @@ namespace nil {
                     typedef typename preprocessed_data_type::public_precommitments_type public_precommitments_type;
 
                     static math::polynomial_dfs<typename FieldType::value_type> lagrange_polynomial(
-                        std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> domain,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t number,
                         const typename ParamsType::commitment_params_type &commitment_params
                     ) {
@@ -365,7 +367,7 @@ namespace nil {
                         identity_polynomials(std::size_t permutation_size,
                                              const typename FieldType::value_type &omega,
                                              const typename FieldType::value_type &delta,
-                                             std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>
+                                             std::shared_ptr<math::evaluation_domain<FieldType>>
                                                  domain,
                                              const typename ParamsType::commitment_params_type &commitment_params) {
 
@@ -390,7 +392,7 @@ namespace nil {
                                                 const typename FieldType::value_type &omega,
                                                 const typename FieldType::value_type &delta,
                                                 cycle_representation &permutation,
-                                                std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>
+                                                std::shared_ptr<math::evaluation_domain<FieldType>>
                                                     domain,
                                                 const typename ParamsType::commitment_params_type &commitment_params) {
 
@@ -410,7 +412,7 @@ namespace nil {
 
                     static inline math::polynomial_dfs<typename FieldType::value_type>
                         selector_blind(std::size_t usable_rows,
-                                       std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>
+                                       std::shared_ptr<math::evaluation_domain<FieldType>>
                                            domain,
                                        const typename ParamsType::commitment_params_type &commitment_params) {
                         math::polynomial_dfs<typename FieldType::value_type> q_blind(domain->size() - 1, domain->size(),
@@ -495,8 +497,8 @@ namespace nil {
                         }
                         assert(max_gates_degree > 0);
 
-                        std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>> basic_domain =
-                            crypto3::math::make_evaluation_domain<FieldType>(N_rows);
+                        std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
+                            math::make_evaluation_domain<FieldType>(N_rows);
 
                         // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
                         cycle_representation permutation(constraint_system, table_description);
@@ -519,11 +521,11 @@ namespace nil {
                             public_polynomial_table =
                                 plonk_public_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>(
                                         detail::column_range_polynomial_dfs<FieldType>(public_assignment.public_inputs(),
-                                            basic_domain),
+                                            basic_domain).get(),
                                         detail::column_range_polynomial_dfs<FieldType>(public_assignment.constants(),
-                                            basic_domain),
+                                            basic_domain).get(),
                                         detail::column_range_polynomial_dfs<FieldType>(public_assignment.selectors(),
-                                            basic_domain));
+                                            basic_domain).get());
 
 
                         // prepare commitments for short verifier
@@ -562,7 +564,7 @@ namespace nil {
                 public:
                     struct preprocessed_data_type {
 
-                        std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> basic_domain;
+                        std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain;
 
                         plonk_private_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>
                             private_polynomial_table;
@@ -578,8 +580,8 @@ namespace nil {
 
                         std::size_t N_rows = table_description.rows_amount;
 
-                        std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> basic_domain =
-                            crypto3::math::make_evaluation_domain<FieldType>(N_rows);
+                        std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
+                            math::make_evaluation_domain<FieldType>(N_rows);
 
                         plonk_private_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>
                             private_polynomial_table =

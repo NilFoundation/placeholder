@@ -205,7 +205,7 @@ namespace nil {
                     }
                     typename LPC::basic_fri::proof_type fri_proof;
                     typename LPC::precommitment_type combined_Q_precommitment =
-                    precommit<typename LPC::basic_fri>(combined_Q, fri_params.D[0], fri_params.step_list.front());
+                        precommit<typename LPC::basic_fri>(combined_Q, fri_params.D[0], fri_params.step_list.front()).get();
 
                     fri_proof = proof_eval<typename LPC::basic_fri, math::polynomial<typename LPC::field_type::value_type>>(
                             g,
@@ -294,7 +294,7 @@ namespace nil {
                         combined_Q_dfs, 
                         fri_params.D[0], 
                         fri_params.step_list.front()
-                    );
+                    ).get();
 
                     fri_proof = proof_eval<typename LPC::basic_fri, math::polynomial_dfs<typename LPC::field_type::value_type>>(
                         g,

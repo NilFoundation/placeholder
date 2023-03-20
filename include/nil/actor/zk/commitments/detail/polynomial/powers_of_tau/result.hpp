@@ -28,9 +28,9 @@
 #include <vector>
 
 #include <nil/actor/zk/commitments/detail/polynomial/powers_of_tau/accumulator.hpp>
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 namespace nil {
     namespace actor {
@@ -78,8 +78,8 @@ namespace nil {
                             auto beta_g1 = acc.beta_tau_powers_g1[0];
                             auto beta_g2 = acc.beta_g2;
 
-                            auto domain_g1 = nil::crypto3::math::make_evaluation_domain<scalar_field_type, g1_value_type>(m);
-                            auto domain_g2 = nil::crypto3::math::make_evaluation_domain<scalar_field_type, g2_value_type>(m);
+                            auto domain_g1 = math::make_evaluation_domain<scalar_field_type, g1_value_type>(m);
+                            auto domain_g2 = math::make_evaluation_domain<scalar_field_type, g2_value_type>(m);
 
                             BOOST_ASSERT(domain_g1->m <= TauPowersLength);
 
