@@ -46,16 +46,16 @@ namespace nil {
                     auto begin = element_per_cpu * i;
                     auto end = (i == cpu_usage - 1) ? set_size : element_per_cpu * (i + 1);
                     fut.emplace_back(smp::submit_to(i, 
-                        [begin, end, domain_size, max_domain_degree, &domain_set]() {
+                        [begin, end, max_domain_degree, &domain_set]() {
                         for (std::size_t index = begin; index < end; index++) {
-                            const std::size_t domain_size = std::pow(2, max_domain_degree - i);
-                            domain_set[i] = make_evaluation_domain<FieldType>(domain_size);
+                            const std::size_t domain_size = std::pow(2, max_domain_degree - index);
+                            domain_set[index] = make_evaluation_domain<FieldType>(domain_size);
                         }
                         return nil::actor::make_ready_future<>();
                     }));
                 }
                 return when_all(fut.begin(), fut.end()).then([&domain_set](auto tuple) {
-                    return domain_set 
+                    return domain_set; 
                 });
             }
         }    // namespace math
