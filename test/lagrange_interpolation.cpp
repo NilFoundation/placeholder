@@ -31,6 +31,7 @@
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
 
+#include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
 #include <nil/actor/math/polynomial/lagrange_interpolation.hpp>
