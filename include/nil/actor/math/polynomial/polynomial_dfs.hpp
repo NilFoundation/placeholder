@@ -163,10 +163,10 @@ namespace nil {
                 //                }
 
                 bool operator==(const polynomial_dfs& rhs) const {
-                    return val == rhs.val && _d == rhs.d;
+                    return val == rhs.val && _d == rhs._d;
                 }
                 bool operator!=(const polynomial_dfs& rhs) const {
-                    return !(rhs == *this && _d == rhs.d);
+                    return !(rhs == *this && _d == rhs._d);
                 }
 
                 //                template<typename InputIterator>
@@ -445,7 +445,7 @@ namespace nil {
                         detail::block_execution(this->size(), smp::count, [this, &tmp](std::size_t begin, std::size_t end)
                         {
                             for (std::size_t i = begin; i < end; i++) {
-                                this[i] += tmp[i];
+                                this->at(i) += tmp[i];
                             }
                         }).get();
 
@@ -454,7 +454,7 @@ namespace nil {
                     detail::block_execution(this->size(), smp::count, [this, &other](std::size_t begin, std::size_t end)
                         {
                             for (std::size_t i = begin; i < end; i++) {
-                                this[i] += other[i];
+                                this->at(i) += other[i];
                             }
                         }).get();
 
@@ -532,10 +532,26 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
 
+                        detail::block_execution(
+                            this->size(),
+                            smp::count,
+                            [this, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    this->at(i) -= tmp[i];
+                                }
+                            }).get();
+ 
                         std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::minus<FieldValueType>());
                         return *this;
                     }
-                    std::transform(this->begin(), this->end(), other.begin(), this->begin(), std::minus<FieldValueType>());
+                    detail::block_execution(
+                        this->size(),
+                        smp::count,
+                        [this, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                this->at(i) -= other[i];
+                            }
+                        }).get();
                     return *this;
                 }
 
@@ -544,7 +560,14 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs operator-=(const FieldValueType& c) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it -= c;
+                    detail::block_execution(
+                        this->size(),
+                        smp::count,
+                        [this, c](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                this->at(i) -= c;
+                            }
+                        }).get();
                     return *this;
                 }
 
@@ -562,24 +585,24 @@ namespace nil {
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
-                        detail::block_execution(result.size(),
-                                                smp::count,
-                                                [&result, &tmp](std::size_t begin, std::size_t end) {
-                                                    for (std::size_t i = begin; i < end; i++) {
-                                                        result[i] = result[i] * tmp[i];
-                                                    }
-                                                })
-                            .get();
+                        detail::block_execution(
+                            result.size(),
+                            smp::count,
+                            [&result, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    result[i] = result[i] * tmp[i];
+                                }
+                            }).get();
                         return result;
                     }
-                    detail::block_execution(result.size(),
-                                            smp::count,
-                                            [&result, &other](std::size_t begin, std::size_t end) {
-                                                for (std::size_t i = begin; i < end; i++) {
-                                                    result[i] = result[i] * other[i];
-                                                }
-                                            })
-                        .get();
+                    detail::block_execution(
+                        result.size(),
+                        smp::count,
+                        [&result, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] = result[i] * other[i];
+                            }
+                        }).get();
                     return result;
                 }
 
@@ -599,20 +622,40 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
 
-                        // TODO(martun): convert this, once you are sure it's correct.
-                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::multiplies<FieldValueType>());
+                        detail::block_execution(
+                            polynomial_s,
+                            smp::count,
+                            [this, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    this->at(i) = this->at(i) * tmp[i];
+                                }
+                            }).get();
                         return *this;
                     }
-                    std::transform(this->begin(), this->end(), other.begin(), this->begin(), std::multiplies<FieldValueType>());
+                    detail::block_execution(
+                        polynomial_s,
+                        smp::count,
+                        [this, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                this->at(i) = this->at(i) * other[i];
+                            }
+                        }).get();
                     return *this;
                 }
                 
                 /**
-                 * Perform the multiplication of two polynomials, polynomial A * constant alpha, 
+                 * Perform the multiplication of a polynomial with a constant, polynomial A * constant alpha, 
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs operator*=(const FieldValueType& alpha) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it *= alpha;
+                    detail::block_execution(
+                        this->size(),
+                        smp::count,
+                        [this, alpha](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                this->at(i) *= alpha;
+                            }
+                        }).get();
                     return *this;
                 }
                 
@@ -698,9 +741,14 @@ namespace nil {
             polynomial_dfs<FieldValueType, Allocator> operator+(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
                 polynomial_dfs<FieldValueType> result(A);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it += B;
-                }
+                detail::block_execution(
+                    result.size(),
+                    smp::count,
+                    [&result, B](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] += B;
+                        }
+                    }).get();
                 return result;
             }
 
@@ -709,9 +757,14 @@ namespace nil {
             polynomial_dfs<FieldValueType, Allocator> operator+(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
                 polynomial_dfs<FieldValueType> result(B);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it += A;
-                }
+                detail::block_execution(
+                    result.size(),
+                    smp::count,
+                    [&result, A](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] += A;
+                        }
+                    }).get();
                 return result;
             }
             
@@ -721,9 +774,14 @@ namespace nil {
             polynomial_dfs<FieldValueType, Allocator> operator-(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
                 polynomial_dfs<FieldValueType> result(A);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it -=  B;
-                }
+                detail::block_execution(
+                    result.size(),
+                    smp::count,
+                    [&result, B](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] -= B;
+                        }
+                    }).get();
                 return result;
             }
 
@@ -732,9 +790,15 @@ namespace nil {
             polynomial_dfs<FieldValueType, Allocator> operator-(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
                 polynomial_dfs<FieldValueType> result(B);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it = A - *it;
-                }
+                detail::block_execution(
+                    result.size(),
+                    smp::count,
+                    [&result, A](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] = A - result[i];
+                        }
+                    }).get();
+ 
                 return result;
             }
 
@@ -743,9 +807,14 @@ namespace nil {
             polynomial_dfs<FieldValueType, Allocator> operator*(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
                 polynomial_dfs<FieldValueType> result(A);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it *= B;
-                }
+                detail::block_execution(
+                    result.size(),
+                    smp::count,
+                    [&result, B](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] *= B;
+                        }
+                    }).get();
                 return result;
             }
 
@@ -754,9 +823,14 @@ namespace nil {
             polynomial_dfs<FieldValueType, Allocator> operator*(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
                 polynomial_dfs<FieldValueType> result(B);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it *= A;
-                }
+                detail::block_execution(
+                    result.size(),
+                    smp::count,
+                    [&result, A](std::size_t begin, std::size_t end) {
+                        for (std::size_t i = begin; i < end; i++) {
+                            result[i] *= A;
+                        }
+                    }).get();
                 return result;
             }
 
