@@ -396,15 +396,20 @@ namespace nil {
                         if (other.size() + shift + 1 > r.size()) {
                             r.resize(other.size() + shift + 1);
                         }
-                        auto glambda = [=](const FieldValueType& x, const FieldValueType& y) {
-                            return y - (x * lead_coeff);
-                        };
-                        std::transform(other.begin(), other.end(), r.begin() + shift, r.begin() + shift, glambda);
+                        detail::block_execution(
+                            this->size(),
+                            smp::count,
+                            [this, lead_coeff, shift](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    this[i + shift] -= other[i] * lead_coeff;
+                                }
+                            }
+                        );
                         r.condense();
 
                         r_deg = r.size() - 1;
                     }
-                    //                    q.condense();
+                    nil::crypto3::math::condense(q);
 
                     this->template assign(q.begin(), q.end());
                     return *this;
@@ -429,11 +434,15 @@ namespace nil {
                         if (other.size() + shift + 1 > this->size()) {
                             this->resize(other.size() + shift + 1);
                         }
-                        auto glambda = [=](const FieldValueType& x, const FieldValueType& y) {
-                            return y - (x * lead_coeff);
-                        };
-                        std::transform(other.begin(), other.end(), this->begin() + shift, this->begin() + shift,
-                                       glambda);
+                        detail::block_execution(
+                            this->size(),
+                            smp::count,
+                            [this, lead_coeff, shift](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    this[i + shift] -= other[i] * lead_coeff;
+                                }
+                            }
+                        );
                         this->condense();
 
                         r_deg = this->size() - 1;

@@ -42,6 +42,9 @@ namespace nil {
 
             using namespace nil::crypto3::algebra;
 
+            template<typename FieldType, typename ValueType>
+            class evaluation_domain;
+
             template<typename FieldType, typename ValueType = typename FieldType::value_type>
             class geometric_sequence_domain : public evaluation_domain<FieldType, ValueType> {
                 typedef typename FieldType::value_type field_value_type;
@@ -73,7 +76,7 @@ namespace nil {
 
                 geometric_sequence_domain(const std::size_t m) : evaluation_domain<FieldType, ValueType>(m) {
                     if (m <= 1) {
-                        throw std::invalid_argument("geometric(): expected m > 1");
+                        throw std::invalid_argument("geometric: expected m > 1");
                     }
 
                     if (field_value_type(fields::arithmetic_params<FieldType>::geometric_generator).is_zero()) {
@@ -91,7 +94,7 @@ namespace nil {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
                         } else {
-                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                            throw std::invalid_argument("geometric: expected a.size() == this->m");
                         }
                     }
 
@@ -129,7 +132,7 @@ namespace nil {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
                         } else {
-                            throw std::invalid_argument("arithmetic: expected a.size() == this->m");
+                            throw std::invalid_argument("geometric: expected a.size() == this->m");
                         }
                     }
 

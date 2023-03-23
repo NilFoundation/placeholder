@@ -508,6 +508,7 @@ namespace nil {
                     return *this;
                 }
 
+                // We want to support polynomial creation from any container type.
                 template<typename ContainerType>
                 void from_coefficients(const ContainerType &tmp) {
                     typedef typename value_type::field_type FieldType;
