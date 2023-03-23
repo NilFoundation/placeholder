@@ -349,7 +349,7 @@ namespace nil {
                     val.clear();
                 }
 
-                void resize(size_type _sz) {
+                future<> resize(size_type _sz) {
                     // BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
 
                     if (this->size() == 1){
@@ -357,10 +357,12 @@ namespace nil {
                     } else {
                         typedef typename value_type::field_type FieldType;
 
-                        make_evaluation_domain<FieldType>(this->size())->inverse_fft(this->val);
+                        make_evaluation_domain<FieldType>(this->size())->inverse_fft(this->val).get();
                         this->val.resize(_sz, FieldValueType::zero());
-                        make_evaluation_domain<FieldType>(_sz)->fft(this->val);
+                        make_evaluation_domain<FieldType>(_sz)->fft(this->val).get();
                     }
+                    // We return a future here, to show the caller that we used parallelization inside.
+                    return make_ready_future<>();
                 }
 
                 void swap(polynomial_dfs& other) {
@@ -392,7 +394,7 @@ namespace nil {
                  */
                 void reverse(std::size_t n) {
                     std::reverse(this->begin(), this->end());
-                    this->resize(n);
+                    this->resize(n).get();
                 }
 
                 /**
@@ -402,11 +404,11 @@ namespace nil {
                 polynomial_dfs operator+(const polynomial_dfs& other) const {
                     polynomial_dfs result(std::max(this->_d, other._d), this->begin(), this->end());
                     if (other.size() > this->size()) {
-                        result.resize(other.size());
+                        result.resize(other.size()).get();
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(this->size());
+                        tmp.resize(this->size()).get();
                         detail::block_execution(result.size(),
                                                 smp::count,
                                                 [&result, &tmp](std::size_t begin, std::size_t end) {
@@ -436,11 +438,11 @@ namespace nil {
                 polynomial_dfs operator+=(const polynomial_dfs& other) {
                     this->_d = std::max(this->_d, other._d);
                     if (other.size() > this->size()) {
-                        this->resize(other.size());
+                        this->resize(other.size()).get();
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(this->size());
+                        tmp.resize(this->size()).get();
 
                         detail::block_execution(this->size(), smp::count, [this, &tmp](std::size_t begin, std::size_t end)
                         {
@@ -493,11 +495,11 @@ namespace nil {
                 polynomial_dfs operator-(const polynomial_dfs& other) const {
                     polynomial_dfs result(std::max(_d, other._d), this->begin(), this->end());
                     if (other.size() > this->size()) {
-                        result.resize(other.size());
+                        result.resize(other.size()).get();
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(this->size());
+                        tmp.resize(this->size()).get();
                         detail::block_execution(result.size(),
                                                 smp::count,
                                                 [&result, &tmp](std::size_t begin, std::size_t end) {
@@ -526,11 +528,11 @@ namespace nil {
                 polynomial_dfs operator-=(const polynomial_dfs& other) {
                     this->_d = std::max(this->_d, other._d);
                     if (other.size() > this->size()) {
-                        this->resize(other.size());
+                        this->resize(other.size()).get();
                     }
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(this->size());
+                        tmp.resize(this->size()).get();
 
                         detail::block_execution(
                             this->size(),
@@ -580,11 +582,11 @@ namespace nil {
                     size_t polynomial_s = crypto3::math::detail::power_of_two(
                         std::max({this->size(), other.size(), this->_d + other._d + 1}));
                     if (result.size() < polynomial_s) {
-                        result.resize(polynomial_s);
+                        result.resize(polynomial_s).get();
                     }
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(polynomial_s);
+                        tmp.resize(polynomial_s).get();
                         detail::block_execution(
                             result.size(),
                             smp::count,
@@ -616,11 +618,11 @@ namespace nil {
                         crypto3::math::detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
 
                     if (this->size() < polynomial_s) {
-                        this->resize(polynomial_s);
+                        this->resize(polynomial_s).get();
                     }
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
-                        tmp.resize(polynomial_s);
+                        tmp.resize(polynomial_s).get();
 
                         detail::block_execution(
                             polynomial_s,

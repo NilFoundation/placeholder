@@ -31,7 +31,6 @@
 #include <vector>
 
 #include <nil/actor/math/polynomial/basic_operations.hpp>
-#include <nil/actor/math/polynomial/polynomial.hpp>
 
 namespace nil {
     namespace actor {
