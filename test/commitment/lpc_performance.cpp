@@ -40,6 +40,7 @@
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
+#include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/algorithms/calculate_domain_set.hpp>
 #include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/zk/commitments/polynomial/lpc.hpp>
@@ -53,11 +54,11 @@ namespace boost {
     namespace test_tools {
         namespace tt_detail {
             template<>
-            struct print_log_value<polynomial<
+            struct print_log_value<nil::actor::math::polynomial<
                     nil::crypto3::algebra::fields::detail::element_fp<nil::crypto3::algebra::fields::params<nil::crypto3::algebra::fields::bls12_base_field<381>>>>> {
                 void operator()(std::ostream &,
-                                const math::polynomial<algebra::fields::detail::element_fp<
-                                    algebra::fields::params<algebra::fields::bls12_base_field<381>>>> &) {
+                                const nil::actor::math::polynomial<nil::crypto3::algebra::fields::detail::element_fp<
+                                    nil::crypto3::algebra::fields::params<nil::crypto3::algebra::fields::bls12_base_field<381>>>> &) {
                 }
             };
         }    // namespace tt_detail
@@ -170,11 +171,11 @@ ACTOR_THREAD_TEST_CASE(lpc_performance_test) {
             poly[i] = typename FieldType::value_type(polynomial_element_gen());
         }
         merkle_tree_type tree =
-            zk::algorithms::precommit<lpc_type>(poly, D[0], fri_params.step_list.front());    // phase_1: Commit
+            zk::algorithms::precommit<lpc_type>(poly, D[0], fri_params.step_list.front()).get();    // phase_1: Commit
 
         // TODO: take a point outside of the basic domain
         std::vector<typename FieldType::value_type> evaluation_points = {
-                nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
+                nil::crypto3::nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
 
         std::array<std::uint8_t, 96> x_data {};
         zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(x_data);

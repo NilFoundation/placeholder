@@ -235,7 +235,7 @@ namespace nil {
                               const std::size_t fri_step) {
 
                     if (f.size() != D->size()) {
-                        f.resize(D->size());
+                        f.resize(D->size()).get();
                     }
                     std::size_t domain_size = D->size();
                     std::size_t coset_size = 1 << fri_step;
@@ -323,7 +323,7 @@ namespace nil {
 #endif
                     for (int i = 0; i < poly.size(); ++i) {
                         if (poly[i].size() != D->size()) {
-                            poly[i].resize(D->size());
+                            poly[i].resize(D->size()).get();
                         }
                     }
 
@@ -393,7 +393,7 @@ namespace nil {
                     std::vector<math::polynomial_dfs<typename FRI::field_type::value_type>> poly_dfs(list_size);
                     for (std::size_t i = 0; i < list_size; i++) {
                         poly_dfs[i].from_coefficients(poly[i]);
-                        poly_dfs[i].resize(D->size());
+                        poly_dfs[i].resize(D->size()).get();
                     }
 
                     return precommit<FRI>(poly_dfs, D, fri_step);
@@ -554,7 +554,7 @@ namespace nil {
                             for (int i = 0; i < g[k].size(); ++i ){
                                 // If LPC works properly this if is never executed.
                                 if (g[k][i].size() != fri_params.D[0]->size()) {
-                                    g[k][i].resize(fri_params.D[0]->size());
+                                    g[k][i].resize(fri_params.D[0]->size()).get();
                                 }
                             }
                         }
