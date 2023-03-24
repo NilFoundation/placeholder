@@ -60,7 +60,7 @@ void test_fold_polynomial() {
 
     std::size_t d_log = boost::static_log2<d>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(d_log, 1);
+        math::calculate_domain_set<FieldType>(d_log, 1).get();
 
     math::polynomial<typename FieldType::value_type> f = {1, 3, 4, 3};
 
@@ -94,7 +94,7 @@ void test_fold_polynomial_dfs() {
 
     std::size_t d_log = boost::static_log2<d>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(d_log, 2);
+        math::calculate_domain_set<FieldType>(d_log, 2).get();
 
     math::polynomial<typename FieldType::value_type> f = {1, 3, 4, 3};
 

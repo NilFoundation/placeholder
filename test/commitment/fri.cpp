@@ -107,7 +107,7 @@ ACTOR_THREAD_TEST_CASE(fri_basic_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -167,7 +167,7 @@ ACTOR_THREAD_TEST_CASE(fri_basic_skipping_layers_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -226,7 +226,7 @@ ACTOR_THREAD_TEST_CASE(fri_steps_count_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -280,7 +280,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -343,7 +343,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_compile_time_size_skipping_layers_test)
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -408,7 +408,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -469,7 +469,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_basic_runtime_size_skipping_layers_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -538,7 +538,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_basic_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -599,7 +599,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_basic_skipping_layers_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -663,7 +663,7 @@ ACTOR_THREAD_TEST_CASE(fri_dfs_test_2) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -729,7 +729,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -800,7 +800,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_basic_skipping_layers_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;
@@ -876,7 +876,7 @@ ACTOR_THREAD_TEST_CASE(batched_fri_dfs_test_2) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     params.r = r;
     params.D = D;

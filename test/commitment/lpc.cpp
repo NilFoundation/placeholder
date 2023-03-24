@@ -114,7 +114,7 @@ ACTOR_THREAD_TEST_CASE(lpc_basic_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -182,7 +182,7 @@ ACTOR_THREAD_TEST_CASE(lpc_basic_skipping_layers_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -253,7 +253,7 @@ ACTOR_THREAD_TEST_CASE(lpc_dfs_basic_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -329,7 +329,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -393,7 +393,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_skipping_layers_test) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -463,7 +463,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_2) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -528,7 +528,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_2) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -598,7 +598,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -663,7 +663,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_basic_test_runtime_size_skipping_layers) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -733,7 +733,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size) {
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -803,7 +803,7 @@ ACTOR_THREAD_TEST_CASE(batched_lpc_dfs_basic_test_runtime_size_skipping_layers) 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r);
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
