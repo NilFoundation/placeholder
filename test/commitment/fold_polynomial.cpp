@@ -67,7 +67,7 @@ void test_fold_polynomial() {
     typename FieldType::value_type omega = D[0]->get_domain_element(1);
 
     typename FieldType::value_type x_next = q.evaluate(omega);
-    typename FieldType::value_type alpha = algebra::random_element<FieldType>();
+    typename FieldType::value_type alpha = nil::crypto3::algebra::random_element<FieldType>();
 
     math::polynomial<typename FieldType::value_type> f_next =
         zk::commitments::detail::fold_polynomial<FieldType>(f, alpha);
@@ -101,7 +101,7 @@ void test_fold_polynomial_dfs() {
     typename FieldType::value_type omega = D[0]->get_domain_element(1);
 
     typename FieldType::value_type x_next = q.evaluate(omega);
-    typename FieldType::value_type alpha = algebra::random_element<FieldType>();
+    typename FieldType::value_type alpha = nil::crypto3::algebra::random_element<FieldType>();
 
     math::polynomial_dfs<typename FieldType::value_type> f_dfs(3, D[0]->size(), 0);
     std::vector<typename FieldType::value_type> f_vector(f.size());
@@ -137,20 +137,20 @@ void test_fold_polynomial_dfs() {
 //BOOST_AUTO_TEST_SUITE(fold_polynomial_test_suite)
 
 ACTOR_THREAD_TEST_CASE(fold_polynomial_test) {
-    test_fold_polynomial<algebra::curves::mnt4<298>>();
+    test_fold_polynomial<nil::crypto3::algebra::curves::mnt4<298>>();
 
-    test_fold_polynomial<algebra::curves::pallas>();
+    test_fold_polynomial<nil::crypto3::algebra::curves::pallas>();
 
-    test_fold_polynomial<algebra::curves::vesta>();
+    test_fold_polynomial<nil::crypto3::algebra::curves::vesta>();
 }
 
 ACTOR_THREAD_TEST_CASE(fold_polynomial_dfs_test) {
 
-    test_fold_polynomial_dfs<algebra::curves::mnt4<298>>();
+    test_fold_polynomial_dfs<nil::crypto3::algebra::curves::mnt4<298>>();
 
-    test_fold_polynomial_dfs<algebra::curves::pallas>();
+    test_fold_polynomial_dfs<nil::crypto3::algebra::curves::pallas>();
 
-    test_fold_polynomial_dfs<algebra::curves::vesta>();
+    test_fold_polynomial_dfs<nil::crypto3::algebra::curves::vesta>();
 }
 
 //BOOST_AUTO_TEST_SUITE_END()

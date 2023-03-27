@@ -41,7 +41,6 @@
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/actor/math/algorithms/calculate_domain_set.hpp>
 #include <nil/actor/math/domains/evaluation_domain.hpp>
