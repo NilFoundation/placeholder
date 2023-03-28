@@ -54,9 +54,8 @@ namespace nil {
                         return nil::actor::make_ready_future<>();
                     }));
                 }
-                return when_all(fut.begin(), fut.end()).then([&domain_set](auto tuple) {
-                    return domain_set; 
-                });
+                when_all(fut.begin(), fut.end()).get();
+                return nil::actor::make_ready_future<std::vector<std::shared_ptr<evaluation_domain<FieldType>>>>(domain_set);
             }
         }    // namespace math
     }        // namespace actor

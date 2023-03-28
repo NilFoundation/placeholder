@@ -230,7 +230,7 @@ namespace nil {
                     return make_ready_future<std::vector<field_value_type>>(l);
                 }
 
-                std::vector<value_type> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
                                                                           const typename std::vector<value_type>::const_iterator &t_powers_end) {
                     if(std::distance(t_powers_begin, t_powers_end) < this->m) {
                         throw std::invalid_argument("geometric_sequence_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
@@ -255,7 +255,7 @@ namespace nil {
                         {
                             std::vector<value_type> res(this->m, value_type::zero());
                             res[i] = t_powers_begin[0];
-                            return res;
+                            return make_ready_future<std::vector<value_type>>(res);
                         }
                     }
 
@@ -307,7 +307,7 @@ namespace nil {
                         r_i *= r;
                     }
 
-                    return result;
+                    return make_ready_future<std::vector<value_type>>(result);
                 }
 
                 field_value_type get_domain_element(const std::size_t idx) {

@@ -104,14 +104,14 @@ namespace nil {
                     return make_ready_future<std::vector<field_value_type>>(detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType>(this->m, t));
                 }
 
-                std::vector<value_type> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
                                                                           const typename std::vector<value_type>::const_iterator &t_powers_end) {
                     if (std::distance(t_powers_begin, t_powers_end) < this->m) {
                         throw std::invalid_argument("basic_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
                     }
                     std::vector<value_type> tmp(t_powers_begin, t_powers_begin + this->m);
                     this->inverse_fft(tmp).get();
-                    return tmp;
+                    return make_ready_future<std::vector<value_type>>(tmp);
                 }
 
                 field_value_type get_domain_element(const std::size_t idx) {

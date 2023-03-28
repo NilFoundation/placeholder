@@ -156,7 +156,7 @@ namespace nil {
                     return make_ready_future<std::vector<field_value_type>>(result);
                 }
 
-                std::vector<value_type> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
                                                                           const typename std::vector<value_type>::const_iterator &t_powers_end) {
                     if(std::distance(t_powers_begin, t_powers_end) < this->m) {
                         throw std::invalid_argument("extended_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
@@ -165,9 +165,9 @@ namespace nil {
                     basic_radix2_domain<FieldType, ValueType> basic_domain(small_m);
 
                     std::vector<value_type> T0 =
-                            basic_domain.evaluate_all_lagrange_polynomials(t_powers_begin, t_powers_end);
+                            basic_domain.evaluate_all_lagrange_polynomials(t_powers_begin, t_powers_end).get();
                     std::vector<value_type> T0_times_t_to_small_m =
-                            basic_domain.evaluate_all_lagrange_polynomials(t_powers_begin + small_m, t_powers_end);
+                            basic_domain.evaluate_all_lagrange_polynomials(t_powers_begin + small_m, t_powers_end).get();
 
                     field_value_type shift_inverse = shift.inversed();
                     std::vector<value_type> shift_inv_t_powers(small_m);
@@ -179,9 +179,9 @@ namespace nil {
                         shift_inverse_i *= shift_inverse;
                     }
                     std::vector<value_type> T1 =
-                            basic_domain.evaluate_all_lagrange_polynomials(shift_inv_t_powers.cbegin(), shift_inv_t_powers.cend());
+                            basic_domain.evaluate_all_lagrange_polynomials(shift_inv_t_powers.cbegin(), shift_inv_t_powers.cend()).get();
                     std::vector<value_type> T1_times_t_to_small_m =
-                            basic_domain.evaluate_all_lagrange_polynomials(shift_inv_t_powers_times_t_to_small_m.cbegin(), shift_inv_t_powers_times_t_to_small_m.cend());
+                            basic_domain.evaluate_all_lagrange_polynomials(shift_inv_t_powers_times_t_to_small_m.cbegin(), shift_inv_t_powers_times_t_to_small_m.cend()).get();
 
                     std::vector<value_type> result(this->m, value_type::zero());
 
@@ -195,7 +195,7 @@ namespace nil {
                         result[i + small_m] = (T1_times_t_to_small_m[i] - T1[i]) * one_over_denom;
                     }
 
-                    return result;
+                    return make_ready_future<std::vector<value_type>>(result);
                 }
 
                 field_value_type get_domain_element(const std::size_t idx) {
