@@ -130,7 +130,7 @@ namespace nil {
 
                         const field_value_type Zt = this->domain->compute_vanishing_polynomial(t);
 
-                        const std::vector<field_value_type> u = this->domain->evaluate_all_lagrange_polynomials(t);
+                        const std::vector<field_value_type> u = this->domain->evaluate_all_lagrange_polynomials(t).get();
 
                         for (size_t i = 0; i < this->num_variables + 1; ++i) {
                             for (auto &el : A_in_Lagrange_basis[i]) {

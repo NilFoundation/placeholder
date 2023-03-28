@@ -151,7 +151,7 @@ namespace nil {
                             const typename FieldType::value_type Zt = domain->compute_vanishing_polynomial(t);
 
                             const std::vector<typename FieldType::value_type> u =
-                                domain->evaluate_all_lagrange_polynomials(t);
+                                domain->evaluate_all_lagrange_polynomials(t).get();
                             /**
                              * add and process the constraints
                              *     input_i * 0 = 0

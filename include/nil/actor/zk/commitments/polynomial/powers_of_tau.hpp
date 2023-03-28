@@ -40,9 +40,9 @@ namespace nil {
                     // and should thus be destroyed
                     template<typename RNG = boost::random_device>
                     static private_key_type generate_private_key(RNG &&rng = boost::random_device()) {
-                        typename scalar_field_type::value_type tau = algebra::random_element<scalar_field_type>(rng);
-                        typename scalar_field_type::value_type alpha = algebra::random_element<scalar_field_type>(rng);
-                        typename scalar_field_type::value_type beta = algebra::random_element<scalar_field_type>(rng);
+                        typename scalar_field_type::value_type tau = nil::crypto3::algebra::random_element<scalar_field_type>(rng);
+                        typename scalar_field_type::value_type alpha = nil::crypto3::algebra::random_element<scalar_field_type>(rng);
+                        typename scalar_field_type::value_type beta = nil::crypto3::algebra::random_element<scalar_field_type>(rng);
 
                         return private_key_type {std::move(tau), std::move(alpha), std::move(beta)};
                     }
@@ -51,7 +51,7 @@ namespace nil {
                         std::size_t n = 42;
                         std::vector<std::uint8_t> cur_hash = beacon;
                         for (std::size_t i = 0; i < (1 << n); ++i) {
-                            std::vector<std::uint8_t> hash = nil::crypto3::hash<hashes::sha2<256>>(cur_hash);
+                            std::vector<std::uint8_t> hash = nil::crypto3::hash<nil::crypto3::hashes::sha2<256>>(cur_hash);
                             cur_hash = hash;
                         }
                         // random::chacha gen;
@@ -155,13 +155,13 @@ namespace nil {
                     static bool is_same_ratio(const std::pair<g1_value_type, g1_value_type> &g1_pair,
                                               const std::pair<g2_value_type, g2_value_type> &g2_pair) {
 
-                        return algebra::pair_reduced<CurveType>(g1_pair.first, g2_pair.second) ==
-                               algebra::pair_reduced<CurveType>(g1_pair.second, g2_pair.first);
+                        return nil::crypto3::algebra::pair_reduced<CurveType>(g1_pair.first, g2_pair.second) ==
+                               nil::crypto3::algebra::pair_reduced<CurveType>(g1_pair.second, g2_pair.first);
                     }
 
                     static std::vector<std::uint8_t> compute_transcript(const accumulator_type &acc) {
                         auto acc_blob = serialize_accumulator(acc);
-                        return nil::crypto3::hash<hashes::blake2b<512>>(acc_blob);
+                        return nil::crypto3::hash<nil::crypto3::hashes::blake2b<512>>(acc_blob);
                     }
 
                     static std::vector<std::uint8_t> serialize_accumulator(const accumulator_type &acc) {

@@ -53,7 +53,7 @@ namespace nil {
                                                  const std::vector<std::uint8_t> &transcript,
                                                  std::uint8_t personalization,
                                                  RNG &&rng = boost::random_device()) {
-                        const g1_value_type g1_s = algebra::random_element<g1_type>(rng);
+                        const g1_value_type g1_s = nil::crypto3::algebra::random_element<g1_type>(rng);
                         const g1_value_type g1_s_x = x * g1_s;
                         const g2_value_type g2_s = compute_g2_s(g1_s, g1_s_x, transcript, personalization);
                         const g2_value_type g2_s_x = x * g2_s;
@@ -69,8 +69,8 @@ namespace nil {
                     }
 
                     static bool verify_eval(const proof_type &proof, const g2_value_type &g2_s) {
-                        return algebra::pair_reduced<curve_type>(proof.g1_s, proof.g2_s_x) ==
-                               algebra::pair_reduced<curve_type>(proof.g1_s_x, g2_s);
+                        return nil::crypto3::algebra::pair_reduced<curve_type>(proof.g1_s, proof.g2_s_x) ==
+                               nil::crypto3::algebra::pair_reduced<curve_type>(proof.g1_s_x, g2_s);
                     }
 
                     static g2_value_type compute_g2_s(const g1_value_type &g1_s,
@@ -92,7 +92,7 @@ namespace nil {
                         std::copy(std::cbegin(g1_s_x_blob), std::cend(g1_s_x_blob), std::back_inserter(g1_s_x_blob));
 
                         std::vector<std::uint8_t> hash =
-                            nil::crypto3::hash<hashes::blake2b<256>>(personalization_transcript_g1s_g1sx);
+                            nil::crypto3::hash<nil::crypto3::hashes::blake2b<256>>(personalization_transcript_g1s_g1sx);
 
                         // this is unsecure as it's only using the first byte,
                         // it should be chacha which is currently broken
@@ -100,7 +100,7 @@ namespace nil {
                         // random::chacha gen;
                         gen.seed(hash[0]);
                         // gen.seed(hash.begin(), hash.end());
-                        return algebra::random_element<g2_type>(gen);
+                        return nil::crypto3::algebra::random_element<g2_type>(gen);
                     }
 
                     static std::vector<std::uint8_t> serialize_g1_uncompressed(const g1_value_type &g) {

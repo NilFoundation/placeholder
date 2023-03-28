@@ -119,7 +119,7 @@ namespace nil {
                             const typename FieldType::value_type Zt = domain->compute_vanishing_polynomial(t);
 
                             const std::vector<typename FieldType::value_type> u =
-                                domain->evaluate_all_lagrange_polynomials(t);
+                                domain->evaluate_all_lagrange_polynomials(t).get();
                             for (std::size_t i = 0; i < cs.num_constraints(); ++i) {
                                 for (std::size_t j = 0; j < cs.constraints[i].terms.size(); ++j) {
                                     Vt[cs.constraints[i].terms[j].index] += u[i] * cs.constraints[i].terms[j].coeff;

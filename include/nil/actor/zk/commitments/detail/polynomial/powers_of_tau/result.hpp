@@ -84,16 +84,16 @@ namespace nil {
                             BOOST_ASSERT(domain_g1->m <= TauPowersLength);
 
                             std::vector<g1_value_type> coeffs_g1 = domain_g1->evaluate_all_lagrange_polynomials(
-                                acc.tau_powers_g1.begin(), acc.tau_powers_g1.end());
+                                acc.tau_powers_g1.begin(), acc.tau_powers_g1.end()).get();
 
                             std::vector<g2_value_type> coeffs_g2 = domain_g2->evaluate_all_lagrange_polynomials(
-                                acc.tau_powers_g2.begin(), acc.tau_powers_g2.end());
+                                acc.tau_powers_g2.begin(), acc.tau_powers_g2.end()).get();
 
                             std::vector<g1_value_type> alpha_coeffs_g1 = domain_g1->evaluate_all_lagrange_polynomials(
-                                acc.alpha_tau_powers_g1.begin(), acc.alpha_tau_powers_g1.end());
+                                acc.alpha_tau_powers_g1.begin(), acc.alpha_tau_powers_g1.end()).get();
 
                             std::vector<g1_value_type> beta_coeffs_g1 = domain_g1->evaluate_all_lagrange_polynomials(
-                                acc.beta_tau_powers_g1.begin(), acc.beta_tau_powers_g1.end());
+                                acc.beta_tau_powers_g1.begin(), acc.beta_tau_powers_g1.end()).get();
 
                             std::vector<g1_value_type> h(m - 1, g1_value_type::zero());
 

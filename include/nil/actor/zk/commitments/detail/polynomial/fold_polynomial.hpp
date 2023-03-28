@@ -33,7 +33,6 @@
 
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/polynomial_dfs.hpp>
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/container/merkle/tree.hpp>
 #include <nil/crypto3/container/merkle/proof.hpp>
