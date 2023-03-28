@@ -284,7 +284,7 @@ void test_lagrange_coefficients_from_powers(std::size_t m) {
     domain.reset(new EvaluationDomainType(m));
 
     std::vector<field_value_type> u = domain->evaluate_all_lagrange_polynomials(t).get();
-    std::vector<field_value_type> u_from_powers = domain->evaluate_all_lagrange_polynomials(t_powers.cbegin(), t_powers.cend());
+    std::vector<field_value_type> u_from_powers = domain->evaluate_all_lagrange_polynomials(t_powers.cbegin(), t_powers.cend()).get();
 
     BOOST_CHECK_EQUAL(u.size(), u_from_powers.size());
 
@@ -319,7 +319,7 @@ void test_lagrange_coefficients_curve_elements(std::size_t m) {
     curve_element_domain.reset(new GroupEvaluationDomainType(m));
 
     std::vector<field_value_type> u = domain->evaluate_all_lagrange_polynomials(t).get();
-    std::vector<value_type> u_curve_element = curve_element_domain->evaluate_all_lagrange_polynomials(t_powers.cbegin(), t_powers.cend());
+    std::vector<value_type> u_curve_element = curve_element_domain->evaluate_all_lagrange_polynomials(t_powers.cbegin(), t_powers.cend()).get();
 
     BOOST_CHECK_EQUAL(u.size(), u_curve_element.size());
 

@@ -105,7 +105,7 @@ namespace nil {
                  * The output is a vector (b_{0},...,b_{m-1})
                  * where b_{i} is the evaluation of L_{i,S}(z) at z = t.
                  */
-                virtual std::vector<value_type> evaluate_all_lagrange_polynomials(
+                virtual future<std::vector<value_type>> evaluate_all_lagrange_polynomials(
                         const typename std::vector<value_type>::const_iterator &t_powers_begin,
                         const typename std::vector<value_type>::const_iterator &t_powers_end) = 0;
 
