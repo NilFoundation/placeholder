@@ -24,8 +24,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-//#define BOOST_TEST_MODULE lpc_test
-
 #include <string>
 
 #include <nil/actor/testing/test_case.hh>
@@ -36,11 +34,10 @@
 #include <nil/crypto3/algebra/curves/params/multiexp/bls12.hpp>
 #include <nil/crypto3/algebra/curves/params/wnaf/bls12.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
-
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
+
+#include <nil/actor/math/algorithms/calculate_domain_set.hpp>
 
 #include <nil/actor/zk/commitments/polynomial/lpc.hpp>
 #include <nil/actor/zk/commitments/polynomial/fri.hpp>
@@ -53,11 +50,11 @@ namespace boost {
     namespace test_tools {
         namespace tt_detail {
             template<>
-            struct print_log_value<polynomial<
-                    nil::crypto3::algebra::fields::detail::element_fp<nil::crypto3::algebra::fields::params<nil::crypto3::algebra::fields::bls12_base_field<381>>>>> {
+            struct print_log_value<nil::actor::math::polynomial<
+                nil::crypto3::algebra::fields::detail::element_fp<nil::crypto3::algebra::fields::params<nil::crypto3::algebra::fields::bls12_base_field<381>>>>> {
                 void operator()(std::ostream &,
-                                const math::polynomial<algebra::fields::detail::element_fp<
-                                    algebra::fields::params<algebra::fields::bls12_base_field<381>>>> &) {
+                                const nil::actor::math::polynomial<nil::crypto3::algebra::fields::detail::element_fp<
+                                    nil::crypto3::algebra::fields::params<nil::crypto3::algebra::fields::bls12_base_field<381>>>> &) {
                 }
             };
         }    // namespace tt_detail
@@ -131,16 +128,16 @@ ACTOR_THREAD_TEST_CASE(lpc_performance_test) {
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
 
-    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m, 0> fri_type;
-    typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m>
+    typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, lambda, m, 1 > fri_type;
+    typedef zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, lambda, r, m, 1>
         lpc_params_type;
     typedef zk::commitments::list_polynomial_commitment<FieldType, lpc_params_type> lpc_type;
     typedef typename lpc_type::proof_type proof_type;
 
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
-    std::vector<std::shared_ptr<nil::crypto3::math::evaluation_domain<FieldType>>> D =
-            nil::crypto3::math::calculate_domain_set<FieldType>(extended_log, r);
+    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
+        math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typename fri_type::params_type fri_params;
 
@@ -170,24 +167,34 @@ ACTOR_THREAD_TEST_CASE(lpc_performance_test) {
             poly[i] = typename FieldType::value_type(polynomial_element_gen());
         }
         merkle_tree_type tree =
-            zk::algorithms::precommit<lpc_type>(poly, D[0], fri_params.step_list.front());    // phase_1: Commit
+            zk::algorithms::precommit<lpc_type>(poly, D[0], fri_params.step_list.front()).get();    // phase_1: Commit
 
         // TODO: take a point outside of the basic domain
-        std::vector<typename FieldType::value_type> evaluation_points = {
-                nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
+        std::vector<typename FieldType::value_type> point = {nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator};
+        std::vector<std::vector<typename FieldType::value_type>> evaluation_points = {
+            point
+        };
 
         std::array<std::uint8_t, 96> x_data {};
         zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript(x_data);
 
+        std::array<std::vector<std::vector<typename FieldType::value_type>>,1> evaluation_points_batch = {
+            evaluation_points
+        };
+        std::array<merkle_tree_type, 1> tree_batch = {tree};
+
+        std::vector<math::polynomial<typename FieldType::value_type>> poly_vector = {poly};
+        std::array<std::vector<math::polynomial<typename FieldType::value_type>>, 1> poly_batch = {poly_vector};
+
         auto proof = zk::algorithms::proof_eval<lpc_type>(
-            evaluation_points, tree, poly, fri_params, transcript);    // phase_2: Prove
+            evaluation_points_batch, tree_batch, poly_batch, fri_params, transcript);    // phase_2: Prove
 
         // verify
         zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier(x_data);
 
+        std::array<typename fri_type::commitment_type, 1> commitment_batch = {tree.root()};
         BOOST_CHECK(zk::algorithms::verify_eval<lpc_type>(
-            evaluation_points, proof, fri_params, transcript_verifier));    // phase_3: Verify
+            evaluation_points_batch, proof, commitment_batch, fri_params, transcript_verifier)
+        );    // phase_3: Verify
     }
 }
-
-//BOOST_AUTO_TEST_SUITE_END()

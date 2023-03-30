@@ -28,14 +28,12 @@
 #ifndef ACTOR_ZK_PLONK_PLACEHOLDER_LOOKUP_ARGUMENT_HPP
 #define ACTOR_ZK_PLONK_PLACEHOLDER_LOOKUP_ARGUMENT_HPP
 
-
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
-
 #include <nil/crypto3/hash/sha2.hpp>
 
 #include <nil/actor/container/merkle/tree.hpp>
 
+#include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/shift.hpp>
 
@@ -86,7 +84,7 @@ namespace nil {
                         const std::vector<plonk_gate<FieldType, plonk_lookup_constraint<FieldType>>> lookup_gates =
                             constraint_system.lookup_gates();
 
-                        std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> basic_domain =
+                        std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
                             preprocessed_data.common_data.basic_domain;
 
                         std::array<math::polynomial<typename FieldType::value_type>, argument_size> F;
@@ -181,17 +179,17 @@ namespace nil {
                             math::polynomial<typename FieldType::value_type>(F_perm_value.coefficients());
 
                         typename CommitmentSchemeTypePermutation::precommitment_type F_perm_input_tree =
-                            algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_input, fri_params.D[0],
+                            zk::algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_input, fri_params.D[0],
                                                                                    fri_params.step_list.front()).get();
                         typename CommitmentSchemeTypePermutation::commitment_type F_perm_input_commitment =
-                            algorithms::commit<CommitmentSchemeTypePermutation>(F_perm_input_tree);
+                            zk::algorithms::commit<CommitmentSchemeTypePermutation>(F_perm_input_tree);
                         transcript(F_perm_input_commitment);
 
                         typename CommitmentSchemeTypePermutation::precommitment_type F_perm_value_tree =
-                            algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_value, fri_params.D[0],
+                            zk::algorithms::precommit<CommitmentSchemeTypePermutation>(F_perm_value, fri_params.D[0],
                                                                                    fri_params.step_list.front()).get();
                         typename CommitmentSchemeTypePermutation::commitment_type F_perm_value_commitment =
-                            algorithms::commit<CommitmentSchemeTypePermutation>(F_perm_value_tree);
+                            zk::algorithms::commit<CommitmentSchemeTypePermutation>(F_perm_value_tree);
                         transcript(F_perm_value_commitment);
 
                         // Compute $V_L(X)$
@@ -210,10 +208,10 @@ namespace nil {
                             math::polynomial<typename FieldType::value_type>(V_L.coefficients());
 
                         typename CommitmentSchemeTypePermutation::precommitment_type V_L_tree =
-                            algorithms::precommit<CommitmentSchemeTypePermutation>(V_L, fri_params.D[0],
+                            zk::algorithms::precommit<CommitmentSchemeTypePermutation>(V_L, fri_params.D[0],
                                                                                    fri_params.step_list.front()).get();
                         typename CommitmentSchemeTypePermutation::commitment_type V_L_commitment =
-                            algorithms::commit<CommitmentSchemeTypePermutation>(V_L_tree);
+                            zk::algorithms::commit<CommitmentSchemeTypePermutation>(V_L_tree);
                         transcript(V_L_commitment);
 
                         // Calculate lookup-related numerators of the quotinent polynomial

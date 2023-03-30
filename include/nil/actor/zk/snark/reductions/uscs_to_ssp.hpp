@@ -49,8 +49,9 @@
 #define ACTOR_ZK_USCS_TO_SSP_REDUCTION_HPP
 
 #include <nil/crypto3/math/coset.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/zk/snark/arithmetization/arithmetic_programs/ssp.hpp>
 #include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 
@@ -75,7 +76,7 @@ namespace nil {
                          */
                         static ssp_instance<FieldType> instance_map(const uscs_constraint_system<FieldType> &cs) {
                             const std::shared_ptr<evaluation_domain<FieldType>> domain =
-                                math::make_evaluation_domain<FieldType>(cs.num_constraints());
+                                nil::math::make_evaluation_domain<FieldType>(cs.num_constraints());
                             std::vector<std::map<std::size_t, typename FieldType::value_type>> V_in_Lagrange_basis(
                                 cs.num_variables() + 1);
                             for (std::size_t i = 0; i < cs.num_constraints(); ++i) {
@@ -118,7 +119,7 @@ namespace nil {
                             const typename FieldType::value_type Zt = domain->compute_vanishing_polynomial(t);
 
                             const std::vector<typename FieldType::value_type> u =
-                                domain->evaluate_all_lagrange_polynomials(t);
+                                domain->evaluate_all_lagrange_polynomials(t).get();
                             for (std::size_t i = 0; i < cs.num_constraints(); ++i) {
                                 for (std::size_t j = 0; j < cs.constraints[i].terms.size(); ++j) {
                                     Vt[cs.constraints[i].terms[j].index] += u[i] * cs.constraints[i].terms[j].coeff;

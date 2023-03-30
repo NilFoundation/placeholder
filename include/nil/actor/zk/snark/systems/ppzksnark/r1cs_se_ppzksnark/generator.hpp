@@ -32,8 +32,7 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/zk/snark/reductions/r1cs_to_sap.hpp>
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_se_ppzksnark/detail/basic_policy.hpp>
 

@@ -49,8 +49,8 @@
 #define ACTOR_ZK_R1CS_TO_QAP_BASIC_POLICY_HPP
 
 #include <nil/crypto3/math/coset.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
+#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/actor/zk/snark/arithmetization/arithmetic_programs/qap.hpp>
 #include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 
@@ -80,7 +80,7 @@ namespace nil {
                         static qap_instance<FieldType> instance_map(const r1cs_constraint_system<FieldType> &cs) {
 
                             const std::shared_ptr<math::evaluation_domain<FieldType>> domain =
-                                math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
+                                nil::math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
 
                             std::vector<std::map<std::size_t, typename FieldType::value_type>> A_in_Lagrange_basis(
                                 cs.num_variables() + 1);
@@ -139,7 +139,7 @@ namespace nil {
                             instance_map_with_evaluation(const r1cs_constraint_system<FieldType> &cs,
                                                          const typename FieldType::value_type &t) {
                             const std::shared_ptr<math::evaluation_domain<FieldType>> domain = 
-                                math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
+                                nil::math::make_evaluation_domain<FieldType>(cs.num_constraints() + cs.num_inputs() + 1);
 
                             std::vector<typename FieldType::value_type> At, Bt, Ct, Ht;
 
@@ -151,7 +151,7 @@ namespace nil {
                             const typename FieldType::value_type Zt = domain->compute_vanishing_polynomial(t);
 
                             const std::vector<typename FieldType::value_type> u =
-                                domain->evaluate_all_lagrange_polynomials(t);
+                                domain->evaluate_all_lagrange_polynomials(t).get();
                             /**
                              * add and process the constraints
                              *     input_i * 0 = 0

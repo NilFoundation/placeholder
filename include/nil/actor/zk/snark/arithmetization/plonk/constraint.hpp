@@ -27,8 +27,7 @@
 #ifndef ACTOR_ZK_PLONK_CONSTRAINT_HPP
 #define ACTOR_ZK_PLONK_CONSTRAINT_HPP
 
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/shift.hpp>
 
@@ -109,9 +108,10 @@ namespace nil {
                     }
 
                     template<typename ArithmetizationParams>
-                    math::polynomial<typename VariableType::assignment_type>
+                    future<math::polynomial<typename VariableType::assignment_type>>
                         evaluate(const plonk_polynomial_table<FieldType, ArithmetizationParams> &assignments,
-                                 std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> domain) const {
+                                 std::shared_ptr<math::evaluation_domain<FieldType>>
+                                     domain) const {
                         math::polynomial<typename VariableType::assignment_type> acc = {0};
                         for (const math::non_linear_term<VariableType> &nlt : this->terms) {
                             math::polynomial<typename VariableType::assignment_type> term_value = {nlt.coeff};
@@ -143,18 +143,19 @@ namespace nil {
                             }
                             acc = acc + term_value;
                         }
-                        return acc;
+                        return make_ready_future<math::polynomial<typename VariableType::assignment_type>>(acc);
                     }
 
                     template<typename ArithmetizationParams>
                     future<math::polynomial_dfs<typename VariableType::assignment_type>>
                         evaluate(const plonk_polynomial_dfs_table<FieldType, ArithmetizationParams> &assignments,
-                            std::shared_ptr<crypto3::math::evaluation_domain<FieldType>> domain) const {
-                        math::polynomial_dfs<typename VariableType::assignment_type> acc (
-                            0, domain->m, FieldType::value_type::zero());
+                                 std::shared_ptr<math::evaluation_domain<FieldType>>
+                                     domain) const {
+                        math::polynomial_dfs<typename VariableType::assignment_type> acc(
+                            0, assignments.rows_amount(), FieldType::value_type::zero());
                         for (const math::non_linear_term<VariableType> &nlt : this->terms) {
                             math::polynomial_dfs<typename VariableType::assignment_type> term_value(
-                                0, domain->m, nlt.coeff);
+                                0, assignments.rows_amount(), nlt.coeff);
 
                             for (const VariableType &var : nlt.vars) {
 

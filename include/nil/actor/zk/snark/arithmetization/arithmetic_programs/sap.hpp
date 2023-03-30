@@ -126,7 +126,7 @@ namespace nil {
                         const typename FieldType::value_type Zt = this->domain->compute_vanishing_polynomial(t);
 
                         const std::vector<typename FieldType::value_type> u =
-                            this->domain->evaluate_all_lagrange_polynomials(t);
+                            this->domain->evaluate_all_lagrange_polynomials(t).get();
 
                         for (std::size_t i = 0; i < this->num_variables + 1; ++i) {
                             for (auto &el : A_in_Lagrange_basis[i]) {
