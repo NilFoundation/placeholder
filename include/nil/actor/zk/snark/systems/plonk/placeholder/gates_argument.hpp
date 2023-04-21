@@ -58,7 +58,7 @@ namespace nil {
                             table.public_table().public_inputs();
 
                     for (std::size_t pi_index = 0; pi_index < table.public_inputs_amount(); pi_index++) {
-                        public_inputs[pi_index].resize(new_size);
+                        public_inputs[pi_index].resize(new_size).get();
                     }
 
                     typename plonk_public_polynomial_dfs_table<FieldType,
@@ -66,7 +66,7 @@ namespace nil {
                         table.public_table().constants();
 
                     for (std::size_t cst_index = 0; cst_index < table.constants_amount(); cst_index++) {
-                        constants[cst_index].resize(new_size);
+                        constants[cst_index].resize(new_size).get();
                     }
 
                     typename plonk_public_polynomial_dfs_table<FieldType,
@@ -74,7 +74,7 @@ namespace nil {
                         table.public_table().selectors();
 
                     for (std::size_t sel_index = 0; sel_index < table.selectors_amount(); sel_index++) {
-                        selectors[sel_index].resize(new_size);
+                        selectors[sel_index].resize(new_size).get();
                     }
 
                     typename plonk_private_polynomial_dfs_table<FieldType,
@@ -82,7 +82,7 @@ namespace nil {
                         table.private_table().witnesses();
 
                     for (std::size_t wts_index = 0; wts_index < table.witnesses_amount(); wts_index++) {
-                        witnesses[wts_index].resize(new_size);
+                        witnesses[wts_index].resize(new_size).get();
                     }
 
                     return

@@ -317,7 +317,7 @@ namespace nil {
                         for( std::size_t k = 0; k < T_splitted.size(); k++ ){
                             math::polynomial_dfs<typename FieldType::value_type> dfs(0, fri_params.D[0]->size());
                             dfs.from_coefficients(T_splitted[k]);
-                            if( dfs.size() != fri_params.D[0]->size() ) dfs.resize(fri_params.D[0]->size());
+                            if( dfs.size() != fri_params.D[0]->size() ) dfs.resize(fri_params.D[0]->size()).get();
                             T_splitted_dfs.push_back(dfs);
                         }
 
