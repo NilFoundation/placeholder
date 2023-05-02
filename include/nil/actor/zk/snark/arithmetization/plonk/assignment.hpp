@@ -32,12 +32,12 @@
 #include <nil/actor/zk/snark/arithmetization/plonk/padding.hpp>
 
 namespace nil {
-    namespace actor_blueprint {
-        template<typename ArithmetizationType, std::size_t... BlueprintParams>
-        class assignment;
-    }    // namespace blueprint
-
     namespace actor {
+        namespace actor_blueprint {
+            template<typename ArithmetizationType, std::size_t... BlueprintParams>
+            class assignment;
+        }    // namespace blueprint
+
         namespace zk {
             namespace snark {
 
@@ -70,12 +70,12 @@ namespace nil {
                         return _witnesses[index].size();
                     }
 
-                    ColumnType witness(std::uint32_t index) const {
+                    const ColumnType& witness(std::uint32_t index) const {
                         assert(index < ArithmetizationParams::witness_columns);
                         return _witnesses[index];
                     }
 
-                    witnesses_container_type witnesses() const {
+                    const witnesses_container_type& witnesses() const {
                         return _witnesses;
                     }
 
@@ -94,7 +94,7 @@ namespace nil {
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
                         plonk_table<FieldType, ArithmetizationParams, ColumnType> &table);
 
-                    friend struct nil::actor_blueprint::assignment<plonk_constraint_system<FieldType,
+                    friend struct nil::actor::actor_blueprint::assignment<plonk_constraint_system<FieldType,
                         ArithmetizationParams>>;
                 };
 
@@ -129,12 +129,12 @@ namespace nil {
                         return _public_inputs[index].size();
                     }
 
-                    ColumnType public_input(std::uint32_t index) const {
+                    const ColumnType& public_input(std::uint32_t index) const {
                         assert(index < public_inputs_amount());
                         return _public_inputs[index];
                     }
 
-                    public_input_container_type public_inputs() const {
+                    const public_input_container_type& public_inputs() const {
                         return _public_inputs;
                     }
 
@@ -146,12 +146,12 @@ namespace nil {
                         return _constants[index].size();
                     }
 
-                    ColumnType constant(std::uint32_t index) const {
+                    const ColumnType& constant(std::uint32_t index) const {
                         assert(index < constants_amount());
                         return _constants[index];
                     }
 
-                    constant_container_type constants() const {
+                    const constant_container_type& constants() const {
                         return _constants;
                     }
 
@@ -163,12 +163,12 @@ namespace nil {
                         return _selectors[index].size();
                     }
 
-                    ColumnType selector(std::uint32_t index) const {
+                    const ColumnType& selector(std::uint32_t index) const {
                         assert(index < selectors_amount());
                         return _selectors[index];
                     }
 
-                    selector_container_type selectors() const {
+                    const selector_container_type& selectors() const {
                         return _selectors;
                     }
 
@@ -195,7 +195,7 @@ namespace nil {
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
                         plonk_table<FieldType, ArithmetizationParams, ColumnType> &table);
 
-                    friend struct nil::actor_blueprint::assignment<plonk_constraint_system<FieldType,
+                    friend struct nil::actor::actor_blueprint::assignment<plonk_constraint_system<FieldType,
                         ArithmetizationParams>>;
                 };
 

@@ -436,11 +436,11 @@ namespace nil {
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> fixed_polys;
                         fixed_polys.insert(fixed_polys.end(), id_perm_polys.begin(), id_perm_polys.end());
                         fixed_polys.insert(fixed_polys.end(), sigma_perm_polys.begin(), sigma_perm_polys.end());
-                        for (std::size_t i = 0; i < public_table.constants().size(); i++) {
-                            fixed_polys.push_back(public_table.constants()[i]);
+                        for (std::size_t i = 0; i < public_table.constants_amount(); i++) {
+                            fixed_polys.push_back(public_table.constant(i));
                         }
-                        for (std::size_t i = 0; i < public_table.selectors().size(); i++) {
-                            fixed_polys.push_back(public_table.selectors()[i]);
+                        for (std::size_t i = 0; i < public_table.selectors_amount(); i++) {
+                            fixed_polys.push_back(public_table.selector(i));
                         }
                         fixed_polys.push_back(q_last_q_blind[0]);
                         fixed_polys.push_back(q_last_q_blind[1]);
