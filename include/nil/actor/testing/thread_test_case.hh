@@ -29,8 +29,8 @@
 
 #include <nil/actor/testing/actor_test.hh>
 
-#define ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures)      \
-    struct name : public nil::actor::testing::actor_test {            \
+#define ACTOR_FIXTURE_TEST_CASE_EXPECTED_FAILURES(name, fixture, failures)      \
+    struct name : public nil::actor::testing::actor_test, public fixture {            \
         const char *get_test_file() override {                        \
             return __FILE__;                                          \
         }                                                             \
@@ -48,4 +48,10 @@
     static name name##_instance;                                      \
     void name::do_run_test_case()
 
-#define ACTOR_THREAD_TEST_CASE(name) ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, 0)
+struct dump_fixture {};
+
+#define ACTOR_FIXTURE_TEST_CASE(name, fixture) ACTOR_FIXTURE_TEST_CASE_EXPECTED_FAILURES(name, fixture, 0)
+
+#define ACTOR_THREAD_TEST_CASE(name) ACTOR_FIXTURE_TEST_CASE_EXPECTED_FAILURES(name, dump_fixture, 0)
+
+#define ACTOR_THREAD_TEST_CASE_EXPECTED_FAILURES(name, failures) ACTOR_FIXTURE_TEST_CASE_EXPECTED_FAILURES(name, dump_fixture, failures)

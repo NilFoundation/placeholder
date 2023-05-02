@@ -1535,9 +1535,9 @@ namespace nil {
                     cpu_mem.replace_memory_backing(sys_alloc);
                 }
                 cpu_mem.resize(total, sys_alloc);
+#ifdef ACTOR_HAVE_NUMA
                 size_t pos = 0;
                 for (auto &&x : m) {
-#ifdef ACTOR_HAVE_NUMA
                     unsigned long nodemask = 1UL << x.nodeid;
                     if (mbind) {
                         auto r = ::mbind(cpu_mem.mem() + pos, x.bytes, MPOL_PREFERRED, &nodemask,
@@ -1550,9 +1550,9 @@ namespace nil {
                                       << std::endl;
                         }
                     }
-#endif
                     pos += x.bytes;
                 }
+#endif
             }
 
             statistics stats() {
