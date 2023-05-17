@@ -29,7 +29,7 @@ macro(actor_find_dependencies)
         # Public dependencies.
         Boost
         c-ares
-        fmt
+        FMT
         lz4
         # Private and private/public dependencies.
         Concepts
