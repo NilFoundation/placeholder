@@ -24,11 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef ACTOR_MATH_POLYNOMIAL_POLYNOM_DFT_HPP
-#define ACTOR_MATH_POLYNOMIAL_POLYNOM_DFT_HPP
+#ifndef ACTOR_MATH_POLYNOMIAL_POLYNOM_DFS_HPP
+#define ACTOR_MATH_POLYNOMIAL_POLYNOM_DFS_HPP
 
 #include <algorithm>
 #include <vector>
+#include <ostream>
 
 #include <nil/actor/math/polynomial/basic_operations.hpp>
 #include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
@@ -117,12 +118,14 @@ namespace nil {
                 // TODO: add constructor with omega
 
                 polynomial_dfs(polynomial_dfs&& x)
-                    BOOST_NOEXCEPT(std::is_nothrow_move_constructible<allocator_type>::value) :
-                    val(x.val),
-                    _d(x._d) {
+                    BOOST_NOEXCEPT(std::is_nothrow_move_constructible<allocator_type>::value)
+                    : val(std::move(x.val))
+                    , _d(x._d) {
                 }
 
-                polynomial_dfs(polynomial_dfs&& x, const allocator_type& a) : val(x.val, a), _d(x._d) {
+                polynomial_dfs(polynomial_dfs&& x, const allocator_type& a)
+                    : val(std::move(x.val), a)
+                    , _d(x._d) {
                 }
 
                 polynomial_dfs(size_t d, const container_type& c) : val(c), _d(d) {
@@ -142,7 +145,7 @@ namespace nil {
                 }
 
                 polynomial_dfs& operator=(polynomial_dfs&& x) {
-                    val = x.val;
+                    val = std::move(x.val);
                     _d = x._d;
                     return *this;
                 }
@@ -300,7 +303,7 @@ namespace nil {
                 }
 
                 void push_back(value_type&& _x) {
-                    val.push_back(_x);
+                    val.emplace_back(_x);
                 }
 
                 template<class... Args>
@@ -350,6 +353,10 @@ namespace nil {
                 }
 
                 future<> resize(size_type _sz) {
+                    // For some reason this does actually happen sometimes.
+                    if (this->size() == _sz)
+                        return make_ready_future<>();
+
                     // BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
 
                     if (this->size() == 1){
@@ -613,9 +620,9 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs operator*=(const polynomial_dfs& other) {
-                    this->_d += other._d;
                     size_t polynomial_s =
                         crypto3::math::detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
+                    this->_d += other._d;
 
                     if (this->size() < polynomial_s) {
                         this->resize(polynomial_s).get();
@@ -736,6 +743,28 @@ namespace nil {
                     tmp.resize(r_size);
                     return tmp;
                 }
+
+                polynomial_dfs pow(size_t power) const {
+                    if (power == 1) {
+                        return *this;
+                    }
+
+                    polynomial_dfs power_of_2 = *this;
+                    size_t expected_size = crypto3::math::detail::power_of_two(
+                        std::max({this->size(), this->degree() * power + 1})); 
+                    power_of_2.resize(expected_size).get();
+                    polynomial_dfs result(0, expected_size, FieldValueType::one());
+                    while (power) {
+                        if (power % 2 == 1) {
+                            result *= power_of_2;
+                        }
+                        power /= 2;
+                        if (power == 0)
+                            break;
+                        power_of_2 *= power_of_2;
+                    }
+                    return result;
+                }
             };
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
@@ -851,8 +880,24 @@ namespace nil {
 
                 return polynomial_dfs<FieldValueType>(0, B.size(), A) / B;
             }
+
+            // Used in the unit tests, so we can use BOOST_CHECK_EQUALS, and see
+            // the values of polynomials, when the check fails.
+            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                     typename = typename std::enable_if<is_field_element<FieldValueType>::value>::type>
+            std::ostream& operator<<(std::ostream& os,
+                                     const polynomial_dfs<FieldValueType, Allocator>& poly) {
+                os << "[Polynomial DFS, size " << poly.size()
+                   << " degree " << poly.degree() << " values ";
+                for( auto it = poly.begin(); it != poly.end(); it++ ){
+                    os << it->data << ", ";
+                }
+                os << "]";
+                return os;
+            }
+
         }    // namespace math
     }        // namespace actor
 }    // namespace nil
 
-#endif    // ACTOR_MATH_POLYNOMIAL_POLYNOM_DFT_HPP
+#endif    // ACTOR_MATH_POLYNOMIAL_POLYNOM_DFS_HPP
