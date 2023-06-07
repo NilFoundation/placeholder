@@ -28,19 +28,21 @@
 #ifndef ACTOR_ZK_PLONK_PLACEHOLDER_PREPROCESSOR_HPP
 #define ACTOR_ZK_PLONK_PLACEHOLDER_PREPROCESSOR_HPP
 
+#include <set>
+
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
-
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>
+#include <nil/actor/math/domains/evaluation_domain.hpp>
 
+#include <nil/actor/zk/math/expression.hpp>
+#include <nil/actor/zk/math/expression_visitors.hpp>
 #include <nil/actor/zk/math/permutation.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/actor/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/copy_constraint.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/table_description.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/detail/column_polynomial.hpp>
 
 namespace nil {
@@ -51,9 +53,9 @@ namespace nil {
                 template<typename FieldType, typename ParamsType>
                 class placeholder_public_preprocessor {
                     typedef detail::placeholder_policy<FieldType, ParamsType> policy_type;
+                    typedef typename ParamsType::runtime_size_commitment_scheme_type fixed_values_commitment_scheme_type;
+                    typedef typename plonk_constraint<FieldType>::variable_type variable_type;
 
-                    using fixed_values_commitment_scheme_type =
-                        typename ParamsType::runtime_size_commitment_scheme_type;
                 public:
                     struct preprocessed_data_type {
 
@@ -78,8 +80,7 @@ namespace nil {
                         struct common_data_type {
                             using field_type = FieldType;
                             using commitments_type = public_commitments_type;
-                            using columns_rotations_type =
-                                std::array<std::vector<int>, ParamsType::arithmetization_params::total_columns>;
+                            using columns_rotations_type = std::array<std::set<int>, ParamsType::arithmetization_params::total_columns>;
                             // marshalled
                             public_commitments_type commitments;
 
@@ -99,7 +100,7 @@ namespace nil {
                             common_data_type(
                                 std::shared_ptr<math::evaluation_domain<FieldType>> D, 
                                 public_commitments_type commts, 
-                                std::array<std::vector<int>, ParamsType::arithmetization_params::total_columns> col_rotations,
+                                std::array<std::set<int>, ParamsType::arithmetization_params::total_columns> col_rotations,
                                 std::size_t rows,
                                 std::size_t usable_rows, 
                                 std::uint32_t max_gates_degree
@@ -121,7 +122,7 @@ namespace nil {
                             // Constructor for marshalling. Domain is regenerated.
                             common_data_type(
                                 public_commitments_type commts, 
-                                std::array<std::vector<int>, ParamsType::arithmetization_params::total_columns> col_rotations,
+                                std::array<std::set<int>, ParamsType::arithmetization_params::total_columns> col_rotations,
                                 std::size_t rows,
                                 std::size_t usable_rows, 
                                 std::uint32_t max_gates_degree
@@ -129,8 +130,8 @@ namespace nil {
                                 commitments(commts), 
                                 columns_rotations(col_rotations), rows_amount(rows), usable_rows_amount(usable_rows),
                                 Z(std::vector<typename FieldType::value_type>(rows + 1, FieldType::value_type::zero())),
-                                max_gates_degree(max_gates_degree
-                            ) {
+                                max_gates_degree(max_gates_degree) 
+                            {
                                 // Z is polynomial -1, 0,..., 0, 1
                                 Z[0] = -FieldType::value_type::one();
                                 Z[Z.size()-1] = FieldType::value_type::one();
@@ -150,7 +151,7 @@ namespace nil {
                                 commitments == rhs.commitments &&
                                 basic_domain->size() == rhs.basic_domain->size() &&
                                 lagrange_0 == rhs.lagrange_0 &&
-                                Z == rhs.Z;
+                                Z == rhs.Z &&
                                 max_gates_degree == rhs.max_gates_degree;
                             }
                             bool operator!=(const common_data_type &rhs) const {
@@ -276,87 +277,36 @@ namespace nil {
                     };
 
                 public:
-                    static inline std::array<std::vector<int>, ParamsType::arithmetization_params::total_columns>
+                    static inline std::array<std::set<int>, ParamsType::arithmetization_params::total_columns>
                         columns_rotations(
                             plonk_constraint_system<FieldType, typename ParamsType::arithmetization_params>
                                 &constraint_system,
                             const plonk_table_description<FieldType, typename ParamsType::arithmetization_params>
                                 &table_description) {
 
-                        std::array<std::vector<int>, ParamsType::arithmetization_params::total_columns> result;
+                        std::array<std::set<int>, ParamsType::arithmetization_params::total_columns> result;
 
-                        std::vector<plonk_gate<FieldType, plonk_constraint<FieldType>>> gates =
-                            constraint_system.gates();
+                        for (auto & s : result) {
+                            s.insert(0);
+                        }
 
-                        for (std::size_t g_index = 0; g_index < gates.size(); g_index++) {
+                        math::expression_for_each_variable_visitor<variable_type> visitor(
+                            [&table_description, &result](const variable_type& var) {
+                                result[table_description.global_index(var)].insert(var.rotation);
+                            }
+                        );
 
-                            for (std::size_t c_index = 0; c_index < gates[g_index].constraints.size(); c_index++) {
-
-                                for (std::size_t t_index = 0;
-                                     t_index < gates[g_index].constraints[c_index].terms.size();
-                                     t_index++) {
-                                    for (std::size_t v_index = 0;
-                                         v_index < gates[g_index].constraints[c_index].terms[t_index].vars.size();
-                                         v_index++) {
-
-                                        if (gates[g_index].constraints[c_index].terms[t_index].vars[v_index].relative) {
-                                            std::size_t column_index = table_description.global_index(
-                                                gates[g_index].constraints[c_index].terms[t_index].vars[v_index]);
-
-                                            int rotation = gates[g_index]
-                                                               .constraints[c_index]
-                                                               .terms[t_index]
-                                                               .vars[v_index]
-                                                               .rotation;
-
-                                            if (std::find(result[column_index].begin(), result[column_index].end(),
-                                                          rotation) == result[column_index].end()) {
-                                                result[column_index].push_back(rotation);
-                                            }
-                                        }
-                                    }
-                                }
+                        for (const auto& gate: constraint_system.gates()) {
+                            for (const auto& constraint: gate.constraints) {
+                               	visitor.visit(constraint);
                             }
                         }
 
-                        std::vector<plonk_gate<FieldType, plonk_lookup_constraint<FieldType>>> lookup_gates =
-                            constraint_system.lookup_gates();
-
-                        for (std::size_t g_index = 0; g_index < lookup_gates.size(); g_index++) {
-
-                            for (std::size_t c_index = 0; c_index < lookup_gates[g_index].constraints.size();
-                                 c_index++) {
-
-                                for (std::size_t v_index = 0;
-                                     v_index < lookup_gates[g_index].constraints[c_index].lookup_input.size();
-                                     v_index++) {
-
-                                    if (lookup_gates[g_index]
-                                            .constraints[c_index]
-                                            .lookup_input[v_index]
-                                            .vars[0]
-                                            .relative) {
-                                        std::size_t column_index = table_description.global_index(
-                                            lookup_gates[g_index].constraints[c_index].lookup_input[v_index].vars[0]);
-
-                                        int rotation = lookup_gates[g_index]
-                                                           .constraints[c_index]
-                                                           .lookup_input[v_index]
-                                                           .vars[0]
-                                                           .rotation;
-
-                                        if (std::find(result[column_index].begin(), result[column_index].end(),
-                                                      rotation) == result[column_index].end()) {
-                                            result[column_index].push_back(rotation);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        for (std::size_t i = 0; i < ParamsType::arithmetization_params::total_columns; i++) {
-                            if (std::find(result[i].begin(), result[i].end(), 0) == result[i].end()) {
-                                result[i].push_back(0);
+                        for (const auto& gate: constraint_system.lookup_gates()) {
+                            for (const auto& constraint: gate.constraints) {
+                                for (const auto& expr: constraint.lookup_input) {
+                               	    visitor.visit(expr);
+                                } 
                             }
                         }
 
@@ -434,32 +384,34 @@ namespace nil {
                         const typename ParamsType::commitment_params_type &commitment_params) {
 
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> fixed_polys;
-                        fixed_polys.insert(fixed_polys.end(), id_perm_polys.begin(), id_perm_polys.end());
-                        fixed_polys.insert(fixed_polys.end(), sigma_perm_polys.begin(), sigma_perm_polys.end());
-                        for (std::size_t i = 0; i < public_table.constants_amount(); i++) {
-                            fixed_polys.push_back(public_table.constant(i));
+                        fixed_polys.insert( fixed_polys.end(), id_perm_polys.begin(), id_perm_polys.end() );
+                        fixed_polys.insert( fixed_polys.end(), sigma_perm_polys.begin(), sigma_perm_polys.end() );
+                        for (std::size_t i = 0; i < public_table.constants().size(); i ++){
+                            fixed_polys.push_back(public_table.constants()[i]);
                         }
-                        for (std::size_t i = 0; i < public_table.selectors_amount(); i++) {
-                            fixed_polys.push_back(public_table.selector(i));
+                        for (std::size_t i = 0; i < public_table.selectors().size(); i ++){
+                            fixed_polys.push_back(public_table.selectors()[i]);
                         }
                         fixed_polys.push_back(q_last_q_blind[0]);
                         fixed_polys.push_back(q_last_q_blind[1]);
-
+                        
                         typename fixed_values_commitment_scheme_type::precommitment_type fixed_values_precommitment =
-                            zk::algorithms::precommit<fixed_values_commitment_scheme_type>(
-                                fixed_polys, commitment_params.D[0], commitment_params.step_list.front())
-                                .get();
+                            algorithms::precommit<fixed_values_commitment_scheme_type>(
+                                fixed_polys, commitment_params.D[0],
+                                commitment_params.step_list[0]).get();
 
                         return make_ready_future<typename preprocessed_data_type::public_precommitments_type>(
-                            typename preprocessed_data_type::public_precommitments_type {fixed_values_precommitment});
+                            typename preprocessed_data_type::public_precommitments_type {
+                                fixed_values_precommitment});
                     }
 
                     static inline typename preprocessed_data_type::public_commitments_type
                         commitments(const typename preprocessed_data_type::public_precommitments_type &precommitments) {
 
                         typename fixed_values_commitment_scheme_type::commitment_type fixed_values_commitment =
-                            zk::algorithms::commit<fixed_values_commitment_scheme_type>(precommitments.fixed_values);
-                        return typename preprocessed_data_type::public_commitments_type {fixed_values_commitment};
+                            algorithms::commit<fixed_values_commitment_scheme_type>(precommitments.fixed_values);
+                        return typename preprocessed_data_type::public_commitments_type {
+                            fixed_values_commitment};
                     }
 
                     static inline future<preprocessed_data_type> process(
@@ -483,15 +435,18 @@ namespace nil {
                         std::size_t usable_rows = table_description.usable_rows_amount;
 
                         std::uint32_t max_gates_degree = 0;
+                        math::expression_max_degree_visitor<variable_type> gates_visitor;
                         for (auto gate : constraint_system.gates()) {
                             for (auto constr : gate.constraints) {
-                                max_gates_degree = std::max(max_gates_degree, (std::uint32_t)constr.max_degree());
+                                max_gates_degree = std::max(max_gates_degree, gates_visitor.compute_max_degree(constr));
                             }
                         }
+                        math::expression_max_degree_visitor<variable_type> lookup_visitor;
                         for (auto gate : constraint_system.lookup_gates()) {
                             for (auto constr : gate.constraints) {
                                 for (auto li : constr.lookup_input) {
-                                    max_gates_degree = std::max(max_gates_degree, (std::uint32_t)li.vars.size());
+                                    max_gates_degree = std::max(max_gates_degree, 
+                                        lookup_visitor.compute_max_degree(li));
                                 }
                             }
                         }
@@ -517,27 +472,27 @@ namespace nil {
                         std::array<math::polynomial_dfs<typename FieldType::value_type>, 2> q_last_q_blind;
                         q_last_q_blind[0] = lagrange_polynomial(basic_domain, usable_rows, commitment_params);
                         q_last_q_blind[1] = selector_blind(usable_rows, basic_domain, commitment_params);
+
                         plonk_public_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>
                             public_polynomial_table =
-                                plonk_public_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>(
-                                        detail::column_range_polynomial_dfs<FieldType>(public_assignment.public_inputs(),
-                                            basic_domain).get(),
-                                        detail::column_range_polynomial_dfs<FieldType>(public_assignment.constants(),
-                                            basic_domain).get(),
-                                        detail::column_range_polynomial_dfs<FieldType>(public_assignment.selectors(),
-                                            basic_domain).get());
-
+                                plonk_public_polynomial_dfs_table<FieldType,
+                                                                  typename ParamsType::arithmetization_params>(
+                                    detail::column_range_polynomial_dfs<FieldType>(public_assignment.public_inputs(),
+                                                                                   basic_domain).get(),
+                                    detail::column_range_polynomial_dfs<FieldType>(public_assignment.constants(),
+                                                                                   basic_domain).get(),
+                                    detail::column_range_polynomial_dfs<FieldType>(public_assignment.selectors(),
+                                                                                   basic_domain).get());
 
                         // prepare commitments for short verifier
                         typename preprocessed_data_type::public_precommitments_type public_precommitments =
                             precommitments(public_polynomial_table, id_perm_polys, sigma_perm_polys, q_last_q_blind,
-                                           commitment_params)
-                                .get();
+                                           commitment_params).get();
 
                         typename preprocessed_data_type::public_commitments_type public_commitments =
                             commitments(public_precommitments);
 
-                        std::array<std::vector<int>, ParamsType::arithmetization_params::total_columns> c_rotations =
+                        std::array<std::set<int>, ParamsType::arithmetization_params::total_columns> c_rotations =
                             columns_rotations(constraint_system, table_description);
 
                         typename preprocessed_data_type::common_data_type common_data (
@@ -588,10 +543,8 @@ namespace nil {
                                 plonk_private_polynomial_dfs_table<FieldType,
                                                                    typename ParamsType::arithmetization_params>(
                                     detail::column_range_polynomial_dfs<FieldType>(private_assignment.witnesses(),
-                                                                                   basic_domain)
-                                        .get());
-                        return make_ready_future<preprocessed_data_type>(
-                            preprocessed_data_type({basic_domain, private_polynomial_table}));
+                                                                                   basic_domain).get());
+                        return make_ready_future<preprocessed_data_type>(preprocessed_data_type({basic_domain, private_polynomial_table}));
                     }
                 };
             }    // namespace snark

@@ -29,11 +29,12 @@
 #define ACTOR_ZK_PLONK_PLACEHOLDER_PROVER_HPP
 
 #include <chrono>
+#include <set>
 
-#include <nil/actor/math/polynomial/polynomial.hpp>
 
 #include <nil/actor/container/merkle/tree.hpp>
 
+#include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/zk/commitments/polynomial/lpc.hpp>
 #include <nil/actor/zk/transcript/fiat_shamir.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/constraint.hpp>
@@ -276,7 +277,7 @@ namespace nil {
                             for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
                                 math::polynomial_dfs<typename FieldType::value_type> constraint_result =
                                     gates[i].constraints[j].evaluate(
-                                        polynomial_table, preprocessed_public_data.common_data.basic_domain) *
+                                        polynomial_table, preprocessed_public_data.common_data.basic_domain).get() *
                                     polynomial_table.selector(gates[i].selector_index);
                                 // for (std::size_t k = 0; k < table_description.rows_amount; k++) {
                                 if (constraint_result.evaluate(
@@ -347,13 +348,12 @@ namespace nil {
 
                         // variable_values polynomials (table columns)
                         for (std::size_t variable_values_index = 0; variable_values_index < witness_columns + public_input_columns; variable_values_index++) {
-                            std::vector<int> variable_values_rotation =
+                            std::set<int> variable_values_rotation =
                                 preprocessed_public_data.common_data.columns_rotations[variable_values_index];
 
-                            for (std::size_t rotation_index = 0; rotation_index < variable_values_rotation.size();
-                                 rotation_index++) {
+                            for (int rotation: variable_values_rotation) {
                                 variable_values_evaluation_points[variable_values_index].push_back(
-                                    challenge * omega.pow(variable_values_rotation[rotation_index]));
+                                    challenge * omega.pow(rotation));
                             }
                         }
 #ifdef ZK_PLACEHOLDER_PROFILING_ENABLED
@@ -374,7 +374,7 @@ namespace nil {
 //                             std::vector<typename FieldType::value_type> evaluation_points_v_l = {challenge,
 //                                                                                                  challenge * omega};
 //                             typename permutation_commitment_scheme_type::proof_type v_l_evaluation =
-//                                 algorithms::proof_eval<permutation_commitment_scheme_type>(
+//                                 zk::algorithms::proof_eval<permutation_commitment_scheme_type>(
 //                                     evaluation_points_v_l,
 //                                     lookup_argument.V_L_precommitment,
 //                                     lookup_argument.V_L_polynomial,
@@ -392,7 +392,7 @@ namespace nil {
 //                             std::vector<typename FieldType::value_type> evaluation_points_input = {
 //                                 challenge, challenge * omega.inversed()};
 //                             typename permutation_commitment_scheme_type::proof_type input_evaluation =
-//                                 algorithms::proof_eval<permutation_commitment_scheme_type>(
+//                                 zk::algorithms::proof_eval<permutation_commitment_scheme_type>(
 //                                     evaluation_points_input,
 //                                     lookup_argument.input_precommitment,
 //                                     lookup_argument.input_polynomial,
@@ -409,7 +409,7 @@ namespace nil {
 // #endif
 //                             std::vector<typename FieldType::value_type> evaluation_points_value = {challenge};
 //                             typename permutation_commitment_scheme_type::proof_type value_evaluation =
-//                                 algorithms::proof_eval<permutation_commitment_scheme_type>(
+//                                 zk::algorithms::proof_eval<permutation_commitment_scheme_type>(
 //                                     evaluation_points_value,
 //                                     lookup_argument.value_precommitment,
 //                                     lookup_argument.value_polynomial,
@@ -447,24 +447,24 @@ namespace nil {
 
                         for (std::size_t k = 0; k < constant_columns; k ++){
                             combined_poly[3].push_back(preprocessed_public_data.public_polynomial_table.constants()[k]);
-                            std::vector<int> rotation =
+                            std::set<int> rotations =
                                 preprocessed_public_data.common_data.columns_rotations[witness_columns + public_input_columns + k];
                             std::vector<typename FieldType::value_type> point;
 
-                            for (std::size_t rotation_index = 0; rotation_index < rotation.size(); rotation_index++) {
-                                point.push_back( challenge * omega.pow(rotation[rotation_index]));
+                            for (int rotation: rotations) {
+                                point.push_back( challenge * omega.pow(rotation));
                             }
                             evaluation_points_public.push_back(point);
                         }
                         
                         for (std::size_t k = 0; k < preprocessed_public_data.public_polynomial_table.selectors().size(); k ++){
                             combined_poly[3].push_back(preprocessed_public_data.public_polynomial_table.selectors()[k]);
-                            std::vector<int> rotation =
+                            std::set<int> rotations =
                                 preprocessed_public_data.common_data.columns_rotations[witness_columns + public_input_columns + constant_columns + k];
                             std::vector<typename FieldType::value_type> point;
 
-                            for (std::size_t rotation_index = 0; rotation_index < rotation.size(); rotation_index++) {
-                                point.push_back( challenge * omega.pow(rotation[rotation_index]));
+                            for (int rotation: rotations) {
+                                point.push_back( challenge * omega.pow(rotation));
                             }
                             evaluation_points_public.push_back(point);
                         }
@@ -485,7 +485,7 @@ namespace nil {
 
                         proof.fixed_values_commitment = preprocessed_public_data.common_data.commitments.fixed_values;
 
-                        proof.eval_proof.combined_value = algorithms::proof_eval<commitment_scheme_type>(
+                        proof.eval_proof.combined_value = zk::algorithms::proof_eval<commitment_scheme_type>(
                                                     evaluations_points,
                                                     precommitments,
                                                     combined_poly, fri_params, transcript);
@@ -507,7 +507,6 @@ namespace nil {
                         std::cout << "Placeholder prover, total time: " << std::fixed << std::setprecision(3)
                                   << elapsed.count() * 1e-6 << "ms" << std::endl;
 #endif
-
                         return proof;
                     }
                 };

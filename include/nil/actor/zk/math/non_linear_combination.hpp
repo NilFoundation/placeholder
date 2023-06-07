@@ -32,6 +32,7 @@
 #define ACTOR_ZK_MATH_NON_LINEAR_COMBINATION_HPP
 
 #include <vector>
+#include <nil/actor/zk/math/expression.hpp>
 
 namespace nil {
     namespace actor {
@@ -41,161 +42,25 @@ namespace nil {
              * Forward declaration.
              */
             template<typename VariableType>
-            struct non_linear_combination;
-
-            /****************************** Linear term **********************************/
-
-            /**
-             * A linear term represents a formal expression of the form
-             * "coeff * w^{wire_index_1}_{rotation_1} * ... * w^{wire_index_k}_{rotation_k}".
-             */
-            template<typename VariableType>
-            class non_linear_term;
-
-            template<typename VariableType>
-            class non_linear_term {
-            public:
-                typedef VariableType variable_type;
-                typedef typename VariableType::assignment_type assignment_type;
-
-                std::vector<VariableType> vars;
-                assignment_type coeff;
-
-                non_linear_term() {};
-
-                non_linear_term(const VariableType &var) : coeff(assignment_type::one()) {
-                    vars.push_back(var);
-                }
-
-                non_linear_term(const assignment_type &field_val) : coeff(field_val) {
-                }
-
-                non_linear_term(std::vector<VariableType> vars) : vars(vars), coeff(assignment_type::one()) {
-                }
-
-                non_linear_term(std::vector<VariableType> vars, assignment_type coeff) : vars(vars), coeff(coeff) {
-                }
-
-                non_linear_term operator*(const assignment_type &field_coeff) const {
-                    non_linear_term result(this->vars);
-                    result.coeff = field_coeff * this->coeff;
-                    return result;
-                }
-
-                non_linear_term operator*(const non_linear_term &other) const {
-                    non_linear_term result(this->vars);
-
-                    std::copy(other.vars.begin(), other.vars.end(), std::back_inserter(result.vars));
-                    result.coeff = other.coeff * this->coeff;
-                    return result;
-                }
-
-                non_linear_term pow(const std::size_t power) const {
-                    
-                    non_linear_term result(this->vars);
-
-                    for (std::size_t i = 0; i < power - 1; i++){
-                        std::copy(this->vars.begin(), this->vars.end(), std::back_inserter(result.vars));
-                    }
-
-                    result.coeff = this->coeff.pow(power);
-                    return result;
-                }
-
-                // non_linear_combination<field_type> operator+(const non_linear_combination<field_type> &other)
-                // const {
-                //     return non_linear_combination<field_type>(*this) + other;
-                // }
-
-                // non_linear_combination<field_type> operator-(const non_linear_combination<field_type> &other)
-                // const {
-                //     return (*this) + (-other);
-                // }
-
-                non_linear_term operator-() const {
-                    return non_linear_term(this->vars) * (-this->coeff);
-                }
-            };
-
-            template<typename VariableType>
-            non_linear_term<VariableType> operator*(const typename VariableType::assignment_type &field_coeff,
-                                                    const non_linear_term<VariableType> &nlt) {
-                return nlt * field_coeff;
-            }
-
-            template<typename VariableType>
-            non_linear_combination<VariableType>
-                operator+(const typename VariableType::assignment_type &field_coeff,
-                          const non_linear_term<VariableType> &nlt) {
-                return non_linear_combination<VariableType>(field_coeff) + nlt;
-            }
-
-            template<typename VariableType>
-            non_linear_combination<VariableType>
-                operator-(const typename VariableType::assignment_type &field_coeff,
-                          const non_linear_term<VariableType> &nlt) {
-                return non_linear_combination<VariableType>(field_coeff) - nlt;
-            }
-
-            template<typename VariableType>
-            non_linear_combination<VariableType> operator+(const non_linear_term<VariableType> &A,
-                                                           const non_linear_term<VariableType> &B) {
-                return non_linear_combination<VariableType>(A) + non_linear_combination<VariableType>(B);
-            }
-
-            template<typename VariableType>
-            non_linear_combination<VariableType> operator-(const non_linear_term<VariableType> &A,
-                                                           const non_linear_term<VariableType> &B) {
-                return non_linear_combination<VariableType>(A) - non_linear_combination<VariableType>(B);
-            }
-
-            template<typename VariableType>
-            non_linear_combination<VariableType> operator+(const non_linear_term<VariableType> &A,
-                                                           const VariableType &B) {
-                return non_linear_combination<VariableType>(A) + non_linear_combination<VariableType>(B);
-            }
-
-            template<typename VariableType>
-            non_linear_combination<VariableType> operator-(const non_linear_term<VariableType> &A,
-                                                           const VariableType &B) {
-                return non_linear_combination<VariableType>(A) - non_linear_combination<VariableType>(B);
-            }
-
-            template<typename VariableType>
-            non_linear_combination<VariableType> operator-(const non_linear_term<VariableType> &A,
-                                                           const typename VariableType::assignment_type &field_coeff) {
-                return non_linear_combination<VariableType>(A) - non_linear_combination<VariableType>(field_coeff);
-            }
-
-            /***************************** Linear combination ****************************/
-
-            /**
-             * A linear combination represents a formal expression of the form "sum_i coeff_i * x_{index_i}".
-             */
-            template<typename VariableType>
             struct non_linear_combination {
 
-                using term_type = non_linear_term<VariableType>;
+                using term_type = term<VariableType>;
                 using variable_type = VariableType;
                 
                 std::vector<term_type> terms;
 
                 non_linear_combination() {};
-                // non_linear_combination(const field_value_type &field_coeff) {
-                //     this->add_term(non_linear_term<VariableType>(field_coeff));
-                // }
+
                 non_linear_combination(const VariableType &var) {
                     this->add_term(var);
                 }
+
                 non_linear_combination(const term_type &nlt) {
                     this->add_term(nlt);
                 }
+
                 non_linear_combination(const std::vector<term_type> &terms) : terms(terms) {
                 }
-
-                // non_linear_combination(const non_linear_combination &other):
-                //     terms(other.terms) {
-                // }
 
                 /* for supporting range-based for loops over non_linear_combination */
                 typename std::vector<term_type>::const_iterator begin() const {
@@ -255,6 +120,7 @@ namespace nil {
                             }
                         }
                     }
+                    terms = std::move(new_terms);
                 }
 
                 bool operator==(const non_linear_combination &other) {
@@ -328,7 +194,7 @@ namespace nil {
 
             template<typename VariableType>
             non_linear_combination<VariableType>
-                operator+(const non_linear_term<VariableType> &nlt,
+                operator+(const term<VariableType> &nlt,
                           const non_linear_combination<VariableType> &lc) {
                 return non_linear_combination<VariableType>(nlt) + lc;
             }
@@ -358,7 +224,7 @@ namespace nil {
 
             template<typename VariableType>
             non_linear_combination<VariableType>
-                operator-(const non_linear_term<VariableType> &term,
+                operator-(const term<VariableType> &term,
                           const non_linear_combination<VariableType> &lc) {
                 return non_linear_combination<VariableType>(term) - lc;
             }
@@ -366,11 +232,11 @@ namespace nil {
             template<typename VariableType>
             non_linear_combination<VariableType>
                 operator-(const non_linear_combination<VariableType> &lc,
-                    const non_linear_term<VariableType> &term) {
+                    const term<VariableType> &term) {
                 return lc - non_linear_combination<VariableType>(term);
             }
         }    // namespace math
-    }            // namespace actor
+    }    // namespace actor
 }    // namespace nil
 
 #endif    // ACTOR_ZK_MATH_NON_LINEAR_COMBINATION_HPP

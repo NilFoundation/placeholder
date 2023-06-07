@@ -40,6 +40,7 @@ namespace nil {
                 struct plonk_gate {
                     typedef FieldType field_type;
                     typedef ConstraintType constraint_type;
+                    typedef typename ConstraintType::variable_type variable_type;
 
                     std::size_t selector_index;
                     std::vector<ConstraintType> constraints;

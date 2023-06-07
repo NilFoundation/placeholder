@@ -34,13 +34,15 @@
 #include <nil/actor/zk/snark/routing/as_waksman.hpp>
 #include <nil/actor/zk/snark/routing/benes.hpp>
 
+using namespace nil::actor;
+using namespace nil::actor::math;
 using namespace nil::actor::zk::snark;
 
 /**
  * Test Benes network routing for all permutations on 2^static_cast<std::size_t>(std::ceil(std::log2(N))) elements.
  */
 void test_benes(const std::size_t N) {
-    integer_permutation permutation(1ul << static_cast<std::size_t>(std::ceil(std::log2(N))));
+    math::integer_permutation permutation(1ul << static_cast<std::size_t>(std::ceil(std::log2(N))));
 
     do {
         const benes_routing routing = get_benes_routing(permutation);
@@ -52,7 +54,7 @@ void test_benes(const std::size_t N) {
  * Test AS-Waksman network routing for all permutations on N elements.
  */
 void test_as_waksman(const std::size_t N) {
-    integer_permutation permutation(N);
+    math::integer_permutation permutation(N);
 
     do {
         const as_waksman_routing routing = get_as_waksman_routing(permutation);

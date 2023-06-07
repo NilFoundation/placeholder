@@ -266,8 +266,6 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_polynomials_test) {
     BOOST_CHECK_MESSAGE(id_res == sigma_res, "Complex check");
 }
 
-/*
-
 ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
 
     circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
@@ -343,6 +341,9 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
     }
 }
 
+// This test is disabled in singlethreaded version due to a bug in zk/snark/systems/plonk/placeholder/lookup_argument.hpp line 160-173.
+// Since lookup argument is old, and will be updated we do not want to fix this problem for now.
+#ifdef ENABLE_PLACEHOLDER_LOOKUP_TESTS
 ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
 
     circuit_description<FieldType, circuit_3_params, table_rows_log, 3> circuit = circuit_test_3<FieldType>();
@@ -452,6 +453,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
         }
     }
 }
+#endif
 
 ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
@@ -593,11 +595,14 @@ ACTOR_THREAD_TEST_CASE(placeholder_prover_basic_test) {
     auto proof = placeholder_prover<FieldType, circuit_2_params>::process(
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, assignments, fri_params);
 
-    bool verifier_res = placeholder_verifier<FieldType, circuit_2_params>::process(preprocessed_public_data, proof,
-                                                                                   constraint_system, fri_params);
+    bool verifier_res = placeholder_verifier<FieldType, circuit_2_params>::process(
+        preprocessed_public_data, proof, constraint_system, fri_params);
     BOOST_CHECK(verifier_res);
 }
 
+// This test is disabled in singlethreaded version due to a bug in zk/snark/systems/plonk/placeholder/lookup_argument.hpp line 160-173.
+// Since lookup argument is old, and will be updated we do not want to fix this problem for now.
+#ifdef ENABLE_PLACEHOLDER_LOOKUP_TESTS
 ACTOR_THREAD_TEST_CASE(placeholder_prover_lookup_test) {
     circuit_description<FieldType, circuit_3_params, table_rows_log, 3> circuit =
         circuit_test_3<FieldType>();
@@ -634,4 +639,4 @@ ACTOR_THREAD_TEST_CASE(placeholder_prover_lookup_test) {
                                                                                    constraint_system, fri_params);
     BOOST_CHECK(verifier_res);
 }
-*/
+#endif

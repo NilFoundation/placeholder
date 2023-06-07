@@ -31,6 +31,7 @@
 #ifndef ACTOR_ZK_PLONK_VARIABLE_HPP
 #define ACTOR_ZK_PLONK_VARIABLE_HPP
 
+#include <ostream>
 #include <vector>
 
 namespace nil {
@@ -41,13 +42,13 @@ namespace nil {
              * Forward declaration.
              */
             template<typename VariableType>
-            struct non_linear_term;
+            struct term;
 
             /**
              * Forward declaration.
              */
             template<typename VariableType>
-            struct non_linear_combination;
+            struct expression;
         }    // namespace math
         namespace zk {
             namespace snark {
@@ -81,45 +82,44 @@ namespace nil {
                         index(index),
                         rotation(rotation), relative(relative), type(type) {};
 
-                    math::non_linear_term<plonk_variable<FieldType>> pow(const std::size_t power) const {
-                        return math::non_linear_term<plonk_variable<FieldType>>(*this).pow(power);
+                    math::expression<plonk_variable<FieldType>> pow(const std::size_t power) const {
+                        return math::term<plonk_variable<FieldType>>(*this).pow(power);
                     }
 
-                    math::non_linear_term<plonk_variable<FieldType>>
+                    math::term<plonk_variable<FieldType>>
                         operator*(const assignment_type &field_coeff) const {
-                        return math::non_linear_term<plonk_variable<FieldType>>(*this) * field_coeff;
+                        return math::term<plonk_variable<FieldType>>(*this) * field_coeff;
                     }
 
-                    math::non_linear_term<plonk_variable<FieldType>> operator*(const plonk_variable &other) const {
-                        return math::non_linear_term<plonk_variable<FieldType>>(*this) * other;
+                    math::term<plonk_variable<FieldType>> operator*(const plonk_variable &other) const {
+                        return math::term<plonk_variable<FieldType>>(*this) * other;
                     }
 
-                    math::non_linear_combination<plonk_variable<FieldType>>
-                        operator+(const math::non_linear_combination<plonk_variable<FieldType>> &other) const {
-                        math::non_linear_combination<plonk_variable<FieldType>> result(other);
-
-                        result.add_term(*this);
-
+                    math::expression<plonk_variable<FieldType>>
+                        operator+(const math::expression<plonk_variable<FieldType>> &other) const {
+                        math::expression<plonk_variable<FieldType>> result(*this);
+                        result += other;
                         return result;
                     }
 
-                    math::non_linear_combination<plonk_variable<FieldType>>
-                        operator-(const math::non_linear_combination<plonk_variable<FieldType>> &other) const {
-                        return (*this) + (-other);
+                    math::expression<plonk_variable<FieldType>>
+                        operator-(const math::expression<plonk_variable<FieldType>> &other) const {
+                        math::expression<plonk_variable<FieldType>> result(*this);
+                        result -= other;
+                        return result;
                     }
 
-                    math::non_linear_combination<plonk_variable<FieldType>>
-                        operator-(const assignment_type &field_val) const {
-                        return (*this) - math::non_linear_combination<plonk_variable<FieldType>>(field_val);
-                    }
-
-                    math::non_linear_term<plonk_variable<FieldType>> operator-() const {
-                        return math::non_linear_term<plonk_variable<FieldType>>(*this) * (-assignment_type::one());
+                    math::term<plonk_variable<FieldType>> operator-() const {
+                        return math::term<plonk_variable<FieldType>>(*this) * (-assignment_type::one());
                     }
 
                     bool operator==(const plonk_variable &other) const {
                         return ((this->index == other.index) && (this->rotation == other.rotation) &&
-                                this->type == other.type);
+                                this->type == other.type && this->relative == other.relative);
+                    }
+
+                    bool operator!=(const plonk_variable &other) const {
+                        return !(*this == other);
                     }
 
                     bool operator<(const plonk_variable &other) const {
@@ -129,21 +129,38 @@ namespace nil {
                 };
 
                 template<typename FieldType>
-                math::non_linear_term<plonk_variable<FieldType>>
+                math::term<plonk_variable<FieldType>>
                     operator*(const typename FieldType::value_type &field_coeff, const plonk_variable<FieldType> &var) {
                     return var * field_coeff;
                 }
 
                 template<typename FieldType>
-                math::non_linear_combination<plonk_variable<FieldType>>
+                math::expression<plonk_variable<FieldType>>
                     operator+(const typename FieldType::value_type &field_val, const plonk_variable<FieldType> &var) {
                     return var + field_val;
                 }
 
                 template<typename FieldType>
-                math::non_linear_combination<plonk_variable<FieldType>>
+                math::expression<plonk_variable<FieldType>>
                     operator-(const typename FieldType::value_type &field_val, const plonk_variable<FieldType> &var) {
                     return -(var - field_val);
+                }
+                
+                // Used in the unit test, so we can use BOOST_CHECK_EQUALS, and see
+                // the values of terms, when the check fails.
+                template<typename FieldType>
+                std::ostream& operator<<(std::ostream& os, const plonk_variable<FieldType>& var)
+                {
+                    std::map<typename plonk_variable<FieldType>::column_type, std::string> type_map = {
+                        {plonk_variable<FieldType>::column_type::witness, "witness"}, 
+                        {plonk_variable<FieldType>::column_type::public_input, "public_input"},
+                        {plonk_variable<FieldType>::column_type::constant, "constant"},
+                        {plonk_variable<FieldType>::column_type::selector, "selector"}
+                    };
+                    os << "var_" << var.index << '_' << var.rotation << '_'
+                        << type_map[var.type]
+                        << (var.relative ? "_relative" : "");
+                    return os;
                 }
 
             }    // namespace snark

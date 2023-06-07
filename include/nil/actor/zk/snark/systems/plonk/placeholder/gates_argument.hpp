@@ -166,7 +166,7 @@ namespace nil {
                             typename FieldType::value_type gate_result = {0};
 
                             for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
-                                gate_result = gate_result + gates[i].constraints[j].evaluate(evaluations) * theta_acc;
+                                gate_result = gate_result + gates[i].constraints[j].evaluate(evaluations).get() * theta_acc;
                                 theta_acc *= theta;
                             }
 
