@@ -528,8 +528,6 @@ namespace nil {
     }    // namespace actor
 }    // namespace nil
 
-namespace std {
-
 template <typename VariableType>
 struct std::hash<nil::actor::math::term<VariableType>>
 {
@@ -547,8 +545,5 @@ struct std::hash<nil::actor::math::term<VariableType>>
         return result;
     }
 };
-
-} // namespace std
-
 
 #endif    // ACTOR_ZK_MATH_EXPRESSION_HPP
