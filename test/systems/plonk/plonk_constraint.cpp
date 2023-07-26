@@ -48,7 +48,7 @@ ACTOR_THREAD_TEST_CASE(plonk_constraint_basic_test) {
     using curve_type = nil::crypto3::algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
-    using var = zk::snark::plonk_variable<FieldType>;
+    using var = zk::snark::plonk_variable<AssignmentType>;
 
     using constraint_type = zk::snark::plonk_constraint<FieldType>;
 

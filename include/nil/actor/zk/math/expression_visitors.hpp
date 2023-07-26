@@ -94,10 +94,6 @@ namespace nil {
 
                 // A function used to retrieve the value of a variable.
                 std::function<ValueType(const VariableType &var)> get_var_value;
-
-                // Used to convert the coefficients from VariableType::assignment_type to 
-                // math::polynomial_dfs<typename VariableType::assignment_type> if needed.
-                std::function<ValueType(const typename VariableType::assignment_type&)> convert_to_value_type;
             };
 
             // Used for counting max degree of an expression.
