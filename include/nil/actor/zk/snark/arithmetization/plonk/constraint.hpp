@@ -30,6 +30,7 @@
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/shift.hpp>
 #include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/zk/math/expression_evaluator.hpp>
 
 #include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>

@@ -21,8 +21,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef ACTOR_ZK_MATH_EXPRESSION_EVALUATOR_HPP
-#define ACTOR_ZK_MATH_EXPRESSION_EVALUATOR_HPP
+#ifndef ACTOR_ZK_MATH_EXPRESSION_VISITORS_HPP
+#define ACTOR_ZK_MATH_EXPRESSION_VISITORS_HPP
 
 #include <vector>
 #include <boost/variant/static_visitor.hpp>
@@ -103,24 +103,24 @@ namespace nil {
                 expression_max_degree_visitor() {}
 
                 std::uint32_t compute_max_degree(const math::expression<VariableType>& expr) {
-                    return boost::apply_visitor(*this, expr.expr);
+                    return boost::apply_visitor(*this, expr.get_expr());
                 }
 
                 std::uint32_t operator()(const math::term<VariableType>& term) {
-                    return term.vars.size();
+                    return term.get_vars().size();
                 }
 
                 std::uint32_t operator()(
                         const math::pow_operation<VariableType>& pow) {
-                    std::uint32_t result = boost::apply_visitor(*this, pow.expr.expr);
-                    return result * pow.power;
+                    std::uint32_t result = boost::apply_visitor(*this, pow.get_expr().get_expr());
+                    return result * pow.get_power();
                 }
 
                 std::uint32_t operator()(
                         const math::binary_arithmetic_operation<VariableType>& op) {
-                    std::uint32_t left = boost::apply_visitor(*this, op.expr_left.expr);
-                    std::uint32_t right = boost::apply_visitor(*this, op.expr_right.expr);
-                    switch (op.op) {
+                    std::uint32_t left = boost::apply_visitor(*this, op.get_expr_left().get_expr());
+                    std::uint32_t right = boost::apply_visitor(*this, op.get_expr_right().get_expr());
+                    switch (op.get_op()) {
                         case ArithmeticOperator::ADD:
                         case ArithmeticOperator::SUB:
                             return std::max(left, right);
@@ -141,23 +141,23 @@ namespace nil {
                     : callback(callback) {}
 
                 void visit(const math::expression<VariableType>& expr) {
-                    boost::apply_visitor(*this, expr.expr);
+                    boost::apply_visitor(*this, expr.get_expr());
                 }
 
                 void operator()(const math::term<VariableType>& term) {
-                    for (const auto& var: term.vars) {
+                    for (const auto& var: term.get_vars()) {
                         callback(var);
                     }                    
                 }
 
                 void operator()(
                         const math::pow_operation<VariableType>& pow) {
-                    boost::apply_visitor(*this, pow.expr.expr);
+                    boost::apply_visitor(*this, pow.get_expr().get_expr());
                 }
 
                 void operator()(const math::binary_arithmetic_operation<VariableType>& op) {
-                    boost::apply_visitor(*this, op.expr_left.expr);
-                    boost::apply_visitor(*this, op.expr_right.expr);
+                    boost::apply_visitor(*this, op.get_expr_left().get_expr());
+                    boost::apply_visitor(*this, op.get_expr_right().get_expr());
                 }
 
                 private:
@@ -176,7 +176,7 @@ namespace nil {
                 math::non_linear_combination<VariableType> convert(
                         const math::expression<VariableType>& expr) {
                     math::non_linear_combination<VariableType> result = 
-                        boost::apply_visitor(*this, expr.expr);
+                        boost::apply_visitor(*this, expr.get_expr());
                     result.merge_equal_terms();
                     return result;
                 }
@@ -189,11 +189,11 @@ namespace nil {
                 math::non_linear_combination<VariableType> operator()(
                         const math::pow_operation<VariableType>& pow) {
                     math::non_linear_combination<VariableType> base = boost::apply_visitor(
-                        *this, pow.expr.expr);
+                        *this, pow.get_expr().get_expr());
                     math::non_linear_combination<VariableType> result = base;
 
                     // It does not matter how we compute power here.
-                    for (int i = 1; i < pow.power; ++i)
+                    for (int i = 1; i < pow.get_power(); ++i)
                     {
                         result = result * base;
                     }
@@ -203,10 +203,10 @@ namespace nil {
                 math::non_linear_combination<VariableType> operator()(
                         const math::binary_arithmetic_operation<VariableType>& op) {
                     math::non_linear_combination<VariableType> left =
-                        boost::apply_visitor(*this, op.expr_left.expr);
+                        boost::apply_visitor(*this, op.get_expr_left().get_expr());
                     math::non_linear_combination<VariableType> right =
-                        boost::apply_visitor(*this, op.expr_right.expr);
-                    switch (op.op) {
+                        boost::apply_visitor(*this, op.get_expr_right().get_expr());
+                    switch (op.get_op()) {
                         case ArithmeticOperator::ADD:
                             return left + right;
                         case ArithmeticOperator::SUB:
