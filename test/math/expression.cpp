@@ -34,6 +34,7 @@
 
 #include <nil/actor/zk/math/expression.hpp>
 #include <nil/actor/zk/math/expression_visitors.hpp>
+#include <nil/actor/zk/math/expression_evaluator.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
 
 using namespace nil::actor;
@@ -75,7 +76,7 @@ ACTOR_THREAD_TEST_CASE(expression_evaluation_test) {
 
     expression<variable_type> expr = (w0 + w1) * (w2 + w3);
    
-    expression_evaluator<variable_type, variable_type::assignment_type> evaluator(
+    expression_evaluator<variable_type> evaluator(
         expr,
         [&w0, &w1, &w2, &w3](const variable_type& var) {
             if (var == w0) return variable_type::assignment_type(1);
