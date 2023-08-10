@@ -25,6 +25,7 @@
 #include <string>
 #include <random>
 #include <iostream>
+#include <set>
 
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
