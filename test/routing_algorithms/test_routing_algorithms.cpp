@@ -27,7 +27,8 @@
 
 #define BOOST_TEST_MODULE routing_algorithms_test
 
-#include <boost/test/unit_test.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <cassert>
 
@@ -62,9 +63,7 @@ void test_as_waksman(const std::size_t N) {
     } while (permutation.next_permutation());
 }
 
-BOOST_AUTO_TEST_SUITE(routing_algorithms_test_suite)
-
-BOOST_AUTO_TEST_CASE(routing_algorithms_test) {
+ACTOR_FIXTURE_TEST_CASE(routing_algorithms_test) {
     std::size_t bn_size = 8;
     printf("* for all permutations on %zu elements\n", bn_size);
     test_benes(bn_size);
@@ -75,4 +74,3 @@ BOOST_AUTO_TEST_CASE(routing_algorithms_test) {
     }
 }
 
-BOOST_AUTO_TEST_SUITE_END()

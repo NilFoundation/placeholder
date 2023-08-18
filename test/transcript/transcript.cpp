@@ -27,9 +27,8 @@
 
 #include <vector>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -39,14 +38,12 @@
 #include <nil/actor/zk/transcript/fiat_shamir.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::actor::zk::snark;
+using namespace nil::actor::zk;
 
-BOOST_AUTO_TEST_SUITE(zk_transcript_test_suite)
-
-BOOST_AUTO_TEST_CASE(zk_transcript_manual_test) {
+ACTOR_FIXTURE_TEST_CASE(zk_transcript_manual_test) {
     using field_type = algebra::curves::alt_bn128_254::scalar_field_type;
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    fiat_shamir_heuristic_sequential tr(init_blob);
+    transcript::fiat_shamir_heuristic_sequential tr(init_blob);
     auto ch1 = tr.challenge<field_type>();
     auto ch2 = tr.challenge<field_type>();
     auto ch_n = tr.challenges<field_type, 3>();
@@ -66,4 +63,3 @@ BOOST_AUTO_TEST_CASE(zk_transcript_manual_test) {
     }
 }
 
-BOOST_AUTO_TEST_SUITE_END()

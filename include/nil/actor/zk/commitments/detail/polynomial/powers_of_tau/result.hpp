@@ -64,15 +64,15 @@ namespace nil {
                                              const std::vector<g1_value_type> &alpha_coeffs_g1,
                                              const std::vector<g1_value_type> &beta_coeffs_g1,
                                              const std::vector<g1_value_type> &h) :
-                            alpha_g1(alpha_g1),
-                            beta_g1(beta_g1), beta_g2(beta_g2), coeffs_g1(coeffs_g1), coeffs_g2(coeffs_g2),
-                            alpha_coeffs_g1(alpha_coeffs_g1), beta_coeffs_g1(beta_coeffs_g1), h(h) {
+                                alpha_g1(alpha_g1),
+                                beta_g1(beta_g1), beta_g2(beta_g2), coeffs_g1(coeffs_g1), coeffs_g2(coeffs_g2),
+                                alpha_coeffs_g1(alpha_coeffs_g1), beta_coeffs_g1(beta_coeffs_g1), h(h) {
                         }
 
                         template<unsigned TauPowersLength>
                         static powers_of_tau_result
-                            from_accumulator(const powers_of_tau_accumulator<curve_type, TauPowersLength> &acc,
-                                             std::size_t m) {
+                        from_accumulator(const powers_of_tau_accumulator<curve_type, TauPowersLength> &acc,
+                                         std::size_t m) {
 
                             auto alpha_g1 = acc.alpha_tau_powers_g1[0];
                             auto beta_g1 = acc.beta_tau_powers_g1[0];

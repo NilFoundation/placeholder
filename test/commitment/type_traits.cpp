@@ -34,7 +34,6 @@
 
 // #include <nil/actor/zk/commitments/polynomial/kzg.hpp>
 #include <nil/actor/zk/commitments/polynomial/fri.hpp>
-#include <nil/actor/zk/commitments/polynomial/batched_fri.hpp>
 #include <nil/actor/zk/commitments/polynomial/lpc.hpp>
 #include <nil/actor/zk/commitments/polynomial/kimchi_pedersen.hpp>
 #include <nil/actor/zk/commitments/polynomial/pedersen.hpp>

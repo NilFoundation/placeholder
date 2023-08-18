@@ -67,9 +67,8 @@ namespace nil {
                 public:
                     using assignment_type = AssignmentType;
 
-                    enum column_type : std::uint8_t 
-                    { 
-                        witness, public_input, constant, selector 
+                    enum column_type : std::uint8_t {
+                        witness, public_input, constant, selector
                     };
 
                     /**
@@ -86,15 +85,15 @@ namespace nil {
                                              std::int32_t rotation,
                                              bool relative = true,
                                              column_type type = column_type::witness) :
-                        index(index),
-                        rotation(rotation), relative(relative), type(type) {};
+                            index(index),
+                            rotation(rotation), relative(relative), type(type) {};
 
                     math::expression<plonk_variable<AssignmentType>> pow(const std::size_t power) const {
                         return math::term<plonk_variable<AssignmentType>>(*this).pow(power);
                     }
 
                     math::term<plonk_variable<AssignmentType>>
-                        operator*(const assignment_type &field_coeff) const {
+                    operator*(const assignment_type &field_coeff) const {
                         return math::term<plonk_variable<AssignmentType>>(*this) * field_coeff;
                     }
 
@@ -103,14 +102,14 @@ namespace nil {
                     }
 
                     math::expression<plonk_variable<AssignmentType>>
-                        operator+(const math::expression<plonk_variable<AssignmentType>> &other) const {
+                    operator+(const math::expression<plonk_variable<AssignmentType>> &other) const {
                         math::expression<plonk_variable<AssignmentType>> result(*this);
                         result += other;
                         return result;
                     }
 
                     math::expression<plonk_variable<AssignmentType>>
-                        operator-(const math::expression<plonk_variable<AssignmentType>> &other) const {
+                    operator-(const math::expression<plonk_variable<AssignmentType>> &other) const {
                         math::expression<plonk_variable<AssignmentType>> result(*this);
                         result -= other;
                         return result;
@@ -187,10 +186,8 @@ namespace nil {
 }    // namespace nil
 
 template<typename AssignmentType>
-struct std::hash<nil::crypto3::zk::snark::plonk_variable<AssignmentType>>
-{
-    std::size_t operator()(const nil::crypto3::zk::snark::plonk_variable<AssignmentType>& var) const
-    {
+struct std::hash<nil::crypto3::zk::snark::plonk_variable<AssignmentType>> {
+    std::size_t operator()(const nil::crypto3::zk::snark::plonk_variable<AssignmentType> &var) const {
         std::size_t result = std::hash<std::int32_t>()(var.rotation);
         boost::hash_combine(result, std::hash<std::int8_t>()(var.type));
         boost::hash_combine(result, std::hash<std::size_t>()(var.index));

@@ -24,8 +24,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-//#define BOOST_TEST_MODULE pedersen_test
-
 #include <vector>
 #include <iostream>
 #include <random>
@@ -45,8 +43,6 @@
 
 using namespace nil::actor;
 
-//BOOST_AUTO_TEST_SUITE(pedersen_test_suite)
-
 ACTOR_THREAD_TEST_CASE(pedersen_basic_test) {
 
     // setup
@@ -56,8 +52,8 @@ ACTOR_THREAD_TEST_CASE(pedersen_basic_test) {
 
     constexpr static const int n = 50;
     constexpr static const int k = 26;
-    static curve_group_type::value_type g = algebra::random_element<curve_group_type>();
-    static curve_group_type::value_type h = algebra::random_element<curve_group_type>();
+    curve_group_type::value_type g = algebra::random_element<curve_group_type>();
+    curve_group_type::value_type h = algebra::random_element<curve_group_type>();
     while (g == h) {
         h = algebra::random_element<curve_group_type>();
     }
@@ -217,5 +213,3 @@ ACTOR_THREAD_TEST_CASE(pedersen_long_test) {
     field_type::value_type secret = pedersen_type::message_eval(params, proof, idx);
     BOOST_CHECK(w == secret);
 }
-
-//BOOST_AUTO_TEST_SUITE_END()
