@@ -107,7 +107,7 @@ namespace nil {
                             }
 
                             if (var.rotation != 0) {
-                                assignment = math::polynomial_shift(assignment, var.rotation, domain->m);
+                                assignment = math::polynomial_shift(assignment, var.rotation, domain->m).get();
                             }
                             if (count > 1) {
                                 assignment.resize(extended_domain_size).get();
@@ -223,7 +223,7 @@ namespace nil {
                             typename FieldType::value_type gate_result = {0};
 
                             for (const auto& constraint : gate.constraints) {
-                                gate_result += constraint.evaluate(evaluations) * theta_acc;
+                                gate_result += constraint.evaluate(evaluations).get() * theta_acc;
                                 theta_acc *= theta;
                             }
 

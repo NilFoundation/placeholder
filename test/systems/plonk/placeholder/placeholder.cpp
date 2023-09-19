@@ -220,7 +220,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_polynomials_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto polynomial_table =
         plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
@@ -295,7 +295,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto polynomial_table =
         plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
@@ -480,7 +480,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto polynomial_table =
         plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
@@ -586,7 +586,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_prover_basic_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto proof = placeholder_prover<FieldType, circuit_2_params>::process(
         preprocessed_public_data, preprocessed_private_data, desc,

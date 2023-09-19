@@ -27,7 +27,7 @@
 #include <vector>
 #include <boost/variant/static_visitor.hpp>
 #include <boost/variant/apply_visitor.hpp>
-#include <nil/crypto3/zk/math/expression.hpp>
+#include <nil/actor/zk/math/expression.hpp>
 
 namespace nil {
     namespace actor {

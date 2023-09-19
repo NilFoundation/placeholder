@@ -32,7 +32,7 @@
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_ppzksnark.hpp>
 #include <nil/actor/zk/snark/systems/ppzksnark/bacs_ppzksnark/detail/basic_policy.hpp>
 
-#include <nil/crypto3/zk/algorithms/generate.hpp>
+#include <nil/actor/zk/algorithms/generate.hpp>
 
 namespace nil {
     namespace actor {

@@ -31,9 +31,9 @@
 
 #include <tuple>
 
-#include <nil/crypto3/zk/algorithms/generate.hpp>
-#include <nil/crypto3/zk/algorithms/verify.hpp>
-#include <nil/crypto3/zk/algorithms/prove.hpp>
+#include <nil/actor/zk/algorithms/generate.hpp>
+#include <nil/actor/zk/algorithms/verify.hpp>
+#include <nil/actor/zk/algorithms/prove.hpp>
 
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/marshalling.hpp>

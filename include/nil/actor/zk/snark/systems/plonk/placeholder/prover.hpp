@@ -81,7 +81,7 @@ namespace nil {
 
                     using policy_type = detail::placeholder_policy<FieldType, ParamsType>;
 
-                    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+                    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
                     typedef typename math::polynomial<typename FieldType::value_type> polynomial_type;
                     typedef typename math::polynomial_dfs<typename FieldType::value_type> polynomial_dfs_type;
 

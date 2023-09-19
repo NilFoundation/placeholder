@@ -91,7 +91,7 @@ namespace nil {
 
                     typedef LPCParams lpc_params;
 
-                    typedef typename containers::merkle_proof<merkle_hash_type, 2> merkle_proof_type;
+                    typedef typename nil::crypto3::containers::merkle_proof<merkle_hash_type, 2> merkle_proof_type;
 
                     using basic_fri = detail::basic_batched_fri<FieldType, typename LPCParams::merkle_hash_type,
                             typename LPCParams::transcript_hash_type,

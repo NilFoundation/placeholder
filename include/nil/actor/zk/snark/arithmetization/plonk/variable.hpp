@@ -186,8 +186,8 @@ namespace nil {
 }    // namespace nil
 
 template<typename AssignmentType>
-struct std::hash<nil::crypto3::zk::snark::plonk_variable<AssignmentType>> {
-    std::size_t operator()(const nil::crypto3::zk::snark::plonk_variable<AssignmentType> &var) const {
+struct std::hash<nil::actor::zk::snark::plonk_variable<AssignmentType>> {
+    std::size_t operator()(const nil::actor::zk::snark::plonk_variable<AssignmentType> &var) const {
         std::size_t result = std::hash<std::int32_t>()(var.rotation);
         boost::hash_combine(result, std::hash<std::int8_t>()(var.type));
         boost::hash_combine(result, std::hash<std::size_t>()(var.index));

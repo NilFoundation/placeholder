@@ -78,7 +78,7 @@ namespace nil {
                     circuit_description()
                         : domain(math::make_evaluation_domain<FieldType>(table_rows))
                         , omega(domain->get_domain_element(1))
-                        , delta(algebra::fields::arithmetic_params<FieldType>::multiplicative_generator) {
+                        , delta(crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator) {
                      }
 
                     void init() {

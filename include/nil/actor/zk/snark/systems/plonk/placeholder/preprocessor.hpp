@@ -482,7 +482,7 @@ namespace nil {
                         // prepare commitments for short verifier
                         typename preprocessed_data_type::public_precommitments_type public_precommitments =
                             precommitments(public_polynomial_table, id_perm_polys, sigma_perm_polys, q_last_q_blind,
-                                           commitment_params).get();
+                                           commitment_params);
 
                         typename preprocessed_data_type::public_commitments_type public_commitments =
                             commitments(public_precommitments);
