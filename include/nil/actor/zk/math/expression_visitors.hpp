@@ -33,69 +33,6 @@
 namespace nil {
     namespace actor {
         namespace math {
-
-            // ValueType is usually either VariableType::assignment_type or 
-            // math::polynomial_dfs<typename VariableType::assignment_type>.
-            template<typename VariableType, typename ValueType>
-            class expression_evaluator : public boost::static_visitor<future<ValueType>> {
-            public:
-                /** \Brief Later this class can optimize the given expression 
-                           before starting the evaluation.
-                 * @param expr - the expression that will be evaluated.
-                 *  @param get_var_value - A function which can return the value for a given variable.
-                 */
-                expression_evaluator(
-                    const math::expression<VariableType>& expr,
-                    std::function<ValueType(const VariableType&)> get_var_value,
-                    std::function<ValueType(const typename VariableType::assignment_type&)> convert_to_value_type = [](const typename VariableType::assignment_type& coeff) {return coeff;})
-                        : expr(expr)
-                        , get_var_value(get_var_value)
-                        , convert_to_value_type(convert_to_value_type) {
-                }
-
-                future<ValueType> evaluate() {
-                    return boost::apply_visitor(*this, expr.expr);
-                }
-
-                future<ValueType> operator()(const math::term<VariableType>& term) {
-                    ValueType result = convert_to_value_type(term.coeff);
-                    for (const VariableType& var : term.vars) {
-                        result *= get_var_value(var);
-                    }
-                    return make_ready_future<ValueType>(result);
-                }
-
-                future<ValueType> operator()(
-                        const math::pow_operation<VariableType>& pow) {
-                    ValueType result = boost::apply_visitor(*this, pow.expr.expr).get();
-                    return make_ready_future<ValueType>(result.pow(pow.power));
-                }
-
-                future<ValueType> operator()(
-                        const math::binary_arithmetic_operation<VariableType>& op) {
-                    
-                    ValueType result = boost::apply_visitor(*this, op.expr_left.expr).get();
-                    switch (op.op) {
-                        case ArithmeticOperator::ADD:
-                            result += boost::apply_visitor(*this, op.expr_right.expr).get();
-                            break;
-                        case ArithmeticOperator::SUB:
-                            result -= boost::apply_visitor(*this, op.expr_right.expr).get();
-                            break;
-                        case ArithmeticOperator::MULT:
-                            result *= boost::apply_visitor(*this, op.expr_right.expr).get();
-                            break;
-                    }
-                    return make_ready_future<ValueType>(result);
-                }
-
-            private:
-                const math::expression<VariableType>& expr;
-
-                // A function used to retrieve the value of a variable.
-                std::function<ValueType(const VariableType &var)> get_var_value;
-            };
-
             // Used for counting max degree of an expression.
             template<typename VariableType>
             class expression_max_degree_visitor : public boost::static_visitor<std::uint32_t> {
@@ -216,8 +153,74 @@ namespace nil {
                     }
                 }
             };
+
+
+            // Changes the underlying variable type of an expression. This is useful, when
+            // we have a constraint with variable type plonk_variable<AssignmentType>
+            // but we need a constraint of variable type 
+            // plonk_variable<math::polynomial_dfs<typename FieldType::value_type>>.
+            // You can convert between types if the coefficient types are convertable.
+            template<typename SourceVariableType, typename DestinationVariableType>
+            class expression_variable_type_converter
+                : public boost::static_visitor<math::expression<DestinationVariableType>> {
+            public:
+                /*
+                 * @param convert_coefficient - A function that can convert a coefficient of Source Type, into a coefficient 
+                                                of the destination type.
+                 */
+                expression_variable_type_converter(
+                    std::function<typename DestinationVariableType::assignment_type(
+                        const typename SourceVariableType::assignment_type&)> convert_coefficient = 
+                            [](const typename SourceVariableType::assignment_type& coeff) {return coeff;})
+                    : _convert_coefficient(convert_coefficient) {
+                }
+
+                math::expression<DestinationVariableType> convert(
+                        const math::expression<SourceVariableType>& expr) {
+                    return boost::apply_visitor(*this, expr.get_expr());
+                }
+
+                math::expression<DestinationVariableType> operator()(
+                        const math::term<SourceVariableType>& term) {
+                    std::vector<DestinationVariableType> vars;
+                    for (const auto& var: term.get_vars()) {
+                        vars.emplace_back(
+                            var.index, var.rotation, var.relative,
+                            static_cast<typename DestinationVariableType::column_type>(static_cast<std::uint8_t>(var.type)));
+                    }
+                    return math::term<DestinationVariableType>(std::move(vars), _convert_coefficient(term.get_coeff()));
+                }
+
+                math::expression<DestinationVariableType> operator()(
+                        const math::pow_operation<SourceVariableType>& pow) {
+                    math::expression<DestinationVariableType> base = boost::apply_visitor(
+                        *this, pow.get_expr().get_expr());
+                    return math::pow_operation<DestinationVariableType>(base, pow.get_power());
+                }
+
+                math::expression<DestinationVariableType> operator()(
+                        const math::binary_arithmetic_operation<SourceVariableType>& op) {
+                    math::expression<DestinationVariableType> left =
+                        boost::apply_visitor(*this, op.get_expr_left().get_expr());
+                    math::expression<DestinationVariableType> right =
+                        boost::apply_visitor(*this, op.get_expr_right().get_expr());
+                    switch (op.get_op()) {
+                        case ArithmeticOperator::ADD:
+                            return left + right;
+                        case ArithmeticOperator::SUB:
+                            return left - right;
+                        case ArithmeticOperator::MULT:
+                            return left * right;
+                    }
+                }
+            private:
+                std::function<typename DestinationVariableType::assignment_type(
+                    const typename SourceVariableType::assignment_type&)> _convert_coefficient;
+
+            };
+
         }    // namespace math
     }    // namespace actor
 }    // namespace nil
 
-#endif    // ACTOR_ZK_MATH_EXPRESSION_EVALUATOR_HPP
+#endif    // ACTOR_ZK_MATH_EXPRESSION_VISITORS_HPP
