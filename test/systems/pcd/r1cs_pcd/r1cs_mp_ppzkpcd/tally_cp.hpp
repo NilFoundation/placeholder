@@ -37,7 +37,7 @@
 #ifndef ACTOR_ZK_TALLY_CP_HPP
 #define ACTOR_ZK_TALLY_CP_HPP
 
-#include <nil/actor/zk/snark/components/basic_components.hpp>
+#include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 
 #include <nil/actor/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/compliance_predicate.hpp>
 #include <nil/actor/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/cp_handler.hpp>

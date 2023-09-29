@@ -43,7 +43,7 @@
 #include <nil/crypto3/algebra/multiexp/inner_product.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/evaluation_domain.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 
 namespace nil {
     namespace actor {
@@ -81,31 +81,34 @@ namespace nil {
 
                     std::vector<std::map<std::size_t, typename FieldType::value_type>> V_in_Lagrange_basis;
 
-                    ssp_instance(
-                        const std::shared_ptr<evaluation_domain<FieldType>> &domain,
-                        const std::size_t num_variables,
-                        const std::size_t degree,
-                        const std::size_t num_inputs,
-                        const std::vector<std::map<std::size_t, typename FieldType::value_type>> &V_in_Lagrange_basis) :
-                        num_variables(num_variables),
-                        degree(degree), num_inputs(num_inputs), domain(domain),
-                        V_in_Lagrange_basis(V_in_Lagrange_basis) {
+                    ssp_instance(const std::shared_ptr<evaluation_domain<FieldType>> &domain,
+                                 const std::size_t num_variables,
+                                 const std::size_t degree,
+                                 const std::size_t num_inputs,
+                                 const std::vector<std::map<std::size_t, typename FieldType::value_type>> &V_in_Lagrange_basis)
+                            :
+                            num_variables(num_variables),
+                            degree(degree), num_inputs(num_inputs), domain(domain),
+                            V_in_Lagrange_basis(V_in_Lagrange_basis) {
                     }
 
-                    ssp_instance(
-                        const std::shared_ptr<evaluation_domain<FieldType>> &domain,
-                        const std::size_t num_variables,
-                        const std::size_t degree,
-                        const std::size_t num_inputs,
-                        std::vector<std::map<std::size_t, typename FieldType::value_type>> &&V_in_Lagrange_basis) :
-                        num_variables(num_variables),
-                        degree(degree), num_inputs(num_inputs), domain(domain),
-                        V_in_Lagrange_basis(std::move(V_in_Lagrange_basis)) {
+                    ssp_instance(const std::shared_ptr<evaluation_domain<FieldType>> &domain,
+                                 const std::size_t num_variables,
+                                 const std::size_t degree,
+                                 const std::size_t num_inputs,
+                                 std::vector<std::map<std::size_t, typename FieldType::value_type>> &&V_in_Lagrange_basis)
+                            :
+                            num_variables(num_variables),
+                            degree(degree), num_inputs(num_inputs), domain(domain),
+                            V_in_Lagrange_basis(std::move(V_in_Lagrange_basis)) {
                     }
 
                     ssp_instance(const ssp_instance<FieldType> &other) = default;
+
                     ssp_instance(ssp_instance<FieldType> &&other) = default;
+
                     ssp_instance &operator=(const ssp_instance<FieldType> &other) = default;
+
                     ssp_instance &operator=(ssp_instance<FieldType> &&other) = default;
 
                     bool is_satisfied(const ssp_witness<FieldType> &witness) const {
@@ -177,8 +180,8 @@ namespace nil {
                                             const std::vector<typename FieldType::value_type> &Vt,
                                             const std::vector<typename FieldType::value_type> &Ht,
                                             const typename FieldType::value_type &Zt) :
-                        num_variables(num_variables),
-                        degree(degree), num_inputs(num_inputs), domain(domain), t(t), Vt(Vt), Ht(Ht), Zt(Zt) {
+                            num_variables(num_variables),
+                            degree(degree), num_inputs(num_inputs), domain(domain), t(t), Vt(Vt), Ht(Ht), Zt(Zt) {
                     }
 
                     ssp_instance_evaluation(const std::shared_ptr<evaluation_domain<FieldType>> &domain,
@@ -189,14 +192,17 @@ namespace nil {
                                             std::vector<typename FieldType::value_type> &&Vt,
                                             std::vector<typename FieldType::value_type> &&Ht,
                                             const typename FieldType::value_type &Zt) :
-                        num_variables(num_variables),
-                        degree(degree), num_inputs(num_inputs), domain(domain), t(t), Vt(std::move(Vt)),
-                        Ht(std::move(Ht)), Zt(Zt) {
+                            num_variables(num_variables),
+                            degree(degree), num_inputs(num_inputs), domain(domain), t(t), Vt(std::move(Vt)),
+                            Ht(std::move(Ht)), Zt(Zt) {
                     }
 
                     ssp_instance_evaluation(const ssp_instance_evaluation<FieldType> &other) = default;
+
                     ssp_instance_evaluation(ssp_instance_evaluation<FieldType> &&other) = default;
+
                     ssp_instance_evaluation &operator=(const ssp_instance_evaluation<FieldType> &other) = default;
+
                     ssp_instance_evaluation &operator=(ssp_instance_evaluation<FieldType> &&other) = default;
 
                     bool is_satisfied(const ssp_witness<FieldType> &witness) const {
@@ -276,9 +282,9 @@ namespace nil {
                                 const typename FieldType::value_type &d,
                                 const std::vector<typename FieldType::value_type> &coefficients_for_Vs,
                                 const std::vector<typename FieldType::value_type> &coefficients_for_H) :
-                        num_variables(num_variables),
-                        degree(degree), num_inputs(num_inputs), d(d), coefficients_for_Vs(coefficients_for_Vs),
-                        coefficients_for_H(coefficients_for_H) {
+                            num_variables(num_variables),
+                            degree(degree), num_inputs(num_inputs), d(d), coefficients_for_Vs(coefficients_for_Vs),
+                            coefficients_for_H(coefficients_for_H) {
                     }
 
                     ssp_witness(const std::size_t num_variables,
@@ -287,14 +293,17 @@ namespace nil {
                                 const typename FieldType::value_type &d,
                                 const std::vector<typename FieldType::value_type> &coefficients_for_Vs,
                                 std::vector<typename FieldType::value_type> &&coefficients_for_H) :
-                        num_variables(num_variables),
-                        degree(degree), num_inputs(num_inputs), d(d), coefficients_for_Vs(coefficients_for_Vs),
-                        coefficients_for_H(std::move(coefficients_for_H)) {
+                            num_variables(num_variables),
+                            degree(degree), num_inputs(num_inputs), d(d), coefficients_for_Vs(coefficients_for_Vs),
+                            coefficients_for_H(std::move(coefficients_for_H)) {
                     }
 
                     ssp_witness(const ssp_witness<FieldType> &other) = default;
+
                     ssp_witness(ssp_witness<FieldType> &&other) = default;
+
                     ssp_witness &operator=(const ssp_witness<FieldType> &other) = default;
+
                     ssp_witness &operator=(ssp_witness<FieldType> &&other) = default;
                 };
 

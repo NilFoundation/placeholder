@@ -51,7 +51,7 @@ namespace nil {
                 class placeholder_lookup_argument {
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using VariableType = plonk_variable<FieldType>;
+                    using VariableType = plonk_variable<typename FieldType::value_type>;
 
                     static constexpr std::size_t argument_size = 5;
 
@@ -76,7 +76,7 @@ namespace nil {
                         const plonk_assignment_table<FieldType, typename ParamsType::arithmetization_params>
                             &plonk_columns,
                         typename CommitmentSchemeTypePermutation::params_type fri_params,
-                        transcript_type &transcript = transcript_type()) {
+                        transcript_type &transcript) {
 
                         // $/theta = \challenge$
                         typename FieldType::value_type theta = transcript.template challenge<FieldType>();
@@ -106,15 +106,15 @@ namespace nil {
                                     int k = 0;
                                     std::vector<typename FieldType::value_type> input_assignment;
                                     std::vector<typename FieldType::value_type> value_assignment;
-                                    switch (lookup.vars[0].type) {
+                                    switch (lookup.get_vars()[0].type) {
                                         case VariableType::column_type::witness:
-                                            input_assignment = plonk_columns.witness(lookup.vars[0].index);
+                                            input_assignment = plonk_columns.witness(lookup.get_vars()[0].index);
                                             break;
                                         case VariableType::column_type::public_input:
-                                            input_assignment = plonk_columns.public_input(lookup.vars[0].index);
+                                            input_assignment = plonk_columns.public_input(lookup.get_vars()[0].index);
                                             break;
                                         case VariableType::column_type::constant:
-                                            input_assignment = plonk_columns.constant(lookup.vars[0].index);
+                                            input_assignment = plonk_columns.constant(lookup.get_vars()[0].index);
                                             break;
                                         case VariableType::column_type::selector:
                                             break;
@@ -139,9 +139,9 @@ namespace nil {
                                         F_compr_input[t] =
                                             F_compr_input[t] +
                                             theta_acc *
-                                                input_assignment[(j + lookup.vars[0].rotation) %
+                                                input_assignment[(j + lookup.get_vars()[0].rotation) %
                                                                  input_assignment.size()] *
-                                                lookup.coeff *
+                                                lookup.get_coeff() *
                                                 plonk_columns.selector(lookup_gates[i].selector_index)[t];
                                         F_compr_value[t] =
                                             F_compr_value[t] +
@@ -281,7 +281,7 @@ namespace nil {
                         const typename CommitmentSchemeTypePermutation::commitment_type &F_perm_input_commitment,
                         const typename CommitmentSchemeTypePermutation::commitment_type &F_perm_value_commitment,
                         const typename CommitmentSchemeTypePermutation::commitment_type &V_L_commitment,
-                        transcript_type &transcript = transcript_type()) {
+                        transcript_type& transcript) {
                         // 1. Get theta
                         typename FieldType::value_type theta = transcript.template challenge<FieldType>();
                         // 2. Add commitments to transcript
@@ -300,19 +300,19 @@ namespace nil {
                                      lookup_gates[i].constraints[j].lookup_input) {
                                     int k = 0;
                                     std::tuple<std::size_t, int, typename VariableType::column_type> input_key =
-                                        std::make_tuple(lookup.vars[0].index, lookup.vars[0].rotation,
-                                                        lookup.vars[0].type);
+                                        std::make_tuple(lookup.get_vars()[0].index, lookup.get_vars()[0].rotation,
+                                                        lookup.get_vars()[0].type);
                                     std::tuple<std::size_t, int, typename VariableType::column_type> value_key =
                                         std::make_tuple(lookup_gates[i].constraints[j].lookup_value[k].index,
                                                         lookup_gates[i].constraints[j].lookup_value[k].rotation,
                                                         lookup_gates[i].constraints[j].lookup_value[k].type);
 
-                                    std::tuple<std::size_t, int, typename plonk_variable<FieldType>::column_type>
+                                    std::tuple<std::size_t, int, typename plonk_variable<typename FieldType::value_type>::column_type>
                                         selector_key =
                                             std::make_tuple(lookup_gates[i].selector_index, 0,
-                                                            plonk_variable<FieldType>::column_type::selector);
+                                                            plonk_variable<typename FieldType::value_type>::column_type::selector);
 
-                                    F_input_compr = F_input_compr + theta_acc * evaluations[input_key] * lookup.coeff *
+                                    F_input_compr = F_input_compr + theta_acc * evaluations[input_key] * lookup.get_coeff() *
                                                                         evaluations[selector_key];
 
                                     F_value_compr =

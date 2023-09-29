@@ -30,6 +30,7 @@
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/shift.hpp>
 #include <nil/actor/math/domains/evaluation_domain.hpp>
+#include <nil/actor/zk/math/expression_evaluator.hpp>
 
 #include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
@@ -51,7 +52,7 @@ namespace nil {
 
                 /************************* PLONK constraint ***********************************/
 
-                template<typename FieldType, typename VariableType = plonk_variable<FieldType>>
+                template<typename FieldType, typename VariableType = plonk_variable<typename FieldType::value_type>>
                 class plonk_constraint : public math::expression<VariableType> {
                 public:
                     typedef FieldType field_type;
@@ -84,9 +85,7 @@ namespace nil {
                     future<typename VariableType::assignment_type>
                         evaluate(std::size_t row_index,
                                  const plonk_assignment_table<FieldType, ArithmetizationParams> &assignments) const {
-                        math::expression_evaluator<
-                                VariableType,
-                                typename VariableType::assignment_type> evaluator(
+                        math::expression_evaluator<VariableType> evaluator(
                             *this, 
                             [this, &assignments, row_index](const VariableType &var) {
                                 switch (var.type) {
@@ -111,12 +110,16 @@ namespace nil {
                         evaluate(const plonk_polynomial_table<FieldType, ArithmetizationParams> &assignments,
                                  std::shared_ptr<math::evaluation_domain<FieldType>>
                                      domain) const {
-                        math::expression_evaluator<
-                                VariableType, 
-                                math::polynomial<typename VariableType::assignment_type>> evaluator(
-                            *this, 
+                        using polynomial_type = math::polynomial<typename VariableType::assignment_type>;
+                        using polynomial_variable_type = plonk_variable<polynomial_type>;
+
+                        math::expression_variable_type_converter<VariableType, polynomial_variable_type> converter;
+                        
+                        math::expression_evaluator<polynomial_variable_type> evaluator(
+                            converter.convert(*this),
+
                             [&domain, &assignments](const VariableType &var) {
-                                math::polynomial<typename VariableType::assignment_type> assignment;
+                                polynomial_type assignment;
                                 switch (var.type) {
                                     case VariableType::column_type::witness:
                                         assignment = assignments.witness(var.index);
@@ -147,14 +150,19 @@ namespace nil {
                     future<math::polynomial_dfs<typename VariableType::assignment_type>>
                         evaluate(const plonk_polynomial_dfs_table<FieldType, ArithmetizationParams> &assignments,
                                  std::shared_ptr<math::evaluation_domain<FieldType>> domain) const {
+                        using polynomial_dfs_type = math::polynomial_dfs<typename VariableType::assignment_type>;
+                        using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
 
-                        math::expression_evaluator<
-                                VariableType, 
-                                math::polynomial_dfs<typename VariableType::assignment_type>> evaluator(
-                            *this, 
-                            [&domain, &assignments](const VariableType &var) {
-                                math::polynomial_dfs<typename VariableType::assignment_type> assignment;
-                                switch (var.type) {
+                        math::expression_variable_type_converter<variable_type, polynomial_dfs_variable_type> converter(
+                            [&assignments](const typename VariableType::assignment_type& coeff) {
+                                polynomial_dfs_type(0, assignments.rows_amount(), coeff);
+                            });
+                        math::expression_evaluator<polynomial_dfs_variable_type> evaluator(
+                            converter.convert(*this),
+                            [&domain, &assignments](const polynomial_dfs_variable_type &var) {
+                                polynomial_dfs_type assignment;
+
+                               switch (var.type) {
                                     case VariableType::column_type::witness:
                                         assignment = assignments.witness(var.index);
                                         break;
@@ -173,10 +181,6 @@ namespace nil {
                                     assignment = math::polynomial_shift(assignment, var.rotation, domain->m).get();
                                 }
                                 return assignment;
-                            },
-                            [&assignments](const typename VariableType::assignment_type& coeff) {
-                                return  math::polynomial_dfs<typename VariableType::assignment_type> (
-                                    0, assignments.rows_amount(), coeff);
                             }
                         );
 
@@ -187,9 +191,7 @@ namespace nil {
                     future<typename VariableType::assignment_type>
                         evaluate(detail::plonk_evaluation_map<VariableType> &assignments) const {
                         typename VariableType::assignment_type acc = VariableType::assignment_type::zero();
-                        math::expression_evaluator<
-                                VariableType,
-                                typename VariableType::assignment_type> evaluator(
+                        math::expression_evaluator<VariableType> evaluator(
                             *this, 
                             [this, &assignments](const VariableType &var) {
                                 std::tuple<std::size_t, int, typename VariableType::column_type> key =
@@ -199,7 +201,7 @@ namespace nil {
                                 return assignments[key];
                             });
 
-                        auto result = evaluator.evaluate().get();
+                        auto result = evaluator.evaluate();
                         return make_ready_future<typename VariableType::assignment_type>(result); 
                     }
                 };

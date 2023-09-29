@@ -29,11 +29,11 @@
 #ifndef CRYPTO3_RUN_R1CS_GG_PPZKSNARK_MARSHALLING_HPP
 #define CRYPTO3_RUN_R1CS_GG_PPZKSNARK_MARSHALLING_HPP
 
-#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
-#include <nil/actor/zk/snark/algorithms/generate.hpp>
-#include <nil/actor/zk/snark/algorithms/verify.hpp>
-#include <nil/actor/zk/snark/algorithms/prove.hpp>
+#include <nil/actor/zk/algorithms/generate.hpp>
+#include <nil/actor/zk/algorithms/verify.hpp>
+#include <nil/actor/zk/algorithms/prove.hpp>
 
+#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
 #include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/marshalling.hpp>
 
 #include "../r1cs_examples.hpp"

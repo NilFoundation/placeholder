@@ -192,8 +192,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_split_polynomial_test) {
 // This tests crashes for some reason...
 ACTOR_THREAD_TEST_CASE(placeholder_permutation_polynomials_test) {
 
-    circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
-        circuit_test_2<FieldType>();
+    auto circuit = circuit_test_2<FieldType>();
 
     constexpr std::size_t argument_size = 3;
 
@@ -221,7 +220,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_polynomials_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto polynomial_table =
         plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
@@ -268,8 +267,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_polynomials_test) {
 
 ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
 
-    circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
-        circuit_test_2<FieldType>();
+    auto circuit = circuit_test_2<FieldType>();
 
     constexpr std::size_t argument_size = 3;
 
@@ -297,7 +295,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto polynomial_table =
         plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
@@ -346,7 +344,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_permutation_argument_test) {
 #ifdef ENABLE_PLACEHOLDER_LOOKUP_TESTS
 ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
 
-    circuit_description<FieldType, circuit_3_params, table_rows_log, 3> circuit = circuit_test_3<FieldType>();
+    auto circuit = circuit_test_3<FieldType>();
 
     constexpr std::size_t argument_size = 5;
 
@@ -398,7 +396,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
         std::size_t i_global_index = i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<FieldType>::column_type::witness);
+            auto key = std::make_tuple(i, rotation, plonk_variable<typename FieldType::value_type>::column_type::witness);
             columns_at_y[key] = polynomial_table.witness(i).evaluate(y * circuit.omega.pow(rotation));
         }
     }
@@ -408,7 +406,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
                                      placeholder_test_params_lookups::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<FieldType>::column_type::constant);
+            auto key = std::make_tuple(i, rotation, plonk_variable<typename FieldType::value_type>::column_type::constant);
 
             columns_at_y[key] = polynomial_table.constant(i).evaluate(y * circuit.omega.pow(rotation));
         }
@@ -420,7 +418,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
                                      placeholder_test_params_lookups::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<FieldType>::column_type::selector);
+            auto key = std::make_tuple(i, rotation, plonk_variable<typename FieldType::value_type>::column_type::selector);
 
             columns_at_y[key] = polynomial_table.selector(i).evaluate(y * circuit.omega.pow(rotation));
         }
@@ -457,8 +455,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_lookup_argument_test) {
 
 ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
-    circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
-        circuit_test_2<FieldType>();
+    auto circuit = circuit_test_2<FieldType>();
 
     using policy_type = zk::snark::detail::placeholder_policy<FieldType, circuit_2_params>;
 
@@ -483,7 +480,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto polynomial_table =
         plonk_polynomial_dfs_table<FieldType, typename placeholder_test_params::arithmetization_params>(
@@ -510,7 +507,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
         std::size_t i_global_index = i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<FieldType>::column_type::witness);
+            auto key = std::make_tuple(i, rotation, plonk_variable<typename FieldType::value_type>::column_type::witness);
             columns_at_y[key] = polynomial_table.witness(i).evaluate(y * omega.pow(rotation));
         }
     }
@@ -520,7 +517,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
 
-            auto key = std::make_tuple(i, rotation, plonk_variable<FieldType>::column_type::public_input);
+            auto key = std::make_tuple(i, rotation, plonk_variable<typename FieldType::value_type>::column_type::public_input);
 
             columns_at_y[key] = polynomial_table.public_input(i).evaluate(y * omega.pow(rotation));
         }
@@ -531,7 +528,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
             placeholder_test_params::witness_columns + placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<FieldType>::column_type::constant);
+            auto key = std::make_tuple(i, rotation, plonk_variable<typename FieldType::value_type>::column_type::constant);
 
             columns_at_y[key] = polynomial_table.constant(i).evaluate(y * omega.pow(rotation));
         }
@@ -543,7 +540,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
                                      placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<FieldType>::column_type::selector);
+            auto key = std::make_tuple(i, rotation, plonk_variable<typename FieldType::value_type>::column_type::selector);
 
             columns_at_y[key] = polynomial_table.selector(i).evaluate(y * omega.pow(rotation));
         }
@@ -562,8 +559,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
 ACTOR_THREAD_TEST_CASE(placeholder_prover_basic_test) {
 
-    circuit_description<FieldType, circuit_2_params, table_rows_log, permutation_size> circuit =
-        circuit_test_2<FieldType>();
+    auto circuit = circuit_test_2<FieldType>();
 
     using policy_type = zk::snark::detail::placeholder_policy<FieldType, circuit_2_params>;
 
@@ -590,10 +586,11 @@ ACTOR_THREAD_TEST_CASE(placeholder_prover_basic_test) {
 
     typename placeholder_private_preprocessor<FieldType, circuit_2_params>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<FieldType, circuit_2_params>::process(
-            constraint_system, assignments.private_table(), desc, fri_params).get();
+            constraint_system, assignments.private_table(), desc, fri_params);
 
     auto proof = placeholder_prover<FieldType, circuit_2_params>::process(
-        preprocessed_public_data, preprocessed_private_data, desc, constraint_system, assignments, fri_params);
+        preprocessed_public_data, preprocessed_private_data, desc,
+        constraint_system, assignments, fri_params);
 
     bool verifier_res = placeholder_verifier<FieldType, circuit_2_params>::process(
         preprocessed_public_data, proof, constraint_system, fri_params);
@@ -635,8 +632,8 @@ ACTOR_THREAD_TEST_CASE(placeholder_prover_lookup_test) {
     auto proof = placeholder_prover<FieldType, circuit_3_params>::process(
         preprocessed_public_data, preprocessed_private_data, desc, constraint_system, assignments, fri_params);
 
-    bool verifier_res = placeholder_verifier<FieldType, circuit_3_params>::process(preprocessed_public_data, proof,
-                                                                                   constraint_system, fri_params);
+    bool verifier_res = placeholder_verifier<FieldType, circuit_3_params>::process(
+        preprocessed_public_data, proof, constraint_system, fri_params);
     BOOST_CHECK(verifier_res);
 }
 #endif
