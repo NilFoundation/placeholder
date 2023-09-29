@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <vector>
 #include <ostream>
+#include <iterator>
 
 #include <nil/actor/math/polynomial/basic_operations.hpp>
 #include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
@@ -37,7 +38,7 @@
 namespace nil {
     namespace actor {
         namespace math {
-            // Optimal val.size must be power of two, if it's not true we have points that we will never use
+            // Optimal val.size must be a power of two, if it's not true we have points that we will never use
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>>
             class polynomial_dfs {
                 typedef std::vector<FieldValueType, Allocator> container_type;
@@ -59,36 +60,37 @@ namespace nil {
                 typedef typename container_type::reverse_iterator reverse_iterator;
                 typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
-                polynomial_dfs() : val({0}) {
+                // Default constructor creates a zero polynomial of degree 0 and size 1.
+                polynomial_dfs() : val(1, 0) {
                     _d = 0;
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n) : val(n), _d(d) {
                     BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n, const allocator_type& a) : val(n, a), _d(d) {
                     BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 polynomial_dfs(size_t d, size_type n, const value_type& x) : val(n, x), _d(d) {
                     BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 polynomial_dfs(size_t d, size_type n, const value_type& x, const allocator_type& a) :
                     val(n, x, a), _d(d) {
                     BOOST_ASSERT_MSG(n == crypto3::math::detail::power_of_two(n),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 template<typename InputIterator>
                 polynomial_dfs(size_t d, InputIterator first, InputIterator last) : val(first, last), _d(d) {
                     BOOST_ASSERT_MSG(std::distance(first, last) ==
                                          crypto3::math::detail::power_of_two(std::distance(first, last)),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 template<typename InputIterator>
@@ -96,7 +98,7 @@ namespace nil {
                     val(first, last, a), _d(d) {
                     BOOST_ASSERT_MSG(std::distance(first, last) ==
                                          crypto3::math::detail::power_of_two(std::distance(first, last)),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 ~polynomial_dfs() = default;
@@ -113,7 +115,7 @@ namespace nil {
                 polynomial_dfs(size_t d, std::initializer_list<value_type> il, const allocator_type& a) :
                     val(il, a), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == crypto3::math::detail::power_of_two(val.size()),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
                 // TODO: add constructor with omega
 
@@ -130,12 +132,12 @@ namespace nil {
 
                 polynomial_dfs(size_t d, const container_type& c) : val(c), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == crypto3::math::detail::power_of_two(val.size()),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 polynomial_dfs(size_t d, container_type&& c) : val(c), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == crypto3::math::detail::power_of_two(val.size()),
-                                     "DFS optimal polynom size must be power of two");
+                                     "DFS optimal polynomial size must be a power of two");
                 }
 
                 polynomial_dfs& operator=(const polynomial_dfs& x) {
@@ -357,10 +359,12 @@ namespace nil {
                     if (this->size() == _sz)
                         return make_ready_future<>();
 
-                    // BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
+                    BOOST_ASSERT_MSG(_sz >= _d, "Resizing DFS polynomial to a size less than degree is prohibited: can't restore the polynomial in the future.");
 
-                    if (this->size() == 1){
-                        this->val.resize(_sz, this->val[0]);
+                    if (this->degree() == 0) {
+                        // Here we cannot write this->val.resize(_sz, this->val[0]), it will segfault.
+                        auto value = this->val[0]; 
+                        this->val.resize(_sz, value);
                     } else {
                         typedef typename value_type::field_type FieldType;
 
@@ -391,7 +395,30 @@ namespace nil {
                  * Returns true if polynomial is a zero polynomial.
                  */
                 bool is_zero() const {
-                    return _d == 0;
+                    for (const auto& v: val) {
+                        if (v != FieldValueType::zero())
+                            return false;
+                    }
+                    return true;
+                }
+                
+                /**
+                 * Returns true if polynomial is a one polynomial.
+                 */
+                bool is_one() const {
+                    for (const auto& v: val) {
+                        if (v != FieldValueType::one())
+                            return false;
+                    }
+                    return true;
+                }
+
+                inline static polynomial_dfs zero() {
+                    return polynomial_dfs(); 
+                }
+
+                inline static polynomial_dfs one() {
+                    return polynomial_dfs(0, size_type(1), value_type(1)); 
                 }
 
                 /**
@@ -409,10 +436,12 @@ namespace nil {
                  * and stores result in polynomial C.
                  */
                 polynomial_dfs operator+(const polynomial_dfs& other) const {
-                    polynomial_dfs result(std::max(this->_d, other._d), this->begin(), this->end());
+                    polynomial_dfs result = *this;
                     if (other.size() > this->size()) {
                         result.resize(other.size()).get();
                     }
+                    result._d = std::max(this->_d, other._d);
+
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size()).get();
@@ -442,11 +471,11 @@ namespace nil {
                  * Computes the standard polynomial addition, polynomial A + polynomial B, 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs operator+=(const polynomial_dfs& other) {
-                    this->_d = std::max(this->_d, other._d);
+                polynomial_dfs& operator+=(const polynomial_dfs& other) {
                     if (other.size() > this->size()) {
                         this->resize(other.size()).get();
                     }
+                    this->_d = std::max(this->_d, other._d);
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size()).get();
@@ -474,8 +503,8 @@ namespace nil {
                  * Computes polynomial A + constant c, 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs operator+=(const FieldValueType& c) {
-                    for( auto it = this->begin(); it!=this->end(); it++) *it += c;
+                polynomial_dfs& operator+=(const FieldValueType& c) {
+                    for(auto it = this->begin(); it!=this->end(); it++) *it += c;
                     return *this;
                 }
                 
@@ -490,8 +519,7 @@ namespace nil {
                             result[i] = -result[i];
                         }
                     }).get();
-                    //                    std::transform(this->begin(), this->end(), result.begin(),
-                    //                    std::negate<FieldValueType>());
+
                     return result;
                 }
 
@@ -500,10 +528,12 @@ namespace nil {
                  * and stores result in polynomial C.
                  */
                 polynomial_dfs operator-(const polynomial_dfs& other) const {
-                    polynomial_dfs result(std::max(_d, other._d), this->begin(), this->end());
+                    polynomial_dfs result = * this;
                     if (other.size() > this->size()) {
                         result.resize(other.size()).get();
                     }
+                    result._d = std::max(_d, other._d);
+
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size()).get();
@@ -532,11 +562,12 @@ namespace nil {
                  * Computes the standard polynomial subtraction, polynomial A - polynomial B, 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs operator-=(const polynomial_dfs& other) {
-                    this->_d = std::max(this->_d, other._d);
+                polynomial_dfs& operator-=(const polynomial_dfs& other) {
                     if (other.size() > this->size()) {
                         this->resize(other.size()).get();
                     }
+                    this->_d = std::max(this->_d, other._d);
+
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size()).get();
@@ -550,7 +581,6 @@ namespace nil {
                                 }
                             }).get();
  
-                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::minus<FieldValueType>());
                         return *this;
                     }
                     detail::block_execution(
@@ -568,7 +598,7 @@ namespace nil {
                  * Computes tpolynomial A - constant c 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs operator-=(const FieldValueType& c) {
+                polynomial_dfs& operator-=(const FieldValueType& c) {
                     detail::block_execution(
                         this->size(),
                         smp::count,
@@ -585,12 +615,16 @@ namespace nil {
                  * and stores result in polynomial C.
                  */
                 polynomial_dfs operator*(const polynomial_dfs& other) const {
-                    polynomial_dfs result(this->_d + other._d, this->begin(), this->end());
+                    polynomial_dfs result = *this;
                     size_t polynomial_s = crypto3::math::detail::power_of_two(
                         std::max({this->size(), other.size(), this->_d + other._d + 1}));
                     if (result.size() < polynomial_s) {
                         result.resize(polynomial_s).get();
                     }
+                    // Change the degree only here, after a possible resize, otherwise we have a polynomial
+                    // with a high degree but small size, which sometimes segfaults.
+                    result._d = this->degree() + other.degree();
+
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s).get();
@@ -619,14 +653,18 @@ namespace nil {
                  * Perform the multiplication of two polynomials, polynomial A * polynomial B, 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs operator*=(const polynomial_dfs& other) {
+                polynomial_dfs& operator*=(const polynomial_dfs& other) {
                     size_t polynomial_s =
                         crypto3::math::detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
-                    this->_d += other._d;
 
                     if (this->size() < polynomial_s) {
                         this->resize(polynomial_s).get();
                     }
+
+                    // Change the degree only here, after a possible resize, otherwise we have a polynomial
+                    // with a high degree but small size, which sometimes segfaults.
+                    this->_d += other._d;
+
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s).get();
@@ -656,7 +694,7 @@ namespace nil {
                  * Perform the multiplication of a polynomial with a constant, polynomial A * constant alpha, 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs operator*=(const FieldValueType& alpha) {
+                polynomial_dfs& operator*=(const FieldValueType& alpha) {
                     detail::block_execution(
                         this->size(),
                         smp::count,
@@ -765,6 +803,7 @@ namespace nil {
                     }
                     return result;
                 }
+
             };
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
@@ -887,17 +926,43 @@ namespace nil {
                      typename = typename std::enable_if<is_field_element<FieldValueType>::value>::type>
             std::ostream& operator<<(std::ostream& os,
                                      const polynomial_dfs<FieldValueType, Allocator>& poly) {
-                os << "[Polynomial DFS, size " << poly.size()
-                   << " degree " << poly.degree() << " values ";
-                for( auto it = poly.begin(); it != poly.end(); it++ ){
-                    os << it->data << ", ";
+                if (poly.degree() == 0) {
+                    // If all it contains is a constant, print the constant, so it's more readable.
+                    os << *poly.begin();
+                } else {
+                    os << "[Polynomial DFS, size " << poly.size()
+                       << " degree " << poly.degree() << " values ";
+                    for( auto it = poly.begin(); it != poly.end(); it++ ){
+                        os << "0x" << std::hex << it->data << ", ";
+                    }
+                    os << "]";
                 }
-                os << "]";
                 return os;
             }
 
         }    // namespace math
     }        // namespace actor
 }    // namespace nil
+
+namespace std {
+
+    // As our operator== returns false for polynomials with different sizes, the same will happen here,
+    // resized polynomial will have a different hash from the initial one.
+    template<typename FieldValueType, typename Allocator>
+    struct std::hash<nil::actor::math::polynomial_dfs<FieldValueType, Allocator>>
+    {
+        std::hash<FieldValueType> value_hasher;
+
+        std::size_t operator()(const nil::actor::math::polynomial_dfs<FieldValueType, Allocator>& poly) const
+        {
+            std::size_t result = poly.degree();
+            for (const auto& val: poly) {
+                boost::hash_combine(result, value_hasher(val));
+            }
+            return result;
+        }
+    };
+
+} // namespace std
 
 #endif    // ACTOR_MATH_POLYNOMIAL_POLYNOM_DFS_HPP
