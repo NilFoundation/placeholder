@@ -146,11 +146,11 @@ namespace nil {
 #endif
 
 // Both asan and optimizations can increase the stack used by a
-// function. When both are used, we need more than 128 KiB.
+// function. When both are used, we need more than 256 KiB.
 #if defined(ACTOR_ASAN_ENABLED)
-        static constexpr size_t base_stack_size = 256 * 1024;
+        static constexpr size_t base_stack_size = 512 * 1024;
 #else
-        static constexpr size_t base_stack_size = 128 * 1024;
+        static constexpr size_t base_stack_size = 256 * 1024;
 #endif
 
         static size_t get_stack_size(thread_attributes attr) {
