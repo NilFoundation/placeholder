@@ -2,6 +2,7 @@
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
+// Copyright (c) 2023 Martun Karapetyan <martun@nil.foundation>
 //
 // MIT License
 //
@@ -38,6 +39,7 @@
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
+#include <nil/actor/math/detail/utility.hpp>
 
 #include <nil/crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
 
@@ -48,78 +50,77 @@ namespace nil {
 
                 template<typename FieldType, typename Range>
                 future<> basic_radix2_fft(Range &a, const typename FieldType::value_type &omega) {
-
-                    std::size_t num_cpus = nil::actor::smp::count;
-
-                    const std::size_t log_cpus = (num_cpus & (num_cpus - 1)) == 0 ? log2(num_cpus) : log2(num_cpus) - 1;
+                    typedef typename FieldType::value_type field_value_type;
+                    BOOST_STATIC_ASSERT(crypto3::algebra::is_field<FieldType>::value);
 
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;
 
-                    typedef typename FieldType::value_type field_value_type;
-                    BOOST_STATIC_ASSERT(crypto3::algebra::is_field<FieldType>::value);
-
                     // It now supports curve elements too, should probably some other assertion about the field type and value type
                     // BOOST_STATIC_ASSERT(std::is_same<typename FieldType::value_type, value_type>::value);
 
-                    num_cpus = 1ul << log_cpus;
+                    const std::size_t n = a.size(), logn = log2(n);
 
-                    const std::size_t m = a.size();
-                    const std::size_t log_m = log2(m);
+                    if (n != (1u << logn))
+                        throw std::invalid_argument("expected n == (1u << logn)");
 
-                    if (m != (1u << log_m))
-                        throw std::invalid_argument("expected m == (1u << log_m)");
-
-                    if (log_m < log_cpus || log_cpus == 0) {
-                        crypto3::math::detail::basic_radix2_fft<FieldType>(a, omega);
-                        return make_ready_future<>();
+                    /* swapping in place (from Storer's book) */
+                    for (std::size_t k = 0; k < n; ++k) {
+                        const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
+                        if (k < rk)
+                            std::swap(a[k], a[rk]);
                     }
 
-                    std::vector<std::vector<value_type>> tmp(
-                        num_cpus, std::vector<value_type>(1ul << (log_m - log_cpus), value_type::zero()));
+                    std::size_t m = 1;    // invariant: m = 2^{s-1}
+                    field_value_type w_m;
 
-                    std::vector<future<>> fut;
+                    for (std::size_t s = 1; s <= logn; ++s) {
+                        // w_m is 2^s-th root of unity now
+                        w_m = omega.pow(n / (2 * m));
+                        size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
 
-                    const field_value_type omega_num_cpus = omega.pow(num_cpus);
-
-                    for (std::size_t j = 0; j < num_cpus; ++j) {
-                        const field_value_type omega_j = omega.pow(j);
-                        const field_value_type omega_step = omega.pow(j << (log_m - log_cpus));
-
-                        fut.emplace_back(smp::submit_to(
-                            j, [j, omega_num_cpus, omega_j, omega_step, log_m, log_cpus, num_cpus, &tmp, &a]() {
-                                    field_value_type elt = field_value_type::one();
-                                for (std::size_t i = 0; i < 1ul << (log_m - log_cpus); ++i) {
-                                    for (std::size_t s = 0; s < num_cpus; ++s) {
-                                        // invariant: elt is omega^(j*idx)
-                                        const std::size_t idx = (i + (s << (log_m - log_cpus))) % (1u << log_m);
-                                        tmp[j][i] = tmp[j][i] + elt * a[idx];
-                                        elt *= omega_step;
+                        if (m > count_k) {
+                            for (std::size_t k = 0; k < n; k += 2 * m) {
+                                // We can parallelize here, because for each range, we touch only 
+                                // a[k + j] and a[k + j + m], and they are never equal for different values of j.
+                                detail::block_execution(
+                                    m,
+                                    smp::count,
+                                    [&a, k, m, &w_m](std::size_t begin, std::size_t end) {
+                                        field_value_type w = w_m.pow(begin);
+                                        for (std::size_t j = begin; j < end; j++) {
+                                            const value_type t = a[k + j + m] * w;
+                                            a[k + j + m] = a[k + j] - t;
+                                            a[k + j] += t;
+                                            w *= w_m;
+                                        }
                                     }
-                                    elt = elt * omega_j;
-                                }
-
-                                crypto3::math::detail::basic_radix2_fft<FieldType>(tmp[j], omega_num_cpus);
-
-                                return nil::actor::make_ready_future<>();
-                            }));
-                    }
-                    when_all(fut.begin(), fut.end()).get();
-
-                    fut.clear();
-
-                    for (std::size_t i = 0; i < num_cpus; ++i) {
-                        fut.emplace_back(smp::submit_to(i, [i, log_m, log_cpus, &tmp, &a]() {
-                            for (std::size_t j = 0; j < 1ul << (log_m - log_cpus); ++j) {
-                                // now: i = idx >> (log_m - log_cpus) and j = idx % (1u << (log_m - log_cpus)), for idx
-                                // =
-                                // ((i<<(log_m-log_cpus))+j) % (1u << log_m)
-                                a[(j << log_cpus) + i] = tmp[i][j];
+                                ).get();
                             }
-                            return nil::actor::make_ready_future<>();
-                        }));
+                        } else {
+                            // Here we can parallelize on the cycle with 'k', because for each value of k
+                            // the ranges of array 'a' used do not intersect.
+                            detail::block_execution(
+                                count_k,
+                                smp::count,
+                                [&a, m, &w_m](std::size_t begin, std::size_t end) {
+                                    for (std::size_t k_index = begin; k_index < end; k_index++) {
+                                        field_value_type w = field_value_type::one();
+                                        std::size_t k = k_index * 2 * m;
+                                        size_t w_power = 0;
+                                        for (std::size_t j = 0; j < m; ++j) {
+                                            const value_type t = a[k + j + m] * w;
+                                            a[k + j + m] = a[k + j] - t;
+                                            a[k + j] += t;
+                                            w *= w_m;
+                                        }
+                                    }
+                                }
+                            ).get();
+                        }
+
+                        m *= 2;
                     }
-                    when_all(fut.begin(), fut.end()).get();
                     return make_ready_future<>();
                 }
 
