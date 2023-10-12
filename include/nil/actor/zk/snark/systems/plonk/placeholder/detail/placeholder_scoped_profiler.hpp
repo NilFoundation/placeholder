@@ -109,14 +109,14 @@ namespace nil {
 
 #ifdef ZK_PLACEHOLDER_PROFILING_ENABLED
     #define PROFILE_PLACEHOLDER_SCOPE(name) \
-        nil::actor::zk::nil::crypto3::zk::snark::detail::placeholder_scoped_profiler profiler(name);
+        nil::actor::zk::snark::detail::placeholder_scoped_profiler profiler(name);
 #else
     #define PROFILE_PLACEHOLDER_SCOPE(name) 
 #endif
 
 #ifdef ZK_PLACEHOLDER_PROFILING_ENABLED
     #define PROFILE_PLACEHOLDER_FUNCTION_CALLS() \
-        nil::actor::zk::nil::crypto3::zk::snark::detail::placeholder_scoped_aggregate_profiler profiler(__PRETTY_FUNCTION__ );
+        nil::actor::zk::snark::detail::placeholder_scoped_aggregate_profiler profiler(__PRETTY_FUNCTION__ );
 #else
     #define PROFILE_PLACEHOLDER_FUNCTION_CALLS() 
 #endif

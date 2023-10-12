@@ -36,40 +36,48 @@ namespace nil {
     namespace actor {
         namespace zk {
             namespace snark {
-                template<typename FieldType, typename ArithmetizationParams,
-                         typename MerkleTreeHashType = crypto3::hashes::keccak_1600<512>,
-                         typename TranscriptHashType = crypto3::hashes::keccak_1600<512>, 
-                         std::size_t Lambda = 40,
-                         std::size_t R = 1, 
-                         std::size_t M = 2, 
-                         std::size_t BatchesNum = 4>
-                struct placeholder_params {
-
-                    typedef MerkleTreeHashType merkle_hash_type;
-                    typedef TranscriptHashType transcript_hash_type;
-
-                    constexpr static const std::size_t batches_num = BatchesNum;
-
+                template<
+                    typename FieldType, 
+                    typename ArithmetizationParams
+                >
+                struct placeholder_circuit_params{
                     constexpr static const std::size_t witness_columns = ArithmetizationParams::witness_columns;
                     constexpr static const std::size_t public_input_columns = ArithmetizationParams::public_input_columns;
                     constexpr static const std::size_t constant_columns = ArithmetizationParams::constant_columns;
                     constexpr static const std::size_t selector_columns = ArithmetizationParams::selector_columns;
 
-                    using arithmetization_params = ArithmetizationParams;
-
                     constexpr static const typename FieldType::value_type delta =
-                        crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+                        crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;                    
 
-                    typedef
-                        typename commitments::fri<FieldType, MerkleTreeHashType, TranscriptHashType, Lambda, M, BatchesNum>::params_type
-                            commitment_params_type;
+                    using arithmetization_params = ArithmetizationParams;
+                    using field_type = FieldType;
+                    using public_input_type = std::array<std::vector<typename field_type::value_type>, arithmetization_params::public_input_columns>;
+                    using constraint_system_type = plonk_constraint_system<field_type, arithmetization_params>;
+                    using assignment_table_type = plonk_table<field_type, arithmetization_params, plonk_column<field_type>>;
+                };
 
-                    typedef commitments::list_polynomial_commitment_params<MerkleTreeHashType, TranscriptHashType,
-                                                                           Lambda, R, M, BatchesNum>
-                        batched_commitment_params_type;
+                template<typename CircuitParams, typename CommitmentScheme>
+                struct placeholder_params{
+                    constexpr static const std::size_t witness_columns = CircuitParams::witness_columns;
+                    constexpr static const std::size_t public_input_columns = CircuitParams::public_input_columns;
+                    constexpr static const std::size_t constant_columns = CircuitParams::constant_columns;
+                    constexpr static const std::size_t selector_columns = CircuitParams::selector_columns;
+                    constexpr static const std::size_t total_columns = witness_columns + public_input_columns + constant_columns + selector_columns;
 
-                    using runtime_size_commitment_scheme_type =
-                        commitments::batched_lpc<FieldType, batched_commitment_params_type>;
+                    using field_type = typename CircuitParams::field_type;
+
+                    constexpr static const typename field_type::value_type delta = CircuitParams::delta;
+
+                    using arithmetization_params = typename CircuitParams::arithmetization_params;
+                    using constraint_system_type = typename CircuitParams::constraint_system_type;
+                    using assignment_table_type = typename CircuitParams::assignment_table_type;
+
+                    using commitment_scheme_type = CommitmentScheme;
+                    using commitment_scheme_params_type = typename CommitmentScheme::params_type;
+                    using public_input_type = typename CircuitParams::public_input_type;
+
+                    using transcript_hash_type = typename CommitmentScheme::transcript_hash_type;
+                    using circuit_params_type = CircuitParams;
                 };
             }    // namespace snark
         }        // namespace zk

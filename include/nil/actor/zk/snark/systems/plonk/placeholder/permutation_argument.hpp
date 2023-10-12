@@ -55,32 +55,27 @@ namespace nil {
                     using transcript_hash_type = typename ParamsType::transcript_hash_type;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
 
+                    using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
+                    using commitment_type = typename commitment_scheme_type::commitment_type;
+
                     static constexpr std::size_t argument_size = 3;
-
-                    using permutation_commitment_scheme_type = typename ParamsType::runtime_size_commitment_scheme_type;
-
                 public:
+                    // TODO: Check, do we really need permutation_polynomial_dfs.
                     struct prover_result_type {
                         std::array<math::polynomial_dfs<typename FieldType::value_type>, argument_size> F_dfs;
 
                         math::polynomial_dfs<typename FieldType::value_type> permutation_polynomial_dfs;
-
-                        typename permutation_commitment_scheme_type::precommitment_type permutation_poly_precommitment;
                     };
 
                     static inline math::polynomial_dfs<typename FieldType::value_type> polynomial_product(
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers)
                     {
-                        // TODO(martun): Make this part parallel.
-                        while (multipliers.size() != 1) {
-                            for (int i = 0; i < multipliers.size() / 2; ++i) {
-                                multipliers[i] = multipliers[2 * i] * multipliers[2 * i + 1];
+                        std::size_t stride = 1;
+                        while (stride < multipliers.size() ) {
+                            for(std::size_t i = 0; i + stride < multipliers.size(); i += stride*2) {
+                                multipliers[i] *= multipliers[ i + stride ];
                             }
-                            if (multipliers.size() % 2 != 0) {
-                                multipliers[multipliers.size() / 2] = multipliers[multipliers.size() - 1];
-                            }
-                            // Delete the second half.
-                            multipliers.resize(multipliers.size() / 2 + multipliers.size() % 2);
+                            stride *= 2;
                         }
                         return multipliers[0];
                     }
@@ -94,7 +89,7 @@ namespace nil {
                             &table_description,
                         const plonk_polynomial_dfs_table<FieldType, typename ParamsType::arithmetization_params>
                             &column_polynomials,
-                        const typename ParamsType::commitment_params_type& fri_params,
+                        typename ParamsType::commitment_scheme_type& commitment_scheme,
                         transcript_type& transcript) {
 
                         PROFILE_PLACEHOLDER_SCOPE("permutation_argument_prove_eval_time");
@@ -114,15 +109,22 @@ namespace nil {
                         math::polynomial_dfs<typename FieldType::value_type> V_P(basic_domain->size() - 1,
                                                                                  basic_domain->size());
 
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_v;
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_v;
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_v = S_id;
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_v = S_sigma;
                         for (std::size_t i = 0; i < S_id.size(); i++) {
                             BOOST_ASSERT(column_polynomials[i].size() == basic_domain->size());
                             BOOST_ASSERT(S_id[i].size() == basic_domain->size());
                             BOOST_ASSERT(S_sigma[i].size() == basic_domain->size());
 
-                            g_v.push_back(column_polynomials[i] + beta * S_id[i] + gamma);
-                            h_v.push_back(column_polynomials[i] + beta * S_sigma[i] + gamma);
+                            /* g_v.push_back(column_polynomials[i] + beta * S_id[i] + gamma); */
+                            g_v[i] *= beta;
+                            g_v[i] += gamma;
+                            g_v[i] += column_polynomials[i];
+
+                            /* h_v.push_back(column_polynomials[i] + beta * S_sigma[i] + gamma); */
+                            h_v[i] *= beta;
+                            h_v[i] += gamma;
+                            h_v[i] += column_polynomials[i];
                         }
 
                         V_P[0] = FieldType::value_type::one();
@@ -136,18 +138,14 @@ namespace nil {
                             }
                             V_P[j] = V_P[j - 1] * nom / denom;
                         }
-                        V_P.resize(fri_params.D[0]->m).get();
 
                         // 4. Compute and add commitment to $V_P$ to $\text{transcript}$.
-                        typename permutation_commitment_scheme_type::precommitment_type V_P_tree =
-                            zk::algorithms::precommit<permutation_commitment_scheme_type>(
-                                V_P, fri_params.D[0], fri_params.step_list.front()).get();
-                        typename permutation_commitment_scheme_type::commitment_type V_P_commitment =
-                            zk::algorithms::commit<permutation_commitment_scheme_type>(V_P_tree);
-                        transcript(V_P_commitment);
+                        // TODO: Better enumeration for polynomial batches
+                        commitment_scheme.append_to_batch(PERMUTATION_BATCH, V_P);
+
                         // 5. Calculate g_perm, h_perm
-                        math::polynomial_dfs<typename FieldType::value_type> g = polynomial_product(g_v);
-                        math::polynomial_dfs<typename FieldType::value_type> h = polynomial_product(h_v);
+                        math::polynomial_dfs<typename FieldType::value_type> g = polynomial_product(std::move(g_v));
+                        math::polynomial_dfs<typename FieldType::value_type> h = polynomial_product(std::move(h_v));
 
                         math::polynomial_dfs<typename FieldType::value_type> one_polynomial(
                             0, V_P.size(), FieldType::value_type::one());
@@ -155,11 +153,30 @@ namespace nil {
                         math::polynomial_dfs<typename FieldType::value_type> V_P_shifted =
                             math::polynomial_shift(V_P, 1, basic_domain->m).get();
 
-                        F_dfs[0] = preprocessed_data.common_data.lagrange_0 * (one_polynomial - V_P);
-                        F_dfs[1] = (one_polynomial - (preprocessed_data.q_last + preprocessed_data.q_blind)) * (V_P_shifted * h - V_P * g);
-                        F_dfs[2] = preprocessed_data.q_last * V_P * (V_P - one_polynomial);
+                        /* F_dfs[0] = preprocessed_data.common_data.lagrange_0 * (one_polynomial - V_P); */
 
-                        prover_result_type res = {F_dfs, V_P, V_P_tree};
+                        F_dfs[0] = one_polynomial;
+                        F_dfs[0] -= V_P;
+                        F_dfs[0] *= preprocessed_data.common_data.lagrange_0;
+
+                        /* F_dfs[1] = (one_polynomial - (preprocessed_data.q_last + preprocessed_data.q_blind)) * (V_P_shifted * h - V_P * g); */
+                        math::polynomial_dfs<typename FieldType::value_type> t1 = V_P;
+                        t1 *= g;
+                        V_P_shifted *= h;
+                        V_P_shifted -= t1;
+
+                        F_dfs[1] = one_polynomial;
+                        F_dfs[1] -= preprocessed_data.q_last;
+                        F_dfs[1] -= preprocessed_data.q_blind;
+                        F_dfs[1] *= V_P_shifted;
+
+                        /* F_dfs[2] = preprocessed_data.q_last * V_P * (V_P - one_polynomial); */
+                        F_dfs[2] = V_P;
+                        F_dfs[2] -= one_polynomial;
+                        F_dfs[2] *= V_P;
+                        F_dfs[2] *= preprocessed_data.q_last;
+
+                        prover_result_type res = {std::move(F_dfs), std::move(V_P)};
 
                         return make_ready_future<prover_result_type>(res);
                     }
@@ -175,8 +192,7 @@ namespace nil {
                         const typename FieldType::value_type &perm_polynomial_value,
                         // V_P(omega * y):
                         const typename FieldType::value_type &perm_polynomial_shifted_value,
-                        const typename permutation_commitment_scheme_type::commitment_type &V_P_commitment,
-                        transcript_type& transcript) {
+                        transcript_type &transcript) {
 
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_sigma =
                             preprocessed_data.permutation_polynomials;
@@ -186,32 +202,44 @@ namespace nil {
                         // 1. Get beta, gamma
                         typename FieldType::value_type beta = transcript.template challenge<FieldType>();
                         typename FieldType::value_type gamma = transcript.template challenge<FieldType>();
-
                         // 2. Add commitment to V_P to transcript
-                        transcript(V_P_commitment);
 
                         // 3. Calculate h_perm, g_perm at challenge point
-                        math::polynomial_dfs<typename FieldType::value_type> g_poly(
-                            0, preprocessed_data.common_data.basic_domain->size(), FieldType::value_type::one()
-                        );
-                        math::polynomial_dfs<typename FieldType::value_type> h_poly(
-                            0, preprocessed_data.common_data.basic_domain->size(), FieldType::value_type::one()
-                        );
+                        math::polynomial_dfs<typename FieldType::value_type> one_polynomial(
+                            0, preprocessed_data.common_data.basic_domain->size(), FieldType::value_type::one());
+                        math::polynomial_dfs<typename FieldType::value_type> g_poly = one_polynomial;
+                        math::polynomial_dfs<typename FieldType::value_type> h_poly = one_polynomial;
 
                         for (std::size_t i = 0; i < column_polynomials_values.size(); i++) {
                             typename FieldType::value_type pp = column_polynomials_values[i] + gamma;
+                            math::polynomial_dfs<typename FieldType::value_type> t_id = S_id[i];
+                            math::polynomial_dfs<typename FieldType::value_type> t_sigma = S_sigma[i];
 
-                            g_poly = g_poly * (S_id[i] * beta + pp);
-                            h_poly = h_poly * (S_sigma[i] * beta  + pp);
+                            //  g_poly = g_poly * (S_id[i] * beta + pp);
+                            t_id *= beta;
+                            t_id += pp;
+                            g_poly *= t_id;
 
+                            // h_poly = h_poly * (S_sigma[i] * beta  + pp);
+                            t_sigma *= beta;
+                            t_sigma += pp;
+                            h_poly *= t_sigma;
                         }
+
                         std::array<typename FieldType::value_type, argument_size> F;
                         typename FieldType::value_type one = FieldType::value_type::one();
 
                         F[0] = preprocessed_data.common_data.lagrange_0.evaluate(challenge) *
                                (one - perm_polynomial_value);
-                        F[1] = ((one - preprocessed_data.q_last - preprocessed_data.q_blind) *
-                               (perm_polynomial_shifted_value * h_poly - perm_polynomial_value * g_poly)).evaluate(challenge);
+
+                        // F[1] = ((one - preprocessed_data.q_last - preprocessed_data.q_blind) *
+                        //       (perm_polynomial_shifted_value * h_poly - perm_polynomial_value * g_poly)).evaluate(challenge);
+                        h_poly *= perm_polynomial_shifted_value;
+                        g_poly *= perm_polynomial_value;
+                        h_poly -= g_poly;
+                        h_poly *= one - preprocessed_data.q_last - preprocessed_data.q_blind;
+                        F[1] = h_poly.evaluate(challenge);
+
                         F[2] = preprocessed_data.q_last.evaluate(challenge) *
                                (perm_polynomial_value.squared() - perm_polynomial_value);
 

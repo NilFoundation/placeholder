@@ -29,6 +29,7 @@
 #define ACTOR_ZK_PLONK_LOOKUP_CONSTRAINT_HPP
 
 #include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/constraint.hpp>
 
 namespace nil {
     namespace actor {
@@ -41,9 +42,14 @@ namespace nil {
                     using field_type = FieldType;
                     using variable_type = VariableType;
                     using term = math::term<VariableType>;
+                    using constraint_type = plonk_constraint<FieldType>;
 
-                    std::vector<math::term<VariableType>> lookup_input;
-                    std::vector<VariableType> lookup_value;
+                    std::size_t table_id;
+                    std::vector<constraint_type> lookup_input;
+
+                    bool operator== (const plonk_lookup_constraint &other) const {
+                        return table_id == other.table_id && lookup_input == other.lookup_input;
+                    }
                 };
             }    // namespace snark
         }        // namespace zk

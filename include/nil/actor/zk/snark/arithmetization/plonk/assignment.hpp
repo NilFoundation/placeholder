@@ -32,11 +32,12 @@
 #include <nil/actor/zk/snark/arithmetization/plonk/padding.hpp>
 
 namespace nil {
+
     namespace actor {
         namespace actor_blueprint {
             template<typename ArithmetizationType, std::size_t... BlueprintParams>
             class assignment;
-        }    // namespace blueprint
+        } // namespace actor_blueprint
 
         namespace zk {
             namespace snark {
@@ -56,11 +57,13 @@ namespace nil {
                     using witnesses_container_type = std::array<ColumnType, ArithmetizationParams::witness_columns>;
 
                 protected:
+
                     witnesses_container_type _witnesses;
 
                 public:
-                    plonk_private_table(witnesses_container_type witness_columns = {})
-                        : _witnesses(std::move(witness_columns)) {
+                    plonk_private_table(
+                        witnesses_container_type witness_columns = {}) :
+                        _witnesses(std::move(witness_columns)) {
                     }
 
                     std::uint32_t witnesses_amount() const {
@@ -90,6 +93,10 @@ namespace nil {
                         return witnesses_amount();
                     }
 
+                    bool operator==(plonk_private_table<FieldType, ArithmetizationParams, ColumnType> const &other) const {
+                        return _witnesses == other._witnesses;
+                    }
+
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
                         plonk_table<FieldType, ArithmetizationParams, ColumnType> &table);
 
@@ -99,8 +106,7 @@ namespace nil {
 
                 template<typename FieldType, typename ArithmetizationParams, typename ColumnType>
                 class plonk_public_table {
-                    public:
-
+                public:
                     using public_input_container_type = std::array<ColumnType, ArithmetizationParams::public_input_columns>;
                     using constant_container_type = std::array<ColumnType, ArithmetizationParams::constant_columns>;
                     using selector_container_type = std::array<ColumnType, ArithmetizationParams::selector_columns>;
@@ -191,6 +197,12 @@ namespace nil {
                                selectors_amount();
                     }
 
+                    bool operator==(plonk_public_table<FieldType, ArithmetizationParams, ColumnType> const &other) const {
+                        return _public_inputs == other._public_inputs &&
+                               _constants == other._constants &&
+                               _selectors == other._selectors;
+                    }
+
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
                         plonk_table<FieldType, ArithmetizationParams, ColumnType> &table);
 
@@ -201,19 +213,25 @@ namespace nil {
                 template<typename FieldType, typename ArithmetizationParams, typename ColumnType>
                 class plonk_table {
                 public:
-
+                    using field_type = FieldType;
+                    using arithmetization_params = ArithmetizationParams;
+                    using column_type = ColumnType;
                     using private_table_type = plonk_private_table<FieldType, ArithmetizationParams, ColumnType>;
                     using public_table_type = plonk_public_table<FieldType, ArithmetizationParams, ColumnType>;
+                    using witnesses_container_type = typename private_table_type::witnesses_container_type;
+                    using public_input_container_type = typename public_table_type::public_input_container_type;
+                    using constant_container_type = typename public_table_type::constant_container_type;
+                    using selector_container_type = typename public_table_type::selector_container_type;
 
                 protected:
                     private_table_type _private_table;
                     public_table_type _public_table;
 
                 public:
-                    plonk_table(private_table_type private_table = private_table_type(),
-                                public_table_type public_table = public_table_type()) :
-                        _private_table(std::move(private_table)),
-                        _public_table(std::move(public_table)) {
+                    plonk_table(private_table_type private_table = {},
+                                public_table_type public_table = {})
+                        : _private_table(std::move(private_table))
+                        , _public_table(std::move(public_table)) {
                     }
 
                     const ColumnType& witness(std::uint32_t index) const {
@@ -230,6 +248,22 @@ namespace nil {
 
                     const ColumnType& selector(std::uint32_t index) const {
                         return _public_table.selector(index);
+                    }
+
+                    const witnesses_container_type& witnesses() const {
+                        return _private_table.witnesses();
+                    }
+
+                    const public_input_container_type& public_inputs() const {
+                        return _public_table.public_inputs();
+                    }
+
+                    const constant_container_type& constants() const {
+                        return _public_table.constants();
+                    }
+
+                    const selector_container_type& selectors() const {
+                        return _public_table.selectors();
                     }
 
                     const ColumnType& operator[](std::uint32_t index) const {
@@ -309,6 +343,10 @@ namespace nil {
                         }
 
                         return rows_amount;
+                    }
+
+                    bool operator==(plonk_table<FieldType, ArithmetizationParams, ColumnType> const &other) const {
+                        return _private_table == other._private_table && _public_table == other._public_table;
                     }
 
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
