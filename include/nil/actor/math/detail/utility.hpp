@@ -37,16 +37,24 @@ namespace nil {
                 template<typename Func>
                 future<> block_execution(std::size_t elements_count, std::size_t smp_count, Func &&func) {
                     std::vector<future<>> fut;
+
+                    // We experimentally noticed, that when at least 4 cores are available, it's better to keep core #0 idle.
+                    bool use_core_0 = (smp_count < 4);
+
                     std::size_t cpu_usage = std::min(elements_count, smp_count);
-                    std::size_t element_per_cpu = elements_count / cpu_usage;
+
+                    if (!use_core_0 && elements_count >= smp_count) {
+                        --cpu_usage;
+                    }
+                    std::size_t begin = 0;
 
                     for (auto i = 0; i < cpu_usage; ++i) {
-                        auto begin = element_per_cpu * i;
-                        auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
-                        fut.emplace_back(smp::submit_to(i, [begin, end, func]() {
+                        auto end = begin + (elements_count - begin) / (cpu_usage - i);
+                        fut.emplace_back(smp::submit_to(i + (use_core_0 ? 0 : 1), [begin, end, func]() {
                             func(begin, end);
                             return make_ready_future<>();
                         }));
+                        begin = end;
                     }
 
                     when_all(fut.begin(), fut.end()).get();

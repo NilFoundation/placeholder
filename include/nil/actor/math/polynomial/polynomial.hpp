@@ -461,7 +461,7 @@ namespace nil {
                 }
 
                 polynomial& operator+=(const polynomial& other) {
-                    addition(*this, *this, other);
+                    addition(*this, *this, other).get();
                     return *this;
                 }
 
