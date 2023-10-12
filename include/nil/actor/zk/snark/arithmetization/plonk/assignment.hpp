@@ -86,7 +86,7 @@ namespace nil {
                     const ColumnType& operator[](std::uint32_t index) const {
                         if (index < ArithmetizationParams::witness_columns)
                             return _witnesses[index];
-                        throw std::out_of_range("Public table index out of range."); 
+                        throw std::out_of_range("Public table index out of range.");
                     }
 
                     constexpr std::uint32_t size() const {
@@ -99,6 +99,11 @@ namespace nil {
 
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
                         plonk_table<FieldType, ArithmetizationParams, ColumnType> &table);
+
+                    friend std::uint32_t zk_padding<FieldType, ArithmetizationParams, ColumnType>(
+                        plonk_table<FieldType, ArithmetizationParams, ColumnType> &table,
+                        typename nil::crypto3::random::algebraic_engine<FieldType> alg_rnd
+                    );
 
                     friend struct nil::actor::actor_blueprint::assignment<plonk_constraint_system<FieldType,
                         ArithmetizationParams>>;
@@ -178,6 +183,20 @@ namespace nil {
                         return _selectors;
                     }
 
+                    void fill_constant(std::uint32_t index, const ColumnType& column) {
+                        BOOST_ASSERT(index < constants_amount());
+                        BOOST_ASSERT(_constants[index].size() == 0);
+
+                        _constants[index] = column;
+                    }
+
+                    void fill_selector(std::uint32_t index, const ColumnType& column) {
+                        BOOST_ASSERT(index < selectors_amount());
+                        BOOST_ASSERT(_selectors[index].size() == 0);
+
+                        _selectors[index] = column;
+                    }
+
                     const ColumnType& operator[](std::uint32_t index) const {
                         if (index < public_inputs_amount())
                             return public_input(index);
@@ -188,7 +207,7 @@ namespace nil {
                         if (index < selectors_amount()) {
                             return selector(index);
                         }
-                        throw std::out_of_range("Public table index out of range."); 
+                        throw std::out_of_range("Public table index out of range.");
                     }
 
                     constexpr std::uint32_t size() const {
@@ -205,6 +224,11 @@ namespace nil {
 
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
                         plonk_table<FieldType, ArithmetizationParams, ColumnType> &table);
+
+                    friend std::uint32_t zk_padding<FieldType, ArithmetizationParams, ColumnType>(
+                        plonk_table<FieldType, ArithmetizationParams, ColumnType> &table,
+                        typename nil::crypto3::random::algebraic_engine<FieldType> alg_rnd
+                    );
 
                     friend struct nil::actor::actor_blueprint::assignment<plonk_constraint_system<FieldType,
                         ArithmetizationParams>>;
@@ -250,6 +274,14 @@ namespace nil {
                         return _public_table.selector(index);
                     }
 
+                    void fill_constant(std::uint32_t index, const ColumnType& column) {
+                        _public_table.fill_constant(index, column);
+                    }
+
+                    void fill_selector(std::uint32_t index, const ColumnType& column) {
+                        _public_table.fill_selector(index, column);
+                    }
+
                     const witnesses_container_type& witnesses() const {
                         return _private_table.witnesses();
                     }
@@ -272,7 +304,7 @@ namespace nil {
                         index -= _private_table.size();
                         if (index < _public_table.size())
                             return _public_table[index];
-                        throw std::out_of_range("Private table index out of range."); 
+                        throw std::out_of_range("Private table index out of range.");
                     }
 
                     const private_table_type& private_table() const {
@@ -351,6 +383,11 @@ namespace nil {
 
                     friend std::uint32_t basic_padding<FieldType, ArithmetizationParams, ColumnType>(
                         plonk_table &table);
+
+                    friend std::uint32_t zk_padding<FieldType, ArithmetizationParams, ColumnType>(
+                        plonk_table &table,
+                        typename nil::crypto3::random::algebraic_engine<FieldType> alg_rnd
+                    );
                 };
 
                 template<typename FieldType, typename ArithmetizationParams>
