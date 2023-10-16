@@ -517,6 +517,7 @@ namespace nil {
                     polynomial r, q;
                     // Can't pass *this to the following function call instead of q.
                     division(q, r, *this, other);
+                    *this = q;
                     return *this;
                 }
 
