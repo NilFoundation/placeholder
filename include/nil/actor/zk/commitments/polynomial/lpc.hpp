@@ -40,7 +40,6 @@
 #include <nil/actor/zk/commitments/batched_commitment.hpp>
 #include <nil/actor/zk/commitments/detail/polynomial/basic_fri.hpp>
 
-
 namespace nil {
     namespace actor {
         namespace zk {
