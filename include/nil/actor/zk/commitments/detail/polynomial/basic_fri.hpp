@@ -32,6 +32,7 @@
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 
+#include <nil/actor/math/detail/utility.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/polynomial_dfs.hpp>
 #include <nil/actor/math/polynomial/lagrange_interpolation.hpp>
@@ -46,6 +47,7 @@
 #include <nil/actor/zk/commitments/type_traits.hpp>
 #include <nil/actor/zk/commitments/detail/polynomial/fold_polynomial.hpp>
 #include <nil/actor/zk/commitments/detail/polynomial/proof_of_work.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/detail/placeholder_scoped_profiler.hpp>
 
 namespace nil {
     namespace actor {
@@ -344,12 +346,8 @@ namespace nil {
                           D,
                           const std::size_t fri_step
                 ) {
+                    PROFILE_PLACEHOLDER_SCOPE("Basic FRI precommit time");
 
-#ifdef ZK_PLACEHOLDER_PROFILING_ENABLED
-                    auto begin = std::chrono::high_resolution_clock::now();
-                    auto last = begin;
-                    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now() - last);
-#endif
                     for (int i = 0; i < poly.size(); ++i) {
                         if (poly[i].size() != D->size()) {
                             poly[i].resize(D->size()).get();
@@ -364,37 +362,44 @@ namespace nil {
                             leafs_number,
                             std::vector<std::uint8_t>(coset_size * FRI::field_element_type::length() * list_size));
 
-                    for (std::size_t x_index = 0; x_index < leafs_number; x_index++) {
-                        auto write_iter = y_data[x_index].begin();
-                        for (std::size_t polynom_index = 0; polynom_index < list_size; polynom_index++) {
-                            std::vector<std::array<std::size_t, FRI::m>> s_indices(coset_size / FRI::m);
-                            s_indices[0][0] = x_index;
-                            s_indices[0][1] = get_paired_index<FRI>(x_index, domain_size);
+                    math::detail::block_execution(
+                        leafs_number,
+                        smp::count,
+                        [coset_size, domain_size, list_size, &poly=std::as_const(poly), &y_data]
+                            (std::size_t begin, std::size_t end) {
+                            for (std::size_t x_index = begin; x_index < end; x_index++) {
+                                auto write_iter = y_data[x_index].begin();
+                                for (std::size_t polynom_index = 0; polynom_index < list_size; polynom_index++) {
+                                    std::vector<std::array<std::size_t, FRI::m>> s_indices(coset_size / FRI::m);
+                                    s_indices[0][0] = x_index;
+                                    s_indices[0][1] = get_paired_index<FRI>(x_index, domain_size);
 
-                            typename FRI::field_element_type y_val0(poly[polynom_index][s_indices[0][0]]);
-                            y_val0.write(write_iter, FRI::field_element_type::length());
-                            typename FRI::field_element_type y_val1(poly[polynom_index][s_indices[0][1]]);
-                            y_val1.write(write_iter, FRI::field_element_type::length());
-
-                            std::size_t base_index = domain_size / (FRI::m * FRI::m);
-                            std::size_t prev_half_size = 1;
-                            std::size_t i = 1;
-                            while (i < coset_size / FRI::m) {
-                                for (std::size_t j = 0; j < prev_half_size; j++) {
-                                    s_indices[i][0] = (base_index + s_indices[j][0]) % domain_size;
-                                    s_indices[i][1] = get_paired_index<FRI>(s_indices[i][0], domain_size);
-                                    typename FRI::field_element_type y_val0(poly[polynom_index][s_indices[i][0]]);
+                                    typename FRI::field_element_type y_val0(poly[polynom_index][s_indices[0][0]]);
                                     y_val0.write(write_iter, FRI::field_element_type::length());
-                                    typename FRI::field_element_type y_val1(poly[polynom_index][s_indices[i][1]]);
+                                    typename FRI::field_element_type y_val1(poly[polynom_index][s_indices[0][1]]);
                                     y_val1.write(write_iter, FRI::field_element_type::length());
 
-                                    i++;
+                                    std::size_t base_index = domain_size / (FRI::m * FRI::m);
+                                    std::size_t prev_half_size = 1;
+                                    std::size_t i = 1;
+                                    while (i < coset_size / FRI::m) {
+                                        for (std::size_t j = 0; j < prev_half_size; j++) {
+                                            s_indices[i][0] = (base_index + s_indices[j][0]) % domain_size;
+                                            s_indices[i][1] = get_paired_index<FRI>(s_indices[i][0], domain_size);
+                                            typename FRI::field_element_type y_val0(poly[polynom_index][s_indices[i][0]]);
+                                            y_val0.write(write_iter, FRI::field_element_type::length());
+                                            typename FRI::field_element_type y_val1(poly[polynom_index][s_indices[i][1]]);
+                                            y_val1.write(write_iter, FRI::field_element_type::length());
+
+                                            i++;
+                                        }
+                                        base_index /= FRI::m;
+                                        prev_half_size <<= 1;
+                                    }
                                 }
-                                base_index /= FRI::m;
-                                prev_half_size <<= 1;
                             }
                         }
-                    }
+                    ).get();
 
                     return containers::make_merkle_tree<typename FRI::merkle_tree_hash_type, FRI::m>(y_data.begin(),
                                                                                                      y_data.end());
@@ -595,12 +600,10 @@ namespace nil {
                     BOOST_ASSERT(check_step_list<FRI>(fri_params));
                     // TODO: add necessary checks
                     //BOOST_ASSERT(check_initial_precommitment<FRI>(precommitments, fri_params));
-
-                    // Think about resizing polynomials. Problems with const.
                     if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>, PolynomialType>::value) {
-                        for( auto const &it:g ){
+                        for(auto const &it : g) {
                             auto k = it.first;
-                            for (int i = 0; i < g[k].size(); ++i ){
+                            for (int i = 0; i < g[k].size(); ++i ) {
                                 // If LPC works properly this if is never executed.
                                 if (g[k][i].size() != fri_params.D[0]->size()) {
                                     g[k][i].resize(fri_params.D[0]->size()).get();
@@ -638,6 +641,7 @@ namespace nil {
                         if (i != fri_params.step_list.size() - 1)
                             precommitment = precommit<FRI>(f, fri_params.D[t], fri_params.step_list[i + 1]).get();
                     }
+
                     fs.push_back(f);
                     math::polynomial<typename FRI::field_type::value_type> final_polynomial;
                     if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>, PolynomialType>::value) {
@@ -647,6 +651,7 @@ namespace nil {
                     }
 
                     typename FRI::grinding_type::output_type proof_of_work;
+
                     // Grinding
                     if( FRI::use_grinding ){
                         proof.proof_of_work = FRI::grinding_type::generate(transcript);

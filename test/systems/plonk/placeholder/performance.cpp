@@ -183,6 +183,8 @@ public:
 
         compute_columns_rotations();
     
+std::cout << "rows_amount = " << table_description.rows_amount << std::endl;
+
         std::size_t table_rows_log = std::ceil(std::log2(table_description.rows_amount));
         typename lpc_type::fri_type::params_type fri_params = 
             create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
@@ -326,16 +328,16 @@ ACTOR_FIXTURE_TEST_CASE(placeholder_merkle_tree_poseidon_test, placeholder_perfo
 
     run_placeholder_perf_test(
         "Merkle tree poseidon performance test",
-        "../libs/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_circuit.crct",
-        "../libs/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_assignment.tbl"
+        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_circuit.crct",
+        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_assignment.tbl"
     );
 }
 
 ACTOR_FIXTURE_TEST_CASE(placeholder_many_hashes_test, placeholder_performance_test<2>) {
     run_placeholder_perf_test(
         "Many hashes performance test",
-        "../libs/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_circuit.crct",
-        "../libs/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_assignment.tbl"
+        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_circuit.crct",
+        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_assignment.tbl"
     );
 }
 

@@ -201,9 +201,10 @@ namespace nil {
 
                         generate_evaluation_points();
 
-                        _proof.eval_proof.eval_proof = _commitment_scheme.proof_eval(transcript);                        
-
-                        std::size_t permutation_size = preprocessed_public_data.permutation_polynomials.size();
+                        {
+                            PROFILE_PLACEHOLDER_SCOPE("commitment scheme proof eval time."); 
+                            _proof.eval_proof.eval_proof = _commitment_scheme.proof_eval(transcript);
+                        }
 
                         return _proof;
                     }
