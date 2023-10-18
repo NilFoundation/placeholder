@@ -393,13 +393,6 @@ namespace nil {
                         }
                     }
                     return res;
-
-//                    FieldValueType result = 0;
-//                    auto end = this->end();
-//                    while (end != this->begin()) {
-//                        result = result * value + *--end;
-//                    }
-//                    return result;
                 }
 
                 /**
@@ -499,7 +492,7 @@ namespace nil {
                 }
 
                 polynomial& operator*=(const polynomial& other) {
-                    multiplication(*this, *this, other);
+                    multiplication(*this, *this, other).get();
                     return *this;
                 }
                 /**

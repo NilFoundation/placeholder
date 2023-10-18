@@ -121,7 +121,7 @@ namespace nil {
 
                     detail::block_execution(this->m, smp::count, [&a, &T](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
-                            a[i] = a[i] * T[i].inversed();
+                            a[i] *= T[i].inversed();
                         }
                     }).get();
                     return make_ready_future<>();
@@ -161,7 +161,7 @@ namespace nil {
 
                     detail::block_execution(this->m, smp::count, [&a, this](std::size_t begin, std::size_t end) {
                         for (std::size_t i = begin; i < end; i++) {
-                            a[i] = a[i] * geometric_triangular_sequence[i].inversed();
+                            a[i] *= geometric_triangular_sequence[i].inversed();
                         }
                     }).get();
 
@@ -276,7 +276,7 @@ namespace nil {
                         l[i] = polynomial<field_value_type>({-geometric_sequence[i], field_value_type::one()});
                         g[i] = field_value_type::one() - geometric_sequence[i];
 
-                        l_vanish = l_vanish * l[i];
+                        l_vanish *= l[i];
                         g_vanish *= g[i];
                     }
 
@@ -303,7 +303,7 @@ namespace nil {
                             result[i] = result[i] + t_powers_begin[j] * l[i][j];
                         }
 
-                        result[i] = result[i] * (r_i * g_i[i]);
+                        result[i] *= r_i * g_i[i];
                         r_i *= r;
                     }
 
@@ -336,7 +336,7 @@ namespace nil {
 
                     polynomial<field_value_type> z({field_value_type::one()});
                     for (std::size_t i = 0; i < this->m; i++) {
-                        z = z * polynomial<field_value_type>({-geometric_sequence[i], field_value_type::one()});
+                        z *= polynomial<field_value_type>({-geometric_sequence[i], field_value_type::one()});
                     }
                     return z;
                 }

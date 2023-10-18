@@ -65,11 +65,18 @@ namespace nil {
                         throw std::invalid_argument("expected n == (1u << logn)");
 
                     /* swapping in place (from Storer's book) */
-                    for (std::size_t k = 0; k < n; ++k) {
-                        const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
-                        if (k < rk)
-                            std::swap(a[k], a[rk]);
-                    }
+                    // We can parallelize this look, since k and rk are pairs, they will never intersect.
+                    detail::block_execution(
+                        n,
+                        smp::count,
+                        [logn, &a](std::size_t begin, std::size_t end) {
+                            for (std::size_t k = begin; k < end; k++) {
+                                const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
+                                if (k < rk)
+                                    std::swap(a[k], a[rk]);
+                            }
+                        }
+                    ).get();
 
                     std::size_t m = 1;    // invariant: m = 2^{s-1}
                     field_value_type w_m;
@@ -79,46 +86,33 @@ namespace nil {
                         w_m = omega.pow(n / (2 * m));
                         size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
 
-                        if (m > count_k) {
-                            for (std::size_t k = 0; k < n; k += 2 * m) {
-                                // We can parallelize here, because for each range, we touch only 
-                                // a[k + j] and a[k + j + m], and they are never equal for different values of j.
-                                detail::block_execution(
-                                    m,
-                                    smp::count,
-                                    [&a, k, m, &w_m](std::size_t begin, std::size_t end) {
-                                        field_value_type w = w_m.pow(begin);
-                                        for (std::size_t j = begin; j < end; j++) {
-                                            const value_type t = a[k + j + m] * w;
-                                            a[k + j + m] = a[k + j] - t;
-                                            a[k + j] += t;
-                                            w *= w_m;
-                                        }
-                                    }
-                                ).get();
-                            }
-                        } else {
-                            // Here we can parallelize on the cycle with 'k', because for each value of k
-                            // the ranges of array 'a' used do not intersect.
-                            detail::block_execution(
-                                count_k,
-                                smp::count,
-                                [&a, m, &w_m](std::size_t begin, std::size_t end) {
-                                    for (std::size_t k_index = begin; k_index < end; k_index++) {
-                                        field_value_type w = field_value_type::one();
-                                        std::size_t k = k_index * 2 * m;
-                                        size_t w_power = 0;
-                                        for (std::size_t j = 0; j < m; ++j) {
-                                            const value_type t = a[k + j + m] * w;
-                                            a[k + j + m] = a[k + j] - t;
-                                            a[k + j] += t;
-                                            w *= w_m;
-                                        }
+                        // Here we can parallelize on the both cycles with 'k' and 'm', because for each value of k and m
+                        // the ranges of array 'a' used do not intersect. Think of these 2 cycles as 1.
+                        detail::block_execution(
+                            m * count_k,
+                            smp::count,
+                            [&a, m, count_k, &w_m](std::size_t begin, std::size_t end) {
+                                size_t current_index = begin;
+                                size_t start_k = begin / m;
+                                for (std::size_t k_index = start_k; k_index < count_k; ++k_index) {
+                                    std::size_t k = k_index * 2 * m;
+
+                                    std::size_t j = start_k == k_index ? begin % m: 0;
+                                    field_value_type w = w_m.pow(j);
+
+                                    for (; j < m; ++j) {
+                                        const value_type t = a[k + j + m] * w;
+                                        a[k + j + m] = a[k + j] - t;
+                                        a[k + j] += t;
+                                        w *= w_m;
+
+                                        ++current_index;
+                                        if (current_index == end)
+                                            return;
                                     }
                                 }
-                            ).get();
-                        }
-
+                            }
+                        ).get();
                         m *= 2;
                     }
                     return make_ready_future<>();
