@@ -186,7 +186,7 @@ public:
 
         compute_columns_rotations();
 
-std::cout << "rows_amount = " << table_description.rows_amount << std::endl;
+        std::cout << "rows_amount = " << table_description.rows_amount << std::endl;
 
         std::size_t table_rows_log = std::ceil(std::log2(table_description.rows_amount));
         typename lpc_type::fri_type::params_type fri_params =

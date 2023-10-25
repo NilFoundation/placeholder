@@ -35,6 +35,8 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
+#include <nil/crypto3/random/algebraic_engine.hpp>
+
 #include <nil/actor/zk/snark/arithmetization/plonk/constraint.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/params.hpp>
