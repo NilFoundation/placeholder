@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE placeholder_performance_test
+// #define BOOST_TEST_MODULE placeholder_performance_test
 
 // NOTE: Most of the following code is taken from main.cpp of transpiler.
 
@@ -35,9 +35,10 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
+
+//#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>

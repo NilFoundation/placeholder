@@ -204,7 +204,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     fri_params.max_degree = d - 1;
     fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
 
-    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -225,7 +225,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
@@ -303,7 +303,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
     fri_params.max_degree = d - 1;
     fri_params.step_list = generate_random_step_list(r, 5, test_global_rnd_engine);
 
-    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -320,7 +320,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
@@ -396,7 +396,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     fri_params.max_degree = d - 1;
     fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
 
-    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -414,7 +414,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
@@ -489,7 +489,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
     fri_params.max_degree = d - 1;
     fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
 
-    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -508,7 +508,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
 
     // Generate evaluation points. Generate points outside of the basic domain
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(2, point);
     lpc_scheme_prover.append_eval_point(3, point);
@@ -541,7 +541,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     // Setup types.
     typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
-    typedef hashes::keccak_1600<256> merkle_hash_type;
+    typedef nil::crypto3::hashes::keccak_1600<256> merkle_hash_type;
     typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
     typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
@@ -581,7 +581,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     fri_params.max_degree = d - 1;
     fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
     
-    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -602,7 +602,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
