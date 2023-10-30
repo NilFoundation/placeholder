@@ -602,7 +602,6 @@ namespace nil {
                     auto right_side_pairing = crypto3::algebra::pair_reduced<typename KZG::curve_type>(proof, right);
 
                     return left_side_pairing == right_side_pairing;
-                    // return true;
                 }
             } // namespace algorithms
 
