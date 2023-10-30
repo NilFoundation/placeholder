@@ -65,7 +65,7 @@ namespace nil {
                     using poly_type = PolynomialType;
                     using lpc = LPCScheme;
                     using eval_storage_type = typename LPCScheme::eval_storage_type;
-                    using preprocessed_data_type = std::map<std::size_t, std::vector<typename field_type::value_type>>;
+                    using preprocessed_data_type = std::map<std::size_t, std::vector<value_type>>;
 
                 private:
                     std::map<std::size_t, precommitment_type> _trees;
