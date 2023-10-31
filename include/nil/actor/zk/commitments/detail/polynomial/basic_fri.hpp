@@ -320,7 +320,8 @@ namespace nil {
                                 bool>::type = true>
                 static future<typename FRI::precommitment_type>
                 precommit(const math::polynomial<typename FRI::field_type::value_type> &f,
-                          std::shared_ptr<math::evaluation_domain<typename FRI::field_type>> D,
+                          std::shared_ptr<math::evaluation_domain<typename FRI::field_type>>
+                          D,
                           const std::size_t fri_step) {
 
                     math::polynomial_dfs<typename FRI::field_type::value_type> f_dfs;
@@ -574,7 +575,7 @@ namespace nil {
 
                     return correct_order_idx;
                 }
-                 
+
                 //template<typename FRI, typename PolynomialType>
 
                 template<typename FRI, typename PolynomialType,
@@ -587,7 +588,7 @@ namespace nil {
                                             FRI::use_grinding, typename FRI::grinding_type>,
                                     FRI>::value,
                             bool>::type = true>
-                static typename FRI::proof_type proof_eval( 
+                static typename FRI::proof_type proof_eval(
                     std::map<std::size_t, std::vector<PolynomialType>> &g,
                     const PolynomialType combined_Q,
                     const std::map<std::size_t, typename FRI::precommitment_type> &precommitments,
@@ -596,7 +597,7 @@ namespace nil {
                     typename FRI::transcript_type &transcript
                 ) {
                     typename FRI::proof_type proof;
-                    
+
                     BOOST_ASSERT(check_step_list<FRI>(fri_params));
                     // TODO: add necessary checks
                     //BOOST_ASSERT(check_initial_precommitment<FRI>(precommitments, fri_params));
@@ -775,7 +776,7 @@ namespace nil {
                     BOOST_ASSERT(combined_U.size() == denominators.size());
                     std::size_t evals_num = combined_U.size();
                     // TODO: Add size correcness checks.
-                
+
                     if (proof.final_polynomial.degree() >
                         std::pow(2, std::log2(fri_params.max_degree + 1) - fri_params.r + 1) - 1) {
                         return false;

@@ -40,15 +40,17 @@
 #include <nil/actor/zk/commitments/batched_commitment.hpp>
 #include <nil/actor/zk/commitments/detail/polynomial/basic_fri.hpp>
 
-
 namespace nil {
     namespace actor {
         namespace zk {
-            namespace commitments { 
+            namespace commitments {
 
                 // Placeholder-friendly class.
-                template<typename LPCScheme, typename PolynomialType = typename math::polynomial_dfs<typename LPCScheme::params_type::field_type::value_type>>
-                class lpc_commitment_scheme:public polys_evaluator<typename LPCScheme::params_type, typename LPCScheme::commitment_type, PolynomialType>{
+                template<typename LPCScheme, typename PolynomialType = typename math::polynomial_dfs<
+                    typename LPCScheme::params_type::field_type::value_type>>
+                class lpc_commitment_scheme : public polys_evaluator<typename LPCScheme::params_type,
+                    typename LPCScheme::commitment_type, PolynomialType>{
+
                 public:
                     using field_type = typename LPCScheme::field_type;
                     using value_type = typename field_type::value_type;
@@ -63,22 +65,40 @@ namespace nil {
                     using poly_type = PolynomialType;
                     using lpc = LPCScheme;
                     using eval_storage_type = typename LPCScheme::eval_storage_type;
+                    using preprocessed_data_type = std::map<std::size_t, std::vector<value_type>>;
 
                 private:
                     std::map<std::size_t, precommitment_type> _trees;
                     typename fri_type::params_type _fri_params;
                     value_type _etha;
                     std::map<std::size_t, bool> _batch_fixed;
+                    preprocessed_data_type _fixed_polys_values;
+
                 public:
-                    lpc_commitment_scheme(const typename fri_type::params_type &fri_params){
-                        _fri_params = fri_params;
+                    lpc_commitment_scheme(const typename fri_type::params_type &fri_params)
+                        : _fri_params(fri_params), _etha(0) {
                     }
 
-                    void setup(transcript_type& transcript){
+                    preprocessed_data_type preprocess(transcript_type& transcript) const{
+                        auto etha = transcript.template challenge<field_type>();
+
+                        preprocessed_data_type result;
+                        for(auto const&[index, fixed]: _batch_fixed) {
+                            if(!fixed) continue;
+                            result[index] = {};
+                            for (const auto& poly: this->_polys.at(index)){
+                                result[index].push_back(poly.evaluate(etha));
+                            }
+                        }
+                        return result;
+                    }
+
+                    void setup(transcript_type& transcript, const preprocessed_data_type &preprocessed_data) {
                         _etha = transcript.template challenge<field_type>();
+                        _fixed_polys_values = preprocessed_data;
                     }
 
-                    commitment_type commit(std::size_t index){
+                    commitment_type commit(std::size_t index) {
                         this->state_commited(index);
                         _trees[index] = nil::actor::zk::algorithms::precommit<fri_type>(
                             this->_polys[index], _fri_params.D[0], _fri_params.step_list.front()).get();
@@ -86,12 +106,11 @@ namespace nil {
                     }
 
                     // Should be done after commitment.
-                    void mark_batch_as_fixed(std::size_t index){
+                    void mark_batch_as_fixed(std::size_t index) {
                         _batch_fixed[index] = true;
                     }
 
-                    proof_type proof_eval(transcript_type &transcript){
-
+                    proof_type proof_eval(transcript_type &transcript) {
                         for(auto const& it: _batch_fixed) {
                             if(it.second){
                                 this->append_eval_point(it.first, _etha);
@@ -103,7 +122,7 @@ namespace nil {
                         BOOST_ASSERT(this->_points.size() == this->_polys.size());
                         BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
 
-                        for( auto const&it: this->_trees){
+                        for(auto const& it: this->_trees) {
                             transcript(it.second.root());
                         }
 
@@ -126,6 +145,7 @@ namespace nil {
                                     BOOST_ASSERT(points.size() == this->_z.get_poly_points_number(b_ind, poly_ind));
 
                                     std::vector<math::polynomial<value_type>> V_multipliers = this->get_V_multipliers(points);
+
                                     math::polynomial<value_type> U = this->get_U(b_ind, poly_ind);
 
                                     math::polynomial<value_type> g_normal(this->_polys[b_ind][poly_ind].coefficients());
@@ -149,13 +169,15 @@ namespace nil {
                             }
                         } else {
                             bool first = true;
+
                             // prepare U and V
-                            for(auto const &it: this->_polys){
+                            for(auto const &it: this->_polys) {
                                 auto b_ind = it.first;
+
                                 BOOST_ASSERT(this->_points[b_ind].size() == this->_polys[b_ind].size());
                                 BOOST_ASSERT(this->_points[b_ind].size() == this->_z.get_batch_size(b_ind));
-                                for( std::size_t poly_ind = 0; poly_ind < this->_polys[b_ind].size(); poly_ind++){
 
+                                for(std::size_t poly_ind = 0; poly_ind < this->_polys[b_ind].size(); poly_ind++) {
                                     // All evaluation points are filled successfully.
                                     const auto& points = this->_points[b_ind][poly_ind];
                                     BOOST_ASSERT(points.size() == this->_z.get_poly_points_number(b_ind, poly_ind));
@@ -183,7 +205,7 @@ namespace nil {
 
                         precommitment_type combined_Q_precommitment = nil::actor::zk::algorithms::precommit<fri_type>(
                             combined_Q,
-                            _fri_params.D[0], 
+                            _fri_params.D[0],
                             _fri_params.step_list.front()
                         ).get();
 
@@ -191,10 +213,10 @@ namespace nil {
                             fri_type, poly_type
                         >(
                             this->_polys,
-                            combined_Q, 
+                            combined_Q,
                             this->_trees,
-                            combined_Q_precommitment, 
-                            this->_fri_params, 
+                            combined_Q_precommitment,
+                            this->_fri_params,
                             transcript
                         );
                         return proof_type({this->_z, fri_proof});
@@ -205,20 +227,24 @@ namespace nil {
                         const std::map<std::size_t, commitment_type> &commitments,
                         transcript_type &transcript
                     ) {
-                        for( auto const&it: _batch_fixed){
-                            if(it.second){
-                                this->append_eval_point(it.first, _etha);
+                        for (auto const&[b_ind, fixed]: _batch_fixed) {
+                            if(!fixed) continue;
+                            this->append_eval_point(b_ind, _etha);
+                            for( std::size_t i = 0; i < proof.z.get_batch_size(b_ind); i++) {
+                                if(this->_fixed_polys_values[b_ind][i] != proof.z.get(b_ind, i, proof.z.get_poly_points_number(b_ind, i) - 1)) {
+                                    return false;
+                                }
                             }
                         }
+
                         this->_z = proof.z;
-                        for( auto const &it: commitments){
+                        for (auto const &it: commitments) {
                             transcript(commitments.at(it.first));
                         }
 
+                        // List of unique eval points set. [id=>points]
                         auto unique_points = this->get_unique_points_list();
                         // Point identifier for each polynomial. poly=>id
-
-                        // List of unique eval points set. [id=>points]
                         typename std::map<std::size_t, std::vector<std::size_t>> eval_map = this->get_eval_map(unique_points);
                         // combined U for each polynomials with id eval points. id=>eval_points.
                         typename std::vector<math::polynomial<value_type>> combined_U;
@@ -231,7 +257,7 @@ namespace nil {
                         denominators.resize(unique_points.size());
 
                         // For each eval_point compute combined_U
-                        for(std::size_t point_index = 0; point_index < unique_points.size(); point_index++) {
+                        for (std::size_t point_index = 0; point_index < unique_points.size(); point_index++) {
                             // Compute V
                             denominators[point_index] = this->get_V(unique_points[point_index]);
                             combined_U[point_index] = {0};
@@ -240,7 +266,6 @@ namespace nil {
                                 auto k = it.first;
                                 for (std::size_t i = 0; i < proof.z.get_batch_size(k); i++) {
                                     combined_U[point_index] *= theta;
-
                                     if (eval_map[k][i] == point_index) {
                                         combined_U[point_index] += this->get_U(k, i);
                                     }
@@ -250,7 +275,7 @@ namespace nil {
 
                         if (!nil::actor::zk::algorithms::verify_eval<fri_type>(
                             proof.fri_proof,
-                            _fri_params, 
+                            _fri_params,
                             commitments,
                             theta,
                             eval_map,
@@ -260,6 +285,7 @@ namespace nil {
                         )) {
                             return false;
                         }
+
                         return true;
                     }
 
@@ -274,7 +300,7 @@ namespace nil {
                         params.put("m", fri_type::m);
                         params.put("lambda", fri_type::lambda);
                         params.put("max_degree", _fri_params.max_degree);
-                        
+
                         boost::property_tree::ptree step_list_node;
                         for( std::size_t j = 0; j < _fri_params.step_list.size(); j++){
                             boost::property_tree::ptree step_node;
@@ -336,10 +362,10 @@ namespace nil {
                     typename LPCParams::grinding_type
                 > {
                     using fri_type = typename detail::basic_batched_fri<
-                        FieldType, 
+                        FieldType,
                         typename LPCParams::merkle_hash_type,
                         typename LPCParams::transcript_hash_type,
-                        LPCParams::lambda, 
+                        LPCParams::lambda,
                         LPCParams::m,
                         LPCParams::use_grinding,
                         typename LPCParams::grinding_type
