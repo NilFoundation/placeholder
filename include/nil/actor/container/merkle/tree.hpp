@@ -49,8 +49,7 @@ namespace nil {
     namespace actor {
         namespace containers {
             namespace detail {
-
-                template<typename T, std::size_t Arity, typename LeafIterator>
+                template<typename T, std::size_t Arity, typename LeafIterator, std::enable_if_t<!crypto3::hashes::is_poseidon<typename T::hash_type>::value, bool> = true>
                 nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first,
                                                                                               LeafIterator last) {
                     typedef T node_type;
@@ -116,6 +115,82 @@ namespace nil {
                     }
                     return *ret_p;
                 }
+
+                template<
+                    typename T, std::size_t Arity, typename LeafIterator,
+                    std::enable_if_t<crypto3::hashes::is_poseidon<typename T::hash_type>::value, bool> = true
+                >
+                nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first,
+                                                                                              LeafIterator last) {
+//                    We can compare it with one-thread version with multi-thread
+//                    nil::crypto3::containers::detail::make_merkle_tree<T, Arity, LeafIterator>(first, last);
+
+                    typedef T node_type;
+                    typedef typename node_type::hash_type hash_type;
+                    typedef typename node_type::value_type value_type;
+
+                    std::size_t number_leaves = std::distance(first, last);
+                    nil::crypto3::containers::detail::merkle_tree_impl<T, Arity> ret(number_leaves);
+                    std::size_t core_count = nil::actor::smp::count;
+                    ret.resize(ret.complete_size());
+
+                    auto ret_p = make_foreign(&ret);
+                    std::size_t parallels = std::min(core_count-1, number_leaves);
+                    std::vector<nil::actor::future<>> fut;
+                    for (auto i = 0; i < parallels; ++i) {
+                        auto begin = i * (number_leaves / parallels);
+                        auto end = (i + 1) * (number_leaves / parallels);
+                        if (i == parallels - 1) {
+                            end = number_leaves;
+                        }
+                        fut.emplace_back(nil::actor::smp::submit_to(i+1, [begin, end, first, p = ret_p.get()]() {
+
+                            auto itr = first;
+                            for (auto i = begin; i < end; ++i) {
+                                auto leaf = *itr;
+                                (*p)[i] = (value_type)nil::crypto3::containers::detail::generate_poseidon_leaf_hash<hash_type>(leaf);
+                                itr++;
+                            }
+                            return nil::actor::make_ready_future<>();
+                        }));
+                        first += number_leaves / parallels;
+                    }
+                    nil::actor::when_all(fut.begin(), fut.end()).get();
+
+                    std::size_t row_size = ret.leaves() / Arity;
+                    typename nil::crypto3::containers::detail::merkle_tree_impl<T, Arity>::iterator it = ret.begin();
+                    std::size_t current_pos = number_leaves;
+                    for (size_t row_number = 1; row_number < ret.row_count(); ++row_number, row_size /= Arity) {
+                        fut.clear();
+                        parallels = std::min(core_count-1, row_size);
+                        std::size_t node_per_shard = row_size / parallels;
+
+                        for (std::size_t c = 0; c < parallels; ++c) {
+                            auto begin_row = node_per_shard * c;
+                            auto end_row = node_per_shard * (c + 1);
+                            if (c == parallels - 1) {
+                                end_row = row_size;
+                            }
+                            auto it_c = it + node_per_shard * c * Arity;
+
+                            fut.push_back(
+                                nil::actor::smp::submit_to(c+1, [begin_row, end_row, it_c, current_pos, p = ret_p.get()] {
+                                    auto index_pos = current_pos;
+                                    for (size_t i = 0; i < end_row - begin_row; ++i, ++index_pos) {
+                                        (*p)[index_pos] = nil::crypto3::containers::detail::generate_poseidon_hash<hash_type>(
+                                            *(it_c + i * Arity), *(it_c + i * Arity + 1));
+                                    }
+                                    return nil::actor::make_ready_future<>();
+                                }));
+                            current_pos += end_row - begin_row;
+                        }
+
+                        it += Arity * row_size;
+
+                        nil::actor::when_all(fut.begin(), fut.end()).get();
+                    }
+                    return *ret_p;
+                }
             }    // namespace detail
 
             template<typename T, std::size_t Arity, typename LeafIterator>
@@ -126,7 +201,6 @@ namespace nil {
                                               T>::type,
                     Arity>(first, last));
             }
-
         }    // namespace containers
     }        // namespace actor
 }    // namespace nil
