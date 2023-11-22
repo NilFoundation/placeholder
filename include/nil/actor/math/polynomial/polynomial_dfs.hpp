@@ -944,25 +944,20 @@ namespace nil {
     }        // namespace actor
 }    // namespace nil
 
-namespace std {
 
-    // As our operator== returns false for polynomials with different sizes, the same will happen here,
-    // resized polynomial will have a different hash from the initial one.
-    template<typename FieldValueType, typename Allocator>
-    struct std::hash<nil::actor::math::polynomial_dfs<FieldValueType, Allocator>>
-    {
-        std::hash<FieldValueType> value_hasher;
+// As our operator== returns false for polynomials with different sizes, the same will happen here,
+// resized polynomial will have a different hash from the initial one.
+template<typename FieldValueType, typename Allocator>
+struct std::hash<nil::actor::math::polynomial_dfs<FieldValueType, Allocator>> {
+    std::hash<FieldValueType> value_hasher;
 
-        std::size_t operator()(const nil::actor::math::polynomial_dfs<FieldValueType, Allocator>& poly) const
-        {
-            std::size_t result = poly.degree();
-            for (const auto& val: poly) {
-                boost::hash_combine(result, value_hasher(val));
-            }
-            return result;
+    std::size_t operator()(const nil::actor::math::polynomial_dfs<FieldValueType, Allocator>& poly) const {
+        std::size_t result = poly.degree();
+        for (const auto& val: poly) {
+            boost::hash_combine(result, value_hasher(val));
         }
-    };
-
-} // namespace std
+        return result;
+    }
+};
 
 #endif    // ACTOR_MATH_POLYNOMIAL_POLYNOM_DFS_HPP
