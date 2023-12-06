@@ -196,13 +196,13 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
         math::calculate_domain_set<FieldType>(extended_log, r).get();
 
-    typename fri_type::params_type fri_params;
-
     // Setup params
-    fri_params.r = r;
-    fri_params.D = D;
-    fri_params.max_degree = d - 1;
-    fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
+    typename fri_type::params_type fri_params(
+        d - 1, // max_degree
+        D,
+        generate_random_step_list(r, 1, test_global_rnd_engine),
+        2 //expand_factor
+    );
 
     using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
@@ -295,13 +295,14 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
         math::calculate_domain_set<FieldType>(extended_log, r).get();
 
     typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, lambda, m> fri_type;
-    typename fri_type::params_type fri_params;
 
     // Setup params
-    fri_params.r = r;
-    fri_params.D = D;
-    fri_params.max_degree = d - 1;
-    fri_params.step_list = generate_random_step_list(r, 5, test_global_rnd_engine);
+    typename fri_type::params_type fri_params(
+        d - 1, // max_degree
+        D,
+        generate_random_step_list(r, 5, test_global_rnd_engine),
+        2 //expand_factor
+    );
 
     using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
@@ -389,12 +390,13 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
         math::calculate_domain_set<FieldType>(extended_log, r+1).get();
 
-    typename fri_type::params_type fri_params;
-
-    fri_params.r = r;
-    fri_params.D = D;
-    fri_params.max_degree = d - 1;
-    fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
+    // Setup params
+    typename fri_type::params_type fri_params(
+        d - 1, // max_degree
+        D,
+        generate_random_step_list(r, 1, test_global_rnd_engine),
+        2 //expand_factor
+    );
 
     using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
@@ -481,13 +483,13 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
         math::calculate_domain_set<FieldType>(extended_log, r).get();
 
-    typename fri_type::params_type fri_params;
-
     // Setup params
-    fri_params.r = r;
-    fri_params.D = D;
-    fri_params.max_degree = d - 1;
-    fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
+    typename fri_type::params_type fri_params(
+        d - 1, // max_degree
+        D,
+        generate_random_step_list(r, 1, test_global_rnd_engine),
+        2 //expand_factor
+    );
 
     using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
@@ -573,14 +575,14 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
         math::calculate_domain_set<FieldType>(extended_log, r).get();
 
-    typename fri_type::params_type fri_params;
-
     // Setup params
-    fri_params.r = r;
-    fri_params.D = D;
-    fri_params.max_degree = d - 1;
-    fri_params.step_list = generate_random_step_list(r, 1, test_global_rnd_engine);
-    
+    typename fri_type::params_type fri_params(
+        d - 1, // max_degree
+        D,
+        generate_random_step_list(r, 1, test_global_rnd_engine),
+        2 //expand_factor
+    );
+
     using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);

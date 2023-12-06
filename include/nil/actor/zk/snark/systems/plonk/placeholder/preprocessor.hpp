@@ -50,6 +50,7 @@
 #include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/detail/column_polynomial.hpp>
 #include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
+#include <nil/actor/zk/snark/systems/plonk/placeholder/detail/transcript_initialization_context.hpp>
 
 namespace nil {
     namespace actor {
@@ -81,7 +82,7 @@ namespace nil {
                             }
                         };
 
-                        struct verification_key{
+                        struct verification_key {
                             typename transcript_hash_type::digest_type constraint_system_hash;
                             commitment_type                            fixed_values_commitment;
 
@@ -441,22 +442,10 @@ namespace nil {
                         std::size_t N_rows = table_description.rows_amount;
                         std::size_t usable_rows = table_description.usable_rows_amount;
 
-                        std::uint32_t max_gates_degree = 0;
-                        math::expression_max_degree_visitor<variable_type> gates_visitor;
-                        for (const auto& gate : constraint_system.gates()) {
-                            for (const auto& constr : gate.constraints) {
-                                max_gates_degree = std::max(max_gates_degree, gates_visitor.compute_max_degree(constr));
-                            }
-                        }
-                        math::expression_max_degree_visitor<variable_type> lookup_visitor;
-                        for (const auto& gate : constraint_system.lookup_gates()) {
-                            for (const auto& constr : gate.constraints) {
-                                for (const auto& li : constr.lookup_input) {
-                                    max_gates_degree = std::max(max_gates_degree,
-                                        lookup_visitor.compute_max_degree(li));
-                                }
-                            }
-                        }
+                        std::uint32_t max_gates_degree = std::max(
+                            constraint_system.max_gates_degree(),
+                            constraint_system.max_lookup_gates_degree()
+                        );
                         assert(max_gates_degree > 0);
 
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
@@ -508,12 +497,14 @@ namespace nil {
                         using TTypeBase = nil::marshalling::field_type<Endianness>;
                         using ConstraintSystem = plonk_constraint_system<FieldType, typename ParamsType::arithmetization_params>;
                         using value_marshalling_type = nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, ConstraintSystem>;
+
                         auto filled_val = nil::crypto3::marshalling::types::fill_plonk_constraint_system<Endianness, ConstraintSystem>(constraint_system);
-                        std::vector<std::uint8_t> cv;
-                        cv.resize(filled_val.length(), 0x00);
+                        std::vector<std::uint8_t> cv(filled_val.length(), 0x00);
+
+                        // Function write wants an lvalue as 1st parameter.
                         auto write_iter = cv.begin();
                         nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
-                        typename transcript_hash_type::digest_type circuit_hash = nil::crypto3::hash<transcript_hash_type>(cv);
+                        typename transcript_hash_type::digest_type circuit_hash = hash<transcript_hash_type>(cv);
 
                         typename preprocessed_data_type::verification_key vk = {circuit_hash, public_commitments.fixed_values};
                         typename preprocessed_data_type::common_data_type common_data (
@@ -523,8 +514,16 @@ namespace nil {
                         transcript_type transcript(std::vector<std::uint8_t>({}));
                         transcript(vk.constraint_system_hash);
                         transcript(vk.fixed_values_commitment);
-                        common_data.commitment_scheme_data = commitment_scheme.preprocess(transcript);
 
+                        nil::crypto3::zk::snark::detail::init_transcript<ParamsType, transcript_hash_type>(
+                            transcript,
+                            common_data.rows_amount,
+                            common_data.usable_rows_amount,
+                            commitment_scheme.get_commitment_params(),
+                            "Default application dependent transcript initialization string"
+                        );
+
+                        common_data.commitment_scheme_data = commitment_scheme.preprocess(transcript);
                         // Push circuit description to transcript
                         preprocessed_data_type preprocessed_data({
                             std::move(public_polynomial_table),
