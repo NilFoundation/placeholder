@@ -61,6 +61,11 @@ namespace nil {
                     typedef plonk_lookup_table<FieldType> lookup_table_type;
                     typedef std::vector<lookup_table_type> lookup_tables_type;
                     typedef std::vector<plonk_variable<typename FieldType::value_type>> public_input_gate_type;
+                    typedef math::expression_max_degree_visitor<variable_type> degree_visitor_type;
+                    typedef math::expression<variable_type> expression_type;
+                    typedef math::term<variable_type> term_type;
+                    typedef math::binary_arithmetic_operation<variable_type> binary_operation_type;
+                    typedef math::pow_operation<variable_type> pow_operation_type;
 
                 protected:
                     gates_container_type _gates;
@@ -132,7 +137,7 @@ namespace nil {
                     std::size_t sorted_lookup_columns_number() const {
                         if(_lookup_gates.size() == 0){
                             return 0;
-                        }   
+                        }
                         return lookup_options_num() + lookup_constraints_num();
                     }
 
