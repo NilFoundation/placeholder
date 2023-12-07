@@ -113,25 +113,18 @@ class placeholder_performance_test_base {
         return step_list;
     }
 
-    template<typename fri_type, typename FieldType>
-    static typename fri_type::params_type create_fri_params(std::size_t degree_log, const int max_step = 1) {
-        typename fri_type::params_type params;
-        math::polynomial<typename FieldType::value_type> q = {0, 0, 1};
+    typename fri_type::params_type create_fri_params(
+        std::size_t degree_log, const int max_step = 1, std::size_t expand_factor = 7) {
+    std::size_t r = degree_log - 1;
 
-        constexpr std::size_t expand_factor = 7;
+    return typename fri_type::params_type(
+        (1 << degree_log) - 1, // max_degree
+        math::calculate_domain_set<FieldType>(degree_log + expand_factor, r),
+        generate_random_step_list(r, max_step),
+        expand_factor
+    );
+}
 
-        std::size_t r = degree_log - 1;
-
-        std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> domain_set =
-            math::calculate_domain_set<FieldType>(degree_log + expand_factor, r).get();
-
-        params.r = r;
-        params.D = domain_set;
-        params.max_degree = (1 << degree_log) - 1;
-        params.step_list = generate_random_step_list(r, max_step);
-
-        return params;
-    }
 };
 
 template<std::size_t lambda>
@@ -330,22 +323,23 @@ private:
 
 // BOOST_AUTO_TEST_SUITE(placeholder_transpiler_suite)
 
-ACTOR_FIXTURE_TEST_CASE(placeholder_merkle_tree_poseidon_test, placeholder_performance_test<2>) {
-
-    run_placeholder_perf_test(
-        "Merkle tree poseidon performance test",
-        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_circuit.crct",
-        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_assignment.tbl"
-    );
-}
-
-ACTOR_FIXTURE_TEST_CASE(placeholder_many_hashes_test, placeholder_performance_test<2>) {
-    run_placeholder_perf_test(
-        "Many hashes performance test",
-        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_circuit.crct",
-        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_assignment.tbl"
-    );
-}
+// This tests SUITE is disabled in crypto3-zk, uncomment if you want to run manually.
+//ACTOR_FIXTURE_TEST_CASE(placeholder_merkle_tree_poseidon_test, placeholder_performance_test<2>) {
+//
+//    run_placeholder_perf_test(
+//        "Merkle tree poseidon performance test",
+//        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_circuit.crct",
+//        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_assignment.tbl"
+//    );
+//}
+//
+//ACTOR_FIXTURE_TEST_CASE(placeholder_many_hashes_test, placeholder_performance_test<2>) {
+//    run_placeholder_perf_test(
+//        "Many hashes performance test",
+//        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_circuit.crct",
+//        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_assignment.tbl"
+//    );
+//}
 
 //BOOST_AUTO_TEST_SUITE_END()
 
