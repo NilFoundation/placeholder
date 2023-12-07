@@ -45,6 +45,7 @@
 #include <nil/crypto3/algebra/multiexp/policies.hpp>
 #include <nil/crypto3/algebra/curves/detail/marshalling.hpp>
 #include <nil/crypto3/algebra/marshalling.hpp>
+#include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/actor/zk/transcript/fiat_shamir.hpp>
 #include <nil/actor/math/polynomial/polynomial.hpp>
@@ -248,7 +249,9 @@ namespace nil {
 
                         std::vector<single_commitment_type> commitment_key;
                         std::vector<verification_key_type> verification_key;
+
                         params_type() {};
+
                         params_type(std::size_t d, std::size_t t) {
                             auto alpha = crypto3::algebra::random_element<typename curve_type::scalar_field_type>();
                             commitment_key.resize(d);
