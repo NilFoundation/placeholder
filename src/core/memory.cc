@@ -196,7 +196,7 @@ namespace nil {
 
             static void on_allocation_failure(size_t size);
 
-            static constexpr unsigned cpu_id_shift = 36;    // FIXME: make dynamic
+            static constexpr unsigned cpu_id_shift = 37;    // FIXME: make dynamic
             static constexpr unsigned max_cpus = 256;
             static constexpr uintptr_t cpu_id_and_mem_base_mask = ~((uintptr_t(1) << cpu_id_shift) - 1);
 
@@ -698,6 +698,7 @@ namespace nil {
             }
 
             void cpu_pages::free_span(uint32_t span_start, uint32_t nr_pages) {
+                assert(nr_pages);
                 auto idx = index_of(nr_pages);
                 while (grow_span(span_start, nr_pages, idx)) {
                     ++idx;
@@ -707,10 +708,14 @@ namespace nil {
 
             // Internal, used during startup. Span is not aligned so needs to be broken up
             void cpu_pages::free_span_unaligned(uint32_t span_start, uint32_t nr_pages) {
+                assert(nr_pages);
+
                 while (nr_pages) {
                     auto start_nr_bits = span_start ? count_trailing_zeros(span_start) : 32;
                     auto size_nr_bits = count_trailing_zeros(nr_pages);
                     auto now = 1u << std::min(start_nr_bits, size_nr_bits);
+
+                    assert(now);
                     free_span(span_start, now);
                     span_start += now;
                     nr_pages -= now;
@@ -893,6 +898,7 @@ namespace nil {
                     alloc_site->size -= span->span_size * page_size;
                 }
 #endif
+                assert(span->span_size);
                 free_span(idx, span->span_size);
             }
 
@@ -1024,6 +1030,8 @@ namespace nil {
                 span[new_size_pages - 1].free = false;
                 span[new_size_pages - 1].span_size = new_size_pages;
                 pageidx idx = span - pages;
+
+                assert(old_size_pages - new_size_pages);
                 free_span_unaligned(idx + new_size_pages, old_size_pages - new_size_pages);
             }
 
@@ -1066,6 +1074,7 @@ namespace nil {
                     pages[i].free = false;
                 }
                 pages[nr_pages].free = false;
+                assert(nr_pages - reserved);
                 free_span_unaligned(reserved, nr_pages - reserved);
                 live_cpus[cpu_id].store(true, std::memory_order_relaxed);
                 return true;
@@ -1136,8 +1145,10 @@ namespace nil {
                     old_pages_size -= page_size;
                 }
                 if (old_pages_size != 0) {
+                    assert(old_pages_size / page_size);
                     free_span_unaligned(old_pages_start, old_pages_size / page_size);
                 }
+                assert(new_pages - old_nr_pages);
                 free_span_unaligned(old_nr_pages, new_pages - old_nr_pages);
             }
 

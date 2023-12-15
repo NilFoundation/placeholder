@@ -58,13 +58,13 @@ namespace nil {
 
             void throw_fs_exception_if_error(const sstring &reason, const sstring &path) const {
                 if (long(result) == -1) {
-                    throw_fs_exception(reason, boost::filesystem::path(path));
+                    throw_fs_exception(reason, boost::filesystem::path(path.c_str()));
                 }
             }
 
             void throw_fs_exception_if_error(const sstring &reason, const sstring &path1, const sstring &path2) const {
                 if (long(result) == -1) {
-                    throw_fs_exception(reason, boost::filesystem::path(path1), boost::filesystem::path(path2));
+                    throw_fs_exception(reason, boost::filesystem::path(path1.c_str()), boost::filesystem::path(path2.c_str()));
                 }
             }
 

@@ -1704,7 +1704,7 @@ namespace nil {
                     .then([name = sstring(name), mode](syscall_result<int> sr) {
                         if (sr.result == -1) {
                             auto reason = format("chmod(0{:o}) failed", mode);
-                            sr.throw_fs_exception(reason, boost::filesystem::path(name));
+                            sr.throw_fs_exception(reason, boost::filesystem::path(name.c_str()));
                         }
                         return make_ready_future<>();
                     });
@@ -1848,7 +1848,7 @@ namespace nil {
                                 (sr.error == EACCES && flags != access_flags::exists)) {
                                 return make_ready_future<bool>(false);
                             }
-                            sr.throw_fs_exception("access failed", boost::filesystem::path(pathname));
+                            sr.throw_fs_exception("access failed", boost::filesystem::path(pathname.c_str()));
                         }
 
                         return make_ready_future<bool>(true);
@@ -1960,7 +1960,7 @@ namespace nil {
                     })
                     .then([name = sstring(name)](syscall_result<int> sr) {
                         if (sr.result == -1 && sr.error != EEXIST) {
-                            sr.throw_fs_exception("mkdir failed", boost::filesystem::path(name));
+                            sr.throw_fs_exception("mkdir failed", boost::filesystem::path(name.c_str()));
                         }
                         return make_ready_future<>();
                     });

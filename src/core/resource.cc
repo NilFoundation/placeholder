@@ -158,7 +158,7 @@ namespace nil {
                 }
 
                 // the path is guaranteed to start with '0::/'
-                return boost::filesystem::path {"/sys/fs/cgroup/" + cline.substr(4)};
+                return boost::filesystem::path {std::string("/sys/fs/cgroup/") + cline.substr(4).c_str()};
             }
 
             /*
@@ -498,8 +498,8 @@ namespace nil {
                 if (procs > available_procs) {
                     throw std::runtime_error("insufficient processing units");
                 }
-                // limit memory address to fit in 36-bit, see core/memory.cc:Memory map
-                constexpr size_t max_mem_per_proc = 1UL << 36;
+                // limit memory address to fit in 37-bit, see core/memory.cc:Memory map
+                constexpr size_t max_mem_per_proc = 1UL << 37;
                 auto mem_per_proc = std::min(align_down<size_t>(mem / (procs + c.shard0scale - 1), 2 << 20), max_mem_per_proc);
                 resources ret;
                 std::unordered_map<unsigned, hwloc_obj_t> cpu_to_node;

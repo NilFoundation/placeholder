@@ -29,7 +29,7 @@ macro(actor_find_dependencies)
         # Public dependencies.
         Boost
         c-ares
-        FMT
+        fmt
         lz4
         # Private and private/public dependencies.
         Concepts
@@ -82,4 +82,3 @@ macro(actor_find_dependencies)
         find_package("${third_party}" ${_actor_dep_args_${third_party}})
     endforeach()
 endmacro()
-
