@@ -249,6 +249,7 @@ namespace placeholder_circuit1 {
         constexpr static const std::size_t lambda = 40;
         constexpr static const std::size_t m = 2;
     };
+
     typedef placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params> circuit_params;
     using transcript_type = typename transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
 
