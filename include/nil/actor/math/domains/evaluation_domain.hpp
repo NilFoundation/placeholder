@@ -48,13 +48,6 @@ namespace nil {
             public:
                 typedef FieldType field_type;
 
-                field_value_type root;
-                field_value_type root_inverse;
-                field_value_type domain;
-                field_value_type domain_inverse;
-                field_value_type generator;
-                field_value_type generator_inverse;
-
                 std::size_t m;
                 std::size_t log2_size;
                 std::size_t generator_size;
@@ -69,6 +62,11 @@ namespace nil {
                 inline std::size_t size() const {
                     return m;
                 }
+
+                /**
+                 * Get the unity root.
+                 */
+                virtual const field_value_type& get_unity_root() = 0;
 
                 /**
                  * Get the idx-th element in S.
@@ -130,9 +128,7 @@ namespace nil {
                 virtual future<> divide_by_z_on_coset(std::vector<field_value_type> &P) = 0;
 
                 bool operator==(const evaluation_domain &rhs) const {
-                    return root == rhs.root && root_inverse == rhs.root_inverse && domain == rhs.domain &&
-                           domain_inverse == rhs.domain_inverse && generator == rhs.generator &&
-                           generator_inverse == rhs.generator_inverse && m == rhs.m && log2_size == rhs.log2_size &&
+                    return m == rhs.m && log2_size == rhs.log2_size &&
                            generator_size == rhs.generator_size;
                 }
             };

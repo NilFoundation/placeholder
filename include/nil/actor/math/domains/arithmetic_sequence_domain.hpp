@@ -85,7 +85,7 @@ namespace nil {
                     precomputation_sentinel = false;
                 }
 
-                future<> fft(std::vector<value_type> &a) {
+                future<> fft(std::vector<value_type> &a) override {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
@@ -123,7 +123,7 @@ namespace nil {
                     return nil::actor::make_ready_future<>();
                 }
 
-                future<> inverse_fft(std::vector<value_type> &a) {
+                future<> inverse_fft(std::vector<value_type> &a) override {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
@@ -159,7 +159,7 @@ namespace nil {
                     return make_ready_future<>();
                 }
 
-                future<std::vector<field_value_type>> evaluate_all_lagrange_polynomials(const field_value_type &t) {
+                future<std::vector<field_value_type>> evaluate_all_lagrange_polynomials(const field_value_type &t) override {
                     /* Compute Lagrange polynomial of size m, with m+1 points (x_0, y_0), ... ,(x_m, y_m) */
                     /* Evaluate for x = t */
                     /* Return coeffs for each l_j(x) = (l / l_i[j]) * w[j] */
@@ -231,8 +231,9 @@ namespace nil {
                     return nil::actor::make_ready_future<std::vector<field_value_type>>(l);
                 }
 
-                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
-                                                                          const typename std::vector<value_type>::const_iterator &t_powers_end) {
+                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(
+                        const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                        const typename std::vector<value_type>::const_iterator &t_powers_end) override {
                     if(std::distance(t_powers_begin, t_powers_end) < this->m) {
                         throw std::invalid_argument("arithmetic_sequence_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
                     }
@@ -300,14 +301,19 @@ namespace nil {
                     return nil::actor::make_ready_future<std::vector<value_type>>(result);
                 }
 
-                field_value_type get_domain_element(const std::size_t idx) {
+                // This one is not the unity root actually, but it's ok for our purposes. 
+                const field_value_type& get_unity_root() override {
+                    return arithmetic_generator;
+                }
+
+                field_value_type get_domain_element(const std::size_t idx) override {
                     if (!this->precomputation_sentinel)
                         do_precomputation().get();
 
                     return this->arithmetic_sequence[idx];
                 }
 
-                field_value_type compute_vanishing_polynomial(const field_value_type &t) {
+                field_value_type compute_vanishing_polynomial(const field_value_type &t) override {
                     if (!this->precomputation_sentinel)
                         do_precomputation().get();
 
@@ -319,7 +325,7 @@ namespace nil {
                     return Z;
                 }
 
-                polynomial<field_value_type> get_vanishing_polynomial() {
+                polynomial<field_value_type> get_vanishing_polynomial() override {
                     if (!precomputation_sentinel)
                         do_precomputation().get();
 
@@ -330,7 +336,7 @@ namespace nil {
                     return z;
                 }
 
-                future<> add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) {
+                future<> add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) override {
                     if (H.size() != this->m + 1)
                         throw std::invalid_argument("basic_radix2: expected H.size() == this->m+1");
 
@@ -359,7 +365,7 @@ namespace nil {
 
                     return nil::actor::make_ready_future<>();
                 }
-                future<> divide_by_z_on_coset(std::vector<field_value_type> &P) {
+                future<> divide_by_z_on_coset(std::vector<field_value_type> &P) override {
                     const field_value_type coset = this->arithmetic_generator; /* coset in arithmetic sequence? */
                     const field_value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
 

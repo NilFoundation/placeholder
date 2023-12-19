@@ -70,7 +70,7 @@ namespace nil {
                     shift = crypto3::math::detail::coset_shift<FieldType>();
                 }
 
-                future<> fft(std::vector<value_type> &a) {
+                future<> fft(std::vector<value_type> &a) override {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
@@ -102,7 +102,7 @@ namespace nil {
                     return make_ready_future<>();
                 }
 
-                future<> inverse_fft(std::vector<value_type> &a) {
+                future<> inverse_fft(std::vector<value_type> &a) override {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
                             a.resize(this->m, value_type::zero());
@@ -134,7 +134,7 @@ namespace nil {
                     return make_ready_future<>();
                 }
 
-                future<std::vector<field_value_type>> evaluate_all_lagrange_polynomials(const field_value_type &t) {
+                future<std::vector<field_value_type>> evaluate_all_lagrange_polynomials(const field_value_type &t) override {
                     const std::vector<field_value_type> T0 =
                         detail::basic_radix2_evaluate_all_lagrange_polynomials<FieldType>(small_m, t);
                     const std::vector<field_value_type> T1 =
@@ -156,8 +156,9 @@ namespace nil {
                     return make_ready_future<std::vector<field_value_type>>(result);
                 }
 
-                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(const typename std::vector<value_type>::const_iterator &t_powers_begin,
-                                                                          const typename std::vector<value_type>::const_iterator &t_powers_end) {
+                future<std::vector<value_type>> evaluate_all_lagrange_polynomials(
+                        const typename std::vector<value_type>::const_iterator &t_powers_begin,
+                        const typename std::vector<value_type>::const_iterator &t_powers_end) override {
                     if(std::distance(t_powers_begin, t_powers_end) < this->m) {
                         throw std::invalid_argument("extended_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
                     }
@@ -198,7 +199,11 @@ namespace nil {
                     return make_ready_future<std::vector<value_type>>(result);
                 }
 
-                field_value_type get_domain_element(const std::size_t idx) {
+                const field_value_type& get_unity_root() override {
+                    return omega;
+                }
+
+                field_value_type get_domain_element(const std::size_t idx) override {
                     if (idx < small_m) {
                         return omega.pow(idx);
                     } else {
@@ -206,11 +211,11 @@ namespace nil {
                     }
                 }
 
-                field_value_type compute_vanishing_polynomial(const field_value_type &t) {
+                field_value_type compute_vanishing_polynomial(const field_value_type &t) override {
                     return (t.pow(small_m) - field_value_type::one()) * (t.pow(small_m) - shift.pow(small_m));
                 }
 
-                polynomial<field_value_type> get_vanishing_polynomial() {
+                polynomial<field_value_type> get_vanishing_polynomial() override {
                     polynomial<field_value_type> z(2*small_m + 1, field_value_type::zero());
                     field_value_type shift_to_small_m = shift.pow(small_m);
                     z[2*small_m] = field_value_type::one();
@@ -219,7 +224,7 @@ namespace nil {
                     return z;
                 }
 
-                future<> add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) {
+                future<> add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) override {
                     // if (H.size() != this->m + 1)
                     //    throw std::invalid_argument("extended_radix2: expected H.size() == this->m+1");
 
@@ -231,7 +236,7 @@ namespace nil {
                     return make_ready_future<>();
                 }
 
-                future<> divide_by_z_on_coset(std::vector<field_value_type> &P) {
+                future<> divide_by_z_on_coset(std::vector<field_value_type> &P) override {
                     const field_value_type coset = fields::arithmetic_params<FieldType>::multiplicative_generator;
 
                     const field_value_type coset_to_small_m = coset.pow(small_m);
