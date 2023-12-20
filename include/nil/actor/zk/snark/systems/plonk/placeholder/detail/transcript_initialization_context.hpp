@@ -92,7 +92,7 @@ namespace nil {
                             std::size_t usable_rows_amount,
                             const typename PlaceholderParamsType::commitment_scheme_type::params_type& commitment_params,
                             const std::string& application_id) {
-                        nil::crypto3::zk::snark::detail::transcript_initialization_context<PlaceholderParamsType> context(
+                        transcript_initialization_context<PlaceholderParamsType> context(
                             rows_amount,
                             usable_rows_amount,
                             commitment_params,
@@ -103,9 +103,9 @@ namespace nil {
                         using Endianness = nil::marshalling::option::big_endian;
                         using TTypeBase = nil::marshalling::field_type<Endianness>;
                         using value_marshalling_type = nil::crypto3::marshalling::types::transcript_initialization_context<
-                            TTypeBase, nil::crypto3::zk::snark::detail::transcript_initialization_context<PlaceholderParamsType>>;
+                            TTypeBase, transcript_initialization_context<PlaceholderParamsType>>;
                         auto filled_val = nil::crypto3::marshalling::types::fill_transcript_initialization_context<
-                            Endianness, nil::crypto3::zk::snark::detail::transcript_initialization_context<PlaceholderParamsType>>(context);
+                            Endianness, transcript_initialization_context<PlaceholderParamsType>>(context);
 
                         std::vector<std::uint8_t> cv(filled_val.length(), 0x00);
                         auto write_iter = cv.begin();

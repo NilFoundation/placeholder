@@ -25,7 +25,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE kzg_test
+// #define BOOST_TEST_MODULE kzg_test
 
 #include <string>
 
@@ -53,7 +53,7 @@ using namespace nil::actor::math;
 
 ACTOR_THREAD_TEST_CASE(kzg_basic_test) {
 
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::base_field_type::value_type base_value_type;
     typedef typename curve_type::base_field_type base_field_type;
     typedef typename curve_type::scalar_field_type scalar_field_type;
@@ -84,7 +84,7 @@ ACTOR_THREAD_TEST_CASE(kzg_basic_test) {
 
 ACTOR_THREAD_TEST_CASE(kzg_random_test) {
 
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::base_field_type::value_type base_value_type;
     typedef typename curve_type::base_field_type base_field_type;
     typedef typename curve_type::scalar_field_type scalar_field_type;
@@ -93,7 +93,7 @@ ACTOR_THREAD_TEST_CASE(kzg_random_test) {
     typedef zk::commitments::kzg<curve_type> kzg_type;
 
     std::size_t n = 298;
-    scalar_value_type z = algebra::random_element<scalar_field_type>();
+    scalar_value_type z = nil::crypto3::algebra::random_element<scalar_field_type>();
     const polynomial<scalar_value_type> f = {-1, 1, 2, 3, 5, -15};
 
     auto params = typename kzg_type::params_type(n);
@@ -107,7 +107,7 @@ ACTOR_THREAD_TEST_CASE(kzg_random_test) {
 
 ACTOR_THREAD_TEST_CASE(kzg_false_test) {
 
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::base_field_type::value_type base_value_type;
     typedef typename curve_type::base_field_type base_field_type;
     typedef typename curve_type::scalar_field_type scalar_field_type;
@@ -172,7 +172,7 @@ ACTOR_THREAD_TEST_CASE(kzg_false_test) {
 
 // ACTOR_THREAD_TEST_CASE(kzg_batched_basic_test) {
 
-//     typedef algebra::curves::bls12<381> curve_type;
+//     typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
 //     typedef typename curve_type::base_field_type::value_type base_value_type;
 //     typedef typename curve_type::base_field_type base_field_type;
 //     typedef typename curve_type::scalar_field_type scalar_field_type;
@@ -210,7 +210,7 @@ ACTOR_THREAD_TEST_CASE(kzg_false_test) {
 
 // ACTOR_THREAD_TEST_CASE(kzg_batched_random_test) {
 
-//     typedef algebra::curves::bls12<381> curve_type;
+//     typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
 //     typedef typename curve_type::base_field_type::value_type base_value_type;
 //     typedef typename curve_type::base_field_type base_field_type;
 //     typedef typename curve_type::scalar_field_type scalar_field_type;
@@ -252,7 +252,7 @@ ACTOR_THREAD_TEST_CASE(kzg_false_test) {
 
 // ACTOR_THREAD_TEST_CASE(kzg_batched_false_test) {
 
-//     typedef algebra::curves::bls12<381> curve_type;
+//     typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
 //     typedef typename curve_type::base_field_type::value_type base_value_type;
 //     typedef typename curve_type::base_field_type base_field_type;
 //     typedef typename curve_type::scalar_field_type scalar_field_type;
@@ -406,7 +406,7 @@ ACTOR_THREAD_TEST_CASE(kzg_false_test) {
 
 ACTOR_THREAD_TEST_CASE(batched_kzg_basic_test) {
 
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::base_field_type::value_type base_value_type;
     typedef typename curve_type::base_field_type base_field_type;
     typedef typename curve_type::scalar_field_type scalar_field_type;
@@ -447,7 +447,7 @@ ACTOR_THREAD_TEST_CASE(batched_kzg_basic_test) {
 }
 
 ACTOR_THREAD_TEST_CASE(batched_kzg_bigger_basic_test) {
-    typedef algebra::curves::bls12<381> curve_type;
+    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::base_field_type::value_type base_value_type;
     typedef typename curve_type::base_field_type base_field_type;
     typedef typename curve_type::scalar_field_type scalar_field_type;

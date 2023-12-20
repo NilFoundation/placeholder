@@ -1,6 +1,7 @@
-#define BOOST_TEST_MODULE powers_of_a_test
+// #define BOOST_TEST_MODULE powers_of_a_test
 
-#include <boost/test/unit_test.hpp>
+#include <nil/actor/testing/test_case.hh>
+#include <nil/actor/testing/thread_test_case.hh>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
@@ -13,9 +14,7 @@
 using namespace nil::crypto3::algebra;
 using namespace nil::actor::zk::commitments;
 
-BOOST_AUTO_TEST_SUITE(proof_of_knowledge_test_suite)
-
-BOOST_AUTO_TEST_CASE(pok_basic_test) {
+ACTOR_THREAD_TEST_CASE(pok_basic_test) {
     using curve_type = curves::bls12<381>;
     using scalar_field_type = curve_type::scalar_field_type;
     using scheme_type = proof_of_knowledge<curve_type>;
@@ -28,5 +27,3 @@ BOOST_AUTO_TEST_CASE(pok_basic_test) {
     BOOST_CHECK(scheme_type::verify_eval(a_pok, a_gs2));
     BOOST_CHECK(scheme_type::verify_eval(a_pok, transcript, 0));
 }
-
-BOOST_AUTO_TEST_SUITE_END()

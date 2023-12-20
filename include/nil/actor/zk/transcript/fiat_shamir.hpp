@@ -213,12 +213,12 @@ namespace nil {
 
                     template<typename InputRange>
                     fiat_shamir_heuristic_sequential(const InputRange &r) {
-                        sponge.absorb(hash<hash_type>(r));
+                        sponge.absorb(crypto3::hash<hash_type>(r));
                     }
 
                     template<typename InputIterator>
                     fiat_shamir_heuristic_sequential(InputIterator first, InputIterator last) {
-                        sponge.absorb(hash<hash_type>(first, last));
+                        sponge.absorb(crypto3::hash<hash_type>(first, last));
                     }
 
                     void operator()(const typename hash_type::digest_type input) {
@@ -227,12 +227,12 @@ namespace nil {
 
                     template<typename InputRange>
                     void operator()(const InputRange &r) {
-                        sponge.absorb(hash<hash_type>(r));
+                        sponge.absorb(crypto3::hash<hash_type>(r));
                     }
 
                     template<typename InputIterator>
                     void operator()(InputIterator first, InputIterator last) {
-                        sponge.absorb(hash<hash_type>(first, last));
+                        sponge.absorb(crypto3::hash<hash_type>(first, last));
                     }
 
                     template<typename Field>
@@ -271,7 +271,7 @@ namespace nil {
                     }
 
                 private:
-                    hashes::detail::poseidon_sponge_construction<typename Hash::policy_type> sponge;
+                    crypto3::hashes::detail::poseidon_sponge_construction<typename Hash::policy_type> sponge;
                 };
 
             }    // namespace transcript
