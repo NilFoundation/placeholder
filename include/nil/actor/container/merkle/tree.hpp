@@ -148,7 +148,7 @@ namespace nil {
                             auto itr = first;
                             for (auto i = begin; i < end; ++i) {
                                 auto leaf = *itr;
-                                (*p)[i] = (value_type)nil::crypto3::containers::detail::generate_poseidon_leaf_hash<hash_type>(leaf);
+                                (*p)[i] = nil::crypto3::containers::detail::generate_poseidon_leaf_hash<hash_type>(leaf);
                                 itr++;
                             }
                             return nil::actor::make_ready_future<>();
