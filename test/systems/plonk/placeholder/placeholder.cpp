@@ -467,7 +467,7 @@ ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
     BOOST_CHECK(verifier_res);
 }
 
-BOOST_AUTO_TEST_CASE(permutation_polynomials_test) {
+ACTOR_THREAD_TEST_CASE(permutation_polynomials_test) {
     constexpr std::size_t argument_size = 4;
 
     typename field_type::value_type pi0 = test_global_alg_rnd_engine<field_type>();
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(permutation_polynomials_test) {
     BOOST_CHECK_MESSAGE(id_res == sigma_res, "Complex check");
 }
 
-BOOST_AUTO_TEST_CASE(placeholder_split_polynomial_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_split_polynomial_test) {
     nil::actor::math::polynomial<typename field_type::value_type> f = {1, 3, 4, 1, 5, 6, 7, 2, 8, 7, 5, 6, 1, 2, 1, 1};
     std::size_t expected_size = 4;
     std::size_t max_degree = 3;
@@ -562,7 +562,7 @@ BOOST_AUTO_TEST_CASE(placeholder_split_polynomial_test) {
     BOOST_CHECK(f_at_y == f_splitted_at_y);
 }
 
-BOOST_AUTO_TEST_CASE(permutation_argument_test) {
+ACTOR_THREAD_TEST_CASE(permutation_argument_test) {
     auto circuit = circuit_test_t<field_type>();
 
     plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(permutation_argument_test) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(placeholder_gate_argument_test) {
+ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
     auto circuit = circuit_test_t<field_type>();
 
     plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
@@ -797,7 +797,7 @@ namespace placeholder_circuit3_lookup_test {
     using lpc_placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
     using policy_type = nil::actor::zk::snark::detail::placeholder_policy<field_type, circuit_params>;
 
-BOOST_AUTO_TEST_CASE(lookup_test_3) {
+ACTOR_THREAD_TEST_CASE(lookup_test_3) {
     auto circuit = circuit_test_3<field_type>();
     constexpr std::size_t argument_size = 4;
 
@@ -966,7 +966,7 @@ namespace placeholder_circuit4_lookup_test {
     using lpc_placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
     using policy_type = nil::actor::zk::snark::detail::placeholder_policy<field_type, circuit_params>;
 
-BOOST_AUTO_TEST_CASE(lookup_test_4) {
+ACTOR_THREAD_TEST_CASE(lookup_test_4) {
     auto circuit = circuit_test_4<field_type>(test_global_alg_rnd_engine<field_type>);
     constexpr std::size_t argument_size = 4;
 
