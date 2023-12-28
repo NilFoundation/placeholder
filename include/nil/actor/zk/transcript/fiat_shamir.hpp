@@ -213,7 +213,7 @@ namespace nil {
 
                     template<typename InputRange>
                     fiat_shamir_heuristic_sequential(const InputRange &r) {
-                        if (r != 0) {
+                        if (r.size() != 0) {
                            sponge.absorb(crypto3::hash<hash_type>(r));
                         }
                     }

@@ -518,7 +518,7 @@ namespace nil {
                         transcript(vk.constraint_system_hash);
                         transcript(vk.fixed_values_commitment);
 
-                        nil::crypto3::zk::snark::detail::init_transcript<ParamsType, transcript_hash_type>(
+                        detail::init_transcript<ParamsType, transcript_hash_type>(
                             transcript,
                             common_data.rows_amount,
                             common_data.usable_rows_amount,
