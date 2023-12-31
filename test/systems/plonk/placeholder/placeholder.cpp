@@ -282,16 +282,16 @@ struct placeholder_test_fixture : public test_initializer {
 
         typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
+                constraint_system, assignments.move_public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
             );
 
         typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.private_table(), desc
+                constraint_system, assignments.move_private_table(), desc
             );
 
         auto lpc_proof = placeholder_prover<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data, lpc_preprocessed_private_data, desc, constraint_system, assignments, lpc_scheme
+            lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, constraint_system, lpc_scheme
         );
 
         bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -389,7 +389,7 @@ ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
         );
 
     auto proof = placeholder_prover<field_type, placeholder_params_type>::process(
-        preprocessed_public_data, preprocessed_private_data, desc, constraint_system, assignments, commitment_scheme
+        preprocessed_public_data, std::move(preprocessed_private_data), desc, constraint_system, commitment_scheme
     );
 
     verifier_res = placeholder_verifier<field_type, placeholder_params_type>::process(
@@ -424,18 +424,20 @@ ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
     lpc_scheme_type lpc_scheme(fri_params);
     transcript_type lpc_transcript;
 
+    // Normally we would use "assignments.move_public_table()" here, but assignments are reused in this test.
     typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
         lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
         );
 
+    // Normally we would use "assignments.move_private_table()" here, but assignments are reused in this test.
     typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
         lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.private_table(), desc
         );
 
     auto lpc_proof = placeholder_prover<field_type, lpc_placeholder_params_type>::process(
-        lpc_preprocessed_public_data, lpc_preprocessed_private_data, desc, constraint_system, assignments, lpc_scheme
+        lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, constraint_system, lpc_scheme
     );
 
     verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -458,7 +460,7 @@ ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
         );
 
     auto kzg_proof = placeholder_prover<field_type, kzg_placeholder_params_type>::process(
-        kzg_preprocessed_public_data, kzg_preprocessed_private_data, desc, constraint_system, assignments, kzg_scheme
+        kzg_preprocessed_public_data, std::move(kzg_preprocessed_private_data), desc, constraint_system, kzg_scheme
     );
 
     verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
@@ -490,12 +492,12 @@ ACTOR_THREAD_TEST_CASE(permutation_polynomials_test) {
 
     typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
         lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
-            constraint_system, assignments.public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
+            constraint_system, assignments.move_public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
         );
 
     typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
         lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
-            constraint_system, assignments.private_table(), desc
+            constraint_system, assignments.move_private_table(), desc
         );
 
     auto polynomial_table =
@@ -586,12 +588,12 @@ ACTOR_THREAD_TEST_CASE(permutation_argument_test) {
 
     typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
         preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
-            constraint_system, assignments.public_table(), desc, lpc_scheme, permutation_size
+            constraint_system, assignments.move_public_table(), desc, lpc_scheme, permutation_size
         );
 
     typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
         preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
-            constraint_system, assignments.private_table(), desc
+            constraint_system, assignments.move_private_table(), desc
         );
 
     auto polynomial_table =
@@ -836,10 +838,9 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
     transcript_type prover_transcript(init_blob);
     transcript_type verifier_transcript(init_blob);
 
-    auto prover_res =
-        placeholder_lookup_argument<field_type, lpc_scheme_type, lpc_placeholder_params_type>::prove_eval(
-            constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript
-    );
+    placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> lookup_prover(
+        constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript);
+    auto prover_res = lookup_prover.prove_eval();
     auto omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
 
     // Challenge phase
@@ -896,8 +897,8 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
             preprocessed_public_data.q_blind.evaluate(y)));
     auto half = prover_res.F_dfs[2].evaluate(y) * special_selectors.inversed();
 
-    std::array<typename field_type::value_type, argument_size> verifier_res =
-    placeholder_lookup_argument<field_type, lpc_type, lpc_placeholder_params_type>::verify_eval(
+    placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> lookup_verifier;
+    std::array<typename field_type::value_type, argument_size> verifier_res = lookup_verifier.verify_eval(
         preprocessed_public_data,
         constraint_system.lookup_gates(),
         constraint_system.lookup_tables(),
@@ -1005,10 +1006,9 @@ ACTOR_THREAD_TEST_CASE(lookup_test_4) {
     transcript_type prover_transcript(init_blob);
     transcript_type verifier_transcript(init_blob);
 
-    auto prover_res =
-        placeholder_lookup_argument<field_type, lpc_scheme_type, lpc_placeholder_params_type>::prove_eval(
-            constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript
-    );
+    placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> prover(
+            constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript);
+    auto prover_res = prover.prove_eval();
 
     // Challenge phase
     auto omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
@@ -1065,8 +1065,8 @@ ACTOR_THREAD_TEST_CASE(lookup_test_4) {
             preprocessed_public_data.q_blind.evaluate(y)));
     auto half = prover_res.F_dfs[2].evaluate(y) * special_selectors.inversed();
 
-    std::array<typename field_type::value_type, argument_size> verifier_res =
-    placeholder_lookup_argument<field_type, lpc_type, lpc_placeholder_params_type>::verify_eval(
+    placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> verifier;
+    std::array<typename field_type::value_type, argument_size> verifier_res = verifier.verify_eval(
         preprocessed_public_data,
         constraint_system.lookup_gates(),
         constraint_system.lookup_tables(),
