@@ -35,8 +35,8 @@ namespace nil {
         namespace math {
             template<typename FieldValueType>
             static inline polynomial<FieldValueType>
-                polynomial_shift(const polynomial<FieldValueType> &f,
-                                 const FieldValueType &x) {
+            polynomial_shift(const polynomial<FieldValueType> &f,
+                             const FieldValueType &x) {
                 polynomial<FieldValueType> f_shifted(f);
                 FieldValueType x_power = x;
                 for (std::size_t i = 1; i < f.size(); i++) {
@@ -49,9 +49,9 @@ namespace nil {
 
             template<typename FieldValueType>
             static inline polynomial_dfs<FieldValueType>
-                polynomial_shift(const polynomial_dfs<FieldValueType> &f,
-                                 const int shift,
-                                 std::size_t domain_size = 0) {
+            polynomial_shift(const polynomial_dfs<FieldValueType> &f,
+                             const int shift,
+                             std::size_t domain_size = 0) {
                 if (domain_size == 0) {
                     domain_size = f.size();
                 }
@@ -60,11 +60,11 @@ namespace nil {
 
                 assert((extended_domain_size % domain_size) == 0);
 
-                const std::size_t domain_scale = extended_domain_size/domain_size;
+                const std::size_t domain_scale = extended_domain_size / domain_size;
 
                 polynomial_dfs<FieldValueType> f_shifted(f.degree(), extended_domain_size);
 
-                parallel_for(0, extended_domain_size, 
+                parallel_for(0, extended_domain_size,
                     [&f, &f_shifted, shift, extended_domain_size, domain_scale](std::size_t index) {
                         f_shifted[index] = f[(extended_domain_size + index + domain_scale * shift) % (extended_domain_size)];
                     });
