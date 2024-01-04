@@ -144,7 +144,7 @@ namespace nil {
 
                             const std::size_t max_degree;
                             const std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D;
- 
+
                             // The total number of FRI-rounds, the sum of 'step_list'.
                             const std::size_t r;
                             const std::vector<std::size_t> step_list;
@@ -694,6 +694,9 @@ namespace nil {
                             for (const auto& poly: poly_vector) {
                                 if (poly.size() != fri_params.D[0]->size()) {
                                     g_coeffs[key].emplace_back(poly.coefficients());
+                                } else {
+                                    // These polynomials won't be used
+                                    g_coeffs[key].emplace_back(math::polynomial<typename FRI::field_type::value_type>());
                                 }
                             }
                         }
