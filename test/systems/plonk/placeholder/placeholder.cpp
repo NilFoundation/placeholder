@@ -72,11 +72,30 @@
 #include <nil/actor/zk/commitments/polynomial/kzg.hpp>
 #include <nil/actor/zk/commitments/batched_commitment.hpp>
 
-#include "circuits.hpp"
+// We want to verify that proof created on the actor can pass on single-threaded verifier.
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
+#include <nil/crypto3/zk/commitments/batched_commitment.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
+#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
-using namespace nil::actor;
-using namespace nil::actor::zk;
-using namespace nil::actor::zk::snark;
+// Marshalling is needed to convert single-threaded structures to multi-threaded and vice-versa.
+#include <nil/marshalling/status_type.hpp>
+#include <nil/marshalling/field_type.hpp>
+#include <nil/marshalling/endianness.hpp>
+
+#include <nil/crypto3/marshalling/zk/types/plonk/assignment_table.hpp>
+#include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
+#include <nil/crypto3/marshalling/zk/types/placeholder/proof.hpp>
+
+#include "circuits.hpp"
 
 template<typename CommitmentSchemeParamsType, typename TranscriptHashType>
 class dummy_commitment_scheme_type : public nil::actor::zk::commitments::polys_evaluator<CommitmentSchemeParamsType, TranscriptHashType> {
@@ -86,7 +105,7 @@ public:
     using commitment_type = typename params_type::commitment_type;
     using field_type = typename params_type::field_type;
     using transcript_hash_type = TranscriptHashType;
-    using transcript_type = transcript::fiat_shamir_heuristic_sequential<TranscriptHashType>;
+    using transcript_type = nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<TranscriptHashType>;
     using preprocessed_data_type = bool;
 
     params_type get_commitment_params() const {
@@ -155,13 +174,26 @@ inline std::vector<std::size_t> generate_random_step_list(const std::size_t r, c
 }
 
 template<typename fri_type, typename FieldType>
-typename fri_type::params_type create_fri_params(
+typename fri_type::params_type create_actor_fri_params(
         std::size_t degree_log, const int max_step = 1, std::size_t expand_factor = 4) {
     std::size_t r = degree_log - 1;
 
     return typename fri_type::params_type(
         (1 << degree_log) - 1, // max_degree
         nil::actor::math::calculate_domain_set<FieldType>(degree_log + expand_factor, r).get(),
+        generate_random_step_list(r, max_step),
+        expand_factor
+    );
+}
+
+template<typename fri_type, typename FieldType>
+typename fri_type::params_type create_fri_params(
+        std::size_t degree_log, const int max_step = 1, std::size_t expand_factor = 4) {
+    std::size_t r = degree_log - 1;
+
+    return typename fri_type::params_type(
+        (1 << degree_log) - 1, // max_degree
+        nil::crypto3::math::calculate_domain_set<FieldType>(degree_log + expand_factor, r),
         generate_random_step_list(r, max_step),
         expand_factor
     );
@@ -227,6 +259,118 @@ struct test_initializer {
 template<typename CurveType, typename merkle_hash_type, typename transcript_hash_type,
     std::size_t WitnessColumns, std::size_t PublicInputColumns, std::size_t ConstantColumns, std::size_t SelectorColumns,
     std::size_t usable_rows_amount, std::size_t permutation, bool UseGrinding = false>
+struct single_threaded_placeholder_verifier {
+    using curve_type = CurveType;
+    using field_type = typename curve_type::base_field_type;
+
+    struct placeholder_test_params {
+        constexpr static const std::size_t usable_rows = 13;
+
+        constexpr static const std::size_t witness_columns = WitnessColumns;
+        constexpr static const std::size_t public_input_columns = PublicInputColumns;
+        constexpr static const std::size_t constant_columns = ConstantColumns;
+        constexpr static const std::size_t selector_columns = SelectorColumns;
+
+        using arithmetization_params = nil::crypto3::zk::snark::plonk_arithmetization_params<
+            witness_columns, public_input_columns, constant_columns, selector_columns>;
+
+        constexpr static const std::size_t lambda = 40;
+        constexpr static const std::size_t m = 2;
+    };
+
+    typedef nil::crypto3::zk::snark::placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params> circuit_params;
+    using transcript_type = typename nil::crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
+
+    using lpc_params_type = nil::crypto3::zk::commitments::list_polynomial_commitment_params<
+        merkle_hash_type,
+        transcript_hash_type,
+        placeholder_test_params::lambda,
+        placeholder_test_params::m,
+        UseGrinding
+    >;
+
+    using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
+    using policy_type = nil::crypto3::zk::snark::detail::placeholder_policy<field_type, lpc_placeholder_params_type>;
+    using public_preprocessed_data_type = typename nil::crypto3::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type;
+
+    using ProofType = nil::crypto3::zk::snark::placeholder_proof<field_type, lpc_placeholder_params_type>;
+    using Endianness = nil::marshalling::option::big_endian;
+    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_proof<TTypeBase, ProofType>;
+    using constraint_system_marshalling_type = nil::crypto3::marshalling::types::plonk_constraint_system<
+        TTypeBase, typename policy_type::constraint_system_type>;
+    using assignments_marshalling_type = nil::crypto3::marshalling::types::plonk_assignment_table<
+        TTypeBase, typename policy_type::variable_assignment_type>;
+
+//     using circuit_type = circuit_description<field_type, placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params>, usable_rows_amount, permutation>;
+
+    single_threaded_placeholder_verifier(
+            const std::vector<std::uint8_t>& constraint_system_cv,
+            const std::vector<std::uint8_t>& assignments_cv,
+            std::size_t usable_rows, std::size_t table_rows)
+        : table_rows_log(std::log2(table_rows))
+        , fri_params(create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log))
+    {
+        // Read constraint system from buffer.
+        constraint_system_marshalling_type marshalled_constraint_system;
+        auto read_iter = constraint_system_cv.begin();
+        nil::marshalling::status_type status = marshalled_constraint_system.read(read_iter, constraint_system_cv.size());
+        BOOST_CHECK(status == nil::marshalling::status_type::success);
+
+        constraint_system = nil::crypto3::marshalling::types::make_plonk_constraint_system<
+            Endianness, typename policy_type::constraint_system_type>(marshalled_constraint_system);
+
+        // Read assignments from buffer.
+        assignments_marshalling_type marshalled_assignments;
+        read_iter = assignments_cv.begin();
+        status = marshalled_assignments.read(read_iter, assignments_cv.size());
+        BOOST_CHECK(status == nil::marshalling::status_type::success);
+
+        std::size_t _unused_usable_rows;
+        std::tie(_unused_usable_rows, assignments) = nil::crypto3::marshalling::types::make_assignment_table<
+            Endianness, typename policy_type::variable_assignment_type>(marshalled_assignments);
+
+        desc.rows_amount = table_rows;
+        desc.usable_rows_amount = usable_rows;
+    }
+
+    // CV must contain marshalled proof as a byte array.
+    bool verify(const std::vector<std::uint8_t>& cv) {
+        proof_marshalling_type marshalled_proof;
+        auto read_iter = cv.begin();
+        nil::marshalling::status_type status = marshalled_proof.read(read_iter, cv.size());
+
+        ProofType proof_crypto3 = 
+            nil::crypto3::marshalling::types::make_placeholder_proof<Endianness, ProofType>(marshalled_proof);
+
+        lpc_scheme_type lpc_scheme(fri_params);
+
+        std::vector<std::size_t> columns_with_copy_constraints = {0, 1, 2, 3};
+        
+        public_preprocessed_data_type lpc_preprocessed_public_data = nil::crypto3::zk::snark::placeholder_public_preprocessor<
+            field_type, lpc_placeholder_params_type>::process(
+                constraint_system, assignments.move_public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
+            );
+
+        bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
+            lpc_preprocessed_public_data, proof_crypto3, constraint_system, lpc_scheme
+        );
+
+        return verifier_res;
+    }
+
+    nil::crypto3::zk::snark::plonk_table_description<field_type, typename circuit_params::arithmetization_params> desc;
+    typename policy_type::constraint_system_type constraint_system;
+    typename policy_type::variable_assignment_type assignments;
+    std::size_t table_rows_log;
+    typename lpc_type::fri_type::params_type fri_params;
+};
+
+template<typename CurveType, typename merkle_hash_type, typename transcript_hash_type,
+    std::size_t WitnessColumns, std::size_t PublicInputColumns, std::size_t ConstantColumns, std::size_t SelectorColumns,
+    std::size_t usable_rows_amount, std::size_t permutation, bool UseGrinding = false>
 struct placeholder_test_fixture : public test_initializer {
     using curve_type = CurveType;
     using field_type = typename curve_type::base_field_type;
@@ -240,16 +384,16 @@ struct placeholder_test_fixture : public test_initializer {
         constexpr static const std::size_t selector_columns = SelectorColumns;
 
         using arithmetization_params =
-            plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
+            nil::actor::zk::snark::plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
 
         constexpr static const std::size_t lambda = 40;
         constexpr static const std::size_t m = 2;
     };
 
-    typedef placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params> circuit_params;
-    using transcript_type = typename transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
+    typedef nil::actor::zk::snark::placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params> circuit_params;
+    using transcript_type = typename nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
 
-    using lpc_params_type = commitments::list_polynomial_commitment_params<
+    using lpc_params_type = nil::actor::zk::commitments::list_polynomial_commitment_params<
         merkle_hash_type,
         transcript_hash_type,
         placeholder_test_params::lambda,
@@ -257,18 +401,20 @@ struct placeholder_test_fixture : public test_initializer {
         UseGrinding
     >;
 
-    using lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
-    using lpc_scheme_type = typename commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_type = nil::actor::zk::commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using lpc_scheme_type = typename nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type>;
     using lpc_placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
     using policy_type = nil::actor::zk::snark::detail::placeholder_policy<field_type, lpc_placeholder_params_type>;
-    using circuit_type = circuit_description<field_type, placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params>, usable_rows_amount, permutation>;
+    using circuit_type = nil::actor::zk::snark::circuit_description<field_type, nil::actor::zk::snark::placeholder_circuit_params<
+        field_type, typename placeholder_test_params::arithmetization_params>, usable_rows_amount, permutation>;
+    using ProofType = nil::actor::zk::snark::placeholder_proof<field_type, lpc_placeholder_params_type>;
 
     placeholder_test_fixture(const circuit_type& circuit_in, std::size_t usable_rows, std::size_t table_rows)
         : circuit(circuit_in)
         , constraint_system(circuit.gates, circuit.copy_constraints, circuit.lookup_gates, circuit.lookup_tables)
         , assignments(circuit.table)
         , table_rows_log(std::log2(table_rows))
-        , fri_params(create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log))
+        , fri_params(create_actor_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log))
     {
         desc.rows_amount = table_rows;
         desc.usable_rows_amount = usable_rows;
@@ -280,36 +426,83 @@ struct placeholder_test_fixture : public test_initializer {
 
         std::vector<std::size_t> columns_with_copy_constraints = {0, 1, 2, 3};
 
-        typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-            lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
+        typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+            lpc_preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
+                constraint_system, assignments.public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
             );
 
-        typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-            lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_private_table(), desc
+        typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+            lpc_preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
+                constraint_system, assignments.private_table(), desc
             );
 
-        auto lpc_proof = placeholder_prover<field_type, lpc_placeholder_params_type>::process(
+        ProofType proof = nil::actor::zk::snark::placeholder_prover<field_type, lpc_placeholder_params_type>::process(
             lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, constraint_system, lpc_scheme
         );
 
-        bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data, lpc_proof, constraint_system, lpc_scheme
+        bool verifier_res_actor = nil::actor::zk::snark::placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
+            lpc_preprocessed_public_data, proof, constraint_system, lpc_scheme
         );
+
+        // Also verify on single-threaded verifier. We need to go through marshalling, 
+        // because classes are different for actor VS crypto3.
+        using Endianness = nil::marshalling::option::big_endian;
+        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using constraint_system_marshalling_type = nil::crypto3::marshalling::types::plonk_constraint_system<
+            TTypeBase, typename policy_type::constraint_system_type>;
+        using assignments_marshalling_type = nil::crypto3::marshalling::types::plonk_assignment_table<
+            TTypeBase, typename policy_type::variable_assignment_type>;
+
+        // ****************************************** Marshall the constraint system. ****************************************************
+        auto filled_constraint_system = nil::crypto3::marshalling::types::fill_plonk_constraint_system<
+            Endianness, typename policy_type::constraint_system_type>(constraint_system);
+        std::vector<std::uint8_t> constraint_system_cv(filled_constraint_system.length(), 0x00);
+
+        // Function write wants an lvalue as 1st parameter.
+        auto constraint_system_write_iter = constraint_system_cv.begin();
+        nil::marshalling::status_type status = filled_constraint_system.write(constraint_system_write_iter, constraint_system_cv.size());
+
+        // ******************************************* Marshall the assignment tables. ***************************************************
+        auto filled_assignment_tables = nil::crypto3::marshalling::types::fill_assignment_table<
+            Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments);
+        std::vector<std::uint8_t> assignments_cv(filled_assignment_tables.length(), 0x00);
+
+        // Function write wants an lvalue as 1st parameter.
+        auto assignments_write_iter = assignments_cv.begin();
+        status = filled_assignment_tables.write(assignments_write_iter, assignments_cv.size());
+        BOOST_CHECK(status == nil::marshalling::status_type::success);
+
+        single_threaded_placeholder_verifier<
+            CurveType, merkle_hash_type, transcript_hash_type, WitnessColumns, PublicInputColumns, ConstantColumns, 
+            SelectorColumns, usable_rows_amount, permutation, UseGrinding> verifier(
+                constraint_system_cv, assignments_cv, desc.usable_rows_amount, desc.rows_amount);
+
+        // ******************************************** Marshall the placeholder proof **************************************************
+        using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_proof<TTypeBase, ProofType>;
+
+        proof_marshalling_type filled_placeholder_proof = nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, ProofType>(
+            proof, fri_params);
+
+        std::vector<std::uint8_t> cv;
+        cv.resize(filled_placeholder_proof.length(), 0x00);
+        auto proof_write_iter = cv.begin();
+        status = filled_placeholder_proof.write(proof_write_iter, cv.size());
+        BOOST_CHECK(status == nil::marshalling::status_type::success);
+
+        // Finally call verifier with the crypto3 proof.
+        bool verifier_res_single_threaded = verifier.verify(cv);
+
         test_initializer::teardown();
-        return verifier_res;
+        return verifier_res_actor && verifier_res_single_threaded;
     }
 
     circuit_type circuit;
-    plonk_table_description<field_type, typename circuit_params::arithmetization_params> desc;
+    nil::actor::zk::snark::plonk_table_description<field_type, typename circuit_params::arithmetization_params> desc;
     typename policy_type::constraint_system_type constraint_system;
     typename policy_type::variable_assignment_type assignments;
     std::size_t table_rows_log;
     typename lpc_type::fri_type::params_type fri_params;
 };
-
-
 
 // BOOST_AUTO_TEST_SUITE(placeholder_circuit2)
 namespace placeholder_circuit2 {
@@ -327,43 +520,43 @@ namespace placeholder_circuit2 {
         constexpr static const std::size_t selector_columns = 2;
 
         using arithmetization_params =
-            plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
+            nil::actor::zk::snark::plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
 
         constexpr static const std::size_t lambda = 1;
         constexpr static const std::size_t m = 2;
     };
-    using circuit_t_params = placeholder_circuit_params<
+    using circuit_t_params = nil::actor::zk::snark::placeholder_circuit_params<
         field_type,
         typename placeholder_test_params::arithmetization_params
     >;
 
-    using transcript_type = typename transcript::fiat_shamir_heuristic_sequential<typename placeholder_test_params::transcript_hash_type>;
+    using transcript_type = typename nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<typename placeholder_test_params::transcript_hash_type>;
 
     using commitment_scheme_params_type = nil::actor::zk::commitments::commitment_scheme_params_type<field_type, std::vector<std::uint8_t>>;
     using commitment_scheme_dummy_type = dummy_commitment_scheme_type<commitment_scheme_params_type, typename placeholder_test_params::transcript_hash_type>;
     using placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_t_params, commitment_scheme_dummy_type>;
     using policy_type = nil::actor::zk::snark::detail::placeholder_policy<field_type, placeholder_params_type>;
 
-    using lpc_params_type = commitments::list_polynomial_commitment_params<
+    using lpc_params_type = nil::actor::zk::commitments::list_polynomial_commitment_params<
         typename placeholder_test_params::merkle_hash_type,
         typename placeholder_test_params::transcript_hash_type,
         placeholder_test_params::lambda,
         placeholder_test_params::m
     >;
 
-    using lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
-    using lpc_scheme_type = typename commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_type = nil::actor::zk::commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using lpc_scheme_type = typename nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type>;
     using lpc_placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_t_params, lpc_scheme_type>;
 
-    using kzg_type = commitments::batched_kzg<curve_type, typename placeholder_test_params::transcript_hash_type>;
-    using kzg_scheme_type = typename commitments::kzg_commitment_scheme<kzg_type>;
+    using kzg_type = nil::actor::zk::commitments::batched_kzg<curve_type, typename placeholder_test_params::transcript_hash_type>;
+    using kzg_scheme_type = typename nil::actor::zk::commitments::kzg_commitment_scheme<kzg_type>;
     using kzg_placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_t_params, kzg_scheme_type>;
 
 ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
     typename field_type::value_type pi0 = test_global_alg_rnd_engine<field_type>();
-    auto circuit = circuit_test_t<field_type>(pi0, test_global_alg_rnd_engine<field_type>);
+    auto circuit = nil::actor::zk::snark::circuit_test_t<field_type>(pi0, test_global_alg_rnd_engine<field_type>);
 
-    plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
+    nil::actor::zk::snark::plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
     desc.rows_amount = circuit.table_rows;
     desc.usable_rows_amount = circuit.usable_rows;
     std::size_t table_rows_log = std::log2(desc.rows_amount);
@@ -373,26 +566,24 @@ ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
 
     std::vector<std::size_t> columns_with_copy_constraints = {0, 1, 2, 3};
 
-    bool verifier_res;
-
     // Dummy commitment scheme
     commitment_scheme_dummy_type commitment_scheme;
 
-    typename placeholder_public_preprocessor<field_type, placeholder_params_type>::preprocessed_data_type
-        preprocessed_public_data = placeholder_public_preprocessor<field_type, placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, placeholder_params_type>::preprocessed_data_type
+        preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, placeholder_params_type>::process(
             constraint_system, assignments.public_table(), desc, commitment_scheme, columns_with_copy_constraints.size()
         );
 
-    typename placeholder_private_preprocessor<field_type, placeholder_params_type>::preprocessed_data_type
-        preprocessed_private_data = placeholder_private_preprocessor<field_type, placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, placeholder_params_type>::preprocessed_data_type
+        preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, placeholder_params_type>::process(
             constraint_system, assignments.private_table(), desc
         );
 
-    auto proof = placeholder_prover<field_type, placeholder_params_type>::process(
+    auto proof = nil::actor::zk::snark::placeholder_prover<field_type, placeholder_params_type>::process(
         preprocessed_public_data, std::move(preprocessed_private_data), desc, constraint_system, commitment_scheme
     );
 
-    verifier_res = placeholder_verifier<field_type, placeholder_params_type>::process(
+    bool verifier_res = nil::actor::zk::snark::placeholder_verifier<field_type, placeholder_params_type>::process(
         preprocessed_public_data, proof, constraint_system, commitment_scheme
     );
     BOOST_CHECK(verifier_res);
@@ -400,47 +591,47 @@ ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
     // Public inputs checks
     // Completely correct public input
     typename placeholder_params_type::public_input_type public_input = {{{pi0, 0, 1}}};
-    verifier_res = placeholder_verifier<field_type, placeholder_params_type>::process(
+    verifier_res = nil::actor::zk::snark::placeholder_verifier<field_type, placeholder_params_type>::process(
         preprocessed_public_data, proof, constraint_system, commitment_scheme, public_input
     );
     BOOST_CHECK(verifier_res);
 
     // Completely correct zeroes after it are not important
     public_input =  {{{pi0, 0, 1, 0}}};
-    verifier_res = placeholder_verifier<field_type, placeholder_params_type>::process(
+    verifier_res = nil::actor::zk::snark::placeholder_verifier<field_type, placeholder_params_type>::process(
         preprocessed_public_data, proof, constraint_system, commitment_scheme, public_input
     );
     BOOST_CHECK(verifier_res);
 
     // Incorrect public input
     public_input =  {{{pi0, 1}}};
-    verifier_res = placeholder_verifier<field_type, placeholder_params_type>::process(
+    verifier_res = nil::actor::zk::snark::placeholder_verifier<field_type, placeholder_params_type>::process(
         preprocessed_public_data, proof, constraint_system, commitment_scheme, public_input
     );
     BOOST_CHECK(!verifier_res);
 
     // LPC commitment scheme
-    typename lpc_type::fri_type::params_type fri_params = create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
+    typename lpc_type::fri_type::params_type fri_params = create_actor_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
     lpc_scheme_type lpc_scheme(fri_params);
     transcript_type lpc_transcript;
 
     // Normally we would use "assignments.move_public_table()" here, but assignments are reused in this test.
-    typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        lpc_preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
         );
 
     // Normally we would use "assignments.move_private_table()" here, but assignments are reused in this test.
-    typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        lpc_preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.private_table(), desc
         );
 
-    auto lpc_proof = placeholder_prover<field_type, lpc_placeholder_params_type>::process(
+    auto lpc_proof = nil::actor::zk::snark::placeholder_prover<field_type, lpc_placeholder_params_type>::process(
         lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, constraint_system, lpc_scheme
     );
 
-    verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
+    verifier_res = nil::actor::zk::snark::placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
         lpc_preprocessed_public_data, lpc_proof, constraint_system, lpc_scheme
     );
     BOOST_CHECK(verifier_res);
@@ -449,21 +640,21 @@ ACTOR_FIXTURE_TEST_CASE(prover_test, test_initializer){
     auto kzg_params = create_kzg_params<kzg_type>(table_rows_log);
     kzg_scheme_type kzg_scheme(kzg_params);
 
-    typename placeholder_public_preprocessor<field_type, kzg_placeholder_params_type>::preprocessed_data_type
-        kzg_preprocessed_public_data = placeholder_public_preprocessor<field_type, kzg_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, kzg_placeholder_params_type>::preprocessed_data_type
+        kzg_preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, kzg_placeholder_params_type>::process(
             constraint_system, assignments.public_table(), desc, kzg_scheme, columns_with_copy_constraints.size()
         );
 
-    typename placeholder_private_preprocessor<field_type, kzg_placeholder_params_type>::preprocessed_data_type
-        kzg_preprocessed_private_data = placeholder_private_preprocessor<field_type, kzg_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, kzg_placeholder_params_type>::preprocessed_data_type
+        kzg_preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, kzg_placeholder_params_type>::process(
             constraint_system, assignments.private_table(), desc
         );
 
-    auto kzg_proof = placeholder_prover<field_type, kzg_placeholder_params_type>::process(
+    auto kzg_proof = nil::actor::zk::snark::placeholder_prover<field_type, kzg_placeholder_params_type>::process(
         kzg_preprocessed_public_data, std::move(kzg_preprocessed_private_data), desc, constraint_system, kzg_scheme
     );
 
-    verifier_res = placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
+    verifier_res = nil::actor::zk::snark::placeholder_verifier<field_type, kzg_placeholder_params_type>::process(
         kzg_preprocessed_public_data, kzg_proof, constraint_system, kzg_scheme
     );
     BOOST_CHECK(verifier_res);
@@ -473,9 +664,9 @@ ACTOR_THREAD_TEST_CASE(permutation_polynomials_test) {
     constexpr std::size_t argument_size = 4;
 
     typename field_type::value_type pi0 = test_global_alg_rnd_engine<field_type>();
-    auto circuit = circuit_test_t<field_type>(pi0, test_global_alg_rnd_engine<field_type>);
+    auto circuit = nil::actor::zk::snark::circuit_test_t<field_type>(pi0, test_global_alg_rnd_engine<field_type>);
 
-    plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
+    nil::actor::zk::snark::plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
     desc.rows_amount = circuit.table_rows;
     desc.usable_rows_amount = circuit.usable_rows;
     std::size_t table_rows_log = std::log2(desc.rows_amount);
@@ -486,22 +677,22 @@ ACTOR_THREAD_TEST_CASE(permutation_polynomials_test) {
 
     std::vector<std::size_t> columns_with_copy_constraints = {0, 1, 2, 3};
 
-    typename lpc_type::fri_type::params_type fri_params = create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
+    typename lpc_type::fri_type::params_type fri_params = create_actor_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
     lpc_scheme_type lpc_scheme(fri_params);
     transcript_type lpc_transcript;
 
-    typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        lpc_preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.move_public_table(), desc, lpc_scheme, columns_with_copy_constraints.size()
         );
 
-    typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        lpc_preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.move_private_table(), desc
         );
 
     auto polynomial_table =
-        plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
+        nil::actor::zk::snark::plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
             lpc_preprocessed_private_data.private_polynomial_table, lpc_preprocessed_public_data.public_polynomial_table);
 
     std::shared_ptr<nil::actor::math::evaluation_domain<field_type>> domain = lpc_preprocessed_public_data.common_data.basic_domain;
@@ -565,9 +756,9 @@ ACTOR_THREAD_TEST_CASE(placeholder_split_polynomial_test) {
 }
 
 ACTOR_THREAD_TEST_CASE(permutation_argument_test) {
-    auto circuit = circuit_test_t<field_type>();
+    auto circuit = nil::actor::zk::snark::circuit_test_t<field_type>();
 
-    plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
+    nil::actor::zk::snark::plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
     desc.rows_amount = circuit.table_rows;
     desc.usable_rows_amount = circuit.usable_rows;
     std::size_t table_rows_log = std::log2(desc.rows_amount);
@@ -575,7 +766,7 @@ ACTOR_THREAD_TEST_CASE(permutation_argument_test) {
     const std::size_t argument_size = 3;
     const std::size_t permutation_size = 4;
 
-    auto fri_params = create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
+    auto fri_params = create_actor_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
     lpc_scheme_type lpc_scheme(fri_params);
 
     typename policy_type::constraint_system_type constraint_system(circuit.gates, circuit.copy_constraints,
@@ -586,26 +777,26 @@ ACTOR_THREAD_TEST_CASE(permutation_argument_test) {
 
     transcript_type transcript;
 
-    typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.move_public_table(), desc, lpc_scheme, permutation_size
         );
 
-    typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.move_private_table(), desc
         );
 
     auto polynomial_table =
-        plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
+        nil::actor::zk::snark::plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
             preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table);
 
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> prover_transcript(init_blob);
-    transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> verifier_transcript(init_blob);
+    nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> prover_transcript(init_blob);
+    nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> verifier_transcript(init_blob);
 
-    typename placeholder_permutation_argument<field_type, lpc_placeholder_params_type>::prover_result_type prover_res =
-        placeholder_permutation_argument<field_type, lpc_placeholder_params_type>::prove_eval(
+    typename nil::actor::zk::snark::placeholder_permutation_argument<field_type, lpc_placeholder_params_type>::prover_result_type prover_res =
+        nil::actor::zk::snark::placeholder_permutation_argument<field_type, lpc_placeholder_params_type>::prove_eval(
             constraint_system, preprocessed_public_data, desc, polynomial_table, lpc_scheme, prover_transcript).get();
 
     // Challenge phase
@@ -620,9 +811,9 @@ ACTOR_THREAD_TEST_CASE(permutation_argument_test) {
     typename field_type::value_type v_p_at_y = prover_res.permutation_polynomial_dfs.evaluate(y);
     typename field_type::value_type v_p_at_y_shifted = prover_res.permutation_polynomial_dfs.evaluate(omega * y);
 
-    auto permutation_commitment = lpc_scheme.commit(PERMUTATION_BATCH);
+    auto permutation_commitment = lpc_scheme.commit(nil::actor::zk::snark::PERMUTATION_BATCH);
     std::array<typename field_type::value_type, argument_size> verifier_res =
-        placeholder_permutation_argument<field_type, lpc_placeholder_params_type>::verify_eval(
+        nil::actor::zk::snark::placeholder_permutation_argument<field_type, lpc_placeholder_params_type>::verify_eval(
             preprocessed_public_data, y, f_at_y, v_p_at_y, v_p_at_y_shifted, verifier_transcript
         );
 
@@ -641,9 +832,9 @@ ACTOR_THREAD_TEST_CASE(permutation_argument_test) {
 }
 
 ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
-    auto circuit = circuit_test_t<field_type>();
+    auto circuit = nil::actor::zk::snark::circuit_test_t<field_type>();
 
-    plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
+    nil::actor::zk::snark::plonk_table_description<field_type, typename circuit_t_params::arithmetization_params> desc;
 
     desc.rows_amount = circuit.table_rows;
     desc.usable_rows_amount = circuit.usable_rows;
@@ -657,28 +848,28 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
     std::vector<std::size_t> columns_with_copy_constraints = {0, 1, 2, 3};
 
-    auto fri_params = create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
+    auto fri_params = create_actor_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
     lpc_scheme_type lpc_scheme(fri_params);
 
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     transcript_type transcript(init_blob);
 
-    typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.public_table(), desc, lpc_scheme, permutation_size
         );
 
-    typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.private_table(), desc
         );
 
     auto polynomial_table =
-        plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
+        nil::actor::zk::snark::plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
             preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table);
 
-    transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> prover_transcript = transcript;
-    transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> verifier_transcript = transcript;
+    nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> prover_transcript = transcript;
+    nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<placeholder_test_params::transcript_hash_type> verifier_transcript = transcript;
 
     nil::actor::math::polynomial_dfs<typename field_type::value_type> mask_polynomial(
         0, preprocessed_public_data.common_data.basic_domain->m,
@@ -688,7 +879,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
     mask_polynomial -= preprocessed_public_data.q_blind;
 
     std::array<nil::actor::math::polynomial_dfs<typename field_type::value_type>, 1> prover_res =
-        placeholder_gates_argument<field_type, lpc_placeholder_params_type>::prove_eval(
+        nil::actor::zk::snark::placeholder_gates_argument<field_type, lpc_placeholder_params_type>::prove_eval(
             constraint_system, polynomial_table, preprocessed_public_data.common_data.basic_domain,
             preprocessed_public_data.common_data.max_gates_degree, mask_polynomial, prover_transcript).get();
 
@@ -702,7 +893,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
         std::size_t i_global_index = i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::witness);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::witness);
             columns_at_y[key] = polynomial_table.witness(i).evaluate(y * omega.pow(rotation));
         }
     }
@@ -712,7 +903,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
 
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::public_input);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::public_input);
 
             columns_at_y[key] = polynomial_table.public_input(i).evaluate(y * omega.pow(rotation));
         }
@@ -723,7 +914,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
             placeholder_test_params::witness_columns + placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::constant);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::constant);
 
             columns_at_y[key] = polynomial_table.constant(i).evaluate(y * omega.pow(rotation));
         }
@@ -735,7 +926,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
                                      placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::selector);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::selector);
 
             columns_at_y[key] = polynomial_table.selector(i).evaluate(y * omega.pow(rotation));
         }
@@ -744,7 +935,7 @@ ACTOR_THREAD_TEST_CASE(placeholder_gate_argument_test) {
     auto mask_value = field_type::value_type::one() - preprocessed_public_data.q_last.evaluate(y) - 
         preprocessed_public_data.q_blind.evaluate(y);
     std::array<typename field_type::value_type, 1> verifier_res =
-        placeholder_gates_argument<field_type, lpc_placeholder_params_type>::verify_eval(
+        nil::actor::zk::snark::placeholder_gates_argument<field_type, lpc_placeholder_params_type>::verify_eval(
             constraint_system.gates(), columns_at_y, y, mask_value, verifier_transcript);
 
     typename field_type::value_type verifier_next_challenge = verifier_transcript.template challenge<field_type>();
@@ -772,21 +963,21 @@ namespace placeholder_circuit3_lookup_test {
         using merkle_hash_type = hashes::keccak_1600<512>;
         using transcript_hash_type = hashes::keccak_1600<512>;
 
-        constexpr static const std::size_t witness_columns = witness_columns_3;
-        constexpr static const std::size_t public_input_columns = public_columns_3;
-        constexpr static const std::size_t constant_columns = constant_columns_3;
-        constexpr static const std::size_t selector_columns = selector_columns_3;
+        constexpr static const std::size_t witness_columns = nil::actor::zk::snark::witness_columns_3;
+        constexpr static const std::size_t public_input_columns = nil::actor::zk::snark::public_columns_3;
+        constexpr static const std::size_t constant_columns = nil::actor::zk::snark::constant_columns_3;
+        constexpr static const std::size_t selector_columns = nil::actor::zk::snark::selector_columns_3;
 
         using arithmetization_params =
-            plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
+            nil::actor::zk::snark::plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
 
         constexpr static const std::size_t lambda = 40;
         constexpr static const std::size_t m = 2;
     };
 
-    using circuit_params = placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params>;
-    using transcript_type = typename transcript::fiat_shamir_heuristic_sequential<typename placeholder_test_params::transcript_hash_type>;
-    using lpc_params_type = commitments::list_polynomial_commitment_params<
+    using circuit_params = nil::actor::zk::snark::placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params>;
+    using transcript_type = typename nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<typename placeholder_test_params::transcript_hash_type>;
+    using lpc_params_type = nil::actor::zk::commitments::list_polynomial_commitment_params<
         typename placeholder_test_params::merkle_hash_type,
         typename placeholder_test_params::transcript_hash_type,
         placeholder_test_params::lambda,
@@ -794,16 +985,16 @@ namespace placeholder_circuit3_lookup_test {
         true
     >;
 
-    using lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
-    using lpc_scheme_type = typename commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_type = nil::actor::zk::commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using lpc_scheme_type = typename nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type>;
     using lpc_placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
     using policy_type = nil::actor::zk::snark::detail::placeholder_policy<field_type, circuit_params>;
 
 ACTOR_THREAD_TEST_CASE(lookup_test_3) {
-    auto circuit = circuit_test_3<field_type>();
+    auto circuit = nil::actor::zk::snark::circuit_test_3<field_type>();
     constexpr std::size_t argument_size = 4;
 
-    plonk_table_description<field_type, typename circuit_params::arithmetization_params> desc;
+    nil::actor::zk::snark::plonk_table_description<field_type, typename circuit_params::arithmetization_params> desc;
 
     desc.rows_amount = table_rows;
     desc.usable_rows_amount = usable_rows;
@@ -816,21 +1007,21 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
     );
     typename policy_type::variable_assignment_type assignments = circuit.table;
 
-    auto fri_params = create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
+    auto fri_params = create_actor_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
     lpc_scheme_type lpc_scheme(fri_params);
 
     std::vector<std::size_t> columns_with_copy_constraints = {0, 1, 2, 3};
 
-    typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.public_table(), desc, lpc_scheme, columns_with_copy_constraints.size());
 
-    typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.private_table(), desc);
 
     auto polynomial_table =
-        plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
+        nil::actor::zk::snark::plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
             preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table
     );
 
@@ -838,7 +1029,7 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
     transcript_type prover_transcript(init_blob);
     transcript_type verifier_transcript(init_blob);
 
-    placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> lookup_prover(
+    nil::actor::zk::snark::placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> lookup_prover(
         constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript);
     auto prover_res = lookup_prover.prove_eval();
     auto omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
@@ -851,7 +1042,7 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
         std::size_t i_global_index = i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::witness);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::witness);
             columns_at_y[key] = polynomial_table.witness(i).evaluate(y * omega.pow(rotation));
         }
     }
@@ -862,7 +1053,7 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
                                      placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::constant);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::constant);
 
             columns_at_y[key] = polynomial_table.constant(i).evaluate(y * omega.pow(rotation));
         }
@@ -875,19 +1066,19 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
                                      placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::selector);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::selector);
 
             columns_at_y[key] = polynomial_table.selector(i).evaluate(y * omega.pow(rotation));
         }
     }
 
-    lpc_scheme.append_eval_point(LOOKUP_BATCH, y);
-    lpc_scheme.append_eval_point(LOOKUP_BATCH, y * omega);
-    lpc_scheme.append_eval_point(LOOKUP_BATCH, y * omega.pow(usable_rows));
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::LOOKUP_BATCH, y);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::LOOKUP_BATCH, y * omega);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::LOOKUP_BATCH, y * omega.pow(usable_rows));
 
-    lpc_scheme.commit(PERMUTATION_BATCH);
-    lpc_scheme.append_eval_point(PERMUTATION_BATCH, y);
-    lpc_scheme.append_eval_point(PERMUTATION_BATCH, y * omega);
+    lpc_scheme.commit(nil::actor::zk::snark::PERMUTATION_BATCH);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::PERMUTATION_BATCH, y);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::PERMUTATION_BATCH, y * omega);
 
     transcript_type transcript;
     auto lpc_proof = lpc_scheme.proof_eval(transcript);
@@ -897,13 +1088,13 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
             preprocessed_public_data.q_blind.evaluate(y)));
     auto half = prover_res.F_dfs[2].evaluate(y) * special_selectors.inversed();
 
-    placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> lookup_verifier;
+    nil::actor::zk::snark::placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> lookup_verifier;
     std::array<typename field_type::value_type, argument_size> verifier_res = lookup_verifier.verify_eval(
         preprocessed_public_data,
         constraint_system.lookup_gates(),
         constraint_system.lookup_tables(),
-        y, columns_at_y, lpc_proof.z.get(LOOKUP_BATCH),
-        lpc_proof.z.get(PERMUTATION_BATCH, 0),
+        y, columns_at_y, lpc_proof.z.get(nil::actor::zk::snark::LOOKUP_BATCH),
+        lpc_proof.z.get(nil::actor::zk::snark::PERMUTATION_BATCH, 0),
         prover_res.lookup_commitment,
         verifier_transcript
     );
@@ -940,21 +1131,21 @@ namespace placeholder_circuit4_lookup_test {
         using merkle_hash_type = hashes::keccak_1600<512>;
         using transcript_hash_type = hashes::keccak_1600<512>;
 
-        constexpr static const std::size_t witness_columns = witness_columns_4;
-        constexpr static const std::size_t public_input_columns = public_columns_4;
-        constexpr static const std::size_t constant_columns = constant_columns_4;
-        constexpr static const std::size_t selector_columns = selector_columns_4;
+        constexpr static const std::size_t witness_columns = nil::actor::zk::snark::witness_columns_4;
+        constexpr static const std::size_t public_input_columns = nil::actor::zk::snark::public_columns_4;
+        constexpr static const std::size_t constant_columns = nil::actor::zk::snark::constant_columns_4;
+        constexpr static const std::size_t selector_columns = nil::actor::zk::snark::selector_columns_4;
 
         using arithmetization_params =
-            plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
+            nil::actor::zk::snark::plonk_arithmetization_params<witness_columns, public_input_columns, constant_columns, selector_columns>;
 
         constexpr static const std::size_t lambda = 40;
         constexpr static const std::size_t m = 2;
     };
 
-    using circuit_params = placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params>;
-    using transcript_type = typename transcript::fiat_shamir_heuristic_sequential<typename placeholder_test_params::transcript_hash_type>;
-    using lpc_params_type = commitments::list_polynomial_commitment_params<
+    using circuit_params = nil::actor::zk::snark::placeholder_circuit_params<field_type, typename placeholder_test_params::arithmetization_params>;
+    using transcript_type = typename nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<typename placeholder_test_params::transcript_hash_type>;
+    using lpc_params_type = nil::actor::zk::commitments::list_polynomial_commitment_params<
         typename placeholder_test_params::merkle_hash_type,
         typename placeholder_test_params::transcript_hash_type,
         placeholder_test_params::lambda,
@@ -962,16 +1153,16 @@ namespace placeholder_circuit4_lookup_test {
         true
     >;
 
-    using lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
-    using lpc_scheme_type = typename commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_type = nil::actor::zk::commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using lpc_scheme_type = typename nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type>;
     using lpc_placeholder_params_type = nil::actor::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
     using policy_type = nil::actor::zk::snark::detail::placeholder_policy<field_type, circuit_params>;
 
 ACTOR_THREAD_TEST_CASE(lookup_test_4) {
-    auto circuit = circuit_test_4<field_type>(test_global_alg_rnd_engine<field_type>);
+    auto circuit = nil::actor::zk::snark::circuit_test_4<field_type>(test_global_alg_rnd_engine<field_type>);
     constexpr std::size_t argument_size = 4;
 
-    plonk_table_description<field_type, typename circuit_params::arithmetization_params> desc;
+    nil::actor::zk::snark::plonk_table_description<field_type, typename circuit_params::arithmetization_params> desc;
 
     desc.rows_amount = table_rows;
     desc.usable_rows_amount = usable_rows;
@@ -984,29 +1175,29 @@ ACTOR_THREAD_TEST_CASE(lookup_test_4) {
     );
     typename policy_type::variable_assignment_type assignments = circuit.table;
 
-    auto fri_params = create_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
+    auto fri_params = create_actor_fri_params<typename lpc_type::fri_type, field_type>(table_rows_log);
     lpc_scheme_type lpc_scheme(fri_params);
 
     std::vector<std::size_t> columns_with_copy_constraints = {0, 1, 2, 3};
     transcript_type transcript;
 
-    typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_public_data = nil::actor::zk::snark::placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.public_table(), desc, lpc_scheme, columns_with_copy_constraints.size());
 
-    typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
-        preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
+    typename nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_private_data = nil::actor::zk::snark::placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
             constraint_system, assignments.private_table(), desc);
 
     auto polynomial_table =
-        plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
+        nil::actor::zk::snark::plonk_polynomial_dfs_table<field_type, typename placeholder_test_params::arithmetization_params>(
             preprocessed_private_data.private_polynomial_table, preprocessed_public_data.public_polynomial_table);
 
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     transcript_type prover_transcript(init_blob);
     transcript_type verifier_transcript(init_blob);
 
-    placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> prover(
+    nil::actor::zk::snark::placeholder_lookup_argument_prover<field_type, lpc_scheme_type, lpc_placeholder_params_type> prover(
             constraint_system, preprocessed_public_data, polynomial_table, lpc_scheme, prover_transcript);
     auto prover_res = prover.prove_eval();
 
@@ -1019,7 +1210,7 @@ ACTOR_THREAD_TEST_CASE(lookup_test_4) {
         std::size_t i_global_index = i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::witness);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::witness);
             columns_at_y[key] = polynomial_table.witness(i).evaluate(y * omega.pow(rotation));
         }
     }
@@ -1030,7 +1221,7 @@ ACTOR_THREAD_TEST_CASE(lookup_test_4) {
                                      placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::constant);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::constant);
 
             columns_at_y[key] = polynomial_table.constant(i).evaluate(y * omega.pow(rotation));
         }
@@ -1044,34 +1235,34 @@ ACTOR_THREAD_TEST_CASE(lookup_test_4) {
                                      placeholder_test_params::public_input_columns + i;
 
         for (int rotation : preprocessed_public_data.common_data.columns_rotations[i_global_index]) {
-            auto key = std::make_tuple(i, rotation, plonk_variable<typename field_type::value_type>::column_type::selector);
+            auto key = std::make_tuple(i, rotation, nil::actor::zk::snark::plonk_variable<typename field_type::value_type>::column_type::selector);
 
             columns_at_y[key] = polynomial_table.selector(i).evaluate(y * omega.pow(rotation));
         }
     }
 
-    lpc_scheme.append_eval_point(LOOKUP_BATCH, y);
-    lpc_scheme.append_eval_point(LOOKUP_BATCH, y * omega);
-    lpc_scheme.append_eval_point(LOOKUP_BATCH, y * omega.pow(usable_rows));
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::LOOKUP_BATCH, y);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::LOOKUP_BATCH, y * omega);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::LOOKUP_BATCH, y * omega.pow(usable_rows));
 
-    lpc_scheme.commit(PERMUTATION_BATCH);
-    lpc_scheme.append_eval_point(PERMUTATION_BATCH, y);
-    lpc_scheme.append_eval_point(PERMUTATION_BATCH, y * omega);
+    lpc_scheme.commit(nil::actor::zk::snark::PERMUTATION_BATCH);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::PERMUTATION_BATCH, y);
+    lpc_scheme.append_eval_point(nil::actor::zk::snark::PERMUTATION_BATCH, y * omega);
 
-    auto lpc_proof = lpc_scheme.proof_eval(transcript);
+    auto proof = lpc_scheme.proof_eval(transcript);
     // Prepare sorted, V_L and V_S values.
 
     auto special_selectors = (field_type::value_type::one() - (preprocessed_public_data.q_last.evaluate(y) +
             preprocessed_public_data.q_blind.evaluate(y)));
     auto half = prover_res.F_dfs[2].evaluate(y) * special_selectors.inversed();
 
-    placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> verifier;
+    nil::actor::zk::snark::placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> verifier;
     std::array<typename field_type::value_type, argument_size> verifier_res = verifier.verify_eval(
         preprocessed_public_data,
         constraint_system.lookup_gates(),
         constraint_system.lookup_tables(),
-        y, columns_at_y, lpc_proof.z.get(LOOKUP_BATCH),
-        lpc_proof.z.get(PERMUTATION_BATCH, 0),
+        y, columns_at_y, proof.z.get(nil::actor::zk::snark::LOOKUP_BATCH),
+        proof.z.get(nil::actor::zk::snark::PERMUTATION_BATCH, 0),
         prover_res.lookup_commitment,
         verifier_transcript
     );
@@ -1104,14 +1295,14 @@ using field_type = typename curve_type::base_field_type;
 using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
 
 ACTOR_THREAD_TEST_CASE(poseidon_prover_test_1) {
-    auto circuit = circuit_test_1<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, witness_columns_1, public_columns_1, constant_columns_1, selector_columns_1, rows_amount_1, 4> fixture(circuit, circuit.usable_rows, circuit.table_rows);
+    auto circuit = nil::actor::zk::snark::circuit_test_1<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, nil::actor::zk::snark::witness_columns_1, nil::actor::zk::snark::public_columns_1, nil::actor::zk::snark::constant_columns_1, nil::actor::zk::snark::selector_columns_1, nil::actor::zk::snark::rows_amount_1, 4> fixture(circuit, circuit.usable_rows, circuit.table_rows);
     BOOST_CHECK(fixture.run_test());
 }
 
 ACTOR_THREAD_TEST_CASE(keccak_prover_test_1) {
-    auto circuit = circuit_test_1<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, witness_columns_1, public_columns_1, constant_columns_1, selector_columns_1, rows_amount_1, 4> fixture(circuit, circuit.usable_rows, circuit.table_rows);
+    auto circuit = nil::actor::zk::snark::circuit_test_1<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, nil::actor::zk::snark::witness_columns_1, nil::actor::zk::snark::public_columns_1, nil::actor::zk::snark::constant_columns_1, nil::actor::zk::snark::selector_columns_1, nil::actor::zk::snark::rows_amount_1, 4> fixture(circuit, circuit.usable_rows, circuit.table_rows);
     BOOST_CHECK(fixture.run_test());
 }
 
@@ -1128,14 +1319,14 @@ const size_t usable_rows_3 = 4;
 const size_t permutation_size = 3;
 
 ACTOR_THREAD_TEST_CASE(poseidon_prover_test_3) {
-    auto circuit = circuit_test_3<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, witness_columns_3, public_columns_3, constant_columns_3, selector_columns_3, usable_rows_3, permutation_size> fixture(circuit, usable_rows_3, 1 << 3);
+    auto circuit = nil::actor::zk::snark::circuit_test_3<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, nil::actor::zk::snark::witness_columns_3, nil::actor::zk::snark::public_columns_3, nil::actor::zk::snark::constant_columns_3, nil::actor::zk::snark::selector_columns_3, usable_rows_3, permutation_size> fixture(circuit, usable_rows_3, 1 << 3);
     BOOST_CHECK(fixture.run_test());
 }
 
 ACTOR_THREAD_TEST_CASE(keccak_prover_test_3) {
-    auto circuit = circuit_test_3<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, witness_columns_3, public_columns_3, constant_columns_3, selector_columns_3, usable_rows_3, permutation_size> fixture(circuit, usable_rows_3, 1 << 3);
+    auto circuit = nil::actor::zk::snark::circuit_test_3<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, nil::actor::zk::snark::witness_columns_3, nil::actor::zk::snark::public_columns_3, nil::actor::zk::snark::constant_columns_3, nil::actor::zk::snark::selector_columns_3, usable_rows_3, permutation_size> fixture(circuit, usable_rows_3, 1 << 3);
     BOOST_CHECK(fixture.run_test());
 }
 
@@ -1151,14 +1342,14 @@ const size_t usable_rows_4 = 5;
 const size_t permutation_size = 3;
 
 ACTOR_THREAD_TEST_CASE(poseidon_prover_test_4) {
-    auto circuit = circuit_test_4<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, witness_columns_4, public_columns_4, constant_columns_4, selector_columns_4, usable_rows_4, permutation_size> fixture(circuit, usable_rows_4, 1 << 3);
+    auto circuit = nil::actor::zk::snark::circuit_test_4<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, nil::actor::zk::snark::witness_columns_4, nil::actor::zk::snark::public_columns_4, nil::actor::zk::snark::constant_columns_4, nil::actor::zk::snark::selector_columns_4, usable_rows_4, permutation_size> fixture(circuit, usable_rows_4, 1 << 3);
     BOOST_CHECK(fixture.run_test());
 }
 
 ACTOR_THREAD_TEST_CASE(keccak_prover_test_4) {
-    auto circuit = circuit_test_4<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, witness_columns_4, public_columns_4, constant_columns_4, selector_columns_4, usable_rows_4, permutation_size> fixture(circuit, usable_rows_4, 1 << 3);
+    auto circuit = nil::actor::zk::snark::circuit_test_4<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, nil::actor::zk::snark::witness_columns_4, nil::actor::zk::snark::public_columns_4, nil::actor::zk::snark::constant_columns_4, nil::actor::zk::snark::selector_columns_4, usable_rows_4, permutation_size> fixture(circuit, usable_rows_4, 1 << 3);
     BOOST_CHECK(fixture.run_test());
 }
 
@@ -1172,14 +1363,14 @@ using field_type = typename curve_type::base_field_type;
 using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
 
 ACTOR_THREAD_TEST_CASE(poseidon_prover_test_6) {
-    auto circuit = circuit_test_6<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, witness_columns_6, public_columns_6, constant_columns_6, selector_columns_6, usable_rows_6, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
+    auto circuit = nil::actor::zk::snark::circuit_test_6<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, nil::actor::zk::snark::witness_columns_6, nil::actor::zk::snark::public_columns_6, nil::actor::zk::snark::constant_columns_6, nil::actor::zk::snark::selector_columns_6, nil::actor::zk::snark::usable_rows_6, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
     BOOST_CHECK(fixture.run_test());
 }
 
 ACTOR_THREAD_TEST_CASE(keccak_prover_test_6) {
-    auto circuit = circuit_test_6<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, witness_columns_6, public_columns_6, constant_columns_6, selector_columns_6, usable_rows_6, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
+    auto circuit = nil::actor::zk::snark::circuit_test_6<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, nil::actor::zk::snark::witness_columns_6, nil::actor::zk::snark::public_columns_6, nil::actor::zk::snark::constant_columns_6, nil::actor::zk::snark::selector_columns_6, nil::actor::zk::snark::usable_rows_6, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
     BOOST_CHECK(fixture.run_test());
 }
 
@@ -1193,14 +1384,14 @@ using field_type = typename curve_type::base_field_type;
 using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
 
 ACTOR_THREAD_TEST_CASE(poseidon_prover_test_7) {
-    auto circuit = circuit_test_7<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, witness_columns_7, public_columns_7, constant_columns_7, selector_columns_7, usable_rows_7, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
+    auto circuit = nil::actor::zk::snark::circuit_test_7<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, poseidon_type, poseidon_type, nil::actor::zk::snark::witness_columns_7, nil::actor::zk::snark::public_columns_7, nil::actor::zk::snark::constant_columns_7, nil::actor::zk::snark::selector_columns_7, nil::actor::zk::snark::usable_rows_7, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
     BOOST_CHECK(fixture.run_test());
 }
 
 ACTOR_THREAD_TEST_CASE(keccak_prover_test_7) {
-    auto circuit = circuit_test_7<field_type>(test_global_alg_rnd_engine<field_type>);
-    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, witness_columns_7, public_columns_7, constant_columns_7, selector_columns_7, usable_rows_7, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
+    auto circuit = nil::actor::zk::snark::circuit_test_7<field_type>(test_global_alg_rnd_engine<field_type>);
+    placeholder_test_fixture<algebra::curves::pallas, hashes::keccak_1600<512>, hashes::keccak_1600<512>, nil::actor::zk::snark::witness_columns_7, nil::actor::zk::snark::public_columns_7, nil::actor::zk::snark::constant_columns_7, nil::actor::zk::snark::selector_columns_7, nil::actor::zk::snark::usable_rows_7, 3, true> fixture(circuit, circuit.usable_rows, circuit.table_rows);
     BOOST_CHECK(fixture.run_test());
 }
 

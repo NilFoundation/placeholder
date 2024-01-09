@@ -24,8 +24,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_COMMITMENTS_BASIC_BATCHED_FRI_HPP
-#define CRYPTO3_ZK_COMMITMENTS_BASIC_BATCHED_FRI_HPP
+#ifndef ACTOR_ZK_COMMITMENTS_BASIC_BATCHED_FRI_HPP
+#define ACTOR_ZK_COMMITMENTS_BASIC_BATCHED_FRI_HPP
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 
@@ -503,4 +503,4 @@ namespace nil {
     }                // namespace crypto3
 }    // namespace nil
 
-#endif    // CRYPTO3_ZK_COMMITMENTS_BASIC_BATCHED_FRI_HPP
+#endif    // ACTOR_ZK_COMMITMENTS_BASIC_BATCHED_FRI_HPP

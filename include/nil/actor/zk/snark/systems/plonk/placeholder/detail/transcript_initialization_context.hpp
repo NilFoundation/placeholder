@@ -25,8 +25,8 @@
 //
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_PLONK_PLACEHOLDER_TRANSCRIPT_INITIALIZATION_CONTEXT_HPP
-#define CRYPTO3_PLONK_PLACEHOLDER_TRANSCRIPT_INITIALIZATION_CONTEXT_HPP
+#ifndef ACTOR_PLONK_PLACEHOLDER_TRANSCRIPT_INITIALIZATION_CONTEXT_HPP
+#define ACTOR_PLONK_PLACEHOLDER_TRANSCRIPT_INITIALIZATION_CONTEXT_HPP
 
 #include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
 #include <nil/actor/zk/snark/systems/plonk/placeholder/params.hpp>
@@ -120,4 +120,4 @@ namespace nil {
     }                // namespace actor
 }    // namespace nil
 
-#endif    // CRYPTO3_PLONK_PLACEHOLDER_TRANSCRIPT_INITIALIZATION_CONTEXT_HPP
+#endif    // ACTOR_PLONK_PLACEHOLDER_TRANSCRIPT_INITIALIZATION_CONTEXT_HPP
