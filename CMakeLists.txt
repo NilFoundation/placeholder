@@ -173,6 +173,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
         ${Boost_LIBRARIES}
 
         crypto3::algebra
+        crypto3::block
         crypto3::math
         crypto3::hash
         crypto3::multiprecision
