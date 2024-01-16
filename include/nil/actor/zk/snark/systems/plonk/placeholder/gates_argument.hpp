@@ -30,11 +30,13 @@
 
 #include <unordered_map>
 #include <iostream>
+#include <memory>
 
 #include <nil/actor/math/polynomial/polynomial.hpp>
 #include <nil/actor/math/polynomial/shift.hpp>
 #include <nil/actor/math/domains/evaluation_domain.hpp>
 #include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 
