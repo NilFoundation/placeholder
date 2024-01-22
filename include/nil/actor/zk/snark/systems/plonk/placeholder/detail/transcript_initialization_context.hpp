@@ -31,8 +31,7 @@
 #include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
 #include <nil/actor/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
-
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/actor/zk/transcript/fiat_shamir.hpp>
 
 #include <nil/crypto3/marshalling/zk/types/placeholder/transcript_initialization_context.hpp>
 
@@ -57,11 +56,13 @@ namespace nil {
                                 std::size_t rows_amount,
                                 std::size_t usable_rows_amount,
                                 const typename commitment_scheme_type::params_type& commitment_params,
-                                const std::string& application_id)
+                                const std::string& application_id,
+                                const typename field_type::value_type& delta)
                             : rows_amount(rows_amount)
                             , usable_rows_amount(usable_rows_amount)
                             , commitment_params(commitment_params)
                             , application_id(application_id)
+                            , delta(delta)
                         { }
  
                         // All fields below this line must be included in the transcript initilization, including
@@ -71,13 +72,13 @@ namespace nil {
                         constexpr static const std::size_t constant_columns = PlaceholderParamsType::constant_columns;
                         constexpr static const std::size_t selector_columns = PlaceholderParamsType::selector_columns;
 
-                        constexpr static const typename field_type::value_type delta = PlaceholderParamsType::delta;
  
                         std::size_t rows_amount;
                         std::size_t usable_rows_amount;
 
                         // Commitment params. All fields of this data structure must be included on marshalling,
                         // including some static constexpr parameters.
+                        const typename field_type::value_type delta;
                         typename commitment_scheme_type::params_type commitment_params;
 
                         constexpr static const typename field_type::value_type modulus = field_type::modulus;
@@ -93,12 +94,14 @@ namespace nil {
                             std::size_t rows_amount,
                             std::size_t usable_rows_amount,
                             const typename PlaceholderParamsType::commitment_scheme_type::params_type& commitment_params,
-                            const std::string& application_id) {
+                            const std::string& application_id,
+                            const typename PlaceholderParamsType::field_type::value_type& delta) {
                         transcript_initialization_context<PlaceholderParamsType> context(
                             rows_amount,
                             usable_rows_amount,
                             commitment_params,
-                            application_id
+                            application_id,
+                            delta
                         );
 
                         // Marshall the initialization context and push it to the transcript.

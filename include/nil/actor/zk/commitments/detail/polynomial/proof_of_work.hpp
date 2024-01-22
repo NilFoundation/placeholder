@@ -39,7 +39,6 @@ namespace nil {
     namespace actor {
         namespace zk {
             namespace commitments {
-
                 template<typename TranscriptHashType, typename OutType = std::uint32_t, std::uint32_t MASK=0xFFFF0000>
                 class proof_of_work {
                 public:
@@ -90,6 +89,10 @@ namespace nil {
                     }
                 };
 
+                // Note that the interface here is slightly different from the one above:
+                // amount of bits for grinding instead of the mask.
+                // This was done because the actual mask is applied to the high bits instead of the low bits
+                // which makes manually setting the mask error-prone.
                 template<typename TranscriptHashType, typename FieldType, std::uint8_t GrindingBits=16>
                 class field_proof_of_work {
                 public:
@@ -153,55 +156,6 @@ namespace nil {
                     }
 
                     static inline bool verify(transcript_type &transcript, value_type const& proof_of_work) {
-                        transcript(proof_of_work);
-                        integral_type result = integral_type(transcript.template challenge<FieldType>().data);
-                        return ((result & mask) == 0);
-                    }
-                };
-
-                // Note that the interface here is slightly different from the one above:
-                // amount of bits for grinding instead of the mask.
-                // This was done because the actual mask is applied to the high bits instead of the low bits
-                // which makes manually setting the mask error-prone.
-                template<typename TranscriptHashType, typename FieldType, std::uint8_t GrindingBits=16>
-                class field_proof_of_work {
-                public:
-                    using transcript_hash_type = TranscriptHashType;
-                    using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using value_type = typename FieldType::value_type;
-                    using integral_type = typename FieldType::integral_type;
-
-                    constexpr static const integral_type mask =
-                        (GrindingBits > 0 ?
-                            ((integral_type(2) << GrindingBits - 1) - 1) << (FieldType::modulus_bits - GrindingBits)
-                            : 0);
-
-                    static inline boost::property_tree::ptree get_params() {
-                        boost::property_tree::ptree params;
-                        params.put("mask", mask);
-                        return params;
-                    }
-
-                    static inline value_type generate(transcript_type &transcript) {
-                        static boost::random::random_device dev;
-                        static nil::crypto3::random::algebraic_engine<FieldType> random_engine(dev);
-                        value_type proof_of_work = random_engine();
-                        integral_type result;
-
-                        while( true ) {
-                            transcript_type tmp_transcript = transcript;
-                            tmp_transcript(proof_of_work);
-                            result = integral_type(tmp_transcript.template challenge<FieldType>().data);
-                            if ((result & mask) == 0)
-                                break;
-                            proof_of_work++;
-                        }
-                        transcript(proof_of_work);
-                        result = integral_type(transcript.template challenge<FieldType>().data);
-                        return proof_of_work;
-                    }
-
-                    static inline bool verify(transcript_type &transcript, value_type proof_of_work) {
                         transcript(proof_of_work);
                         integral_type result = integral_type(transcript.template challenge<FieldType>().data);
                         return ((result & mask) == 0);
