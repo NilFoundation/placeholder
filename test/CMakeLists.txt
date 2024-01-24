@@ -156,6 +156,7 @@ set(TESTS_NAMES
     "commitment/kzg"
     "commitment/fold_polynomial"
     "commitment/proof_of_knowledge"
+    "commitment/proof_of_work"
     "commitment/powers_of_tau"
     "commitment/r1cs_gg_ppzksnark_mpc"
     "commitment/kimchi_pedersen"
