@@ -116,7 +116,7 @@ namespace nil {
 
                         value_type pow_seed = random_engine();
                         value_type init_seed = pow_seed;
-                        std::size_t per_core = 2*65536;
+                        std::size_t per_core = 4*65536;
                         std::vector<value_type> pow_values(smp::count*per_core);
                         std::atomic<bool> challenge_found = false;
                         value_type pow_value;

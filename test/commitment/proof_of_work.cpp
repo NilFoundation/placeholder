@@ -88,9 +88,9 @@ ACTOR_FIXTURE_TEST_CASE(pow_poseidon_basic_test, test_fixture) {
     using integral_type = typename field_type::integral_type;
     using policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
     using poseidon = nil::crypto3::hashes::poseidon<policy>;
-    using pow_type = nil::actor::zk::commitments::field_proof_of_work<poseidon, field_type, 28>;
+    using pow_type = nil::actor::zk::commitments::field_proof_of_work<poseidon, field_type, 32>;
 
-    const integral_type expected_mask = integral_type(0xFFFFFFF000000000) << (field_type::modulus_bits - 64);
+    const integral_type expected_mask = integral_type(0xFFFFFFFF00000000) << (field_type::modulus_bits - 64);
     nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<poseidon> transcript;
     auto old_transcript_1 = transcript, old_transcript_2 = transcript;
 
