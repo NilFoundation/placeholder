@@ -117,43 +117,22 @@ namespace nil {
                         value_type pow_seed = random_engine();
                         value_type init_seed = pow_seed;
                         std::size_t per_core = 4*65536;
-                        std::vector<value_type> pow_values(smp::count*per_core);
                         std::atomic<bool> challenge_found = false;
                         value_type pow_value;
 
-                        std::cout << "Starting seed: " << pow_seed << std::endl;
-                        std::cout << "Batch size   : " << pow_values.size() << std::endl;
-                        std::cout << "SMP count    : " << smp::count << std::endl;
-
                         while( true ) {
-
-                            /* prepare pow_values for batch */
-                            for(std::size_t i = 0; i < pow_values.size(); ++i) {
-                                pow_values[i] = ++pow_seed;
-                            }
-
-                            /* Execute batch */
                             math::detail::block_execution(
-                                pow_values.size(), smp::count,
-                                [&transcript, &pow_values, &challenge_found, &pow_value](std::size_t pow_start, std::size_t pow_finish) {
-                                    std::size_t batch_size = pow_finish - pow_start;
-                                    std::size_t ten_percent = batch_size/10;
-                                    // std::cout << "Batch item from " << pow_start << " to " << pow_finish << std::endl;
+                                per_core*smp::count, smp::count,
+                                [&transcript, &pow_seed, &challenge_found, &pow_value](std::size_t pow_start, std::size_t pow_finish) {
                                     for(std::size_t i = pow_start; i < pow_finish; ++i) {
                                         if (challenge_found)
                                             break;
-
-                                        if ((pow_start == batch_size) && (i-pow_start)%ten_percent == 0) {
-                                            std::cout << "Worker #1 processed: " << (i-pow_start)/ten_percent*10 << "%" << std::endl;
-                                        }
-                                        
                                         transcript_type tmp_transcript = transcript;
-                                        tmp_transcript(pow_values[i]);
+                                        tmp_transcript(pow_value+i);
                                         integral_type pow_result = integral_type(tmp_transcript.template challenge<FieldType>().data);
                                         if (((pow_result & mask) == 0) && !challenge_found) {
                                             challenge_found = true;
-                                            pow_value = pow_values[i];
-                                            // std::cout << "Challenge found! : " << pow_value << " at " << i << std::endl;
+                                            pow_value = pow_seed+i;
                                             break;
                                         }
                                     }
@@ -161,17 +140,13 @@ namespace nil {
 
                             if (challenge_found)
                                 break;
-                            std::cout << "Batch with seed " << pow_seed << " (" << pow_seed - init_seed <<" values grinded), gave nothing, starting another..." << std::endl;
                         }
-                        std::cout << "Challenge found! : " << pow_value << std::endl;
-                        std::cout << "Pow value offset: " << pow_value - init_seed << std::endl;
-
                         transcript(pow_value);
-                        integral_type result = integral_type(transcript.template challenge<FieldType>().data);
+                        transcript.template challenge<FieldType>();
                         return pow_value;
                     }
 
-                    static inline bool verify(transcript_type &transcript, value_type proof_of_work) {
+                    static inline bool verify(transcript_type &transcript, value_type const& proof_of_work) {
                         transcript(proof_of_work);
                         integral_type result = integral_type(transcript.template challenge<FieldType>().data);
                         return ((result & mask) == 0);

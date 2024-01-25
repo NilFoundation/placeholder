@@ -88,14 +88,14 @@ ACTOR_FIXTURE_TEST_CASE(pow_poseidon_basic_test, test_fixture) {
     using integral_type = typename field_type::integral_type;
     using policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
     using poseidon = nil::crypto3::hashes::poseidon<policy>;
-    using pow_type = nil::actor::zk::commitments::field_proof_of_work<poseidon, field_type, 32>;
+    using pow_type = nil::actor::zk::commitments::field_proof_of_work<poseidon, field_type, 16>;
 
-    const integral_type expected_mask = integral_type(0xFFFFFFFF00000000) << (field_type::modulus_bits - 64);
+    const integral_type expected_mask = integral_type(0xFFFF000000000000) << (field_type::modulus_bits - 64);
     nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<poseidon> transcript;
     auto old_transcript_1 = transcript, old_transcript_2 = transcript;
 
     auto seed = nil::actor::testing::local_random_engine();
-    BOOST_TEST_MESSAGE("Seed for proof of work generator: " << seed);
+
     nil::crypto3::random::algebraic_engine<field_type> rnd_engine = nil::crypto3::random::algebraic_engine<field_type>(seed);
 
     auto result = pow_type::generate(transcript,  rnd_engine);
@@ -111,30 +111,3 @@ ACTOR_FIXTURE_TEST_CASE(pow_poseidon_basic_test, test_fixture) {
     // check that random stuff doesn't pass verify
     BOOST_ASSERT(!hard_pow_type::verify(old_transcript_1, result));
 }
-/*
-ACTOR_THREAD_TEST_CASE(pow_basic_test) {
-    using keccak = nil::crypto3::hashes::keccak_1600<512>;
-    const std::uint32_t mask = 0xFFFFF000;
-    using pow_type = nil::actor::zk::commitments::proof_of_work<keccak, std::uint32_t, mask>;
-
-    nil::actor::zk::transcript::fiat_shamir_heuristic_sequential<keccak> transcript;
-    auto old_transcript_1 = transcript, old_transcript_2 = transcript;
-
-    auto result = pow_type::generate(transcript);
-    BOOST_ASSERT(pow_type::verify(old_transcript_1, result));
-
-    // manually reimplement verify to ensure that changes in implementation didn't break it
-    std::array<std::uint8_t, 4> bytes;
-    bytes[0] = std::uint8_t((result & 0xFF000000) >> 24);
-    bytes[1] = std::uint8_t((result & 0x00FF0000) >> 16);
-    bytes[2] = std::uint8_t((result & 0x0000FF00) >> 8);
-    bytes[3] = std::uint8_t(result & 0x000000FF);
-    old_transcript_2(bytes);
-    auto chal = old_transcript_2.template int_challenge<std::uint32_t>();
-    BOOST_ASSERT((chal & mask) == 0);
-
-    // check that random stuff doesn't pass verify
-    using hard_pow_type = nil::actor::zk::commitments::proof_of_work<keccak, std::uint32_t, 0xFFFF0000>;
-    BOOST_ASSERT(!hard_pow_type::verify(old_transcript_1, result));
-}
-*/
