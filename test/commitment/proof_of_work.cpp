@@ -44,45 +44,10 @@
 
 #include <nil/actor/zk/transcript/fiat_shamir.hpp>
 
-std::size_t test_global_seed = 0;
-boost::random::mt11213b test_global_rnd_engine;
-template <typename FieldType>
-nil::crypto3::random::algebraic_engine<FieldType> test_global_alg_rnd_engine;
-
-struct test_fixture {
-    // Enumerate all fields used in tests;
-    using field1_type = nil::crypto3::algebra::curves::pallas::base_field_type;
-
-    test_fixture(){
-        test_global_seed = 0;
-
-        for( std::size_t i = 0; i + 1 < boost::unit_test::framework::master_test_suite().argc; i++){
-            if(std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--seed"){
-                if(std::string(boost::unit_test::framework::master_test_suite().argv[i+1]) == "random"){
-                    std::random_device rd;
-                    test_global_seed = rd();
-                    std::cout << "Random seed=" << test_global_seed << std::endl;
-                    break;
-                }
-                if(std::regex_match( boost::unit_test::framework::master_test_suite().argv[i+1], std::regex( ( "((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?" ) ) ) ){
-                    test_global_seed = atoi(boost::unit_test::framework::master_test_suite().argv[i+1]);
-                    break;
-                }
-            }
-        }
-
-        BOOST_TEST_MESSAGE("test_global_seed = " << test_global_seed);
-        test_global_rnd_engine = boost::random::mt11213b(test_global_seed);
-        test_global_alg_rnd_engine<field1_type> = nil::crypto3::random::algebraic_engine<field1_type>(test_global_seed);
-    }
-    ~test_fixture(){}
-};
-
-
 using namespace nil::crypto3::algebra;
 using namespace nil::actor::zk::commitments;
 
-ACTOR_FIXTURE_TEST_CASE(pow_poseidon_basic_test, test_fixture) {
+ACTOR_THREAD_TEST_CASE(pow_poseidon_basic_test) {
     using curve_type = curves::pallas;
     using field_type = curve_type::base_field_type;
     using integral_type = typename field_type::integral_type;
