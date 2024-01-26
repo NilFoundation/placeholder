@@ -59,7 +59,7 @@ namespace nil {
                         return params;
                     }
 
-                    static inline value_type generate(transcript_type &transcript, 
+                    static inline value_type generate(transcript_type &transcript,
                         nil::crypto3::random::algebraic_engine<FieldType> random_engine) {
 
                         value_type pow_seed = random_engine();
@@ -71,35 +71,38 @@ namespace nil {
                         value_type pow_value;
 
                         while( true ) {
-                            // std::vector<std::optional<value_type>> 
-                            auto results = math::detail::block_execution_vector(
+                            std::vector<future<std::optional<value_type>>>
+                            results = math::detail::block_execution_vector<std::optional<value_type>>(
                                 per_core*smp::count, smp::count,
                                 [&transcript, &pow_seed, &challenge_found](std::size_t pow_start, std::size_t pow_finish) {
                                     std::size_t i = pow_start;
                                     while ( i < pow_finish ) {
-                                        if (challenge_found)
+                                        if (challenge_found) {
                                             break;
+                                        }
                                         transcript_type tmp_transcript = transcript;
                                         tmp_transcript(pow_seed + i);
                                         integral_type pow_result = integral_type(tmp_transcript.template challenge<FieldType>().data);
                                         if ( (pow_result & mask) == 0 ) {
                                             challenge_found = true;
-                                            break;
+                                            return std::optional<value_type>{ pow_seed + i };
                                         }
                                         ++i;
                                     }
-                                    if ( i < pow_finish ) {
-                                        return std::optional<value_type>{ pow_seed + i };
-                                    } else {
-                                        return std::optional<value_type>{ };
-                                    }
+                                    return std::optional<value_type>{ };
                                 });
 
-                            auto found = std::find_if(results.begin(), results.end(),
-                                    [](auto x) { return x.get() ; });
+                            auto it = results.begin();
+                            while (it != results.end() ) {
+                                std::optional<value_type> result = it->get();
+                                if (result) {
+                                    pow_value = *result;
+                                    break;
+                                }
+                                ++it;
+                            }
 
-                            if (found != results.end()) {
-                                pow_value = found->get();
+                            if (it != results.end()) {
                                 break;
                             }
 
