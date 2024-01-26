@@ -61,6 +61,32 @@ namespace nil {
 
                     return make_ready_future<>();
                 }
+
+                template<typename ReturnType>
+                std::vector<future<ReturnType>> block_execution_vector(std::size_t elements_count, std::size_t smp_count,
+                        std::function<ReturnType(std::size_t begin, std::size_t end)> func) {
+                    std::vector<future<ReturnType>> fut;
+
+                    // We experimentally noticed, that when at least 4 cores are available, it's better to keep core #0 idle.
+                    bool use_core_0 = (smp_count < 4);
+
+                    std::size_t cpu_usage = std::min(elements_count, smp_count);
+
+                    if (!use_core_0 && elements_count >= smp_count) {
+                        --cpu_usage;
+                    }
+                    std::size_t begin = 0;
+
+                    for (auto i = 0; i < cpu_usage; ++i) {
+                        auto end = begin + (elements_count - begin) / (cpu_usage - i);
+                        fut.emplace_back(smp::submit_to(i + (use_core_0 ? 0 : 1), [begin, end, func]() {
+                            return func(begin, end);
+                        }));
+                        begin = end;
+                    }
+
+                    return fut;
+                }
             }    // namespace detail
         }        // namespace math
     }            // namespace actor
