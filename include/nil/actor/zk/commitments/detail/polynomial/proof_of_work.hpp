@@ -28,7 +28,6 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include <cstdint>
-#include <optional>
 
 #include <nil/actor/math/detail/utility.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -64,17 +63,16 @@ namespace nil {
 
                         value_type pow_seed = random_engine();
 
-                        /* Enough work for ~ two minutes */
-                        std::size_t per_core = 1<<18;
+                        /* Enough work for ~ two minutes on 48 cores */
+                        std::size_t per_block = 1<<23;
 
                         std::atomic<bool> challenge_found = false;
-                        value_type pow_value;
+                        std::atomic<std::size_t> pow_value_offset;
 
                         while( true ) {
-                            std::vector<future<std::optional<value_type>>>
-                            results = math::detail::block_execution_vector<std::optional<value_type>>(
-                                per_core*smp::count, smp::count,
-                                [&transcript, &pow_seed, &challenge_found](std::size_t pow_start, std::size_t pow_finish) {
+                            math::detail::block_execution(
+                                per_block, smp::count,
+                                [&transcript, &pow_seed, &challenge_found, &pow_value_offset](std::size_t pow_start, std::size_t pow_finish) {
                                     std::size_t i = pow_start;
                                     while ( i < pow_finish ) {
                                         if (challenge_found) {
@@ -83,35 +81,24 @@ namespace nil {
                                         transcript_type tmp_transcript = transcript;
                                         tmp_transcript(pow_seed + i);
                                         integral_type pow_result = integral_type(tmp_transcript.template challenge<FieldType>().data);
-                                        if ( (pow_result & mask) == 0 ) {
+                                        if ( ((pow_result & mask) == 0) && !challenge_found ) {
                                             challenge_found = true;
-                                            return std::optional<value_type>{ pow_seed + i };
+                                            pow_value_offset = i;
+                                            break;
                                         }
                                         ++i;
                                     }
-                                    return std::optional<value_type>{ };
-                                });
+                                }).get();
 
-                            auto it = results.begin();
-                            while (it != results.end() ) {
-                                std::optional<value_type> result = it->get();
-                                if (result) {
-                                    pow_value = *result;
-                                    break;
-                                }
-                                ++it;
-                            }
-
-                            if (it != results.end()) {
+                            if (challenge_found) {
                                 break;
                             }
-
-                            pow_seed += per_core * smp::count;
+                            pow_seed += per_block;
                         }
 
-                        transcript(pow_value);
+                        transcript(pow_seed + (std::size_t)pow_value_offset);
                         transcript.template challenge<FieldType>();
-                        return pow_value;
+                        return pow_seed + (std::size_t)pow_value_offset;
                     }
 
                     static inline bool verify(transcript_type &transcript, value_type const& proof_of_work) {
