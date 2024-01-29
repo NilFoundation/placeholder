@@ -27,21 +27,30 @@
 
 #include <boost/property_tree/ptree.hpp>
 
+#include <cstdint>
+
+#include <nil/actor/math/detail/utility.hpp>
+#include <nil/crypto3/random/algebraic_engine.hpp>
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/actor/zk/transcript/fiat_shamir.hpp>
+
 
 namespace nil {
     namespace actor {
         namespace zk {
             namespace commitments {
-                template<typename TranscriptHashType, typename OutType = std::uint32_t, std::uint32_t MASK=0xFFFF0000>
-                class proof_of_work {
+                template<typename TranscriptHashType, typename FieldType, std::uint8_t GrindingBits=16>
+                class field_proof_of_work {
                 public:
                     using transcript_hash_type = TranscriptHashType;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using output_type = OutType;
+                    using value_type = typename FieldType::value_type;
+                    using integral_type = typename FieldType::integral_type;
 
-                    constexpr static std::uint32_t mask = MASK;
+                    constexpr static const integral_type mask =
+                        (GrindingBits > 0 ?
+                            ((integral_type(2) << GrindingBits - 1) - 1) << (FieldType::modulus_bits - GrindingBits)
+                            : 0);
 
                     static inline boost::property_tree::ptree get_params() {
                         boost::property_tree::ptree params;
@@ -49,37 +58,52 @@ namespace nil {
                         return params;
                     }
 
-                    static inline OutType generate(transcript_type &transcript) {
-                        output_type proof_of_work = std::rand();
-                        output_type result;
-                        std::vector<std::uint8_t> bytes(4);
+                    static inline value_type generate(transcript_type &transcript,
+                        nil::crypto3::random::algebraic_engine<FieldType> random_engine) {
+
+                        value_type pow_seed = random_engine();
+
+                        /* Enough work for ~ two minutes on 48 cores */
+                        std::size_t per_block = 1<<23;
+
+                        std::atomic<bool> challenge_found = false;
+                        std::atomic<std::size_t> pow_value_offset;
 
                         while( true ) {
-                            transcript_type tmp_transcript = transcript;
-                            bytes[0] = std::uint8_t((proof_of_work&0xFF000000)>>24);
-                            bytes[1] = std::uint8_t((proof_of_work&0x00FF0000)>>16);
-                            bytes[2] = std::uint8_t((proof_of_work&0x0000FF00)>>8);
-                            bytes[3] = std::uint8_t(proof_of_work&0x000000FF);
+                            math::detail::block_execution(
+                                per_block, smp::count,
+                                [&transcript, &pow_seed, &challenge_found, &pow_value_offset](std::size_t pow_start, std::size_t pow_finish) {
+                                    std::size_t i = pow_start;
+                                    while ( i < pow_finish ) {
+                                        if (challenge_found) {
+                                            break;
+                                        }
+                                        transcript_type tmp_transcript = transcript;
+                                        tmp_transcript(pow_seed + i);
+                                        integral_type pow_result = integral_type(tmp_transcript.template challenge<FieldType>().data);
+                                        if ( ((pow_result & mask) == 0) && !challenge_found ) {
+                                            challenge_found = true;
+                                            pow_value_offset = i;
+                                            break;
+                                        }
+                                        ++i;
+                                    }
+                                }).get();
 
-                            tmp_transcript(bytes);
-                            result = tmp_transcript.template int_challenge<output_type>();
-                            if ((result & mask) == 0)
+                            if (challenge_found) {
                                 break;
-                            proof_of_work++;
+                            }
+                            pow_seed += per_block;
                         }
-                        transcript(bytes);
-                        result = transcript.template int_challenge<output_type>();
-                        return proof_of_work;
+
+                        transcript(pow_seed + (std::size_t)pow_value_offset);
+                        transcript.template challenge<FieldType>();
+                        return pow_seed + (std::size_t)pow_value_offset;
                     }
 
-                    static inline bool verify(transcript_type &transcript, output_type proof_of_work) {
-                        std::vector<std::uint8_t> bytes(4);
-                        bytes[0] = std::uint8_t((proof_of_work&0xFF000000)>>24);
-                        bytes[1] = std::uint8_t((proof_of_work&0x00FF0000)>>16);
-                        bytes[2] = std::uint8_t((proof_of_work&0x0000FF00)>>8);
-                        bytes[3] = std::uint8_t(proof_of_work&0x000000FF);
-                        transcript(bytes);
-                        output_type result = transcript.template int_challenge<output_type>();
+                    static inline bool verify(transcript_type &transcript, value_type const& proof_of_work) {
+                        transcript(proof_of_work);
+                        integral_type result = integral_type(transcript.template challenge<FieldType>().data);
                         return ((result & mask) == 0);
                     }
                 };
