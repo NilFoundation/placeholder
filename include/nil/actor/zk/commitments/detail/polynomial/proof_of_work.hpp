@@ -39,6 +39,57 @@ namespace nil {
     namespace actor {
         namespace zk {
             namespace commitments {
+
+                template<typename TranscriptHashType, typename OutType = std::uint32_t, std::uint32_t MASK=0xFFFF0000>
+                class proof_of_work {
+                public:
+                    using transcript_hash_type = TranscriptHashType;
+                    using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
+                    using output_type = OutType;
+
+                    constexpr static std::uint32_t mask = MASK;
+
+                    static inline boost::property_tree::ptree get_params() {
+                        boost::property_tree::ptree params;
+                        params.put("mask", mask);
+                        return params;
+                    }
+
+                    static inline OutType generate(transcript_type &transcript) {
+                        output_type proof_of_work = std::rand();
+                        output_type result;
+                        std::vector<std::uint8_t> bytes(4);
+
+                        while( true ) {
+                            transcript_type tmp_transcript = transcript;
+                            bytes[0] = std::uint8_t((proof_of_work&0xFF000000)>>24);
+                            bytes[1] = std::uint8_t((proof_of_work&0x00FF0000)>>16);
+                            bytes[2] = std::uint8_t((proof_of_work&0x0000FF00)>>8);
+                            bytes[3] = std::uint8_t(proof_of_work&0x000000FF);
+
+                            tmp_transcript(bytes);
+                            result = tmp_transcript.template int_challenge<output_type>();
+                            if ((result & mask) == 0)
+                                break;
+                            proof_of_work++;
+                        }
+                        transcript(bytes);
+                        result = transcript.template int_challenge<output_type>();
+                        return proof_of_work;
+                    }
+
+                    static inline bool verify(transcript_type &transcript, output_type proof_of_work) {
+                        std::vector<std::uint8_t> bytes(4);
+                        bytes[0] = std::uint8_t((proof_of_work&0xFF000000)>>24);
+                        bytes[1] = std::uint8_t((proof_of_work&0x00FF0000)>>16);
+                        bytes[2] = std::uint8_t((proof_of_work&0x0000FF00)>>8);
+                        bytes[3] = std::uint8_t(proof_of_work&0x000000FF);
+                        transcript(bytes);
+                        output_type result = transcript.template int_challenge<output_type>();
+                        return ((result & mask) == 0);
+                    }
+                };
+
                 template<typename TranscriptHashType, typename FieldType, std::uint8_t GrindingBits=16>
                 class field_proof_of_work {
                 public:
