@@ -173,7 +173,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
 
     constexpr static const std::size_t d = 16;
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
-    
+
     constexpr static const std::size_t m = 2;
 
     typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, lambda, m> fri_type;
@@ -421,7 +421,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
     lpc_scheme_prover.append_eval_point(3, point);
-    
+
     std::array<std::uint8_t, 96> x_data {};
 
     // Prove
@@ -514,7 +514,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(2, point);
     lpc_scheme_prover.append_eval_point(3, point);
-    
+
     std::array<std::uint8_t, 96> x_data {};
 
     // Prove
@@ -533,7 +533,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
     lpc_scheme_verifier.append_eval_point(3, point);
     BOOST_CHECK(lpc_scheme_verifier.verify_eval(proof, commitments, transcript_verifier));
 
-    // Check transcript state    
+    // Check transcript state
     typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
@@ -552,7 +552,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
 
     constexpr static const std::size_t d = 16;
     constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
-    
+
     constexpr static const std::size_t m = 2;
 
     typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, lambda, m> fri_type;
