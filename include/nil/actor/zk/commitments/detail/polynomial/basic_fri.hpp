@@ -1019,3 +1019,4 @@ namespace nil {
 }    // namespace nil
 
 #endif    // ACTOR_ZK_COMMITMENTS_BASIC_FRI_HPP
+
