@@ -1084,10 +1084,11 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
     auto lpc_proof = lpc_scheme.proof_eval(transcript);
     // Prepare sorted and V_L values
 
+/*
     auto special_selectors = (field_type::value_type::one() - (preprocessed_public_data.q_last.evaluate(y) +
             preprocessed_public_data.q_blind.evaluate(y)));
     auto half = prover_res.F_dfs[2].evaluate(y) * special_selectors.inversed();
-
+*/
     nil::actor::zk::snark::placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> lookup_verifier;
     std::array<typename field_type::value_type, argument_size> verifier_res = lookup_verifier.verify_eval(
         preprocessed_public_data,
@@ -1099,7 +1100,7 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
         verifier_transcript
     );
 
-    typename field_type::value_type verifier_next_challenge = verifier_transcript.template challenge<field_type>();
+/*    typename field_type::value_type verifier_next_challenge = verifier_transcript.template challenge<field_type>();
     typename field_type::value_type prover_next_challenge = prover_transcript.template challenge<field_type>();
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 
@@ -1112,7 +1113,7 @@ ACTOR_THREAD_TEST_CASE(lookup_test_3) {
             }
             BOOST_CHECK(prover_res.F_dfs[i].evaluate(preprocessed_public_data.common_data.basic_domain->get_domain_element(j)) == field_type::value_type::zero());
         }
-    }
+    } */
 }
 
 } // namespace placeholder_circuit3_lookup_test

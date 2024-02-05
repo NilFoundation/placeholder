@@ -100,7 +100,7 @@ namespace nil {
 
                     commitment_type commit(std::size_t index) {
                         this->state_commited(index);
-                        _trees[index] = nil::crypto3::zk::algorithms::precommit<fri_type>(
+                        _trees[index] = nil::actor::zk::algorithms::precommit<fri_type>(
                             this->_polys[index], _fri_params.D[0], _fri_params.step_list.front()).get();
                         return _trees[index].root();
                     }
@@ -165,7 +165,7 @@ namespace nil {
                             combined_Q = combined_Q_normal;
                         }
 
-                        precommitment_type combined_Q_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
+                        precommitment_type combined_Q_precommitment = nil::actor::zk::algorithms::precommit<fri_type>(
                             combined_Q,
                             _fri_params.D[0],
                             _fri_params.step_list.front()
