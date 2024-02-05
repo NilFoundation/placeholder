@@ -1,7 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
-// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -23,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+
 #include <nil/actor/testing/test_case.hh>
 #include <nil/actor/testing/thread_test_case.hh>
 
@@ -43,6 +43,8 @@
 #include <nil/crypto3/algebra/fields/mnt6/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/mnt6.hpp>
+
+#include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/actor/math/coset.hpp>
 #include <nil/actor/math/domains/arithmetic_sequence_domain.hpp>
@@ -71,9 +73,7 @@ void test_fft() {
     const std::size_t m = 4;
     std::vector<value_type> f = {2, 5, 3, 8};
 
-    std::shared_ptr<evaluation_domain<FieldType>> domain;
-
-    domain = make_evaluation_domain<FieldType>(m);
+    std::shared_ptr<evaluation_domain<FieldType>> domain = make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
 
@@ -100,14 +100,43 @@ void test_fft() {
 }
 
 template<typename FieldType>
+void test_fft_performance(std::string field_name, size_t poly_size, size_t domain_size) {
+    typedef typename FieldType::value_type value_type;
+
+    std::vector<value_type> f;
+
+    for (int i = 0; i < poly_size; ++i) {
+        f.push_back(nil::crypto3::algebra::random_element<FieldType>());
+    }
+
+    std::shared_ptr<evaluation_domain<FieldType>> domain = make_evaluation_domain<FieldType>(domain_size);
+
+    std::vector<value_type> a(f);
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> start(std::chrono::high_resolution_clock::now());
+
+    size_t SAMPLES = 20;
+
+    for (int i = 0; i < SAMPLES; ++i) {
+        a.resize(poly_size);
+        domain->fft(a).get();
+    }
+
+    auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::high_resolution_clock::now() - start);
+
+    size_t time = elapsed.count() / SAMPLES / 1000 / 1000;
+    std::cout << "FFT on " << field_name << " of poly size " << poly_size << " and domain size " << domain_size << " took: " << std::fixed << std::setprecision(3)
+        << time / 1000 << " sec " << time % 1000  << " ms" << std::endl;
+}
+
+template<typename FieldType>
 void test_inverse_fft_of_fft() {
     typedef typename FieldType::value_type value_type;
     const std::size_t m = 4;
     std::vector<value_type> f = {2, 5, 3, 8};
 
-    std::shared_ptr<evaluation_domain<FieldType>> domain;
-
-    domain = make_evaluation_domain<FieldType>(m);
+    std::shared_ptr<evaluation_domain<FieldType>> domain = make_evaluation_domain<FieldType>(m);
 
     std::vector<value_type> a(f);
     domain->fft(a).get();
@@ -200,7 +229,7 @@ void test_fft_curve_elements() {
     typedef typename FieldType::value_type field_value_type;
 
     std::size_t m = 4;
-
+    
     // Make sure the results are reproducible.
     std::srand(0);
     std::vector<field_value_type> f(m);
@@ -209,7 +238,7 @@ void test_fft_curve_elements() {
     for(std::size_t i = 0; i < m; ++i) {
         g[i] = value_type::one() * f[i];
     }
-
+ 
     std::shared_ptr<evaluation_domain<FieldType>> domain;
 
     domain.reset(new EvaluationDomainType(m));
@@ -222,7 +251,7 @@ void test_fft_curve_elements() {
     curve_element_domain->fft(g).get();
 
     BOOST_CHECK_EQUAL(f.size(), g.size());
-
+    
     for(std::size_t i = 0; i < f.size(); ++i) {
         BOOST_CHECK(f[i] * value_type::one() == g[i]);
     }
@@ -245,7 +274,7 @@ void test_inverse_fft_curve_elements() {
     for(std::size_t i = 0; i < m; ++i) {
         g[i] = value_type::one() * f[i];
     }
-
+ 
     std::shared_ptr<evaluation_domain<FieldType>> domain;
 
     domain.reset(new EvaluationDomainType(m));
@@ -258,7 +287,7 @@ void test_inverse_fft_curve_elements() {
     curve_element_domain->inverse_fft(g).get();
 
     BOOST_CHECK_EQUAL(f.size(), g.size());
-
+    
     for(std::size_t i = 0; i < f.size(); ++i) {
         BOOST_CHECK(f[i] * value_type::one() == g[i]);
     }
@@ -278,7 +307,7 @@ void test_lagrange_coefficients_from_powers(std::size_t m) {
     for(std::size_t i = 1; i < m; ++i) {
         t_powers[i] = t_powers[i-1] * t;
     }
-
+ 
     std::shared_ptr<evaluation_domain<FieldType>> domain;
 
     domain.reset(new EvaluationDomainType(m));
@@ -289,9 +318,6 @@ void test_lagrange_coefficients_from_powers(std::size_t m) {
     BOOST_CHECK_EQUAL(u.size(), u_from_powers.size());
 
     for(std::size_t i = 0; i < u.size(); ++i) {
-        std::cout << u[i].data << std::endl;
-        std::cout << u_from_powers[i].data << std::endl;
-
         BOOST_CHECK(u[i] == u_from_powers[i]);
     }
 
@@ -311,10 +337,10 @@ void test_lagrange_coefficients_curve_elements(std::size_t m) {
     for(std::size_t i = 1; i < m; ++i) {
         t_powers[i] = t_powers[i-1] * t;
     }
-
+ 
     std::shared_ptr<evaluation_domain<FieldType>> domain;
     domain.reset(new EvaluationDomainType(m));
-
+    
     std::shared_ptr<evaluation_domain<FieldType, value_type>> curve_element_domain;
     curve_element_domain.reset(new GroupEvaluationDomainType(m));
 
@@ -330,7 +356,6 @@ void test_lagrange_coefficients_curve_elements(std::size_t m) {
     std::cout << "type name " << typeid(EvaluationDomainType).name() << std::endl;
 }
 
-
 template<typename FieldType, typename EvaluationDomainType>
 void test_get_vanishing_polynomial(std::size_t m) {
     typedef typename FieldType::value_type field_value_type;
@@ -338,7 +363,7 @@ void test_get_vanishing_polynomial(std::size_t m) {
     // Make sure the results are reproducible.
     std::srand(0);
     field_value_type t = std::rand();
-
+ 
     std::shared_ptr<evaluation_domain<FieldType>> domain;
 
     domain.reset(new EvaluationDomainType(m));
@@ -349,7 +374,6 @@ void test_get_vanishing_polynomial(std::size_t m) {
 
     std::cout << "type name " << typeid(EvaluationDomainType).name() << std::endl;
 }
-
 
 ACTOR_THREAD_TEST_CASE(fft) {
     test_fft<fields::bls12<381>>();
@@ -380,116 +404,114 @@ ACTOR_THREAD_TEST_CASE(curve_elements_fft) {
     typedef curves::bls12<381>::scalar_field_type field_type;
     typedef curves::bls12<381>::g1_type<> group_type;
     using group_value_type = group_type::value_type;
-
+    
     test_fft_curve_elements<field_type,
-            group_type,
-            basic_radix2_domain<field_type>,
-            basic_radix2_domain<field_type, group_value_type>>();
-    // not applicable for any m < 100 for this field
+                            group_type,
+                            basic_radix2_domain<field_type>,
+                            basic_radix2_domain<field_type, group_value_type>>();
+    // not applicable for any m < 100 for this field 
     // test_fft_curve_elements<field_type,
     //                         group_type,
     //                         extended_radix2_domain<field_type>,
     //                         extended_radix2_domain<field_type, group_value_type>>();
     test_fft_curve_elements<field_type,
-            group_type,
-            step_radix2_domain<field_type>,
-            step_radix2_domain<field_type, group_value_type>>();
+                            group_type,
+                            step_radix2_domain<field_type>,
+                            step_radix2_domain<field_type, group_value_type>>();
     test_fft_curve_elements<field_type,
-            group_type,
-            geometric_sequence_domain<field_type>,
-            geometric_sequence_domain<field_type, group_value_type>>();
-     test_fft_curve_elements<field_type,
-                             group_type,
-                             arithmetic_sequence_domain<field_type>,
-                             arithmetic_sequence_domain<field_type, group_value_type>>();
+                            group_type,
+                            geometric_sequence_domain<field_type>,
+                            geometric_sequence_domain<field_type, group_value_type>>();
+    test_fft_curve_elements<field_type,
+                            group_type,
+                            arithmetic_sequence_domain<field_type>,
+                            arithmetic_sequence_domain<field_type, group_value_type>>();
 }
 
 ACTOR_THREAD_TEST_CASE(curve_elements_inverse_fft) {
     typedef curves::bls12<381>::scalar_field_type field_type;
     typedef curves::bls12<381>::g1_type<> group_type;
     using group_value_type = group_type::value_type;
-
+    
     test_inverse_fft_curve_elements<field_type,
-            group_type,
-            basic_radix2_domain<field_type>,
-            basic_radix2_domain<field_type, group_value_type>>();
+                            group_type,
+                            basic_radix2_domain<field_type>,
+                            basic_radix2_domain<field_type, group_value_type>>();
     // not applicable for any m < 100 for this field
     // test_inverse_fft_curve_elements<field_type,
     //                         group_type,
     //                         extended_radix2_domain<field_type>,
     //                         extended_radix2_domain<field_type, group_value_type>>();
     test_inverse_fft_curve_elements<field_type,
-            group_type,
-            step_radix2_domain<field_type>,
-            step_radix2_domain<field_type, group_value_type>>();
+                            group_type,
+                            step_radix2_domain<field_type>,
+                            step_radix2_domain<field_type, group_value_type>>();
     test_inverse_fft_curve_elements<field_type,
-            group_type,
-            geometric_sequence_domain<field_type>,
-            geometric_sequence_domain<field_type, group_value_type>>();
-     test_inverse_fft_curve_elements<field_type,
-                             group_type,
-                             arithmetic_sequence_domain<field_type>,
-                             arithmetic_sequence_domain<field_type, group_value_type>>();
+                            group_type,
+                            geometric_sequence_domain<field_type>,
+                            geometric_sequence_domain<field_type, group_value_type>>();
+    test_inverse_fft_curve_elements<field_type,
+                            group_type,
+                            arithmetic_sequence_domain<field_type>,
+                            arithmetic_sequence_domain<field_type, group_value_type>>();
 }
 
 ACTOR_THREAD_TEST_CASE(lagrange_coefficients_from_powers) {
     typedef curves::bls12<381>::scalar_field_type field_type;
-
+    
     test_lagrange_coefficients_from_powers<field_type,
-            basic_radix2_domain<field_type>>(4);
+                            basic_radix2_domain<field_type>>(4);
     // not applicable for any m < 100 for this field, testing with base field instead
     test_lagrange_coefficients_from_powers<fields::bls12<381>,
-            extended_radix2_domain<fields::bls12<381>>>(4);
+                            extended_radix2_domain<fields::bls12<381>>>(4);
     test_lagrange_coefficients_from_powers<field_type,
-            step_radix2_domain<field_type>>(4);
+                            step_radix2_domain<field_type>>(4);
     test_lagrange_coefficients_from_powers<field_type,
-            geometric_sequence_domain<field_type>>(4);
+                            geometric_sequence_domain<field_type>>(4);
     test_lagrange_coefficients_from_powers<field_type,
-            arithmetic_sequence_domain<field_type>>(4);
+                            arithmetic_sequence_domain<field_type>>(4);
 }
 
 ACTOR_THREAD_TEST_CASE(curve_elements_lagrange_coefficients) {
     typedef curves::bls12<381>::scalar_field_type field_type;
     typedef curves::bls12<381>::g1_type<> group_type;
     using group_value_type = group_type::value_type;
-
+    
     test_lagrange_coefficients_curve_elements<field_type,
-            group_type,
-            basic_radix2_domain<field_type>,
-            basic_radix2_domain<field_type, group_value_type>>(4);
-    // not applicable for any m < 100 for this field
+                            group_type,
+                            basic_radix2_domain<field_type>,
+                            basic_radix2_domain<field_type, group_value_type>>(4);
+    // not applicable for any m < 100 for this field 
     // test_lagrange_coefficients_curve_elements<field_type,
     //                         group_type,
-    //                         arithmetic_sequence_domain<field_type>,
-    //                         arithmetic_sequence_domain<field_type, group_value_type>>();
     //                         extended_radix2_domain<field_type>,
     //                         extended_radix2_domain<field_type, group_value_type>>(4);
     test_lagrange_coefficients_curve_elements<field_type,
-            group_type,
-            step_radix2_domain<field_type>,
-            step_radix2_domain<field_type, group_value_type>>(4);
+                            group_type,
+                            step_radix2_domain<field_type>,
+                            step_radix2_domain<field_type, group_value_type>>(4);
     test_lagrange_coefficients_curve_elements<field_type,
-            group_type,
-            geometric_sequence_domain<field_type>,
-            geometric_sequence_domain<field_type, group_value_type>>(4);
+                            group_type,
+                            geometric_sequence_domain<field_type>,
+                            geometric_sequence_domain<field_type, group_value_type>>(4);
     test_lagrange_coefficients_curve_elements<field_type,
-            group_type,
-            arithmetic_sequence_domain<field_type>,
-            arithmetic_sequence_domain<field_type, group_value_type>>(4);
+                            group_type,
+                            arithmetic_sequence_domain<field_type>,
+                            arithmetic_sequence_domain<field_type, group_value_type>>(4);
 }
 
 ACTOR_THREAD_TEST_CASE(get_vanishing_polynomial) {
     typedef curves::bls12<381>::scalar_field_type field_type;
-
+    
     test_get_vanishing_polynomial<field_type,
-            basic_radix2_domain<field_type>>(4);
+                            basic_radix2_domain<field_type>>(4);
     // not applicable for any m < 100 for this field, testing with base field instead
     test_get_vanishing_polynomial<fields::bls12<381>,
-            extended_radix2_domain<fields::bls12<381>>>(4);
+                            extended_radix2_domain<fields::bls12<381>>>(4);
     test_get_vanishing_polynomial<field_type,
-            step_radix2_domain<field_type>>(4);
+                            step_radix2_domain<field_type>>(4);
     test_get_vanishing_polynomial<field_type,
-            geometric_sequence_domain<field_type>>(4);
+                            geometric_sequence_domain<field_type>>(4);
     test_get_vanishing_polynomial<field_type,
-            arithmetic_sequence_domain<field_type>>(4);
+                            arithmetic_sequence_domain<field_type>>(4);
 }

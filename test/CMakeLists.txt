@@ -123,7 +123,8 @@ set(TESTS_NAMES
     "polynomial_view"
     "polynomial_dfs"
     "polynomial_dfs_view"
-    "lagrange_interpolation")
+    "lagrange_interpolation"
+    "basic_radix2_domain")
 
 foreach (TEST_NAME ${TESTS_NAMES})
     actor_add_test(${TEST_NAME} SOURCES ${TEST_NAME}.cpp)
