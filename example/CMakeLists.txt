@@ -2,7 +2,6 @@
 #  MIT License
 #
 #  Copyright (c) 2020 Mikhail Komarov <nemo@nil.foundation>
-#  Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a copy
 #  of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +23,7 @@
 #---------------------------------------------------------------------------//
 
 
-include_directories("../include"
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include"
         "${CMAKE_CURRENT_BINARY_DIR}/include"
 
         ${Boost_INCLUDE_DIRS})
@@ -35,22 +34,15 @@ macro(define_containers_example example)
 
     add_executable(${target_name} ${example}.cpp)
     target_link_libraries(${target_name} PRIVATE
-            ${CMAKE_WORKSPACE_NAME}::core
-            ${CMAKE_WORKSPACE_NAME}::network
-            ${CMAKE_WORKSPACE_NAME}::containers
-            epoll-shim
-
-            crypto3::algebra
-            crypto3::hash
-            crypto3::containers
-
+            ${CMAKE_WORKSPACE_NAME}::algebra
+            ${CMAKE_WORKSPACE_NAME}::hash
             ${Boost_LIBRARIES})
     set_target_properties(${target_name} PROPERTIES CXX_STANDARD 17)
 endmacro()
 
 set(EXAMPLES_NAMES
-        "merkle/merkle")
+    "merkle/merkle")
 
-foreach (EXAMPLE_NAME ${EXAMPLES_NAMES})
+foreach(EXAMPLE_NAME ${EXAMPLES_NAMES})
     define_containers_example(${EXAMPLE_NAME})
-endforeach ()
+endforeach()

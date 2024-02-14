@@ -31,14 +31,13 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0057 NEW)
 cmake_policy(SET CMP0079 OLD)
 
-list(APPEND CMAKE_MODULE_PATH "cmake"
-        "cmake/modules/share/modules/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
+        "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/share/modules/cmake")
 
-cm_find_package(CM)
 include(CMConfig)
 include(CMSetupVersion)
 
-cm_workspace(actor)
+cm_workspace(crypto3)
 
 macro(cm_find_package NAME)
     if (NOT "${NAME}" MATCHES "^${CMAKE_WORKSPACE_NAME}_.*$" AND NOT "${NAME}" STREQUAL CM)
@@ -53,10 +52,10 @@ include(CMDeploy)
 include(CMSetupVersion)
 
 if (NOT Boost_FOUND AND NOT CMAKE_CROSSCOMPILING)
-    cm_find_package(Boost REQUIRED COMPONENTS filesystem)
+    cm_find_package(Boost COMPONENTS REQUIRED filesystem)
 endif ()
 
-cm_project(containers WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES ASM C CXX)
+cm_project(containers WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
 option(BUILD_DOXYGEN_DOCS "Build with configuring Doxygen documentation compiler" TRUE)
 
@@ -82,13 +81,9 @@ set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
         EXPORT_NAME ${CURRENT_PROJECT_NAME})
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-        ${CMAKE_WORKSPACE_NAME}::network
-        ${CMAKE_WORKSPACE_NAME}::core
-#        epoll-shim
 
-        crypto3::algebra
-        crypto3::hash
-        crypto3::containers
+        ${CMAKE_WORKSPACE_NAME}::algebra
+        ${CMAKE_WORKSPACE_NAME}::hash
 
         ${Boost_LIBRARIES})
 
