@@ -40,6 +40,9 @@
 #include <nil/crypto3/zk/commitments/batched_commitment.hpp>
 #include <nil/crypto3/zk/commitments/detail/polynomial/basic_fri.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace zk {
@@ -128,20 +131,41 @@ namespace nil {
 
                         // Prepare z-s and combined_Q;
                         auto theta = transcript.template challenge<field_type>();
-                        typename field_type::value_type theta_acc(1);
                         poly_type combined_Q;
-                        math::polynomial<value_type> V;
 
                         auto points = this->get_unique_points();
                         math::polynomial<value_type> combined_Q_normal;
 
-                        for (auto const &point: points){
-                            V = {-point, 1};
-                            math::polynomial<value_type> Q_normal;
-                            for(std::size_t i: this->_z.get_batches()){
-                                for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
+                        std::vector<math::polynomial<value_type>> Q_normals(points.size());
+
+                        // We need to pre-compute what power of theta is the starting power for each itertion 
+                        // of the loop over the points.
+                        std::vector<std::size_t> theta_powers;
+                        theta_powers.push_back(0);
+                        std::size_t current_power = 0;
+                        for (const auto& point : points) {
+                            for(std::size_t i: this->_z.get_batches()) {
+                                for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
                                     auto it = std::find(this->_points[i][j].begin(), this->_points[i][j].end(), point);
-                                    if( it == this->_points[i][j].end()) continue;
+                                    if (it != this->_points[i][j].end()) 
+                                        current_power++;
+                                }
+                            }
+                            theta_powers.push_back(current_power);
+                        }
+ 
+                        parallel_for(0, points.size(), [this, &points, &Q_normals, &theta, &theta_powers](std::size_t i) {
+                            typename field_type::value_type theta_acc = theta.pow(theta_powers[i]);
+
+                            auto const &point = points[i];
+                            math::polynomial<value_type>& Q_normal = Q_normals[i];
+
+                            for(std::size_t i: this->_z.get_batches()) {
+                                for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
+                                    auto it = std::find(this->_points[i][j].begin(), this->_points[i][j].end(), point);
+                                    if (it == this->_points[i][j].end()) 
+                                        continue;
+
                                     math::polynomial<value_type> g_normal;
                                     if constexpr(std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
                                         g_normal = math::polynomial<value_type>(this->_polys[i][j].coefficients());
@@ -154,17 +178,21 @@ namespace nil {
                                     theta_acc *= theta;
                                 }
                             }
+                            math::polynomial<value_type> V = {-point, 1};
                             Q_normal = Q_normal / V;
+                        }, ThreadPool::PoolLevel::HIGH);
+
+                        for (const auto& Q_normal: Q_normals) {
                             combined_Q_normal += Q_normal;
                         }
-
                         if constexpr (std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
                             combined_Q.from_coefficients(combined_Q_normal);
                         } else {
-                            combined_Q = combined_Q_normal;
+                            combined_Q = std::move(combined_Q_normal);
                         }
 
-                        precommitment_type combined_Q_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
+                        precommitment_type combined_Q_precommitment;
+                        combined_Q_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
                             combined_Q,
                             _fri_params.D[0],
                             _fri_params.step_list.front()

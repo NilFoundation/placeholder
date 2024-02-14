@@ -129,6 +129,8 @@ namespace nil {
                             , _is_lookup_enabled(constraint_system.lookup_gates().size() > 0)
                             , _commitment_scheme(commitment_scheme)
                     {
+                        std::cout << "Table has " << table_description.rows_amount << " rows." << std::endl;
+
                         // Initialize transcript.
                         transcript(preprocessed_public_data.common_data.vk.constraint_system_with_params_hash);
                         transcript(preprocessed_public_data.common_data.vk.fixed_values_commitment);
@@ -143,10 +145,7 @@ namespace nil {
                         // 2. Commit witness columns and public_input columns
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->public_inputs());
-                        {
-                            PROFILE_PLACEHOLDER_SCOPE("variable_values_precommit_time");
-                            _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
-                        }
+                        _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
                         transcript(_proof.commitments[VARIABLE_VALUES_BATCH]);
 
                         // 4. permutation_argument
@@ -229,8 +228,6 @@ namespace nil {
                             quotient_polynomial(), table_description.rows_amount - 1
                         );
 
-                        PROFILE_PLACEHOLDER_SCOPE("split_polynomial_dfs_conversion_time");
-
                         std::size_t split_polynomial_size = std::max(
                             (preprocessed_public_data.identity_polynomials.size() + 2) * (preprocessed_public_data.common_data.rows_amount -1 ),
                             (constraint_system.lookup_poly_degree_bound() + 1) * (preprocessed_public_data.common_data.rows_amount -1 )//,
@@ -250,44 +247,44 @@ namespace nil {
                         //      F[7] (from gates argument)
                         // If some columns used in permutation or lookup argument are zero, real quotient polynomial degree
                         //      may be less than split_polynomial_size.
-                        std::vector<polynomial_dfs_type> T_splitted_dfs(split_polynomial_size,
-                            polynomial_dfs_type(0, _F_dfs[0].size(), FieldType::value_type::zero()));
+                        std::vector<polynomial_dfs_type> T_splitted_dfs(split_polynomial_size);
 
-                        for (std::size_t k = 0; k < T_splitted.size(); k++) {
+                        parallel_for(0, T_splitted.size(), [&T_splitted, &T_splitted_dfs](std::size_t k) {
                             T_splitted_dfs[k].from_coefficients(T_splitted[k]);
-                        }
+                        });
 
                         return T_splitted_dfs;
                     }
 
                     polynomial_type quotient_polynomial() {
-                        PROFILE_PLACEHOLDER_SCOPE("quotient_polynomial_time");
+                        PROFILE_PLACEHOLDER_SCOPE("Quotient polynomial time");
 
                         // 7.1. Get $\alpha_0, \dots, \alpha_8 \in \mathbb{F}$ from $hash(\text{transcript})$
                         std::array<typename FieldType::value_type, f_parts> alphas =
                             transcript.template challenges<FieldType, f_parts>();
 
                         // 7.2. Compute F_consolidated
-                        polynomial_dfs_type F_consolidated_dfs(
-                            0, _F_dfs[0].size(), FieldType::value_type::zero());
-                        for (std::size_t i = 0; i < f_parts; i++) {
-                            if (_F_dfs[i].is_zero()) {
-                                continue;
-                            }
-                            F_consolidated_dfs += alphas[i] * _F_dfs[i];
-                        }
+                        polynomial_dfs_type F_consolidated_dfs;
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> F_consolidated_dfs_parts(f_parts);
 
+                        parallel_for(0, f_parts, 
+                            [this, &F_consolidated_dfs_parts, &alphas](std::size_t i) {
+                                F_consolidated_dfs_parts[i] = this->_F_dfs[i];
+                                F_consolidated_dfs_parts[i] *= alphas[i];
+                        }, ThreadPool::PoolLevel::HIGH);
+
+                        F_consolidated_dfs = math::polynomial_sum<FieldType>(std::move(F_consolidated_dfs_parts));
                         polynomial_type F_consolidated_normal(F_consolidated_dfs.coefficients());
 
-                        polynomial_type T_consolidated =
-                            F_consolidated_normal / preprocessed_public_data.common_data.Z;
+                        polynomial_type T_consolidated = std::move(F_consolidated_normal);
+                        T_consolidated /= preprocessed_public_data.common_data.Z;
 
                         return T_consolidated;
                     }
 
                     typename placeholder_lookup_argument_prover<FieldType, commitment_scheme_type, ParamsType>::prover_lookup_result
                         lookup_argument() {
-                        PROFILE_PLACEHOLDER_SCOPE("lookup_argument_time");
+                        PROFILE_PLACEHOLDER_SCOPE("Lookup argument time");
 
                         typename placeholder_lookup_argument_prover<
                             FieldType,
@@ -315,7 +312,7 @@ namespace nil {
                     }
 
                     commitment_type T_commit(const std::vector<polynomial_dfs_type>& T_splitted_dfs) {
-                        PROFILE_PLACEHOLDER_SCOPE("T_splitted_precommit_time");
+                        PROFILE_PLACEHOLDER_SCOPE("T_splitted precommit time");
                         _commitment_scheme.append_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
                         return _commitment_scheme.commit(QUOTIENT_BATCH);
                     }
@@ -347,7 +344,7 @@ namespace nil {
                     }
 
                     void generate_evaluation_points() {
-                        PROFILE_PLACEHOLDER_SCOPE("evaluation_points_generated_time");
+                        PROFILE_PLACEHOLDER_SCOPE("Evaluation points generation time");
                         _omega = preprocessed_public_data.common_data.basic_domain->get_domain_element(1);
 
                         // variable_values' rotations

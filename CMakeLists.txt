@@ -15,8 +15,8 @@ list(APPEND CMAKE_MODULE_PATH
 include(CMConfig)
 include(CMSetupVersion)
 
-if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "crypto3"))
-    cm_workspace(crypto3)
+if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
+    cm_workspace(actor)
 endif()
 
 option(ZK_PLACEHOLDER_PROFILING_ENABLED "Build with placeholder profiling" FALSE)
@@ -172,13 +172,14 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
 
                       ${Boost_LIBRARIES}
 
-                      ${CMAKE_WORKSPACE_NAME}::algebra
-                      ${CMAKE_WORKSPACE_NAME}::block
+                      ${CMAKE_WORKSPACE_NAME}::containers
+                      ${CMAKE_WORKSPACE_NAME}::core
                       ${CMAKE_WORKSPACE_NAME}::math
-                      ${CMAKE_WORKSPACE_NAME}::hash
-                      ${CMAKE_WORKSPACE_NAME}::multiprecision
-                      ${CMAKE_WORKSPACE_NAME}::containers)
-                    #   marshalling::crypto3_zk)
+
+                      crypto3::algebra
+                      crypto3::block
+                      crypto3::hash
+                      crypto3::multiprecision)
 
 cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
           INCLUDE include

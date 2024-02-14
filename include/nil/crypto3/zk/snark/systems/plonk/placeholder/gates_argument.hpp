@@ -52,6 +52,9 @@
 #include <nil/crypto3/zk/math/expression_evaluator.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace zk {
@@ -82,41 +85,55 @@ namespace nil {
 
                         std::unordered_map<polynomial_dfs_variable_type, size_t> variable_counts;
 
+                        std::vector<polynomial_dfs_variable_type> variables;
+
                         math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
-                            [&variable_counts](const polynomial_dfs_variable_type& var) {
+                            [&variable_counts, &variables, &variable_values_out](const polynomial_dfs_variable_type& var) {
+                                // Create the structure of the map so we can change the values later.
+                                if (variable_counts[var] == 0) {
+                                    variables.push_back(var);
+                                    // Create the structure of the map, so its values can be filled in parallel.
+                                    if (variable_values_out.find(var) == variable_values_out.end()) {
+                                        variable_values_out[var] = polynomial_dfs_type();
+                                    }
+                                }
                                 variable_counts[var]++;
                         });
+
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
                         visitor.visit(expr);
-                        for (const auto& [var, count]: variable_counts) {
-                            // We may have variable values in required sizes in some cases.
-                            if (variable_values_out.find(var) != variable_values_out.end())
-                                continue;
-                            polynomial_dfs_type assignment;
-                            switch (var.type) {
-                                case polynomial_dfs_variable_type::column_type::witness:
-                                    assignment = assignments.witness(var.index);
-                                    break;
-                                case polynomial_dfs_variable_type::column_type::public_input:
-                                    assignment = assignments.public_input(var.index);
-                                    break;
-                                case polynomial_dfs_variable_type::column_type::constant:
-                                    assignment = assignments.constant(var.index);
-                                    break;
-                                case polynomial_dfs_variable_type::column_type::selector:
-                                    assignment = assignments.selector(var.index);
-                                    break;
-                            }
 
-                            if (var.rotation != 0) {
-                                assignment = math::polynomial_shift(assignment, var.rotation, domain->m);
-                            }
-                            if (count > 1) {
+                        parallel_for(0, variables.size(), 
+                            [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size](std::size_t i) {
+                                const auto& var = variables[i];
+                                // We may have variable values in required sizes in some cases.
+                                if (variable_values_out[var].size() == extended_domain_size)
+                                    return;
+                                polynomial_dfs_type assignment;
+                                switch (var.type) {
+                                    case polynomial_dfs_variable_type::column_type::witness:
+                                        assignment = assignments.witness(var.index);
+                                        break;
+                                    case polynomial_dfs_variable_type::column_type::public_input:
+                                        assignment = assignments.public_input(var.index);
+                                        break;
+                                    case polynomial_dfs_variable_type::column_type::constant:
+                                        assignment = assignments.constant(var.index);
+                                        break;
+                                    case polynomial_dfs_variable_type::column_type::selector:
+                                        assignment = assignments.selector(var.index);
+                                        break;
+                                }
+
+                                if (var.rotation != 0) {
+                                    assignment = math::polynomial_shift(assignment, var.rotation, domain->m);
+                                }
+                                // In parallel version we always resize the assignment poly, it's better to parallelization.
+                                // if (count > 1) {
                                 assignment.resize(extended_domain_size, domain, extended_domain);
-                            }
-                            variable_values_out[var] = assignment;
-                        }
+                                variable_values_out[var] = std::move(assignment);
+                            }, ThreadPool::PoolLevel::HIGH);
                     }
 
                     static inline std::array<polynomial_dfs_type, argument_size>

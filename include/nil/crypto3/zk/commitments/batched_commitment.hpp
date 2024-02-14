@@ -40,6 +40,9 @@
 #include <nil/crypto3/zk/commitments/type_traits.hpp>
 #include <nil/crypto3/zk/commitments/detail/polynomial/eval_storage.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace zk {
@@ -173,18 +176,25 @@ namespace nil {
                     }
 
                     void eval_polys() {
-                        for(auto const &[k, poly] : _polys) {
+                        for(auto it = _polys.begin(); it != _polys.end(); ++it) {
+                            std::size_t k = it->first;
+                            const auto& poly = it->second;
+
                             _z.set_batch_size(k, poly.size());
                             auto const &point = _points.at(k);
 
                             BOOST_ASSERT(poly.size() == point.size() || point.size() == 1);
 
-                            for (std::size_t i = 0; i < poly.size(); i++) {
+                            for (std::size_t i = 0; i < poly.size(); ++i) {
                                 _z.set_poly_points_number(k, i, point[i].size());
+                            }
+
+                            // We use HIGH level thread pool here, because "evaluate" may use the lower level one.
+                            parallel_for(0, poly.size(), [this, &point, k, &poly](std::size_t i) {
                                 for (std::size_t j = 0; j < point[i].size(); j++) {
                                     _z.set(k, i, j, poly[i].evaluate(point[i][j]));
                                 }
-                            }
+                            }, ThreadPool::PoolLevel::HIGH); 
                         }
                     }
 

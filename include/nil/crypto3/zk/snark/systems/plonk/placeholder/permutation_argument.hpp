@@ -45,6 +45,9 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_scoped_profiler.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace zk {
@@ -79,7 +82,7 @@ namespace nil {
                         typename ParamsType::commitment_scheme_type& commitment_scheme,
                         transcript_type& transcript) {
 
-                        PROFILE_PLACEHOLDER_SCOPE("permutation_argument_prove_eval_time");
+                        PROFILE_PLACEHOLDER_SCOPE("Permutation argument prove_eval time");
 
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_sigma =
                             preprocessed_data.permutation_polynomials;
@@ -98,7 +101,7 @@ namespace nil {
 
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_v = S_id;
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_v = S_sigma;
-                        for (std::size_t i = 0; i < S_id.size(); i++) {
+                        parallel_for(0, S_id.size(), [&g_v, &h_v, &beta, &gamma, &column_polynomials, &basic_domain](std::size_t i) {
                             BOOST_ASSERT(column_polynomials[i].size() == basic_domain->size());
                             BOOST_ASSERT(S_id[i].size() == basic_domain->size());
                             BOOST_ASSERT(S_sigma[i].size() == basic_domain->size());
@@ -112,8 +115,9 @@ namespace nil {
                             h_v[i] *= beta;
                             h_v[i] += gamma;
                             h_v[i] += column_polynomials[i];
-                        }
+                        }, ThreadPool::PoolLevel::HIGH);
 
+                        // TODO(martun): parallelize the loop below, it takes ~20 seconds on 256 leaves.
                         V_P[0] = FieldType::value_type::one();
                         for (std::size_t j = 1; j < basic_domain->size(); j++) {
                             typename FieldType::value_type nom = FieldType::value_type::one();

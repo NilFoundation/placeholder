@@ -52,6 +52,9 @@
 #include <nil/crypto3/zk/commitments/detail/polynomial/proof_of_work.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_scoped_profiler.hpp>
 
+#include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace zk {
@@ -369,11 +372,12 @@ namespace nil {
                 ) {
                     PROFILE_PLACEHOLDER_SCOPE("Basic FRI Precommit time");
 
-                    for (std::size_t i = 0; i < poly.size(); ++i) {
+                    // Resize uses low level thread pool, so we need to use the high level one here.
+                    parallel_for(0, poly.size(), [&poly, &D](std::size_t i) {
                         if (poly[i].size() != D->size()) {
                             poly[i].resize(D->size(), nullptr, D);
                         }
-                    }
+                    }, ThreadPool::PoolLevel::HIGH);
 
                     std::size_t domain_size = D->size();
                     std::size_t list_size = poly.size();
@@ -383,7 +387,7 @@ namespace nil {
                             leafs_number,
                             std::vector<std::uint8_t>(coset_size * FRI::field_element_type::length() * list_size));
 
-                    for (std::size_t x_index = 0; x_index < leafs_number; x_index++) {
+                    parallel_for(0, leafs_number, [&y_data, &poly, domain_size, coset_size, list_size](std::size_t x_index) {
                         auto write_iter = y_data[x_index].begin();
                         for (std::size_t polynom_index = 0; polynom_index < list_size; polynom_index++) {
                             std::vector<std::array<std::size_t, FRI::m>> s_indices(coset_size / FRI::m);
@@ -413,7 +417,7 @@ namespace nil {
                                 prev_half_size <<= 1;
                             }
                         }
-                    }
+                    });
 
                     return containers::make_merkle_tree<typename FRI::merkle_tree_hash_type, FRI::m>(y_data.begin(),
                                                                                                      y_data.end());
