@@ -29,13 +29,13 @@
 #ifndef CRYPTO3_BACS_EXAMPLES_HPP
 #define CRYPTO3_BACS_EXAMPLES_HPP
 
-#include <nil/actor/zk/snark/arithmetization/circuit_satisfaction_problems/bacs.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/bacs_ppzksnark.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/bacs.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/bacs_ppzksnark.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -102,11 +102,11 @@ namespace nil {
                                                               std::size_t num_outputs) {
                     bacs_example<FieldType> example;
                     for (std::size_t i = 0; i < primary_input_size; ++i) {
-                        example.primary_input.emplace_back(crypto3::algebra::random_element<FieldType>());
+                        example.primary_input.emplace_back(algebra::random_element<FieldType>());
                     }
 
                     for (std::size_t i = 0; i < auxiliary_input_size; ++i) {
-                        example.auxiliary_input.emplace_back(crypto3::algebra::random_element<FieldType>());
+                        example.auxiliary_input.emplace_back(algebra::random_element<FieldType>());
                     }
 
                     example.circuit.primary_input_size = primary_input_size;
@@ -156,7 +156,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
 #endif    // CRYPTO3_BACS_EXAMPLES_HPP

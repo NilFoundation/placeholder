@@ -26,12 +26,12 @@
 #ifndef CRYPTO3_USCS_EXAMPLES_HPP
 #define CRYPTO3_USCS_EXAMPLES_HPP
 
-#include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -197,7 +197,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
 #endif    // CRYPTO3_USCS_EXAMPLES_HPP

@@ -34,8 +34,8 @@
 #include <vector>
 #include <chrono>
 
-#include <nil/actor/zk/snark/reductions/r1cs_to_qap.hpp>
-#include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
+#include <nil/crypto3/zk/snark/reductions/r1cs_to_qap.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
@@ -53,7 +53,7 @@
 
 #include "../../schemes/ppzksnark/r1cs_examples.hpp"
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 using namespace nil::crypto3::algebra;
 
 template<typename FieldType>

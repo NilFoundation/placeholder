@@ -46,7 +46,7 @@
 
 #include "run_r1cs_se_ppzksnark.hpp"
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 using namespace nil::crypto3::algebra;
 
 template<typename CurveType>

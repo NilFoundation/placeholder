@@ -26,16 +26,16 @@
 #ifndef CRYPTO3_RUN_RAM_PPZKSNARK_HPP
 #define CRYPTO3_RUN_RAM_PPZKSNARK_HPP
 
-#include <nil/actor/zk/snark/arithmetization/ram_computations/rams/examples/ram_examples.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/ram_ppzksnark/ram_ppzksnark_params.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/ram_ppzksnark.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/ram_computations/rams/examples/ram_examples.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/ram_ppzksnark/ram_ppzksnark_params.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/ram_ppzksnark.hpp>
 
-#include <nil/actor/zk/snark/algorithms/generate.hpp>
-#include <nil/actor/zk/snark/algorithms/verify.hpp>
-#include <nil/actor/zk/snark/algorithms/prove.hpp>
+#include <nil/crypto3/zk/snark/algorithms/generate.hpp>
+#include <nil/crypto3/zk/snark/algorithms/verify.hpp>
+#include <nil/crypto3/zk/snark/algorithms/prove.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -82,7 +82,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
 #endif    // CRYPTO3_RUN_RAM_PPZKSNARK_HPP

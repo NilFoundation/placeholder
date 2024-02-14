@@ -30,7 +30,7 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
 
-#include <nil/actor/zk/snark/systems/plonk/pickles/oracles.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/oracles.hpp>
 
 using namespace nil::crypto3;
 

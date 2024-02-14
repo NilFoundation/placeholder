@@ -24,12 +24,13 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-//#define BOOST_TEST_MODULE fold_polynomial_test
+#define BOOST_TEST_MODULE fold_polynomial_test
 
 #include <string>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/mnt4.hpp>
@@ -39,15 +40,14 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/actor/math/domains/evaluation_domain.hpp>
-#include <nil/actor/math/polynomial/polynomial.hpp>
-#include <nil/actor/math/polynomial/polynomial_dfs.hpp>
-#include <nil/actor/math/polynomial/lagrange_interpolation.hpp>
-#include <nil/actor/math/algorithms/calculate_domain_set.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
+#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
-#include <nil/actor/zk/commitments/detail/polynomial/fold_polynomial.hpp>
+#include <nil/crypto3/zk/commitments/detail/polynomial/fold_polynomial.hpp>
 
-using namespace nil::actor;
+using namespace nil::crypto3;
 
 template<typename CurveType>
 void test_fold_polynomial() {
@@ -60,14 +60,14 @@ void test_fold_polynomial() {
 
     std::size_t d_log = boost::static_log2<d>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(d_log, 1).get();
+        math::calculate_domain_set<FieldType>(d_log, 1);
 
     math::polynomial<typename FieldType::value_type> f = {1, 3, 4, 3};
 
     typename FieldType::value_type omega = D[0]->get_domain_element(1);
 
     typename FieldType::value_type x_next = q.evaluate(omega);
-    typename FieldType::value_type alpha = nil::crypto3::algebra::random_element<FieldType>();
+    typename FieldType::value_type alpha = algebra::random_element<FieldType>();
 
     math::polynomial<typename FieldType::value_type> f_next =
         zk::commitments::detail::fold_polynomial<FieldType>(f, alpha);
@@ -94,14 +94,14 @@ void test_fold_polynomial_dfs() {
 
     std::size_t d_log = boost::static_log2<d>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(d_log, 2).get();
+        math::calculate_domain_set<FieldType>(d_log, 2);
 
     math::polynomial<typename FieldType::value_type> f = {1, 3, 4, 3};
 
     typename FieldType::value_type omega = D[0]->get_domain_element(1);
 
     typename FieldType::value_type x_next = q.evaluate(omega);
-    typename FieldType::value_type alpha = nil::crypto3::algebra::random_element<FieldType>();
+    typename FieldType::value_type alpha = algebra::random_element<FieldType>();
 
     math::polynomial_dfs<typename FieldType::value_type> f_dfs(3, D[0]->size(), 0);
     std::vector<typename FieldType::value_type> f_vector(f.size());
@@ -134,23 +134,23 @@ void test_fold_polynomial_dfs() {
     BOOST_CHECK(x1 == x2);
 }
 
-//BOOST_AUTO_TEST_SUITE(fold_polynomial_test_suite)
+BOOST_AUTO_TEST_SUITE(fold_polynomial_test_suite)
 
-ACTOR_THREAD_TEST_CASE(fold_polynomial_test) {
-    test_fold_polynomial<nil::crypto3::algebra::curves::mnt4<298>>();
+BOOST_AUTO_TEST_CASE(fold_polynomial_test) {
+    test_fold_polynomial<algebra::curves::mnt4<298>>();
 
-    test_fold_polynomial<nil::crypto3::algebra::curves::pallas>();
+    test_fold_polynomial<algebra::curves::pallas>();
 
-    test_fold_polynomial<nil::crypto3::algebra::curves::vesta>();
+    test_fold_polynomial<algebra::curves::vesta>();
 }
 
-ACTOR_THREAD_TEST_CASE(fold_polynomial_dfs_test) {
+BOOST_AUTO_TEST_CASE(fold_polynomial_dfs_test) {
 
-    test_fold_polynomial_dfs<nil::crypto3::algebra::curves::mnt4<298>>();
+    test_fold_polynomial_dfs<algebra::curves::mnt4<298>>();
 
-    test_fold_polynomial_dfs<nil::crypto3::algebra::curves::pallas>();
+    test_fold_polynomial_dfs<algebra::curves::pallas>();
 
-    test_fold_polynomial_dfs<nil::crypto3::algebra::curves::vesta>();
+    test_fold_polynomial_dfs<algebra::curves::vesta>();
 }
 
-//BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END()

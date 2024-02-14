@@ -26,32 +26,32 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef ACTOR_ZK_TEST_PLONK_CIRCUITS_HPP
-#define ACTOR_ZK_TEST_PLONK_CIRCUITS_HPP
+#ifndef CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP
+#define CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP
 
-#define _RND_ crypto3::algebra::random_element<FieldType>();
+#define _RND_ algebra::random_element<FieldType>();
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/actor/math/polynomial/polynomial.hpp>
-#include <nil/actor/math/domains/evaluation_domain.hpp>
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/actor/zk/math/permutation.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/copy_constraint.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/padding.hpp>
-#include <nil/actor/zk/commitments/polynomial/fri.hpp>
-#include <nil/actor/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/actor/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
+#include <nil/crypto3/zk/math/permutation.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/padding.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
                 template<typename FieldType, typename ParamsType, std::size_t usable_rows_amount, std::size_t permutation_size>
@@ -130,7 +130,7 @@ namespace nil {
                     table[0][0] = alg_rnd();
                     table[1][0] = alg_rnd();
                     table[2][0] = alg_rnd();
-//                    table[3][0] = crypto3::algebra::random_element<FieldType>();
+//                    table[3][0] = algebra::random_element<FieldType>();
                     q_add[0] = FieldType::value_type::zero();
                     q_mul[0] = FieldType::value_type::zero();
 
@@ -266,16 +266,16 @@ namespace nil {
 
                     // init values
                     typename FieldType::value_type one = FieldType::value_type::one();
-                    table[0][0] = crypto3::algebra::random_element<FieldType>();
-                    table[1][0] = crypto3::algebra::random_element<FieldType>();
-                    table[2][0] = crypto3::algebra::random_element<FieldType>();
+                    table[0][0] = algebra::random_element<FieldType>();
+                    table[1][0] = algebra::random_element<FieldType>();
+                    table[2][0] = algebra::random_element<FieldType>();
                     table[3][0] = pi0;
                     q_add[0] = FieldType::value_type::zero();
                     q_mul[0] = FieldType::value_type::zero();
 
                     // fill rows with ADD gate
                     for (std::size_t i = 1; i < 3; i++) {
-                        table[0][i] = crypto3::algebra::random_element<FieldType>();
+                        table[0][i] = algebra::random_element<FieldType>();
                         table[1][i] = table[2][i - 1];
                         table[2][i] = table[0][i] + table[1][i];
                         table[3][i] = FieldType::value_type::zero();
@@ -291,7 +291,7 @@ namespace nil {
 
                     // fill rows with MUL gate
                     for (std::size_t i = 3; i < 5; i++) {
-                        table[0][i] = crypto3::algebra::random_element<FieldType>();
+                        table[0][i] = algebra::random_element<FieldType>();
                         table[1][i] = table[3][0];
                         table[2][i] = table[0][i] * table[1][i] + table[0][i - 1];
                         table[3][i] = FieldType::value_type::zero();
@@ -377,7 +377,6 @@ namespace nil {
                     boost::random::mt11213b rnd = boost::random::mt11213b()
                 ) {
                     using assignment_type = typename FieldType::value_type;
-                    using field_type = typename FieldType::value_type;
 
                     constexpr static const std::size_t permutation = permutation_size_3;
                     constexpr static const std::size_t witness_columns = witness_columns_3;
@@ -398,8 +397,6 @@ namespace nil {
                     }
 
                     // lookup inputs
-                    typename FieldType::value_type one = FieldType::value_type::one();
-                    typename FieldType::value_type zero = FieldType::value_type::zero();
                     table[0] = {1, 0, 0, 0}; // Witness 1
                     table[1] = {0, 0, 0, 0};
                     table[2] = {0, 0, 0, 0};
@@ -513,8 +510,6 @@ namespace nil {
                     }
 
                     // lookup inputs
-                    typename FieldType::value_type one = FieldType::value_type::one();
-                    typename FieldType::value_type zero = FieldType::value_type::zero();
                     table[0] = {rnd() % 2, rnd() % 2, rnd(), rnd() % 2, rnd() % 2, 0, 0, 0};
                     table[1] = {rnd() % 2, rnd() % 2, rnd(), rnd() % 2, rnd() % 2, 0, 0, 0};;
                     table[2] = {table[0][0] * table[1][0], table[0][1] * table[1][1], table[0][2] * table[1][2], table[0][3] * table[1][3], table[0][4] * table[1][4], 0, 0, 0};
@@ -742,7 +737,6 @@ namespace nil {
                     constexpr static const std::size_t selector_columns = selector_columns_6;
                     constexpr static const std::size_t table_columns =
                             witness_columns + public_columns + constant_columns + selector_columns;
-                    constexpr static const std::size_t usable_rows = usable_rows_6;
 
                     typedef placeholder_circuit_params<FieldType, arithmetization_params_6> circuit_params;
 
@@ -754,8 +748,6 @@ namespace nil {
                     }
 
                     // lookup inputs
-                    typename FieldType::value_type one = FieldType::value_type::one();
-                    typename FieldType::value_type zero = FieldType::value_type::zero();
                     table[0] = {rnd() % 5 + 2, rnd() % 5 + 2, rnd() % 5 + 2, rnd() % 5 + 2, rnd() % 5 + 2, rnd() % 5 + 2};
                     table[1] = {7, table[0][0] + table[0][1],  table[0][1] + table[0][2],  table[0][2] + table[0][3],  table[0][3] + table[0][4],  table[0][4] + table[0][5]};
 
@@ -892,7 +884,6 @@ namespace nil {
                     constexpr static const std::size_t selector_columns = selector_columns_7;
                     constexpr static const std::size_t table_columns =
                             witness_columns + public_columns + constant_columns + selector_columns;
-                    constexpr static const std::size_t usable_rows = usable_rows_7;
 
                     typedef placeholder_circuit_params<FieldType, arithmetization_params_7> circuit_params;
 
@@ -904,9 +895,6 @@ namespace nil {
                     }
 
                     // lookup inputs
-                    typename FieldType::value_type one = FieldType::value_type::one();
-                    typename FieldType::value_type zero = FieldType::value_type::zero();
-
                     auto r = rnd() % 7;
                     table[0] = std::vector<typename FieldType::value_type>(16);
                     std::size_t j = 0;
@@ -1029,7 +1017,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
-#endif    // ACTOR_ZK_TEST_PLONK_CIRCUITS_HPP
+#endif    // CRYPTO3_ZK_TEST_PLONK_CIRCUITS_HPP

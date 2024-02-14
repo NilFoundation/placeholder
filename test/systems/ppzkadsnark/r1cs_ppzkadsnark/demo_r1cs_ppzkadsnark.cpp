@@ -29,9 +29,9 @@
 #include <cstring>
 #include <vector>
 
-#include <nil/actor/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/examples/run_r1cs_ppzkadsnark.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/examples/run_r1cs_ppzkadsnark.hpp>
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 int main(int argc, const char *argv[]) {
     if (argc == 2 && strcmp(argv[1], "-v") == 0) {

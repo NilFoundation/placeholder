@@ -26,12 +26,15 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE lpc_test
+
 #include <string>
 #include <random>
 #include <regex>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -39,23 +42,23 @@
 #include <nil/crypto3/algebra/curves/params/wnaf/bls12.hpp>
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/actor/math/domains/evaluation_domain.hpp>
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/actor/math/algorithms/calculate_domain_set.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
-#include <nil/actor/zk/commitments/polynomial/lpc.hpp>
-#include <nil/actor/zk/commitments/polynomial/fri.hpp>
-#include <nil/actor/zk/commitments/type_traits.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/crypto3/zk/commitments/type_traits.hpp>
 
 #include <nil/crypto3/random/algebraic_random_device.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-using namespace nil::actor;
+using namespace nil::crypto3;
 
 using dist_type = std::uniform_int_distribution<int>;
 
-inline std::vector<std::size_t> generate_random_step_list(const std::size_t r, const int max_step, boost::random::mt11213b &rnd) {
+inline std::vector<std::size_t> generate_random_step_list(const std::size_t r, const std::size_t max_step, boost::random::mt11213b &rnd) {
     std::vector<std::size_t> step_list;
     std::size_t steps_sum = 0;
     while (steps_sum != r) {
@@ -103,7 +106,7 @@ inline std::vector<math::polynomial<typename FieldType::value_type>> generate_ra
 ){
     std::vector<math::polynomial<typename FieldType::value_type>> result;
 
-    for( uint i = 0; i < batch_size; i++ ){
+    for( std::size_t i = 0; i < batch_size; i++ ){
         result.push_back(generate_random_polynomial(degree, rnd));
     }
     return result;
@@ -118,7 +121,7 @@ inline std::vector<math::polynomial_dfs<typename FieldType::value_type>> generat
     auto data = generate_random_polynomial_batch(batch_size, degree, rnd);
     std::vector<math::polynomial_dfs<typename FieldType::value_type>> result;
 
-    for( uint i = 0; i < data.size(); i++ ){
+    for( std::size_t i = 0; i < data.size(); i++ ){
         math::polynomial_dfs<typename FieldType::value_type> dfs;
         dfs.from_coefficients(data[i]);
         result.push_back(dfs);
@@ -133,12 +136,12 @@ nil::crypto3::random::algebraic_engine<FieldType> test_global_alg_rnd_engine;
 
 struct test_fixture {
     // Enumerate all fields used in tests;
-    using field1_type = nil::crypto3::algebra::curves::bls12<381>::scalar_field_type;
+    using field1_type = algebra::curves::bls12<381>::scalar_field_type;
 
     test_fixture(){
         test_global_seed = 0;
 
-        for( std::size_t i = 0; i + 1 < boost::unit_test::framework::master_test_suite().argc; i++){
+        for( std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++){
             if(std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--seed"){
                 if(std::string(boost::unit_test::framework::master_test_suite().argv[i+1]) == "random"){
                     std::random_device rd;
@@ -154,19 +157,20 @@ struct test_fixture {
         }
 
         BOOST_TEST_MESSAGE("test_global_seed = " << test_global_seed);
-        test_global_rnd_engine = boost::random::mt11213b(test_global_seed);
+        test_global_rnd_engine  = boost::random::mt11213b(test_global_seed);
         test_global_alg_rnd_engine<field1_type> = nil::crypto3::random::algebraic_engine<field1_type>(test_global_seed);
     }
     ~test_fixture(){}
 };
 
-ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
+BOOST_AUTO_TEST_SUITE(lpc_math_polynomial_suite);
+BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     // Setup types.
-    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
+    typedef algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
-    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
-    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
-    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef hashes::sha2<256> merkle_hash_type;
+    typedef hashes::sha2<256> transcript_hash_type;
+    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 10;
     constexpr static const std::size_t k = 1;
@@ -189,12 +193,11 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     static_assert(!zk::is_commitment<merkle_tree_type>::value);
     static_assert(!zk::is_commitment<std::size_t>::value);
 
-    typedef typename lpc_type::proof_type proof_type;
-
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r).get();
+        math::calculate_domain_set<FieldType>(extended_log, r);
+
 
     // Setup params
     typename fri_type::params_type fri_params(
@@ -204,7 +207,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
         2 //expand_factor
     );
 
-    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -225,7 +228,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
@@ -256,15 +259,15 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
+BOOST_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
     // Setup types
-    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
+    typedef algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
-    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
+    typedef hashes::sha2<256> merkle_hash_type;
+    typedef hashes::sha2<256> transcript_hash_type;
 
-    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 10;
     constexpr static const std::size_t k = 1;
@@ -287,12 +290,10 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
     static_assert(!zk::is_commitment<merkle_tree_type>::value);
     static_assert(!zk::is_commitment<std::size_t>::value);
 
-    typedef typename lpc_type::proof_type proof_type;
-
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r).get();
+        math::calculate_domain_set<FieldType>(extended_log, r);
 
     typedef zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, lambda, m> fri_type;
 
@@ -304,7 +305,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
         2 //expand_factor
     );
 
-    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -321,7 +322,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
@@ -352,15 +353,15 @@ ACTOR_FIXTURE_TEST_CASE(lpc_basic_skipping_layers_test, test_fixture) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
+BOOST_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     // Setup types
-    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
+    typedef algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
 
-    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
-    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
+    typedef hashes::sha2<256> merkle_hash_type;
+    typedef hashes::sha2<256> transcript_hash_type;
 
-    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 10;
     constexpr static const std::size_t k = 1;
@@ -383,12 +384,11 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     static_assert(!zk::is_commitment<merkle_tree_type>::value);
     static_assert(!zk::is_commitment<std::size_t>::value);
 
-    typedef typename lpc_type::proof_type proof_type;
     // Setup params
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r+1).get();
+        math::calculate_domain_set<FieldType>(extended_log, r+1);
 
     // Setup params
     typename fri_type::params_type fri_params(
@@ -398,7 +398,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
         2 //expand_factor
     );
 
-    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -416,7 +416,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
@@ -447,13 +447,16 @@ ACTOR_FIXTURE_TEST_CASE(lpc_dfs_basic_test, test_fixture) {
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
-ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(lpc_params_test_suite)
+BOOST_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
     // Setup types.
-    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
+    typedef algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
-    typedef nil::crypto3::hashes::sha2<256> merkle_hash_type;
-    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
-    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef hashes::sha2<256> merkle_hash_type;
+    typedef hashes::sha2<256> transcript_hash_type;
+    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 40;
     constexpr static const std::size_t k = 1;
@@ -476,14 +479,11 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
     static_assert(!zk::is_commitment<merkle_tree_type>::value);
     static_assert(!zk::is_commitment<std::size_t>::value);
 
-    typedef typename lpc_type::proof_type proof_type;
-
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r).get();
+        math::calculate_domain_set<FieldType>(extended_log, r);
 
-    // Setup params
     typename fri_type::params_type fri_params(
         d - 1, // max_degree
         D,
@@ -491,7 +491,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
         2 //expand_factor
     );
 
-    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -510,7 +510,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
 
     // Generate evaluation points. Generate points outside of the basic domain
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(2, point);
     lpc_scheme_prover.append_eval_point(3, point);
@@ -539,13 +539,13 @@ ACTOR_FIXTURE_TEST_CASE(lpc_batches_num_3_test, test_fixture){
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
 
-ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
+BOOST_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     // Setup types.
-    typedef nil::crypto3::algebra::curves::bls12<381> curve_type;
+    typedef algebra::curves::bls12<381> curve_type;
     typedef typename curve_type::scalar_field_type FieldType;
-    typedef nil::crypto3::hashes::keccak_1600<256> merkle_hash_type;
-    typedef nil::crypto3::hashes::sha2<256> transcript_hash_type;
-    typedef typename nil::crypto3::containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
+    typedef hashes::keccak_1600<256> merkle_hash_type;
+    typedef hashes::sha2<256> transcript_hash_type;
+    typedef typename containers::merkle_tree<merkle_hash_type, 2> merkle_tree_type;
 
     constexpr static const std::size_t lambda = 10;
     constexpr static const std::size_t k = 1;
@@ -568,14 +568,11 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     static_assert(!zk::is_commitment<merkle_tree_type>::value);
     static_assert(!zk::is_commitment<std::size_t>::value);
 
-    typedef typename lpc_type::proof_type proof_type;
-
     constexpr static const std::size_t d_extended = d;
     std::size_t extended_log = boost::static_log2<d_extended>::value;
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
-        math::calculate_domain_set<FieldType>(extended_log, r).get();
+        math::calculate_domain_set<FieldType>(extended_log, r);
 
-    // Setup params
     typename fri_type::params_type fri_params(
         d - 1, // max_degree
         D,
@@ -583,7 +580,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
         2 //expand_factor
     );
 
-    using lpc_scheme_type = nil::actor::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;
     lpc_scheme_type lpc_scheme_prover(fri_params);
     lpc_scheme_type lpc_scheme_verifier(fri_params);
 
@@ -604,7 +601,7 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     commitments[3] = lpc_scheme_prover.commit(3);
 
     // Generate evaluation points. Choose poin1ts outside the domain
-    auto point = nil::crypto3::algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
+    auto point = algebra::fields::arithmetic_params<FieldType>::multiplicative_generator;
     lpc_scheme_prover.append_eval_point(0, point);
     lpc_scheme_prover.append_eval_point(1, point);
     lpc_scheme_prover.append_eval_point(2, point);
@@ -634,4 +631,4 @@ ACTOR_FIXTURE_TEST_CASE(lpc_different_hash_types_test, test_fixture) {
     typename FieldType::value_type prover_next_challenge = transcript.template challenge<FieldType>();
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 }
-
+BOOST_AUTO_TEST_SUITE_END()

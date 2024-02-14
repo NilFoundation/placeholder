@@ -28,15 +28,15 @@
 
 #include "tbcs_examples.hpp"
 
-#include <nil/actor/zk/snark/systems/ppzksnark/tbcs_ppzksnark.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark.hpp>
 
-#include <nil/actor/zk/snark/algorithms/generate.hpp>
-#include <nil/actor/zk/snark/algorithms/verify.hpp>
-#include <nil/actor/zk/snark/algorithms/prove.hpp>
+#include <nil/crypto3/zk/snark/algorithms/generate.hpp>
+#include <nil/crypto3/zk/snark/algorithms/verify.hpp>
+#include <nil/crypto3/zk/snark/algorithms/prove.hpp>
 
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -82,7 +82,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
 #endif    // CRYPTO3_RUN_TBCS_PPZKSNARK_HPP

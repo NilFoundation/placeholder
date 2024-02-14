@@ -34,16 +34,16 @@
 // for code that uses the tally compliance predicate.
 //---------------------------------------------------------------------------//
 
-#ifndef ACTOR_ZK_TALLY_CP_HPP
-#define ACTOR_ZK_TALLY_CP_HPP
+#ifndef CRYPTO3_ZK_TALLY_CP_HPP
+#define CRYPTO3_ZK_TALLY_CP_HPP
 
-#include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 
-#include <nil/actor/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/compliance_predicate.hpp>
-#include <nil/actor/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/cp_handler.hpp>
+#include <nil/crypto3/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/compliance_predicate.hpp>
+#include <nil/crypto3/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/cp_handler.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -380,7 +380,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
 #endif    // TALLY_CP_HPP

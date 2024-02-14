@@ -26,13 +26,13 @@
 // USCS examples with prescribed parameters (according to some distribution).
 //---------------------------------------------------------------------------//
 
-#ifndef ACTOR_ZK_USCS_EXAMPLES_HPP
-#define ACTOR_ZK_USCS_EXAMPLES_HPP
+#ifndef CRYPTO3_ZK_USCS_EXAMPLES_HPP
+#define CRYPTO3_ZK_USCS_EXAMPLES_HPP
 
-#include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -181,7 +181,7 @@ namespace nil {
                 }
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
 #endif    // USCS_EXAMPLES_HPP

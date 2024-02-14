@@ -23,11 +23,11 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-// #define BOOST_TEST_MODULE placeholder_performance_test
+#define BOOST_TEST_MODULE placeholder_performance_test
 
 // NOTE: Most of the following code is taken from main.cpp of transpiler.
 
-// Do it forcefully because it is a main purpose of this test.
+// Do it forsefully because it is a main purpose of this test.
 #define ZK_PLACEHOLDER_PROFILING_ENABLED
 
 #include <string>
@@ -35,10 +35,9 @@
 #include <iostream>
 #include <fstream>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
-
-//#include <boost/test/data/monomorphic.hpp>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -47,8 +46,8 @@
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/actor/math/polynomial/lagrange_interpolation.hpp>
-#include <nil/actor/math/algorithms/calculate_domain_set.hpp>
+#include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
+#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
@@ -57,16 +56,16 @@
 #include <nil/crypto3/hash/sha2.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 
-#include <nil/actor/zk/snark/systems/plonk/placeholder/prover.hpp>
-#include <nil/actor/zk/snark/systems/plonk/placeholder/verifier.hpp>
-#include <nil/actor/zk/snark/systems/plonk/placeholder/permutation_argument.hpp>
-#include <nil/actor/zk/snark/systems/plonk/placeholder/lookup_argument.hpp>
-#include <nil/actor/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/actor/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/actor/zk/transcript/fiat_shamir.hpp>
-#include <nil/actor/zk/commitments/polynomial/fri.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/permutation_argument.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/lookup_argument.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
@@ -85,9 +84,9 @@
 
 #include "circuits.hpp"
 
-using namespace nil::actor;
-using namespace nil::actor::zk;
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3;
+using namespace nil::crypto3::zk;
+using namespace nil::crypto3::zk::snark;
 
 class placeholder_performance_test_base {
     public:
@@ -113,6 +112,7 @@ class placeholder_performance_test_base {
         return step_list;
     }
 
+    template<typename fri_type, typename FieldType>
     typename fri_type::params_type create_fri_params(
         std::size_t degree_log, const int max_step = 1, std::size_t expand_factor = 7) {
     std::size_t r = degree_log - 1;
@@ -130,11 +130,11 @@ class placeholder_performance_test_base {
 template<std::size_t lambda>
 class placeholder_performance_test : public placeholder_performance_test_base {
 public:
-    // using curve_type = nil::crypto3::algebra::curves::bls12<381>;
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+    // using curve_type = algebra::curves::bls12<381>;
+    using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
 
-    using hash_type = nil::crypto3::hashes::keccak_1600<256>;
+    using hash_type = hashes::keccak_1600<256>;
 
     static constexpr std::size_t m = 2;
 
@@ -163,9 +163,9 @@ public:
     using TTypeBase = nil::marshalling::field_type<Endianness>;
     using column_type = zk::snark::plonk_column<field_type>;
 
-    using circuit_marshalling_type = nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, constraint_system_type>;
+    using circuit_marshalling_type = marshalling::types::plonk_constraint_system<TTypeBase, constraint_system_type>;
     using assignment_table_type = zk::snark::plonk_table<field_type, arithmetization_params_type, column_type>;
-    using assignment_table_marshalling_type = nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, assignment_table_type>;
+    using assignment_table_marshalling_type = marshalling::types::plonk_assignment_table<TTypeBase, assignment_table_type>;
 
     using columns_rotations_type = std::array<std::set<int>, arithmetization_params_type::total_columns>;
     using transcript_type = typename transcript::fiat_shamir_heuristic_sequential<hash_type>;
@@ -206,7 +206,7 @@ public:
 
         auto lpc_proof = placeholder_prover<field_type, lpc_placeholder_params_type>::process(
             lpc_preprocessed_public_data, lpc_preprocessed_private_data, table_description,
-            constraint_system, assignments, lpc_scheme
+            constraint_system, lpc_scheme
         );
 
         bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -260,7 +260,7 @@ private:
         auto read_iter = v.begin();
         auto status = marshalled_data.read(read_iter, v.size());
         std::tie(table_description.usable_rows_amount, assignments) =
-            nil::crypto3::marshalling::types::make_assignment_table<Endianness, assignment_table_type>(marshalled_data);
+            marshalling::types::make_assignment_table<Endianness, assignment_table_type>(marshalled_data);
 
         table_description.rows_amount = assignments.rows_amount();
     }
@@ -277,7 +277,7 @@ private:
         circuit_marshalling_type marshalled_data;
         auto read_iter = v.begin();
         auto status = marshalled_data.read(read_iter, v.size());
-        constraint_system = nil::crypto3::marshalling::types::make_plonk_constraint_system<
+        constraint_system = marshalling::types::make_plonk_constraint_system<
             Endianness, constraint_system_type>(marshalled_data);
     }
 
@@ -321,40 +321,39 @@ private:
     columns_rotations_type columns_rotations;
 };
 
-// BOOST_AUTO_TEST_SUITE(placeholder_transpiler_suite)
+BOOST_AUTO_TEST_SUITE(placeholder_transpiler_suite, *boost::unit_test::disabled())
 
-// This tests SUITE is disabled in crypto3-zk, uncomment if you want to run manually.
-//ACTOR_FIXTURE_TEST_CASE(placeholder_merkle_tree_poseidon_test, placeholder_performance_test<2>) {
-//
-//    run_placeholder_perf_test(
-//        "Merkle tree poseidon performance test",
-//        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_circuit.crct",
-//        "../libs/actor/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_assignment.tbl"
-//    );
-//}
-//
-//ACTOR_FIXTURE_TEST_CASE(placeholder_many_hashes_test, placeholder_performance_test<2>) {
-//    run_placeholder_perf_test(
-//        "Many hashes performance test",
-//        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_circuit.crct",
-//        "../libs/actor/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_assignment.tbl"
-//    );
-//}
+BOOST_FIXTURE_TEST_CASE(placeholder_merkle_tree_poseidon_test, placeholder_performance_test<2>) {
 
-//BOOST_AUTO_TEST_SUITE_END()
+    run_placeholder_perf_test(
+        "Merkle tree poseidon performance test",
+        "../libs/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_circuit.crct",
+        "../libs/zk/test/systems/plonk/placeholder/data/merkle_tree_poseidon/merkle_tree_posseidon_assignment.tbl"
+    );
+}
 
-//BOOST_AUTO_TEST_SUITE(placeholder_prover_test_suite)
+BOOST_FIXTURE_TEST_CASE(placeholder_many_hashes_test, placeholder_performance_test<2>) {
+    run_placeholder_perf_test(
+        "Many hashes performance test",
+        "../libs/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_circuit.crct",
+        "../libs/zk/test/systems/plonk/placeholder/data/many_hashes/many_hashes_assignment.tbl"
+    );
+}
 
-// using curve_type = nil::crypto3::algebra::curves::bls12<381>;
-using curve_type = nil::crypto3::algebra::curves::pallas;
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(placeholder_prover_test_suite)
+
+// using curve_type = algebra::curves::bls12<381>;
+using curve_type = algebra::curves::pallas;
 using field_type = typename curve_type::base_field_type;
 
 // lpc params
 constexpr static const std::size_t m = 2;
 
 struct placeholder_fibonacci_params {
-    using merkle_hash_type = nil::crypto3::hashes::keccak_1600<512>;
-    using transcript_hash_type = nil::crypto3::hashes::sha2<256>;
+    using merkle_hash_type = hashes::keccak_1600<512>;
+    using transcript_hash_type = hashes::sha2<256>;
 
     constexpr static const std::size_t witness_columns = 1;
     constexpr static const std::size_t public_input_columns = 1;
@@ -387,12 +386,12 @@ using lpc_params_type = commitments::list_polynomial_commitment_params<
 
 using lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
 using lpc_scheme_type = typename commitments::lpc_commitment_scheme<lpc_type>;
-using lpc_placeholder_params_type = placeholder_params<circuit_fib_params, lpc_scheme_type>;
+using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_fib_params, lpc_scheme_type>;
 using policy_type = zk::snark::detail::placeholder_policy<field_type, lpc_placeholder_params_type>;
 
 const std::size_t rows_amount = 987;
 
-ACTOR_FIXTURE_TEST_CASE(placeholder_large_fibonacci_test, placeholder_performance_test_base) {
+BOOST_FIXTURE_TEST_CASE(placeholder_large_fibonacci_test, placeholder_performance_test_base) {
     auto circuit = circuit_test_fib<field_type, rows_amount>();
 
     plonk_table_description<field_type, typename circuit_fib_params::arithmetization_params> desc;
@@ -424,7 +423,7 @@ ACTOR_FIXTURE_TEST_CASE(placeholder_large_fibonacci_test, placeholder_performanc
 
     auto lpc_proof = placeholder_prover<field_type, lpc_placeholder_params_type>::process(
         lpc_preprocessed_public_data, lpc_preprocessed_private_data, desc,
-        constraint_system, assignments, lpc_scheme
+        constraint_system, lpc_scheme
     );
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -434,6 +433,6 @@ ACTOR_FIXTURE_TEST_CASE(placeholder_large_fibonacci_test, placeholder_performanc
     std::cout << "==========================================================="<<std::endl;
 }
 
-// BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END()
 
 

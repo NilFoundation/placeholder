@@ -45,20 +45,20 @@
 #include <nil/crypto3/algebra/pairing/mnt6.hpp>
 #include <nil/crypto3/algebra/algorithms/pair.hpp>
 
-#include <nil/actor/zk/commitments/polynomial/kzg_ipp2.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/srs.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/prover.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/verifier.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/transcript.hpp>
-#include <nil/actor/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/kzg_ipp2.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/srs.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/prover.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/verifier.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/ipp2/transcript.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
 
-#include <nil/actor/zk/algorithms/prove.hpp>
-#include <nil/actor/zk/algorithms/verify.hpp>
+#include <nil/crypto3/zk/algorithms/prove.hpp>
+#include <nil/crypto3/zk/algorithms/verify.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::zk;
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk;
+using namespace nil::crypto3::zk::snark;
 
 template<typename FieldParams>
 void print_field_element(std::ostream &os, const typename fields::detail::element_fp<FieldParams> &e) {

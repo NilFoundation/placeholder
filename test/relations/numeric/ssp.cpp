@@ -33,8 +33,8 @@
 #include <cstring>
 #include <vector>
 
-#include <nil/actor/zk/snark/reductions/uscs_to_ssp.hpp>
-#include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
+#include <nil/crypto3/zk/snark/reductions/uscs_to_ssp.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
@@ -52,7 +52,7 @@
 
 #include "uscs_examples.hpp"
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 using namespace nil::crypto3::algebra;
 
 template<typename FieldType>

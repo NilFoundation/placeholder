@@ -23,13 +23,13 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef ACTOR_ZK_AESCTRPRF_HPP
-#define ACTOR_ZK_RUN_R1CS_MP_PPZKPCD_HPP
+#ifndef CRYPTO3_ZK_AESCTRPRF_HPP
+#define CRYPTO3_ZK_RUN_R1CS_MP_PPZKPCD_HPP
 
-#include <nil/actor/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/prf.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/prf.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -89,7 +89,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
-#endif    // ACTOR_ZK_RUN_R1CS_MP_PPZKPCD_HPP
+#endif    // CRYPTO3_ZK_RUN_R1CS_MP_PPZKPCD_HPP

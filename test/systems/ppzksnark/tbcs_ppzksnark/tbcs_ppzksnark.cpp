@@ -47,7 +47,7 @@
 #include "tbcs_examples.hpp"
 #include "run_tbcs_ppzksnark.hpp"
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 template<typename CurveType>
 void test_tbcs_ppzksnark(std::size_t primary_input_size, std::size_t auxiliary_input_size, std::size_t num_gates,

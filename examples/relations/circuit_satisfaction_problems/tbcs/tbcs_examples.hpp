@@ -23,13 +23,13 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef ACTOR_ZK_TBCS_EXAMPLES_HPP
-#define ACTOR_ZK_ED25519SIG_HPP
+#ifndef CRYPTO3_ZK_TBCS_EXAMPLES_HPP
+#define CRYPTO3_ZK_ED25519SIG_HPP
 
-#include <nil/actor/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -127,7 +127,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
-#endif    // ACTOR_ZK_ED25519SIG_HPP
+#endif    // CRYPTO3_ZK_ED25519SIG_HPP

@@ -47,7 +47,7 @@
 #include "uscs_examples.hpp"
 #include "run_uscs_ppzksnark.hpp"
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 template<typename CurveType>
 void test_uscs_ppzksnark(std::size_t num_constraints, std::size_t input_size) {

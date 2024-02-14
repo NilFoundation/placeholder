@@ -44,23 +44,23 @@
 
 #include <boost/foreach.hpp>
 
-#include <nil/actor/zk/snark/systems/plonk/pickles/detail.hpp>
-#include <nil/actor/zk/snark/systems/plonk/pickles/proof.hpp>
-#include <nil/actor/zk/snark/systems/plonk/pickles/verifier_index.hpp>
-#include <nil/actor/zk/snark/systems/plonk/pickles/verifier.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/verifier_index.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/verifier.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
 
 using curve_type = nil::crypto3::algebra::curves::vesta;
 using vesta_verifier_index_type = zk::snark::verifier_index<
     curve_type,
-    nil::actor::zk::snark::arithmetic_sponge_params<curve_type::scalar_field_type::value_type>,
-    nil::actor::zk::snark::arithmetic_sponge_params<curve_type::base_field_type::value_type>,
-    nil::actor::zk::snark::kimchi_constant::COLUMNS,
-    nil::actor::zk::snark::kimchi_constant::PERMUTES
+    nil::crypto3::zk::snark::arithmetic_sponge_params<curve_type::scalar_field_type::value_type>,
+    nil::crypto3::zk::snark::arithmetic_sponge_params<curve_type::base_field_type::value_type>,
+    nil::crypto3::zk::snark::kimchi_constant::COLUMNS, 
+    nil::crypto3::zk::snark::kimchi_constant::PERMUTES
 >;
 
 template<typename Iterator>
@@ -104,8 +104,8 @@ zk::snark::proof_type<curve_type> make_proof(boost::property_tree::ptree root) {
     it = best_chain.second.get_child(base_path + "openings.proof.sg").begin();
     proof.proof.sg = {get_cppui256(it++), get_cppui256(it)};
 
-    proof.proof.z1 = nil::crypto3::multiprecision::cpp_int(best_chain.second.get<std::string>(base_path + "openings.proof.z_1"));
-    proof.proof.z2 = nil::crypto3::multiprecision::cpp_int(best_chain.second.get<std::string>(base_path + "openings.proof.z_2"));
+    proof.proof.z1 = multiprecision::cpp_int(best_chain.second.get<std::string>(base_path + "openings.proof.z_1"));
+    proof.proof.z2 = multiprecision::cpp_int(best_chain.second.get<std::string>(base_path + "openings.proof.z_2"));
 
     std::size_t ev_i = 0;
     for (auto &evals_it : best_chain.second.get_child(base_path + "openings.evals")) {
@@ -143,7 +143,7 @@ zk::snark::proof_type<curve_type> make_proof(boost::property_tree::ptree root) {
         ev_i++;
     }
 
-    proof.ft_eval1 = nil::crypto3::multiprecision::cpp_int(best_chain.second.get<std::string>(base_path + "openings.ft_eval1"));
+    proof.ft_eval1 = multiprecision::cpp_int(best_chain.second.get<std::string>(base_path + "openings.ft_eval1"));
     //            // public
     //            std::vector<typename CurveType::scalar_field_type::value_type> public_p; // TODO: where it is?
     //
@@ -163,7 +163,7 @@ vesta_verifier_index_type make_verify_index(boost::property_tree::ptree root, bo
     // TODO Is it right? Is it a good way to set domain generator?
     // We need to assert, need to check that the input is indeed the root of unity
 
-    auto d_gen = nil::crypto3::multiprecision::cpp_int(const_root.get<std::string>("verify_index.domain.group_gen"));
+    auto d_gen = multiprecision::cpp_int(const_root.get<std::string>("verify_index.domain.group_gen"));
     auto d_size = const_root.get<std::size_t>("verify_index.domain.log_size_of_group");
     // std::cout << d_gen << " " << d_size << std::endl;
     ver_index.domain = nil::crypto3::math::basic_radix2_domain<typename curve_type::scalar_field_type>(d_size+1);
@@ -211,7 +211,7 @@ vesta_verifier_index_type make_verify_index(boost::property_tree::ptree root, bo
     //i = 0; 
     // No member shifts
     //for (auto &row : root.get_child("data.blockchainVerificationKey.index.shifts")) {
-    //    ver_index.shifts[i] = nil::crypto3::multiprecision::cpp_int(row.second.get_value<std::string>());
+    //    ver_index.shifts[i] = multiprecision::cpp_int(row.second.get_value<std::string>());
     //    ++i;
     //}
 
@@ -221,8 +221,8 @@ vesta_verifier_index_type make_verify_index(boost::property_tree::ptree root, bo
                       0x1764D9CB4C64EBA9A150920807637D458919CB6948821F4D15EB1994EADF9CE3_cppui256,
                       0x0140117C8BBC4CE4644A58F7007148577782213065BB9699BF5C391FBE1B3E6D_cppui256,
                       0x0000000000000000000000000000000000000000000000000000000000000001_cppui256};
-    ver_index.w = nil::crypto3::multiprecision::cpp_int(const_root.get<std::string>("verify_index.w"));
-    ver_index.endo = nil::crypto3::multiprecision::cpp_int(const_root.get<std::string>("verify_index.endo"));
+    ver_index.w = multiprecision::cpp_int(const_root.get<std::string>("verify_index.w"));
+    ver_index.endo = multiprecision::cpp_int(const_root.get<std::string>("verify_index.endo"));
 
     //ver_index.lookup_index = root.get_child("data.blockchainVerificationKey.index.lookup_index"); // TODO: null
     //ver_index.linearization;       // TODO: where it is?

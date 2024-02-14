@@ -9,8 +9,8 @@
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 
-#include <nil/actor/zk/snark/systems/plonk/pickles/detail.hpp>
-#include <nil/actor/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
 
 using namespace nil::crypto3;
                 

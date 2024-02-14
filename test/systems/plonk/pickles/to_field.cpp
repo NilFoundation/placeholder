@@ -34,10 +34,10 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/actor/zk/snark/systems/plonk/pickles/detail.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
 
 using namespace nil::crypto3;
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 BOOST_AUTO_TEST_SUITE(pickles_kimchi_to_field_test_suite)
 

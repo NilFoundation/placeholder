@@ -23,27 +23,28 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-//#define BOOST_TEST_MODULE commitments_type_traits_test
+#define BOOST_TEST_MODULE commitments_type_traits_test
 
 #include <string>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
-// #include <nil/actor/zk/commitments/polynomial/kzg.hpp>
-#include <nil/actor/zk/commitments/polynomial/fri.hpp>
-#include <nil/actor/zk/commitments/polynomial/lpc.hpp>
-#include <nil/actor/zk/commitments/polynomial/kimchi_pedersen.hpp>
-#include <nil/actor/zk/commitments/polynomial/pedersen.hpp>
-#include <nil/actor/zk/commitments/type_traits.hpp>
+// #include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/pedersen.hpp>
+#include <nil/crypto3/zk/commitments/type_traits.hpp>
 
-using namespace nil::actor;
+using namespace nil::crypto3;
 
-//BOOST_AUTO_TEST_SUITE(commitments_type_traits_test_suite)
+BOOST_AUTO_TEST_SUITE(commitments_type_traits_test_suite)
 
-ACTOR_THREAD_TEST_CASE(commitments_type_traits_basic_test) {
+BOOST_AUTO_TEST_CASE(commitments_type_traits_basic_test) {
 
     typedef algebra::curves::bls12<381> curve_type;
     typedef curve_type::base_field_type field_type;
@@ -67,4 +68,4 @@ ACTOR_THREAD_TEST_CASE(commitments_type_traits_basic_test) {
     static_assert(zk::is_commitment<zk::commitments::kimchi_pedersen<curve_type>>::value);
 }
 
-//BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END()

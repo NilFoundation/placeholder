@@ -10,15 +10,15 @@
 #include <nil/crypto3/algebra/curves/params/multiexp/bls12.hpp>
 #include <nil/crypto3/algebra/curves/params/wnaf/bls12.hpp>
 
-#include <nil/actor/zk/commitments/polynomial/powers_of_tau.hpp>
-#include <nil/actor/zk/commitments/polynomial/r1cs_gg_ppzksnark_mpc.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/powers_of_tau.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/r1cs_gg_ppzksnark_mpc.hpp>
 
 #include "../systems/ppzksnark/r1cs_examples.hpp"
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::zk;
-using namespace nil::actor::zk::snark;
-using namespace nil::actor::zk::commitments;
+using namespace nil::crypto3::zk;
+using namespace nil::crypto3::zk::snark;
+using namespace nil::crypto3::zk::commitments;
 
 BOOST_AUTO_TEST_SUITE(mpc_generator_test_suite)
 
@@ -103,10 +103,8 @@ BOOST_AUTO_TEST_CASE(mpc_generator_compare_keypairs_without_delta_contribution_t
 BOOST_AUTO_TEST_CASE(mpc_generator_proof_verification_without_delta_contribution_test) {
 
     using curve_type = curves::bls12<381>;
-    using scalar_field_type = curve_type::scalar_field_type;
     using powers_of_tau_scheme_type = powers_of_tau<curve_type, 32>;
     using proving_scheme_type = r1cs_gg_ppzksnark<curve_type>;
-    using crs_mpc_type = r1cs_gg_ppzksnark_mpc<curve_type>;
 
     auto acc = powers_of_tau_scheme_type::accumulator_type();
     auto sk = powers_of_tau_scheme_type::generate_private_key();
@@ -127,7 +125,6 @@ BOOST_AUTO_TEST_CASE(mpc_generator_proof_verification_without_delta_contribution
 BOOST_AUTO_TEST_CASE(mpc_generator_proof_verification_with_delta_contribution_test) {
 
     using curve_type = curves::bls12<381>;
-    using scalar_field_type = curve_type::scalar_field_type;
     using powers_of_tau_scheme_type = powers_of_tau<curve_type, 32>;
     using proving_scheme_type = r1cs_gg_ppzksnark<curve_type>;
     using crs_mpc_type = r1cs_gg_ppzksnark_mpc<curve_type>;

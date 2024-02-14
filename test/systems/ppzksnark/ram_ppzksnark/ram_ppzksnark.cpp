@@ -36,7 +36,7 @@
 #include "ram_examples.hpp"
 #include "run_ram_ppzksnark.hpp"
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 template<typename CurveType>
 void test_ram_ppzksnark(const std::size_t w,

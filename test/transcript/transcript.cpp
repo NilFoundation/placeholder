@@ -23,12 +23,13 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-// #define BOOST_TEST_MODULE zk_transcript_test
+#define BOOST_TEST_MODULE zk_transcript_test
 
 #include <vector>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -38,15 +39,17 @@
 #include <nil/crypto3/hash/poseidon.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 
-#include <nil/actor/zk/transcript/fiat_shamir.hpp>
+#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 
-using namespace nil::actor;
-using namespace nil::actor::zk;
+using namespace nil::crypto3;
+using namespace nil::crypto3::zk;
 
-ACTOR_THREAD_TEST_CASE(zk_transcript_manual_test) {
-    using field_type = nil::crypto3::algebra::curves::alt_bn128_254::scalar_field_type;
+BOOST_AUTO_TEST_SUITE(zk_transcript_test_suite)
+
+BOOST_AUTO_TEST_CASE(zk_transcript_manual_test) {
+    using field_type = algebra::curves::alt_bn128_254::scalar_field_type;
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    transcript::fiat_shamir_heuristic_sequential<nil::crypto3::hashes::keccak_1600<256>> tr(init_blob);
+    transcript::fiat_shamir_heuristic_sequential<hashes::keccak_1600<256>> tr(init_blob);
     auto ch1 = tr.challenge<field_type>();
     auto ch2 = tr.challenge<field_type>();
     auto ch_n = tr.challenges<field_type, 3>();
@@ -59,11 +62,16 @@ ACTOR_THREAD_TEST_CASE(zk_transcript_manual_test) {
     BOOST_CHECK_EQUAL(ch_n[2].data, field_type::value_type(0x10bfe2f4a414eec551dda5fd9899e9b46e327648b4fa564ed0517b6a99396aec_cppui256).data);
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_AUTO_TEST_SUITE(zk_poseidon_transcript_test_suite)
+
 // We need this test to make sure that poseidon keeps working exactly the same after any refactoring/code changes.
-ACTOR_THREAD_TEST_CASE(zk_poseidon_transcript_init_test) {
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
+    using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
-    using poseidon_type = nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
+    using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
 
     std::vector<std::uint8_t> init_blob {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     transcript::fiat_shamir_heuristic_sequential<poseidon_type> tr(init_blob);
@@ -76,10 +84,10 @@ ACTOR_THREAD_TEST_CASE(zk_poseidon_transcript_init_test) {
     BOOST_CHECK_EQUAL(ch_int, 0x6296);
 }
 
-ACTOR_THREAD_TEST_CASE(zk_poseidon_transcript_no_init_test) {
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_no_init_test) {
+    using curve_type = algebra::curves::pallas;
     using field_type = typename curve_type::base_field_type;
-    using poseidon_type = nil::crypto3::hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
+    using poseidon_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
 
     transcript::fiat_shamir_heuristic_sequential<poseidon_type> tr;
     auto ch1 = tr.challenge<field_type>();
@@ -90,3 +98,5 @@ ACTOR_THREAD_TEST_CASE(zk_poseidon_transcript_no_init_test) {
     BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x1b961886411ee8722dd6b576cba5876eb30999b5237fe0e14255e6d006cff63c_cppui256).data);
     BOOST_CHECK_EQUAL(ch_int, 0xc92);
 }
+
+BOOST_AUTO_TEST_SUITE_END()

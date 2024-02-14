@@ -24,10 +24,13 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE plonk_constraint_test
+
 #include <string>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/mnt4.hpp>
@@ -37,17 +40,19 @@
 
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
-#include <nil/actor/zk/snark/arithmetization/plonk/constraint.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
-using namespace nil::actor;
+using namespace nil::crypto3;
 
-ACTOR_THREAD_TEST_CASE(plonk_constraint_basic_test) {
+BOOST_AUTO_TEST_SUITE(plonk_constraint_test_suite)
+
+BOOST_AUTO_TEST_CASE(plonk_constraint_basic_test) {
 
     // setup
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+    using curve_type = algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
 
     using var = zk::snark::plonk_variable<typename FieldType::value_type>;
@@ -68,9 +73,9 @@ ACTOR_THREAD_TEST_CASE(plonk_constraint_basic_test) {
     constraint_type constraint9 = var(0, 0).pow(1) - var(0, 0);
 
     std::array<zk::snark::plonk_column<FieldType>, arithmetization_params::witness_columns> witness_columns;
-    witness_columns[0] = {nil::crypto3::algebra::random_element<FieldType>()};
-    witness_columns[1] = {nil::crypto3::algebra::random_element<FieldType>()};
-    witness_columns[2] = {nil::crypto3::algebra::random_element<FieldType>()};
+    witness_columns[0] = {algebra::random_element<FieldType>()};
+    witness_columns[1] = {algebra::random_element<FieldType>()};
+    witness_columns[2] = {algebra::random_element<FieldType>()};
 
     std::cout << witness_columns[0][0].data << std::endl;
     std::cout << witness_columns[1][0].data << std::endl;
@@ -81,32 +86,31 @@ ACTOR_THREAD_TEST_CASE(plonk_constraint_basic_test) {
     zk::snark::plonk_assignment_table<FieldType, arithmetization_params> assignment(private_assignment);
 
     BOOST_CHECK((witness_columns[0][0] + witness_columns[1][0] - witness_columns[2][0]) ==
-                constraint.evaluate(0, assignment).get());
+                constraint.evaluate(0, assignment));
 
     BOOST_CHECK((witness_columns[0][0] + witness_columns[1][0] - typename FieldType::value_type(2)) ==
-                constraint1.evaluate(0, assignment).get());
+                constraint1.evaluate(0, assignment));
 
     BOOST_CHECK((typename FieldType::value_type(2) - (witness_columns[0][0] + witness_columns[1][0])) ==
-                constraint2.evaluate(0, assignment).get());
+                constraint2.evaluate(0, assignment));
 
-    BOOST_CHECK((typename FieldType::value_type(2) - witness_columns[0][0]) ==
-                constraint3.evaluate(0, assignment).get());
+    BOOST_CHECK((typename FieldType::value_type(2) - witness_columns[0][0]) == constraint3.evaluate(0, assignment));
 
     BOOST_CHECK((typename FieldType::value_type(2) - witness_columns[0][0] * witness_columns[0][0]) ==
-                constraint4.evaluate(0, assignment).get());
+                constraint4.evaluate(0, assignment));
 
     BOOST_CHECK((witness_columns[0][0] - witness_columns[0][0] * witness_columns[0][0]) ==
-                constraint5.evaluate(0, assignment).get());
+                constraint5.evaluate(0, assignment));
 
     BOOST_CHECK((witness_columns[0][0] * witness_columns[0][0] + witness_columns[0][0]) ==
-                constraint6.evaluate(0, assignment).get());
+                constraint6.evaluate(0, assignment));
 
     BOOST_CHECK((witness_columns[0][0] * witness_columns[0][0] - witness_columns[0][0]) ==
-                constraint7.evaluate(0, assignment).get());
+                constraint7.evaluate(0, assignment));
 
-    BOOST_CHECK((witness_columns[0][0].pow(2) - witness_columns[0][0]) == 
-                constraint8.evaluate(0, assignment).get());
+    BOOST_CHECK((witness_columns[0][0].pow(2) - witness_columns[0][0]) == constraint8.evaluate(0, assignment));
 
-    BOOST_CHECK((witness_columns[0][0] - witness_columns[0][0]) ==
-                constraint9.evaluate(0, assignment).get());
+    BOOST_CHECK((witness_columns[0][0] - witness_columns[0][0]) == constraint9.evaluate(0, assignment));
 }
+
+BOOST_AUTO_TEST_SUITE_END()

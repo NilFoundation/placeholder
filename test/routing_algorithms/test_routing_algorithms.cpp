@@ -27,23 +27,20 @@
 
 #define BOOST_TEST_MODULE routing_algorithms_test
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
 
 #include <cassert>
 
-#include <nil/actor/zk/snark/routing/as_waksman.hpp>
-#include <nil/actor/zk/snark/routing/benes.hpp>
+#include <nil/crypto3/zk/snark/routing/as_waksman.hpp>
+#include <nil/crypto3/zk/snark/routing/benes.hpp>
 
-using namespace nil::actor;
-using namespace nil::actor::math;
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 /**
  * Test Benes network routing for all permutations on 2^static_cast<std::size_t>(std::ceil(std::log2(N))) elements.
  */
 void test_benes(const std::size_t N) {
-    math::integer_permutation permutation(1ul << static_cast<std::size_t>(std::ceil(std::log2(N))));
+    nil::crypto3::math::integer_permutation permutation(1ul << static_cast<std::size_t>(std::ceil(std::log2(N))));
 
     do {
         const benes_routing routing = get_benes_routing(permutation);
@@ -55,7 +52,7 @@ void test_benes(const std::size_t N) {
  * Test AS-Waksman network routing for all permutations on N elements.
  */
 void test_as_waksman(const std::size_t N) {
-    math::integer_permutation permutation(N);
+    nil::crypto3::math::integer_permutation permutation(N);
 
     do {
         const as_waksman_routing routing = get_as_waksman_routing(permutation);
@@ -63,7 +60,9 @@ void test_as_waksman(const std::size_t N) {
     } while (permutation.next_permutation());
 }
 
-ACTOR_FIXTURE_TEST_CASE(routing_algorithms_test) {
+BOOST_AUTO_TEST_SUITE(routing_algorithms_test_suite)
+
+BOOST_AUTO_TEST_CASE(routing_algorithms_test) {
     std::size_t bn_size = 8;
     printf("* for all permutations on %zu elements\n", bn_size);
     test_benes(bn_size);
@@ -74,3 +73,4 @@ ACTOR_FIXTURE_TEST_CASE(routing_algorithms_test) {
     }
 }
 
+BOOST_AUTO_TEST_SUITE_END()

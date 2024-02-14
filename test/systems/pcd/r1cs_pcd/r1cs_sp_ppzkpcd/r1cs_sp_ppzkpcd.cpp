@@ -29,7 +29,7 @@
 
 #include "run_r1cs_sp_ppzkpcd.hpp"
 
-using namespace nil::actor::zk::snark;
+using namespace nil::crypto3::zk::snark;
 
 template<typename PCD_ppT>
 void test_tally(const std::size_t arity, const std::size_t max_layer) {

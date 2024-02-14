@@ -26,11 +26,11 @@
 #ifndef CRYPTO3_RUN_R1CS_PPZKADSNARK_HPP
 #define CRYPTO3_RUN_R1CS_PPZKADSNARK_HPP
 
-#include <nil/actor/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp>
-#include <nil/actor/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/r1cs_ppzkadsnark_params.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/r1cs_ppzkadsnark_params.hpp>
 
 namespace nil {
-    namespace actor {
+    namespace crypto3 {
         namespace zk {
             namespace snark {
 
@@ -98,7 +98,7 @@ namespace nil {
 
             }    // namespace snark
         }        // namespace zk
-    }            // namespace actor
+    }            // namespace crypto3
 }    // namespace nil
 
 #endif    // CRYPTO3_RUN_R1CS_PPZKADSNARK_HPP

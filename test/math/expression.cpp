@@ -22,31 +22,36 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE expression_test
+
 #include <string>
 #include <random>
 #include <iostream>
 #include <set>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 
-#include <nil/actor/zk/math/expression.hpp>
-#include <nil/actor/zk/math/expression_visitors.hpp>
-#include <nil/actor/zk/math/expression_evaluator.hpp>
-#include <nil/actor/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/crypto3/zk/math/expression.hpp>
+#include <nil/crypto3/zk/math/expression_visitors.hpp>
+#include <nil/crypto3/zk/math/expression_evaluator.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
-using namespace nil::actor;
-using namespace nil::actor::math;
+using namespace nil::crypto3;
+using namespace nil::crypto3::math;
 
-ACTOR_THREAD_TEST_CASE(expression_to_non_linear_combination_test) {
+BOOST_AUTO_TEST_SUITE(expression_tests_suite)
+
+BOOST_AUTO_TEST_CASE(expression_to_non_linear_combination_test) {
 
     // setup
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+    using curve_type = algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
-    using variable_type = typename nil::actor::zk::snark::plonk_variable<typename FieldType::value_type>;
+    using variable_type = typename nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>;
 
     variable_type w0(0, 0, variable_type::column_type::witness);
     variable_type w1(3, -1, variable_type::column_type::public_input);
@@ -63,12 +68,12 @@ ACTOR_THREAD_TEST_CASE(expression_to_non_linear_combination_test) {
     BOOST_CHECK_EQUAL(result, expected);
 }
 
-ACTOR_THREAD_TEST_CASE(expression_evaluation_test) {
+BOOST_AUTO_TEST_CASE(expression_evaluation_test) {
 
     // setup
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+    using curve_type = algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
-    using variable_type = typename nil::actor::zk::snark::plonk_variable<typename FieldType::value_type>;
+    using variable_type = typename nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>;
 
     variable_type w0(0, 0, variable_type::column_type::witness);
     variable_type w1(3, -1, variable_type::column_type::public_input);
@@ -87,17 +92,16 @@ ACTOR_THREAD_TEST_CASE(expression_evaluation_test) {
             return variable_type::assignment_type::zero();
         }
     );
-    
-    auto result = evaluator.evaluate().get();
-    BOOST_CHECK(result == variable_type::assignment_type((1 + 2) * (3 + 4)));
+ 
+    BOOST_CHECK(evaluator.evaluate() == variable_type::assignment_type((1 + 2) * (3 + 4)));
 }
 
-ACTOR_THREAD_TEST_CASE(expression_max_degree_visitor_test) {
+BOOST_AUTO_TEST_CASE(expression_max_degree_visitor_test) {
 
     // setup
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+    using curve_type = algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
-    using variable_type = typename nil::actor::zk::snark::plonk_variable<typename FieldType::value_type>;
+    using variable_type = typename nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>;
 
     variable_type w0(0, 0, variable_type::column_type::witness);
     variable_type w1(3, -1, variable_type::column_type::public_input);
@@ -111,12 +115,12 @@ ACTOR_THREAD_TEST_CASE(expression_max_degree_visitor_test) {
     BOOST_CHECK_EQUAL(visitor.compute_max_degree(expr), 3);
 }
 
-ACTOR_THREAD_TEST_CASE(expression_for_each_variable_visitor_test) {
+BOOST_AUTO_TEST_CASE(expression_for_each_variable_visitor_test) {
 
     // setup
-    using curve_type = nil::crypto3::algebra::curves::pallas;
+    using curve_type = algebra::curves::pallas;
     using FieldType = typename curve_type::base_field_type;
-    using variable_type = typename nil::actor::zk::snark::plonk_variable<typename FieldType::value_type>;
+    using variable_type = typename nil::crypto3::zk::snark::plonk_variable<typename FieldType::value_type>;
 
     variable_type w0(0, 0, variable_type::column_type::witness);
     variable_type w1(3, -1, variable_type::column_type::public_input);
@@ -147,3 +151,5 @@ ACTOR_THREAD_TEST_CASE(expression_for_each_variable_visitor_test) {
         variable_rotations.begin(), variable_rotations.end(),
         expected_rotations.begin(), expected_rotations.end());
 }
+
+BOOST_AUTO_TEST_SUITE_END()
