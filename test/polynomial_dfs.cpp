@@ -24,25 +24,31 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE polynomial_dfs_test
+
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
+#include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/actor/math/polynomial/polynomial.hpp>
-#include <nil/actor/math/polynomial/polynomial_dfs.hpp>
-#include <nil/actor/math/polynomial/shift.hpp>
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/crypto3/math/polynomial/shift.hpp>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
 typedef fields::bls12_fr<381> FieldType;
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_equal_test){
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_from_coefficients_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_equal_test){
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x35_cppui253, 0x26D37C08AED60085FDE335498E7DFEE2AFB1463D06E338219CD0E5DDAF27D68F_cppui253,
@@ -66,7 +72,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_equal_test){
     BOOST_CHECK_EQUAL(a, a1);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_from_coefficients_less_degree) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_from_coefficients_less_degree) {
     std::vector<typename FieldType::value_type> a_v;
     std::vector<typename FieldType::value_type> polynomial = {1, 3, 4, 25, 6, 7, 7};
 
@@ -89,7 +95,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_from_coefficients_less_degree) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_coefficients_less_degree) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_coefficients_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_coefficients_less_degree) {
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x35_cppui253, 0x26D37C08AED60085FDE335498E7DFEE2AFB1463D06E338219CD0E5DDAF27D68F_cppui253,
@@ -108,7 +118,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_coefficients_less_degree) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_coefficients_same_degree) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_coefficients_same_degree) {
     polynomial_dfs<typename FieldType::value_type> a = {
         8,
         {0x37, 0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -124,8 +134,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_coefficients_same_degree) {
         BOOST_CHECK_EQUAL(c_res[i].data, c[i].data);
     }
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_equal) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_addition_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_equal) {
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x37_cppui253, 0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -164,7 +177,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_equal) {
     BOOST_CHECK_EQUAL(c_res, c);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_inplace_addition_operator_test_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_less_b) {
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x37_cppui253, 0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -192,7 +205,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_inplace_addition_operator_test_b) {
     BOOST_CHECK_EQUAL(c_res, c);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_inplace_addition_operator_test_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_less_a) {
     polynomial_dfs<typename FieldType::value_type> a = {
         2,
         {0x17_cppui253, 0x1a7f5666b62090e72c4090007620900000002fffffffffffe_cppui253, 0x11_cppui253,
@@ -220,8 +233,10 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_inplace_addition_operator_test_a) {
          0x5a8fa2a6cb26338cef1cd76f6106a8baa60293c9c1c0d2c31e813ed413279c47_cppui253}};
     BOOST_CHECK_EQUAL(c_res, c);
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_eq_equal) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_addition_eq_test_suite)
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_eq_equal) {
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x37_cppui253, 0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -260,7 +275,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_eq_equal) {
     BOOST_CHECK_EQUAL(c_res, a);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_less_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_less_b) {
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x37_cppui253, 0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -288,7 +303,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_less_b) {
     BOOST_CHECK_EQUAL(c_res, a);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_less_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_less_a) {
     polynomial_dfs<typename FieldType::value_type> a = {
         2,
         {0x17_cppui253, 0x1a7f5666b62090e72c4090007620900000002fffffffffffe_cppui253, 0x11_cppui253,
@@ -316,8 +331,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_addition_less_a) {
          0x5a8fa2a6cb26338cef1cd76f6106a8baa60293c9c1c0d2c31e813ed413279c47_cppui253}};
     BOOST_CHECK_EQUAL(c_res, a);
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_equal) {
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_subtraction_test_suite)
+BOOST_AUTO_TEST_CASE(polynomial_dfs_subtraction_equal) {
 
     //{1, 3, 4, 25, 6, 7, 7, 2}
     polynomial_dfs<typename FieldType::value_type> a = {
@@ -366,7 +384,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_equal) {
     BOOST_CHECK_EQUAL(c_res, c);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_less_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_subtraction_less_b) {
     // 1, 3, 4, 25, 6, 7, 7, 2
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
@@ -413,7 +431,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_less_b) {
     BOOST_CHECK_EQUAL(c_res, c);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_less_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_subtraction_less_a) {
     // 1, 3, 4, 25, 6
     polynomial_dfs<typename FieldType::value_type> a = {
         4,
@@ -459,8 +477,10 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_less_a) {
 
     BOOST_CHECK_EQUAL(c_res, c);
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_eq_equal) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_subtraction_eq_test_suite)
+BOOST_AUTO_TEST_CASE(polynomial_dfs_subtraction_eq_equal) {
 
     //{1, 3, 4, 25, 6, 7, 7, 2}
     polynomial_dfs<typename FieldType::value_type> a = {
@@ -507,7 +527,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_eq_equal) {
     BOOST_CHECK_EQUAL(c_res, a);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_eq_less_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_subtraction_eq_less_b) {
     // 1, 3, 4, 25, 6, 7, 7, 2
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
@@ -549,7 +569,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_eq_less_b) {
 
     BOOST_CHECK_EQUAL(c_res, a);
 }
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_eq_less_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_subtraction_eq_less_a) {
     // 1, 3, 4, 25, 6
     polynomial_dfs<typename FieldType::value_type> a = {
         4,
@@ -594,8 +614,10 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_subtraction_eq_less_a) {
 
     BOOST_CHECK_EQUAL(c_res, a);
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_without_resize) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_multiplication_test_suite)
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_without_resize) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         3,
@@ -638,7 +660,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_without_resize) {
     BOOST_CHECK_EQUAL(c_res, c);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_resize_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_resize_a) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         3,
@@ -685,7 +707,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_resize_a) {
     BOOST_CHECK_EQUAL(c_res, c);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_resize_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_resize_b) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         5,
@@ -732,7 +754,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_resize_b) {
     BOOST_CHECK_EQUAL(c_res, c);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_resize_both) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_resize_both) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
@@ -771,8 +793,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_resize_both) {
 
     BOOST_CHECK_EQUAL(c_res, c);
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_without_resize) {
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_multiplication_eq_test_suite)
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_eq_without_resize) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         3,
@@ -815,7 +840,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_without_resize) {
     BOOST_CHECK_EQUAL(c_res, a);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_resize_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_eq_resize_a) {
     polynomial_dfs<typename FieldType::value_type> a = {
         3,
         {
@@ -861,7 +886,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_resize_a) {
     BOOST_CHECK_EQUAL(c_res, a);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_resize_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_eq_resize_b) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         5,
@@ -908,7 +933,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_resize_b) {
     BOOST_CHECK_EQUAL(c_res, a);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_resize_both) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_eq_resize_both) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
@@ -947,8 +972,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_multiplication_eq_resize_both) {
 
     BOOST_CHECK_EQUAL(c_res, a);
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_division) {
+
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_division_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_division) {
     // {5, 0, 0, 13, 0, 1};
     polynomial_dfs<typename FieldType::value_type> a = {
         5,
@@ -994,8 +1024,8 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_division) {
     BOOST_CHECK_EQUAL(R_ans, R);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_shift) {
-    
+BOOST_AUTO_TEST_CASE(polynomial_dfs_shift) {
+
     polynomial_dfs<typename FieldType::value_type> a = {
         0,
         {0x01,
@@ -1010,7 +1040,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_shift) {
     std::vector<typename FieldType::value_type> a_coefficients =
         a.coefficients();
 
-    polynomial<typename FieldType::value_type> a_normal = 
+    polynomial<typename FieldType::value_type> a_normal =
         polynomial<typename FieldType::value_type>(a_coefficients);
 
     polynomial_dfs<typename FieldType::value_type> a_ans;
@@ -1025,13 +1055,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_shift) {
     for (int shift = 0; shift < int(a.size()); shift++){
 
         polynomial_dfs<typename FieldType::value_type> a_shifted =
-            nil::actor::math::polynomial_shift(a, shift).get();
+            polynomial_shift(a, shift);
 
         typename FieldType::value_type omega_shifted =
-            nil::crypto3::math::unity_root<FieldType>(domain_size + 1).pow(shift);
+            unity_root<FieldType>(domain_size + 1).pow(shift);
 
         polynomial<typename FieldType::value_type> a_normal_shifted =
-            nil::actor::math::polynomial_shift(a_normal, omega_shifted);
+            polynomial_shift(a_normal, omega_shifted);
 
         std::vector<typename FieldType::value_type> a_normal_shifted_coefs(a_normal_shifted.size());
         std::copy(a_normal_shifted.begin(), a_normal_shifted.end(), a_normal_shifted_coefs.begin());
@@ -1047,8 +1077,10 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_shift) {
 
     }
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_add_constant) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_operations_with_constants_test_suite)
+BOOST_AUTO_TEST_CASE(polynomial_dfs_add_constant) {
     polynomial_dfs<typename FieldType::value_type> a = {
         5,
         {0x13_cppui253, 0x515afe1189d5ef4dbc50a127ce5e634034a28d0005e1fafd70aeef634654d2e0_cppui253,
@@ -1081,7 +1113,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_add_constant) {
     BOOST_CHECK_EQUAL(c_res, a);
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_sub_constant) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_sub_constant) {
     polynomial_dfs<typename FieldType::value_type> a = {
         5,
         {0x13_cppui253, 0x515afe1189d5ef4dbc50a127ce5e634034a28d0005e1fafd70aeef634654d2e0_cppui253,
@@ -1103,10 +1135,10 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_sub_constant) {
          0x2292a9419fc78dfa76e936e03b4374c51f1b1702fa1c61018f51109bb9ab2d1b_cppui253,
          0x69fd599ad882439cb1024001d88240000000bfffffffffff5_cppui253,
          0x225563a322dac633d1c77fc14960780266d5b167b8a62ccc942322dcfdb216f7_cppui253}};
-         
+
     polynomial_dfs<typename FieldType::value_type> c2_res = {
         5,
-        {0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffefffffffe_cppui253, 
+        {0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffefffffffe_cppui253,
          0x2292a9419fc78dfa76e936e03b4374c51f1b1702fa1c61018f51109bb9ab2d31_cppui253,
          0x69fd599ad882439cb1024001d88240000000c00000000000b_cppui253,
          0x225563a322dac633d1c77fc14960780266d5b167b8a62ccc942322dcfdb2170d_cppui253,
@@ -1125,7 +1157,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_sub_constant) {
 }
 
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_mul_constant) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_mul_constant) {
     polynomial_dfs<typename FieldType::value_type> a = {
         5,
         {0x13_cppui253, 0x515afe1189d5ef4dbc50a127ce5e634034a28d0005e1fafd70aeef634654d2e0_cppui253,
@@ -1149,7 +1181,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_mul_constant) {
          0x4aa11aeeffeaf5820679a035dc419bec892909fe768e4dbce45b05c05b05aaf_cppui253,
          0x4eeb4b3446e9b3c3c79e9cedc89af1d7017a5b7f4dcd61879d800d4191e44d8a_cppui253
         }};
-         
+
     polynomial_dfs<typename FieldType::value_type> c1 = a * c;
     polynomial_dfs<typename FieldType::value_type> c2 = c * a;
     a *= c;
@@ -1158,8 +1190,10 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_mul_constant) {
     BOOST_CHECK_EQUAL(c_res, c2);
     BOOST_CHECK_EQUAL(c_res, a);
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_pow_eq_test) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_pow_eq_test_suite)
+BOOST_AUTO_TEST_CASE(polynomial_dfs_pow_eq_test) {
 
     polynomial_dfs<typename FieldType::value_type> a = {
         3,
@@ -1177,11 +1211,15 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_pow_eq_test) {
     polynomial_dfs<typename FieldType::value_type> res = a;
     for (int i = 1; i < 7; ++i)
         res *= a;
-    
+
     BOOST_CHECK_EQUAL(res, a.pow(7));
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_evaluate_after_resize_test) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_evaluation_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_evaluate_after_resize_test) {
 
     polynomial_dfs<typename FieldType::value_type> small_poly = {
         3,
@@ -1199,12 +1237,12 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_evaluate_after_resize_test) {
     typename FieldType::value_type point = 0x10_cppui253;
     polynomial_dfs<typename FieldType::value_type> large_poly = small_poly;
     for (size_t new_size : {16, 32, 64, 128, 256, 512}) {
-        large_poly.resize(new_size).get();
+        large_poly.resize(new_size);
         BOOST_CHECK(small_poly.evaluate(point) == large_poly.evaluate(point));
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_evaluate_after_resize_and_shift_test) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_evaluate_after_resize_and_shift_test) {
 
     polynomial_dfs<typename FieldType::value_type> small_poly = {
         3,
@@ -1221,15 +1259,15 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_evaluate_after_resize_and_shift_test) {
 
     typename FieldType::value_type point = 0x10_cppui253;
     polynomial_dfs<typename FieldType::value_type> large_poly = small_poly;
-    small_poly = nil::actor::math::polynomial_shift(small_poly, -1, 8).get(); 
+    small_poly = polynomial_shift(small_poly, -1, 8);
     for (size_t new_size : {16, 32, 64, 128, 256, 512}) {
-        large_poly.resize(new_size).get();
-        auto large_poly_shifted = nil::actor::math::polynomial_shift(large_poly, -1, 8).get();
+        large_poly.resize(new_size);
+        auto large_poly_shifted = polynomial_shift(large_poly, -1, 8);
         BOOST_CHECK(small_poly.evaluate(point) == large_poly_shifted.evaluate(point));
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_zero_one_test) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_zero_one_test) {
     polynomial_dfs<typename FieldType::value_type> small_poly = {
         3,
         {
@@ -1249,9 +1287,65 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_zero_one_test) {
     BOOST_CHECK(zero.is_zero());
     BOOST_CHECK((small_poly - one * small_poly).is_zero());
 
-    zero.resize(100).get();
+    zero.resize(100);
     BOOST_CHECK(zero.is_zero());
 
-    one.resize(100).get();
+    one.resize(100);
     BOOST_CHECK((small_poly - one * small_poly).is_zero());
 }
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test::disabled()) {
+    size_t size = 131072 * 4;
+
+    polynomial_dfs<typename FieldType::value_type> poly = {
+        size / 128, size, nil::crypto3::algebra::random_element<FieldType>()};
+
+    std::vector<polynomial_dfs<typename FieldType::value_type>> poly4(64, poly);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < poly4.size(); ++i) {
+        for (int j = 0; j < 32; ++j)
+            poly4[i] *= poly;
+    }
+
+    for (int i = 1; i < poly4.size(); ++i) {
+        BOOST_CHECK(poly4[i] == poly4[0]);
+    }
+
+    // Record the end time
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Calculate the duration
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    std::cout << "Multiplication time: " << duration.count() << " microseconds." << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test, *boost::unit_test::disabled()) {
+    std::vector<typename FieldType::value_type> values;
+    size_t size = 131072 * 16;
+    for (int i = 0; i < size; i++) {
+        values.push_back(nil::crypto3::algebra::random_element<FieldType>());
+    }
+
+    polynomial_dfs<typename FieldType::value_type> poly = {
+        size - 1, values};
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < 10; ++i) {
+        auto poly2 = poly;
+        poly2.resize(8 * size);
+
+        BOOST_CHECK(poly2.size() == 8 * size);
+    }
+
+    // Record the end time
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Calculate the duration
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    std::cout << "Resize time: " << duration.count() << " microseconds." << std::endl;
+}
+
+BOOST_AUTO_TEST_SUITE_END()

@@ -24,33 +24,35 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE polynomial_arithmetic_test
+
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
-
-#include <nil/actor/math/polynomial/polynomial.hpp>
-#include <nil/actor/math/polynomial/basic_operations.hpp>
-#include <nil/actor/math/polynomial/xgcd.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/crypto3/math/polynomial/xgcd.hpp>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
 typedef fields::bls12<381> FieldType;
 typedef fields::bls12_fr<381> ScalarFieldType;
 
-ACTOR_THREAD_TEST_CASE(polynomial_addition_equal) {
+BOOST_AUTO_TEST_SUITE(polynomial_addition_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_addition_equal) {
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> b = {9, 3, 11, 14, 7, 1, 5, 8};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    addition(c, a, b).get();
+    nil::crypto3::math::addition(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {10, 6, 15, 39, 13, 8, 12, 10};
 
@@ -59,13 +61,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_addition_equal) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_addition_long_a) {
+BOOST_AUTO_TEST_CASE(polynomial_addition_long_a) {
 
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> b = {9, 3, 11, 14, 7};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    addition(c, a, b).get();
+    nil::crypto3::math::addition(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {10, 6, 15, 39, 13, 7, 7, 2};
 
@@ -74,13 +76,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_addition_long_a) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_addition_long_b) {
+BOOST_AUTO_TEST_CASE(polynomial_addition_long_b) {
 
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6};
     std::vector<typename FieldType::value_type> b = {9, 3, 11, 14, 7, 1, 5, 8};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    addition(c, a, b).get();
+    nil::crypto3::math::addition(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {10, 6, 15, 39, 13, 1, 5, 8};
 
@@ -89,13 +91,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_addition_long_b) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_addition_zero_a) {
+BOOST_AUTO_TEST_CASE(polynomial_addition_zero_a) {
 
     std::vector<typename FieldType::value_type> a = {0, 0, 0};
     std::vector<typename FieldType::value_type> b = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    addition(c, a, b).get();
+    nil::crypto3::math::addition(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {1, 3, 4, 25, 6, 7, 7, 2};
 
@@ -104,13 +106,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_addition_zero_a) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_addition_zero_b) {
+BOOST_AUTO_TEST_CASE(polynomial_addition_zero_b) {
 
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> b = {0, 0, 0};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    addition(c, a, b).get();
+    nil::crypto3::math::addition(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {1, 3, 4, 25, 6, 7, 7, 2};
 
@@ -119,13 +121,17 @@ ACTOR_THREAD_TEST_CASE(polynomial_addition_zero_b) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_subtraction_equal) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_subtraction_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_subtraction_equal) {
 
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> b = {9, 3, 11, 14, 7, 1, 5, 8};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    subtraction(c, a, b).get();
+    nil::crypto3::math::subtraction(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {-8, 0, -7, 11, -1, 6, 2, -6};
 
@@ -134,13 +140,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_subtraction_equal) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_subtraction_long_a) {
+BOOST_AUTO_TEST_CASE(polynomial_subtraction_long_a) {
 
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> b = {9, 3, 11, 14, 7};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    subtraction(c, a, b).get();
+    nil::crypto3::math::subtraction(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {-8, 0, -7, 11, -1, 7, 7, 2};
 
@@ -149,13 +155,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_subtraction_long_a) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_subtraction_long_b) {
+BOOST_AUTO_TEST_CASE(polynomial_subtraction_long_b) {
 
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6};
     std::vector<typename FieldType::value_type> b = {9, 3, 11, 14, 7, 1, 5, 8};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    subtraction(c, a, b).get();
+    nil::crypto3::math::subtraction(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {-8, 0, -7, 11, -1, -1, -5, -8};
 
@@ -164,13 +170,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_subtraction_long_b) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_subtraction_zero_a) {
+BOOST_AUTO_TEST_CASE(polynomial_subtraction_zero_a) {
 
     std::vector<typename FieldType::value_type> a = {0, 0, 0};
     std::vector<typename FieldType::value_type> b = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    subtraction(c, a, b).get();
+    nil::crypto3::math::subtraction(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {-1, -3, -4, -25, -6, -7, -7, -2};
 
@@ -179,13 +185,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_subtraction_zero_a) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_subtraction_zero_b) {
+BOOST_AUTO_TEST_CASE(polynomial_subtraction_zero_b) {
 
     std::vector<typename FieldType::value_type> a = {1, 3, 4, 25, 6, 7, 7, 2};
     std::vector<typename FieldType::value_type> b = {0, 0, 0};
     std::vector<typename FieldType::value_type> c(1, FieldType::value_type::zero());
 
-    subtraction(c, a, b).get();
+    nil::crypto3::math::subtraction(c, a, b);
 
     std::vector<typename FieldType::value_type> c_ans = {1, 3, 4, 25, 6, 7, 7, 2};
 
@@ -194,13 +200,17 @@ ACTOR_THREAD_TEST_CASE(polynomial_subtraction_zero_b) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_multiplication_long_a) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_multiplication_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_multiplication_long_a) {
 
     std::vector<typename ScalarFieldType::value_type> a = {5, 0, 0, 13, 0, 1};
     std::vector<typename ScalarFieldType::value_type> b = {13, 0, 1};
     std::vector<typename ScalarFieldType::value_type> c(1, ScalarFieldType::value_type::zero());
 
-    multiplication(c, a, b).get();
+    nil::crypto3::math::multiplication(c, a, b);
 
     std::vector<typename ScalarFieldType::value_type> c_ans = {65, 0, 5, 169, 0, 26, 0, 1};
 
@@ -209,13 +219,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_multiplication_long_a) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_multiplication_long_b) {
+BOOST_AUTO_TEST_CASE(polynomial_multiplication_long_b) {
 
     std::vector<typename ScalarFieldType::value_type> a = {13, 0, 1};
     std::vector<typename ScalarFieldType::value_type> b = {5, 0, 0, 13, 0, 1};
     std::vector<typename ScalarFieldType::value_type> c(1, ScalarFieldType::value_type::zero());
 
-    multiplication(c, a, b).get();
+    nil::crypto3::math::multiplication(c, a, b);
 
     std::vector<typename ScalarFieldType::value_type> c_ans = {65, 0, 5, 169, 0, 26, 0, 1};
 
@@ -224,13 +234,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_multiplication_long_b) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_multiplication_zero_a) {
+BOOST_AUTO_TEST_CASE(polynomial_multiplication_zero_a) {
 
     std::vector<typename ScalarFieldType::value_type> a = {0};
     std::vector<typename ScalarFieldType::value_type> b = {5, 0, 0, 13, 0, 1};
     std::vector<typename ScalarFieldType::value_type> c(1, ScalarFieldType::value_type::zero());
 
-    multiplication(c, a, b).get();
+    nil::crypto3::math::multiplication(c, a, b);
 
     std::vector<typename ScalarFieldType::value_type> c_ans = {0};
 
@@ -239,13 +249,13 @@ ACTOR_THREAD_TEST_CASE(polynomial_multiplication_zero_a) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_multiplication_zero_b) {
+BOOST_AUTO_TEST_CASE(polynomial_multiplication_zero_b) {
 
     std::vector<typename ScalarFieldType::value_type> a = {5, 0, 0, 13, 0, 1};
     std::vector<typename ScalarFieldType::value_type> b = {0};
     std::vector<typename ScalarFieldType::value_type> c(1, ScalarFieldType::value_type::zero());
 
-    multiplication(c, a, b).get();
+    nil::crypto3::math::multiplication(c, a, b);
 
     std::vector<typename ScalarFieldType::value_type> c_ans = {0};
 
@@ -254,7 +264,9 @@ ACTOR_THREAD_TEST_CASE(polynomial_multiplication_zero_b) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_division1) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(polynomial_division1) {
 
     std::vector<typename FieldType::value_type> a = {5, 0, 0, 13, 0, 1};
     std::vector<typename FieldType::value_type> b = {13, 0, 1};
@@ -262,7 +274,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_division1) {
     std::vector<typename FieldType::value_type> Q(1, FieldType::value_type::zero());
     std::vector<typename FieldType::value_type> R(1, FieldType::value_type::zero());
 
-    division(Q, R, a, b);
+    nil::crypto3::math::division(Q, R, a, b);
 
     std::vector<typename FieldType::value_type> Q_ans = {0, 0, 0, 1};
     std::vector<typename FieldType::value_type> R_ans = {5};
@@ -275,7 +287,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_division1) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_division2) {
+BOOST_AUTO_TEST_CASE(polynomial_division2) {
 
     std::vector<typename ScalarFieldType::value_type> a = {
         typename ScalarFieldType::integral_type(
@@ -304,7 +316,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_division2) {
     std::vector<typename ScalarFieldType::value_type> Q;
     std::vector<typename ScalarFieldType::value_type> R;
 
-    division(Q, R, a, b);
+    nil::crypto3::math::division(Q, R, a, b);
 
     std::vector<typename ScalarFieldType::value_type> Q_ans = {
         typename ScalarFieldType::integral_type(
@@ -328,7 +340,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_division2) {
     BOOST_CHECK(R_ans == R);
 }
 
-ACTOR_THREAD_TEST_CASE(extended_gcd) {
+BOOST_AUTO_TEST_CASE(extended_gcd) {
 
     std::vector<typename ScalarFieldType::value_type> a = {0, 0, 0, 0, 1};
     std::vector<typename ScalarFieldType::value_type> b = {1, -6, 11, -6};

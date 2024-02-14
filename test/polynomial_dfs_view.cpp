@@ -24,21 +24,27 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE polynomial_dfs_view_test
+
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
-#include <nil/actor/math/polynomial/polynomial_dfs_view.hpp>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
+#include <nil/crypto3/math/polynomial/polynomial_dfs_view.hpp>
+
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
 typedef fields::bls12_fr<381> FieldType;
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_from_coefficients_less_degree) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_view_from_coefficients_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_from_coefficients_less_degree) {
     std::vector<typename FieldType::value_type> a_v;
     std::vector<typename FieldType::value_type> polynomial = {1, 3, 4, 25, 6, 7, 7};
 
@@ -61,7 +67,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_from_coefficients_less_degree) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_coefficients_less_degree) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_view_coefficients_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_coefficients_less_degree) {
     std::vector<typename FieldType::value_type> a_v = {
         0x35_cppui253,
         0x26D37C08AED60085FDE335498E7DFEE2AFB1463D06E338219CD0E5DDAF27D68F_cppui253,
@@ -82,7 +92,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_coefficients_less_degree) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_coefficients_same_degree) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_coefficients_same_degree) {
     std::vector<typename FieldType::value_type> a_v = {
         0x37,
         0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -101,8 +111,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_coefficients_same_degree) {
         BOOST_CHECK_EQUAL(c_res[i].data, c[i].data);
     }
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_addition_equal) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_view_addition_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_addition_equal) {
     std::vector<typename FieldType::value_type> a_v = {
         0x37_cppui253,
         0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -146,7 +159,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_addition_equal) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_addition_less_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_addition_less_b) {
     std::vector<typename FieldType::value_type> a_v = {
         0x37_cppui253,
         0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -182,7 +195,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_addition_less_b) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_addition_less_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_addition_less_a) {
     std::vector<typename FieldType::value_type> a_v = {
         0x17_cppui253, 0x1a7f5666b62090e72c4090007620900000002fffffffffffe_cppui253, 0x11_cppui253,
         0x73eda753299d7d468b44719ca798c9928fb4a3fb9df55bfefffcfffeffffffff_cppui253};
@@ -219,7 +232,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_addition_less_a) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_subtraction_equal) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_view_subtraction_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_subtraction_equal) {
 
     //{1, 3, 4, 25, 6, 7, 7, 2}
     std::vector<typename FieldType::value_type> a_v = {
@@ -268,7 +285,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_subtraction_equal) {
     BOOST_CHECK_EQUAL(a.degree(), c_res.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_subtraction_less_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_subtraction_less_b) {
     // 1, 3, 4, 25, 6, 7, 7, 2
     std::vector<typename FieldType::value_type> a_v = {
         0x37_cppui253,
@@ -315,7 +332,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_subtraction_less_b) {
     BOOST_CHECK_EQUAL(a.degree(), c_res.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_subtraction_less_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_subtraction_less_a) {
 
     // 1, 3, 4, 25, 6
     std::vector<typename FieldType::value_type> a_v = {
@@ -365,7 +382,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_subtraction_less_a) {
     BOOST_CHECK_EQUAL(a.degree(), c_res.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_without_resize) {
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_view_multiplication_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_without_resize) {
 
     std::vector<typename FieldType::value_type> a_v = {
         0x21_cppui253,
@@ -411,7 +432,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_without_resize) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_resize_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_resize_a) {
 
     std::vector<typename FieldType::value_type> a_v = {
         0x21_cppui253,
@@ -461,7 +482,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_resize_a) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_resize_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_resize_b) {
 
     std::vector<typename FieldType::value_type> a_v = {
         0x2f_cppui253,
@@ -511,7 +532,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_resize_b) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_resize_both) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_multiplication_resize_both) {
 
     std::vector<typename FieldType::value_type> a_v = {
         0x37_cppui253,
@@ -556,8 +577,11 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_multiplication_resize_both) {
     }
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
+BOOST_AUTO_TEST_SUITE_END()
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_division) {
+BOOST_AUTO_TEST_SUITE(polynomial_dfs_view_division_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_division) {
     // {5, 0, 0, 13, 0, 1};
     std::vector<typename FieldType::value_type> a_v = {
         0x13_cppui253,
@@ -598,7 +622,7 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_division) {
     BOOST_CHECK_EQUAL(q_ans.degree(), a.degree());
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_modulus) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_view_modulus) {
     // {5, 0, 0, 13, 0, 1};
     std::vector<typename FieldType::value_type> a_v = {
         0x13_cppui253,
@@ -631,3 +655,5 @@ ACTOR_THREAD_TEST_CASE(polynomial_dfs_view_modulus) {
     }
     BOOST_CHECK_EQUAL(r_ans.degree(), a.degree());
 }
+
+BOOST_AUTO_TEST_SUITE_END()

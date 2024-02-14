@@ -2,7 +2,6 @@
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2021 Ilias Khairullin <ilias@nil.foundation>
-// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -25,21 +24,26 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE polynomial_lagrange_interpolation_test
+
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
-#include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
+#include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/actor/math/polynomial/lagrange_interpolation.hpp>
+#include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
-ACTOR_THREAD_TEST_CASE(polynomial_lagrange_interpolation_manual_test) {
+BOOST_AUTO_TEST_SUITE(polynomial_lagrange_interpolation_test_suite)
+
+BOOST_AUTO_TEST_CASE(polynomial_lagrange_interpolation_manual_test) {
     using field_type = fields::bls12_fr<381>;
     using integral_type = typename field_type::integral_type;
 
@@ -63,10 +67,9 @@ ACTOR_THREAD_TEST_CASE(polynomial_lagrange_interpolation_manual_test) {
     }
 }
 
-ACTOR_THREAD_TEST_CASE(polynomial_lagrange_interpolation_random_test) {
+BOOST_AUTO_TEST_CASE(polynomial_lagrange_interpolation_random_test) {
     using field_type = fields::bls12_fr<381>;
-    using integral_type = typename field_type::integral_type;
-    auto one = field_type::value_type::one();    
+    auto one = field_type::value_type::one();
 
     std::size_t n = std::rand() % 50 + 1;
     std::vector<typename field_type::value_type> p_coeffs(2 * n);
@@ -90,3 +93,5 @@ ACTOR_THREAD_TEST_CASE(polynomial_lagrange_interpolation_random_test) {
         BOOST_CHECK(ans.evaluate(points[i].first) == points[i].second);
     }
 }
+
+BOOST_AUTO_TEST_SUITE_END()

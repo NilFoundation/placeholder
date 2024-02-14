@@ -1,7 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
-// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -24,24 +23,29 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE kronecker_substitution_test
+
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
-#include <nil/actor/math/polynomial/basic_operations.hpp>
-#include <nil/actor/math/kronecker_substitution.hpp>
+#include <nil/crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/crypto3/math/kronecker_substitution.hpp>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
 typedef fields::bls12<381> FieldType;
 
-ACTOR_THREAD_TEST_CASE(standard_polynomial_multiplication) {
+BOOST_AUTO_TEST_SUITE(kronecker_substitution_test_suite)
+
+BOOST_AUTO_TEST_CASE(standard_polynomial_multiplication) {
 
     std::vector<typename FieldType::value_type> a = {1, 2, 3, 1};
     std::vector<typename FieldType::value_type> b = {1, 2, 1, 1};
@@ -50,14 +54,14 @@ ACTOR_THREAD_TEST_CASE(standard_polynomial_multiplication) {
     polynomial::multiplication_on_kronecker<FieldType>(c, a, b);
 
     std::vector<typename FieldType::value_type> c_answer(1, FieldType::value_type::zero());
-    multiplication(c_answer, a, b).get();
+    multiplication(c_answer, a, b);
 
     for (std::size_t i = 0; i < c_answer.size(); i++) {
         BOOST_CHECK_EQUAL(c_answer[i].data, c[i].data);
     }
 }
 
-ACTOR_THREAD_TEST_CASE(squared_polynomial_multiplication) {
+BOOST_AUTO_TEST_CASE(squared_polynomial_multiplication) {
 
     std::vector<typename FieldType::value_type> a = {1, 2, 3, 1};
     std::vector<typename FieldType::value_type> b = a;
@@ -66,9 +70,11 @@ ACTOR_THREAD_TEST_CASE(squared_polynomial_multiplication) {
     polynomial::multiplication_on_kronecker<FieldType>(c, a, b);
 
     std::vector<typename FieldType::value_type> c_answer(1, FieldType::value_type::zero());
-    multiplication(c_answer, a, b).get();
+    multiplication(c_answer, a, b);
 
     for (std::size_t i = 0; i < c_answer.size(); i++) {
         BOOST_CHECK_EQUAL(c_answer[i].data, c[i].data);
     }
 }
+
+BOOST_AUTO_TEST_SUITE_END()

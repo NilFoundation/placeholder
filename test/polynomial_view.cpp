@@ -35,10 +35,10 @@
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
-#include <nil/actor/math/polynomial/polynomial_view.hpp>
+#include <nil/crypto3/math/polynomial/polynomial_view.hpp>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
 typedef fields::bls12_fr<381> FieldType;
 

@@ -22,31 +22,34 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE basic_radix2_domain_test
+
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
+
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
-
-#include <nil/actor/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/actor/math/polynomial/polynomial.hpp>
-#include <nil/actor/math/polynomial/polynomial_dfs.hpp>
-#include <nil/actor/math/polynomial/shift.hpp>
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/crypto3/math/polynomial/shift.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/actor/math/domains/detail/basic_radix2_domain_aux.hpp>
+#include <nil/crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
 typedef fields::bls12_fr<381> FieldType;
 
-/* This test is disabled in crypto3, it's actually a benchmark, runs slow.
+BOOST_AUTO_TEST_SUITE(basic_radix2_domain_test_suit)
 
-ACTOR_THREAD_TEST_CASE(basic_radix2_domain_benchmark) {
+BOOST_AUTO_TEST_CASE(basic_radix2_domain_benchmark, *boost::unit_test::disabled()) {
     using value_type = FieldType::value_type;
     const std::size_t fft_count = 5;
     const std::array<std::size_t, fft_count> fft_sizes = {1 << 16, 1 << 17, 1 << 18, 1 << 19, 1 << 20};
@@ -70,7 +73,7 @@ ACTOR_THREAD_TEST_CASE(basic_radix2_domain_benchmark) {
     for (std::size_t i = 0; i < fft_count; i++) {
         omega_powers[i].reset(new std::vector<value_type>);
         omega_powers[i]->resize(fft_sizes[i]);
-        (*omega_powers[i])[0] = nil::crypto3::math::unity_root<FieldType>(fft_sizes[i]);
+        (*omega_powers[i])[0] = unity_root<FieldType>(fft_sizes[i]);
         for (std::size_t j = 1; j < fft_sizes[i]; j++) {
             (*omega_powers[i])[j] = (*omega_powers[i])[j - 1] * (*omega_powers[i])[0];
         }
@@ -85,7 +88,7 @@ ACTOR_THREAD_TEST_CASE(basic_radix2_domain_benchmark) {
     for (std::size_t i = 0; i < fft_count; ++i) {
         nil::crypto3::math::detail::basic_radix2_fft<FieldType>(
             test_data[i],
-            nil::crypto3::math::unity_root<FieldType>(fft_sizes[i])); //omega_powers[i]);
+            unity_root<FieldType>(fft_sizes[i])); //omega_powers[i]);
     }
 
     std::cout << "Uncached FFT: "
@@ -98,7 +101,7 @@ ACTOR_THREAD_TEST_CASE(basic_radix2_domain_benchmark) {
     for (std::size_t i = 0; i < fft_count; ++i) {
         nil::crypto3::math::detail::basic_radix2_fft<FieldType>(
             test_data[i],
-            nil::crypto3::math::unity_root<FieldType>(fft_sizes[i]),
+            unity_root<FieldType>(fft_sizes[i]),
             omega_powers[i]);
     }
     std::cout << "Cached FFT: "
@@ -107,9 +110,8 @@ ACTOR_THREAD_TEST_CASE(basic_radix2_domain_benchmark) {
                  ).count()
               << " ms" << std::endl;
 }
-*/
 
-ACTOR_THREAD_TEST_CASE(fft_vs_multiplication_benchmark) {
+BOOST_AUTO_TEST_CASE(fft_vs_multiplication_benchmark) {
     using value_type = FieldType::value_type;
     const std::size_t fft_size = 1 << 16;
     std::vector<value_type> test_data(fft_size);
@@ -128,7 +130,7 @@ ACTOR_THREAD_TEST_CASE(fft_vs_multiplication_benchmark) {
     std::chrono::time_point<std::chrono::high_resolution_clock> start_fft(std::chrono::high_resolution_clock::now());
     nil::crypto3::math::detail::basic_radix2_fft<FieldType>(
         test_data,
-        nil::crypto3::math::unity_root<FieldType>(fft_size));
+        unity_root<FieldType>(fft_size));
     std::cout << "FFT: "
               << std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::high_resolution_clock::now() - start_fft)
@@ -147,3 +149,4 @@ ACTOR_THREAD_TEST_CASE(fft_vs_multiplication_benchmark) {
              << " ms" << std::endl;
 }
 
+BOOST_AUTO_TEST_SUITE_END()

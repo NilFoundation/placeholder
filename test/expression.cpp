@@ -1,7 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2021 Nikita Kaskov <nbering@nil.foundation>
-// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 //
 // MIT License
 //
@@ -24,23 +23,28 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#define BOOST_TEST_MODULE expression_arithmetic_test
+
 #include <vector>
 #include <cstdint>
 
-#include <nil/actor/testing/test_case.hh>
-#include <nil/actor/testing/thread_test_case.hh>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
-#include <nil/actor/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/expressions/expression.hpp>
 
 using namespace nil::crypto3::algebra;
-using namespace nil::actor::math;
+using namespace nil::crypto3::math;
 
 typedef fields::bls12<381> FieldType;
 
-// ACTOR_THREAD_TEST_CASE(expression_field_evaluation) {
+BOOST_AUTO_TEST_SUITE(expression_test_suite)
+
+// BOOST_AUTO_TEST_CASE(expression_field_evaluation) {
 
 //     expressions::lazy_expression< typename FieldType::value_type > v0, v1;
 
@@ -55,7 +59,8 @@ typedef fields::bls12<381> FieldType;
 //     BOOST_CHECK_EQUAL((505 - 100) + 505*100, d.data);
 // }
 
-ACTOR_THREAD_TEST_CASE(expression_polynom_evaluation) {
+BOOST_AUTO_TEST_CASE(expression_polynom_evaluation) {
+
     // expressions::lazy_expression< polynomial<typename FieldType::value_type> > v0, v1;
 
     // using expr_type = typename boost::proto::terminal<polynomial<typename FieldType::value_type>>::type;
@@ -76,3 +81,5 @@ ACTOR_THREAD_TEST_CASE(expression_polynom_evaluation) {
     //     BOOST_CHECK_EQUAL(c_ans[i].data, d[i].data);
     // }
 }
+
+BOOST_AUTO_TEST_SUITE_END()
