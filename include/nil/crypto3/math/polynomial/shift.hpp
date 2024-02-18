@@ -28,6 +28,7 @@
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -39,7 +40,7 @@ namespace nil {
                 polynomial<FieldValueType> f_shifted(f);
                 FieldValueType x_power = x;
                 for (std::size_t i = 1; i < f.size(); i++) {
-                    f_shifted[i] = f_shifted[i] * x_power;
+                    f_shifted[i] *= x_power;
                     x_power *= x;
                 }
 
@@ -63,9 +64,10 @@ namespace nil {
 
                 polynomial_dfs<FieldValueType> f_shifted(f.degree(), extended_domain_size);
 
-                for (std::size_t index = 0; index < extended_domain_size; index++){
-                    f_shifted[index] = f[(extended_domain_size + index + domain_scale * shift) % (extended_domain_size)];
-                }
+                parallel_for(0, extended_domain_size, 
+                    [&f, &f_shifted, shift, extended_domain_size, domain_scale](std::size_t index) {
+                        f_shifted[index] = f[(extended_domain_size + index + domain_scale * shift) % (extended_domain_size)];
+                    });
 
                 return f_shifted;
             }

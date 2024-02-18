@@ -14,13 +14,13 @@ endif()
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
 
-                       ${CMAKE_WORKSPACE_NAME}::algebra
-                       ${CMAKE_WORKSPACE_NAME}::multiprecision
+                       crypto3::algebra
+                       crypto3::multiprecision
 
                        ${Boost_LIBRARIES})
 
 macro(define_math_test name)
-    set(test_name "math_${name}_test")
+    set(test_name "actor_math_${name}_test")
 
     set(additional_args "")
     if(ENABLE_JUNIT_TEST_OUTPUT)

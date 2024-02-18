@@ -78,6 +78,7 @@ namespace nil {
                             throw std::invalid_argument(
                                 "extended_radix2(): expected logm == fields::arithmetic_params<FieldType>::s + 1");
                     }
+                    create_fft_cache();
                 }
 
                 void fft(std::vector<value_type> &a) override {
@@ -102,9 +103,6 @@ namespace nil {
                         shift_i *= shift;
                     }
 
-                    if (fft_cache == nullptr) {
-                        create_fft_cache();
-                    }
                     detail::basic_radix2_fft_cached<FieldType>(a0, fft_cache->first);
                     detail::basic_radix2_fft_cached<FieldType>(a1, fft_cache->first);
 

@@ -22,8 +22,8 @@ list(APPEND CMAKE_MODULE_PATH
 include(CMConfig)
 include(CMSetupVersion)
 
-if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "crypto3"))
-    cm_workspace(crypto3)
+if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
+    cm_workspace(actor)
 endif()
 
 macro(cm_find_package NAME)
@@ -66,8 +66,11 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            ${Boost_INCLUDE_DIRS})
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-                      ${CMAKE_WORKSPACE_NAME}::algebra
-                      ${CMAKE_WORKSPACE_NAME}::multiprecision
+
+                      ${CMAKE_WORKSPACE_NAME}::core
+
+                      crypto3::algebra
+                      crypto3::multiprecision
 
                       ${Boost_LIBRARIES})
 
