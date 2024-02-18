@@ -37,7 +37,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake"
 include(CMConfig)
 include(CMSetupVersion)
 
-cm_workspace(crypto3)
+cm_workspace(actor)
 
 macro(cm_find_package NAME)
     if (NOT "${NAME}" MATCHES "^${CMAKE_WORKSPACE_NAME}_.*$" AND NOT "${NAME}" STREQUAL CM)
@@ -82,8 +82,10 @@ set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
 
-        ${CMAKE_WORKSPACE_NAME}::algebra
-        ${CMAKE_WORKSPACE_NAME}::hash
+        ${CMAKE_WORKSPACE_NAME}::core
+
+        crypto3::algebra
+        crypto3::hash
 
         ${Boost_LIBRARIES})
 
