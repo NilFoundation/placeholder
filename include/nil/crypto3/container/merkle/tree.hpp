@@ -500,7 +500,7 @@ namespace nil {
                     using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
                     using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
                     hashes::detail::poseidon_sponge_construction<poseidon_policy> sponge;
-                    std::size_t cur = 1;
+                    BOOST_ASSERT_MSG(leaf.size() % 64 == 0, "Leaf size must be a multiple of 64");
                     for (std::size_t i = 0; i < leaf.size(); i += 64) {
                         nil::crypto3::multiprecision::cpp_int first = 0;
                         std::size_t j = 0;
@@ -515,9 +515,6 @@ namespace nil {
                         }
                         sponge.absorb(first);
                         sponge.absorb(second);
-                    }
-                    if (cur == 2) {
-                        BOOST_ASSERT("Data size should be multiple of 32 bytes");
                     }
                     return sponge.squeeze();
                 }
@@ -549,7 +546,7 @@ namespace nil {
                     for (size_t row_number = 1; row_number < ret.row_count(); ++row_number, row_size /= Arity) {
                         nil::crypto3::parallel_for(0, row_size, [&ret, it, next_row_start_index](std::size_t index) {
                             ret[next_row_start_index + index] = generate_poseidon_hash<hash_type>(
-                                *(it + index * Arity), *(it + index * Arity + 1)); 
+                                *(it + index * Arity), *(it + index * Arity + 1));
                         });
                         next_row_start_index += row_size;
                         it += row_size * Arity;
@@ -580,7 +577,7 @@ namespace nil {
                     for (size_t row_number = 1; row_number < ret.row_count(); ++row_number, row_size /= Arity) {
                         nil::crypto3::parallel_for(0, row_size, [&ret, it, next_row_start_index](std::size_t index) {
                             ret[next_row_start_index + index] = generate_hash<hash_type>(
-                                it + index * Arity, it + (index + 1) * Arity); 
+                                it + index * Arity, it + (index + 1) * Arity);
                         });
                         next_row_start_index += row_size;
                         it += row_size * Arity;
