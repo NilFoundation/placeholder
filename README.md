@@ -1,7 +1,7 @@
 # Zero-Knowledge Cryptography Schemes for =nil; Foundation's Cryptography Suite
 
-Zero-Knowledge cryptography schemes for =nil; Foundation's cryptography suite. 
-SNARK-alike schemes for now. More trivial Pedersen commitment schemes, STARKs, 
+Zero-Knowledge cryptography schemes for =nil; Foundation's cryptography suite.
+SNARK-alike schemes for now. More trivial Pedersen commitment schemes, STARKs,
 IOP-based SNARKs, Bulletproofs etc in future.
 
 [![Run tests](https://github.com/NilFoundation/crypto3-zk/actions/workflows/run_tests.yml/badge.svg)](https://github.com/NilFoundation/crypto3-zk/actions/workflows/run_tests.yml)
@@ -16,6 +16,16 @@ library in a project it is required to:
    submodules to target project repository.
 3. Initialize parent project with [CMake Modules](https://github.com/BoostCMake/cmake_modules.git) (Look
    at [crypto3](https://github.com/nilfoundation/crypto3.git) for the example)
+
+## Updating from crypto3-zk repository
+Update could be done either with `git format-patch` and `git am --3way --whitespace=fix --reject`, but this will lead to *.rej* files in case of conflicts.
+
+To make it more merge-like, add `crypto3-zk` as upstream, and cherry-pick commits from it:
+```bash
+git remote add crypto3-zk git@github.com:NilFoundation/crypto3-zk.git
+git fetch crypto3-zk
+git cherry-pick <from_crypto3-zk_commit_sha>^..<to_crypto3-zk_commit_sha>
+```
 
 ## Dependencies
 
