@@ -101,7 +101,7 @@ namespace nil {
 
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_v = S_id;
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_v = S_sigma;
-                        parallel_for(0, S_id.size(), [&g_v, &h_v, &beta, &gamma, &column_polynomials, &basic_domain, &S_id](std::size_t i) {
+                        parallel_for(0, S_id.size(), [&g_v, &h_v, &beta, &gamma, &column_polynomials, &basic_domain, &S_id, &S_sigma](std::size_t i) {
                             BOOST_ASSERT(column_polynomials[i].size() == basic_domain->size());
                             BOOST_ASSERT(S_id[i].size() == basic_domain->size());
                             BOOST_ASSERT(S_sigma[i].size() == basic_domain->size());
