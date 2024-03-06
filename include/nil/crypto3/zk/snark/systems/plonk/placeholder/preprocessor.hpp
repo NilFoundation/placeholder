@@ -181,6 +181,10 @@ namespace nil {
                                 return rows_amount == rhs.rows_amount &&
                                 usable_rows_amount == rhs.usable_rows_amount &&
                                 columns_rotations == rhs.columns_rotations &&
+                                witness_columns == rhs.witness_columns &&
+                                public_input_columns == rhs.public_input_columns &&
+                                constant_columns == rhs.constant_columns &&
+                                selector_columns == rhs.selector_columns &&
                                 commitments == rhs.commitments &&
                                 basic_domain->size() == rhs.basic_domain->size() &&
                                 lagrange_0 == rhs.lagrange_0 &&
