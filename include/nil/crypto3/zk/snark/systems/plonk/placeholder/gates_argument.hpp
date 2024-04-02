@@ -104,7 +104,7 @@ namespace nil {
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
                         visitor.visit(expr);
 
-                        parallel_for(0, variables.size(), 
+                        parallel_for(0, variables.size(),
                             [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size](std::size_t i) {
                                 const auto& var = variables[i];
                                 // We may have variable values in required sizes in some cases.
@@ -123,6 +123,10 @@ namespace nil {
                                         break;
                                     case polynomial_dfs_variable_type::column_type::selector:
                                         assignment = assignments.selector(var.index);
+                                        break;
+                                    default:
+                                        std::cerr << "Invalid column type";
+                                        std::abort();
                                         break;
                                 }
 
