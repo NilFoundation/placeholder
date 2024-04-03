@@ -37,9 +37,6 @@
 
 #include <nil/crypto3/hash/type_traits.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
-#include <nil/crypto3/hash/poseidon.hpp>
-#include <nil/crypto3/hash/detail/poseidon/poseidon_sponge.hpp>
-#include <nil/crypto3/hash/detail/poseidon/poseidon_policy.hpp>
 #include <nil/crypto3/container/merkle/node.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
@@ -484,78 +481,7 @@ namespace nil {
                     return accumulators::extract::hash<T>(acc);
                 }
 
-                template<typename T, std::enable_if_t<crypto3::hashes::is_poseidon<T>::value, bool> = true>
-                typename T::digest_type generate_poseidon_hash(typename T::digest_type first, typename T::digest_type second) {
-                    using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
-                    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
-                    hashes::detail::poseidon_sponge_construction<poseidon_policy> sponge;
-                    sponge.absorb(first);
-                    sponge.absorb(second);
-                    return sponge.squeeze();
-                }
-
-                template<typename T, typename LeafData = std::vector<std::uint8_t>,
-                    std::enable_if_t<crypto3::hashes::is_poseidon<T>::value, bool> = true>
-                typename T::digest_type generate_poseidon_leaf_hash(const LeafData &leaf) {
-                    using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
-                    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
-                    hashes::detail::poseidon_sponge_construction<poseidon_policy> sponge;
-                    BOOST_ASSERT_MSG(leaf.size() % 64 == 0, "Leaf size must be a multiple of 64");
-                    for (std::size_t i = 0; i < leaf.size(); i += 64) {
-                        nil::crypto3::multiprecision::cpp_int first = 0;
-                        std::size_t j = 0;
-                        for(; j < 32; j++){
-                            first <<= 8;
-                            first += leaf[i + j];
-                        }
-                        nil::crypto3::multiprecision::cpp_int second = 0;
-                        for(; j < 64; j++){
-                            second <<= 8;
-                            second += leaf[i + j];
-                        }
-                        sponge.absorb(first);
-                        sponge.absorb(second);
-                    }
-                    return sponge.squeeze();
-                }
-
-                template<typename T,
-                    std::size_t Arity, typename LeafIterator,
-                    std::enable_if_t<crypto3::hashes::is_poseidon<typename T::hash_type>::value, bool> = true
-                >
-                merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first, LeafIterator last) {
-                    BOOST_ASSERT_MSG(Arity == 2, "Only arity 2 is supported for poseidon hash function");
-                    typedef T node_type;
-                    typedef typename node_type::hash_type hash_type;
-                    typedef typename node_type::value_type value_type;
-                    typedef typename std::iterator_traits<LeafIterator>::value_type leaf_value_type;
-
-                    merkle_tree_impl<T, Arity> ret(std::distance(first, last));
-
-                    ret.resize(ret.complete_size());
-
-                    nil::crypto3::parallel_transform(first, last, ret.begin(), [](const leaf_value_type& leaf) {
-                        return static_cast<value_type>(generate_poseidon_leaf_hash<hash_type>(leaf));
-                    });
-
-                    std::size_t row_idx = ret.leaves(), row_size = row_idx / Arity;
-                    typename merkle_tree_impl<T, Arity>::iterator it = ret.begin();
-
-                    std::size_t next_row_start_index = std::distance(first, last);
-
-                    for (size_t row_number = 1; row_number < ret.row_count(); ++row_number, row_size /= Arity) {
-                        nil::crypto3::parallel_for(0, row_size, [&ret, it, next_row_start_index](std::size_t index) {
-                            ret[next_row_start_index + index] = generate_poseidon_hash<hash_type>(
-                                *(it + index * Arity), *(it + index * Arity + 1));
-                        });
-                        next_row_start_index += row_size;
-                        it += row_size * Arity;
-                    }
-                    return ret;
-                }
-
-                template<typename T, std::size_t Arity, typename LeafIterator,
-                    std::enable_if_t<!crypto3::hashes::is_poseidon<typename T::hash_type>::value, bool> = true>
+                template<typename T, std::size_t Arity, typename LeafIterator>
                 merkle_tree_impl<T, Arity> make_merkle_tree(LeafIterator first, LeafIterator last) {
                     typedef T node_type;
                     typedef typename node_type::hash_type hash_type;
