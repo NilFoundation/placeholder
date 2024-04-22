@@ -258,13 +258,17 @@ namespace nil {
                             BOOST_ASSERT(part_sizes.size() == gs.size());
                             BOOST_ASSERT(part_sizes.size() == hs.size());
                             BOOST_ASSERT(part_sizes.size() == lookup_alphas.size() + 1);
-                            for( std::size_t i = 0; i < lookup_alphas.size(); i ++ ){
+                            std::vector<math::polynomial_dfs<typename FieldType::value_type>> reduced_gs(lookup_alphas.size());
+                            std::vector<math::polynomial_dfs<typename FieldType::value_type>> reduced_hs(lookup_alphas.size());
+                            parallel_for(0, lookup_alphas.size(), [this, &gs, &hs, &reduced_gs, &reduced_hs](std::size_t i) {
+                                reduced_gs[i] = reduce_dfs_polynomial_domain(gs[i], basic_domain->m);
+                                reduced_hs[i] = reduce_dfs_polynomial_domain(hs[i], basic_domain->m);
+                            });
+                            for (std::size_t i = 0; i < lookup_alphas.size(); ++i) {
                                 auto &g = gs[i];
                                 auto &h = hs[i];
-                                auto reduced_g = reduce_dfs_polynomial_domain(g, basic_domain->m);
-                                auto reduced_h = reduce_dfs_polynomial_domain(h, basic_domain->m);
                                 for( std::size_t j = 0; j < preprocessed_data.common_data.desc.usable_rows_amount; j++){
-                                    current_poly[j] = (previous_poly[j] * reduced_g[j]) / reduced_h[j];
+                                    current_poly[j] = (previous_poly[j] * reduced_gs[i][j]) / reduced_hs[i][j];
                                 }
                                 commitment_scheme.append_to_batch(PERMUTATION_BATCH, current_poly);
                                 auto par = lookup_alphas[i] * (previous_poly * g - current_poly * h);

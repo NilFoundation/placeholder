@@ -181,9 +181,16 @@ namespace nil {
                             combined_Q_normal += Q_normal;
                         }
 
-                        for(std::size_t i: this->_z.get_batches()){
-                            if( !_batch_fixed[i] )continue;
-                            math::polynomial<value_type> Q_normal;
+                        theta_powers = {theta_powers[points.size()]};
+                        for(std::size_t i : this->_z.get_batches()) {
+                            theta_powers.push_back(theta_powers[theta_powers.size() - 1] + this->_z.get_batch_size(i));
+                        }
+                        Q_normals.assign(this->_z.get_batches().size(), math::polynomial<value_type>{});
+                        parallel_for(0, this->_z.get_batches().size(), [this, &theta, &theta_powers, &Q_normals](std::size_t batch_idx) {
+                            std::size_t i = this->_z.get_batches()[batch_idx];
+                            typename field_type::value_type theta_acc = theta.pow(theta_powers[i]);
+                            if( _batch_fixed.find(i) == _batch_fixed.end() || !_batch_fixed[i] )return;
+                            math::polynomial<value_type>& Q_normal = Q_normals[batch_idx];
                             auto point = _etha;
                             math::polynomial<value_type> V = {-point, 1};
                             for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
@@ -199,6 +206,9 @@ namespace nil {
                                 theta_acc *= theta;
                             }
                             Q_normal = Q_normal / V;
+                        }, ThreadPool::PoolLevel::HIGH);
+
+                        for (const auto& Q_normal: Q_normals) {
                             combined_Q_normal += Q_normal;
                         }
 
