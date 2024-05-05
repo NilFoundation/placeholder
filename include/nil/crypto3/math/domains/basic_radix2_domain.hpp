@@ -62,7 +62,7 @@ namespace nil {
             public:
                 typedef FieldType field_type;
 
-                const field_value_type omega;
+                field_value_type omega;
 
                 basic_radix2_domain(const std::size_t m)
                         : evaluation_domain<FieldType, ValueType>(m),
