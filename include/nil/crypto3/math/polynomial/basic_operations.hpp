@@ -32,6 +32,8 @@
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
+#include <nil/crypto3/detail/type_traits.hpp>
+
 #include <nil/actor/core/parallelization_utils.hpp>
 
 namespace nil {
@@ -95,7 +97,8 @@ namespace nil {
              * @param &power is the exponent.
              * @return exponentiated polynomial (input^power).
              */
-            template<typename FieldRange, typename IntegerType>
+            template<typename FieldRange, typename IntegerType,
+                     typename = typename std::enable_if<nil::crypto3::detail::is_range<FieldRange>::value>::type>
             FieldRange power(const FieldRange &input, IntegerType power) {
                 typedef
                 typename std::iterator_traits<decltype(std::begin(
@@ -327,7 +330,7 @@ namespace nil {
                             std::begin(a), std::end(a), std::begin(q), [&c](const value_type& value) {return value * c;});
                     // We will always have no reminder here.
                     r.resize(1);
-                    r[0] = 0;
+                    r[0] = 0u;
                 }
                     // Special case when B = X^N + C.
                 else if (b.back() == value_type::one() && is_zero(b.begin() + 1, b.end() - 1) && a.size() >= b.size()) {

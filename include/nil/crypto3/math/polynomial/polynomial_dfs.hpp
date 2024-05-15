@@ -70,8 +70,7 @@ namespace nil {
                 typedef typename container_type::const_reverse_iterator const_reverse_iterator;
 
                 // Default constructor creates a zero polynomial of degree 0 and size 1.
-                polynomial_dfs() : val(1, 0) {
-                    _d = 0;
+                polynomial_dfs() : val(1, FieldValueType::zero()), _d(0) {
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n) : val(n, FieldValueType::zero()), _d(d) {
@@ -114,7 +113,7 @@ namespace nil {
                 polynomial_dfs(const polynomial_dfs& x, const allocator_type& a) : val(x.val, a), _d(x._d) {
                 }
 
-                polynomial_dfs(size_t d, std::initializer_list<value_type> il) : val(il), _d(d) {
+                polynomial_dfs(std::size_t d, std::initializer_list<value_type> il) : val(il), _d(d) {
                 }
 
                 polynomial_dfs(size_t d, std::initializer_list<value_type> il, const allocator_type& a) :
@@ -367,7 +366,7 @@ namespace nil {
 
                 FieldValueType evaluate(const FieldValueType& value) const {
                     std::vector<FieldValueType> tmp = this->coefficients();
-                    FieldValueType result = 0;
+                    FieldValueType result = FieldValueType::zero();
                     auto end = tmp.end();
                     // TODO(martun): parallelize the lower loop.
                     while (end != tmp.begin()) {
@@ -403,7 +402,7 @@ namespace nil {
                 }
 
                 inline static polynomial_dfs one() {
-                    return polynomial_dfs(0, size_type(1), value_type(1));
+                    return polynomial_dfs(0, size_type(1), value_type::one());
                 }
 
                 /**
