@@ -139,7 +139,8 @@ namespace nil {
                         std::vector<typename KZGScheme::scalar_value_type> result;
                         std::set_difference(merged_points.begin(), merged_points.end(), points.begin(), points.end(), std::back_inserter(result));
                         if (result.size() == 0) {
-                            return typename math::polynomial<typename KZGScheme::scalar_value_type>({{1}});
+                            return typename math::polynomial<typename KZGScheme::scalar_value_type>(
+                                {{KZGScheme::scalar_value_type::one()}});
                         }
                         BOOST_ASSERT(this->get_V(result) * this->get_V(points) == this->get_V(merged_points));
                         return this->get_V(result);
@@ -290,7 +291,7 @@ namespace nil {
                         );
 
                         auto theta_2 = transcript.template challenge<typename curve_type::scalar_field_type>();
-                        math::polynomial<typename KZGScheme::scalar_value_type> theta_2_vanish = { -theta_2, 1 };
+                        math::polynomial<typename KZGScheme::scalar_value_type> theta_2_vanish = {{ -theta_2, KZGScheme::scalar_value_type::one() }};
 
                         addends.assign(this->_polys.size(), math::polynomial<typename KZGScheme::scalar_value_type>::zero());
                         parallel_for(0, this->_polys.size(), [this, &theta, &theta_i_pows, &addends, &theta_2](std::size_t polys_idx) {

@@ -79,7 +79,7 @@ namespace nil {
 
                 public:
                     lpc_commitment_scheme(const typename fri_type::params_type &fri_params)
-                        : _fri_params(fri_params), _etha(0) {
+                        : _fri_params(fri_params), _etha(0u) {
                     }
 
                     preprocessed_data_type preprocess(transcript_type& transcript) const{
@@ -192,7 +192,7 @@ namespace nil {
                             if( _batch_fixed.find(i) == _batch_fixed.end() || !_batch_fixed[i] )return;
                             math::polynomial<value_type>& Q_normal = Q_normals[batch_idx];
                             auto point = _etha;
-                            math::polynomial<value_type> V = {-point, 1};
+                            math::polynomial<value_type> V = {-point, 1u};
                             for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
                                 math::polynomial<value_type> g_normal;
                                 if constexpr(std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
@@ -261,11 +261,11 @@ namespace nil {
                         typename std::vector<std::vector<std::tuple<std::size_t, std::size_t>>> poly_map(total_points);
 
                         value_type theta = transcript.template challenge<field_type>();
-                        value_type theta_acc(1);
+                        value_type theta_acc = value_type::one();
 
                         for (std::size_t p = 0; p < points.size(); p++){
                             auto &point = points[p];
-                            V[p] = {-point, 1};
+                            V[p] = {-point, 1u};
                             for(std::size_t i:this->_z.get_batches()){
                                 for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
                                     auto it = std::find(this->_points[i][j].begin(), this->_points[i][j].end(), point);
@@ -279,7 +279,7 @@ namespace nil {
 
                         if( total_points > points.size()){
                             std::size_t p = points.size();
-                            V[p] = {-_etha, 1};
+                            V[p] = {-_etha, 1u};
                             for(std::size_t i:this->_z.get_batches()){
                                 if( !_batch_fixed[i] )continue;
                                 for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
