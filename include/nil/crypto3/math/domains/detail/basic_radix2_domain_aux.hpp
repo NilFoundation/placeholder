@@ -83,7 +83,7 @@ namespace nil {
 
                     // swapping in place (from Storer's book)
                     // We can parallelize this look, since k and rk are pairs, they will never intersect.
-                    nil::crypto3::parallel_for(0, n, 
+                    nil::crypto3::parallel_for(0, n,
                         [logn, &a](std::size_t k) {
                             const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
                             if (k < rk)
@@ -114,7 +114,7 @@ namespace nil {
 
                                     for (; j < m; ++j, idx += inc) {
                                         t = a[k + j + m];
-                                        t *= omega_cache[idx].data;
+                                        t *= omega_cache[idx];
                                         a[k + j + m] = a[k + j];
                                         a[k + j + m] -= t;
                                         a[k + j] += t;
@@ -126,7 +126,7 @@ namespace nil {
                                 }
                             }, ThreadPool::PoolLevel::LOW
                         ));
-                    } 
+                    }
                 }
 
                 /**
