@@ -35,9 +35,10 @@
 #include <iterator>
 #include <unordered_map>
 
-#include <nil/crypto3/math/polynomial/basic_operations.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
@@ -165,6 +166,10 @@ namespace nil {
 
                 allocator_type get_allocator() const BOOST_NOEXCEPT {
                     return this->val.__alloc();
+                }
+
+                container_type& get_storage() {
+                    return val;
                 }
 
                 iterator begin() BOOST_NOEXCEPT {
@@ -443,7 +448,7 @@ namespace nil {
                             [](FieldValueType& v1, const FieldValueType& v2){v1+=v2;});
                         return *this;
                     }
-                    
+
                     in_place_parallel_transform(this->begin(), this->end(), other.begin(),
                             [](FieldValueType& v1, const FieldValueType& v2){v1+=v2;});
 
@@ -495,7 +500,7 @@ namespace nil {
 
                         in_place_parallel_transform(this->begin(), this->end(), tmp.begin(),
                             [](FieldValueType& v1, const FieldValueType& v2){v1-=v2;});
- 
+
                         return *this;
                     }
 
@@ -524,13 +529,13 @@ namespace nil {
                 }
 
                 /**
-                 * Perform the multiplication of two polynomials, polynomial A * polynomial B, 
+                 * Perform the multiplication of two polynomials, polynomial A * polynomial B,
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator*=(const polynomial_dfs& other) {
                     return cached_multiplication(other);
                 }
-                
+
                 /**
                  * Performs multiplication of two polynomials, but with domain caches
                  */
@@ -559,7 +564,7 @@ namespace nil {
                             [](FieldValueType& v1, const FieldValueType& v2){v1*=v2;});
                         return *this;
                     }
-                    
+
                     in_place_parallel_transform(this->begin(), this->end(), other.begin(),
                             [](FieldValueType& v1, const FieldValueType& v2){v1*=v2;});
 
@@ -567,14 +572,14 @@ namespace nil {
                 }
 
                 /**
-                 * Perform the multiplication of two polynomials, polynomial A * constant alpha, 
+                 * Perform the multiplication of two polynomials, polynomial A * constant alpha,
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator*=(const FieldValueType& alpha) {
                     for( auto it = this->begin(); it!=this->end(); it++) *it *= alpha;
                     return *this;
                 }
-                
+
                 /**
                  * Perform the standard Euclidean Division algorithm.
                  * Input: Polynomial A, Polynomial B, where A / B
@@ -776,49 +781,60 @@ namespace nil {
                 return os;
             }
 
-            // This function makes sense only in parallel version, in single-threaded version it's just a loop.
             template<typename FieldType>
             static inline polynomial_dfs<typename FieldType::value_type> polynomial_sum(
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> addends) {
-                std::size_t max_size = 0;
-                for (const auto& poly: addends) {
-                    max_size = std::max(max_size, poly.size());
-                }
-                std::size_t count_max_size = 0;
-                for (const auto& poly: addends) {
-                    if (max_size == poly.size()) 
-                        count_max_size++;
-                }
+                using FieldValueType = typename FieldType::value_type;
 
-                // If there is at least anything to resize, resize all in parallel.
-                if (count_max_size != addends.size()) {
-                    auto max_domain = make_evaluation_domain<FieldType>(max_size);
-                    parallel_for(0, addends.size(), [&addends, max_size, &max_domain](std::size_t i) {
-                        addends[i].resize(max_size, nullptr, max_domain);
-                    }, ThreadPool::PoolLevel::HIGH); 
+                // Since there are only ~20 addends, we will just use that many maps
+                std::vector<std::unordered_map<std::size_t, polynomial_dfs<FieldValueType>>> maps(addends.size());
+                for (size_t i = 0; i < addends.size(); ++i) {
+                    maps[i][addends[i].size()] = std::move(addends[i]);
                 }
 
                 for (std::size_t stride = 1; stride < addends.size(); stride <<= 1) {
-                    const std::size_t double_stride = stride << 1;
-
-                    // This loop will run in parallel.
+                    std::size_t double_stride = stride << 1;
                     std::size_t max_i = (addends.size() - stride) / double_stride;
-                    if ((addends.size() - stride) % double_stride != 0)
+                    if ((addends.size() - stride) % double_stride != 0) {
                         max_i++;
+                    }
 
-                    // We can't use LOW level thread pool here, it's used in cached_multiplication.
-                    parallel_for(0, max_i, 
-                        [&addends, stride, double_stride](std::size_t i) {
-                            std::size_t index1 = i * double_stride;
-                            std::size_t index2 = index1 + stride;
+                    parallel_for(0, max_i, [&, stride, double_stride](std::size_t i) {
+                        std::size_t index1 = i * double_stride;
+                        std::size_t index2 = index1 + stride;
+                        if (index2 < addends.size()) {
+                            auto& map1 = maps[index1];
+                            auto& map2 = maps[index2];
 
-                            addends[index1] += addends[index2];
-
-                            // Free the memory we are not going to use anymore.
-                            addends[index2] = polynomial_dfs<typename FieldType::value_type>();
-                        }, ThreadPool::PoolLevel::HIGH);
+                            for (auto& entry : map2) {
+                                auto it = map1.find(entry.first);
+                                if (it != map1.end()) {
+                                    it->second += entry.second;
+                                } else {
+                                    map1[entry.first] = std::move(entry.second);
+                                }
+                            }
+                            map2.clear();
+                        }
+                    });
                 }
-                return addends[0];
+
+                std::unordered_map<std::size_t, polynomial_dfs<FieldValueType>>& size_to_part_sum = maps[0];
+
+                std::size_t max_size = 0;
+                for (const auto& [size, _] : size_to_part_sum) {
+                    max_size = std::max(max_size, size);
+                }
+
+                auto coef_result = polynomial<FieldValueType>(max_size, FieldValueType::zero());
+                for (auto& [_, partial_sum] : size_to_part_sum) {
+                    coef_result += polynomial<FieldValueType>(std::move(partial_sum.coefficients()));
+                }
+
+                polynomial_dfs<FieldValueType> dfs_result;
+                dfs_result.from_coefficients(coef_result.get_storage());
+
+                return dfs_result;
             }
 
             template<typename FieldType>
@@ -848,7 +864,7 @@ namespace nil {
                 }
 
                 // We cannot use LOW level thread pool here, make_evaluation_domain uses it.
-                parallel_foreach(needed_domain_sizes.begin(), needed_domain_sizes.end(), 
+                parallel_foreach(needed_domain_sizes.begin(), needed_domain_sizes.end(),
                     [&domain_cache](std::size_t domain_size) {
                         domain_cache[domain_size] = make_evaluation_domain<FieldType>(domain_size);
                     }, ThreadPool::PoolLevel::HIGH);
@@ -861,7 +877,7 @@ namespace nil {
                         max_i++;
 
                     // We can't use LOW level thread pool here, it's used in cached_multiplication.
-                    parallel_for(0, max_i, 
+                    parallel_for(0, max_i,
                         [&multipliers, &domain_cache, stride, double_stride](std::size_t i) {
                             std::size_t index1 = i * double_stride;
                             std::size_t index2 = index1 + stride;
