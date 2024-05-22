@@ -285,19 +285,17 @@ namespace nil {
                         F_dfs[3] = zero_polynomial;
 
                         std::vector<typename FieldType::value_type> alpha_challenges(sorted.size() - 1);
-                        for (std::size_t i = 1; i < sorted.size(); ++i) {
-                            alpha_challenges[i - 1] = transcript.template challenge<FieldType>();
+                        for (std::size_t i = 0; i < sorted.size() - 1; ++i) {
+                            alpha_challenges[i] = transcript.template challenge<FieldType>();
                         }
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> F_dfs_3_parts(sorted.size() -1);
 
-                        parallel_for(1, sorted.size(), [this, &F_dfs_3_parts, &alpha_challenges, &sorted](std::size_t i) {
-                            math::polynomial_dfs<typename FieldType::value_type> sorted_shifted = math::polynomial_shift(
-                                sorted[i-1], this->preprocessed_data.common_data.desc.usable_rows_amount, this->basic_domain->m);
-                            F_dfs_3_parts[i-1] = alpha_challenges[i-1] * this->preprocessed_data.common_data.lagrange_0 *
-                                (sorted[i] - sorted_shifted);
+                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> F_dfs_3_parts(std::next(sorted.begin(), 1), sorted.end());
+                        parallel_for(0, F_dfs_3_parts.size(), [this, &F_dfs_3_parts, &alpha_challenges, &sorted](std::size_t i) {
+                            math::polynomial_dfs sorted_shifted = math::polynomial_shift(sorted[i], this->preprocessed_data.common_data.desc.usable_rows_amount, this->basic_domain->m);
+                            F_dfs_3_parts[i] -= sorted_shifted;
+                            F_dfs_3_parts[i] *= alpha_challenges[i] * preprocessed_data.common_data.lagrange_0;
                         }, ThreadPool::PoolLevel::HIGH);
-
-                        F_dfs[3] = math::polynomial_sum<FieldType>(std::move(F_dfs_3_parts));
+                        F_dfs[3] = polynomial_sum<FieldType>(std::move(F_dfs_3_parts));
 
                         return {
                             std::move(F_dfs),

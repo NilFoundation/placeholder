@@ -262,20 +262,21 @@ namespace nil {
                             transcript.template challenges<FieldType, f_parts>();
 
                         // 7.2. Compute F_consolidated
-                        polynomial_dfs_type F_consolidated_dfs;
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> F_consolidated_dfs_parts(f_parts);
-
-                        parallel_for(0, f_parts,
+                        std::vector<polynomial_dfs_type> F_consolidated_dfs_parts(_F_dfs.begin(), _F_dfs.end());
+                        parallel_for(0, F_consolidated_dfs_parts.size(),
                             [this, &F_consolidated_dfs_parts, &alphas](std::size_t i) {
-                                F_consolidated_dfs_parts[i] = this->_F_dfs[i];
+                                if (_F_dfs[i].is_zero()) {
+                                    return;
+                                }
                                 F_consolidated_dfs_parts[i] *= alphas[i];
                         }, ThreadPool::PoolLevel::HIGH);
 
-                        F_consolidated_dfs = math::polynomial_sum<FieldType>(std::move(F_consolidated_dfs_parts));
+                        polynomial_dfs_type F_consolidated_dfs = polynomial_sum<FieldType>(std::move(F_consolidated_dfs_parts));
+
                         polynomial_type F_consolidated_normal(F_consolidated_dfs.coefficients());
 
-                        polynomial_type T_consolidated = std::move(F_consolidated_normal);
-                        T_consolidated /= preprocessed_public_data.common_data.Z;
+                        polynomial_type T_consolidated =
+                            F_consolidated_normal / preprocessed_public_data.common_data.Z;
 
                         return T_consolidated;
                     }
