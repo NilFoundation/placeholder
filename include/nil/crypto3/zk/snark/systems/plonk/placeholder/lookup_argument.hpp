@@ -268,7 +268,7 @@ namespace nil {
                                 auto &g = gs[i];
                                 auto &h = hs[i];
                                 for( std::size_t j = 0; j < preprocessed_data.common_data.desc.usable_rows_amount; j++){
-                                    current_poly[j] = (previous_poly[j] * reduced_gs[i][j]) / reduced_hs[i][j];
+                                    current_poly[j] = (previous_poly[j] * reduced_gs[i][j]) * reduced_hs[i][j].inversed();
                                 }
                                 commitment_scheme.append_to_batch(PERMUTATION_BATCH, current_poly);
                                 auto par = lookup_alphas[i] * (previous_poly * g - current_poly * h);
