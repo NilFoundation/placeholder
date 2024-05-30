@@ -26,6 +26,10 @@ git remote add crypto3-zk git@github.com:NilFoundation/crypto3-zk.git
 git fetch crypto3-zk
 git cherry-pick <from_crypto3-zk_commit_sha>^..<to_crypto3-zk_commit_sha>
 ```
+After transforming Crypto3 into monorepo subtree path should be specified:
+```bash
+git cherry-pick -Xsubtree=libs/zk <from_crypto3_commit_sha>^..<to_crypto3_commit_sha>
+```
 
 ## Dependencies
 
