@@ -106,7 +106,7 @@ namespace nil {
 
                     const field_value_type sconst = field_value_type(a.size()).inversed();
                     nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& a_i){
-                        a_i *= sconst.data;
+                        a_i *= sconst;
                     });
                 }
 

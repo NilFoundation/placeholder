@@ -1376,7 +1376,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test:
     std::vector<polynomial_dfs<typename FieldType::value_type>> poly4(64, poly);
 
     auto start = std::chrono::high_resolution_clock::now();
-    nil::crypto3::wait_for_all(parallel_run_in_chunks<void>(
+    nil::crypto3::wait_for_all(nil::crypto3::parallel_run_in_chunks<void>(
         poly4.size(),
         [&poly4, &poly](std::size_t begin, std::size_t end) {
             for (std::size_t i = begin; i < end; i++) {
@@ -1407,7 +1407,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test, *boost::unit_test::disable
 
     polynomial_dfs<typename FieldType::value_type> poly = {
         size - 1, values};
- 
+
     auto start = std::chrono::high_resolution_clock::now();
     for (std::size_t i = 0; i < 10; ++i) {
         auto poly2 = poly;

@@ -65,7 +65,7 @@ namespace nil {
 
                     arithmetic_sequence = std::vector<field_value_type>(this->m);
 
-                    nil::crypto3::parallel_for(0, arithmetic_sequence.size(), 
+                    nil::crypto3::parallel_for(0, arithmetic_sequence.size(),
                         [this](std::size_t i) {
                             this->arithmetic_sequence[i] *= field_value_type(i);
                         });
@@ -117,7 +117,7 @@ namespace nil {
                     a.resize(this->m);
 
                     nil::crypto3::in_place_parallel_transform(a.begin(), a.end(), S.begin(),
-                        [](value_type& a_i, const field_value_type& S_i){a_i *= S_i.inversed().data;});
+                        [](value_type& a_i, const field_value_type& S_i){a_i *= S_i.inversed();});
                 }
 
                 void inverse_fft(std::vector<value_type> &a) override {

@@ -17,7 +17,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        crypto3::algebra
                        crypto3::multiprecision
 
-                       ${Boost_LIBRARIES})
+                       Boost::random)
 
 macro(define_math_test name)
     set(test_name "actor_math_${name}_test")

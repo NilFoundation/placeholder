@@ -121,7 +121,7 @@ namespace nil {
                     a.resize(this->m);
 
                     nil::crypto3::in_place_parallel_transform(a.begin(), a.end(), T.begin(),
-                            [](value_type& a_i, const field_value_type& T_i){a_i *= T_i.inversed().data;});
+                            [](value_type& a_i, const field_value_type& T_i){a_i *= T_i.inversed();});
                 }
 
                 void inverse_fft(std::vector<value_type> &a) override {
@@ -157,7 +157,7 @@ namespace nil {
                     a.resize(this->m);
 
                     nil::crypto3::in_place_parallel_transform(a.begin(), a.end(), geometric_triangular_sequence.begin(),
-                            [](value_type& a_i, const field_value_type& g_i){a_i *= g_i.inversed().data;});
+                            [](value_type& a_i, const field_value_type& g_i){a_i *= g_i.inversed();});
 
                     newton_to_monomial_basis_geometric<FieldType>(a, geometric_sequence, geometric_triangular_sequence,
                                                                   this->m);
