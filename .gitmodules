@@ -1,0 +1,15 @@
+[submodule "libs/parallelization-utils"]
+	path = libs/parallelization-utils
+	url = git@github.com:NilFoundation/actor-core
+[submodule "libs/threaded-zk"]
+	path = libs/parallel-zk
+	url = git@github.com:NilFoundation/actor-zk
+[submodule "libs/threaded-math"]
+	path = libs/parallel-math
+	url = git@github.com:NilFoundation/actor-math
+[submodule "libs/threaded-containers"]
+	path = libs/parallel-containers
+	url = git@github.com:NilFoundation/actor-containers
+[submodule "cmake/modules"]
+	path = cmake/modules
+	url = git@github.com:BoostCMake/cmake_modules.git
