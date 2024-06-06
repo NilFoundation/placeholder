@@ -28,7 +28,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        marshalling::crypto3_algebra
                        marshalling::crypto3_zk
 
-                       ${Boost_LIBRARIES})
+                       Boost::random)
 
 option(ZK_PLACEHOLDER_PROFILING_ENABLED "Build with placeholder profiling" FALSE)
 
