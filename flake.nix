@@ -5,7 +5,7 @@
     nixpkgs.url = github:NixOS/nixpkgs/nixos-23.11;
     crypto3 = {
       url =
-        "git+https://github.com/NilFoundation/crypto3?submodules=1&rev=887b4dbcc1adfe57d7236620f01d079537245b75";
+        "git+https://github.com/NilFoundation/crypto3?submodules=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
