@@ -1,6 +1,3 @@
-[submodule "libs/parallelization-utils"]
-	path = libs/parallelization-utils
-	url = git@github.com:NilFoundation/actor-core
 [submodule "libs/threaded-zk"]
 	path = libs/parallel-zk
 	url = git@github.com:NilFoundation/actor-zk
