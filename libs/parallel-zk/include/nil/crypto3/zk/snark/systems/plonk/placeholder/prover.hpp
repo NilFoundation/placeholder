@@ -217,6 +217,8 @@ namespace nil {
 
                 private:
                     std::vector<polynomial_dfs_type> quotient_polynomial_split_dfs() {
+                        PROFILE_PLACEHOLDER_SCOPE("quotient_polynomial_split_dfs");
+
                         // TODO: pass max_degree parameter placeholder
                         std::vector<polynomial_type> T_splitted = detail::split_polynomial<FieldType>(
                             quotient_polynomial(), table_description.rows_amount - 1
@@ -234,7 +236,8 @@ namespace nil {
                             (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount + 1):
                             (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount);
 
-                        if( preprocessed_public_data.common_data.max_quotient_chunks != 0 && split_polynomial_size > preprocessed_public_data.common_data.max_quotient_chunks){
+                        if (preprocessed_public_data.common_data.max_quotient_chunks != 0 && 
+                            split_polynomial_size > preprocessed_public_data.common_data.max_quotient_chunks) {
                             split_polynomial_size = preprocessed_public_data.common_data.max_quotient_chunks;
                         }
 
@@ -245,11 +248,11 @@ namespace nil {
                         //      F[7] (from gates argument)
                         // If some columns used in permutation or lookup argument are zero, real quotient polynomial degree
                         //      may be less than split_polynomial_size.
-                        std::vector<polynomial_dfs_type> T_splitted_dfs(split_polynomial_size);
+                        std::vector<polynomial_dfs_type> T_splitted_dfs(T_splitted.size());
 
                         parallel_for(0, T_splitted.size(), [&T_splitted, &T_splitted_dfs](std::size_t k) {
                             T_splitted_dfs[k].from_coefficients(T_splitted[k]);
-                        });
+                        }, ThreadPool::PoolLevel::HIGH);
 
                         return T_splitted_dfs;
                     }
@@ -262,9 +265,10 @@ namespace nil {
                             transcript.template challenges<FieldType, f_parts>();
 
                         // 7.2. Compute F_consolidated
-                        std::vector<polynomial_dfs_type> F_consolidated_dfs_parts(_F_dfs.begin(), _F_dfs.end());
+                        std::vector<polynomial_dfs_type> F_consolidated_dfs_parts(_F_dfs.size(), polynomial_dfs_type());
                         parallel_for(0, F_consolidated_dfs_parts.size(),
                             [this, &F_consolidated_dfs_parts, &alphas](std::size_t i) {
+                                F_consolidated_dfs_parts[i] = _F_dfs[i];
                                 if (_F_dfs[i].is_zero()) {
                                     return;
                                 }

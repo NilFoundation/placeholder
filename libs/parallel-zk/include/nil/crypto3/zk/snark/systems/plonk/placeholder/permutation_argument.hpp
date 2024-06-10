@@ -79,7 +79,7 @@ namespace nil {
                         typename ParamsType::commitment_scheme_type& commitment_scheme,
                         transcript_type& transcript
                     ) {
-                        PROFILE_PLACEHOLDER_SCOPE("permutation_argument_prove_eval_time");
+                        PROFILE_PLACEHOLDER_SCOPE("Permutation Argument prove_eval Time");
 
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_sigma =
                             preprocessed_data.permutation_polynomials;
@@ -107,6 +107,7 @@ namespace nil {
                         std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_v = S_sigma;
                         BOOST_ASSERT(global_indices.size() == S_id.size());
                         BOOST_ASSERT(global_indices.size() == S_sigma.size());
+
                         parallel_for(0, S_id.size(), [&g_v, &h_v, &beta, &gamma, &global_indices, &column_polynomials, &basic_domain, &S_id, &S_sigma](std::size_t i) {
                             BOOST_ASSERT(column_polynomials[global_indices[i]].size() == basic_domain->size());
                             BOOST_ASSERT(S_id[i].size() == basic_domain->size());
@@ -123,9 +124,11 @@ namespace nil {
                             h_v[i] += column_polynomials[global_indices[i]];
                         }, ThreadPool::PoolLevel::HIGH);
 
-                        // TODO(martun): parallelize the loop below, it takes ~20 seconds on 256 leaves.
                         V_P[0] = FieldType::value_type::one();
-                        for (std::size_t j = 1; j < basic_domain->size(); j++) {
+                        
+                        auto V_P_parts = std::make_unique<std::vector<typename FieldType::value_type>>(
+                            basic_domain->size(), FieldType::value_type::zero());
+                        parallel_for(1, basic_domain->size(), [&g_v, &h_v, &S_id, &V_P_parts](std::size_t j) {
                             typename FieldType::value_type nom = FieldType::value_type::one();
                             typename FieldType::value_type denom = FieldType::value_type::one();
 
@@ -133,8 +136,12 @@ namespace nil {
                                 nom *= g_v[i][j - 1];
                                 denom *= h_v[i][j - 1];
                             }
-                            V_P[j] = V_P[j - 1] * nom * denom.inversed();
-                        }
+                            (*V_P_parts)[j] = nom * denom.inversed();
+                        }, ThreadPool::PoolLevel::LOW);
+                        
+                        for (std::size_t j = 1; j < basic_domain->size(); ++j)
+                            V_P[j] = V_P[j - 1] * (*V_P_parts)[j];
+                        V_P_parts.reset(nullptr);
 
                         // 4. Compute and add commitment to $V_P$ to $\text{transcript}$.
                         // TODO: Better enumeration for polynomial batches
@@ -194,25 +201,43 @@ namespace nil {
                             F_dfs[1] -= preprocessed_data.q_blind;
                             F_dfs[1] *= V_P_shifted;
                         } else {
+                            PROFILE_PLACEHOLDER_SCOPE("PERMUTATION ARGUMENT else block");
                             math::polynomial_dfs<typename FieldType::value_type> previous_poly = V_P;
                             math::polynomial_dfs<typename FieldType::value_type> current_poly = V_P;
+                            // We need to store all the values of current_poly. Suddenly this increases the RAM usage, but 
+                            // there's no other way to parallelize this loop.
+                            std::vector<math::polynomial_dfs<typename FieldType::value_type>> all_polys(1, V_P);
+
                             for( std::size_t i = 0; i < preprocessed_data.common_data.permutation_parts-1; i++ ){
-                                auto g = gs[i];
-                                auto h = hs[i];
+                                const auto& g = gs[i];
+                                const auto& h = hs[i];
                                 auto reduced_g = reduce_dfs_polynomial_domain(g, basic_domain->m);
                                 auto reduced_h = reduce_dfs_polynomial_domain(h, basic_domain->m);
-                                for(std::size_t j = 0; j < preprocessed_data.common_data.desc.usable_rows_amount; j++){
-                                    current_poly[j] = (previous_poly[j] * reduced_g[j]) * reduced_h[j].inversed();
-                                }
+                                parallel_for(0, preprocessed_data.common_data.desc.usable_rows_amount,
+                                    [&reduced_g, &reduced_h, &current_poly, &previous_poly](std::size_t j) {
+                                        current_poly[j] = (previous_poly[j] * reduced_g[j]) * reduced_h[j].inversed();
+                                    },
+                                    ThreadPool::PoolLevel::LOW);
+
                                 commitment_scheme.append_to_batch(PERMUTATION_BATCH, current_poly);
-                                auto part = permutation_alphas[i] * (previous_poly * g - current_poly * h);
-                                F_dfs[1] += part;
+                                all_polys.push_back(current_poly);
                                 previous_poly = current_poly;
                             }
+                            std::vector<math::polynomial_dfs<typename FieldType::value_type>> F_dfs_1_parts(
+                                preprocessed_data.common_data.permutation_parts);
+                            parallel_for(0, preprocessed_data.common_data.permutation_parts - 1,
+                                [&gs, &hs, &permutation_alphas, &all_polys, &F_dfs_1_parts](std::size_t i) {
+                                    auto &g = gs[i];
+                                    auto &h = hs[i];
+                                    F_dfs_1_parts[i] = permutation_alphas[i] * (all_polys[i] * g - all_polys[i + 1] * h);
+                                },
+                                ThreadPool::PoolLevel::HIGH);
+
                             std::size_t last = permutation_alphas.size();
                             auto &g = gs[last];
                             auto &h = hs[last];
-                            F_dfs[1] += (previous_poly * g - V_P_shifted * h);
+                            F_dfs_1_parts.back() = previous_poly * g - V_P_shifted * h;
+                            F_dfs[1] += polynomial_sum<FieldType>(std::move(F_dfs_1_parts));
                             F_dfs[1] *= (preprocessed_data.q_last + preprocessed_data.q_blind) - one_polynomial;
                         }
 

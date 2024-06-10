@@ -133,7 +133,7 @@ namespace nil {
                                 if (var.rotation != 0) {
                                     assignment = math::polynomial_shift(assignment, var.rotation, domain->m);
                                 }
-                                // In parallel version we always resize the assignment poly, it's better to parallelization.
+                                // In parallel version we always resize the assignment poly, it's better for parallelization.
                                 // if (count > 1) {
                                 assignment.resize(extended_domain_size, domain, extended_domain);
                                 variable_values_out[var] = std::move(assignment);
@@ -149,7 +149,7 @@ namespace nil {
                             std::uint32_t max_gates_degree,
                             const polynomial_dfs_type &mask_polynomial,
                             transcript_type& transcript) {
-                        PROFILE_PLACEHOLDER_SCOPE("gate_argument_time");
+                        PROFILE_PLACEHOLDER_SCOPE("Gate Argument prove_eval");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
@@ -172,6 +172,9 @@ namespace nil {
                         extended_domain_sizes.push_back(max_domain_size / 2);
 
                         std::vector<math::expression<polynomial_dfs_variable_type>> expressions(extended_domain_sizes.size());
+
+                        // Only in parallel version we store the subexpressions of each expression and ignore the cache.
+                        std::vector<std::vector<math::expression<polynomial_dfs_variable_type>>> subexpressions(extended_domain_sizes.size());
 
                         auto theta_acc = FieldType::value_type::one();
 
@@ -208,28 +211,38 @@ namespace nil {
 
                             for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                                 gate_results[i] *= selector;
+                                // Only in parallel version we store the subexpressions of each expression and ignore the cache.
                                 expressions[i] += gate_results[i];
+                                subexpressions[i].push_back(gate_results[i]);
                             }
                         }
 
-                        std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type> variable_values;
                         std::array<polynomial_dfs_type, argument_size> F;
 
-                        for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                            if (i != 0 && extended_domain_sizes[i] != extended_domain_sizes[i-1]) {
-                                variable_values.clear();
-                            }
+                        std::vector<polynomial_dfs_type> F_0_parts(extended_domain_sizes.size());
+                        parallel_for(0, extended_domain_sizes.size(),
+                                [&subexpressions, &extended_domain_sizes, &F_0_parts, &original_domain, &column_polynomials, &expressions](std::size_t i) {
+                            std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type> variable_values;
+                            
                             build_variable_value_map(expressions[i], column_polynomials, original_domain,
                                 extended_domain_sizes[i], variable_values);
 
-                            math::cached_expression_evaluator<polynomial_dfs_variable_type> evaluator(
-                                expressions[i], [&assignments=variable_values, domain_size=extended_domain_sizes[i]](const polynomial_dfs_variable_type &var) {
-                                return assignments[var];
-                            });
+                            std::vector<polynomial_dfs_type> subvalues(subexpressions[i].size());
+                            parallel_for(0, subexpressions[i].size(),
+                                [&subexpressions, &variable_values, &extended_domain_sizes, &subvalues, i](std::size_t subexpression_index) {
+                                // Only in parallel version we store the subexpressions of each expression and ignore the cache, not using "cached_expression_evaluator".
+                                math::expression_evaluator<polynomial_dfs_variable_type> evaluator(
+                                    subexpressions[i][subexpression_index], [&assignments=variable_values, domain_size=extended_domain_sizes[i]]
+                                        (const polynomial_dfs_variable_type &var) {
+                                            return assignments[var];
+                                    });
+                                subvalues[subexpression_index] = evaluator.evaluate(); 
+                            }, ThreadPool::PoolLevel::HIGH);
+                            
+                            F_0_parts[i] = polynomial_sum<FieldType>(std::move(subvalues));
+                        }, ThreadPool::PoolLevel::LASTPOOL);
 
-                            F[0] += evaluator.evaluate();
-                        }
-
+                        F[0] += polynomial_sum<FieldType>(std::move(F_0_parts));
                         F[0] *= mask_polynomial;
                         return F;
                     }

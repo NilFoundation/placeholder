@@ -108,18 +108,23 @@ namespace nil {
 
                 polynomial(polynomial&& x) BOOST_NOEXCEPT
                     (std::is_nothrow_move_constructible<allocator_type>::value) :
-                    val(x.val) {
+                    val(std::move(x.val)) {
                 }
 
-                polynomial(polynomial&& x, const allocator_type& a) : val(x.val, a) {
+                polynomial(polynomial&& x, const allocator_type& a) : val(std::move(x.val), a) {
                 }
 
                 polynomial(const FieldValueType& value, std::size_t power = 0) : val(power + 1, FieldValueType::zero()) {
                     this->operator[](power) = value;
                 }
 
-                template<typename T>
-                explicit polynomial(T&& c) : val(std::forward<T>(c)) {
+                explicit polynomial(const container_type &c) : val(c) {
+                    if (val.empty()) {
+                        val.push_back(FieldValueType::zero());
+                    }
+                }
+
+                explicit polynomial(container_type &&c) : val(std::move(c)) {
                     if (val.empty()) {
                         val.push_back(FieldValueType::zero());
                     }

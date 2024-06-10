@@ -42,9 +42,14 @@ namespace nil {
                             inline placeholder_scoped_profiler(std::string name) 
                                 : start(std::chrono::high_resolution_clock::now())
                                 , name(name) {
+                                //auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+                                //std::cout << "Starting operation \"" << name << "\" at " << std::ctime(&time) << std::endl;
                             }
                     
                             inline ~placeholder_scoped_profiler() {
+                                //auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+                                //std::cout << "Finished operation \"" << name << "\" at " << std::ctime(&time) << std::endl;
+
                                 auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                                                 std::chrono::high_resolution_clock::now() - start);
                                 std::cout << name << ": " << std::fixed << std::setprecision(3)

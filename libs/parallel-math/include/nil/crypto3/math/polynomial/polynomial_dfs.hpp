@@ -794,6 +794,10 @@ namespace nil {
                     std::vector<math::polynomial_dfs<typename FieldType::value_type>> addends) {
                 using FieldValueType = typename FieldType::value_type;
 
+                if (addends.empty()) {
+                    return {};
+                }
+
                 // Since there are only ~20 addends, we will just use that many maps
                 std::vector<std::unordered_map<std::size_t, polynomial_dfs<FieldValueType>>> maps(addends.size());
                 for (size_t i = 0; i < addends.size(); ++i) {

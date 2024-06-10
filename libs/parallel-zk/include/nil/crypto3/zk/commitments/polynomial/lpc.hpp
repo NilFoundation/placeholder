@@ -41,6 +41,7 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_scoped_profiler.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -114,6 +115,7 @@ namespace nil {
                     }
 
                     proof_type proof_eval(transcript_type &transcript) {
+                        PROFILE_PLACEHOLDER_SCOPE("LPC proof_eval");
 
                         this->eval_polys();
 
@@ -136,43 +138,91 @@ namespace nil {
                         // We need to pre-compute what power of theta is the starting power for each itertion
                         // of the loop over the points.
                         std::vector<std::size_t> theta_powers;
+
+                        // Write point and back indices into a vector, so it's easier to parallelize.
+                        std::vector<std::pair<std::size_t, std::size_t>> point_batch_pairs;
+
+                        // An array of the same size as point_batch_pairs, showing starting power of theta for 
+                        // each entry of 'point_batch_pairs'.
+                        std::vector<std::size_t> theta_powers_for_each_batch;
+                        
+                        this->build_points_map();
+
                         theta_powers.push_back(0);
                         std::size_t current_power = 0;
-                        for (const auto& point : points) {
-                            for(std::size_t i: this->_z.get_batches()) {
+                        for (std::size_t point_index = 0; point_index < points.size(); ++point_index) {
+                            for(std::size_t batch_idx = 0; batch_idx < this->_z.get_batches().size(); ++batch_idx) {
+                                point_batch_pairs.push_back({point_index, batch_idx});
+                                theta_powers_for_each_batch.push_back(current_power);
+
+                                std::size_t i = this->_z.get_batches()[batch_idx];
                                 for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
-                                    auto it = std::find(this->_points[i][j].begin(), this->_points[i][j].end(), point);
-                                    if (it != this->_points[i][j].end())
+                                    if (this->_points_map[i][j].find(points[point_index]) != this->_points_map[i][j].end())
                                         current_power++;
                                 }
                             }
                             theta_powers.push_back(current_power);
                         }
 
-                        parallel_for(0, points.size(), [this, &points, &Q_normals, &theta, &theta_powers](std::size_t i) {
-                            typename field_type::value_type theta_acc = theta.pow(theta_powers[i]);
+                        // If PolynomialType is DFS type, we need to convert this->polys to coefficients form,
+                        // otherwise we do nothing. After this block polys_coefficients_ptr must be used,
+                        // it will point to this->_polys if no conversion is required, or to polys_coefficients
+                        // if conversion was required.
+                        std::map<std::size_t, std::vector<math::polynomial<value_type>>> polys_coefficients;
+                        std::map<std::size_t, std::vector<math::polynomial<value_type>>>* polys_coefficients_ptr;
 
-                            auto const &point = points[i];
-                            math::polynomial<value_type>& Q_normal = Q_normals[i];
-
-                            for(std::size_t i: this->_z.get_batches()) {
-                                for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
-                                    auto it = std::find(this->_points[i][j].begin(), this->_points[i][j].end(), point);
-                                    if (it == this->_points[i][j].end())
-                                        continue;
-
-                                    math::polynomial<value_type> g_normal;
-                                    if constexpr(std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
-                                        g_normal = math::polynomial<value_type>(this->_polys[i][j].coefficients());
-                                    } else {
-                                        g_normal = this->_polys[i][j];
-                                    }
-                                    g_normal *= theta_acc;
-                                    Q_normal += g_normal;
-                                    Q_normal -= this->_z.get(i, j, it - this->_points[i][j].begin()) * theta_acc;
-                                    theta_acc *= theta;
+                        if constexpr(std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
+                            // Convert this->_polys to coefficients form.
+                            std::vector<std::pair<std::size_t, std::size_t>> indices;
+                            for (const auto& [i, V]: this->_polys) {
+                                polys_coefficients[i].resize(V.size());
+                                for (std::size_t j = 0; j < V.size(); ++j) {
+                                    indices.push_back({i, j});
                                 }
                             }
+
+                            parallel_for(0, indices.size(), [this, &indices, &polys_coefficients](std::size_t i) {
+                                polys_coefficients[indices[i].first][indices[i].second] =
+                                    this->_polys[indices[i].first][indices[i].second].coefficients(); 
+                            }, ThreadPool::PoolLevel::HIGH);
+
+                            polys_coefficients_ptr = &polys_coefficients;
+                        } else {
+                            polys_coefficients_ptr = &this->_polys;
+                        }
+
+                        std::vector<std::vector<math::polynomial<value_type>>> Q_normal_parts(
+                            points.size(), std::vector<math::polynomial<value_type>>(this->_z.get_batches().size()));
+
+                        parallel_for(0, point_batch_pairs.size(),
+                            [this, &points, &theta, &theta_powers, polys_coefficients_ptr, &point_batch_pairs, &Q_normal_parts, &theta_powers_for_each_batch]
+                                (std::size_t point_batch_index) {
+                            typename field_type::value_type theta_acc = theta.pow(theta_powers_for_each_batch[point_batch_index]);
+                            std::size_t point_index = point_batch_pairs[point_batch_index].first;
+                            auto const &point = points[point_index];
+
+                            std::size_t i = this->_z.get_batches()[point_batch_pairs[point_batch_index].second];
+                            for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
+                                auto iter = this->_points_map[i][j].find(point);
+                                if (iter == this->_points_map[i][j].end())
+                                    continue;
+
+                                math::polynomial<value_type> g_normal = (*polys_coefficients_ptr)[i][j];
+                                g_normal *= theta_acc;
+                                Q_normal_parts[point_index][point_batch_pairs[point_batch_index].second] += g_normal;
+                                Q_normal_parts[point_index][point_batch_pairs[point_batch_index].second] -=
+                                    this->_z.get(i, j, iter->second) * theta_acc;
+                                theta_acc *= theta;
+                            }
+                        }, ThreadPool::PoolLevel::HIGH);
+
+                        parallel_for(0, points.size(), [this, &points, &Q_normals, &Q_normal_parts](std::size_t point_index) {
+                            math::polynomial<value_type>& Q_normal = Q_normals[point_index];
+
+                            for(std::size_t batch_index = 0; batch_index < this->_z.get_batches().size(); ++batch_index) {
+                                Q_normal += Q_normal_parts[point_index][batch_index];
+                            }
+                            auto const &point = points[point_index];
                             math::polynomial<value_type> V = {-point, 1};
                             Q_normal = Q_normal / V;
                         }, ThreadPool::PoolLevel::HIGH);
@@ -183,23 +233,22 @@ namespace nil {
 
                         theta_powers = {theta_powers[points.size()]};
                         for(std::size_t i : this->_z.get_batches()) {
-                            theta_powers.push_back(theta_powers[theta_powers.size() - 1] + this->_z.get_batch_size(i));
+                            theta_powers.push_back(theta_powers.back() + this->_z.get_batch_size(i));
                         }
                         Q_normals.assign(this->_z.get_batches().size(), math::polynomial<value_type>{});
-                        parallel_for(0, this->_z.get_batches().size(), [this, &theta, &theta_powers, &Q_normals](std::size_t batch_idx) {
+
+                        parallel_for(0, this->_z.get_batches().size(), [this, &theta, &theta_powers, &Q_normals, polys_coefficients_ptr](std::size_t batch_idx) {
                             std::size_t i = this->_z.get_batches()[batch_idx];
                             typename field_type::value_type theta_acc = theta.pow(theta_powers[i]);
-                            if( _batch_fixed.find(i) == _batch_fixed.end() || !_batch_fixed[i] )return;
+
+                            if( _batch_fixed.find(i) == _batch_fixed.end() || !_batch_fixed[i] )
+                                return;
                             math::polynomial<value_type>& Q_normal = Q_normals[batch_idx];
                             auto point = _etha;
                             math::polynomial<value_type> V = {-point, 1u};
+
                             for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
-                                math::polynomial<value_type> g_normal;
-                                if constexpr(std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
-                                    g_normal = math::polynomial<value_type>(this->_polys[i][j].coefficients());
-                                } else {
-                                    g_normal = this->_polys[i][j];
-                                }
+                                math::polynomial<value_type> g_normal = (*polys_coefficients_ptr)[i][j];
                                 g_normal *= theta_acc;
                                 Q_normal += g_normal;
                                 Q_normal -= _fixed_polys_values[i][j] * theta_acc;

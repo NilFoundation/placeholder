@@ -764,20 +764,34 @@ namespace nil {
                     ) {
                         std::unordered_map<std::size_t,
                                            std::shared_ptr<math::evaluation_domain<typename FRI::field_type>>> d_cache;
+                        std::vector<std::size_t> required_domains;
+                        std::vector<std::pair<std::size_t, std::size_t>> key_index_pairs;
                         for (const auto &[key, poly_vector]: g) {
-                            for (const auto& poly: poly_vector) {
+                            g_coeffs[key].resize(poly_vector.size());
+
+                            for (std::size_t poly_index = 0; poly_index < poly_vector.size(); ++poly_index) {
+                                const auto& poly = poly_vector[poly_index];
                                 if (poly.size() != fri_params.D[0]->size()) {
                                     if (d_cache.find(poly.size()) == d_cache.end()) {
-                                        d_cache[poly.size()] =
-                                            math::make_evaluation_domain<typename FRI::field_type>(poly.size());
+                                        required_domains.push_back(poly.size());
+                                        d_cache[poly.size()] = nullptr;
                                     }
-                                    g_coeffs[key].emplace_back(poly.coefficients(d_cache[poly.size()]));
-                                } else {
-                                    // These polynomials won't be used
-                                    g_coeffs[key].emplace_back(math::polynomial<typename FRI::field_type::value_type>());
+                                    key_index_pairs.push_back({key, poly_index});
                                 }
                             }
                         }
+
+                        parallel_for(0, required_domains.size(),
+                            [&required_domains, &d_cache](std::size_t i) {
+                            d_cache[required_domains[i]] = math::make_evaluation_domain<typename FRI::field_type>(required_domains[i]);
+                        }, ThreadPool::PoolLevel::HIGH);
+
+                        parallel_for(0, key_index_pairs.size(),
+                            [&d_cache, &g_coeffs, &key_index_pairs, &g](std::size_t pair_index) {
+                            auto [key, index] = key_index_pairs[pair_index];
+                            const auto& poly = g.at(key)[index];
+                            g_coeffs[key][index] = poly.coefficients(d_cache[poly.size()]);
+                        }, ThreadPool::PoolLevel::HIGH);
                     }
 
                     std::vector<typename FRI::field_type::value_type> challenges(fri_params.lambda);
