@@ -1,9 +1,6 @@
 [submodule "libs/threaded-zk"]
 	path = libs/parallel-zk
 	url = git@github.com:NilFoundation/actor-zk
-[submodule "libs/threaded-math"]
-	path = libs/parallel-math
-	url = git@github.com:NilFoundation/actor-math
 [submodule "cmake/modules"]
 	path = cmake/modules
 	url = git@github.com:BoostCMake/cmake_modules.git
