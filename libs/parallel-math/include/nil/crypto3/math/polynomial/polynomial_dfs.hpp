@@ -342,6 +342,7 @@ namespace nil {
                         return;
                     }
                     BOOST_ASSERT_MSG(_sz >= _d, "Resizing DFS polynomial to a size less than degree is prohibited: can't restore the polynomial in the future.");
+
                     if (this->degree() == 0) {
                         // Here we cannot write this->val.resize(_sz, this->val[0]), it will segfault.
                         auto value = this->val[0];
@@ -552,6 +553,7 @@ namespace nil {
                         this->resize(polynomial_s, domain, new_domain);
                     }
 
+
                     // Change the degree only here, after a possible resize, otherwise we have a polynomial
                     // with a high degree but small size, which sometimes segfaults.
                     this->_d += other._d;
@@ -724,10 +726,12 @@ namespace nil {
                      typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator*(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
+
                 polynomial_dfs<FieldValueType> result(A);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it *= B;
-                }
+                parallel_foreach(result.begin(), result.end(),
+                    [&B](FieldValueType& v) {
+                        v *= B;
+                    }, ThreadPool::PoolLevel::LOW);
                 return result;
             }
 
@@ -735,18 +739,22 @@ namespace nil {
                      typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator*(const FieldValueType& A,
                                                             const polynomial_dfs<FieldValueType, Allocator>& B) {
-                polynomial_dfs<FieldValueType> result(B);
-                for( auto it = result.begin(); it != result.end(); it++ ){
-                    *it *= A;
-                }
-                return result;
+                // Call the upper function.
+                return B * A;
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
                      typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
             polynomial_dfs<FieldValueType, Allocator> operator/(const polynomial_dfs<FieldValueType, Allocator>& A,
                                                             const FieldValueType& B) {
-                return A / polynomial_dfs<FieldValueType>(0, A.size(), B);
+                polynomial_dfs<FieldValueType> result(A);
+                FieldValueType B_inversed = B.inversed();
+                parallel_foreach(result.begin(), result.end(),
+                    [&B_inversed](FieldValueType& v) {
+                        v *= B_inversed;
+                    }, ThreadPool::PoolLevel::LOW);
+
+                return result;
             }
 
             template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
@@ -820,15 +828,25 @@ namespace nil {
                 }
 
                 std::unordered_map<std::size_t, polynomial_dfs<FieldValueType>>& size_to_part_sum = maps[0];
+                std::vector<polynomial_dfs<FieldValueType>> grouped_addends;
 
                 std::size_t max_size = 0;
-                for (const auto& [size, _] : size_to_part_sum) {
+                for (const auto& [size, partial_sum] : size_to_part_sum) {
                     max_size = std::max(max_size, size);
+                    grouped_addends.push_back(std::move(partial_sum));
                 }
 
-                auto coef_result = polynomial<FieldValueType>(max_size, FieldValueType::zero());
-                for (auto& [_, partial_sum] : size_to_part_sum) {
-                    coef_result += polynomial<FieldValueType>(std::move(partial_sum.coefficients()));
+                std::vector<polynomial<FieldValueType>> grouped_addends_coefs(grouped_addends.size());
+
+                nil::crypto3::parallel_for(0, grouped_addends.size(), [&grouped_addends_coefs, &grouped_addends] (std::size_t i) {
+                    grouped_addends_coefs[i] = grouped_addends[i].coefficients();
+                }, ThreadPool::PoolLevel::HIGH);
+
+                // We can parallelize this by adding pairwise, like it's done in multiplication, but it's pretty fast
+                // so skipping it for now.
+                polynomial<FieldValueType> coef_result;
+                for (const auto& partial_sum : grouped_addends_coefs) {
+                    coef_result += partial_sum;
                 }
 
                 polynomial_dfs<FieldValueType> dfs_result;
