@@ -64,12 +64,8 @@
             ninja
             clang
             gcc
-            (boost183.override {
-              enableShared = true;
-              enableStatic = true;
-              enableRelease = true;
-              enableDebug = true;
-            })
+            boost183
+            crypto3.packages.${system}.default
           ];
 
           shellHook = ''
