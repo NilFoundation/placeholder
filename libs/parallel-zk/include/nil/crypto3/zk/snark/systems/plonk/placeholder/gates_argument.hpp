@@ -100,9 +100,10 @@ namespace nil {
                                 variable_counts[var]++;
                         });
 
+                        visitor.visit(expr);
+
                         std::shared_ptr<math::evaluation_domain<FieldType>> extended_domain =
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
-                        visitor.visit(expr);
 
                         parallel_for(0, variables.size(),
                             [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size](std::size_t i) {
@@ -110,29 +111,9 @@ namespace nil {
                                 // We may have variable values in required sizes in some cases.
                                 if (variable_values_out[var].size() == extended_domain_size)
                                     return;
-                                polynomial_dfs_type assignment;
-                                switch (var.type) {
-                                    case polynomial_dfs_variable_type::column_type::witness:
-                                        assignment = assignments.witness(var.index);
-                                        break;
-                                    case polynomial_dfs_variable_type::column_type::public_input:
-                                        assignment = assignments.public_input(var.index);
-                                        break;
-                                    case polynomial_dfs_variable_type::column_type::constant:
-                                        assignment = assignments.constant(var.index);
-                                        break;
-                                    case polynomial_dfs_variable_type::column_type::selector:
-                                        assignment = assignments.selector(var.index);
-                                        break;
-                                    default:
-                                        std::cerr << "Invalid column type";
-                                        std::abort();
-                                        break;
-                                }
 
-                                if (var.rotation != 0) {
-                                    assignment = math::polynomial_shift(assignment, var.rotation, domain->m);
-                                }
+                                polynomial_dfs_type assignment = assignments.get_variable_value(var, domain);
+
                                 // In parallel version we always resize the assignment poly, it's better for parallelization.
                                 // if (count > 1) {
                                 assignment.resize(extended_domain_size, domain, extended_domain);
@@ -191,7 +172,25 @@ namespace nil {
                         for (const auto& gate: gates) {
                             std::vector<math::expression<polynomial_dfs_variable_type>> gate_results(extended_domain_sizes.size());
 
-                            for (const auto& constraint : gate.constraints) {
+                            // We will split gates into parts especially for zkEVM circuit, since there is only 1 large gate with
+                            // 683 constraints. Will split it into 24 parts, ~32 constraints each.
+                            // This will mean our code will multiply by selector 16 times, instead of just once. But this is 
+                            // much better that losing parallelization. We do not want to re-write the whole code to try parallelize
+                            // each gate compatation separately. This will not harm circuits with smaller number of terms much.
+                            std::vector<math::expression<polynomial_dfs_variable_type>> gate_parts(extended_domain_sizes.size());
+                            std::vector<std::size_t> gate_parts_constaint_counts(extended_domain_sizes.size());
+    
+
+                            // This parameter can be tuned based on the circuit and the number of cores of the server on which the proofs
+                            // are generated. On the current zkEVM circuit this value is optimal based on experiments.
+                            const std::size_t constraint_limit = 16;
+
+
+                            auto selector = polynomial_dfs_variable_type(
+                                gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector);
+
+                            for (std::size_t constraint_idx = 0; constraint_idx < gate.constraints.size(); ++constraint_idx) {
+                                const auto& constraint = gate.constraints[constraint_idx];
                                 auto next_term = converter.convert(constraint) * value_type_to_polynomial_dfs(theta_acc);
 
                                 theta_acc *= theta;
@@ -201,19 +200,26 @@ namespace nil {
                                     // Whatever the degree of term is, add it to the maximal degree expression.
                                     if (degree_limits[i] >= constraint_degree || i == 0) {
                                         gate_results[i] += next_term;
+                                        gate_parts[i] += next_term;
+                                        gate_parts_constaint_counts[i]++;
+
+                                        // If we already have constraint_limit constaints in the gate_parts[i], add it to the 'subexpressions'.
+                                        if (gate_parts_constaint_counts[i] == constraint_limit) {
+                                            subexpressions[i].push_back(gate_parts[i] * selector);
+                                            gate_parts[i] = math::expression<polynomial_dfs_variable_type>();
+                                            gate_parts_constaint_counts[i] = 0;
+                                        }
                                         break;
                                     }
+                                     
                                 }
                             }
 
-                            auto selector = polynomial_dfs_variable_type(
-                                gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector);
-
                             for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                                gate_results[i] *= selector;
                                 // Only in parallel version we store the subexpressions of each expression and ignore the cache.
-                                expressions[i] += gate_results[i];
-                                subexpressions[i].push_back(gate_results[i]);
+                                expressions[i] += gate_results[i] * selector;
+                                if (gate_parts_constaint_counts[i] != 0)
+                                    subexpressions[i].push_back(gate_parts[i] * selector);
                             }
                         }
 
@@ -230,10 +236,12 @@ namespace nil {
                             std::vector<polynomial_dfs_type> subvalues(subexpressions[i].size());
                             parallel_for(0, subexpressions[i].size(),
                                 [&subexpressions, &variable_values, &extended_domain_sizes, &subvalues, i](std::size_t subexpression_index) {
-                                // Only in parallel version we store the subexpressions of each expression and ignore the cache, not using "cached_expression_evaluator".
+                                // Only in parallel version we store the subexpressions of each expression and ignore the cache,
+                                // not using "cached_expression_evaluator".
                                 math::expression_evaluator<polynomial_dfs_variable_type> evaluator(
-                                    subexpressions[i][subexpression_index], [&assignments=variable_values, domain_size=extended_domain_sizes[i]]
-                                        (const polynomial_dfs_variable_type &var) {
+                                    subexpressions[i][subexpression_index], 
+                                    [&assignments=variable_values, domain_size=extended_domain_sizes[i]]
+                                        (const polynomial_dfs_variable_type &var) -> const polynomial_dfs_type& {
                                             return assignments[var];
                                     });
                                 subvalues[subexpression_index] = evaluator.evaluate(); 
