@@ -267,8 +267,7 @@ namespace nil {
                             combined_Q = std::move(combined_Q_normal);
                         }
 
-                        precommitment_type combined_Q_precommitment;
-                        combined_Q_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
+                        precommitment_type combined_Q_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
                             combined_Q,
                             _fri_params.D[0],
                             _fri_params.step_list.front()

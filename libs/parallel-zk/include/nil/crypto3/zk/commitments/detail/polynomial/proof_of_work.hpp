@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2023 Elena Tatuzova <e.tatuzova@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -47,37 +48,66 @@ namespace nil {
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
                     using output_type = OutType;
 
-                    static inline OutType generate(transcript_type &transcript, OutType mask=0xFFFF) {
-                        output_type proof_of_work = std::rand();
-                        output_type result;
-                        std::vector<std::uint8_t> bytes(4);
+                    static inline std::array<std::uint8_t, sizeof(OutType)>
+                        to_byte_array(OutType v) {
+                            std::array<std::uint8_t, sizeof(OutType)> bytes;
+                            for(int i = sizeof(v)-1; i>=0; --i) {
+                                bytes[i] = v & 0xFF;
+                                v >>= 8;
+                            }
+                            return bytes;
+                        }
+
+                    static inline OutType generate(transcript_type &transcript, std::size_t grinding_bits = 16) {
+                        BOOST_ASSERT_MSG(grinding_bits < 64, "Grinding parameter should be bits, not mask");
+                        output_type mask = grinding_bits > 0 ? ( 1ULL << grinding_bits ) - 1 : 0;
+                        output_type pow_seed = std::rand();
+
+                        /* Enough work for ~ two minutes on 48 cores, keccak<512> */
+                        std::size_t per_block = 1 << 30;
+
+                        std::atomic<bool> challenge_found = false;
+                        std::atomic<std::size_t> pow_value_offset;
 
                         while( true ) {
-                            transcript_type tmp_transcript = transcript;
-                            bytes[0] = std::uint8_t((proof_of_work&0xFF000000)>>24);
-                            bytes[1] = std::uint8_t((proof_of_work&0x00FF0000)>>16);
-                            bytes[2] = std::uint8_t((proof_of_work&0x0000FF00)>>8);
-                            bytes[3] = std::uint8_t(proof_of_work&0x000000FF);
+                            wait_for_all(parallel_run_in_chunks<void>(
+                                per_block,
+                                [&transcript, &pow_seed, &challenge_found, &pow_value_offset, &mask](std::size_t pow_start, std::size_t pow_finish) {
+                                    std::size_t i = pow_start;
+                                    while ( i < pow_finish ) {
+                                        if (challenge_found) {
+                                            break;
+                                        }
+                                        transcript_type tmp_transcript = transcript;
+                                        tmp_transcript(to_byte_array(pow_seed + i));
+                                        OutType pow_result = tmp_transcript.template int_challenge<OutType>();
+                                        if ( ((pow_result & mask) == 0) && !challenge_found ) {
+                                            bool expected = false;
+                                            if (challenge_found.compare_exchange_strong(expected, true)) {
+                                                pow_value_offset = i;
+                                            }
+                                            break;
+                                        }
+                                        ++i;
+                                    }
+                                }, ThreadPool::PoolLevel::LOW));
 
-                            tmp_transcript(bytes);
-                            result = tmp_transcript.template int_challenge<output_type>();
-                            if ((result & mask) == 0)
+                            if (challenge_found) {
                                 break;
-                            proof_of_work++;
+                            }
+                            pow_seed += per_block;
                         }
-                        transcript(bytes);
-                        result = transcript.template int_challenge<output_type>();
-                        return proof_of_work;
+
+                        transcript(to_byte_array(pow_seed + (std::size_t)pow_value_offset));
+                        transcript.template int_challenge<OutType>();
+                        return pow_seed + (std::size_t)pow_value_offset;
                     }
 
-                    static inline bool verify(transcript_type &transcript, output_type proof_of_work, OutType mask=0xFFFF) {
-                        std::vector<std::uint8_t> bytes(4);
-                        bytes[0] = std::uint8_t((proof_of_work&0xFF000000)>>24);
-                        bytes[1] = std::uint8_t((proof_of_work&0x00FF0000)>>16);
-                        bytes[2] = std::uint8_t((proof_of_work&0x0000FF00)>>8);
-                        bytes[3] = std::uint8_t(proof_of_work&0x000000FF);
-                        transcript(bytes);
+                    static inline bool verify(transcript_type &transcript, output_type proof_of_work, std::size_t grinding_bits = 16) {
+                        BOOST_ASSERT_MSG(grinding_bits < 64, "Grinding parameter should be bits, not mask");
+                        transcript(to_byte_array(proof_of_work));
                         output_type result = transcript.template int_challenge<output_type>();
+                        output_type mask = grinding_bits > 0 ? ( 1ULL << grinding_bits ) - 1 : 0;
                         return ((result & mask) == 0);
                     }
                 };
@@ -104,8 +134,8 @@ namespace nil {
                                 ((integral_type(1) << GrindingBits) - 1) << (FieldType::modulus_bits - GrindingBits)
                                 : 0);
 
-                        /* Enough work for ~ two minutes on 48 cores */
-                        std::size_t per_block = 1<<23;
+                        /* Enough work for ~ two minutes on 48 cores, poseidon<pallas> */
+                        std::size_t per_block = 1 << 23;
 
                         std::atomic<bool> challenge_found = false;
                         std::atomic<std::size_t> pow_value_offset;

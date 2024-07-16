@@ -69,7 +69,6 @@ namespace nil {
                 workers_to_use = elements_count / POOL_0_MIN_CHUNK_SIZE + ((elements_count % POOL_0_MIN_CHUNK_SIZE) ? 1 : 0);
                 workers_to_use = std::max((size_t)1, workers_to_use);
             }
-            const std::size_t elements_per_worker = elements_count / workers_to_use;
 
             std::size_t begin = 0;
             for (std::size_t i = 0; i < workers_to_use; i++) {

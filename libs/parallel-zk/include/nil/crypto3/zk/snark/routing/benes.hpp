@@ -247,7 +247,7 @@ namespace nil {
                                        benes_routing &routing) {
                     assert(permutation.size() == subnetwork_size);
                     assert(permutation.is_valid());
-                    assert(permutation.inversed() == permutation_inv);
+                    assert(permutation.inverse() == permutation_inv);
 
                     if (column_idx_start == column_idx_end) {
                         /* nothing to route */

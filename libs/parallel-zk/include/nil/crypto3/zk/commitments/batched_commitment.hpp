@@ -199,10 +199,7 @@ namespace nil {
                     }
 
                     void eval_polys() {
-                        for(auto it = _polys.begin(); it != _polys.end(); ++it) {
-                            std::size_t k = it->first;
-                            const auto& poly = it->second;
-
+                        for(auto const &[k, poly] : _polys) {
                             _z.set_batch_size(k, poly.size());
                             auto const &point = _points.at(k);
 

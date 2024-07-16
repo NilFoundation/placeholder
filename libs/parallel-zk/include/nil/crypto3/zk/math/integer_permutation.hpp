@@ -27,6 +27,7 @@
 #define CRYPTO3_ZK_MATH_INTEGER_PERMUTATION_HPP
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <vector>
 #include <unordered_set>
