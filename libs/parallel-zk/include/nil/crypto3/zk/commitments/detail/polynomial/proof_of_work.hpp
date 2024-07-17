@@ -94,9 +94,9 @@ namespace nil {
                     using value_type = typename FieldType::value_type;
                     using integral_type = typename FieldType::integral_type;
 
-                    static inline value_type generate(transcript_type &transcript,
-                        nil::crypto3::random::algebraic_engine<FieldType> random_engine, std::size_t GrindingBits=16) {
-
+                    static inline value_type generate(transcript_type &transcript, std::size_t GrindingBits=16) {
+                        static boost::random::random_device dev;
+                        static nil::crypto3::random::algebraic_engine<FieldType> random_engine(dev);
                         value_type pow_seed = random_engine();
 
                         integral_type mask =

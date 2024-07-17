@@ -33,24 +33,23 @@
 #include <boost/test/data/monomorphic.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
 
-using namespace nil::crypto3::algebra;
-using namespace nil::crypto3::math;
 
 BOOST_AUTO_TEST_SUITE(thread_pool_test_suite)
 
 BOOST_AUTO_TEST_CASE(vector_multiplication_test) {
     size_t size = 131072;
 
-    std::vector<int> v(size);
+    std::vector<size_t> v(size);
 
     for (std::size_t i = 0; i < size; ++i)
         v[i] = i;
 
-    nil::crypto3::wait_for_all(parallel_run_in_chunks<void>(
+    nil::crypto3::wait_for_all(nil::crypto3::parallel_run_in_chunks<void>(
         size,
         [&v](std::size_t begin, std::size_t end) {
-            for (std::size_t i = begin; i < end; i++) {
+            for (std::size_t i = begin; i < end; ++i) {
                 v[i] *= v[i];
             }
         }, nil::crypto3::ThreadPool::PoolLevel::HIGH));

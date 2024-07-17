@@ -67,7 +67,7 @@ namespace nil {
 
                     nil::crypto3::parallel_for(0, arithmetic_sequence.size(),
                         [this](std::size_t i) {
-                            this->arithmetic_sequence[i] *= field_value_type(i);
+                            this->arithmetic_sequence[i] = this->arithmetic_generator * field_value_type(i);
                         });
 
                     precomputation_sentinel = true;

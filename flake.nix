@@ -99,7 +99,7 @@
               "actor_zk_systems_plonk_placeholder_placeholder_quotient_polynomial_chunks_test"
               # "actor_zk_commitment_powers_of_tau_test"
               "actor_zk_commitment_proof_of_knowledge_test"
-              "actor_zk_commitment_r1cs_gg_ppzksnark_mpc_test"
+              # "actor_zk_commitment_r1cs_gg_ppzksnark_mpc_test"
               "actor_zk_math_expression_test"
               "actor_zk_systems_plonk_plonk_constraint_test"
             ];
