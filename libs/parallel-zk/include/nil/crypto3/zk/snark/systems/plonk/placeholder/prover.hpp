@@ -122,7 +122,6 @@ namespace nil {
                             , _is_lookup_enabled(constraint_system.lookup_gates().size() > 0)
                             , _commitment_scheme(commitment_scheme)
                     {
-                        std::cout << "Table has " << table_description.rows_amount << " rows." << std::endl;
 
                         // Initialize transcript.
                         transcript(preprocessed_public_data.common_data.vk.constraint_system_with_params_hash);
@@ -236,7 +235,7 @@ namespace nil {
                             (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount + 1):
                             (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount);
 
-                        if (preprocessed_public_data.common_data.max_quotient_chunks != 0 && 
+                        if (preprocessed_public_data.common_data.max_quotient_chunks != 0 &&
                             split_polynomial_size > preprocessed_public_data.common_data.max_quotient_chunks) {
                             split_polynomial_size = preprocessed_public_data.common_data.max_quotient_chunks;
                         }
@@ -253,6 +252,9 @@ namespace nil {
                         parallel_for(0, T_splitted.size(), [&T_splitted, &T_splitted_dfs](std::size_t k) {
                             T_splitted_dfs[k].from_coefficients(T_splitted[k]);
                         }, ThreadPool::PoolLevel::HIGH);
+
+                        // DO NOT CHANGE, sizes are different by design
+                        T_splitted_dfs.resize(split_polynomial_size);
 
                         return T_splitted_dfs;
                     }
