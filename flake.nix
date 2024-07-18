@@ -36,7 +36,7 @@
           ];
 
           propagatedBuildInputs = [
-            crypto3.packages.${system}.default
+            crypto3.packages.${system}.crypto3
           ];
 
           cmakeFlags = [
@@ -65,7 +65,7 @@
             clang
             gcc
             boost183
-            crypto3.packages.${system}.default
+            crypto3.packages.${system}.crypto3
           ];
 
           shellHook = ''
