@@ -49,9 +49,9 @@ namespace nil {
 
         // Divides work into chunks and makes calls to 'func' in parallel.
         template<class ReturnType>
-        std::vector<std::future<ReturnType>> parallel_run_in_chunks(
+        std::vector<std::future<ReturnType>> parallel_run_in_chunks_with_thread_id(
                 std::size_t elements_count,
-                std::function<ReturnType(std::size_t begin, std::size_t end)> func, 
+                std::function<ReturnType(std::size_t thread_id, std::size_t begin, std::size_t end)> func, 
                 ThreadPool::PoolLevel pool_id = ThreadPool::PoolLevel::LOW) {
 
             auto& thread_pool = ThreadPool::get_instance(pool_id);
@@ -73,12 +73,23 @@ namespace nil {
             std::size_t begin = 0;
             for (std::size_t i = 0; i < workers_to_use; i++) {
                 auto end = begin + (elements_count - begin) / (workers_to_use - i);
-                fut.emplace_back(thread_pool.post<ReturnType>([begin, end, func]() {
-                    return func(begin, end);
+                fut.emplace_back(thread_pool.post<ReturnType>([i, begin, end, func]() {
+                    return func(i, begin, end);
                 }));
                 begin = end;
             }
             return fut;
+        }
+
+        template<class ReturnType>
+        std::vector<std::future<ReturnType>> parallel_run_in_chunks(
+                std::size_t elements_count,
+                std::function<ReturnType(std::size_t begin, std::size_t end)> func, 
+                ThreadPool::PoolLevel pool_id = ThreadPool::PoolLevel::LOW) {
+            return parallel_run_in_chunks_with_thread_id<ReturnType>(elements_count,
+                [func](std::size_t thread_id, std::size_t begin, std::size_t end) -> ReturnType {
+                    return func(begin, end);
+                }, pool_id);
         }
 
         // Similar to std::transform, but in parallel. We return void here for better usability for our use cases.
