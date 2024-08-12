@@ -211,6 +211,7 @@
                                                             \
     ON_OPCODE_IDENTIFIER(OP_SWAP, instructions<BlueprintFieldType>::template swap<0>)                  \
     ON_OPCODE_IDENTIFIER(OP_DUP, instructions<BlueprintFieldType>::template dup<0>)                    \
+    ON_OPCODE_IDENTIFIER(OP_LOG1, instructions<BlueprintFieldType>::log)                    \
     ON_OPCODE_UNDEFINED(0xa8)                               \
     ON_OPCODE_UNDEFINED(0xa9)                               \
     ON_OPCODE_UNDEFINED(0xaa)                               \

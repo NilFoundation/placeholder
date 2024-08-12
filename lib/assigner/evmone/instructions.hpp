@@ -1194,6 +1194,10 @@ struct instructions {
         state.rw_trace.push_back(stack_operation<BlueprintFieldType>(state.call_id,  (uint16_t)(stack.size(state.stack_space.bottom()) - addr), state.rw_trace.size(), true, stack[addr - 1]));
     }
 
+    static void log(StackTop<BlueprintFieldType> /*stack*/, ExecutionState<BlueprintFieldType>& /*state*/) noexcept {
+        // do nothing
+    }
+
     static code_iterator dupn(StackTop<BlueprintFieldType> stack, ExecutionState<BlueprintFieldType>& state, code_iterator pos) noexcept
     {
         const uint16_t n = pos[1] + 1;

@@ -99,6 +99,8 @@ constexpr inline GasCostTable gas_costs = []() noexcept {
     table[EVMC_FRONTIER][OP_MSIZE] = 2;
     table[EVMC_FRONTIER][OP_GAS] = 2;
     table[EVMC_FRONTIER][OP_JUMPDEST] = 1;
+    table[EVMC_FRONTIER][OP_SHR] = 3;
+    table[EVMC_FRONTIER][OP_PUSH0] = 2;
     for (auto op = size_t{OP_PUSH1}; op <= OP_PUSH32; ++op)
         table[EVMC_FRONTIER][op] = 3;
     for (auto op = size_t{OP_DUP1}; op <= OP_DUP16; ++op)
@@ -116,6 +118,7 @@ constexpr inline GasCostTable gas_costs = []() noexcept {
     table[EVMC_FRONTIER][OP_RETURN] = 0;
     table[EVMC_FRONTIER][OP_INVALID] = 0;
     table[EVMC_FRONTIER][OP_SELFDESTRUCT] = 0;
+    table[EVMC_FRONTIER][OP_LOG1] = 0;
 
     table[EVMC_HOMESTEAD] = table[EVMC_FRONTIER];
     table[EVMC_HOMESTEAD][OP_DELEGATECALL] = 40;
