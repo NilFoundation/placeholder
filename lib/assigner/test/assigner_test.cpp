@@ -25,8 +25,9 @@ public:
         nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType> desc(
             WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns);
 
-        assignments.emplace_back(desc);
-        assignments.emplace_back(desc); // for check create, call op codes, where message depth = 1
+        assignments.insert(std::pair<uint8_t, nil::blueprint::assignment<ArithmetizationType>>(0, nil::blueprint::assignment<ArithmetizationType>(desc)));
+        // for check create, call op codes, where message depth = 1
+        assignments.insert(std::pair<uint8_t, nil::blueprint::assignment<ArithmetizationType>>(1, nil::blueprint::assignment<ArithmetizationType>(desc)));
 
         assigner_ptr =
             std::make_shared<nil::evm_assigner::assigner<BlueprintFieldType>>(assignments);
@@ -69,7 +70,7 @@ public:
     }
 
     static std::shared_ptr<nil::evm_assigner::assigner<BlueprintFieldType>> assigner_ptr;
-    static std::vector<nil::blueprint::assignment<ArithmetizationType>> assignments;
+    static std::unordered_map<uint8_t, nil::blueprint::assignment<ArithmetizationType>> assignments;
     static const struct evmc_host_interface* host_interface;
     static struct evmc_host_context* ctx;
     static evmc_revision rev;
@@ -78,7 +79,7 @@ public:
 
 std::shared_ptr<nil::evm_assigner::assigner<AssignerTest::BlueprintFieldType>>
     AssignerTest::assigner_ptr;
-std::vector<nil::blueprint::assignment<AssignerTest::ArithmetizationType>>
+std::unordered_map<uint8_t, nil::blueprint::assignment<AssignerTest::ArithmetizationType>>
     AssignerTest::assignments;
 const struct evmc_host_interface* AssignerTest::host_interface;
 struct evmc_host_context* AssignerTest::ctx;
@@ -91,7 +92,7 @@ inline void check_eq(const uint8_t* l, const uint8_t* r, size_t len) {
     }
 }
 
-inline void rw_circuit_check(const std::vector<nil::blueprint::assignment<AssignerTest::ArithmetizationType>> assignments,
+inline void rw_circuit_check(const std::unordered_map<uint8_t, nil::blueprint::assignment<AssignerTest::ArithmetizationType>> &assignments,
                              uint32_t start_row_index,
                              uint8_t operation_type,
                              uint32_t call_id,
@@ -102,8 +103,11 @@ inline void rw_circuit_check(const std::vector<nil::blueprint::assignment<Assign
                              bool is_write,
                              const typename AssignerTest::BlueprintFieldType::value_type& value_hi,
                              const typename AssignerTest::BlueprintFieldType::value_type& value_lo) {
-    auto& rw_table =
-        assignments[nil::evm_assigner::assigner<AssignerTest::BlueprintFieldType>::RW_TABLE_INDEX];
+    auto it = assignments.find(nil::evm_assigner::assigner<AssignerTest::BlueprintFieldType>::RW_TABLE_INDEX);
+    if (it == assignments.end()) {
+        return;
+    }
+    auto& rw_table = it->second;
     // OP_TYPE
     EXPECT_EQ(rw_table.witness(0, start_row_index), operation_type);
     // CALL ID
@@ -343,218 +347,4 @@ TEST_F(AssignerTest, mul) {
     //MUL
     rw_circuit_check(assignments, start_row_index + 4, 1/*STACK_OP*/, call_id, 1/*address in stack*/, 0/*storage key hi*/, 0/*storage key lo*/,
                      3/*trace size*/, false/*is_write*/, 0/*value_hi*/, 8/*value_lo*/);
-}
-
-// TODO add check assignment tables
-TEST_F(AssignerTest, DISABLED_callvalue_calldataload)
-{
-    const uint8_t index = 10;
-    std::vector<uint8_t> code = {
-        evmone::OP_CALLVALUE,
-        evmone::OP_PUSH1,
-        index,
-        evmone::OP_CALLDATALOAD,
-    };
-    nil::evm_assigner::evaluate<BlueprintFieldType>(host_interface, ctx, rev, &msg, code.data(), code.size(), assigner_ptr);
-    //EXPECT_EQ(assignments[0].witness(1, 0), nil::blueprint::to_field<BlueprintFieldType>(msg.value));
-    EXPECT_EQ(assignments[0].witness(1, 1), index);
-}
-
-// TODO: test dataload instruction (for now its cost is not defined)
-TEST_F(AssignerTest, DISABLED_dataload) {
-    const uint8_t index = 10;
-    std::vector<uint8_t> code = {
-        evmone::OP_PUSH1,
-        index,
-        evmone::OP_DATALOAD,
-    };
-    nil::evm_assigner::evaluate<BlueprintFieldType>(host_interface, ctx, rev, &msg, code.data(), code.size(), assigner_ptr);
-    EXPECT_EQ(assignments[0].witness(1, 2), index);
-}
-
-// TODO add check assignment tables
-TEST_F(AssignerTest, DISABLED_mstore_load)
-{
-    const uint8_t value = 12;
-    const uint8_t index = 1;
-    std::vector<uint8_t> code = {
-        evmone::OP_PUSH1,
-        value,
-        evmone::OP_PUSH1,
-        index,
-        evmone::OP_MSTORE,
-        evmone::OP_PUSH1,
-        index,
-        evmone::OP_MLOAD,
-    };
-    nil::evm_assigner::evaluate<BlueprintFieldType>(host_interface, ctx, rev, &msg, code.data(), code.size(), assigner_ptr);
-    EXPECT_EQ(assignments[0].witness(2, 0), value);
-    EXPECT_EQ(assignments[0].witness(2, 1), index);
-    EXPECT_EQ(assignments[0].witness(2, 2), value);
-}
-
-// TODO add check assignment tables
-TEST_F(AssignerTest, DISABLED_sstore_load)
-{
-    const uint8_t value = 12;
-    const uint8_t key = 4;
-    std::vector<uint8_t> code = {
-        evmone::OP_PUSH1,
-        value,
-        evmone::OP_PUSH1,
-        key,
-        evmone::OP_SSTORE,
-        evmone::OP_PUSH1,
-        key,
-        evmone::OP_SLOAD,
-    };
-    nil::evm_assigner::evaluate<BlueprintFieldType>(host_interface, ctx, rev, &msg, code.data(), code.size(), assigner_ptr);
-    EXPECT_EQ(assignments[0].witness(3, 0), value);
-    EXPECT_EQ(assignments[0].witness(3, 1), key);
-    EXPECT_EQ(assignments[0].witness(3, 2), value);
-}
-
-// TODO: test transient storage opcodes (for now their costs are not defined)
-TEST_F(AssignerTest, DISABLED_tstore_load) {
-    const uint8_t value = 12;
-    const uint8_t key = 4;
-    std::vector<uint8_t> code = {
-        evmone::OP_PUSH1,
-        value,
-        evmone::OP_PUSH1,
-        key,
-        evmone::OP_TSTORE,
-        evmone::OP_PUSH1,
-        key,
-        evmone::OP_TLOAD,
-    };
-    nil::evm_assigner::evaluate<BlueprintFieldType>(host_interface, ctx, rev, &msg, code.data(), code.size(), assigner_ptr);
-    EXPECT_EQ(assignments[0].witness(4, 0), value);
-    EXPECT_EQ(assignments[0].witness(4, 1), key);
-    EXPECT_EQ(assignments[0].witness(4, 2), value);
-}
-
-// TODO add check assignment tables
-TEST_F(AssignerTest, DISABLED_create) {
-
-    std::vector<uint8_t> code = {
-        // Create an account with 0 wei and no code
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_CREATE,
-
-        // Create an account with 9 wei and no code
-        evmone::OP_PUSH1,
-        1,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        9,
-        evmone::OP_CREATE,
-
-        // Create an account with 0 wei and 4 FF as code
-        evmone::OP_PUSH13,
-        // code 0x63FFFFFFFF60005260046000F3 will be inserted later
-
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_MSTORE,
-        evmone::OP_PUSH1,
-        2,
-        evmone::OP_PUSH1,
-        13,
-        evmone::OP_PUSH1,
-        19,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_CREATE,
-    };
-
-    auto push13_it = std::find(code.begin(), code.end(), evmone::OP_PUSH13);
-    ASSERT_NE(push13_it, code.end());
-    size_t push13_idx = static_cast<size_t>(push13_it - code.begin());
-
-    std::vector<uint8_t> contract_code = {0x63, 0xff, 0xff, 0xff, 0xff, 0x60, 0x00, 0x52, 0x60, 0x04, 0x60, 0x00, 0xf3};
-    // Code is in the last 13 bytes of the container
-    code.insert(code.begin() + static_cast<long int>(push13_idx) + 1, contract_code.begin(), contract_code.end());
-
-    nil::evm_assigner::evaluate<BlueprintFieldType>(host_interface, ctx, rev, &msg, code.data(), code.size(), assigner_ptr);
-    // Check stored witnesses of MSTORE instruction at depth 1
-    EXPECT_EQ(assignments[1].witness(2, 1), 0);
-    EXPECT_EQ(assignments[1].witness(2, 0), 0xFFFFFFFF);
-}
-
-// TODO add check assignment tables
-TEST_F(AssignerTest, DISABLED_call) {
-
-    std::vector<uint8_t> code = {
-        // Create a contract that creates an exception if first word of calldata is 0
-        evmone::OP_PUSH17,
-        // code 0x67600035600757FE5B60005260086018F3 will be inserted later
-        evmone::OP_PUSH1,
-        0,
-
-        evmone::OP_MSTORE,
-        evmone::OP_PUSH1,
-        17,
-        evmone::OP_PUSH1,
-        15,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_CREATE,
-
-        // Call with no parameters, return 0
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_DUP6,
-        evmone::OP_PUSH2,
-        0xFF,
-        0xFF,
-        evmone::OP_CALL,
-
-        // Call with non 0 calldata, returns success
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        32,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_PUSH1,
-        0,
-        evmone::OP_DUP7,
-        evmone::OP_PUSH2,
-        0xFF,
-        0xFF,
-        evmone::OP_CALL,
-    };
-
-    auto push17_it = std::find(code.begin(), code.end(), evmone::OP_PUSH17);
-    ASSERT_NE(push17_it, code.end());
-    size_t push17_idx = static_cast<size_t>(push17_it - code.begin());
-
-    std::vector<uint8_t> contract_code = {0x67, 0x60, 0x00, 0x35, 0x60, 0x07, 0x57, 0xfe, 0x5b, 0x60, 0x00, 0x52, 0x60, 0x08, 0x60, 0x18, 0xf3};
-    // Code is in the last 13 bytes of the container
-    code.insert(code.begin() + static_cast<long int>(push17_idx) + 1, contract_code.begin(), contract_code.end());
-
-    nil::evm_assigner::evaluate<BlueprintFieldType>(host_interface, ctx, rev, &msg, code.data(), code.size(), assigner_ptr);
-    // Check stored witness of CALLDATALOAD instruction at depth 1
-    EXPECT_EQ(assignments[1].witness(1, 1), 0);
 }

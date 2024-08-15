@@ -14,6 +14,8 @@
 #include <boost/log/expressions.hpp>
 #include <boost/log/trivial.hpp>
 
+#include <unordered_map>
+
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
@@ -45,21 +47,29 @@ namespace nil {
             constexpr static size_t BYTECODE_TABLE_INDEX = 0;
             constexpr static size_t RW_TABLE_INDEX = 1;
 
-            assigner(std::vector<nil::blueprint::assignment<ArithmetizationType>> &assignments):  m_assignments(assignments) {}
+            assigner(std::unordered_map<uint8_t, nil::blueprint::assignment<ArithmetizationType>> &assignments):  m_assignments(assignments) {}
 
             // TODO error handling
             void handle_bytecode(size_t original_code_size, const uint8_t* code) {
+                auto it = m_assignments.find(BYTECODE_TABLE_INDEX);
+                if (it == m_assignments.end()) {
+                    return;
+                }
                 return process_bytecode_input<BlueprintFieldType>(
-                    original_code_size, code, m_assignments[BYTECODE_TABLE_INDEX]);
+                    original_code_size, code, it->second);
             }
 
             // TODO error handling
             void handle_rw(std::vector<rw_operation<BlueprintFieldType>>& rw_trace) {
+                auto it = m_assignments.find(RW_TABLE_INDEX);
+                if (it == m_assignments.end()) {
+                    return;
+                }
                 return process_rw_operations<BlueprintFieldType>(
-                    rw_trace, m_assignments[RW_TABLE_INDEX]);
+                    rw_trace, it->second);
             }
 
-            std::vector<nil::blueprint::assignment<ArithmetizationType>> &m_assignments;
+            std::unordered_map<uint8_t, nil::blueprint::assignment<ArithmetizationType>> &m_assignments;
         };
 
         template<typename BlueprintFieldType>
