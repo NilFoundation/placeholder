@@ -44,14 +44,11 @@ namespace nil {
 
             using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
 
-            constexpr static size_t BYTECODE_TABLE_INDEX = 0;
-            constexpr static size_t RW_TABLE_INDEX = 1;
-
-            assigner(std::unordered_map<uint8_t, nil::blueprint::assignment<ArithmetizationType>> &assignments):  m_assignments(assignments) {}
+            assigner(std::unordered_map<zkevm_circuit, nil::blueprint::assignment<ArithmetizationType>> &assignments):  m_assignments(assignments) {}
 
             // TODO error handling
             void handle_bytecode(size_t original_code_size, const uint8_t* code) {
-                auto it = m_assignments.find(BYTECODE_TABLE_INDEX);
+                auto it = m_assignments.find(zkevm_circuit::BYTECODE);
                 if (it == m_assignments.end()) {
                     return;
                 }
@@ -61,7 +58,7 @@ namespace nil {
 
             // TODO error handling
             void handle_rw(std::vector<rw_operation<BlueprintFieldType>>& rw_trace) {
-                auto it = m_assignments.find(RW_TABLE_INDEX);
+                auto it = m_assignments.find(zkevm_circuit::RW);
                 if (it == m_assignments.end()) {
                     return;
                 }
@@ -69,7 +66,7 @@ namespace nil {
                     rw_trace, it->second);
             }
 
-            std::unordered_map<uint8_t, nil::blueprint::assignment<ArithmetizationType>> &m_assignments;
+            std::unordered_map<zkevm_circuit, nil::blueprint::assignment<ArithmetizationType>> &m_assignments;
         };
 
         template<typename BlueprintFieldType>

@@ -25,9 +25,8 @@ public:
         nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType> desc(
             WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns);
 
-        assignments.insert(std::pair<uint8_t, nil::blueprint::assignment<ArithmetizationType>>(0, nil::blueprint::assignment<ArithmetizationType>(desc)));
-        // for check create, call op codes, where message depth = 1
-        assignments.insert(std::pair<uint8_t, nil::blueprint::assignment<ArithmetizationType>>(1, nil::blueprint::assignment<ArithmetizationType>(desc)));
+        assignments.insert(std::pair<nil::evm_assigner::zkevm_circuit, nil::blueprint::assignment<ArithmetizationType>>(nil::evm_assigner::zkevm_circuit::BYTECODE, nil::blueprint::assignment<ArithmetizationType>(desc)));
+        assignments.insert(std::pair<nil::evm_assigner::zkevm_circuit, nil::blueprint::assignment<ArithmetizationType>>(nil::evm_assigner::zkevm_circuit::RW, nil::blueprint::assignment<ArithmetizationType>(desc)));
 
         assigner_ptr =
             std::make_shared<nil::evm_assigner::assigner<BlueprintFieldType>>(assignments);
@@ -70,7 +69,7 @@ public:
     }
 
     static std::shared_ptr<nil::evm_assigner::assigner<BlueprintFieldType>> assigner_ptr;
-    static std::unordered_map<uint8_t, nil::blueprint::assignment<ArithmetizationType>> assignments;
+    static std::unordered_map<nil::evm_assigner::zkevm_circuit, nil::blueprint::assignment<ArithmetizationType>> assignments;
     static const struct evmc_host_interface* host_interface;
     static struct evmc_host_context* ctx;
     static evmc_revision rev;
@@ -79,7 +78,7 @@ public:
 
 std::shared_ptr<nil::evm_assigner::assigner<AssignerTest::BlueprintFieldType>>
     AssignerTest::assigner_ptr;
-std::unordered_map<uint8_t, nil::blueprint::assignment<AssignerTest::ArithmetizationType>>
+std::unordered_map<nil::evm_assigner::zkevm_circuit, nil::blueprint::assignment<AssignerTest::ArithmetizationType>>
     AssignerTest::assignments;
 const struct evmc_host_interface* AssignerTest::host_interface;
 struct evmc_host_context* AssignerTest::ctx;
@@ -92,7 +91,7 @@ inline void check_eq(const uint8_t* l, const uint8_t* r, size_t len) {
     }
 }
 
-inline void rw_circuit_check(const std::unordered_map<uint8_t, nil::blueprint::assignment<AssignerTest::ArithmetizationType>> &assignments,
+inline void rw_circuit_check(const std::unordered_map<nil::evm_assigner::zkevm_circuit, nil::blueprint::assignment<AssignerTest::ArithmetizationType>> &assignments,
                              uint32_t start_row_index,
                              uint8_t operation_type,
                              uint32_t call_id,
@@ -103,7 +102,7 @@ inline void rw_circuit_check(const std::unordered_map<uint8_t, nil::blueprint::a
                              bool is_write,
                              const typename AssignerTest::BlueprintFieldType::value_type& value_hi,
                              const typename AssignerTest::BlueprintFieldType::value_type& value_lo) {
-    auto it = assignments.find(nil::evm_assigner::assigner<AssignerTest::BlueprintFieldType>::RW_TABLE_INDEX);
+    auto it = assignments.find(nil::evm_assigner::zkevm_circuit::RW);
     if (it == assignments.end()) {
         return;
     }
