@@ -28,11 +28,6 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
-    - name: Build sources
-      run: nix build -L
+    - name: Build and check
+      run: nix build -L .?submodules=1#checks.x86_64-linux.default
 
-    - name: Run tests
-      run: nix flake -L check
-
-    - name: Check build without nix additional environment flags
-      run: .github/scripts/pure-cmake-build.sh
