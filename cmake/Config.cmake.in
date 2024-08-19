@@ -2,7 +2,6 @@
 
 include(CMakeFindDependencyMacro)
 find_dependency(crypto3 REQUIRED)
-find_dependency(crypto3_blueprint REQUIRED)
 find_dependency(intx REQUIRED)
 find_dependency(ethash REQUIRED)
 

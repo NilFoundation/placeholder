@@ -7,11 +7,13 @@ add_executable(assigner_tests
 
 target_include_directories(assigner_tests PRIVATE
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../evmc>)
+
 target_link_libraries(
         assigner_tests
         PRIVATE
         ${PROJECT_NAME}
         GTest::gtest_main
+        Boost::log
 )
 gtest_discover_tests(assigner_tests PROPERTIES LABELS ASSIGNER)
 
