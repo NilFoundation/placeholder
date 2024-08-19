@@ -28,6 +28,9 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v3
 
-    - name: Build and check
-      run: nix build -L .?submodules=1#checks.x86_64-linux.default
+    - name: Build sources
+      run: nix build -L
+
+    - name: Run tests
+      run: nix flake -L check
 
