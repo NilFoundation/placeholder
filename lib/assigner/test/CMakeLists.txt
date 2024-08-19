@@ -5,6 +5,12 @@ find_package(GTest CONFIG REQUIRED)
 add_executable(assigner_tests
                assigner_test.cpp)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(assigner_tests PRIVATE "-fconstexpr-steps=2147483647")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(assigner_tests PRIVATE "-fconstexpr-ops-limit=4294967295")
+endif()
+
 target_include_directories(assigner_tests PRIVATE
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../evmc>)
 
