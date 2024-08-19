@@ -16,6 +16,8 @@
       type = "git";
       inputs = {
         nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+        nix-3rdparty.follows = "nix-3rdparty";
       };
     };
   };
