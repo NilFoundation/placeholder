@@ -177,7 +177,7 @@ TEST_F(AssignerTest, conversions_address_to_zkevm_word)
 
 TEST_F(AssignerTest, conversions_hash_to_zkevm_word)
 {
-    ethash::hash256 hash;
+    ethash::hash256 hash {.bytes = {0}};
     hash.bytes[2] = 10;
     // conversion to zkevm_word
     auto tmp = nil::evm_assigner::zkevm_word<BlueprintFieldType>(hash);

@@ -269,9 +269,9 @@ namespace nil {
 
         template <typename BlueprintFieldType>
         std::ostream& operator<<(std::ostream& os, const zkevm_word<BlueprintFieldType>& obj){
-            const auto bytes = obj.to_uint256be().bytes;
+            const auto word = obj.to_uint256be();
             for (uint8_t i = 0; i < 32; i++) {
-                os << (int)bytes[i] << " ";
+                os << (int)word.bytes[i] << " ";
             }
             return os;
         }
