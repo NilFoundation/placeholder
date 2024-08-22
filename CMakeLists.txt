@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 project(parallel-crypto3)
 
-list(APPEND CMAKE_MODULE_PATH
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/share/modules/cmake")
+find_package(CM)
 
 # This is useful due to some build systems (Ninja in particular) are piping
 # compiler output and compiler switches it's output to plain text
