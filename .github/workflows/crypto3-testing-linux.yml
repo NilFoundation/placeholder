@@ -17,18 +17,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout submodules to specified refs
-        if: inputs.submodules-refs != ''
-        uses: NilFoundation/ci-cd/actions/recursive-checkout@v1.2.1
-        with:
-          refs: ${{ inputs.submodules-refs }}
-          paths: |
-            ${{ github.workspace }}/**
-            !${{ github.workspace }}/
-            !${{ github.workspace }}/**/.git/**
-
       - name: Run checks
-        run: nix flake -L check
+        run: cd crypto3 && nix flake -L check
         env:
           NIX_CONFIG: |
             cores = 6
