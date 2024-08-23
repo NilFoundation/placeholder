@@ -9,11 +9,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1724160518,
-        "narHash": "sha256-ZuNrBrf9YhPZLugcK6ubHl6WwLlU1iYwDMAlIYrygg8=",
+        "lastModified": 1724399628,
+        "narHash": "sha256-udhXq7+ibDCUuW6ChgR+XnZ1gFXoYxYympzz+HDKleY=",
         "ref": "refs/heads/master",
-        "rev": "e0df9de54db6e1cfe8f016aed6975aeb202820fb",
-        "revCount": 10449,
+        "rev": "53f63c6da04f0b71dfa2f5f0205301c12374f699",
+        "revCount": 10450,
         "submodules": true,
         "type": "git",
         "url": "https://github.com/NilFoundation/crypto3"

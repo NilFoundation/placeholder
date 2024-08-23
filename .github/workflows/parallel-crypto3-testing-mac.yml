@@ -20,7 +20,10 @@ jobs:
       - uses: DeterminateSystems/flake-checker-action@main
 
       - name: Run checks
-        run: nix flake -L check .?submodules=1#
+        run: |
+          cd parallel-crypto3
+          nix flake update crypto3
+          nix flake -L check .?submodules=1#
         env:
           NIX_CONFIG: |
             cores = 0
