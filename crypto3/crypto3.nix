@@ -1,6 +1,5 @@
 { lib,
   stdenv,
-  src_repo,
   ninja,
   pkg-config,
   cmake,
@@ -10,7 +9,7 @@
   gdb,
   cmake_modules,
   enableDebugging,
-  enableDebug ? false,
+  enableDebug ? true,
   runTests ? false,
   }:
 let
@@ -18,7 +17,9 @@ let
 in stdenv.mkDerivation {
   name = "Crypto3";
 
-  src = src_repo;
+  src = lib.sourceByRegex ./. [ ".*" ];
+
+  #src = src_repo;
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++ (lib.optional (!stdenv.isDarwin) gdb);
 
