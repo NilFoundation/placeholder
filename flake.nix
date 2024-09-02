@@ -23,9 +23,9 @@
       in {
         packages = rec {
           crypto3 = (pkgs.callPackage ./crypto3/crypto3.nix { });
-          #parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3/flake.nix {
-          #  crypto3 = crypto3;
-          #});
+          evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
+            crypto3 = crypto3;
+          });
 
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.

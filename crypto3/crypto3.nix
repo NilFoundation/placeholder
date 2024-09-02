@@ -19,8 +19,6 @@ in stdenv.mkDerivation {
 
   src = lib.sourceByRegex ./. [ ".*" ];
 
-  #src = src_repo;
-
   nativeBuildInputs = [ cmake ninja pkg-config ] ++ (lib.optional (!stdenv.isDarwin) gdb);
 
   # enableDebugging will keep debug symbols in boost

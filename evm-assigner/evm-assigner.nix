@@ -1,6 +1,5 @@
 { lib,
   stdenv,
-  src_repo,
   ninja,
   pkg-config,
   cmake,
@@ -21,7 +20,7 @@ let
 in stdenv.mkDerivation rec {
   name = "evm-assigner";
 
-  src = src_repo;
+  src = lib.sourceByRegex ./. [ ".*" ];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++ (lib.optional (!stdenv.isDarwin) gdb);
 
