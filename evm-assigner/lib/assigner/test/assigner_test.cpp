@@ -1,4 +1,5 @@
 #include <map>
+#include <algorithm>
 
 #include <assigner.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>

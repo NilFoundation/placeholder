@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <iostream>
+#include <algorithm>
 #include "eof.hpp"
 #include "execution_state.hpp"
 #include "instructions_traits.hpp"
 #include "instructions_xmacro.hpp"
 #include <ethash/keccak.hpp>
-#include <iostream>
 
 namespace evmone
 {

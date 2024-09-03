@@ -31,6 +31,7 @@
 #include <boost/random/uniform_int.hpp>
 #include <iostream>
 #include <iomanip>
+#include <cstdint>
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/endianness.hpp>

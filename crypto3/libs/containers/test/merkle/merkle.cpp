@@ -26,6 +26,12 @@
 
 #define BOOST_TEST_MODULE containter_merkletree_test
 
+#include <chrono>
+#include <cstdio>
+#include <limits>
+#include <type_traits>
+#include <cstdint>
+
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>
 #include <nil/crypto3/hash/block_to_field_elements_wrapper.hpp>
@@ -35,6 +41,7 @@
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/hash/pedersen.hpp>
 #include <nil/crypto3/hash/poseidon.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 #include <nil/crypto3/container/merkle/proof.hpp>
@@ -42,12 +49,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
-
-#include <chrono>
-#include <cstdio>
-#include <limits>
-#include <type_traits>
-#include <nil/crypto3/hash/algorithm/hash.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::containers;

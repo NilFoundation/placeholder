@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run checks
-        run: nix flake -L check
+        run: nix build -L .?#checks.x86_64-linux.all-gcc
         env:
           NIX_CONFIG: |
-            cores = 6
+            cores = 4

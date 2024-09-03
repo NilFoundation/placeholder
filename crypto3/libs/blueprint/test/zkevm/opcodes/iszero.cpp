@@ -26,6 +26,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <nil/blueprint/zkevm/zkevm_machine_interface.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/goldilocks64.hpp>
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -33,8 +34,6 @@
 
 #include <nil/blueprint/zkevm/zkevm_circuit.hpp>
 #include "../opcode_tester.hpp"
-
-#include <nil/blueprint/zkevm/operations/iszero.hpp>
 
 using namespace nil::blueprint;
 using namespace nil::crypto3::algebra;
