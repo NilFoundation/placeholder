@@ -38,6 +38,19 @@
           default = crypto3; #TODO 
         };
 
-        #overlays.default = final: prev: packages;
+        checks = rec {
+          crypto3-gcc = (pkgs.callPackage ./crypto3/crypto3.nix {
+            runTests = true;
+          });
+          crypto3-clang = (pkgs.callPackage ./crypto3/crypto3.nix {
+            stdenv = pkgs.llvmPackages_18.stdenv;
+            runTests = true;
+          });
+          all = pkgs.symlinkJoin {
+            name = "all";
+            paths = [ crypto3-gcc crypto3-clang];
+          };
+          default = all;
+        };
       }));
 }
