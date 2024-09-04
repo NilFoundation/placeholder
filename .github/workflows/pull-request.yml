@@ -22,9 +22,3 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
-  test-mac:
-    name: macOS Crypto3 Testing
-    uses: ./.github/workflows/mac-nix-check.yml
-    if: |
-      always() && !cancelled()
-    secrets: inherit
