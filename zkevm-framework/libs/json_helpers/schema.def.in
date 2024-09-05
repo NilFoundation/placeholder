@@ -1,0 +1,7 @@
+#ifndef @INCLUDE_GUARD@
+#define @INCLUDE_GUARD@
+
+static const char @SCHEMA_VARIABLE_NAME@[] =
+R"(@SCHEMA_CONTENT@)";
+
+#endif

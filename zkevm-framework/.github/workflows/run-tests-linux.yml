@@ -1,0 +1,42 @@
+name: Run tests on Linux
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+        - '**.md'
+  pull_request:
+    paths-ignore:
+        - '**.md'
+
+concurrency:
+  # In master we want to run for every commit, in other branches — only for the last one
+  group: ${{
+    ( github.ref == 'refs/heads/master' &&
+    format('{0}/{1}/{2}', github.workflow, github.ref, github.sha) )
+    ||
+    format('{0}/{1}', github.workflow, github.ref) }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Run tests workflow on Release build
+    runs-on: [ self-hosted, Linux, X64, aws_autoscaling ]
+    steps:
+      # https://github.com/actions/checkout/issues/1552
+      - name: Clean up after previous checkout
+        run: chmod +w -R ${GITHUB_WORKSPACE}; rm -rf ${GITHUB_WORKSPACE}/*;
+
+      - name: Checkout zkEVM-framework
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Run build
+        run: nix build -L
+
+      - name: Run checks
+        run: nix flake -L check
+
+      - name: Check build without nix environment
+        run: .github/scripts/pure_cmake_build.sh

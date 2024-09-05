@@ -1,0 +1,60 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type" :"object",
+    "description": "Block an input messages data",
+    "properties": {
+        "number": {
+            "type": "number"
+        },
+        "parentHash": {
+            "type": "string",
+            "pattern": "^0x[0-9a-f]+$"
+        },
+        "gasPrice": {
+            "type": "string",
+            "pattern": "^[0-9]+$"
+        },
+        "messages": {
+            "type": "array",
+            "items": {
+                "type" :"object",
+                "properties": {
+                    "flags": {
+                        "type": "array",
+                        "items": {
+                            "enum": ["Internal", "Deploy", "Refund", "Bounce"]
+                        }
+                    },
+                    "from": {
+                        "type": "string",
+                        "pattern": "^0x[0-9a-fA-F]+$",
+                        "minLength": 42,
+                        "maxLength": 42
+                    },
+                    "to": {
+                        "type": "string",
+                        "pattern": "^0x[0-9a-fA-F]+$",
+                        "minLength": 42,
+                        "maxLength": 42
+                    },
+                    "feeCredit": {
+                        "type": "string",
+                        "pattern": "^[0-9]+$"
+                    },
+                    "value": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "string",
+                        "pattern": "^0x[0-9a-fA-F]+$"
+                    }
+                },
+                "required": ["flags", "from", "to", "feeCredit", "value", "data"],
+                "additionalProperties": true
+            },
+            "uniqueItems": true
+        }
+    },
+    "required": ["number", "parentHash", "gasPrice", "messages"],
+    "additionalProperties": true
+}

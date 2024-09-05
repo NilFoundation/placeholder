@@ -1,0 +1,14 @@
+{
+    "contracts": [
+        {
+            "id": 1,
+            "path": "bin/block_generator/contracts/counter.sol"
+        }
+    ],
+    "transactions": [
+        {
+            "contractId": 1,
+            "methodName": "increment"
+        }
+    ]
+}

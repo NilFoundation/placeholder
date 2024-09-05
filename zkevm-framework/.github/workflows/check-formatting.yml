@@ -1,0 +1,41 @@
+name: Check formatting
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+concurrency:
+  # In master we want to run for every commit, in other branches — only for the last one
+  group: ${{
+    ( github.ref == 'refs/heads/master' &&
+    format('{0}/{1}/{2}', github.workflow, github.ref, github.sha) )
+    ||
+    format('{0}/{1}', github.workflow, github.ref) }}
+  cancel-in-progress: true
+
+jobs:
+  code-formatting-check:
+    name: Code formatting check
+    runs-on: [ self-hosted, Linux, X64, aws_autoscaling ]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Run clang-format
+        uses: jidicula/clang-format-action@v4.11.0
+        with:
+          clang-format-version: "17"
+
+  markdown-formatting-check:
+    name: Markdown formatting check
+    runs-on: [ self-hosted, Linux, X64, aws_autoscaling ]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          config: .markdownlint.yml
+          globs: '**/*.md'

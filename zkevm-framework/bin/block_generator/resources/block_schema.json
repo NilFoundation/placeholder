@@ -1,0 +1,54 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type" :"object",
+    "description": "Block generator config file",
+    "properties": {
+        "contracts": {
+            "type": "array",
+            "items": {
+                "type" :"object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "path": {
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "path"],
+                "additionalProperties": false
+            },
+            "uniqueItems": true
+        },
+        "transactions": {
+            "type": "array",
+            "items": {
+                "type" :"object",
+                "properties": {
+                    "contractId": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "methodName": {
+                        "type": "string",
+                        "pattern": "^[a-zA-Z0-9_]+$"
+                    },
+                    "callArguments": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^0x[0-9a-z]+$"
+                        },
+                        "uniqueItems": true
+                    }
+                },
+                "required": ["contractId", "methodName"],
+                "additionalProperties": false
+            },
+            "uniqueItems": true
+        }
+    },
+    "required": ["contracts", "transactions"],
+    "additionalProperties": false
+}
