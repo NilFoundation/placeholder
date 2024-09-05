@@ -47,6 +47,23 @@
             crypto3 = crypto3;
           });
 
+          zkevm-framework = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            crypto3 = crypto3;
+            evm-assigner = evm-assigner;
+          });
+          zkevm-framework-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3;
+            evm-assigner = evm-assigner;
+          });
+          zkevm-framework-debug-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            enableDebug = true;
+            runTests = true;
+            crypto3 = crypto3;
+            evm-assigner = evm-assigner;
+          });
+
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.
           # The packages that have no changes will not be rebuilt, and instead
@@ -81,13 +98,27 @@
             crypto3 = crypto3-clang;
           });
 
+          zkevm-framework-gcc = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3-gcc;
+            evm-assigner = evm-assigner-gcc;
+          });
+          zkevm-framework-clang = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            stdenv = pkgs.llvmPackages_18.stdenv;
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3-clang;
+            evm-assigner = evm-assigner-clang;
+          });
+
           all-clang = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang evm-assigner-clang ];
+            paths = [ crypto3-clang evm-assigner-clang zkevm-framework-clang ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-gcc evm-assigner-gcc ];
+            paths = [ crypto3-gcc evm-assigner-gcc zkevm-framework-gcc ];
           };
           default = all-gcc;
         };

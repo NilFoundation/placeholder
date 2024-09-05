@@ -1,12 +1,9 @@
 { lib,
   stdenv,
-  src_repo,
   ninja,
   pkg-config,
   cmake,
-  boost183,
-  # We'll use boost183 by default, but you can override it
-  boost_lib ? boost183,
+  boost,
   gdb,
   crypto3,
   ethash,
@@ -24,12 +21,12 @@ let
 in stdenv.mkDerivation rec {
   name = "zkevm-framework";
 
-  src = src_repo;
+  src = lib.sourceByRegex ./. [ ".*" ];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++ (lib.optional (!stdenv.isDarwin) gdb);
 
   # enableDebugging will keep debug symbols in boost
-  propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost_lib) else boost_lib) ];
+  propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
   buildInputs = [crypto3 evm-assigner intx ethash sszpp valijson gtest];
 
