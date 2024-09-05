@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdint>
 
 #include <boost/test/unit_test.hpp>
 

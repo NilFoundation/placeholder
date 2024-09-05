@@ -31,6 +31,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <ctime>
+#include <cstdint>
 
 #include <boost/test/unit_test.hpp>
 

@@ -1,0 +1,31 @@
+name: PR Testing
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  # In master we want to run for every commit, in other branches — only for the last one
+  group: ${{
+    ( github.ref == 'refs/heads/master' && format('{0}/{1}/{2}', github.workflow, github.ref, github.sha) )
+    ||
+    format('{0}/{1}', github.workflow, github.ref) }}
+  cancel-in-progress: true
+
+jobs:
+  test-linux-gcc:
+    name: Linux Crypto3 Testing with gcc
+    uses: ./.github/workflows/gcc-linux-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
+  test-linux-clang:
+    name: Linux Crypto3 Testing with clang
+    uses: ./.github/workflows/clang-linux-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+

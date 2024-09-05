@@ -5,6 +5,10 @@ cmake_policy(SET CMP0063 NEW)
 
 option(BUILD_ASSIGNER_TESTS "Build unit tests" FALSE)
 
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "-ggdb -O0")
+endif()
+
 set(evmone_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/evmone/baseline.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/evmone/baseline_instruction_table.cpp

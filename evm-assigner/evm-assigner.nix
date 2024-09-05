@@ -32,10 +32,8 @@ in stdenv.mkDerivation rec {
   cmakeFlags =
   [
       (if runTests then "-DBUILD_TESTS=TRUE" else "")
-      (if runTests then "-DCMAKE_ENABLE_TESTS=TRUE" else "")
       (if runTests then "-DBUILD_ASSIGNER_TESTS=TRUE" else "")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
-      (if enableDebug then "-DCMAKE_CXX_FLAGS=-ggdb" else "")
       "-G Ninja"
   ];
 
