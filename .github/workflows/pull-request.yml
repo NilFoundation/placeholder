@@ -15,9 +15,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-linux:
-    name: Linux Crypto3 Testing
-    uses: ./.github/workflows/linux-nix-check.yml
+  test-linux-gcc:
+    name: Linux Crypto3 Testing with gcc
+    uses: ./.github/workflows/gcc-linux-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
+  test-linux-clang:
+    name: Linux Crypto3 Testing with clang
+    uses: ./.github/workflows/clang-linux-nix-check.yml
     if: |
       always() && !cancelled()
     secrets: inherit

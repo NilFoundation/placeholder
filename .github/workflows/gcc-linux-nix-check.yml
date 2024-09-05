@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-and-test:
-    name: "Build and test Linux"
+    name: "Build and test Linux with gcc"
     runs-on: [self-hosted, Linux, X64, aws_autoscaling]
     steps:
       # https://github.com/actions/checkout/issues/1552
