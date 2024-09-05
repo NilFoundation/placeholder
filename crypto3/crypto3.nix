@@ -26,7 +26,7 @@ in stdenv.mkDerivation {
 
   cmakeFlags =
     [
-      (if runTests then "-DBUILD_TESTS=TRUE" else "")
+      (if runTests then "-DBUILD_TESTS=TRUE" else "-DBUILD_TESTS=False")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       "-G Ninja"
     ];

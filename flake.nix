@@ -22,7 +22,10 @@
         };
       in {
         packages = rec {
-          crypto3 = (pkgs.callPackage ./crypto3/crypto3.nix { });
+          crypto3 = (pkgs.callPackage ./crypto3/crypto3.nix {
+            runTests = false;
+            enableDebug = false;
+          });
           crypto3-tests = (pkgs.callPackage ./crypto3/crypto3.nix {
             runTests = true;
             enableDebug = false;
@@ -33,8 +36,9 @@
           });
           
           evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
-            crypto3 = crypto3;
+            runTests = false;
             enableDebug = false;
+            crypto3 = crypto3;
           });
           evm-assigner-tests = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = true;
@@ -48,6 +52,8 @@
           });
 
           zkevm-framework = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            runTests = false;
+            enableDebug = false;
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
           });
@@ -104,17 +110,10 @@
             crypto3 = crypto3-gcc;
             evm-assigner = evm-assigner-gcc;
           });
-          zkevm-framework-clang = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
-            stdenv = pkgs.llvmPackages_18.stdenv;
-            runTests = true;
-            enableDebug = false;
-            crypto3 = crypto3-clang;
-            evm-assigner = evm-assigner-clang;
-          });
 
           all-clang = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang evm-assigner-clang zkevm-framework-clang ];
+            paths = [ crypto3-clang evm-assigner-clang ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
