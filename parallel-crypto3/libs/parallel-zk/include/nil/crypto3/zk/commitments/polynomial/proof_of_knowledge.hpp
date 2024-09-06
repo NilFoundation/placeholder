@@ -111,8 +111,11 @@ namespace nil {
                         std::vector<std::uint8_t> blob(filled_val.length());
                         auto it = std::begin(blob);
                         nil::marshalling::status_type status = filled_val.write(it, blob.size());
-                        THROW_IF_ERROR_STATUS(status, "proof_of_knowledge::serialize_g1_uncompressed");
-                        return blob;
+                        if (status != nil::marshalling::status_type::success) {
+                            return {};
+                        } else {
+                            return blob;
+                        }
                     }
                 };
             }    // namespace commitments

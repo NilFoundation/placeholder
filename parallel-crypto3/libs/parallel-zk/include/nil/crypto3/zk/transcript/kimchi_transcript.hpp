@@ -41,7 +41,6 @@ namespace nil {
                     std::reverse(limbs_lsb.begin(), limbs_lsb.end());
 
                     integral_type res = nil::marshalling::pack<nil::marshalling::option::big_endian>(limbs_lsb, status);
-                    THROW_IF_ERROR_STATUS(status, "std::vector<uint64_t> to integral_type");
 
                     return res;
                 }
@@ -50,14 +49,8 @@ namespace nil {
                 std::vector<std::uint64_t> unpack(value_type &value) {
                     nil::marshalling::status_type status;
                     integral_type scalar_value = integral_type(value.data);
-<<<<<<<< HEAD:crypto3/libs/zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
-                    std::vector<std::uint64_t> limbs_lsb =
-                        nil::marshalling::pack<nil::marshalling::option::big_endian>(scalar_value, status);
-                    THROW_IF_ERROR_STATUS(status, "integral_type to std::vector<uint64_t>");
-========
                     std::vector<std::uint64_t> limbs_lsb = nil::marshalling::pack<nil::marshalling::option::big_endian>(
                             scalar_value, status);
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallel-zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
 
                     std::reverse(limbs_lsb.begin(), limbs_lsb.end());
                     limbs_lsb.resize(CHALLENGE_LENGTH_IN_LIMBS);
@@ -106,16 +99,6 @@ namespace nil {
                             std::vector<limb_type> remaining(this->last_squeezed.begin() + num_limbs,
                                                              this->last_squeezed.end());
                             this->last_squeezed = remaining;
-<<<<<<<< HEAD:crypto3/libs/zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
-
-                            return typename scalar_field_type::value_type(
-                                    pack<typename scalar_field_type::integral_type>(limbs));
-                        } else {
-                            auto sq = this->sponge.squeeze();
-                            std::vector<limb_type> x = unpack<typename scalar_field_type::value_type, typename scalar_field_type::integral_type>(
-                                    sq);
-
-========
 
                             return typename scalar_field_type::value_type(
                                     pack<typename scalar_field_type::integral_type>(limbs));
@@ -125,7 +108,6 @@ namespace nil {
                             std::vector<limb_type> x = unpack<typename scalar_field_type::value_type, typename scalar_field_type::integral_type>(
                                     sq);
 
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallel-zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
                             for (int i = 0; i < HIGH_ENTROPY_LIMBS; ++i) {
                                 this->last_squeezed.push_back(x[i]);
                             }
@@ -223,16 +205,11 @@ namespace nil {
                             return limbs;
                         } else {
                             auto sq = this->sponge.squeeze();
-                            std::vector<limb_type> x = unpack<
-                                typename base_field_type::value_type,
-                                typename base_field_type::integral_type>(sq);
+                            nil::marshalling::status_type status;
 
-<<<<<<<< HEAD:crypto3/libs/zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
-========
                             std::vector<limb_type> x = unpack<typename base_field_type::value_type, typename base_field_type::integral_type>(
                                     sq);
 
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallel-zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
                             for (int i = 0; i < HIGH_ENTROPY_LIMBS; ++i) {
                                 this->last_squeezed.push_back(x[i]);
                             }
@@ -248,6 +225,7 @@ namespace nil {
 
                     typename scalar_field_type::value_type squeeze(std::size_t num_limbs) {
                         auto limbs = this->squeeze_limbs(num_limbs);
+                        nil::marshalling::status_type status;
                         auto first_value = pack<typename scalar_field_type::integral_type>(limbs);
                         typename scalar_field_type::value_type res = typename scalar_field_type::value_type(
                                 pack<typename scalar_field_type::integral_type>(limbs));
@@ -280,33 +258,12 @@ namespace nil {
                         } else {
                             nil::marshalling::status_type status;
                             typename scalar_field_type::integral_type scalar_f(f.data);
-<<<<<<<< HEAD:crypto3/libs/zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
-                            std::vector<bool> bits =
-                                nil::marshalling::pack<nil::marshalling::option::big_endian>(scalar_f, status);
-                            THROW_IF_ERROR_STATUS(status, "FqSponge::absorb_fr");
-========
                             std::vector<bool> bits = nil::marshalling::pack<nil::marshalling::option::big_endian>(
                                     scalar_f, status);
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallel-zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
                             std::vector<bool> shifted_bits(bits.size(), false);
 
                             std::copy(bits.begin(), bits.end() - 1, shifted_bits.begin() + 1);
 
-<<<<<<<< HEAD:crypto3/libs/zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
-                            typename base_field_type::integral_type low_bit =
-                                bits.back() ?
-                                    typename base_field_type::integral_type(1) :
-                                    typename base_field_type::integral_type(0);
-
-                            typename base_field_type::integral_type high_bits =
-                                nil::marshalling::pack<nil::marshalling::option::big_endian>(shifted_bits, status);
-                            THROW_IF_ERROR_STATUS(status, "FqSponge::absorb_fr");
-
-                            typename base_field_type::value_type high_bits_field =
-                                typename base_field_type::value_type(high_bits);
-                            typename base_field_type::value_type low_bit_field =
-                                typename base_field_type::value_type(low_bit);
-========
                             typename base_field_type::integral_type low_bit = bits.back() ?
                                                                               typename base_field_type::integral_type(1)
                                                                                           : typename base_field_type::integral_type(
@@ -318,7 +275,6 @@ namespace nil {
                                     high_bits);
                             typename base_field_type::value_type low_bit_field = typename base_field_type::value_type(
                                     low_bit);
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallel-zk/include/nil/crypto3/zk/transcript/kimchi_transcript.hpp
 
                             this->sponge.absorb(high_bits_field);
                             this->sponge.absorb(low_bit_field);

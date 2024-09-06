@@ -1,10 +1,6 @@
 //---------------------------------------------------------------------------//
-<<<<<<<< HEAD:crypto3/libs/block/test/md4.cpp
-// Copyright (c) 2018-2020 Mikhail Komarov <nemo@nil.foundation>
-========
 // 
 // Copyright (c) 2024 Martun Karapetyan <martun@nil.foundation>
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallelization-utils/test/thread_pool.cpp
 //
 // MIT License
 //
@@ -27,48 +23,15 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-<<<<<<<< HEAD:crypto3/libs/block/test/md4.cpp
-#define BOOST_TEST_MODULE md4_cipher_test
-
-#include <iostream>
-#include <unordered_map>
-========
 #define BOOST_TEST_MODULE thread_pool_test
 
 #include <vector>
 #include <cstdint>
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallelization-utils/test/thread_pool.cpp
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
 
-<<<<<<<< HEAD:crypto3/libs/block/test/md4.cpp
-#include <nil/crypto3/block/md4.hpp>
-
-#include <nil/crypto3/block/algorithm/encrypt.hpp>
-#include <nil/crypto3/block/algorithm/decrypt.hpp>
-
-using namespace nil::crypto3;
-using namespace nil::crypto3::block;
-
-struct state_adder {
-    template<typename T>
-    void operator()(T &s1, T const &s2) {
-        typedef typename T::size_type size_type;
-        size_type n = (s2.size() < s1.size() ? s2.size() : s1.size());
-        for (typename T::size_type i = 0; i < n; ++i) {
-            s1[i] += s2[i];
-        }
-    }
-};
-
-BOOST_TEST_DONT_PRINT_LOG_VALUE(md4::block_type)
-
-BOOST_AUTO_TEST_SUITE(md4_test_suite)
-
-BOOST_AUTO_TEST_CASE(md4_single_block_encrypt1) {
-========
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
@@ -94,7 +57,6 @@ BOOST_AUTO_TEST_CASE(vector_multiplication_test) {
     for (std::size_t i = 0; i < size; ++i) {
         BOOST_CHECK(v[i] == i * i);
     }
->>>>>>>> parallel-crypto3/migration:parallel-crypto3/libs/parallelization-utils/test/thread_pool.cpp
 }
 
 BOOST_AUTO_TEST_SUITE_END()

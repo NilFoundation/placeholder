@@ -1,2 +1,0 @@
-
-set_target_properties(actor::containers PROPERTIES INTERFACE_PKG_CONFIG_NAME containers)
