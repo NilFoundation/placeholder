@@ -35,6 +35,22 @@
             runTests = true;
           });
           
+          parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
+            runTests = false;
+            enableDebug = false;
+            crypto3 = crypto3;
+          });
+          parallel-crypto3-tests = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3;
+          });
+          parallel-crypto3-debug-tests = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
+            enableDebug = true;
+            runTests = true;
+            crypto3 = crypto3;
+          });
+
           evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = false;
             enableDebug = false;
@@ -90,6 +106,18 @@
             stdenv = pkgs.llvmPackages_18.stdenv;
             runTests = true;
             enableDebug = false;
+          });
+
+          parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3-gcc;
+          });
+          parallel-crypto3-clang = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
+            stdenv = pkgs.llvmPackages_18.stdenv;
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3-gcc;
           });
 
           evm-assigner-gcc = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
