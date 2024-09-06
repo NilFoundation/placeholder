@@ -1,0 +1,10 @@
+#ifndef ZKEMV_FRAMEWORK_LIBS_NIL_CORE_INCLUDE_ZKEVM_FRAMEWORK_CORE_TYPES_SHARD_HPP_
+#define ZKEMV_FRAMEWORK_LIBS_NIL_CORE_INCLUDE_ZKEVM_FRAMEWORK_CORE_TYPES_SHARD_HPP_
+
+namespace core {
+    namespace types {
+        class Shard;
+    }  // namespace types
+}  // namespace core
+
+#endif  // ZKEMV_FRAMEWORK_LIBS_NIL_CORE_INCLUDE_ZKEVM_FRAMEWORK_CORE_TYPES_SHARD_HPP_

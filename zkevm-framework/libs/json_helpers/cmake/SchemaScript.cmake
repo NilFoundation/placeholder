@@ -1,0 +1,5 @@
+message(TRACE "Generating schema include from ${SCHEMA_PATH}")
+get_filename_component(SCHEMA_VARIABLE_NAME ${SCHEMA_PATH} NAME_WE)
+file(READ ${SCHEMA_PATH} SCHEMA_CONTENT)
+message(TRACE "INCLUDE_GUARD=${INCLUDE_GUARD}")
+configure_file(${CMAKE_CURRENT_LIST_DIR}/../schema.def.in ${OUTPUT_PATH} @ONLY)

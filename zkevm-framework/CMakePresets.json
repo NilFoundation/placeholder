@@ -1,0 +1,128 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 27,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "Release",
+      "description": "Release build using Ninja generator",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Test",
+      "description": "Debug build using Ninja generator",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "test",
+      "displayName": "Test",
+      "description": "Build for testing using Ninja generator",
+      "inherits": "release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ENABLE_TESTS": "TRUE"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "displayName": "Release",
+      "description": "Release build of `all` target",
+      "configurePreset": "release",
+      "targets": "all"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "description": "Debug build of `all` target",
+      "configurePreset": "debug",
+      "targets": "all"
+    },
+    {
+      "name": "test",
+      "displayName": "Test",
+      "description": "Release build of `tests/all` target",
+      "configurePreset": "test",
+      "targets": "tests/all"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "test",
+      "displayName": "Default",
+      "description": "Default run of all tests",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "ignore"
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "release-build",
+      "displayName": "Release",
+      "description": "Release build of the project",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "release"
+        },
+        {
+          "type": "build",
+          "name": "release"
+        }
+      ]
+    },
+    {
+      "name": "debug-build",
+      "displayName": "Debug",
+      "description": "Debug build of the project",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "debug"
+        },
+        {
+          "type": "build",
+          "name": "debug"
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "displayName": "Test",
+      "description": "Run project tests",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "test"
+        },
+        {
+          "type": "build",
+          "name": "test"
+        },
+        {
+          "type": "test",
+          "name": "default"
+        }
+      ]
+    }
+  ]
+}

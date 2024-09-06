@@ -1,0 +1,12 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+
+AccessModifierOffset: -2
+ColumnLimit: 100
+IndentWidth: 4
+InsertNewlineAtEOF: true
+NamespaceIndentation: All
+SpaceAfterTemplateKeyword: false
+TabWidth: 4
+...

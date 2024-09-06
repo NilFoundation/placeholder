@@ -5,15 +5,21 @@
   cmake,
   boost,
   gdb,
-  cmake_modules,
+  crypto3,
+  ethash,
+  intx,
+  sszpp,
+  valijson,
+  gtest,
+  evm-assigner,
   enableDebugging,
   enableDebug ? false,
   runTests ? false,
   }:
 let
   inherit (lib) optional;
-in stdenv.mkDerivation {
-  name = "Crypto3";
+in stdenv.mkDerivation rec {
+  name = "zkevm-framework";
 
   src = lib.sourceByRegex ./. [ ".*" ];
 
@@ -22,19 +28,25 @@ in stdenv.mkDerivation {
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules];
+  buildInputs = [crypto3 evm-assigner intx ethash sszpp valijson gtest];
 
   cmakeFlags =
-    [
-      (if runTests then "-DBUILD_TESTS=TRUE" else "-DBUILD_TESTS=False")
+  [
+      (if runTests then "-DENABLE_TESTS=TRUE" else "")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       "-G Ninja"
-    ];
+  ];
 
-  doCheck = runTests; # tests are inside crypto3-tests derivation
+  doBuild = true;
+  doCheck = runTests;
+
+  checkPhase = ''
+    ctest
+    ninja executables_tests
+  '';
 
   shellHook = ''
     PS1="\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
-    echo "Welcome to Crypto3 development environment!"
+    echo "zkEVM-framework ${if enableDebug then "debug" else "release"} dev environment activated"
   '';
 }

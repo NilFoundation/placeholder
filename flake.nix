@@ -22,7 +22,10 @@
         };
       in {
         packages = rec {
-          crypto3 = (pkgs.callPackage ./crypto3/crypto3.nix { });
+          crypto3 = (pkgs.callPackage ./crypto3/crypto3.nix {
+            runTests = false;
+            enableDebug = false;
+          });
           crypto3-tests = (pkgs.callPackage ./crypto3/crypto3.nix {
             runTests = true;
             enableDebug = false;
@@ -33,8 +36,9 @@
           });
           
           evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
-            crypto3 = crypto3;
+            runTests = false;
             enableDebug = false;
+            crypto3 = crypto3;
           });
           evm-assigner-tests = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = true;
@@ -45,6 +49,25 @@
             enableDebug = true;
             runTests = true;
             crypto3 = crypto3;
+          });
+
+          zkevm-framework = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            runTests = false;
+            enableDebug = false;
+            crypto3 = crypto3;
+            evm-assigner = evm-assigner;
+          });
+          zkevm-framework-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3;
+            evm-assigner = evm-assigner;
+          });
+          zkevm-framework-debug-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            enableDebug = true;
+            runTests = true;
+            crypto3 = crypto3;
+            evm-assigner = evm-assigner;
           });
 
           # The "all" package will build all packages. Convenient for CI,
@@ -81,13 +104,20 @@
             crypto3 = crypto3-clang;
           });
 
+          zkevm-framework-gcc = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3-gcc;
+            evm-assigner = evm-assigner-gcc;
+          });
+
           all-clang = pkgs.symlinkJoin {
             name = "all";
             paths = [ crypto3-clang evm-assigner-clang ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-gcc evm-assigner-gcc ];
+            paths = [ crypto3-gcc evm-assigner-gcc zkevm-framework-gcc ];
           };
           default = all-gcc;
         };
