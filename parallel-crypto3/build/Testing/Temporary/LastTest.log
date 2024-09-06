@@ -1,0 +1,344 @@
+Start testing: Aug 23 01:06 CEST
+----------------------------------------------------------
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallelization-utils/test/actor_core_thread_pool_test
+1/21 Testing: actor_core_thread_pool_test
+1/21 Test: actor_core_thread_pool_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallelization-utils/test
+"actor_core_thread_pool_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_core_thread_pool_test" end time: Aug 23 01:06 CEST
+"actor_core_thread_pool_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_commitment_lpc_test
+2/21 Testing: actor_zk_commitment_lpc_test
+2/21 Test: actor_zk_commitment_lpc_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_commitment_lpc_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_commitment_lpc_test" end time: Aug 23 01:06 CEST
+"actor_zk_commitment_lpc_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_commitment_fri_test
+3/21 Testing: actor_zk_commitment_fri_test
+3/21 Test: actor_zk_commitment_fri_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_commitment_fri_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_commitment_fri_test" end time: Aug 23 01:06 CEST
+"actor_zk_commitment_fri_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_commitment_kzg_test
+4/21 Testing: actor_zk_commitment_kzg_test
+4/21 Test: actor_zk_commitment_kzg_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_commitment_kzg_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_commitment_kzg_test" end time: Aug 23 01:06 CEST
+"actor_zk_commitment_kzg_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_commitment_fold_polynomial_test
+5/21 Testing: actor_zk_commitment_fold_polynomial_test
+5/21 Test: actor_zk_commitment_fold_polynomial_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_commitment_fold_polynomial_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_commitment_fold_polynomial_test" end time: Aug 23 01:06 CEST
+"actor_zk_commitment_fold_polynomial_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_commitment_pedersen_test
+6/21 Testing: actor_zk_commitment_pedersen_test
+6/21 Test: actor_zk_commitment_pedersen_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_commitment_pedersen_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_commitment_pedersen_test" end time: Aug 23 01:06 CEST
+"actor_zk_commitment_pedersen_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_commitment_proof_of_knowledge_test
+7/21 Testing: actor_zk_commitment_proof_of_knowledge_test
+7/21 Test: actor_zk_commitment_proof_of_knowledge_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_commitment_proof_of_knowledge_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_commitment_proof_of_knowledge_test" end time: Aug 23 01:06 CEST
+"actor_zk_commitment_proof_of_knowledge_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_commitment_proof_of_work_test
+8/21 Testing: actor_zk_commitment_proof_of_work_test
+8/21 Test: actor_zk_commitment_proof_of_work_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_commitment_proof_of_work_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_commitment_proof_of_work_test" end time: Aug 23 01:06 CEST
+"actor_zk_commitment_proof_of_work_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_math_expression_test
+9/21 Testing: actor_zk_math_expression_test
+9/21 Test: actor_zk_math_expression_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_math_expression_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_math_expression_test" end time: Aug 23 01:06 CEST
+"actor_zk_math_expression_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_circuits_test
+10/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_circuits_test
+10/21 Test: actor_zk_systems_plonk_placeholder_placeholder_circuits_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_circuits_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_circuits_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_circuits_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_goldilocks_test
+11/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_goldilocks_test
+11/21 Test: actor_zk_systems_plonk_placeholder_placeholder_goldilocks_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_goldilocks_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_goldilocks_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_goldilocks_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_lookup_argument_test
+12/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_lookup_argument_test
+12/21 Test: actor_zk_systems_plonk_placeholder_placeholder_lookup_argument_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_lookup_argument_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_lookup_argument_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_lookup_argument_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_gate_argument_test
+13/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_gate_argument_test
+13/21 Test: actor_zk_systems_plonk_placeholder_placeholder_gate_argument_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_gate_argument_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_gate_argument_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_gate_argument_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_permutation_argument_test
+14/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_permutation_argument_test
+14/21 Test: actor_zk_systems_plonk_placeholder_placeholder_permutation_argument_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_permutation_argument_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_permutation_argument_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_permutation_argument_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_kzg_test
+15/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_kzg_test
+15/21 Test: actor_zk_systems_plonk_placeholder_placeholder_kzg_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_kzg_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_kzg_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_kzg_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_hashes_test
+16/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_hashes_test
+16/21 Test: actor_zk_systems_plonk_placeholder_placeholder_hashes_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_hashes_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_hashes_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_hashes_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_curves_test
+17/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_curves_test
+17/21 Test: actor_zk_systems_plonk_placeholder_placeholder_curves_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_curves_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_curves_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_curves_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_placeholder_placeholder_quotient_polynomial_chunks_test
+18/21 Testing: actor_zk_systems_plonk_placeholder_placeholder_quotient_polynomial_chunks_test
+18/21 Test: actor_zk_systems_plonk_placeholder_placeholder_quotient_polynomial_chunks_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_placeholder_placeholder_quotient_polynomial_chunks_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_placeholder_placeholder_quotient_polynomial_chunks_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_placeholder_placeholder_quotient_polynomial_chunks_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_ppzksnark_r1cs_gg_ppzksnark_r1cs_gg_ppzksnark_test
+19/21 Testing: actor_zk_systems_ppzksnark_r1cs_gg_ppzksnark_r1cs_gg_ppzksnark_test
+19/21 Test: actor_zk_systems_ppzksnark_r1cs_gg_ppzksnark_r1cs_gg_ppzksnark_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_ppzksnark_r1cs_gg_ppzksnark_r1cs_gg_ppzksnark_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_ppzksnark_r1cs_gg_ppzksnark_r1cs_gg_ppzksnark_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_ppzksnark_r1cs_gg_ppzksnark_r1cs_gg_ppzksnark_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_transcript_transcript_test
+20/21 Testing: actor_zk_transcript_transcript_test
+20/21 Test: actor_zk_transcript_transcript_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_transcript_transcript_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_transcript_transcript_test" end time: Aug 23 01:06 CEST
+"actor_zk_transcript_transcript_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+Unable to find executable: /home/andrei/sources/parallel-crypto3/build/libs/parallel-zk/test/actor_zk_systems_plonk_plonk_constraint_test
+21/21 Testing: actor_zk_systems_plonk_plonk_constraint_test
+21/21 Test: actor_zk_systems_plonk_plonk_constraint_test
+Command: ""
+Directory: /home/andrei/sources/parallel-crypto3/libs/parallel-zk/test
+"actor_zk_systems_plonk_plonk_constraint_test" start time: 
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"actor_zk_systems_plonk_plonk_constraint_test" end time: Aug 23 01:06 CEST
+"actor_zk_systems_plonk_plonk_constraint_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Aug 23 01:06 CEST
+
+actor-core =   0.00 sec*proc
+
+actor-zk =   0.00 sec*proc
+

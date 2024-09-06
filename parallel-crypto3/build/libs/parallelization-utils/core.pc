@@ -1,0 +1,10 @@
+
+prefix=/home/andrei/sources/parallel-crypto3/outputs/out
+exec_prefix=${prefix}
+libdir=/home/andrei/sources/parallel-crypto3/outputs/out/lib
+includedir=/home/andrei/sources/parallel-crypto3/outputs/out/include
+Name: core
+Description: No description
+Version: 0.1.0
+
+Cflags:  -I/nix/store/mgxy1gjd0jlq86bscykmpd5bhqkgw8n7-boost-1.83.0-dev/include -I/home/andrei/sources/parallel-crypto3/outputs/out/include
