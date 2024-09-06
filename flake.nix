@@ -20,7 +20,7 @@
           inherit system;
           overlays = [ nix-3rdparty.overlays.${system}.default ];
         };
-      in {
+      in rec {
         packages = rec {
           crypto3 = (pkgs.callPackage ./crypto3/crypto3.nix {
             runTests = false;
@@ -111,19 +111,19 @@
           parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3-gcc;
+            crypto3 = packages.crypto3;
           });
           parallel-crypto3-clang = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             stdenv = pkgs.llvmPackages_18.stdenv;
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3-gcc;
+            crypto3 = crypto3-clang;
           });
 
           evm-assigner-gcc = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3-gcc;
+            crypto3 = packages.crypto3;
           });
           evm-assigner-clang = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             stdenv = pkgs.llvmPackages_18.stdenv;
@@ -135,17 +135,17 @@
           zkevm-framework-gcc = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3-gcc;
+            crypto3 = packages.crypto3;
             evm-assigner = evm-assigner-gcc;
           });
 
           all-clang = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang evm-assigner-clang ];
+            paths = [ crypto3-clang parallel-crypto3-clang evm-assigner-clang ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-gcc evm-assigner-gcc zkevm-framework-gcc ];
+            paths = [ crypto3-gcc parallel-crypto3-gcc evm-assigner-gcc zkevm-framework-gcc ];
           };
           default = all-gcc;
         };
