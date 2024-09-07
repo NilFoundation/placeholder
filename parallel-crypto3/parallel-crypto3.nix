@@ -28,10 +28,7 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       (if runTests then "-DBUILD_TESTS=TRUE" else "")
-      (if runTests then "-DCMAKE_ENABLE_TESTS=TRUE" else "")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
-      (if enableDebug then "-DCMAKE_CXX_FLAGS=-ggdb" else "")
-      (if enableDebug then "-DCMAKE_CXX_FLAGS=-O0" else "")
     ];
 
   doCheck = runTests; # tests are inside crypto3-tests derivation

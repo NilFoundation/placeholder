@@ -3,6 +3,10 @@ project(parallel-crypto3)
 
 find_package(CM)
 
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "-ggdb -O0")
+endif()
+
 # This is useful due to some build systems (Ninja in particular) are piping
 # compiler output and compiler switches it's output to plain text
 option (FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." FALSE)
