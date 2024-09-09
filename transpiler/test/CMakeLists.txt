@@ -9,7 +9,6 @@
 include(CMTest)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-
                       crypto3::all
                       ${Boost_LIBRARIES})
 
@@ -17,6 +16,10 @@ add_custom_target(compile_and_run_transpiler_tests)
 
 macro(define_transpiler_test name)
     cm_test(NAME transpiler_${name}_test SOURCES ${name}.cpp)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(transpiler_${name}_test PRIVATE "-fconstexpr-steps=2147483647")
+    endif()
 
     target_include_directories(transpiler_${name}_test PRIVATE
                                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
