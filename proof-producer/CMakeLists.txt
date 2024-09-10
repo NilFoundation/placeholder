@@ -10,16 +10,16 @@
 
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
-list(APPEND CMAKE_MODULE_PATH
-    "${CMAKE_CURRENT_LIST_DIR}/cmake"
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/packages"
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/share/modules/cmake"
-)
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "-ggdb -O0")
+    set(ZK_PLACEHOLDER_DEBUG_ENABLED TRUE)
+endif()
 
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0028 NEW)
 cmake_policy(SET CMP0057 NEW)
 
+find_package(CM)
 include(CMConfig)
 include(CMDeploy)
 include(CMSetupVersion)

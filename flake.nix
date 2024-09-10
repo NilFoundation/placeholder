@@ -102,13 +102,35 @@
             crypto3 = crypto3;
           });
 
+          proof-producer = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            runTests = false;
+            enableDebug = false;
+            crypto3 = crypto3;
+            transpiler = transpiler;
+            parallel-crypto3 = parallel-crypto3;
+          });
+          proof-producer-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3;
+            transpiler = transpiler;
+            parallel-crypto3 = parallel-crypto3;
+          });
+          proof-producer-debug-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            enableDebug = true;
+            runTests = true;
+            crypto3 = crypto3;
+            transpiler = transpiler;
+            parallel-crypto3 = parallel-crypto3;
+          });
+
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.
           # The packages that have no changes will not be rebuilt, and instead
           # fetched from the cache.
           all = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3 evm-assigner zkevm-framework transpiler];
+            paths = [ crypto3 evm-assigner zkevm-framework transpiler proof-producer];
           };
           default = all; 
         };
@@ -167,13 +189,29 @@
             crypto3 = crypto3-clang;
           });
 
+          proof-producer-gcc = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            runTests = true;
+            enableDebug = false;
+            crypto3 = packages.crypto3;
+            transpiler = packages.transpiler;
+            parallel-crypto3 = packages.parallel-crypto3;
+          });
+          proof-producer-clang = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            stdenv = pkgs.llvmPackages_18.stdenv;
+            runTests = true;
+            enableDebug = false;
+            crypto3 = crypto3-clang;
+            transpiler = transpiler-clang;
+            parallel-crypto3 = parallel-crypto3-clang;
+          });
+
           all-clang = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang parallel-crypto3-clang evm-assigner-clang transpiler-clang ];
+            paths = [ crypto3-clang parallel-crypto3-clang evm-assigner-clang transpiler-clang proof-producer-clang ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-gcc parallel-crypto3-gcc evm-assigner-gcc zkevm-framework-gcc transpiler-gcc ];
+            paths = [ crypto3-gcc parallel-crypto3-gcc evm-assigner-gcc zkevm-framework-gcc transpiler-gcc proof-producer-gcc ];
           };
           default = all-gcc;
         };
