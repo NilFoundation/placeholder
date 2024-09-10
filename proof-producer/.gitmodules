@@ -1,6 +1,0 @@
-[submodule "cmake/modules"]
-	path = cmake/modules
-	url = ../../BoostCMake/cmake_modules.git
-[submodule "libs/transpiler"]
-	path = libs/transpiler
-	url = ../../NilFoundation/zkllvm-transpiler.git
