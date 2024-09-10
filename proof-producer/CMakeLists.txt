@@ -29,6 +29,7 @@ cm_project(proof-producer WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(crypto3 REQUIRED)
+find_package(crypto3_transpiler REQUIRED)
 
 find_package(actor_zk REQUIRED)
 find_package(actor_containers REQUIRED)
@@ -40,9 +41,6 @@ find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread)
 if(ENABLE_TESTS)
     find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 endif()
-
-# EXCLUDE_FROM_ALL is needed so crypto3 and other headers won't be installed
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/transpiler" EXCLUDE_FROM_ALL)
 
 # Read version from VERSION file
 set(VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/VERSION")
