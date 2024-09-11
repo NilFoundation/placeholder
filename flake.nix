@@ -215,5 +215,15 @@
           };
           default = all-gcc;
         };
+        apps = {
+          single-threaded = {
+            type = "app";
+            program = "${self.packages.${system}.proof-producer}/bin/proof-producer-single-threaded";
+          };
+          default = {
+            type = "app";
+            program = "${self.packages.${system}.default}/bin/proof-producer-multi-threaded";
+          };
+        };
       }));
 }

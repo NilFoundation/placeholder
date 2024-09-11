@@ -19,7 +19,7 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0028 NEW)
 cmake_policy(SET CMP0057 NEW)
 
-find_package(CM)
+find_package(CM REQUIRED)
 include(CMConfig)
 include(CMDeploy)
 include(CMSetupVersion)
