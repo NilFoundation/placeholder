@@ -6,14 +6,6 @@
 # http://www.boost.org/LICENSE_1_0.txt
 #---------------------------------------------------------------------------#
 
-cmake_minimum_required(VERSION 2.8.12)
-
-cmake_policy(SET CMP0028 NEW)
-cmake_policy(SET CMP0042 NEW)
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0057 NEW)
-cmake_policy(SET CMP0076 NEW)
-
 include(CMConfig)
 include(CMSetupVersion)
 
@@ -21,30 +13,10 @@ if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
     cm_workspace(actor)
 endif()
 
-macro(cm_find_package NAME)
-    foreach(ITERATOR ${CMAKE_WORKSPACE_LIST})
-        if(NOT "${NAME}" MATCHES "^${ITERATOR}_.*$" AND NOT "${NAME}" STREQUAL CM)
-            find_package(${ARGV})
-        else()
-            set(${ARGV0}_FOUND ON CACHE BOOL "")
-        endif()
-    endforeach()
-endmacro()
-
 cm_project(math WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES ASM C CXX)
 
 cm_find_package(CM)
 include(CMDeploy)
-
-option(BUILD_TESTS "Build unit tests" FALSE)
-
-list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_HEADERS)
-
-list(APPEND ${CURRENT_PROJECT_NAME}_UNGROUPED_SOURCES)
-
-list(APPEND ${CURRENT_PROJECT_NAME}_HEADERS ${${CURRENT_PROJECT_NAME}_PUBLIC_HEADERS})
-
-list(APPEND ${CURRENT_PROJECT_NAME}_SOURCES ${${CURRENT_PROJECT_NAME}_UNGROUPED_SOURCES})
 
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
@@ -67,14 +39,11 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       crypto3::algebra
                       crypto3::multiprecision
 
-                      ${Boost_LIBRARIES})
-
-find_package(Boost COMPONENTS random)
+                      Boost::random
+                  )
 
 cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
           INCLUDE include
           NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
 
-if(BUILD_TESTS)
-    add_subdirectory(test)
-endif()
+cm_add_test_subdirectory(test)

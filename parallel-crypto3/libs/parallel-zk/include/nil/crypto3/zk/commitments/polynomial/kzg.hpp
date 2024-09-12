@@ -725,8 +725,12 @@ namespace nil {
                     }
 
                 public:
-                    // Interface function. Isn't useful here.
+                    using preprocessed_data_type = bool;
+
+                    // Interface functions, not useful here. Added for compatibility with LPC.
                     void mark_batch_as_fixed(std::size_t index) {
+                    }
+                    void set_fixed_polys_values(const preprocessed_data_type& value) {
                     }
 
                     kzg_commitment_scheme(params_type kzg_params) : _params(kzg_params) {}
@@ -746,14 +750,12 @@ namespace nil {
                             nil::marshalling::status_type status;
                             std::vector<uint8_t> single_commitment_bytes =
                                     nil::marshalling::pack<endianness>(single_commitment, status);
-                            BOOST_ASSERT(status == nil::marshalling::status_type::success);
+                            THROW_IF_ERROR_STATUS(status, "kzg::commit");
                             result.insert(result.end(), single_commitment_bytes.begin(), single_commitment_bytes.end());
                         }
                         _commitments[index] = result;
                         return result;
                     }
-
-                    using preprocessed_data_type = bool;
 
                     preprocessed_data_type preprocess(transcript_type &transcript) const {
                         return true;
@@ -835,7 +837,7 @@ namespace nil {
                                 nil::marshalling::status_type status;
                                 typename curve_type::template g1_type<>::value_type
                                         i_th_commitment = nil::marshalling::pack(byteblob, status);
-                                BOOST_ASSERT(status == nil::marshalling::status_type::success);
+                                THROW_IF_ERROR_STATUS(status, "kzg::verify_eval");
                                 auto U_commit = nil::crypto3::zk::algorithms::commit_one<CommitmentSchemeType>(_params,
                                                                                                                this->get_U(
                                                                                                                        k,

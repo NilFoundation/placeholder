@@ -42,13 +42,13 @@ namespace nil {
         namespace zk {
             namespace components {
                 template<typename, typename, std::size_t>
-                struct merkle_proof;
+                class merkle_proof;
             }    // namespace components
         }        // namespace zk
         namespace marshalling {
             namespace types {
                 template<typename, typename>
-                struct merkle_proof_marshalling;
+                class merkle_proof_marshalling;
             }
         }    // namespace marshalling
         namespace containers {

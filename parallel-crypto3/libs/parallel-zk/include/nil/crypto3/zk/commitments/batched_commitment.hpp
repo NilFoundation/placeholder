@@ -31,7 +31,6 @@
 #include <utility>
 #include <map>
 
-#include <boost/functional/hash.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
@@ -66,15 +65,25 @@ namespace nil {
                     using field_type = typename ParamsType::field_type;
                     using transcript_type = TranscriptType;
                     using polynomial_type = PolynomialType;
-
-                    eval_storage<field_type> _z;
+                    using value_type = typename field_type::value_type;
+                    using eval_storage_type = eval_storage<field_type>;
 
                     polys_evaluator() = default;
 
-                protected:
+                    // These fields are accessed from marshalling.
+                    eval_storage_type _z;
+
                     std::map<std::size_t, std::vector<polynomial_type>> _polys;
-                    std::map<std::size_t, bool> _locked; // _locked[batch] is true after it is commited
-                    std::map<std::size_t, std::vector<std::vector<typename field_type::value_type>>> _points;
+
+                    // _locked[batch] is true after it is commited
+                    std::map<std::size_t, bool> _locked; 
+
+                    std::map<std::size_t, std::vector<std::vector<value_type>>> _points;
+
+                    bool operator==(const polys_evaluator& other) const {
+                        return _z == other._z && _polys == other._polys &&
+                            _locked == other._locked && _points == other._points;
+                    }
 
                     // We frequently search over the this->_points structure, and it's better to keep a hashmap that maps point to
                     // it's index in vector for faster search. We need to duplicate this data for now, because the order of points matters.
@@ -93,6 +102,13 @@ namespace nil {
                                 }
                             }
                         }
+                    }
+
+                    // This function is called from verifier directly, without actually committing to the
+                    // polynomials.
+                    void state_commited(std::size_t index) {
+                        _locked[index] = true;
+                        _points[index].resize(_polys[index].size());
                     }
 
                 protected:
@@ -154,16 +170,16 @@ namespace nil {
                     std::vector<std::vector<typename field_type::value_type>> get_unique_point_sets_list() const{
                         std::vector<std::vector<typename field_type::value_type>> unique_points;
 
-                        for(auto const &[k, point]:_points){
-                            for( std::size_t i = 0; i < point.size(); i++ ){
+                        for (auto const &[k, point]:_points) {
+                            for (std::size_t i = 0; i < point.size(); i++) {
                                 bool found = false;
-                                for( std::size_t j = 0; j < unique_points.size(); j++ ){
+                                for (std::size_t j = 0; j < unique_points.size(); j++) {
                                     if( unique_points[j] == point[i] ){
                                         found = true;
                                         break;
                                     }
                                 }
-                                if( !found ){
+                                if (!found) {
                                     unique_points.push_back(point[i]);
                                 }
                             }
@@ -192,12 +208,6 @@ namespace nil {
                         return eval_map;
                     }
 
-
-                    void state_commited(std::size_t index){
-                        _locked[index] = true;
-                        _points[index].resize(_polys[index].size());
-                    }
-
                     void eval_polys() {
                         for(auto const &[k, poly] : _polys) {
                             _z.set_batch_size(k, poly.size());
@@ -209,10 +219,14 @@ namespace nil {
                                 _z.set_poly_points_number(k, i, point[i].size());
                             }
 
+                            // Lambda in parallel_for can not capture structured bindings [k, poly], until C++20
+                            auto k_capture = k;
+                            auto poly_capture = poly;
+
                             // We use HIGH level thread pool here, because "evaluate" may use the lower level one.
-                            parallel_for(0, poly.size(), [this, &point, k, &poly](std::size_t i) {
+                            parallel_for(0, poly.size(), [this, &point, k_capture, &poly_capture](std::size_t i) {
                                 for (std::size_t j = 0; j < point[i].size(); j++) {
-                                    _z.set(k, i, j, poly[i].evaluate(point[i][j]));
+                                    _z.set(k_capture, i, j, poly_capture[i].evaluate(point[i][j]));
                                 }
                             }, ThreadPool::PoolLevel::HIGH);
                         }
@@ -225,27 +239,39 @@ namespace nil {
                     }
 
                     void append_to_batch(std::size_t index, const polynomial_type& poly){
-                        if( _locked.find(index) == _locked.end() ) _locked[index] = false;
-                        BOOST_ASSERT(!_locked[index]); // We cannot modify batch after commitment
+                        if (_locked.find(index) == _locked.end())
+                            _locked[index] = false;
+
+                        // We cannot modify batch after commitment
+                        BOOST_ASSERT(!_locked[index]);
+
                         _polys[index].push_back(poly);
                     }
 
                     template<typename container_type>
                     void append_to_batch(std::size_t index, const container_type& polys){
-                        if( _locked.find(index) == _locked.end() ) _locked[index] = false;
+                        if (_locked.find(index) == _locked.end())
+                            _locked[index] = false;
+
                         BOOST_ASSERT(!_locked[index]); // We cannot modify batch after commitment
                         _polys[index].insert(std::end(_polys[index]), std::begin(polys), std::end(polys));
                     }
 
-                    void append_eval_point(std::size_t batch_id, typename field_type::value_type point){
-                        BOOST_ASSERT(_locked[batch_id]); // We can add points only after polynomails are commited.
-                        for(std::size_t i = 0; i < _points[batch_id].size(); i++){
+                    void append_eval_point(std::size_t batch_id, typename field_type::value_type point) {
+                        // We can add points only after polynomails are commited.
+                        BOOST_ASSERT(_locked[batch_id]);
+
+                        for (std::size_t i = 0; i < _points[batch_id].size(); i++) {
                             _points[batch_id][i].push_back(point);
                         }
                     }
 
-                    void append_eval_point(std::size_t batch_id, std::size_t poly_id, typename field_type::value_type point){
-                        BOOST_ASSERT(_locked[batch_id]); // We can add points only after polynomails are commited.
+                    void append_eval_point(
+                            std::size_t batch_id, std::size_t poly_id,
+                            const typename field_type::value_type& point) {
+                        // We can add points only after polynomails are commited.
+                        BOOST_ASSERT(_locked[batch_id]); 
+
                         _points[batch_id][poly_id].push_back(point);
                     }
 
@@ -258,13 +284,16 @@ namespace nil {
                     }
 
                     // This function don't check evaluation points repeats
-                    void append_eval_points(std::size_t batch_id, std::size_t poly_id, std::set<typename field_type::value_type> points){
-                        BOOST_ASSERT(_locked[batch_id]); // We can add points only after polynomails are commited.
+                    void append_eval_points(std::size_t batch_id, std::size_t poly_id,
+                            std::set<typename field_type::value_type> points) {
+                        // We can add points only after polynomails are commited.
+                        BOOST_ASSERT(_locked[batch_id]); 
+
                         _points[batch_id][poly_id].insert(_points[batch_id][poly_id].end(), points.begin(), points.end());
                     }
 
-                    void set_batch_size(std::size_t batch_id, std::size_t batch_size){
-                        if( _points.find(batch_id) == _points.end() ){
+                    void set_batch_size(std::size_t batch_id, std::size_t batch_size) {
+                        if (_points.find(batch_id) == _points.end()) {
                             _points[batch_id] = {};
                         }
                         _points[batch_id].resize(batch_size);

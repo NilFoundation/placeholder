@@ -5,6 +5,7 @@
 // Copyright (c) 2022 Alisa Cherniaeva <a.cherniaeva@nil.foundation>
 // Copyright (c) 2023 Elena Tatuzova <e.tatuzova@nil.foundation>
 // Copyright (c) 2023 Martun Karapetyan <martun@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -47,7 +48,8 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_scoped_profiler.hpp>
+
+#include <nil/crypto3/bench/scoped_profiler.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
@@ -155,7 +157,7 @@ namespace nil {
                     }
 
                     prover_lookup_result prove_eval() {
-                        PROFILE_PLACEHOLDER_SCOPE("Lookup argument prove eval time");
+                        PROFILE_SCOPE("Lookup argument prove eval time");
 
                         // Construct lookup gates
                         polynomial_dfs_type one_polynomial(
@@ -184,9 +186,11 @@ namespace nil {
                         }
                         auto reduced_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         auto& reduced_input = *reduced_input_ptr;
+
                         for( std::size_t i = 0; i < lookup_input.size(); i++ ){
                             reduced_input.push_back(reduce_dfs_polynomial_domain(lookup_input[i], basic_domain->m));
                         }
+
                         //    Sort
                         auto sorted = sort_polynomials(reduced_input, reduced_value, basic_domain->m,
                             preprocessed_data.common_data.desc.usable_rows_amount);
@@ -236,6 +240,7 @@ namespace nil {
 
                         F_dfs[0] = preprocessed_data.common_data.lagrange_0 * (one_polynomial - V_L);
                         F_dfs[1] = preprocessed_data.q_last * ( V_L * V_L - V_L );
+
                         // Polynomial g is waaay too large, saving memory here, by making code very unreadable.
                         //F_dfs[2] = (one_polynomial - (preprocessed_data.q_last + preprocessed_data.q_blind)) *
                         //           (V_L_shifted * h - V_L * g);
@@ -254,8 +259,10 @@ namespace nil {
                             BOOST_ASSERT(part_sizes.size() == gs.size());
                             BOOST_ASSERT(part_sizes.size() == hs.size());
                             BOOST_ASSERT(part_sizes.size() == lookup_alphas.size() + 1);
+
                             std::vector<polynomial_dfs_type> reduced_gs(lookup_alphas.size());
                             std::vector<polynomial_dfs_type> reduced_hs(lookup_alphas.size());
+
                             parallel_for(0, lookup_alphas.size(), [this, &gs, &hs, &reduced_gs, &reduced_hs](std::size_t i) {
                                 reduced_gs[i] = reduce_dfs_polynomial_domain(gs[i], basic_domain->m);
                                 reduced_hs[i] = reduce_dfs_polynomial_domain(hs[i], basic_domain->m);
@@ -320,12 +327,14 @@ namespace nil {
                         std::vector<polynomial_dfs_type> F_dfs_3_parts(std::next(sorted.begin(), 1), sorted.end());
                         parallel_for(0, F_dfs_3_parts.size(), [this, &F_dfs_3_parts, &alpha_challenges, &sorted](std::size_t i) {
                             polynomial_dfs_type sorted_shifted = math::polynomial_shift(
-                                sorted[i], this->preprocessed_data.common_data.desc.usable_rows_amount,
-                                this->basic_domain->m);
+                                sorted[i], preprocessed_data.common_data.desc.usable_rows_amount,
+                                basic_domain->m);
                             F_dfs_3_parts[i] -= sorted_shifted;
                             F_dfs_3_parts[i] *= alpha_challenges[i] * preprocessed_data.common_data.lagrange_0;
                         }, ThreadPool::PoolLevel::HIGH);
+
                         F_dfs[3] = polynomial_sum<FieldType>(std::move(F_dfs_3_parts));
+
                         return {
                             std::move(F_dfs),
                             std::move(lookup_commitment)
@@ -339,9 +348,9 @@ namespace nil {
                             const typename FieldType::value_type& gamma,
                             const std::vector<std::size_t>& lookup_part_sizes
                     ) {
-                        PROFILE_PLACEHOLDER_SCOPE("Lookup argument compute_gs");
+                        PROFILE_SCOPE("Lookup argument compute_gs");
 
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> result(lookup_part_sizes.size());
+                        std::vector<polynomial_dfs_type> result(lookup_part_sizes.size());
                         auto& lookup_value = *lookup_value_ptr;
                         auto& lookup_input = *lookup_input_ptr;
 
@@ -358,7 +367,7 @@ namespace nil {
 
                         parallel_for(0, lookup_part_sizes.size(),
                             [&one, &beta, &part1, &gamma, &lookup_input, &lookup_value, &lookup_part_start_indices, &lookup_part_sizes, &result, this](std::size_t current_part) {
-                                std::vector<math::polynomial_dfs<typename FieldType::value_type>> g_multipliers(
+                                std::vector<polynomial_dfs_type> g_multipliers(
                                     lookup_part_sizes[current_part]);
 
                                 parallel_for(lookup_part_start_indices[current_part], lookup_part_start_indices[current_part + 1],
@@ -379,17 +388,17 @@ namespace nil {
                         return std::move(result);
                     }
 
-                    std::vector<math::polynomial_dfs<typename FieldType::value_type>> compute_hs(
-                            const std::vector<math::polynomial_dfs<typename FieldType::value_type>>& sorted,
+                    std::vector<polynomial_dfs_type> compute_hs(
+                            const std::vector<polynomial_dfs_type>& sorted,
                             const typename FieldType::value_type& beta,
                             const typename FieldType::value_type& gamma,
                             const std::vector<std::size_t> &lookup_part_sizes
                         ) {
-                        PROFILE_PLACEHOLDER_SCOPE("Lookup argument compute_hs");
+                        PROFILE_SCOPE("Lookup argument compute_hs");
 
                         auto one = FieldType::value_type::one();
 
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> result(lookup_part_sizes.size());
+                        std::vector<polynomial_dfs_type> result(lookup_part_sizes.size());
 
                         // Precompute the indices of start and end locations for each chunk.
                         std::vector<std::size_t> lookup_part_start_indices;
@@ -400,7 +409,7 @@ namespace nil {
 
                         parallel_for(0, lookup_part_sizes.size(),
                             [ &sorted, &one, &beta, &gamma, &lookup_part_start_indices, &lookup_part_sizes, &result, this](std::size_t current_part) {
-                                std::vector<math::polynomial_dfs<typename FieldType::value_type>> h_multipliers(lookup_part_sizes[current_part]);
+                                std::vector<polynomial_dfs_type> h_multipliers(lookup_part_sizes[current_part]);
 
                                 parallel_for(lookup_part_start_indices[current_part], lookup_part_start_indices[current_part + 1],
                                     [&sorted, &h_multipliers, &one, &beta, &gamma, &lookup_part_start_indices, &current_part, this](std::size_t i) {
@@ -416,15 +425,15 @@ namespace nil {
                         return std::move(result);
                     }
 
-                    math::polynomial_dfs<typename FieldType::value_type> compute_V_L(
-                        const std::vector<math::polynomial_dfs<typename FieldType::value_type>>& sorted,
-                        const std::vector<math::polynomial_dfs<typename FieldType::value_type>>& reduced_input,
-                        const std::vector<math::polynomial_dfs<typename FieldType::value_type>>& reduced_value,
+                    polynomial_dfs_type compute_V_L(
+                        const std::vector<polynomial_dfs_type>& sorted,
+                        const std::vector<polynomial_dfs_type>& reduced_input,
+                        const std::vector<polynomial_dfs_type>& reduced_value,
                         const typename FieldType::value_type& beta,
                         const typename FieldType::value_type& gamma) {
-                        PROFILE_PLACEHOLDER_SCOPE("Lookup argument compute poly V_L");
+                        PROFILE_SCOPE("Lookup argument compute poly V_L");
 
-                        math::polynomial_dfs<typename FieldType::value_type> V_L(
+                        polynomial_dfs_type V_L(
                             basic_domain->m - 1, basic_domain->m, FieldType::value_type::zero());
                         V_L[0] = FieldType::value_type::one();
                         auto one = FieldType::value_type::one();
@@ -458,15 +467,15 @@ namespace nil {
                         return V_L;
                     }
 
-                    std::unique_ptr<std::vector<math::polynomial_dfs<typename FieldType::value_type>>> prepare_lookup_value(
-                            const math::polynomial_dfs<typename FieldType::value_type>& mask_assignment) {
-                        PROFILE_PLACEHOLDER_SCOPE("Lookup argument preparing lookup value");
+                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_value(
+                            const polynomial_dfs_type& mask_assignment) {
+                        PROFILE_SCOPE("Lookup argument preparing lookup value");
 
                         // Prepare lookup value
-                        auto lookup_value_ptr = std::make_unique<std::vector<math::polynomial_dfs<typename FieldType::value_type>>>();
+                        auto lookup_value_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
-                            const math::polynomial_dfs<typename FieldType::value_type> &lookup_tag = plonk_columns.selector(l_table.tag_index);
+                            const polynomial_dfs_type &lookup_tag = plonk_columns.selector(l_table.tag_index);
 
                             // Increase the size to fit the next table values.
                             std::size_t lookup_values_used = lookup_value_ptr->size();
@@ -474,7 +483,7 @@ namespace nil {
 
                             parallel_for(0, l_table.lookup_options.size(),
                                 [&l_table, t_id, &lookup_tag, this, &mask_assignment, &lookup_value_ptr, lookup_values_used](std::size_t o_id) {
-                                    math::polynomial_dfs<typename FieldType::value_type> v = (typename FieldType::value_type(t_id + 1)) * lookup_tag;
+                                    polynomial_dfs_type v = (typename FieldType::value_type(t_id + 1)) * lookup_tag;
                                     typename FieldType::value_type theta_acc = this->theta;
                                     for (std::size_t i = 0; i < l_table.columns_number; i++) {
                                         v += theta_acc * lookup_tag * plonk_columns.constant(l_table.lookup_options[o_id][i].index);
@@ -487,10 +496,9 @@ namespace nil {
                         return std::move(lookup_value_ptr);
                     }
 
-                    std::unique_ptr<std::vector<math::polynomial_dfs<typename FieldType::value_type>>> prepare_lookup_input() {
-                        PROFILE_PLACEHOLDER_SCOPE("Lookup argument preparing lookup input");
-                      
-                        using polynomial_dfs_type = math::polynomial_dfs<typename FieldType::value_type>; 
+                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input() {
+                        PROFILE_SCOPE("Lookup argument preparing lookup input");
+
                         using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
 
                         // Prepare lookup input
@@ -552,11 +560,11 @@ namespace nil {
 
                 private:
 
-                    math::polynomial_dfs<typename FieldType::value_type> reduce_dfs_polynomial_domain(
-                        const math::polynomial_dfs<typename FieldType::value_type> &polynomial,
+                    polynomial_dfs_type reduce_dfs_polynomial_domain(
+                        const polynomial_dfs_type &polynomial,
                         const std::size_t &new_domain_size
                     ) {
-                        math::polynomial_dfs<typename FieldType::value_type> reduced(
+                        polynomial_dfs_type reduced(
                             new_domain_size - 1, new_domain_size, FieldType::value_type::zero());
 
                         BOOST_ASSERT(new_domain_size <= polynomial.size());
@@ -573,14 +581,13 @@ namespace nil {
                         return reduced;
                     };
 
-                    math::polynomial_dfs<typename FieldType::value_type> get_constraint_tag_from_gate_tag_column(
-                        math::polynomial_dfs<typename FieldType::value_type> tag_column,
+                    polynomial_dfs_type get_constraint_tag_from_gate_tag_column(
+                        polynomial_dfs_type tag_column,
                         std::size_t constraints_num,
-
                         std::size_t constraint_id,
                         std::size_t table_id
                     ){
-                        math::polynomial_dfs<typename FieldType::value_type> result = tag_column;
+                        polynomial_dfs_type result = tag_column;
                         for (std::size_t i = 1; i <= constraints_num; i++) {
                             if (i != constraint_id) {
                                 auto tmp = tag_column - typename FieldType::value_type(i);
@@ -619,13 +626,13 @@ namespace nil {
                     // similar values only with negligible probability.
                     // So similar values in compressed lookup tables vectors repeated values may be only in one column
                     // near each other.
-                    std::vector<math::polynomial_dfs<typename FieldType::value_type>> sort_polynomials(
-                        const std::vector<math::polynomial_dfs<typename FieldType::value_type>>& reduced_input,
-                        const std::vector<math::polynomial_dfs<typename FieldType::value_type>>& reduced_value,
+                    std::vector<polynomial_dfs_type> sort_polynomials(
+                        const std::vector<polynomial_dfs_type>& reduced_input,
+                        const std::vector<polynomial_dfs_type>& reduced_value,
                         std::size_t domain_size,
                         std::size_t usable_rows_amount
                     ) {
-                        PROFILE_PLACEHOLDER_SCOPE("Sort Polynomials");
+                        PROFILE_SCOPE("Sort Polynomials");
 
                         //  Build sorting map
                         std::unordered_map<typename FieldType::value_type, std::size_t> sorting_map;
@@ -646,9 +653,9 @@ namespace nil {
                             }
                         }
 
-                        math::polynomial_dfs<typename FieldType::value_type> zero_poly(
+                        polynomial_dfs_type zero_poly(
                             domain_size-1, domain_size, FieldType::value_type::zero());
-                        std::vector<math::polynomial_dfs<typename FieldType::value_type>> sorted(
+                        std::vector<polynomial_dfs_type> sorted(
                             reduced_input.size() + reduced_value.size(), zero_poly
                         );
                         std::size_t i1 = 0;
@@ -770,8 +777,8 @@ namespace nil {
                                 theta_acc = theta;
                                 BOOST_ASSERT(table.lookup_options[o_id].size() == table.columns_number);
                                 for( std::size_t i = 0; i < table.lookup_options[o_id].size(); i++){
-                                    auto key1 = std::tuple(table.lookup_options[o_id][i].index, 0, plonk_variable<typename FieldType::value_type>::column_type::constant);
-                                    auto shifted_key1 = std::tuple(table.lookup_options[o_id][i].index, 1, plonk_variable<typename FieldType::value_type>::column_type::constant);
+                                    auto key1 = std::tuple(table.lookup_options[o_id][i].index, 0, table.lookup_options[o_id][i].type);
+                                    auto shifted_key1 = std::tuple(table.lookup_options[o_id][i].index, 1, table.lookup_options[o_id][i].type);
                                     v += theta_acc * evaluations[key1] * selector_value;
                                     shifted_v += theta_acc * evaluations[shifted_key1]* shifted_selector_value;
                                     theta_acc *= theta;

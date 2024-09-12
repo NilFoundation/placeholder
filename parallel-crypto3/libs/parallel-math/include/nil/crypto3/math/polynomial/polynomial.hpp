@@ -78,6 +78,7 @@ namespace nil {
 
                 polynomial(size_type n, const value_type& x, const allocator_type& a) : val(n, x, a) {
                 }
+
                 template<typename InputIterator>
                 polynomial(InputIterator first, InputIterator last) : val(first, last) {
                     if (val.empty()) {
@@ -114,20 +115,21 @@ namespace nil {
                 polynomial(polynomial&& x, const allocator_type& a) : val(std::move(x.val), a) {
                 }
 
-                polynomial(const FieldValueType& value, std::size_t power = 0) : val(power + 1, FieldValueType::zero()) {
-                    this->operator[](power) = value;
-                }
-
                 explicit polynomial(const container_type &c) : val(c) {
                     if (val.empty()) {
                         val.push_back(FieldValueType::zero());
                     }
                 }
 
-                explicit polynomial(container_type &&c) : val(std::move(c)) {
+                explicit polynomial(container_type &&c) : val(std::forward<container_type>(c)) {
                     if (val.empty()) {
                         val.push_back(FieldValueType::zero());
                     }
+                }
+
+                polynomial(const FieldValueType& value, std::size_t power = 0)
+                    : val(power + 1, FieldValueType::zero()) {
+                    this->operator[](power) = value;
                 }
 
                 polynomial& operator=(const polynomial& x) {
@@ -158,6 +160,7 @@ namespace nil {
                 bool operator==(const polynomial& rhs) const {
                     return val == rhs.val;
                 }
+
                 bool operator!=(const polynomial& rhs) const {
                     return !(rhs == *this);
                 }
@@ -191,9 +194,11 @@ namespace nil {
                 const_iterator begin() const BOOST_NOEXCEPT {
                     return val.begin();
                 }
+
                 iterator end() BOOST_NOEXCEPT {
                     return val.end();
                 }
+
                 const_iterator end() const BOOST_NOEXCEPT {
                     return val.end();
                 }
@@ -241,15 +246,19 @@ namespace nil {
                 size_type capacity() const BOOST_NOEXCEPT {
                     return val.capacity();
                 }
+
                 bool empty() const BOOST_NOEXCEPT {
                     return val.empty();
                 }
+
                 size_type max_size() const BOOST_NOEXCEPT {
                     return val.max_size();
                 }
+
                 void reserve(size_type _n) {
                     return val.reserve(_n);
                 }
+
                 void shrink_to_fit() BOOST_NOEXCEPT {
                     return val.shrink_to_fit();
                 }
@@ -257,12 +266,15 @@ namespace nil {
                 reference operator[](size_type _n) BOOST_NOEXCEPT {
                     return val[_n];
                 }
+
                 const_reference operator[](size_type _n) const BOOST_NOEXCEPT {
                     return val[_n];
                 }
+
                 reference at(size_type _n) {
                     return val.at(_n);
                 }
+
                 const_reference at(size_type _n) const {
                     return val.at(_n);
                 }
@@ -270,12 +282,15 @@ namespace nil {
                 reference front() BOOST_NOEXCEPT {
                     return val.front();
                 }
+
                 const_reference front() const BOOST_NOEXCEPT {
                     return val.front();
                 }
+
                 reference back() BOOST_NOEXCEPT {
                     return val.back();
                 }
+
                 const_reference back() const BOOST_NOEXCEPT {
                     return val.back();
                 }
@@ -312,6 +327,7 @@ namespace nil {
                 iterator insert(const_iterator _position, value_type&& _x) {
                     return val.insert(_position, _x);
                 }
+
                 template<class... Args>
                 iterator emplace(const_iterator _position, Args&&... _args) {
                     return val.template emplace(_position, _args...);
@@ -409,7 +425,7 @@ namespace nil {
                 void condense() {
                     while (std::distance(this->cbegin(), this->cend()) > 1 &&
                            this->back() == typename std::iterator_traits<decltype(std::begin(
-                                               std::declval<container_type>()))>::value_type()) {
+                                   std::declval<container_type>()))>::value_type()) {
                         this->pop_back();
                     }
                 }
@@ -474,6 +490,7 @@ namespace nil {
                     multiplication(*this, *this, other);
                     return *this;
                 }
+
                 /**
                  * Perform the standard Euclidean Division algorithm.
                  * Input: Polynomial A, Polynomial B, where A / B
@@ -598,7 +615,7 @@ namespace nil {
                     os << *poly.begin();
                 } else {
                     os << "[Polynomial, size " << poly.size() << " values ";
-                    for( auto it = poly.begin(); it != poly.end(); it++ ){
+                    for (auto it = poly.begin(); it != poly.end(); ++it) {
                         os << "0x" << std::hex << it->data << ", ";
                     }
                     os << "]";

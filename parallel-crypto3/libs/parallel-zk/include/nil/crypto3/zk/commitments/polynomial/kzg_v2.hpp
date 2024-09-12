@@ -174,8 +174,12 @@ namespace nil {
                     }
 
                 public:
-                    // Interface function. Isn't useful here.
+                    using preprocessed_data_type = bool;
+
+                    // Interface functions, not useful here. Added for compatibility with LPC.
                     void mark_batch_as_fixed(std::size_t index) {
+                    }
+                    void set_fixed_polys_values(const preprocessed_data_type& value) {
                     }
 
                     static params_type
@@ -205,14 +209,12 @@ namespace nil {
                             nil::marshalling::status_type status;
                             std::vector<uint8_t> single_commitment_bytes =
                                     nil::marshalling::pack<endianness>(single_commitment, status);
-                            BOOST_ASSERT(status == nil::marshalling::status_type::success);
+                            THROW_IF_ERROR_STATUS(status, "kzg_v2::commit");
                             result.insert(result.end(), single_commitment_bytes.begin(), single_commitment_bytes.end());
                         }
                         _commitments[index] = result;
                         return result;
                     }
-
-                    using preprocessed_data_type = bool;
 
                     preprocessed_data_type preprocess(transcript_type &transcript) const {
                         return true;
@@ -235,7 +237,7 @@ namespace nil {
 
                         std::vector<std::size_t> theta_i_pows;
                         theta_i_pows.push_back(0);
-                        for(auto const &it: this->_polys) {
+                        for (auto const &it: this->_polys) {
                             auto k = it.first;
                             theta_i_pows.push_back(theta_i_pows[theta_i_pows.size() - 1] + this->_z.get_batch_size(k));
                         }
@@ -341,7 +343,7 @@ namespace nil {
                                 }
                                 typename curve_type::template g1_type<>::value_type
                                         cm_i = nil::marshalling::pack(byteblob, status);
-                                BOOST_ASSERT(status == nil::marshalling::status_type::success);
+                                THROW_IF_ERROR_STATUS(status, "kzg_v2::verify_eval");
                                 auto Z_T_S_i = set_difference_polynom(_merged_points, this->_points.at(k)[i]).evaluate(
                                         theta_2);
                                 F += theta_i * Z_T_S_i * cm_i;

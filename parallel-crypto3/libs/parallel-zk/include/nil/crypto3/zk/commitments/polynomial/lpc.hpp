@@ -41,7 +41,6 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_scoped_profiler.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -79,6 +78,10 @@ namespace nil {
                     preprocessed_data_type _fixed_polys_values;
 
                 public:
+
+                    // We must set it in verifier, taking this value from common data.
+                    void set_fixed_polys_values(const preprocessed_data_type& value) {_fixed_polys_values = value;}
+
                     lpc_commitment_scheme(const typename fri_type::params_type &fri_params)
                         : _fri_params(fri_params), _etha(0u) {
                     }
@@ -115,7 +118,7 @@ namespace nil {
                     }
 
                     proof_type proof_eval(transcript_type &transcript) {
-                        PROFILE_PLACEHOLDER_SCOPE("LPC proof_eval");
+                        PROFILE_SCOPE("LPC proof_eval");
 
                         this->eval_polys();
 
@@ -261,7 +264,7 @@ namespace nil {
                             combined_Q_normal += Q_normal;
                         }
 
-                        if constexpr (std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value ) {
+                        if constexpr (std::is_same<math::polynomial_dfs<value_type>, PolynomialType>::value) {
                             combined_Q.from_coefficients(combined_Q_normal);
                         } else {
                             combined_Q = std::move(combined_Q_normal);
@@ -300,7 +303,8 @@ namespace nil {
 
                         // List of unique eval points set. [id=>points]
                         std::size_t total_points = points.size();
-                        if (std::any_of(_batch_fixed.begin(), _batch_fixed.end(), [](auto i){return i.second != false;})) total_points++;
+                        if (std::any_of(_batch_fixed.begin(), _batch_fixed.end(), [](auto i){return i.second != false;}))
+                            total_points++;
 
                         typename std::vector<typename field_type::value_type> U(total_points);
                         // V is product of (x - eval_point) polynomial for each eval_point
@@ -325,12 +329,13 @@ namespace nil {
                             }
                         }
 
-                        if( total_points > points.size()){
+                        if (total_points > points.size()) {
                             std::size_t p = points.size();
                             V[p] = {-_etha, 1u};
-                            for(std::size_t i:this->_z.get_batches()){
-                                if( !_batch_fixed[i] )continue;
-                                for(std::size_t j = 0; j < this->_z.get_batch_size(i); j++){
+                            for (std::size_t i:this->_z.get_batches()) {
+                                if (!_batch_fixed[i])
+                                    continue;
+                                for (std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
                                     U[p] += _fixed_polys_values[i][j] * theta_acc;
                                     poly_map[p].push_back(std::make_tuple(i, j));
                                     theta_acc *= theta;
@@ -383,6 +388,14 @@ namespace nil {
                         params.add_child("D_omegas", D_omegas_node);
                         return params;
                     }
+
+                    bool operator==(const lpc_commitment_scheme& other) const {
+                        return _trees == other._trees &&
+                            _fri_params == other._fri_params &&
+                            _etha == other._etha &&
+                            _batch_fixed == other._batch_fixed &&
+                            _fixed_polys_values == other._fixed_polys_values;
+                    }
                 };
 
                 template<typename MerkleTreeHashType, typename TranscriptHashType,
@@ -394,6 +407,7 @@ namespace nil {
                     constexpr static const std::size_t m = M;
                     typedef GrindingType grinding_type;
                 };
+
                 /**
                  * @brief Based on the FRI Commitment description from \[RedShift].
                  * @tparam d ...

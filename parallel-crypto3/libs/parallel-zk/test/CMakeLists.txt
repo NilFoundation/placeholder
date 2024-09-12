@@ -8,50 +8,26 @@
 
 include(CMTest)
 
-find_package(Boost REQUIRED COMPONENTS random unit_test_framework)
-
 target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+    crypto3::random
+    #crypto3::marshalling-zk
+    Boost::unit_test_framework
+    Boost::log
+    )
 
-                       ${CMAKE_WORKSPACE_NAME}::math
-                       ${CMAKE_WORKSPACE_NAME}::containers
-
-                       crypto3::algebra
-                       crypto3::multiprecision
-                       crypto3::random
-
-                       marshalling::core
-                       marshalling::crypto3_multiprecision
-                       marshalling::crypto3_algebra
-                       marshalling::crypto3_zk
-
-                       Boost::random)
-
-option(ZK_PLACEHOLDER_PROFILING_ENABLED "Build with placeholder profiling" FALSE)
-
-if(ZK_PLACEHOLDER_PROFILING)
-    add_definitions(-DZK_PLACEHOLDER_PROFILING_ENABLED)
+if(PROFILING_ENABLED)
+    add_definitions(-DPROFILING_ENABLED)
 endif()
 
 macro(define_zk_test test)
     get_filename_component(name ${test} NAME)
     string(REPLACE "/" "_" full_test_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${test}_test)
 
-    set(additional_args "")
-
-    if(ENABLE_JUNIT_TEST_OUTPUT)
-        set(TEST_RESULTS_DIR "${CMAKE_CURRENT_BINARY_DIR}/junit_results")
-        set(TEST_LOGS_DIR "${TEST_RESULTS_DIR}/logs")
-        file(MAKE_DIRECTORY ${TEST_LOGS_DIR})
-
-        set(additional_args "--log_format=JUNIT"
-                            "--log_sink=${TEST_LOGS_DIR}/${full_test_name}.xml")
-    endif()
-
-    cm_test(NAME ${full_test_name} SOURCES ${test}.cpp ARGS ${additional_args})
+    cm_test(NAME ${full_test_name} SOURCES ${test}.cpp)
 
     target_include_directories(${full_test_name} PRIVATE
                                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -60,13 +36,6 @@ macro(define_zk_test test)
                                ${Boost_INCLUDE_DIRS})
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
-
-    get_target_property(target_type Boost::unit_test_framework TYPE)
-    if(target_type STREQUAL "SHARED_LIB")
-        target_compile_definitions(${full_test_name} PRIVATE BOOST_TEST_DYN_LINK)
-    elseif(target_type STREQUAL "STATIC_LIB")
-
-    endif()
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-steps=2147483647")
@@ -138,9 +107,4 @@ foreach(TEST_NAME ${TESTS_NAMES})
     define_zk_test(${TEST_NAME})
 endforeach()
 
-#string(CONCAT TEST_DATA ${CMAKE_CURRENT_SOURCE_DIR} "/systems/plonk/pickles/data/kimchi")
-#target_compile_definitions(actor_zk_systems_plonk_pickles_kimchi_test PRIVATE TEST_DATA="${TEST_DATA}")
 
-if(BUILD_BENCH_TESTS)
-    cm_add_test_subdirectory(bench_test)
-endif()
