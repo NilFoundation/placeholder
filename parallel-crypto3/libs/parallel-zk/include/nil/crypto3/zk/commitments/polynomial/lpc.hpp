@@ -69,6 +69,8 @@ namespace nil {
                     using lpc = LPCScheme;
                     using eval_storage_type = typename LPCScheme::eval_storage_type;
                     using preprocessed_data_type = std::map<std::size_t, std::vector<value_type>>;
+                    using polys_evaluator_type = polys_evaluator<typename LPCScheme::params_type,
+                        typename LPCScheme::commitment_type, PolynomialType>;
 
                 private:
                     std::map<std::size_t, precommitment_type> _trees;
@@ -78,9 +80,33 @@ namespace nil {
                     preprocessed_data_type _fixed_polys_values;
 
                 public:
+                    // Getters for the upper fields. Used from marshalling only so far.
+                    const std::map<std::size_t, precommitment_type>& get_trees() const {return _trees;}
+                    const typename fri_type::params_type& get_fri_params() const {return _fri_params;}
+                    const value_type& get_etha() const {return _etha;}
+                    const std::map<std::size_t, bool>& get_batch_fixed() const {return _batch_fixed;}
+                    const preprocessed_data_type& get_fixed_polys_values() const {return _fixed_polys_values;}
 
                     // We must set it in verifier, taking this value from common data.
                     void set_fixed_polys_values(const preprocessed_data_type& value) {_fixed_polys_values = value;}
+
+                    // This constructor is normally used from marshalling, to recover the LPC state from a file.
+                    // Maybe we want the move variant of this constructor.
+                    lpc_commitment_scheme(
+                            const polys_evaluator_type& polys_evaluator,
+                            const std::map<std::size_t, precommitment_type>& trees,
+                            const typename fri_type::params_type& fri_params,
+                            const value_type& etha,
+                            const std::map<std::size_t, bool>& batch_fixed,
+                            const preprocessed_data_type& fixed_polys_values)
+                        : polys_evaluator_type(polys_evaluator)
+                        , _trees(trees)
+                        , _fri_params(fri_params)
+                        , _etha(etha)
+                        , _batch_fixed(batch_fixed)
+                        , _fixed_polys_values(fixed_polys_values)
+                    {
+                    }
 
                     lpc_commitment_scheme(const typename fri_type::params_type &fri_params)
                         : _fri_params(fri_params), _etha(0u) {
@@ -91,7 +117,8 @@ namespace nil {
 
                         preprocessed_data_type result;
                         for(auto const&[index, fixed]: _batch_fixed) {
-                            if(!fixed) continue;
+                            if (!fixed)
+                                continue;
                             result[index] = {};
                             for (const auto& poly: this->_polys.at(index)){
                                 result[index].push_back(poly.evaluate(etha));
