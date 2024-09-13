@@ -29,3 +29,10 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
+  check-proof-producer:
+    name: Check Proof Producer
+    uses: ./.github/workflows/check-proof-producer.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
