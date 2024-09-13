@@ -1,7 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
-
-cmake_policy(SET CMP0028 NEW)
-cmake_policy(SET CMP0063 NEW)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 option(BUILD_ASSIGNER_TESTS "Build unit tests" FALSE)
 
