@@ -6,15 +6,9 @@
 # http://www.boost.org/LICENSE_1_0.txt
 #---------------------------------------------------------------------------#
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
-cmake_policy(SET CMP0028 NEW)
-cmake_policy(SET CMP0042 NEW)
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0057 NEW)
-cmake_policy(SET CMP0076 NEW)
-
-find_package(CM)
+find_package(CM REQUIRED)
 include(CMConfig)
 include(CMSetupVersion)
 
