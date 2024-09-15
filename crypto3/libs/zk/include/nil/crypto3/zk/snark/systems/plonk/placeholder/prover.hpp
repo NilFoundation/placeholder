@@ -97,11 +97,12 @@ namespace nil {
                         typename private_preprocessor_type::preprocessed_data_type preprocessed_private_data,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type commitment_scheme
+                        commitment_scheme_type commitment_scheme,
+                        bool skip_commitment_scheme_eval_proofs = false
                     ) {
                         auto prover = placeholder_prover<FieldType, ParamsType>(
                             preprocessed_public_data, std::move(preprocessed_private_data), table_description,
-                            constraint_system, commitment_scheme);
+                            constraint_system, commitment_scheme, skip_commitment_scheme_eval_proofs);
                         return prover.process();
                     }
 
@@ -110,7 +111,8 @@ namespace nil {
                         typename private_preprocessor_type::preprocessed_data_type preprocessed_private_data,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        const commitment_scheme_type &commitment_scheme
+                        const commitment_scheme_type &commitment_scheme,
+                        bool skip_commitment_scheme_eval_proofs = false
                     )
                             : preprocessed_public_data(preprocessed_public_data)
                             , table_description(table_description)
@@ -122,6 +124,7 @@ namespace nil {
                             , transcript(std::vector<std::uint8_t>({}))
                             , _is_lookup_enabled(constraint_system.lookup_gates().size() > 0)
                             , _commitment_scheme(commitment_scheme)
+                            , _skip_commitment_scheme_eval_proofs(skip_commitment_scheme_eval_proofs)
                     {
                         // Initialize transcript.
                         transcript(preprocessed_public_data.common_data.vk.constraint_system_with_params_hash);
@@ -204,12 +207,11 @@ namespace nil {
                         }
                         transcript(_proof.commitments[QUOTIENT_BATCH]);
 
-                        // 8. Run evaluation proofs
-                        _proof.eval_proof.challenge = transcript.template challenge<FieldType>();
-                        generate_evaluation_points();
+                        if (!_skip_commitment_scheme_eval_proofs) {
+                            // 8. Run evaluation proofs
+                            _proof.eval_proof.challenge = transcript.template challenge<FieldType>();
+                            generate_evaluation_points();
 
-                        {
-                            PROFILE_SCOPE("commitment scheme proof eval time");
                             _proof.eval_proof.eval_proof = _commitment_scheme.proof_eval(transcript);
                         }
 
@@ -218,12 +220,12 @@ namespace nil {
 
                 private:
                     std::vector<polynomial_dfs_type> quotient_polynomial_split_dfs() {
+                        PROFILE_SCOPE("quotient_polynomial_split_dfs");
+
                         // TODO: pass max_degree parameter placeholder
                         std::vector<polynomial_type> T_splitted = detail::split_polynomial<FieldType>(
                             quotient_polynomial(), table_description.rows_amount - 1
                         );
-
-                        PROFILE_SCOPE("split_polynomial_dfs_conversion_time");
 
                         std::size_t split_polynomial_size = std::max(
                             (preprocessed_public_data.identity_polynomials.size() + 2) * (preprocessed_public_data.common_data.desc.rows_amount -1 ),
@@ -237,7 +239,8 @@ namespace nil {
                             (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount + 1):
                             (split_polynomial_size / preprocessed_public_data.common_data.desc.rows_amount);
 
-                        if( preprocessed_public_data.common_data.max_quotient_chunks != 0 && split_polynomial_size > preprocessed_public_data.common_data.max_quotient_chunks){
+                        if (preprocessed_public_data.common_data.max_quotient_chunks != 0 &&
+                            split_polynomial_size > preprocessed_public_data.common_data.max_quotient_chunks) {
                             split_polynomial_size = preprocessed_public_data.common_data.max_quotient_chunks;
                         }
 
@@ -312,7 +315,7 @@ namespace nil {
                     }
 
                     commitment_type T_commit(const std::vector<polynomial_dfs_type>& T_splitted_dfs) {
-                        PROFILE_SCOPE("T_splitted_precommit_time");
+                        PROFILE_SCOPE("T_split_precommit_time");
                         _commitment_scheme.append_to_batch(QUOTIENT_BATCH, T_splitted_dfs);
                         return _commitment_scheme.commit(QUOTIENT_BATCH);
                     }
@@ -368,15 +371,16 @@ namespace nil {
                             }
                         }
 
-                        if(_is_lookup_enabled||constraint_system.copy_constraints().size() > 0){
+                        if (_is_lookup_enabled||constraint_system.copy_constraints().size() > 0) {
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, _proof.eval_proof.challenge);
                         }
 
-                        if( constraint_system.copy_constraints().size() > 0 )
+                        if (constraint_system.copy_constraints().size() > 0)
                             _commitment_scheme.append_eval_point(PERMUTATION_BATCH, 0, _proof.eval_proof.challenge * _omega);
 
-                        if(_is_lookup_enabled){
-                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data.permutation_parts , _proof.eval_proof.challenge * _omega);
+                        if (_is_lookup_enabled) {
+                            _commitment_scheme.append_eval_point(PERMUTATION_BATCH, preprocessed_public_data.common_data.permutation_parts,
+                                _proof.eval_proof.challenge * _omega);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge * _omega);
                             _commitment_scheme.append_eval_point(LOOKUP_BATCH, _proof.eval_proof.challenge *
@@ -385,13 +389,12 @@ namespace nil {
 
                         _commitment_scheme.append_eval_point(QUOTIENT_BATCH, _proof.eval_proof.challenge);
 
-
                         // fixed values' rotations (table columns)
                         std::size_t i = 0;
                         std::size_t start_index = preprocessed_public_data.identity_polynomials.size() +
                             preprocessed_public_data.permutation_polynomials.size() + 2;
 
-                        for( i = 0; i < start_index; i++){
+                        for (i = 0; i < start_index; i++) {
                             _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, i, _proof.eval_proof.challenge);
                         }
 
@@ -477,6 +480,7 @@ namespace nil {
                     typename FieldType::value_type _omega;
                     std::vector<typename FieldType::value_type> _challenge_point;
                     commitment_scheme_type _commitment_scheme;
+                    bool _skip_commitment_scheme_eval_proofs;
                 };
             }    // namespace snark
         }        // namespace zk

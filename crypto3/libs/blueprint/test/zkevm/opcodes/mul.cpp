@@ -33,10 +33,9 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 
 #include <nil/blueprint/zkevm/zkevm_circuit.hpp>
-#include <nil/blueprint/zkevm/zkevm_operation.hpp>
-#include <nil/blueprint/zkevm/operations/mul.hpp>
-
 #include "../opcode_tester.hpp"
+
+#include <nil/blueprint/zkevm/operations/mul.hpp>
 
 using namespace nil::blueprint;
 using namespace nil::crypto3::algebra;

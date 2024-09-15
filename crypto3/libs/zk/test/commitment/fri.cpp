@@ -108,14 +108,14 @@ void fri_basic_test()
     std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
         math::calculate_domain_set<FieldType>(extended_log, r);
 
+    std::size_t degree_log = std::ceil(std::log2(d - 1));
     params_type params(
-            d - 1, // max_degree
-            D,
-            generate_random_step_list(r, 1),
-            2, //expand_factor
+            1, /*max_step*/
+            degree_log,
             lambda,
-            true,
-            16
+            2, //expand_factor
+            true, // use_grinding
+            16 // grinding_parameter
             );
 
     BOOST_CHECK(D[1]->m == D[0]->m / 2);
@@ -130,6 +130,9 @@ void fri_basic_test()
     if constexpr (std::is_same<math::polynomial_dfs<typename FieldType::value_type>,
             PolynomialType>::value) {
         f.from_coefficients(coefficients);
+        if (f.size() != params.D[0]->size()) {
+            f.resize(params.D[0]->size(), nullptr, params.D[0]);
+        }
     } else {
         f = PolynomialType(coefficients);
     }
