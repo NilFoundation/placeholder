@@ -25,12 +25,6 @@
 
 #define BOOST_TEST_MODULE tiger_test
 
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <cstdio>
-#include <cstdint>
-
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/adaptor/hashed.hpp>
 
@@ -44,6 +38,12 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include <boost/static_assert.hpp>
+
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <cstdio>
+#include <cstdint>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::accumulators;

@@ -9,6 +9,8 @@
 #ifndef CRYPTO3_CPP_INT_MODULAR_HPP
 #define CRYPTO3_CPP_INT_MODULAR_HPP
 
+#include <cstdint>
+
 // Suddenly, BOOST_MP_ASSERT is NOT BOOST_MP_CXX14_CONSTEXPR, and it is used in BOOST_MP_CXX14_CONSTEXPR functions throughout the boost, resulting to compilation errors on all compilers in debug mode. We need to switch assertions off inside cpp_int to make this code compile in debug mode. So we use this workaround to turn off file 'boost/multiprecision/detail/assert.hpp' which contains definition of BOOST_MP_ASSERT and BOOST_MP_ASSERT_MSG. 
 
 #include <boost/multiprecision/detail/number_base.hpp> // for BOOST_MP_IS_CONST_EVALUATED

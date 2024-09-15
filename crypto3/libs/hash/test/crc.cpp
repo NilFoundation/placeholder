@@ -8,13 +8,8 @@
 
 #define BOOST_TEST_MODULE crc_test
 
-#include <iostream>
-#include <string>
-#include <cassert>
-#include <cstdint>
-#include <unordered_map>
-
 #include <nil/crypto3/hash/algorithm/hash.hpp>
+
 #include <nil/crypto3/hash/crc.hpp>
 #include <nil/crypto3/hash/hash_state.hpp>
 
@@ -23,6 +18,12 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
+
+#include <iostream>
+#include <string>
+#include <cassert>
+#include <cstdint>
+#include <unordered_map>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::hashes;
