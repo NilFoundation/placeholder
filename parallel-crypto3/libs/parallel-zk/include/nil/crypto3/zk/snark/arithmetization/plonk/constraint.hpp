@@ -109,9 +109,8 @@ namespace nil {
                     }
 
                     math::polynomial<typename VariableType::assignment_type>
-                        evaluate(const plonk_polynomial_table<FieldType> &assignments,
-                                 std::shared_ptr<math::evaluation_domain<FieldType>> domain) const {
-
+                       evaluate(const plonk_polynomial_table<FieldType> &assignments,
+                                std::shared_ptr<math::evaluation_domain<FieldType>> domain) const {
                         using polynomial_type = math::polynomial<typename VariableType::assignment_type>;
                         using polynomial_variable_type = plonk_variable<polynomial_type>;
 

@@ -52,6 +52,8 @@
 #include <nil/crypto3/zk/math/expression_evaluator.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 
+#include <nil/crypto3/bench/scoped_profiler.hpp>
+
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
@@ -132,7 +134,7 @@ namespace nil {
                             std::uint32_t max_gates_degree,
                             const polynomial_dfs_type &mask_polynomial,
                             transcript_type& transcript) {
-                        PROFILE_PLACEHOLDER_SCOPE("Gate Argument prove_eval");
+                        PROFILE_SCOPE("gate_argument_time");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
                         // by selector.
@@ -187,7 +189,8 @@ namespace nil {
                             auto selector = variable_type(
                                 gate.selector_index, 0, false, variable_type::column_type::selector);
                             for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
-                                expressions[i] += gate_results[i] * selector;
+                                gate_results[i] *= selector;
+                                expressions[i] += gate_results[i];
                             }
                         }
 

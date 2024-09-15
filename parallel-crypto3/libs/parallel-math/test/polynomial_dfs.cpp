@@ -34,7 +34,6 @@
 #include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
-
 #include <nil/crypto3/algebra/random_element.hpp>
 
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>

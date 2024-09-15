@@ -42,13 +42,13 @@ namespace nil {
         namespace zk {
             namespace components {
                 template<typename, typename, std::size_t>
-                struct merkle_proof;
+                class merkle_proof;
             }    // namespace components
         }        // namespace zk
         namespace marshalling {
             namespace types {
                 template<typename, typename>
-                struct merkle_proof_marshalling;
+                class merkle_proof_marshalling;
             }
         }    // namespace marshalling
         namespace containers {
@@ -95,7 +95,7 @@ namespace nil {
                     typedef std::array<path_element_type, Arity - 1> layer_type;
                     typedef std::vector<layer_type> path_type;
 
-                    merkle_proof_impl() : _li(0) {};
+                    merkle_proof_impl() : _li(0), _root(value_type()) {};
 
                     merkle_proof_impl(std::size_t li, value_type root, path_type path) : _li(li), _root(root),
                                                                                          _path(path){};

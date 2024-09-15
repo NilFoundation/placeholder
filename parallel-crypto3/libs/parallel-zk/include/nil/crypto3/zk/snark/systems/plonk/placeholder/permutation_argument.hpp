@@ -42,8 +42,9 @@
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_scoped_profiler.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+
+#include <nil/crypto3/bench/scoped_profiler.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
@@ -79,7 +80,7 @@ namespace nil {
                         typename ParamsType::commitment_scheme_type& commitment_scheme,
                         transcript_type& transcript
                     ) {
-                        PROFILE_PLACEHOLDER_SCOPE("Permutation Argument prove_eval Time");
+                        PROFILE_SCOPE("permutation_argument_prove_eval_time");
 
                         const std::vector<math::polynomial_dfs<typename FieldType::value_type>> &S_sigma =
                             preprocessed_data.permutation_polynomials;
@@ -125,7 +126,7 @@ namespace nil {
                         }, ThreadPool::PoolLevel::HIGH);
 
                         V_P[0] = FieldType::value_type::one();
-                        
+
                         auto V_P_parts = std::make_unique<std::vector<typename FieldType::value_type>>(
                             basic_domain->size(), FieldType::value_type::zero());
                         parallel_for(1, basic_domain->size(), [&g_v, &h_v, &S_id, &V_P_parts](std::size_t j) {
@@ -138,7 +139,7 @@ namespace nil {
                             }
                             (*V_P_parts)[j] = nom * denom.inversed();
                         }, ThreadPool::PoolLevel::LOW);
-                        
+
                         for (std::size_t j = 1; j < basic_domain->size(); ++j)
                             V_P[j] = V_P[j - 1] * (*V_P_parts)[j];
                         V_P_parts.reset(nullptr);
@@ -201,7 +202,7 @@ namespace nil {
                             F_dfs[1] -= preprocessed_data.q_blind;
                             F_dfs[1] *= V_P_shifted;
                         } else {
-                            PROFILE_PLACEHOLDER_SCOPE("PERMUTATION ARGUMENT else block");
+                            PROFILE_SCOPE("PERMUTATION ARGUMENT else block");
                             math::polynomial_dfs<typename FieldType::value_type> previous_poly = V_P;
                             math::polynomial_dfs<typename FieldType::value_type> current_poly = V_P;
                             // We need to store all the values of current_poly. Suddenly this increases the RAM usage, but 
@@ -213,6 +214,7 @@ namespace nil {
                                 const auto& h = hs[i];
                                 auto reduced_g = reduce_dfs_polynomial_domain(g, basic_domain->m);
                                 auto reduced_h = reduce_dfs_polynomial_domain(h, basic_domain->m);
+
                                 parallel_for(0, preprocessed_data.common_data.desc.usable_rows_amount,
                                     [&reduced_g, &reduced_h, &current_poly, &previous_poly](std::size_t j) {
                                         current_poly[j] = (previous_poly[j] * reduced_g[j]) * reduced_h[j].inversed();

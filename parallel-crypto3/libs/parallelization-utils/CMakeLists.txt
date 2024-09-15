@@ -1,12 +1,3 @@
-cmake_minimum_required(VERSION 2.8.12)
-
-cmake_policy(SET CMP0025 NEW)
-cmake_policy(SET CMP0028 NEW)
-cmake_policy(SET CMP0042 NEW)
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0057 NEW)
-cmake_policy(SET CMP0076 NEW)
-
 include(CMConfig)
 include(CMSetupVersion)
 include(CMTest)

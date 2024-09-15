@@ -5,22 +5,18 @@ if(NOT CMAKE_WORKSPACE_NAME OR NOT ("${CMAKE_WORKSPACE_NAME}" STREQUAL "actor"))
     cm_workspace(actor)
 endif()
 
-option(ZK_PLACEHOLDER_PROFILING_ENABLED "Build with placeholder profiling" FALSE)
+option(PROFILING_ENABLED "Build with placeholder profiling" FALSE)
 option(ZK_PLACEHOLDER_DEBUG_ENABLED "Build with placeholder testing inside" FALSE)
 
-if(ZK_PLACEHOLDER_PROFILING)
-    add_definitions(-DZK_PLACEHOLDER_PROFILING_ENABLED)
+if(PROFILING_ENABLED)
+    add_definitions(-DPROFILING_ENABLED)
 endif()
 
-if(ZK_PLACEHOLDER_DEBUG)
+if(ZK_PLACEHOLDER_DEBUG_ENABLED)
     add_definitions(-DZK_PLACEHOLDER_DEBUG_ENABLED)
 endif()
 
 cm_project(zk WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES C CXX)
-
-if(NOT Boost_FOUND AND NOT CMAKE_CROSSCOMPILING)
-    find_package(Boost)
-endif()
 
 include(CMDeploy)
 include(FindPkgConfig)
@@ -40,16 +36,22 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
 
-                      ${Boost_LIBRARIES}
+                      Boost::container
+                      Boost::log
 
+                      # Containers and math implementation could be replaced with namespace change
                       ${CMAKE_WORKSPACE_NAME}::containers
-                      ${CMAKE_WORKSPACE_NAME}::core
                       ${CMAKE_WORKSPACE_NAME}::math
+                      ${CMAKE_WORKSPACE_NAME}::core
 
                       crypto3::algebra
                       crypto3::block
                       crypto3::hash
-                      crypto3::multiprecision)
+                      crypto3::multiprecision
+                      # crypto3::marshalling-zk
+
+                      # crypto3::benchmark_tools
+)
 
 cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
           INCLUDE include

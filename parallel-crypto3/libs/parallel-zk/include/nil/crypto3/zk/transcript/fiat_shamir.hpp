@@ -94,6 +94,7 @@ namespace nil {
                             nil::marshalling::status_type status;
                             typename hash_type::construction::type::block_type byte_data =
                                 nil::marshalling::pack(data, status);
+                            THROW_IF_ERROR_STATUS(status, "fiat_shamir_heuristic_accumulative::operator()");
                             acc(byte_data);
                         }
                     }
@@ -175,7 +176,7 @@ namespace nil {
                         nil::marshalling::status_type status;
                         std::vector<std::uint8_t> byte_data =
                             nil::marshalling::pack<nil::marshalling::option::big_endian>(data, status);
-                        BOOST_ASSERT(status == nil::marshalling::status_type::success);
+                        THROW_IF_ERROR_STATUS(status, "fiat_shamir_heuristic_sequential::operator()");
                         auto acc_convertible = hash<hash_type>(state);
                         state = accumulators::extract::hash<hash_type>(
                                 hash<hash_type>(byte_data, static_cast<accumulator_set<hash_type> &>(acc_convertible)));
@@ -201,8 +202,7 @@ namespace nil {
                         nil::marshalling::status_type status;
                         boost::multiprecision::number<modular_backend_of_hash_size> raw_result = 
                             nil::marshalling::pack(state, status);
-                        BOOST_ASSERT(status == nil::marshalling::status_type::success);
-
+                        THROW_IF_ERROR_STATUS(status, "fiat_shamir_heuristic_sequential::challenge");
                         return raw_result;
                     }
 
@@ -225,6 +225,17 @@ namespace nil {
                         std::array<typename Field::value_type, N> result;
                         for (auto &ch : result) {
                             ch = challenge<Field>();
+                        }
+
+                        return result;
+                    }
+
+                    template<typename Field>
+                    std::vector<typename Field::value_type> challenges(std::size_t N) {
+
+                        std::vector<typename Field::value_type> result;
+                        for (std::size_t i = 0; i < N; ++i) {
+                            result.push_back(challenge<Field>());
                         }
 
                         return result;
@@ -336,6 +347,17 @@ namespace nil {
                         std::array<typename Field::value_type, N> result;
                         for (auto &ch : result) {
                             ch = challenge<Field>();
+                        }
+
+                        return result;
+                    }
+
+                    template<typename Field>
+                    std::vector<typename Field::value_type> challenges(std::size_t N) {
+
+                        std::vector<typename Field::value_type> result;
+                        for (std::size_t i = 0; i < N; ++i) {
+                            result.push_back(challenge<Field>());
                         }
 
                         return result;
