@@ -1,0 +1,38 @@
+name: Build and Test on Linux Platforms
+
+on:
+  workflow_call:
+
+jobs:
+  build-and-test:
+    name: "Build and test Linux with clang"
+    runs-on: [self-hosted, Linux, X64, aws_autoscaling]
+    continue-on-error: true
+    steps:
+      # https://github.com/actions/checkout/issues/1552
+      - name: Clean up after previous checkout
+        run: chmod +w -R ${GITHUB_WORKSPACE}; rm -rf ${GITHUB_WORKSPACE}/*;
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Run checks
+        run: |
+          nix build -L .?#checks.x86_64-linux.all-sanitizers
+          mkdir results
+          cp result/test-logs/*_test.xml results/
+        continue-on-error: true
+        env:
+          NIX_CONFIG: |
+            cores = 4
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action/linux@v2
+        with:
+          check_name: "Sanitizers Test Results"
+          files: "results/*.xml"
+          comment_mode: ${{ github.event.pull_request.head.repo.fork && 'off' || 'always' }} # Don't create PR comment from fork runs
+          action_fail_on_inconclusive: true # fail, if no reports
+

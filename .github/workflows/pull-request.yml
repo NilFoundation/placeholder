@@ -29,6 +29,13 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
+  test-linux-sanitizers:
+    name: Linux Crypto3 Test and sanitize with clang
+    uses: ./.github/workflows/clang-sanitizers-linux-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
   check-proof-producer:
     name: Check Proof Producer
     uses: ./.github/workflows/check-proof-producer.yml
