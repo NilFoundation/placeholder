@@ -158,7 +158,7 @@ namespace nil {
                         BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
 
                         // For each batch we have a merkle tree.
-                        for(auto const& it: this->_trees) {
+                        for (auto const& it: this->_trees) {
                             transcript(it.second.root());
                         }
 
@@ -168,7 +168,7 @@ namespace nil {
 
                         auto fri_proof = commit_and_fri_proof(combined_Q, transcript);
                         return proof_type({this->_z, fri_proof});
-                    } 
+                    }
 
                     /** This function must be called for the cases where we want to skip the 
                      * round proof for FRI. Must be called once per instance of prover for the aggregated FRI.
@@ -176,7 +176,7 @@ namespace nil {
                             prover in the previous step of the aggregated FRI protocol.
                      * \param[in] transcript - This transcript is initialized from a challenge sent from the "Main" prover,
                             on which the round proof was created for the polynomial F(x) = Sum(combined_Q).
-                     */ 
+                     */
                     lpc_proof_type proof_eval_lpc_proof(
                             const polynomial_type& combined_Q, transcript_type &transcript) {
 
@@ -271,7 +271,9 @@ namespace nil {
                         );
                         return fri_proof;
                     }
-                    /** \brief 
+
+                    /** \brief Computes polynomial combined_Q. In case this function changes, 
+                               the function 'compute_theta_power_for_combined_Q' below should be changed accordingly. 
                      *  \param theta The value of challenge. When called from aggregated FRI, this values is sent from
                                 the "main prover" machine.
                      *  \param starting_power When aggregated FRI is used, the value is not zero, it's the total degree of all
@@ -280,12 +282,11 @@ namespace nil {
                     polynomial_type prepare_combined_Q(
                             const typename field_type::value_type& theta,
                             std::size_t starting_power = 0) {
-                        typename field_type::value_type theta_acc = theta.pow(starting_power);
-
-                         polynomial_type combined_Q;
-                         math::polynomial<value_type> V;
-
                         this->build_points_map();
+
+                        typename field_type::value_type theta_acc = theta.pow(starting_power);
+                        polynomial_type combined_Q;
+                        math::polynomial<value_type> V;
 
                         auto points = this->get_unique_points();
                         math::polynomial<value_type> combined_Q_normal;
@@ -410,6 +411,7 @@ namespace nil {
                                 Q_normal -= _fixed_polys_values[i][j] * theta_acc;
                                 theta_acc *= theta;
                             }
+
                             Q_normal = Q_normal / V;
                         }, ThreadPool::PoolLevel::HIGH);
 
@@ -427,6 +429,37 @@ namespace nil {
                         }
 
                         return combined_Q;
+                    }
+
+                    // Computes and returns the maximal power of theta used to compute the value of Combined_Q.
+                    std::size_t compute_theta_power_for_combined_Q() {
+                        std::size_t theta_power = 0;
+                        this->eval_polys();
+                        this->build_points_map();
+
+                        auto points = this->get_unique_points();
+
+                        for (auto const &point: points) {
+                            for (std::size_t i: this->_z.get_batches()) {
+                                for (std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
+                                    auto iter = this->_points_map[i][j].find(point);
+                                    if (iter == this->_points_map[i][j].end())
+                                        continue;
+
+                                    theta_power++;
+                                }
+                            }
+                        }
+
+                        for (std::size_t i: this->_z.get_batches()) {
+                            if (!_batch_fixed[i]) {
+                                continue;
+                            }
+
+                            theta_power += this->_z.get_batch_size(i);
+                        }
+
+                        return theta_power;
                     }
 
                     bool verify_eval(

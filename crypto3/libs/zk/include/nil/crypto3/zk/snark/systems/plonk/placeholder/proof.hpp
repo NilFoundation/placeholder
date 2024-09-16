@@ -29,6 +29,7 @@
 #define CRYPTO3_ZK_PLONK_PLACEHOLDER_PROOF_HPP
 
 #include <map>
+#include <vector>
 
 namespace nil {
     namespace crypto3 {

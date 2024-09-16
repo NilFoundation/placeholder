@@ -185,24 +185,6 @@ namespace nil {
                               , expand_factor(expand_factor)
                             { }
 
-                            params_type(
-                                std::size_t max_degree,
-                                std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D,
-                                std::vector<std::size_t> step_list_in,
-                                std::size_t expand_factor,
-                                std::size_t lambda,
-                                bool use_grinding = false,
-                                std::size_t grinding_parameter = 16
-                            ) : lambda(lambda)
-                              , use_grinding(use_grinding)
-                              , grinding_parameter(grinding_parameter)
-                              , max_degree(max_degree)
-                              , D(D)
-                              , r(std::accumulate(step_list_in.begin(), step_list_in.end(), 0))
-                              , step_list(step_list_in)
-                              , expand_factor(expand_factor)
-                            {}
-
                             bool operator==(const params_type &rhs) const {
                                 if (D.size() != rhs.D.size()) {
                                     return false;
@@ -256,7 +238,7 @@ namespace nil {
                             }
 
                             // For the last round it's final_polynomial's values
-                           
+
                             // Values for the next round.
                             polynomial_values_type y;
 
@@ -436,7 +418,7 @@ namespace nil {
                     if (f.size() != D->size()) {
                         throw std::runtime_error("Polynomial size does not match the domain size in FRI precommit.");
                     }
-                    
+
                     std::size_t domain_size = D->size();
                     std::size_t coset_size = 1 << fri_step;
                     std::size_t leafs_number = domain_size / coset_size;
@@ -782,7 +764,6 @@ namespace nil {
                             }
                             precommitment = precommit<FRI>(f, D, fri_params.step_list[i + 1]);
                         }
-
                     }
                     fs.push_back(f);
                     if constexpr (std::is_same<math::polynomial_dfs<typename FRI::field_type::value_type>, PolynomialType>::value) {
@@ -1159,7 +1140,7 @@ namespace nil {
                     std::vector<PolynomialType> fs;
 
                     // Contains fri_roots and final_polynomial.
-                    typename FRI::commitments_part_of_proof commitments_proof; 
+                    typename FRI::commitments_part_of_proof commitments_proof;
 
                     std::tie(fs, fri_trees, commitments_proof) =
                         commit_phase<FRI, PolynomialType>(

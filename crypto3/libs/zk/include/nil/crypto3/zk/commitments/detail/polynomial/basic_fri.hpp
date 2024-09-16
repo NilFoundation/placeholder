@@ -1088,7 +1088,6 @@ namespace nil {
                         precommitments, fri_params, challenges, g, fri_trees, fs, final_polynomial);
                 }
 
-
                 template<typename FRI, typename PolynomialType,
                     typename std::enable_if<
                         std::is_base_of<
@@ -1117,7 +1116,6 @@ namespace nil {
 
                     std::vector<typename FRI::precommitment_type> fri_trees;
                     std::vector<PolynomialType> fs;
-                    math::polynomial<typename FRI::field_type::value_type> final_polynomial;
 
                     // Contains fri_roots and final_polynomial.
                     typename FRI::commitments_part_of_proof commitments_proof;

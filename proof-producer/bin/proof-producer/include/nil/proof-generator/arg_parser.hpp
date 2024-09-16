@@ -18,6 +18,7 @@
 #define PROOF_GENERATOR_ARG_PARSER_HPP
 
 #include <optional>
+#include <string>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
@@ -43,7 +44,12 @@ namespace nil {
             boost::filesystem::path circuit_file_path;
             boost::filesystem::path assignment_table_file_path;
             boost::filesystem::path assignment_description_file_path;
+            boost::filesystem::path challenge_file_path;
+            boost::filesystem::path theta_power_file_path;
             std::vector<boost::filesystem::path> input_challenge_files;
+            std::vector<boost::filesystem::path> partial_proof_files;
+            std::vector<boost::filesystem::path> aggregated_proof_files;
+            boost::filesystem::path last_proof_file;
             boost::filesystem::path aggregated_challenge_file = "aggregated_challenge.dat";
             boost::filesystem::path combined_Q_polynomial_file = "combined_Q.dat";
             std::size_t combined_Q_starting_power;
