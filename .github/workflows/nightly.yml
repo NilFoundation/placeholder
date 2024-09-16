@@ -1,0 +1,33 @@
+name: Nightly Testing
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  test-linux-sanitizers:
+    name: Linux placeholder testing and sanitize with clang
+    uses: ./.github/workflows/clang-sanitizers-linux-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
+  post-telemetry:
+    name: Post test results in Open Telemetry format
+    runs-on: [self-hosted, Linux, X64, aws_autoscaling]
+    needs:
+      - test-linux-sanitizers
+    steps:
+      - name: Post logs to Sig Noz
+        run: |
+          ls -l -a
+          ls -l -a ./result/
+          pip3 install -r requirements.txt
+          export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+          ping 172.31.23.196
+          opentelemetry-instrument \
+            --traces_exporter console,otlp \
+            --metrics_exporter console,otlp \
+            --logs_exporter console,otlp \
+            --service_name nightly-build \
+            python3 ./parse_tests.py
