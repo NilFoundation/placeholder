@@ -11,6 +11,7 @@
   gtest,
   enableDebug ? false,
   runTests ? false,
+  sanitize? false,
   }:
 let
   inherit (lib) optional;
@@ -34,6 +35,7 @@ in stdenv.mkDerivation {
       "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
+      (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
       "-G Ninja"
     ];
@@ -43,7 +45,9 @@ in stdenv.mkDerivation {
   checkPhase = ''
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
     export BOOST_TEST_LOGGER=JUNIT:HRF
-    cd proof-producer && ctest --verbose --output-on-failure -R && cd ..
+    cd proof-producer
+    ctest --verbose --output-on-failure -R
+    cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
   '';

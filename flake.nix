@@ -33,10 +33,17 @@
           crypto3-debug-tests = (pkgs.callPackage ./crypto3.nix {
             enableDebug = true;
             runTests = true;
+            sanitize = true;
           });
           crypto3-sanitize = (pkgs.callPackage ./crypto3.nix {
-            enableDebug = true;
             runTests = true;
+            enableDebug = false;
+            sanitize = true;
+          });
+          crypto3-clang-sanitize = (pkgs.callPackage ./crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = true;
+            enableDebug = false;
             sanitize = true;
           });
           crypto3-clang-debug = (pkgs.callPackage ./crypto3.nix {
@@ -121,6 +128,11 @@
             runTests = true;
             enableDebug = false;
           });
+          parallel-crypto3-clang-sanitize = (pkgs.callPackage ./parallel-crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = true;
+            enableDebug = false;
+          });
 
           proof-producer-gcc = (pkgs.callPackage ./proof-producer.nix {
             runTests = true;
@@ -131,6 +143,12 @@
             runTests = true;
             enableDebug = false;
           });
+          proof-producer-sanitize = (pkgs.callPackage ./proof-producer.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = true;
+            enableDebug = false;
+            sanitize = true;
+          });
 
           all-clang = pkgs.symlinkJoin {
             name = "all";
@@ -138,7 +156,7 @@
           };
           all-sanitizers = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang-sanitize ];
+            paths = [ crypto3-clang-sanitize parallel-crypto3-clang-sanitize proof-producer-sanitize ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
