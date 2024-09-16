@@ -39,24 +39,6 @@ proof-generator --circuit <circuit-file> --assignment <assignment-file> --proof 
 ```
 
 # Building from source
-1. Install dependencies:
-    ```
-    sudo apt-get install \
-        build-essential \
-        libsctp-dev \
-        libssl-dev \
-        libicu-dev \
-        lsb-release \
-        gnutls-dev \
-        pkg-config
-    ```
-
-2. Build with CMake:
-    ```mkdir build
-    cd build
-    cmake ..
-    make -j $(nrpoc)
-    ```
 
 # Sample calls to proof-producer
 
@@ -84,7 +66,12 @@ Verify generated proof:
 ./build/bin/proof-producer/proof-producer-single-threaded --stage="verify" --circuit="circuit.crct" --common-data="preprocessed_common_data.dat" --proof="proof.bin" --assignment-description-file="assignment-description.dat" -q 10
 ```
 
-Aggregate challenges
+Aggregate challenges, done once on the main prover
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded --stage="generate-aggregated-challenge" --input-challenge-files challenge1.dat challenge2.dat --aggregated-challenge-file="aggregated_challenge.dat"
+```
+
+Compute polynomial combined_Q, done on each prover
+```bash
+./build/bin/proof-producer/proof-producer-single-threaded --stage="generate-combined-Q" --aggregated-challenge-file="aggregated_challenge.dat" --combined-Q-starting-power=0  --commitment-state-file="commitment_state.dat" --combined-Q-polynomial-file="combined-Q.dat"
 ```

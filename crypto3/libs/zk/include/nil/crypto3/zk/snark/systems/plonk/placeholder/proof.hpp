@@ -141,7 +141,7 @@ namespace nil {
 
                     // This vector contains N partial proofs, one per prover.
                     std::vector<placeholder_partial_proof<FieldType, ParamsType>> partial_proofs;
-                    typename commitment_type::aggregated_proof_type aggregated_proof;
+                    typename commitment_scheme_type::aggregated_proof_type aggregated_proof;
                 };
             }    // namespace snark
         }        // namespace zk

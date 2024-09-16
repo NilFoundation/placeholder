@@ -73,7 +73,7 @@ namespace nil {
             // clang-format off
             auto options_appender = config.add_options()
                 ("stage", make_defaulted_option(prover_options.stage),
-                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge). Defaults to 'all'.")
+                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q). Defaults to 'all'.")
                 ("proof,p", make_defaulted_option(prover_options.proof_file_path), "Proof file")
                 ("json,j", make_defaulted_option(prover_options.json_file_path), "JSON proof file")
                 ("common-data", make_defaulted_option(prover_options.preprocessed_common_data_path), "Preprocessed common data file")
@@ -92,7 +92,11 @@ namespace nil {
                 ("input-challenge-files,u", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_challenge_files)->multitoken(),
                  "Input challenge files. Used with 'generate-aggregated-challenge' stage.")
                 ("aggregated-challenge-file", po::value<boost::filesystem::path>(&prover_options.aggregated_challenge_file),
-                 "Aggregated challenge file. Used with 'generate-aggregated-challenge' stage");
+                 "Aggregated challenge file. Used with 'generate-aggregated-challenge' stage")
+                ("combined-Q-polynomial-file", po::value<boost::filesystem::path>(&prover_options.combined_Q_polynomial_file),
+                 "File containing the polynomial combined-Q, generated on a single prover.")
+                ("combined-Q-starting-power", po::value<std::size_t>(&prover_options.combined_Q_starting_power),
+                 "The starting power for combined-Q polynomial for the current prover.");
 
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");

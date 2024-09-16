@@ -23,6 +23,7 @@
 #include <fstream>
 #include <random>
 #include <sstream>
+#include <optional>
 
 #include <boost/log/trivial.hpp>
 
@@ -75,7 +76,8 @@ namespace nil {
                 auto read_iter = v->begin();
                 auto status = marshalled_data.read(read_iter, v->size());
                 if (status != nil::marshalling::status_type::success) {
-                    BOOST_LOG_TRIVIAL(error) << "When reading a Marshalled structure from file " << path << ", decoding step failed";
+                    BOOST_LOG_TRIVIAL(error) << "When reading a Marshalled structure from file "
+                        << path << ", decoding step failed.";
                     return std::nullopt;
                 }
                 return marshalled_data;
@@ -104,7 +106,12 @@ namespace nil {
                 PREPROCESS = 1,
                 PROVE = 2,
                 VERIFY = 3,
-                GENERATE_AGGREGATED_CHALLENGE = 4
+                GENERATE_AGGREGATED_CHALLENGE = 4,
+                PARTIAL_PROVE = 5,
+                COMPUTE_COMBINED_Q = 6,
+                GENERATE_FRI_PROOF = 7,
+                GENERATE_LPC_INITIAL_PROOF = 8,
+                MERGE_PROOFS = 9
             };
 
             ProverStage prover_stage_from_string(const std::string& stage) {
@@ -113,7 +120,9 @@ namespace nil {
                     {"preprocess", ProverStage::PREPROCESS},
                     {"prove", ProverStage::PROVE},
                     {"verify", ProverStage::VERIFY},
-                    {"generate-aggregated-challenge", ProverStage::GENERATE_AGGREGATED_CHALLENGE}
+                    {"generate-aggregated-challenge", ProverStage::GENERATE_AGGREGATED_CHALLENGE},
+                    {"partial-prove", ProverStage::PARTIAL_PROVE},
+                    {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q}
                 };
                 auto it = stage_map.find(stage);
                 if (it == stage_map.end()) {
@@ -132,6 +141,7 @@ namespace nil {
             using LpcParams = nil::crypto3::zk::commitments::list_polynomial_commitment_params<HashType, HashType, 2>;
             using Lpc = nil::crypto3::zk::commitments::list_polynomial_commitment<BlueprintField, LpcParams>;
             using LpcScheme = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<Lpc>;
+            using polynomial_type = typename LpcScheme::polynomial_type;
             using CircuitParams = nil::crypto3::zk::snark::placeholder_circuit_params<BlueprintField>;
             using PlaceholderParams = nil::crypto3::zk::snark::placeholder_params<CircuitParams, LpcScheme>;
             using Proof = nil::crypto3::zk::snark::placeholder_proof<BlueprintField, PlaceholderParams>;
@@ -448,6 +458,40 @@ namespace nil {
                 return true;
             }
 
+            std::optional<typename BlueprintField::value_type> read_challenge(
+                    const boost::filesystem::path& input_file) {
+                using challenge_marshalling_type = nil::crypto3::marshalling::types::field_element<
+                    TTypeBase, typename BlueprintField::value_type>;
+
+                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
+                    return std::nullopt;
+                }
+
+                auto marshalled_challenge = detail::decode_marshalling_from_file<challenge_marshalling_type>(
+                    input_file);
+
+                if (!marshalled_challenge) {
+                    return std::nullopt;
+                }
+
+                return marshalled_challenge->value();
+            }
+
+            bool save_challenge(const boost::filesystem::path& challenge_file,
+                                const typename BlueprintField::value_type& challenge) {
+                using challenge_marshalling_type = nil::crypto3::marshalling::types::field_element<
+                    TTypeBase, typename BlueprintField::value_type>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing challenge to " << challenge_file << std::endl;
+
+                // marshall the challenge
+                challenge_marshalling_type marshalled_challenge(challenge);
+
+                return detail::encode_marshalling_to_file<challenge_marshalling_type>
+                    (challenge_file, marshalled_challenge);
+            }
+
             void create_lpc_scheme() {
                 // Lambdas and grinding bits should be passed through preprocessor directives
                 std::size_t table_rows_log = std::ceil(std::log2(table_description_->rows_amount));
@@ -497,38 +541,51 @@ namespace nil {
                     return false;
                 }
                 BOOST_LOG_TRIVIAL(info) << "Generating aggregated challenge to " << aggregated_challenge_file;
-                // check that we can access all input files
-                for (const auto &input_file : aggregate_input_files) {
-                    BOOST_LOG_TRIVIAL(info) << "Reading challenge from " << input_file;
-                    if (!nil::proof_generator::can_read_from_file(input_file.string())) {
-                        BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
-                        return false;
-                    }
-                }
+
                 // create the transcript
                 using transcript_hash_type = typename PlaceholderParams::transcript_hash_type;
                 using transcript_type = crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                using challenge_marshalling_type =
-                    nil::crypto3::marshalling::types::field_element<
-                        TTypeBase, typename BlueprintField::value_type>;
                 transcript_type transcript;
+
                 // read challenges from input files and add them to the transcript
                 for (const auto &input_file : aggregate_input_files) {
-                    auto challenge = detail::decode_marshalling_from_file<challenge_marshalling_type>(input_file);
+                    std::optional<typename BlueprintField::value_type> challenge = read_challenge(input_file);
                     if (!challenge) {
-                        BOOST_LOG_TRIVIAL(error) << "Failed to read challenge from " << input_file;
                         return false;
                     }
-                    transcript(challenge->value());
+                    transcript(challenge.value());
                 }
+
                 // produce the aggregated challenge
                 auto output_challenge = transcript.template challenge<BlueprintField>();
-                // marshall the challenge
-                challenge_marshalling_type marshalled_challenge(output_challenge);
-                // write the challenge to the output file
-                BOOST_LOG_TRIVIAL(info) << "Writing aggregated challenge to " << aggregated_challenge_file;
-                return detail::encode_marshalling_to_file<challenge_marshalling_type>
-                    (aggregated_challenge_file, marshalled_challenge);
+
+                return save_challenge(aggregated_challenge_file, output_challenge);
+            }
+
+            bool save_poly_to_file(const polynomial_type& combined_Q,
+                                   const boost::filesystem::path &output_file) {
+                using polynomial_marshalling_type = nil::crypto3::marshalling::types::polynomial<
+                    TTypeBase, polynomial_type>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing polynomial to " << output_file << std::endl;
+
+                polynomial_marshalling_type marshalled_poly = nil::crypto3::marshalling::types::fill_polynomial<Endianness, polynomial_type>(combined_Q);
+
+                return detail::encode_marshalling_to_file<polynomial_marshalling_type>
+                    (output_file, marshalled_poly);
+            }
+
+            bool read_challenge_and_generate_combined_Q_to_file(
+                const boost::filesystem::path &aggregated_challenge_file,
+                std::size_t starting_power,
+                const boost::filesystem::path &output_combined_Q_file) {
+                std::optional<typename BlueprintField::value_type> challenge = read_challenge(
+                    aggregated_challenge_file);
+                if (!challenge) {
+                    return false;
+                }
+                polynomial_type combined_Q = lpc_scheme_->prepare_combined_Q(challenge, starting_power);
+                return save_poly_to_file(combined_Q, output_combined_Q_file); 
             }
 
         private:
