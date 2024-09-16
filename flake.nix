@@ -51,7 +51,7 @@
             crypto3 = crypto3;
           });
 
-          evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
+            evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = false;
             enableDebug = false;
             crypto3 = crypto3;
@@ -216,13 +216,17 @@
           default = all-gcc;
         };
         apps = {
+          assigner = {
+            type = "app";
+            program = "${self.packages.${system}.zkevm-framework}/bin/assigner";
+          };
           single-threaded = {
             type = "app";
             program = "${self.packages.${system}.proof-producer}/bin/proof-producer-single-threaded";
           };
           default = {
             type = "app";
-            program = "${self.packages.${system}.default}/bin/proof-producer-multi-threaded";
+            program = "${self.packages.${system}.proof-producer}/bin/proof-producer-multi-threaded";
           };
         };
       }));
