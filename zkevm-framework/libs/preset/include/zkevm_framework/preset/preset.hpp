@@ -11,12 +11,14 @@
 #include <unordered_map>
 
 #include "zkevm_framework/preset/bytecode.hpp"
+#include "zkevm_framework/preset/sha256.hpp"
 
 template<typename ArithmetizationType>
 struct zkevm_circuits {
     std::vector<std::string> m_default_names = {"bytecode"};
     std::vector<std::string> m_names;
     nil::blueprint::circuit<ArithmetizationType> m_bytecode_circuit;
+    nil::blueprint::circuit<ArithmetizationType> m_sha256_circuit;
     const std::vector<std::string>& get_circuit_names() {
         return m_names.size() > 0 ? m_names : m_default_names;
     }
@@ -35,6 +37,11 @@ std::optional<std::string> initialize_circuits(
         BOOST_LOG_TRIVIAL(debug) << "Initialize circuit = " << circuit_name << "\n";
         if (circuit_name == "bytecode") {
             auto err = initialize_bytecode_circuit(circuits.m_bytecode_circuit, assignments);
+            if (err) {
+                return err;
+            }
+        } else if (circuit_name == "sha256") {
+            auto err = initialize_sha256_circuit(circuits.m_sha256_circuit, assignments);
             if (err) {
                 return err;
             }
