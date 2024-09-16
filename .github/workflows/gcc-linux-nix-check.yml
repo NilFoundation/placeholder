@@ -18,7 +18,20 @@ jobs:
           fetch-depth: 0
 
       - name: Run checks
-        run: nix build -L .?#checks.x86_64-linux.all-gcc
+        run: |
+          nix build -L .?#checks.x86_64-linux.all-gcc
+          mkdir results
+          find -name "*_test.xml" -exec mv -t results/ {} +
+          ls -l -a results/
         env:
           NIX_CONFIG: |
             cores = 4
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action/linux@v2
+        with:
+          check_name: "Gcc Test Results"
+          files: "results/*.xml"
+          comment_mode: ${{ github.event.pull_request.head.repo.fork && 'off' || 'always' }} # Don't create PR comment from fork runs
+          action_fail_on_inconclusive: true # fail, if no reports
+

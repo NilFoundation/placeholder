@@ -33,6 +33,7 @@
           crypto3-debug-tests = (pkgs.callPackage ./crypto3/crypto3.nix {
             enableDebug = true;
             runTests = true;
+            sanitize = true;
           });
           
           parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
@@ -145,6 +146,12 @@
             runTests = true;
             enableDebug = false;
           });
+          crypto3-clang-sanitize = (pkgs.callPackage ./crypto3/crypto3.nix {
+            stdenv = pkgs.llvmPackages_18.stdenv;
+            runTests = true;
+            enableDebug = false;
+            sanitize = true;
+          });
 
           parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             runTests = true;
@@ -208,6 +215,10 @@
           all-clang = pkgs.symlinkJoin {
             name = "all";
             paths = [ crypto3-clang parallel-crypto3-clang evm-assigner-clang transpiler-clang proof-producer-clang ];
+          };
+          all-sanitizers = pkgs.symlinkJoin {
+            name = "all";
+            paths = [ crypto3-clang-sanitize ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
