@@ -22,5 +22,7 @@ target_include_directories(${LIBRARY_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 
 target_link_libraries(${LIBRARY_NAME} PUBLIC intx::intx sszpp::sszpp)
 
+install(TARGETS ${LIBRARY_NAME}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <chrono>
 
 #ifndef BOOST_FILESYSTEM_NO_DEPRECATED
 #define BOOST_FILESYSTEM_NO_DEPRECATED
@@ -27,14 +28,95 @@
 #include "checks.hpp"
 #include "zkevm_framework/assigner_runner/runner.hpp"
 #include "zkevm_framework/preset/preset.hpp"
+#include "zkevm_framework/assigner_runner/write_assignments.hpp"
+#include "zkevm_framework/assigner_runner/write_circuits.hpp"
+
+template<typename Endianness, typename ArithmetizationType, typename BlueprintFieldType>
+std::optional<std::string> write_circuit(nil::evm_assigner::zkevm_circuit idx,
+                                         const std::unordered_map<nil::evm_assigner::zkevm_circuit, nil::blueprint::assignment<ArithmetizationType>>& assignments,
+                                         const nil::blueprint::circuit<ArithmetizationType> circuit,
+                                         const std::string& concrete_circuit_file_name) {
+    const auto find_it = assignments.find(idx);
+    if (find_it == assignments.end()) {
+        return "Can't find assignment table";
+    }
+    std::vector<std::size_t> public_input_column_sizes;
+    const auto public_input_size = find_it->second.public_inputs_amount();
+    for (std::uint32_t i = 0; i < public_input_size; i++) {
+        public_input_column_sizes.push_back(find_it->second.public_input_column_size(i));
+    }
+    return write_binary_circuit<Endianness, ArithmetizationType, BlueprintFieldType>(circuit, public_input_column_sizes, concrete_circuit_file_name);
+}
+
+template<typename BlueprintFieldType, typename ArithmetizationType>
+int setup_prover(const std::string& assignment_table_file_name,
+                 const std::string& circuit_file_name,
+                 zkevm_circuits<ArithmetizationType>& circuits) {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    using Endianness = nil::marshalling::option::big_endian;
+
+    std::unordered_map<nil::evm_assigner::zkevm_circuit,
+                       nil::blueprint::assignment<ArithmetizationType>>
+        assignments;
+
+    auto init_start = std::chrono::high_resolution_clock::now();
+    auto err = initialize_circuits<BlueprintFieldType>(circuits, assignments);
+    if (err) {
+        std::cerr << "Preset step failed: " << err.value() << std::endl;
+        return 1;
+    }
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - init_start);
+    std::cout << "INITIALIZE: " << duration.count() << " ms\n";
+
+    auto write_assignments_start = std::chrono::high_resolution_clock::now();
+    err = write_binary_assignments<Endianness, ArithmetizationType, BlueprintFieldType>(
+        assignments, assignment_table_file_name);
+    if (err) {
+        std::cerr << "Write assignments failed: " << err.value() << std::endl;
+        return 1;
+    }
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - write_assignments_start);
+    std::cout << "WRITE ASSIGNMENT TABLES: " << duration.count() << " ms\n";
+
+    auto write_circuits_start = std::chrono::high_resolution_clock::now();
+    const auto& circuit_names = circuits.get_circuit_names();
+    for (const auto& circuit_name : circuit_names) {
+        std::string concrete_circuit_file_name = circuit_file_name + "_" + circuit_name;
+        if (circuit_name == "bytecode") {
+            err = write_circuit<Endianness, ArithmetizationType, BlueprintFieldType>(nil::evm_assigner::zkevm_circuit::BYTECODE,
+                                                                                     assignments,
+                                                                                     circuits.m_bytecode_circuit,
+                                                                                     concrete_circuit_file_name);
+        } else if (circuit_name == "sha256") {
+            err = write_circuit<Endianness, ArithmetizationType, BlueprintFieldType>(nil::evm_assigner::zkevm_circuit::BYTECODE,
+                                                                                     assignments,
+                                                                                     circuits.m_sha256_circuit,
+                                                                                     concrete_circuit_file_name);
+        }
+        if (err) {
+            std::cerr << "Write circuits failed: " << err.value() << std::endl;
+            return 1;
+        }
+    }
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - write_circuits_start);
+    std::cout << "WRITE CIRCUITS: " << duration.count() << " ms\n";
+
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+    std::cout << "SETUP: " << duration.count() << " ms\n";
+
+    return 0;
+}
 
 template<typename BlueprintFieldType>
 int curve_dependent_main(uint64_t shardId, const std::string& blockHash,
                          const std::string& block_file_name,
                          const std::string& account_storage_file_name,
                          const std::string& assignment_table_file_name,
+                         const std::string& circuit_file_name,
                          const std::optional<OutputArtifacts>& artifacts,
                          const std::vector<std::string>& target_circuits,
+                         bool is_setup,
                          boost::log::trivial::severity_level log_level) {
     using ArithmetizationType =
         nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
@@ -44,6 +126,11 @@ int curve_dependent_main(uint64_t shardId, const std::string& blockHash,
     zkevm_circuits<ArithmetizationType> circuits;
     circuits.m_names = target_circuits;
 
+
+    if (is_setup) {
+        BOOST_LOG_TRIVIAL(debug) << "SetUp prover\n";
+        return setup_prover<BlueprintFieldType, ArithmetizationType>(assignment_table_file_name, circuit_file_name, circuits);
+    }
     std::unordered_map<nil::evm_assigner::zkevm_circuit,
                        nil::blueprint::assignment<ArithmetizationType>>
         assignments;
@@ -95,7 +182,9 @@ int main(int argc, char* argv[]) {
     // clang-format off
     options_desc.add_options()("help,h", "Display help message")
             ("version,v", "Display version")
-            ("assignment-tables,t", boost::program_options::value<std::string>(), "Assignment table output files")
+            ("setup", "Run prover setup")
+            ("assignment-tables,t", boost::program_options::value<std::string>(), "Assignment tables output files")
+            ("circuits,c", boost::program_options::value<std::string>(), "Circuits output files")
             ("output-text", boost::program_options::value<std::string>(), "Output assignment table in readable format. "
                                                                           "Filename or `-` for stdout. "
                                                                           "Using this enables options --tables, --rows, --columns")
@@ -148,6 +237,7 @@ int main(int argc, char* argv[]) {
 
     uint64_t shardId = 0;
     std::string assignment_table_file_name;
+    std::string circuit_file_name;
     std::string blockHash;
     std::string block_file_name;
     std::string account_storage_file_name;
@@ -159,6 +249,15 @@ int main(int argc, char* argv[]) {
         assignment_table_file_name = vm["assignment-tables"].as<std::string>();
     } else {
         std::cerr << "Invalid command line argument - assignment table file name is not specified"
+                  << std::endl;
+        std::cout << options_desc << std::endl;
+        return 1;
+    }
+
+    if (vm.count("circuits")) {
+        circuit_file_name = vm["circuits"].as<std::string>();
+    } else {
+        std::cerr << "Invalid command line argument - circuits file name is not specified"
                   << std::endl;
         std::cout << options_desc << std::endl;
         return 1;
@@ -215,6 +314,11 @@ int main(int argc, char* argv[]) {
         target_circuits = vm["target-circuits"].as<std::vector<std::string>>();
     }
 
+    bool is_setup = false;
+    if (vm.count("setup")) {
+        is_setup = true;
+    }
+
     if (vm.count("log-level")) {
         log_level = vm["log-level"].as<std::string>();
     } else {
@@ -251,7 +355,7 @@ int main(int argc, char* argv[]) {
             return curve_dependent_main<
                 typename nil::crypto3::algebra::curves::pallas::base_field_type>(
                 shardId, blockHash, block_file_name, account_storage_file_name,
-                assignment_table_file_name, artifacts, target_circuits, log_options[log_level]);
+                assignment_table_file_name, circuit_file_name, artifacts, target_circuits, is_setup, log_options[log_level]);
             break;
         }
         case 1: {
@@ -266,7 +370,7 @@ int main(int argc, char* argv[]) {
             return curve_dependent_main<
                 typename nil::crypto3::algebra::fields::bls12_base_field<381>>(
                 shardId, blockHash, block_file_name, account_storage_file_name,
-                assignment_table_file_name, artifacts, target_circuits, log_options[log_level]);
+                assignment_table_file_name, circuit_file_name, artifacts, target_circuits, is_setup, log_options[log_level]);
             break;
         }
     };
