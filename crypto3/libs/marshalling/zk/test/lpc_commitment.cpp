@@ -96,6 +96,33 @@ void test_lpc_proof(typename LPC::proof_type &proof, typename LPC::fri_type::par
     BOOST_CHECK(proof == constructed_val_read);
 }
 
+template<typename Endianness, typename LPC>
+void test_lpc_aggregated_proof(
+    typename LPC::aggregated_proof_type &proof,
+    typename LPC::fri_type::params_type fri_params
+) {
+    using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+    auto filled_proof =
+        nil::crypto3::marshalling::types::fill_aggregated_proof<Endianness, LPC>(proof, fri_params);
+    auto _proof = nil::crypto3::marshalling::types::make_aggregated_proof<Endianness, LPC>(filled_proof);
+    BOOST_CHECK(proof == _proof);
+
+    std::vector<std::uint8_t> cv;
+    cv.resize(filled_proof.length(), 0x00);
+    auto write_iter = cv.begin();
+    auto status = filled_proof.write(write_iter, cv.size());
+    BOOST_CHECK(status == nil::marshalling::status_type::success);
+
+    typename nil::crypto3::marshalling::types::aggregated_proof<TTypeBase, LPC> test_val_read;
+    auto read_iter = cv.begin();
+    test_val_read.read(read_iter, cv.size());
+    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    typename LPC::aggregated_proof_type constructed_val_read =
+            nil::crypto3::marshalling::types::make_aggregated_proof<Endianness, LPC>(test_val_read);
+    BOOST_CHECK(proof == constructed_val_read);
+}
+
 // This function will test saving and restoring LPC commitment scheme state to a file/buffer.
 template<typename Endianness, typename LPC>
 void test_lpc_state_recovery(const LPC& lpc_commitment_scheme) {
@@ -156,6 +183,20 @@ BOOST_FIXTURE_TEST_CASE(lpc_proof_test, zk::test_tools::random_test_initializer<
             generic_random_engine
     );
     test_lpc_proof<Endianness, lpc_scheme_type>(proof, fri_params);
+}
+
+BOOST_FIXTURE_TEST_CASE(lpc_aggregated_proof_test, zk::test_tools::random_test_initializer<field_type>) {
+    typename FRI::params_type fri_params(1, r + 1, lambda, 4);
+
+    auto proof = generate_random_lpc_aggregated_proof<LPC>(
+            final_polynomial_degree, 5,
+            fri_params.step_list,
+            lambda,
+            false,
+            alg_random_engines.template get_alg_engine<field_type>(),
+            generic_random_engine
+    );
+    test_lpc_aggregated_proof<Endianness, lpc_scheme_type>(proof, fri_params);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

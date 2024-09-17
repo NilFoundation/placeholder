@@ -49,6 +49,8 @@ namespace nil {
         namespace marshalling {
             namespace types {
 
+                using batch_info_type = std::map<std::size_t, std::size_t>; // batch_id->batch_size
+
                 ///////////////////////////////////////////////////
                 // fri::merkle_proofs marshalling
                 ///////////////////////////////////////////////////
@@ -86,6 +88,243 @@ namespace nil {
                         );
                     }
                     return merkle_proofs;
+                }
+
+                ///////////////////////////////////////////////////
+                // fri::initial_proof_type marshalling
+                ///////////////////////////////////////////////////
+                template<typename TTypeBase, typename FRI>
+                using fri_initial_proof_type = nil::marshalling::types::bundle<
+                    TTypeBase,
+                    std::tuple<
+                        // polynomials_values_type values;
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            nil::marshalling::types::standard_array_list<
+                                TTypeBase,
+                                nil::marshalling::types::standard_array_list<
+                                    TTypeBase,
+                                    field_element<TTypeBase, typename FRI::field_type::value_type>>>
+                        >,
+                        // merkle_proof_type p;
+                        typename types::merkle_proof<TTypeBase, typename FRI::merkle_proof_type>
+                    >
+                >;
+
+                template<typename Endianness, typename FRI>
+                fri_initial_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                fill_fri_initial_proof(
+                    const typename FRI::initial_proof_type &initial_proof
+                ) {
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using value_type = typename FRI::field_type::value_type;
+                    using filled_type = fri_initial_proof_type<TTypeBase, FRI>;
+                    using outer_list_type = nil::marshalling::types::standard_array_list<
+                        TTypeBase,
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            field_element<TTypeBase, typename FRI::field_type::value_type>
+                        >
+                    >;
+                    using inner_list_type = nil::marshalling::types::standard_array_list<
+                        TTypeBase,
+                        field_element<TTypeBase, typename FRI::field_type::value_type>
+                    >;
+
+                    filled_type filled;
+
+                    for (std::size_t i = 0; i < initial_proof.values.size(); i++) {
+                        outer_list_type outer_list;
+                        for (std::size_t j = 0; j < initial_proof.values[i].size(); j++) {
+                            inner_list_type inner_list;
+                            for (std::size_t k = 0; k < FRI::m; k++) {
+                                inner_list.value().push_back(
+                                    field_element<TTypeBase, typename FRI::field_type::value_type>(
+                                        initial_proof.values[i][j][k])
+                                );
+                            }
+                            outer_list.value().push_back(inner_list);
+                        }
+                        std::get<0>(filled.value()).value().push_back(outer_list);
+                    }
+                    // merkle_proof_type p;
+                    std::get<1>(filled.value()) =
+                        fill_merkle_proof<typename FRI::merkle_proof_type, Endianness>(initial_proof.p);
+
+                    return filled;
+                }
+
+                template<typename Endianness, typename FRI>
+                typename FRI::initial_proof_type
+                make_fri_initial_proof(
+                    const fri_initial_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                ) {
+                    typename FRI::initial_proof_type initial_proof;
+                    // polynomials_values_type values;
+                    auto &values = std::get<0>(filled.value()).value();
+                    initial_proof.values.resize(values.size());
+                    for (std::size_t i = 0; i < values.size(); i++) {
+                        auto &outer_values = values[i].value();
+                        initial_proof.values[i].resize(outer_values.size());
+                        for (std::size_t j = 0; j < outer_values.size(); j++) {
+                            auto &inner_values = outer_values[j].value();
+                            for (std::size_t k = 0; k < FRI::m; k++) {
+                                initial_proof.values[i][j][k] = inner_values[k].value();
+                            }
+                        }
+                    }
+
+                    // merkle_proof_type p;
+                    initial_proof.p = make_merkle_proof<typename FRI::merkle_proof_type, Endianness>(
+                        std::get<1>(filled.value()));
+
+                    return initial_proof;
+                }
+
+                ///////////////////////////////////////////////////
+                // fri::round_proof_type marshalling
+                ///////////////////////////////////////////////////
+                template<typename TTypeBase, typename FRI>
+                using fri_round_proof_type = nil::marshalling::types::bundle<
+                    TTypeBase,
+                    std::tuple<
+                        // std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> y;
+                        nil::marshalling::types::array_list<
+                            TTypeBase,
+                            field_element<TTypeBase, typename FRI::field_type::value_type>,
+                            nil::marshalling::option::size_t_sequence_size_field_prefix<TTypeBase>
+                        >,
+                        // merkle_proof_type p;
+                        typename types::merkle_proof<TTypeBase, typename FRI::merkle_proof_type>
+                    >
+                >;
+
+                template<typename Endianness, typename FRI>
+                fri_round_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                fill_fri_round_proof(
+                    const typename FRI::round_proof_type &round_proof
+                ) {
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using filled_type = fri_round_proof_type<TTypeBase, FRI>;
+
+                    filled_type filled;
+
+                    for (std::size_t i = 0; i < round_proof.y.size(); i++) {
+                        for (std::size_t j = 0; j < FRI::m; j++) {
+                            std::get<0>(filled.value()).value().push_back(
+                                field_element<TTypeBase, typename FRI::field_type::value_type>(
+                                    round_proof.y[i][j])
+                            );
+                        }
+                    }
+                    // merkle_proof_type p;
+                    std::get<1>(filled.value()) =
+                        fill_merkle_proof<typename FRI::merkle_proof_type, Endianness>(round_proof.p);
+
+                    return filled;
+                }
+
+                template<typename Endianness, typename FRI>
+                typename FRI::round_proof_type
+                make_fri_round_proof(
+                    const fri_round_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                ) {
+                    typename FRI::round_proof_type round_proof;
+                    // std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> y;
+                    const std::size_t size = std::get<0>(filled.value()).value().size();
+                    BOOST_ASSERT(size % FRI::m == 0);
+                    const std::size_t coset_size = size / FRI::m;
+                    std::size_t cur = 0;
+                    round_proof.y.resize(coset_size);
+                    for (std::size_t i = 0; i < coset_size; i++) {
+                        for (std::size_t j = 0; j < FRI::m; j++) {
+                            round_proof.y[i][j] = std::get<0>(filled.value()).value()[cur++].value();
+                        }
+                    }
+
+                    // merkle_proof_type p;
+                    round_proof.p = make_merkle_proof<typename FRI::merkle_proof_type, Endianness>(
+                        std::get<1>(filled.value()));
+
+                    return round_proof;
+                }
+
+                ///////////////////////////////////////////////////
+                // fri::query_proof_type marshalling
+                ///////////////////////////////////////////////////
+                template<typename TTypeBase, typename FRI>
+                using fri_query_proof_type = nil::marshalling::types::bundle<
+                    TTypeBase,
+                    std::tuple<
+                        // std::map<std::size_t, initial_proof_type> initial_proof;
+                        nil::marshalling::types::array_list<
+                            TTypeBase,
+                            fri_initial_proof_type<TTypeBase, FRI>,
+                            nil::marshalling::option::size_t_sequence_size_field_prefix<TTypeBase>
+                        >,
+                        // std::vector<round_proof_type> round_proofs;
+                        nil::marshalling::types::array_list<
+                            TTypeBase,
+                            fri_round_proof_type<TTypeBase, FRI>,
+                            nil::marshalling::option::size_t_sequence_size_field_prefix<TTypeBase>
+                        >
+                    >
+                >;
+
+                template<typename Endianness, typename FRI>
+                fri_query_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                fill_fri_query_proof(
+                    const typename FRI::query_proof_type &query_proof
+                ) {
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using filled_type = fri_query_proof_type<TTypeBase, FRI>;
+
+                    filled_type filled;
+
+                    for (auto &[key, value] : query_proof.initial_proof) {
+                        std::get<0>(filled.value()).value().push_back(
+                            fill_fri_initial_proof<Endianness, FRI>(value)
+                        );
+                    }
+
+                    for (std::size_t i = 0; i < query_proof.round_proofs.size(); i++) {
+                        std::get<1>(filled.value()).value().push_back(
+                            fill_fri_round_proof<Endianness, FRI>(query_proof.round_proofs[i])
+                        );
+                    }
+
+                    return filled;
+                }
+
+                template<typename Endianness, typename FRI>
+                typename FRI::query_proof_type
+                make_fri_query_proof(
+                    const fri_query_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled,
+                    const batch_info_type &batch_info,
+                    const std::vector<std::uint8_t> &step_list
+                ) {
+                    typename FRI::query_proof_type query_proof;
+                    // std::map<std::size_t, initial_proof_type> initial_proof;
+                    std::size_t cur = 0;
+                    std::size_t coset_size = 1 << (step_list[0] - 1);
+                    for (const auto &[batch_id, batch_size] : batch_info) {
+                        query_proof.initial_proof[batch_id] =
+                            make_fri_initial_proof<Endianness, FRI>(
+                                std::get<0>(filled.value()).value()[cur++], batch_size, coset_size
+                            );
+                    }
+                    // std::vector<round_proof_type> round_proofs;
+                    cur = 0;
+                    for (std::size_t r = 0; r < step_list.size(); r++) {
+                        coset_size = r == step_list.size() - 1 ? 1 : (1 << (step_list[r+1]-1));
+                        query_proof.round_proofs.push_back(
+                            make_fri_round_proof<Endianness, FRI>(
+                                std::get<1>(filled.value()).value()[cur++]
+                            )
+                        );
+                    }
+
+                    return query_proof;
                 }
 
                 ///////////////////////////////////////////////////
@@ -262,7 +501,8 @@ namespace nil {
                         std::tuple(
                             filled_fri_roots, filled_step_list, filled_initial_val, filled_round_val,
                             filled_initial_merkle_proofs, filled_round_merkle_proofs, filled_final_polynomial,
-                            nil::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>(proof.proof_of_work)
+                            nil::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>(
+                                proof.proof_of_work)
                         )
                     );
                 }
@@ -350,6 +590,189 @@ namespace nil {
                     proof.proof_of_work = std::get<7>(filled_proof.value()).value();
                     return proof;
                 }
+
+                template <typename TTypeBase, typename FRI>
+                using initial_proofs_batch_type = nil::marshalling::types::standard_array_list<
+                    TTypeBase,
+                    nil::marshalling::types::bundle<
+                        TTypeBase,
+                        std::tuple<
+                            nil::marshalling::types::standard_array_list<
+                                TTypeBase,
+                                nil::marshalling::types::integral<TTypeBase, uint8_t>
+                            >,
+                            nil::marshalling::types::standard_array_list<
+                                TTypeBase,
+                                fri_initial_proof_type<TTypeBase, FRI>
+                            >
+                        >
+                    >
+                >;
+
+                template <typename Endianness, typename FRI>
+                initial_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI>
+                fill_initial_proofs_batch(const typename FRI::initial_proofs_batch_type &initial_proofs_batch) {
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using filled_type = initial_proofs_batch_type<TTypeBase, FRI>;
+                    using bundle_type = nil::marshalling::types::bundle<
+                        TTypeBase,
+                        std::tuple<
+                            nil::marshalling::types::standard_array_list<
+                                TTypeBase,
+                                nil::marshalling::types::integral<TTypeBase, uint8_t>
+                            >,
+                            nil::marshalling::types::standard_array_list<
+                                TTypeBase,
+                                fri_initial_proof_type<TTypeBase, FRI>
+                            >
+                        >
+                    >;
+
+                    filled_type filled;
+
+                    for (const auto &inital_proof : initial_proofs_batch.initial_proofs) {
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            nil::marshalling::types::integral<TTypeBase, uint8_t>
+                        > filled_step_list;
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            fri_initial_proof_type<TTypeBase, FRI>
+                        > filled_initial_proofs;
+                        for (const auto &[step_list, proof] : inital_proof) {
+                            filled_step_list.value().push_back(
+                                nil::marshalling::types::integral<TTypeBase, uint8_t>(step_list));
+                            filled_initial_proofs.value().push_back(fill_fri_initial_proof<Endianness, FRI>(
+                                proof));
+                        }
+                        auto filled_bundle = std::make_tuple(filled_step_list, filled_initial_proofs);
+                        filled.value().push_back(bundle_type(filled_bundle));
+                    }
+
+                    return filled;
+                }
+
+                template <typename Endianness, typename FRI>
+                typename FRI::initial_proofs_batch_type make_initial_proofs_batch(
+                    const initial_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                ) {
+                    typename FRI::initial_proofs_batch_type initial_proofs_batch;
+                    for (const auto &batch : filled.value()) {
+                        std::map<std::size_t, typename FRI::initial_proof_type> batch_initial_proofs;
+                        auto &batch_index_vector = std::get<0>(batch.value()).value();
+                        auto &batch_proof_vector = std::get<1>(batch.value()).value();
+                        for (std::size_t i = 0; i < batch_index_vector.size(); i++) {
+                            batch_initial_proofs[batch_index_vector[i].value()] =
+                                make_fri_initial_proof<Endianness, FRI>(batch_proof_vector[i]);
+                        }
+                        initial_proofs_batch.initial_proofs.push_back(batch_initial_proofs);
+                    }
+                    return initial_proofs_batch;
+                }
+
+                template <typename TTypeBase, typename FRI>
+                using round_proofs_batch_type = nil::marshalling::types::standard_array_list<
+                    TTypeBase,
+                    nil::marshalling::types::standard_array_list<
+                        TTypeBase,
+                        fri_round_proof_type<TTypeBase, FRI>
+                    >
+                >;
+
+                template <typename Endianness, typename FRI>
+                round_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI>
+                fill_round_proofs_batch(const typename FRI::round_proofs_batch_type &round_proofs_batch) {
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using filled_type = round_proofs_batch_type<TTypeBase, FRI>;
+
+                    filled_type filled;
+
+                    for (const auto &round_proof_vector : round_proofs_batch.round_proofs) {
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            fri_round_proof_type<TTypeBase, FRI>
+                        > filled_round_proof_vector;
+                        for (const auto &round_proof : round_proof_vector) {
+                            filled_round_proof_vector.value().push_back(
+                                fill_fri_round_proof<Endianness, FRI>(round_proof));
+                        }
+                        filled.value().push_back(filled_round_proof_vector);
+                    }
+
+                    return filled;
+                }
+
+                template <typename Endianness, typename FRI>
+                typename FRI::round_proofs_batch_type make_round_proofs_batch(
+                    const round_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                ) {
+                    typename FRI::round_proofs_batch_type round_proofs_batch;
+                    for (const auto &round_proof_vector : filled.value()) {
+                        std::vector<typename FRI::round_proof_type> round_proofs;
+                        for (const auto &round_proof : round_proof_vector.value()) {
+                            round_proofs.push_back(make_fri_round_proof<Endianness, FRI>(round_proof));
+                        }
+                        round_proofs_batch.round_proofs.push_back(round_proofs);
+                    }
+                    return round_proofs_batch;
+                }
+
+                template <typename TTypeBase, typename FRI>
+                using commitments_part_of_proof_type = nil::marshalling::types::bundle<
+                    TTypeBase,
+                    std::tuple<
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            typename types::merkle_node_value<TTypeBase, typename FRI::merkle_proof_type>::type
+                        >,
+                        typename polynomial<TTypeBase, typename FRI::polynomial_type>::type
+                    >
+                >;
+
+                template <typename Endianness, typename FRI>
+                commitments_part_of_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                fill_commitments_part_of_proof(
+                    const typename FRI::commitments_part_of_proof &commitments_part_of_proof
+                ) {
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using filled_type = commitments_part_of_proof_type<TTypeBase, FRI>;
+
+                    filled_type filled;
+
+                    nil::marshalling::types::standard_array_list<
+                        TTypeBase,
+                        typename types::merkle_node_value<TTypeBase, typename FRI::merkle_proof_type>::type
+                    > filled_fri_roots;
+                    for (const auto &fri_root : commitments_part_of_proof.fri_roots) {
+                        filled_fri_roots.value().push_back(
+                            fill_merkle_node_value<typename FRI::commitment_type, Endianness>(fri_root));
+                    }
+                    std::get<0>(filled.value()) = filled_fri_roots;
+
+                    std::get<1>(filled.value()) = fill_polynomial<Endianness, typename FRI::polynomial_type>(
+                        commitments_part_of_proof.final_polynomial
+                    );
+
+                    return filled;
+                }
+
+                template <typename Endianness, typename FRI>
+                typename FRI::commitments_part_of_proof make_commitments_part_of_proof(
+                    const commitments_part_of_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                ) {
+                    typename FRI::commitments_part_of_proof commitments_part_of_proof;
+                    for (const auto &fri_root : std::get<0>(filled.value()).value()) {
+                        commitments_part_of_proof.fri_roots.push_back(
+                            make_merkle_node_value<typename FRI::commitment_type, Endianness>(fri_root)
+                        );
+                    }
+                    commitments_part_of_proof.final_polynomial =
+                        make_polynomial<Endianness, typename FRI::polynomial_type>(
+                            std::get<1>(filled.value())
+                        );
+                    return commitments_part_of_proof;
+                }
+
             }    // namespace types
         }        // namespace marshalling
     }            // namespace crypto3
