@@ -220,6 +220,36 @@ void test_placeholder_proof(const ProofType &proof, const CommitmentParamsType& 
     BOOST_CHECK(proof == constructed_val_read);
 }
 
+template<typename Endianness, typename ProofType, typename CommitmentParamsType>
+void test_placeholder_partial_proof(const typename ProofType::partial_proof_type &proof, const CommitmentParamsType& params, std::string output_file = "") {
+
+    using namespace nil::crypto3::marshalling;
+
+    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_partial_evaluation_proof<TTypeBase, ProofType>;
+
+    auto filled_placeholder_proof = types::fill_placeholder_partial_evaluation_proof<Endianness, ProofType>(proof);
+    ProofType _proof = types::make_placeholder_partial_evaluation_proof<Endianness, ProofType>(filled_placeholder_proof);
+    BOOST_CHECK(_proof == proof);
+
+    std::vector<std::uint8_t> cv;
+    cv.resize(filled_placeholder_proof.length(), 0x00);
+    auto write_iter = cv.begin();
+    auto status = filled_placeholder_proof.write(write_iter, cv.size());
+    BOOST_CHECK(status == nil::marshalling::status_type::success);
+
+    if (output_file != "") {
+        print_placeholder_proof(cv.cbegin(), cv.cend(), false, output_file.c_str());
+    }
+
+    proof_marshalling_type test_val_read;
+    auto read_iter = cv.begin();
+    status = test_val_read.read(read_iter, cv.size());
+    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    auto constructed_val_read = types::make_placeholder_partial_evaluation_proof<Endianness, ProofType>(test_val_read);
+    BOOST_CHECK(proof == constructed_val_read);
+}
+
 bool has_argv(std::string name){
     bool result = false;
     for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc); i++) {
@@ -241,6 +271,9 @@ void print_placeholder_proof_with_params(
     std::filesystem::create_directory(folder_name);
     test_placeholder_proof<Endianness, placeholder_proof<typename PlaceholderParams::field_type, PlaceholderParams>>(
         proof, commitment_scheme.get_commitment_params(), folder_name + "/proof.bin");
+    test_placeholder_partial_proof<Endianness, placeholder_proof<typename PlaceholderParams::field_type, PlaceholderParams>>(
+        proof, commitment_scheme.get_commitment_params(), folder_name + "/partial_proof.bin"
+    );
     print_placeholder_params<PlaceholderParams> (
         preprocessed_data, commitment_scheme, table_description, folder_name + "/params.json", folder_name
     );
@@ -353,6 +386,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         );
     } else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(lpc_proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(lpc_proof, fri_params);
     }
     auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
         lpc_preprocessed_public_data.common_data, lpc_proof, desc, constraint_system, lpc_scheme
@@ -447,6 +481,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit1/public_input.inp");
     } else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(lpc_proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(lpc_proof, fri_params);
     }
     auto verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
         lpc_preprocessed_public_data.common_data, lpc_proof, desc, constraint_system, lpc_scheme
@@ -548,6 +583,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit2/public_input.inp");
     }else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(lpc_proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(lpc_proof, fri_params);
     }
 
     verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -637,6 +673,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit3/public_input.inp");
     } else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
     }
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -727,6 +764,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit4/public_input.inp");
     }else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
     }
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -816,6 +854,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test100, test_tools::random_test_initi
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit5_chunk100/public_input.inp");
     }else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
     }
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -872,6 +911,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit5_chunk10/public_input.inp");
     }else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
     }
 
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
@@ -961,6 +1001,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit6/public_input.inp");
     }else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
     }
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
         preprocessed_public_data.common_data, proof, desc, constraint_system, lpc_scheme);
@@ -1047,6 +1088,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test, test_tools::random_test_initiali
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit7/public_input.inp");
     }else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
     }
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
         preprocessed_public_data.common_data, proof, desc, constraint_system, lpc_scheme);
@@ -1101,6 +1143,7 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test10, test_tools::random_test_initia
         print_public_input(desc.public_input_columns == 0? std::vector<typename field_type::value_type>({}):assignments.public_input(0), "circuit7_chunk10/public_input.inp");
     }else {
         test_placeholder_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
+        test_placeholder_partial_proof<Endianness, placeholder_proof<field_type, lpc_placeholder_params_type>>(proof, fri_params);
     }
     bool verifier_res = placeholder_verifier<field_type, lpc_placeholder_params_type>::process(
         preprocessed_public_data.common_data, proof, desc, constraint_system, lpc_scheme);

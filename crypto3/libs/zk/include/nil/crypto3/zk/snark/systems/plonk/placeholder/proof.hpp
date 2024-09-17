@@ -88,6 +88,7 @@ namespace nil {
                     using circuit_params_type = typename ParamsType::circuit_params_type;
                     using commitment_scheme_type = typename ParamsType::commitment_scheme_type;
                     using commitment_type = typename commitment_scheme_type::commitment_type;
+                    using partial_proof_type = placeholder_partial_proof<FieldType, ParamsType>;
 
                     struct evaluation_proof {
                         // TODO: remove it!
@@ -104,6 +105,12 @@ namespace nil {
                     };
 
                     placeholder_proof() = default;
+
+                    placeholder_proof(const partial_proof_type &partial_proof) :
+                        placeholder_partial_proof<FieldType, ParamsType>(partial_proof) {}
+
+                    placeholder_proof(const partial_proof_type &partial_proof, const evaluation_proof &eval_proof) :
+                        placeholder_partial_proof<FieldType, ParamsType>(partial_proof), eval_proof(eval_proof) {}
 
                     bool operator==(const placeholder_proof &rhs) const {
                         return placeholder_partial_proof<FieldType, ParamsType>::operator==(rhs) &&

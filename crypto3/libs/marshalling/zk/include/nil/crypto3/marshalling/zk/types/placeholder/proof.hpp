@@ -47,6 +47,72 @@ namespace nil {
     namespace crypto3 {
         namespace marshalling {
             namespace types {
+                template<typename TTypeBase, typename Proof>
+                using placeholder_partial_evaluation_proof = nil::marshalling::types::bundle<
+                    TTypeBase,
+                    std::tuple<
+                        // batch size integers
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            nil::marshalling::types::integral<TTypeBase, uint8_t>
+                        >,
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            typename commitment<TTypeBase, typename Proof::commitment_scheme_type>::type
+                        >
+                    >
+                >;
+
+                template<typename Endianness, typename Proof>
+                placeholder_partial_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof>
+                    fill_placeholder_partial_evaluation_proof(
+                        const typename Proof::partial_proof_type &partial_proof) {
+
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+                    // batch size integers
+                    nil::marshalling::types::standard_array_list<
+                        TTypeBase,
+                        nil::marshalling::types::integral<TTypeBase, uint8_t>
+                    > filled_batch_size;
+                    // batch commitments
+                    nil::marshalling::types::standard_array_list<
+                        TTypeBase,
+                        typename commitment<TTypeBase, typename Proof::commitment_scheme_type>::type
+                    > filled_commitments;
+                    for (const auto &[batch_index, commitment] : partial_proof.commitments) {
+                        filled_batch_size.value().push_back(
+                            nil::marshalling::types::integral<TTypeBase, uint8_t>(batch_index));
+                        filled_commitments.value().push_back(
+                            fill_commitment<Endianness, typename Proof::commitment_scheme_type>(commitment));
+                    }
+
+                    return placeholder_partial_evaluation_proof<TTypeBase, Proof>(std::make_tuple(
+                        filled_batch_size,
+                        filled_commitments
+                    ));
+                }
+
+                template<typename Endianness, typename Proof>
+                typename Proof::partial_proof_type make_placeholder_partial_evaluation_proof(
+                    const placeholder_partial_evaluation_proof<
+                        nil::marshalling::field_type<Endianness>, Proof> &filled_proof
+                ) {
+                    typename Proof::partial_proof_type partial_proof;
+
+                    // batch size integers
+                    auto filled_batch_size = std::get<0>(filled_proof.value()).value();
+                    auto filled_commitments = std::get<1>(filled_proof.value()).value();
+
+                    for (std::size_t i = 0; i < filled_batch_size.size(); i++) {
+                        partial_proof.commitments[filled_batch_size[i].value()] =
+                            make_commitment<Endianness, typename Proof::commitment_scheme_type>(
+                                filled_commitments[i]);
+                    }
+
+                    return partial_proof;
+                }
+
                 // This should be different for different commitment schemes!
                 template<typename TTypeBase, typename Proof>
                 using placeholder_evaluation_proof = nil::marshalling::types::bundle<

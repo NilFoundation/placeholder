@@ -259,6 +259,65 @@ typename FRI::proof_type generate_random_fri_proof(
     return res;
 }
 
+template<typename FRI>
+typename FRI::initial_proofs_batch_type generate_random_inital_proofs_batch(
+    std::size_t lambda,
+    std::size_t max_batch_size,
+    std::vector<std::size_t> step_list,
+    nil::crypto3::random::algebraic_engine<typename FRI::field_type> &alg_rnd,
+    boost::random::mt11213b &rnd
+) {
+    typename FRI::initial_proofs_batch_type res;
+    res.initial_proofs.resize(lambda);
+    for (std::size_t i = 0; i < lambda; i++) {
+        std::map<std::size_t, typename FRI::initial_proof_type> initial_proof;
+        for (const auto &it : step_list) {
+            initial_proof[it] = generate_random_fri_initial_proof<FRI>(max_batch_size, it, alg_rnd, rnd);
+        }
+        res.initial_proofs[i] = std::move(initial_proof);
+    }
+    return res;
+}
+
+template<typename FRI>
+typename FRI::round_proofs_batch_type generate_random_round_proofs_batch(
+    std::size_t lambda,
+    std::size_t max_batch_size,
+    std::vector<std::size_t> step_list,
+    nil::crypto3::random::algebraic_engine<typename FRI::field_type> &alg_rnd,
+    boost::random::mt11213b &rnd
+) {
+    typename FRI::round_proofs_batch_type res;
+    res.round_proofs.resize(lambda);
+    for (std::size_t i = 0; i < lambda; i++) {
+        res.round_proofs[i].resize(step_list.size());
+        for (std::size_t j = 0; j < step_list.size(); j++) {
+            res.round_proofs[i][j] = generate_random_fri_round_proof<FRI>(step_list[j], alg_rnd, rnd);
+        }
+    }
+    return res;
+}
+
+template<typename FRI>
+typename FRI::commitments_part_of_proof generate_random_commitments_part_of_proof(
+    std::size_t d,              //final polynomial degree
+    std::size_t max_batch_size,
+    std::vector<std::size_t> step_list,
+    std::size_t lambda,
+    bool use_grinding,
+    nil::crypto3::random::algebraic_engine<typename FRI::field_type> &alg_rnd,
+    boost::random::mt11213b &rnd
+) {
+    typename FRI::commitments_part_of_proof res;
+    res.fri_roots.resize(step_list.size());
+    for (std::size_t k = 0; k < step_list.size(); k++) {
+        res.fri_roots[k] = nil::crypto3::hash<typename FRI::merkle_tree_hash_type>(
+            generate_random_data<std::uint8_t, 32>(1, rnd).at(0)
+        );
+    }
+    res.final_polynomial = generate_random_polynomial<typename FRI::field_type>(d, alg_rnd);
+    return res;
+}
 
 template<typename LPC>
 typename LPC::proof_type generate_random_lpc_proof(
@@ -289,6 +348,83 @@ typename LPC::proof_type generate_random_lpc_proof(
     return res;
 }
 
+template<typename LPC>
+typename LPC::fri_proof_type generate_random_lpc_intial_fri_proof(
+    std::size_t d,              //final polynomial degree
+    std::size_t max_batch_size,
+    std::vector<std::size_t> step_list,
+    std::size_t lambda,
+    std::size_t use_grinding,
+    nil::crypto3::random::algebraic_engine<typename LPC::basic_fri::field_type> &alg_rnd,
+    boost::random::mt11213b &rnd
+) {
+    typename LPC::fri_proof_type res;
+
+    res.fri_round_proof = generate_random_round_proofs_batch<typename LPC::basic_fri>(
+        lambda, max_batch_size, step_list, alg_rnd, rnd);
+
+    res.fri_commitments_proof_part = generate_random_commitments_part_of_proof<typename LPC::basic_fri>(
+        d, max_batch_size, step_list, lambda, use_grinding, alg_rnd, rnd);
+
+    return res;
+}
+
+template<typename LPC>
+typename LPC::lpc_proof_type generate_random_lpc_inital_proof(
+    std::size_t d,              //final polynomial degree
+    std::size_t max_batch_size,
+    std::vector<std::size_t> step_list,
+    std::size_t lambda,
+    std::size_t use_grinding,
+    nil::crypto3::random::algebraic_engine<typename LPC::basic_fri::field_type> &alg_rnd,
+    boost::random::mt11213b &rnd
+) {
+    typename LPC::lpc_proof_type res;
+
+    nil::crypto3::marshalling::types::batch_info_type batch_info;
+    for (std::size_t i = 0; i < 6; i++) {
+        batch_info[rnd()%6] = rnd()%9 + 1;
+    }
+    for (const auto&it: batch_info) {
+        res.z.set_batch_size(it.first, it.second);
+        for( std::size_t i = 0; i < it.second; i++){
+            res.z.set_poly_points_number(it.first, i, rnd()%3 + 1);
+            for( std::size_t j = 0; j < res.z.get_poly_points_number(it.first, i); j++){
+                res.z.set(it.first, i, j, alg_rnd());
+            }
+        }
+    }
+    res.initial_fri_proofs = generate_random_inital_proofs_batch<typename LPC::basic_fri>(
+        lambda, max_batch_size, step_list, alg_rnd, rnd);
+
+    return res;
+}
+
+template<typename LPC>
+typename LPC::aggregated_proof_type generate_random_lpc_aggregated_proof(
+    std::size_t d,              //final polynomial degree
+    std::size_t max_batch_size,
+    std::vector<std::size_t> step_list,
+    std::size_t lambda,
+    std::size_t use_grinding,
+    nil::crypto3::random::algebraic_engine<typename LPC::basic_fri::field_type> &alg_rnd,
+    boost::random::mt11213b &rnd
+) {
+    typename LPC::aggregated_proof_type res;
+
+    res.fri_proof = generate_random_lpc_intial_fri_proof<LPC>(
+        d, max_batch_size, step_list, lambda, use_grinding, alg_rnd, rnd);
+
+    res.intial_proofs_per_prover.resize(lambda);
+    for (std::size_t i = 0; i < lambda; i++) {
+        res.intial_proofs_per_prover[i] = generate_random_lpc_inital_proof<LPC>(
+            d, max_batch_size, step_list, lambda, use_grinding, alg_rnd, rnd);
+    }
+
+    res.proof_of_work = rnd();
+
+    return res;
+}
 
 template<typename FieldType>
 math::polynomial_dfs<typename FieldType::value_type>
