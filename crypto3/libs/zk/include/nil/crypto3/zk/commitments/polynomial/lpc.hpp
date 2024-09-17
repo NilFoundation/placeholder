@@ -269,7 +269,8 @@ namespace nil {
                         return fri_proof;
                     }
 
-                    /** \brief 
+                    /** \brief Computes polynomial combined_Q. In case this function changes, 
+                               the function 'compute_theta_power_for_combined_Q' below should be changed accordingly. 
                      *  \param theta The value of challenge. When called from aggregated FRI, this values is sent from
                                 the "main prover" machine.
                      *  \param starting_power When aggregated FRI is used, the value is not zero, it's the total degree of all
@@ -348,6 +349,35 @@ namespace nil {
                         }
 
                         return combined_Q;
+                    }
+
+                    // Computes and returns the maximal power of theta used to compute the value of Combined_Q.
+                    std::size_t compute_theta_power_for_combined_Q() const {
+                        std::size_t theta_power = 0;
+                        this->build_points_map();
+
+                        auto points = this->get_unique_points();
+
+                        for (auto const &point: points) {
+                            for (std::size_t i: this->_z.get_batches()) {
+                                for (std::size_t j = 0; j < this->_z.get_batch_size(i); j++) {
+                                    auto iter = this->_points_map[i][j].find(point);
+                                    if (iter == this->_points_map[i][j].end())
+                                        continue;
+
+                                    theta_power++;
+                                }
+                            }
+                        }
+
+                        for (std::size_t i: this->_z.get_batches()) {
+                            if (!_batch_fixed.at(i))
+                                continue;
+
+                            theta_power += this->_z.get_batch_size(i);
+                        }
+
+                        return theta_power;
                     }
 
                     bool verify_eval(
