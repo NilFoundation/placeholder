@@ -21,8 +21,7 @@ jobs:
         run: |
           nix build -L .?#checks.x86_64-linux.all-clang
           mkdir results
-          find -name "*_test.xml" -exec mv -t results/ {} +
-          ls -l -a results/
+          cp result/test-logs/*_test.xml results/
         env:
           NIX_CONFIG: |
             cores = 4
