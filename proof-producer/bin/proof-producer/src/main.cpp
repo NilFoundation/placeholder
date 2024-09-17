@@ -113,6 +113,22 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                             prover_options.aggregated_proof_files,
                             prover_options.last_proof_file,
                             prover_options.proof_file_path);
+                case nil::proof_generator::detail::ProverStage::COMPUTE_COMBINED_Q:
+                    prover_result = 
+                        prover.read_commitment_scheme_from_file(prover_options.commitment_scheme_state_path) &&
+                        prover.generate_combined_Q_to_file(
+                            prover_options.aggregated_challenge_file, prover_options.combined_Q_starting_power,
+                            prover_options.combined_Q_polynomial_file);
+                    break;
+                case nil::proof_generator::detail::ProverStage::GENERATE_AGGREGATED_FRI_PROOF:
+                    prover_result = 
+                        prover.read_assignment_description(prover_options.assignment_description_file_path) &&
+                        prover.generate_aggregated_FRI_proof_to_file(
+                            prover_options.aggregated_challenge_file,
+                            prover_options.input_combined_Q_polynomial_files,
+                            prover_options.proof_file_path,
+                            prover_options.proof_of_work_output_file,
+                            prover_options.consistency_checks_challenges_file);
                     break;
             }
         } catch (const std::exception& e) {

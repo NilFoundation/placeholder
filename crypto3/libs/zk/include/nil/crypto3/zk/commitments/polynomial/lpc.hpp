@@ -199,15 +199,20 @@ namespace nil {
 
                     /** This function must be called once for the aggregated FRI, to proof that polynomial 
                         'sum_poly' has low degree.
-                     * \param[in] sum_poly - polynomial F(x) = Sum(combined_Q).
+                     * \param[in] sum_poly - polynomial F(x) = Sum(combined_Q). Can be resized before used.
                      * \param[in] transcript - This transcript is initialized on the main prover, which has digested 
                             challenges from all the other provers.
+                     * \returns A pair containing the FRI proof and the vector of size 'lambda' containing the challenges used.
                      */
-                    fri_proof_type proof_eval_FRI_proof(const polynomial_type& sum_poly, transcript_type &transcript) {
-                        // TODO(martun): this function belongs to FRI, not here, will move later.
+                    std::pair<fri_proof_type, std::vector<typename fri_type::field_type::value_type>>
+                    proof_eval_FRI_proof(polynomial_type& sum_poly, transcript_type &transcript) {
+                        // TODO(martun): this function belongs to FRI, not here, probably will move later.
+
                         // Precommit to sum_poly.
-                        if (sum_poly.size() != _fri_params.D[0]->size()) {
-                            sum_poly.resize(_fri_params.D[0]->size(), nullptr, _fri_params.D[0]);
+                        if constexpr(std::is_same<math::polynomial_dfs<value_type>, polynomial_type>::value ) {
+                            if (sum_poly.size() != _fri_params.D[0]->size()) {
+                                sum_poly.resize(_fri_params.D[0]->size(), nullptr, _fri_params.D[0]);
+                            }
                         }
                         precommitment_type sum_poly_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
                             sum_poly,
@@ -217,7 +222,6 @@ namespace nil {
 
                         std::vector<typename fri_type::precommitment_type> fri_trees;
                         std::vector<polynomial_type> fs;
-                        math::polynomial<typename fri_type::field_type::value_type> final_polynomial;
 
                         // Contains fri_roots and final_polynomial. 
                         typename fri_type::commitments_part_of_proof commitments_proof;
@@ -232,25 +236,23 @@ namespace nil {
                         std::vector<typename fri_type::field_type::value_type> challenges =
                             transcript.template challenges<typename fri_type::field_type>(this->_fri_params.lambda);
 
-                        fri_proof_type result;
+                        fri_proof_type fri_proof;
 
-                        result.fri_round_proof = nil::crypto3::zk::algorithms::query_phase_round_proofs<
+                        fri_proof.fri_round_proof = nil::crypto3::zk::algorithms::query_phase_round_proofs<
                                 fri_type, polynomial_type>(
                             _fri_params,
                             fri_trees,
                             fs,
-                            sum_poly,
+                            commitments_proof.final_polynomial,
                             challenges);
 
-                        result.fri_commitments_proof_part.fri_roots = std::move(commitments_proof.fri_roots);
-                        result.fri_commitments_proof_part.final_polynomial = std::move(final_polynomial);
+                        fri_proof.fri_commitments_proof_part = std::move(commitments_proof);
                         
-                        return result; 
+                        return {fri_proof, challenges}; 
                     }
 
                     typename fri_type::proof_type commit_and_fri_proof(
                             const polynomial_type& combined_Q, transcript_type &transcript) {
-
 
                         precommitment_type combined_Q_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
                             combined_Q,
@@ -543,6 +545,7 @@ namespace nil {
 
                     typedef typename containers::merkle_proof<merkle_hash_type, 2> merkle_proof_type;
 
+                    // TODO(martun): this duplicates type 'fri_type', please de-duplicate.
                     using basic_fri = detail::basic_batched_fri<FieldType, typename LPCParams::merkle_hash_type,
                             typename LPCParams::transcript_hash_type,
                             LPCParams::m,

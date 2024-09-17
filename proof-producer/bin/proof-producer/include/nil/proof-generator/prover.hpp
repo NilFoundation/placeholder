@@ -109,7 +109,7 @@ namespace nil {
                 GENERATE_AGGREGATED_CHALLENGE = 4,
                 PARTIAL_PROVE = 5,
                 COMPUTE_COMBINED_Q = 6,
-                GENERATE_FRI_PROOF = 7,
+                GENERATE_AGGREGATED_FRI_PROOF = 7,
                 GENERATE_LPC_INITIAL_PROOF = 8,
                 MERGE_PROOFS = 9
             };
@@ -124,6 +124,7 @@ namespace nil {
                     {"partial-prove", ProverStage::PARTIAL_PROVE},
                     {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q},
                     {"merge-proofs", ProverStage::MERGE_PROOFS},
+                    {"aggregated-FRI", ProverStage::GENERATE_AGGREGATED_FRI_PROOF}
                 };
                 auto it = stage_map.find(stage);
                 if (it == stage_map.end()) {
@@ -154,7 +155,8 @@ namespace nil {
             using ConstraintSystem = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
             using TableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
             using Endianness = nil::marshalling::option::big_endian;
-            using FriParams = typename Lpc::fri_type::params_type;
+            using FriType = typename Lpc::fri_type;
+            using FriParams = typename FriType::params_type;
             using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
             using AssignmentTable = nil::crypto3::zk::snark::plonk_table<BlueprintField, Column>;
             using TTypeBase = nil::marshalling::field_type<Endianness>;
@@ -648,20 +650,44 @@ namespace nil {
                 return save_challenge(aggregated_challenge_file, output_challenge);
             }
 
-            bool save_poly_to_file(const polynomial_type& combined_Q,
+            // NOTE: PolynomialType is not required to match polynomial_type.
+            template <typename PolynomialType>
+            bool save_poly_to_file(const PolynomialType& poly,
                                    const boost::filesystem::path &output_file) {
-                using polynomial_marshalling_type = nil::crypto3::marshalling::types::polynomial<
-                    TTypeBase, polynomial_type>;
+                using polynomial_marshalling_type = typename nil::crypto3::marshalling::types::polynomial<
+                    TTypeBase, PolynomialType>::type;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing polynomial to " << output_file << std::endl;
 
-                polynomial_marshalling_type marshalled_poly = nil::crypto3::marshalling::types::fill_polynomial<Endianness, polynomial_type>(combined_Q);
+                polynomial_marshalling_type marshalled_poly = nil::crypto3::marshalling::types::fill_polynomial<Endianness, PolynomialType>(poly);
 
-                return detail::encode_marshalling_to_file<polynomial_marshalling_type>
-                    (output_file, marshalled_poly);
+                return detail::encode_marshalling_to_file<polynomial_marshalling_type>(
+                    output_file, marshalled_poly);
             }
 
-            bool read_challenge_and_generate_combined_Q_to_file(
+            // NOTE: PolynomialType is not required to match polynomial_type.
+            template <typename PolynomialType>
+            std::optional<PolynomialType> read_poly_from_file(const boost::filesystem::path &input_file) {
+                using polynomial_marshalling_type = typename nil::crypto3::marshalling::types::polynomial<
+                    TTypeBase, PolynomialType>::type;
+
+                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
+                    return std::nullopt;
+                }
+
+                auto marshalled_poly = detail::decode_marshalling_from_file<polynomial_marshalling_type>(
+                    input_file);
+
+                if (!marshalled_poly) {
+                    BOOST_LOG_TRIVIAL(error) << "Problem with de-marshalling a polynomial read from a file" << input_file;
+                    return std::nullopt;
+                }
+
+                return nil::crypto3::marshalling::types::make_polynomial<Endianness, PolynomialType>(marshalled_poly.value());
+            }
+
+            bool generate_combined_Q_to_file(
                 const boost::filesystem::path &aggregated_challenge_file,
                 std::size_t starting_power,
                 const boost::filesystem::path &output_combined_Q_file) {
@@ -670,7 +696,8 @@ namespace nil {
                 if (!challenge) {
                     return false;
                 }
-                polynomial_type combined_Q = lpc_scheme_->prepare_combined_Q(challenge, starting_power);
+                polynomial_type combined_Q = lpc_scheme_->prepare_combined_Q(
+                    challenge.value(), starting_power);
                 return save_poly_to_file(combined_Q, output_combined_Q_file); 
             }
 
@@ -711,6 +738,90 @@ namespace nil {
                 BOOST_LOG_TRIVIAL(info) << "Writing merged proof to \"" << merged_proof_file << "\"";
 
                 return true;
+            }
+
+            bool save_fri_proof_to_file(
+                    const typename LpcScheme::fri_proof_type& fri_proof,
+                    const boost::filesystem::path &output_file) {
+                using fri_proof_marshalling_type = nil::crypto3::marshalling::types::initial_fri_proof_type<
+                    TTypeBase, LpcScheme>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing aggregated FRI proof to " << output_file << std::endl;
+
+                fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_initial_fri_proof<Endianness, LpcScheme>(fri_proof);
+
+                return detail::encode_marshalling_to_file<fri_proof_marshalling_type>(
+                    output_file, marshalled_proof);
+            }
+
+            bool save_proof_of_work(
+                const typename FriType::grinding_type::output_type &proof_of_work, 
+                const boost::filesystem::path &output_file) {
+                using POW_marshalling_type = nil::marshalling::types::integral<TTypeBase, typename FriType::grinding_type::output_type>;
+                BOOST_LOG_TRIVIAL(info) << "Writing proof of work to " << output_file << std::endl;
+
+                POW_marshalling_type marshalled_pow(proof_of_work);
+
+                return detail::encode_marshalling_to_file<POW_marshalling_type>(
+                    output_file, marshalled_pow);
+            }
+
+            bool save_challenge_vector_to_file(
+                const std::vector<typename BlueprintField::value_type>& challenges,
+                const boost::filesystem::path &consistency_checks_challenges_output_file) {
+
+                using challenge_vector_marshalling_type = nil::crypto3::marshalling::types::field_element_vector<
+                    typename BlueprintField::value_type, TTypeBase>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing challenges to " << consistency_checks_challenges_output_file << std::endl;
+
+                challenge_vector_marshalling_type marshalled_challenges = 
+                    nil::crypto3::marshalling::types::fill_field_element_vector<typename BlueprintField::value_type, Endianness>(
+                        challenges);
+
+                return detail::encode_marshalling_to_file<challenge_vector_marshalling_type>(
+                    consistency_checks_challenges_output_file, marshalled_challenges);
+            }
+
+            bool generate_aggregated_FRI_proof_to_file(
+                const boost::filesystem::path &aggregated_challenge_file, 
+                const std::vector<boost::filesystem::path>& input_combined_Q_polynomial_files,
+                const boost::filesystem::path& aggregated_fri_proof_output_file, 
+                const boost::filesystem::path& proof_of_work_output_file, 
+                const boost::filesystem::path& consistency_checks_challenges_output_file) {
+
+                std::optional<typename BlueprintField::value_type> aggregated_challenge = read_challenge(
+                    aggregated_challenge_file);
+                if (!aggregated_challenge) {
+                    return false;
+                }
+
+                // create the transcript
+                using transcript_hash_type = typename PlaceholderParams::transcript_hash_type;
+                using transcript_type = crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
+                transcript_type transcript;
+
+                transcript(aggregated_challenge.value());
+
+                // Sum up all the polynomials from the files.
+                polynomial_type sum_poly;
+                for (const auto& path : input_combined_Q_polynomial_files) {
+                    std::optional<polynomial_type> next_combined_Q = read_poly_from_file<polynomial_type>(path);
+                    if (!next_combined_Q) {
+                        return false;
+                    }
+                    sum_poly += next_combined_Q.value();
+                }
+                create_lpc_scheme();
+                auto [fri_proof, challenges] = lpc_scheme_->proof_eval_FRI_proof(sum_poly, transcript);
+
+                // And finally run proof of work.
+                typename FriType::grinding_type::output_type proof_of_work = nil::crypto3::zk::algorithms::run_grinding<FriType>(
+                    lpc_scheme_->get_fri_params(), transcript);
+
+                return save_fri_proof_to_file(fri_proof, aggregated_fri_proof_output_file) &&
+                    save_proof_of_work(proof_of_work, proof_of_work_output_file) &&
+                    save_challenge_vector_to_file(challenges, consistency_checks_challenges_output_file); 
             }
 
         private:
