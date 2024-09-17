@@ -224,7 +224,7 @@
             type = "app";
             program = "${self.packages.${system}.proof-producer}/bin/proof-producer-single-threaded";
           };
-          default = {
+          multi-threaded = {
             type = "app";
             program = "${self.packages.${system}.proof-producer}/bin/proof-producer-multi-threaded";
           };
