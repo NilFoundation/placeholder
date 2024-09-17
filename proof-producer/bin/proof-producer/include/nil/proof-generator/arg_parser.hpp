@@ -51,8 +51,11 @@ namespace nil {
             std::vector<boost::filesystem::path> aggregated_proof_files;
             boost::filesystem::path last_proof_file;
             boost::filesystem::path aggregated_challenge_file = "aggregated_challenge.dat";
+            boost::filesystem::path consistency_checks_challenges_file = "consistency_check_challenges.dat";
             boost::filesystem::path combined_Q_polynomial_file = "combined_Q.dat";
             std::size_t combined_Q_starting_power;
+            std::vector<boost::filesystem::path> input_combined_Q_polynomial_files;
+            boost::filesystem::path proof_of_work_output_file = "proof_of_work.dat";
             boost::log::trivial::severity_level log_level = boost::log::trivial::severity_level::info;
             CurvesVariant elliptic_curve_type = type_identity<nil::crypto3::algebra::curves::pallas>{};
             HashesVariant hash_type = type_identity<nil::crypto3::hashes::keccak_1600<256>>{};
