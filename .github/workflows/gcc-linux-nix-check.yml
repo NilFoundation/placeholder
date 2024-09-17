@@ -23,6 +23,10 @@ jobs:
           mkdir results
           find -name "*_test.xml" -exec mv -t results/ {} +
           ls -l -a results/
+          ls -l -a
+          ls -l -a result/
+          ls -l -a result/test-logs/
+          find -name "*_test.xml"
         env:
           NIX_CONFIG: |
             cores = 4
