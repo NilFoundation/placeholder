@@ -90,14 +90,15 @@ namespace nil {
                     constexpr static const std::size_t permutation_parts = 3;
                     constexpr static const std::size_t lookup_parts = 6;
                     constexpr static const std::size_t f_parts = 8;
-              public:
+
+                public:
 
                     static inline placeholder_proof<FieldType, ParamsType> process(
                         const typename public_preprocessor_type::preprocessed_data_type &preprocessed_public_data,
                         typename private_preprocessor_type::preprocessed_data_type preprocessed_private_data,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type commitment_scheme,
+                        const commitment_scheme_type& commitment_scheme,
                         bool skip_commitment_scheme_eval_proofs = false
                     ) {
                         auto prover = placeholder_prover<FieldType, ParamsType>(
@@ -207,15 +208,18 @@ namespace nil {
                         }
                         transcript(_proof.commitments[QUOTIENT_BATCH]);
 
+                        // 8. Run evaluation proofs
+                        _proof.eval_proof.challenge = transcript.template challenge<FieldType>();
+                        generate_evaluation_points();
                         if (!_skip_commitment_scheme_eval_proofs) {
-                            // 8. Run evaluation proofs
-                            _proof.eval_proof.challenge = transcript.template challenge<FieldType>();
-                            generate_evaluation_points();
-
                             _proof.eval_proof.eval_proof = _commitment_scheme.proof_eval(transcript);
                         }
 
                         return _proof;
+                    }
+
+                    commitment_scheme_type& get_commitment_scheme() {
+                        return _commitment_scheme;
                     }
 
                 private:

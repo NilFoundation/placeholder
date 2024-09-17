@@ -91,12 +91,23 @@ namespace nil {
                 ("max-quotient-chunks,q", make_defaulted_option(prover_options.max_quotient_chunks), "Maximum quotient polynomial parts amount")
                 ("input-challenge-files,u", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_challenge_files)->multitoken(),
                  "Input challenge files. Used with 'generate-aggregated-challenge' stage.")
+                ("challenge-file", po::value<boost::filesystem::path>(&prover_options.challenge_file_path),
+                 "Input challenge files. Used with 'generate-aggregated-challenge' stage.")
+                ("theta-power-file", po::value<boost::filesystem::path>(&prover_options.theta_power_file_path),
+                 "File to output theta power. Used by main prover to arrange starting powers of Q")
                 ("aggregated-challenge-file", po::value<boost::filesystem::path>(&prover_options.aggregated_challenge_file),
                  "Aggregated challenge file. Used with 'generate-aggregated-challenge' stage")
                 ("combined-Q-polynomial-file", po::value<boost::filesystem::path>(&prover_options.combined_Q_polynomial_file),
                  "File containing the polynomial combined-Q, generated on a single prover.")
                 ("combined-Q-starting-power", po::value<std::size_t>(&prover_options.combined_Q_starting_power),
-                 "The starting power for combined-Q polynomial for the current prover.");
+                 "The starting power for combined-Q polynomial for the current prover.")
+                ("partial-proof", po::value<std::vector<boost::filesystem::path>>(&prover_options.partial_proof_files)->multitoken(),
+                 "Partial proofs. Used with 'merge-proofs' stage.")
+                ("aggregated-proof", po::value<std::vector<boost::filesystem::path>>(&prover_options.aggregated_proof_files)->multitoken(),
+                 "Parts of aggregated proof. Used with 'merge-proofs' stage.")
+                ("last-proof", po::value<boost::filesystem::path>(&prover_options.last_proof_file)->multitoken(),
+                 "Last proof of aggregated proof. Used with 'merge-proofs' stage.")
+                ;
 
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");

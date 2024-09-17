@@ -148,6 +148,7 @@ namespace nil {
                     }
 
                     proof_type proof_eval(transcript_type &transcript) {
+                        PROFILE_SCOPE("LPC proof_eval");
 
                         this->eval_polys();
 
@@ -352,8 +353,9 @@ namespace nil {
                     }
 
                     // Computes and returns the maximal power of theta used to compute the value of Combined_Q.
-                    std::size_t compute_theta_power_for_combined_Q() const {
+                    std::size_t compute_theta_power_for_combined_Q() {
                         std::size_t theta_power = 0;
+                        this->eval_polys();
                         this->build_points_map();
 
                         auto points = this->get_unique_points();
@@ -371,8 +373,9 @@ namespace nil {
                         }
 
                         for (std::size_t i: this->_z.get_batches()) {
-                            if (!_batch_fixed.at(i))
+                            if (!_batch_fixed[i]) {
                                 continue;
+                            }
 
                             theta_power += this->_z.get_batch_size(i);
                         }

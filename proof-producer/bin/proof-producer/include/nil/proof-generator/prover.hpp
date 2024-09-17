@@ -122,7 +122,8 @@ namespace nil {
                     {"verify", ProverStage::VERIFY},
                     {"generate-aggregated-challenge", ProverStage::GENERATE_AGGREGATED_CHALLENGE},
                     {"partial-prove", ProverStage::PARTIAL_PROVE},
-                    {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q}
+                    {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q},
+                    {"merge-proofs", ProverStage::MERGE_PROOFS},
                 };
                 auto it = stage_map.find(stage);
                 if (it == stage_map.end()) {
@@ -232,6 +233,90 @@ namespace nil {
                                       *table_description_
                 )
                                       .generate_input(*public_inputs_, proof, constraint_system_->public_input_sizes());
+                output_file->close();
+
+                return res;
+            }
+
+            // The caller must call the preprocessor or load the preprocessed data before calling this function.
+            bool generate_partial_proof_to_file(
+                    boost::filesystem::path proof_file_,
+                    std::optional<boost::filesystem::path> challenge_file_,
+                    std::optional<boost::filesystem::path> theta_power_file) {
+                if (!nil::proof_generator::can_write_to_file(proof_file_.string())) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't write to file " << proof_file_;
+                    return false;
+                }
+
+                BOOST_ASSERT(public_preprocessed_data_);
+                BOOST_ASSERT(private_preprocessed_data_);
+                BOOST_ASSERT(table_description_);
+                BOOST_ASSERT(constraint_system_);
+                BOOST_ASSERT(lpc_scheme_);
+
+                BOOST_LOG_TRIVIAL(info) << "Generating proof...";
+                auto prover = nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams>(
+                        *public_preprocessed_data_,
+                        *private_preprocessed_data_,
+                        *table_description_,
+                        *constraint_system_,
+                        *lpc_scheme_,
+                        true);
+                Proof proof = prover.process();
+                BOOST_LOG_TRIVIAL(info) << "Proof generated";
+
+                BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
+                auto filled_placeholder_proof =
+                    nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
+                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                    proof_file_,
+                    filled_placeholder_proof,
+                    true
+                );
+                if (res) {
+                    BOOST_LOG_TRIVIAL(info) << "Proof written.";
+                } else {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to write proof to file.";
+                }
+
+                if (!challenge_file_) {
+                    BOOST_LOG_TRIVIAL(error) << "Challenge output file is not set.";
+                    return false;
+                }
+                if (!theta_power_file) {
+                    BOOST_LOG_TRIVIAL(error) << "Theta power file is not set.";
+                    return false;
+                }
+                BOOST_LOG_TRIVIAL(info) << "Writing challenge";
+                using challenge_marshalling_type =
+                    nil::crypto3::marshalling::types::field_element<
+                    TTypeBase, typename BlueprintField::value_type>;
+
+                challenge_marshalling_type marshalled_challenge(proof.eval_proof.challenge);
+
+                res = detail::encode_marshalling_to_file<challenge_marshalling_type>(
+                            *challenge_file_, marshalled_challenge);
+                if (res) {
+                    BOOST_LOG_TRIVIAL(info) << "Challenge written.";
+                } else {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to write challenge to file.";
+                }
+
+                auto commitment_scheme = prover.get_commitment_scheme();
+
+                commitment_scheme.state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
+                commitment_scheme.state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
+                commitment_scheme.state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
+                commitment_scheme.state_commited(crypto3::zk::snark::QUOTIENT_BATCH);
+                commitment_scheme.state_commited(crypto3::zk::snark::LOOKUP_BATCH);
+                commitment_scheme.mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
+
+                commitment_scheme.set_fixed_polys_values(common_data_->commitment_scheme_data);
+
+                std::size_t theta_power = commitment_scheme.compute_theta_power_for_combined_Q();
+
+                auto output_file = open_file<std::ofstream>(theta_power_file->string(), std::ios_base::out);
+                (*output_file) << theta_power << std::endl;
                 output_file->close();
 
                 return res;
@@ -420,6 +505,7 @@ namespace nil {
                     );
                 table_description_.emplace(table_description);
                 assignment_table_.emplace(std::move(assignment_table));
+                public_inputs_.emplace(assignment_table_->public_inputs());
                 return true;
             }
 
@@ -586,6 +672,45 @@ namespace nil {
                 }
                 polynomial_type combined_Q = lpc_scheme_->prepare_combined_Q(challenge, starting_power);
                 return save_poly_to_file(combined_Q, output_combined_Q_file); 
+            }
+
+            bool merge_proofs(
+                const std::vector<boost::filesystem::path> &partial_proof_files,
+                const std::vector<boost::filesystem::path> &aggregated_proof_files,
+                const boost::filesystem::path &last_proof_file,
+                const boost::filesystem::path &merged_proof_file)
+            {
+                nil::crypto3::zk::snark::placeholder_aggregated_proof<BlueprintField, PlaceholderParams>
+                    merged_proof;
+
+                for(auto const& partial_proof_file: partial_proof_files) {
+                    using ProofMarshalling = nil::crypto3::marshalling::types::
+                        placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>;
+
+                    BOOST_LOG_TRIVIAL(info) << "Reading partial proof from file \"" << partial_proof_file << "\"";
+                    auto marshalled_proof = detail::decode_marshalling_from_file<ProofMarshalling>(partial_proof_file, true);
+                    if (!marshalled_proof) {
+                        return false;
+                    }
+                    auto partial_proof = nil::crypto3::marshalling::types::make_placeholder_proof<Endianness, Proof>(*marshalled_proof);
+                    merged_proof.partial_proofs.emplace_back(partial_proof);
+                }
+
+                for(auto const& aggregated_proof_file: aggregated_proof_files) {
+
+                    /* TODO: Need marshalling for initial_proofs (lpc_proof_type) */
+                    BOOST_LOG_TRIVIAL(info) << "Reading aggregated part proof from file \"" << aggregated_proof_file << "\"";
+                    // merged_proof.aggregated_proof.intial_proofs_per_prover.emplace_back(initial_proof);
+                }
+
+                /* TODO: Need marshalling for top-level proof, (fri_proof_type) */
+                BOOST_LOG_TRIVIAL(info) << "Reading single round part proof from file \"" << last_proof_file << "\"";
+                // merged_proof.fri_proof = ...
+
+
+                BOOST_LOG_TRIVIAL(info) << "Writing merged proof to \"" << merged_proof_file << "\"";
+
+                return true;
             }
 
         private:
