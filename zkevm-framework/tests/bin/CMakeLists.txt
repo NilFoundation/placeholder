@@ -9,6 +9,11 @@ if(ENABLE_EXECUTABLES_TESTS)
         -t assignment
         -e pallas
         -s ${CMAKE_SOURCE_DIR}/bin/assigner/example_data/state.json
+        --input ""
+        --input ""
+        --input ""
+        --input ""
+        --target-circuits add.0
         --log-level debug
         DEPENDS
         $<TARGET_FILE:assigner>

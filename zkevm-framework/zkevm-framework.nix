@@ -12,6 +12,9 @@
   valijson,
   gtest,
   evm-assigner,
+  transpiler,
+  parallel-crypto3,
+  proof-producer,
   enableDebugging,
   enableDebug ? false,
   runTests ? false,
@@ -28,7 +31,7 @@ in stdenv.mkDerivation rec {
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [crypto3 evm-assigner intx ethash sszpp valijson gtest];
+  buildInputs = [crypto3 evm-assigner proof-producer transpiler parallel-crypto3 intx ethash sszpp valijson gtest];
 
   cmakeFlags =
   [
