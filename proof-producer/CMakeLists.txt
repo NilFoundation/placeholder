@@ -92,3 +92,22 @@ set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/bin/proof-producer")
 
 include(CPack)
+
+# INSTALL
+
+set(CONFIG_PATH ${CMAKE_INSTALL_LIBDIR}/cmake/proof-producer)
+set(TARGET_NAMESPACE crypto3::)
+install(EXPORT proof-producerTargets NAMESPACE ${TARGET_NAMESPACE} DESTINATION ${CONFIG_PATH})
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    cmake/Config.cmake.in
+    proof-producer-config.cmake
+    INSTALL_DESTINATION ${CONFIG_PATH}
+)
+
+install(
+    FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/proof-producer-config.cmake
+    DESTINATION ${CONFIG_PATH}
+)

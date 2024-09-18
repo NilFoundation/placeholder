@@ -314,7 +314,8 @@ namespace nil {
                 commitment_scheme.state_commited(crypto3::zk::snark::LOOKUP_BATCH);
                 commitment_scheme.mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
 
-                commitment_scheme.set_fixed_polys_values(common_data_->commitment_scheme_data);
+                commitment_scheme.set_fixed_polys_values(common_data_.has_value() ? common_data_->commitment_scheme_data :
+                                                                                    public_preprocessed_data_->common_data.commitment_scheme_data);
 
                 std::size_t theta_power = commitment_scheme.compute_theta_power_for_combined_Q();
 
@@ -492,6 +493,13 @@ namespace nil {
                 return true;
             }
 
+            bool set_circuit(const ConstraintSystem& circuit) {
+                BOOST_LOG_TRIVIAL(info) << "Set circuit" << std::endl;
+
+                constraint_system_.emplace(std::move(circuit));
+                return true;
+            }
+
             bool read_assignment_table(const boost::filesystem::path& assignment_table_file_) {
                 BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_;
 
@@ -507,6 +515,20 @@ namespace nil {
                         *marshalled_table
                     );
                 table_description_.emplace(table_description);
+                assignment_table_.emplace(std::move(assignment_table));
+                public_inputs_.emplace(assignment_table_->public_inputs());
+                return true;
+            }
+
+            bool set_assignment_table(const AssignmentTable& assignment_table, std::size_t used_rows_amount) {
+                BOOST_LOG_TRIVIAL(info) << "Set external assignment table" << std::endl;
+
+                table_description_->witness_columns = assignment_table.witnesses_amount();
+                table_description_->public_input_columns = assignment_table.public_inputs_amount();
+                table_description_->constant_columns = assignment_table.constants_amount();
+                table_description_->selector_columns = assignment_table.selectors_amount();
+                table_description_->usable_rows_amount = used_rows_amount;
+                table_description_->rows_amount = assignment_table.rows_amount();
                 assignment_table_.emplace(std::move(assignment_table));
                 public_inputs_.emplace(assignment_table_->public_inputs());
                 return true;

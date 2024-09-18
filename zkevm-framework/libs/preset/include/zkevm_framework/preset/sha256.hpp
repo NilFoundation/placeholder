@@ -69,6 +69,7 @@ std::optional<std::string> initialize_sha256_circuit(
 
     nil::blueprint::components::generate_circuit(component_instance, sha256_circuit,
                                                  sha256_table, input, 0);
+
     std::vector<size_t> lookup_columns_indices;
     for (std::size_t i = 1; i < sha256_table.constants_amount(); i++) {
         lookup_columns_indices.push_back(i);

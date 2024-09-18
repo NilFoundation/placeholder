@@ -40,11 +40,14 @@ function(setup_proof_generator_target)
         src/main.cpp
     )
 
+    add_library(${ARG_TARGET_NAME}-lib INTERFACE)
+
     # Make sure to add these dependencies before the others, since for multi-threaded version dependency on
     # actor-zk must come first.
     if(ARG_ADDITIONAL_DEPENDENCIES)
         foreach(lib IN LISTS ARG_ADDITIONAL_DEPENDENCIES)
             target_link_libraries(${ARG_TARGET_NAME} ${lib})
+            target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${lib})
         endforeach()
     endif()
 
@@ -65,10 +68,26 @@ function(setup_proof_generator_target)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     )
 
+    target_include_directories(${ARG_TARGET_NAME}-lib INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    )
+
     target_link_libraries(${ARG_TARGET_NAME}
         crypto3::all
 
         crypto3_transpiler
+
+        Boost::filesystem
+        Boost::log
+        Boost::program_options
+        Boost::thread
+    )
+
+    target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE
+        crypto3::all
+
+        crypto3::transpiler
 
         Boost::filesystem
         Boost::log
@@ -81,8 +100,15 @@ endfunction()
 set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
 setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET})
 
+
 # Declare multi-threaded target
 set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
 setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all)
 
 install(TARGETS ${SINGLE_THREADED_TARGET} ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# Install library
+install(TARGETS ${SINGLE_THREADED_TARGET}-lib ${MULTI_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
