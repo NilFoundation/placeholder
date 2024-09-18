@@ -21,9 +21,15 @@ option(Boost_USE_STATIC_LIBS "Use static libraries for Boost" OFF)
 option(CMAKE_ENABLE_TESTS "Enable tests" FALSE) # used by CMTest module
 option(BUILD_BENCH_TESTS "Build performance benchmark tests" FALSE)
 option(BUILD_DOCS "Build with configuring Doxygen documentation compiler" FALSE)
+option(SANITIZE "Build sanitizers" FALSE)
 
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "-ggdb -O0")
+endif()
+
+if(${SANITIZE})
+  add_compile_options(-fsanitize=undefined,address,leak)
+  add_link_options(-fsanitize=undefined,address,leak)
 endif()
 
 # This is useful due to some build systems (Ninja in particular) are piping
