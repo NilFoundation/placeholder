@@ -33,6 +33,26 @@ in stdenv.mkDerivation {
       "-G Ninja"
     ];
 
+  preBuild = ''
+    echo "build RAM-consuming tests with 4 cores only"
+    ninja -j4 -k 0
+      crypto3_zk_systems_plonk_placeholder_placeholder_curves_test \
+      marshalling_zk_placeholder_proof_test \
+      pubkey_ecdsa_test \
+      crypto3_zk_commitment_kzg_test \
+      blueprint_algebra_fields_plonk_non_native_lookup_logic_ops_test \
+      blueprint_algebra_fields_plonk_non_native_logic_ops_test \
+      pubkey_bls_test \
+      crypto3_zk_commitment_lpc_test \
+      crypto3_containers_merkle_test \
+      crypto3_zk_commitment_fold_polynomial_test \
+      hash_hash_to_curve_test \
+      pubkey_eddsa_test \
+      crypto3_zk_commitment_proof_of_work_test \
+      crypto3_zk_commitment_proof_of_knowledge_test || echo "Skip building tests. Ignore error if runTests=false"
+    echo "end building with 4 cores"
+  '';
+
   doCheck = runTests; # tests are inside crypto3-tests derivation
 
   checkPhase = ''
