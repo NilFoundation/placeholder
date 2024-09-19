@@ -156,7 +156,7 @@ Compute aggregated FRI proof done once on the main prover. This is a part of the
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
     --stage="aggregated-FRI" \
-    --assignment-description-file="assignment-description.dat"
+    --assignment-description-file="assignment-description.dat" \
     --aggregated-challenge-file="aggregated_challenge.dat" \
     --input-combined-Q-polynomial-files "$CIRCUIT1-combined-Q.dat" "$CIRCUIT2_combined-Q.dat" \
     --proof="aggregated_FRI_proof.bin" \

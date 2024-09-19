@@ -61,7 +61,7 @@ namespace nil {
             HashesVariant hash_type = type_identity<nil::crypto3::hashes::keccak_1600<256>>{};
 
             std::size_t lambda = 9;
-            std::size_t grind = 69;
+            std::size_t grind = 0;
             std::size_t expand_factor = 2;
             std::size_t max_quotient_chunks = 0;
         };

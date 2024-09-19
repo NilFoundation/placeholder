@@ -585,7 +585,7 @@ namespace nil {
                 // Lambdas and grinding bits should be passed through preprocessor directives
                 std::size_t table_rows_log = std::ceil(std::log2(table_description_->rows_amount));
 
-                lpc_scheme_.emplace(FriParams(1, table_rows_log, lambda_, expand_factor_));
+                lpc_scheme_.emplace(FriParams(1, table_rows_log, lambda_, expand_factor_, grind_!=0, grind_));
             }
 
             bool preprocess_public_data() {
