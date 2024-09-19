@@ -86,7 +86,7 @@ namespace nil {
                 ("elliptic-curve-type,e", make_defaulted_option(prover_options.elliptic_curve_type), "Elliptic curve type (pallas)")
                 ("hash-type", make_defaulted_option(prover_options.hash_type), "Hash type (keccak, poseidon, sha256)")
                 ("lambda-param", make_defaulted_option(prover_options.lambda), "Lambda param (9)")
-                ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (69)")
+                ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (0)")
                 ("expand-factor,x", make_defaulted_option(prover_options.expand_factor), "Expand factor")
                 ("max-quotient-chunks,q", make_defaulted_option(prover_options.max_quotient_chunks), "Maximum quotient polynomial parts amount")
                 ("input-challenge-files,u", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_challenge_files)->multitoken(),
