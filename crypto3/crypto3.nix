@@ -49,7 +49,10 @@ in stdenv.mkDerivation {
       hash_hash_to_curve_test \
       pubkey_eddsa_test \
       crypto3_zk_commitment_proof_of_work_test \
-      crypto3_zk_commitment_proof_of_knowledge_test || echo "Skip building tests. Ignore error if runTests=false"
+      crypto3_zk_commitment_proof_of_knowledge_test \
+      marshalling_zk_fri_commitment_test \
+      marshalling_zk_kzg_commitment_test \
+      || echo "Skip building tests. Ignore error if runTests=false"
     echo "end building with 4 cores"
   '';
 
