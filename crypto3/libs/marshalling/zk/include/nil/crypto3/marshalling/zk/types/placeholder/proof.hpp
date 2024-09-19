@@ -42,6 +42,7 @@
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/eval_storage.hpp>
+#include <nil/crypto3/marshalling/zk/types/commitments/lpc.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -226,6 +227,65 @@ namespace nil {
                     return proof;
                 }
 
+                template<typename TTypeBase, typename Proof>
+                using placeholder_aggregated_proof_type = nil::marshalling::types::bundle<
+                    TTypeBase,
+                    std::tuple<
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            placeholder_partial_evaluation_proof<TTypeBase, Proof>
+                        >,
+                        nil::crypto3::marshalling::types::aggregated_proof<TTypeBase, typename Proof::commitment_scheme_type>
+                    >
+                >;
+
+                template<typename Endianness, typename AggregatedProof, typename Proof>
+                placeholder_aggregated_proof_type<nil::marshalling::field_type<Endianness>, Proof>
+                    fill_placeholder_aggregated_proof(
+                        const AggregatedProof &proof,
+                        const typename Proof::commitment_scheme_type::fri_type::params_type &fri_params
+                    ) {
+
+                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+                    nil::marshalling::types::standard_array_list<
+                        TTypeBase,
+                        placeholder_partial_evaluation_proof<TTypeBase, Proof>
+                    > filled_partial_proofs;
+                    for (const auto &it:proof.partial_proofs) {
+                        filled_partial_proofs.value().push_back(
+                            fill_placeholder_partial_evaluation_proof<Endianness, Proof>(it)
+                        );
+                    }
+
+                    return placeholder_aggregated_proof_type<TTypeBase, Proof>(std::make_tuple(
+                        filled_partial_proofs,
+                        fill_aggregated_proof<Endianness, typename Proof::commitment_scheme_type>(
+                            proof.aggregated_proof, fri_params)
+                    ));
+                }
+
+                template<typename Endianness, typename AggregatedProof, typename Proof>
+                AggregatedProof make_placeholder_aggregated_proof(
+                    const placeholder_aggregated_proof_type<nil::marshalling::field_type<Endianness>, Proof> &filled_proof) {
+                    AggregatedProof proof;
+
+                    // std::vector<placeholder_partial_proof<FieldType, ParamsType>> partial_proofs;
+                    auto filled_partial_proofs = std::get<0>(filled_proof.value()).value();
+                    for( const auto &it:filled_partial_proofs){
+                        proof.partial_proofs.push_back(
+                            make_placeholder_partial_evaluation_proof<Endianness, Proof>(it)
+                        );
+                    }
+
+                    // typename commitment_scheme_type::aggregated_proof_type aggregated_proof;
+                    proof.aggregated_proof = make_aggregated_proof<
+                        Endianness, typename AggregatedProof::commitment_scheme_type>(
+                            std::get<1>(filled_proof.value())
+                    );
+
+                    return proof;
+                }
             }    // namespace types
         }        // namespace marshalling
     }            // namespace crypto3
