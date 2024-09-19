@@ -170,9 +170,9 @@ namespace nil {
                         return proof_type({this->_z, fri_proof});
                     }
 
-                    /** This function must be called for the cases where we want to skip the 
+                    /** This function must be called for the cases where we want to skip the
                      * round proof for FRI. Must be called once per instance of prover for the aggregated FRI.
-                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current 
+                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current
                             prover in the previous step of the aggregated FRI protocol.
                      * \param[in] transcript - This transcript is initialized from a challenge sent from the "Main" prover,
                             on which the round proof was created for the polynomial F(x) = Sum(combined_Q).
@@ -199,17 +199,22 @@ namespace nil {
                         return {this->_z, initial_proofs};
                     }
 
-                    /** This function must be called once for the aggregated FRI, to proof that polynomial 
+                    /** This function must be called once for the aggregated FRI, to proof that polynomial
                         'sum_poly' has low degree.
-                     * \param[in] sum_poly - polynomial F(x) = Sum(combined_Q).
-                     * \param[in] transcript - This transcript is initialized on the main prover, which has digested 
+                     * \param[in] sum_poly - polynomial F(x) = Sum(combined_Q). Can be resized before used.
+                     * \param[in] transcript - This transcript is initialized on the main prover, which has digested
                             challenges from all the other provers.
+                     * \returns A pair containing the FRI proof and the vector of size 'lambda' containing the challenges used.
                      */
-                    fri_proof_type proof_eval_FRI_proof(const polynomial_type& sum_poly, transcript_type &transcript) {
-                        // TODO(martun): this function belongs to FRI, not here, will move later.
+                    std::pair<fri_proof_type, std::vector<typename fri_type::field_type::value_type>>
+                    proof_eval_FRI_proof(polynomial_type& sum_poly, transcript_type &transcript) {
+                        // TODO(martun): this function belongs to FRI, not here, probably will move later.
+
                         // Precommit to sum_poly.
-                        if (sum_poly.size() != _fri_params.D[0]->size()) {
-                            sum_poly.resize(_fri_params.D[0]->size(), nullptr, _fri_params.D[0]);
+                        if constexpr(std::is_same<math::polynomial_dfs<value_type>, polynomial_type>::value ) {
+                            if (sum_poly.size() != _fri_params.D[0]->size()) {
+                                sum_poly.resize(_fri_params.D[0]->size(), nullptr, _fri_params.D[0]);
+                            }
                         }
                         precommitment_type sum_poly_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
                             sum_poly,
@@ -219,9 +224,8 @@ namespace nil {
 
                         std::vector<typename fri_type::precommitment_type> fri_trees;
                         std::vector<polynomial_type> fs;
-                        math::polynomial<typename fri_type::field_type::value_type> final_polynomial;
 
-                        // Contains fri_roots and final_polynomial. 
+                        // Contains fri_roots and final_polynomial.
                         typename fri_type::commitments_part_of_proof commitments_proof;
 
                         // Commit to sum_poly.
@@ -234,25 +238,23 @@ namespace nil {
                         std::vector<typename fri_type::field_type::value_type> challenges =
                             transcript.template challenges<typename fri_type::field_type>(this->_fri_params.lambda);
 
-                        fri_proof_type result;
+                        fri_proof_type fri_proof;
 
-                        result.fri_round_proof = nil::crypto3::zk::algorithms::query_phase_round_proofs<
+                        fri_proof.fri_round_proof = nil::crypto3::zk::algorithms::query_phase_round_proofs<
                                 fri_type, polynomial_type>(
                             _fri_params,
                             fri_trees,
                             fs,
-                            sum_poly,
+                            commitments_proof.final_polynomial,
                             challenges);
 
-                        result.fri_commitments_proof_part.fri_roots = std::move(commitments_proof.fri_roots);
-                        result.fri_commitments_proof_part.final_polynomial = std::move(final_polynomial);
-                        
-                        return result; 
+                        fri_proof.fri_commitments_proof_part = std::move(commitments_proof);
+
+                        return {fri_proof, challenges};
                     }
 
                     typename fri_type::proof_type commit_and_fri_proof(
                             const polynomial_type& combined_Q, transcript_type &transcript) {
-
 
                         precommitment_type combined_Q_precommitment = nil::crypto3::zk::algorithms::precommit<fri_type>(
                             combined_Q,
@@ -272,8 +274,8 @@ namespace nil {
                         return fri_proof;
                     }
 
-                    /** \brief Computes polynomial combined_Q. In case this function changes, 
-                               the function 'compute_theta_power_for_combined_Q' below should be changed accordingly. 
+                    /** \brief Computes polynomial combined_Q. In case this function changes,
+                               the function 'compute_theta_power_for_combined_Q' below should be changed accordingly.
                      *  \param theta The value of challenge. When called from aggregated FRI, this values is sent from
                                 the "main prover" machine.
                      *  \param starting_power When aggregated FRI is used, the value is not zero, it's the total degree of all
@@ -300,10 +302,10 @@ namespace nil {
                         // Write point and back indices into a vector, so it's easier to parallelize.
                         std::vector<std::pair<std::size_t, std::size_t>> point_batch_pairs;
 
-                        // An array of the same size as point_batch_pairs, showing starting power of theta for 
+                        // An array of the same size as point_batch_pairs, showing starting power of theta for
                         // each entry of 'point_batch_pairs'.
                         std::vector<std::size_t> theta_powers_for_each_batch;
-                        
+
                         theta_powers.push_back(starting_power);
                         std::size_t current_power = starting_power;
                         for (std::size_t point_index = 0; point_index < points.size(); ++point_index) {
@@ -339,7 +341,7 @@ namespace nil {
 
                             parallel_for(0, indices.size(), [this, &indices, &polys_coefficients](std::size_t i) {
                                 polys_coefficients[indices[i].first][indices[i].second] =
-                                    this->_polys[indices[i].first][indices[i].second].coefficients(); 
+                                    this->_polys[indices[i].first][indices[i].second].coefficients();
                             }, ThreadPool::PoolLevel::HIGH);
 
                             polys_coefficients_ptr = &polys_coefficients;
@@ -622,6 +624,7 @@ namespace nil {
 
                     typedef typename containers::merkle_proof<merkle_hash_type, 2> merkle_proof_type;
 
+                    // TODO(martun): this duplicates type 'fri_type', please de-duplicate.
                     using basic_fri = detail::basic_batched_fri<FieldType, typename LPCParams::merkle_hash_type,
                             typename LPCParams::transcript_hash_type,
                             LPCParams::m,

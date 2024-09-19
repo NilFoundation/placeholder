@@ -1073,11 +1073,11 @@ namespace nil {
                     const std::vector<PolynomialType> &fs,
                     const math::polynomial<typename FRI::field_type::value_type> &final_polynomial)
                 {
-                    typename FRI::initial_proofs_batch_type initial_proofs = 
+                    typename FRI::initial_proofs_batch_type initial_proofs =
                         query_phase_initial_proofs<FRI, PolynomialType>(
                             precommitments, fri_params, g, challenges);
-                        
-                    typename FRI::round_proofs_batch_type round_proofs = 
+
+                    typename FRI::round_proofs_batch_type round_proofs =
                         query_phase_round_proofs<FRI, PolynomialType>(
                             fri_params, fri_trees, fs, final_polynomial, challenges);
 
@@ -1085,7 +1085,7 @@ namespace nil {
                     std::vector<typename FRI::query_proof_type> query_proofs(fri_params.lambda);
 
                     for (std::size_t query_id = 0; query_id < fri_params.lambda; query_id++) {
-                        query_proofs[query_id] = {std::move(initial_proofs.initial_proofs[query_id]), 
+                        query_proofs[query_id] = {std::move(initial_proofs.initial_proofs[query_id]),
                                                   std::move(round_proofs.round_proofs[query_id])};
                     }
                     return query_proofs;
@@ -1108,6 +1108,26 @@ namespace nil {
 
                     return query_phase_with_challenges<FRI, PolynomialType>(
                         precommitments, fri_params, challenges, g, fri_trees, fs, final_polynomial);
+                }
+
+                template<typename FRI,
+                    typename std::enable_if<
+                        std::is_base_of<
+                            commitments::detail::basic_batched_fri<
+                                typename FRI::field_type, typename FRI::merkle_tree_hash_type,
+                                typename FRI::transcript_hash_type,
+                                FRI::m, typename FRI::grinding_type>,
+                            FRI>::value,
+                        bool>::type = true>
+                static typename FRI::grinding_type::output_type run_grinding(
+                    const typename FRI::params_type &fri_params,
+                    typename FRI::transcript_type &transcript) {
+
+                    if (fri_params.use_grinding) {
+                        PROFILE_SCOPE("Basic FRI grinding phase");
+                        return FRI::grinding_type::generate(transcript, fri_params.grinding_parameter);
+                    }
+                    return typename FRI::grinding_type::output_type();
                 }
 
                 template<typename FRI, typename PolynomialType,
@@ -1149,10 +1169,7 @@ namespace nil {
                             fri_params, transcript);
 
                     // Grinding
-                    if (fri_params.use_grinding) {
-                        PROFILE_SCOPE("Basic FRI grinding phase");
-                        proof.proof_of_work = FRI::grinding_type::generate(transcript, fri_params.grinding_parameter);
-                    }
+                    proof.proof_of_work = run_grinding<FRI>(fri_params, transcript);
 
                     // Query phase
                     proof.query_proofs = query_phase<FRI, PolynomialType>(
