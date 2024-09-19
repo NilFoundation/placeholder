@@ -64,6 +64,8 @@ In all the calls you can change the executable name from
 proof-producer-single-threaded to proof-producer-multi-threaded to run on all
 the CPUs of your machine.
 
+## Using proof-producer to generate and verify a single proof
+
 Generate a proof and verify it:
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
@@ -111,7 +113,9 @@ Verify generated proof:
     -q 10
 ```
 
-Partial proof:
+## Using proof-producer to generate and verify an aggregated proof.
+
+Partial proof, ran on each prover.
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
     --stage partial-prove \
@@ -129,7 +133,7 @@ Partial proof:
     --json                         $CIRCUIT-proof.json
 ```
 
-Aggregate challenges, done once on the main prover
+Aggregate challenges, done once on the main prover.
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
     --stage="generate-aggregated-challenge" \
@@ -138,23 +142,35 @@ Aggregate challenges, done once on the main prover
     --aggregated-challenge-file="aggregated_challenge.dat"
 ```
 
-Compute polynomial combined_Q, done on each prover
+Compute polynomial combined_Q, done on each prover. Please notice that the caller must provide the correct value of --combined-Q-starting-power, which can be taken from "$CIRCUIT-theta-power.txt" generated on stage "partial-prove".
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
     --stage="compute-combined-Q" \
     --aggregated-challenge-file="aggregated_challenge.dat" \
     --combined-Q-starting-power=0  \
-    --commitment-state-file="commitment_state.dat" \
-    --combined-Q-polynomial-file="combined-Q.dat"
+    --commitment-state-file="$CIRCUIT-commitment_state.dat" \
+    --combined-Q-polynomial-file="$CIRCUIT-combined-Q.dat"
+```
 
-Compute aggregated FRI proof done once on the main prover. This is a part of the complete proof.
+Compute aggregated FRI proof done once on the main prover. This is a part of the complete proof. The '--assignment-description-file' can point to any description file, since only the number of rows matters.
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
     --stage="aggregated-FRI" \
-    --assignment-description-file="assignment-description.dat"
+    --assignment-description-file="assignment-description.dat" \
     --aggregated-challenge-file="aggregated_challenge.dat" \
-    --input-combined-Q-polynomial-files "combined-Q-1.dat" "combined-Q-2.dat" \
+    --input-combined-Q-polynomial-files "$CIRCUIT1-combined-Q.dat" "$CIRCUIT2_combined-Q.dat" \
     --proof="aggregated_FRI_proof.bin" \
     --proof-of-work-file="POW.dat" \
     --consistency-checks-challenges-file="challenges.dat"
 ```
+
+Compute LPC consistency check proofs for polynomial combined_Q, done on each prover.
+```bash
+./build/bin/proof-producer/proof-producer-single-threaded \
+    --stage="consistency-checks" \
+    --commitment-state-file="$CIRCUIT-commitment_scheme_state.dat" \
+    --combined-Q-polynomial-file="$CIRCUIT-combined-Q.dat" \
+    --consistency-checks-challenges-file="challenges.dat" \
+    --proof="$CIRCUIT-LPC_consistency_check_proof.bin"
+```
+

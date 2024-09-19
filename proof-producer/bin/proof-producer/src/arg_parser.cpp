@@ -73,7 +73,7 @@ namespace nil {
             // clang-format off
             auto options_appender = config.add_options()
                 ("stage", make_defaulted_option(prover_options.stage),
-                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q, aggregated-FRI). Defaults to 'all'.")
+                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q, aggregated-FRI, consistency-checks). Defaults to 'all'.")
                 ("proof,p", make_defaulted_option(prover_options.proof_file_path), "Proof file")
                 ("json,j", make_defaulted_option(prover_options.json_file_path), "JSON proof file")
                 ("common-data", make_defaulted_option(prover_options.preprocessed_common_data_path), "Preprocessed common data file")
@@ -86,7 +86,7 @@ namespace nil {
                 ("elliptic-curve-type,e", make_defaulted_option(prover_options.elliptic_curve_type), "Elliptic curve type (pallas)")
                 ("hash-type", make_defaulted_option(prover_options.hash_type), "Hash type (keccak, poseidon, sha256)")
                 ("lambda-param", make_defaulted_option(prover_options.lambda), "Lambda param (9)")
-                ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (69)")
+                ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (0)")
                 ("expand-factor,x", make_defaulted_option(prover_options.expand_factor), "Expand factor")
                 ("max-quotient-chunks,q", make_defaulted_option(prover_options.max_quotient_chunks), "Maximum quotient polynomial parts amount")
                 ("input-challenge-files,u", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_challenge_files)->multitoken(),
