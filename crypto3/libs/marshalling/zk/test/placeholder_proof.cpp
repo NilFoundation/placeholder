@@ -94,6 +94,7 @@
 #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
 #include "./detail/circuits.hpp"
+#include "random_test_data_generation.hpp"
 
 using namespace nil;
 using namespace nil::crypto3;
@@ -247,6 +248,39 @@ void test_placeholder_partial_proof(const typename ProofType::partial_proof_type
     status = test_val_read.read(read_iter, cv.size());
     BOOST_CHECK(status == nil::marshalling::status_type::success);
     auto constructed_val_read = types::make_placeholder_partial_evaluation_proof<Endianness, ProofType>(test_val_read);
+    BOOST_CHECK(proof == constructed_val_read);
+}
+
+template<typename Endianness, typename AggregatedProofType, typename ProofType, typename CommitmentParamsType>
+void test_placeholder_aggregated_proof(
+    const AggregatedProofType &proof, const CommitmentParamsType& params, std::string output_file = ""
+) {
+    using namespace nil::crypto3::marshalling;
+
+    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using proof_marshalling_type = nil::crypto3::marshalling::types::placeholder_aggregated_proof_type<TTypeBase, ProofType>;
+
+    auto filled_placeholder_proof = types::fill_placeholder_aggregated_proof<Endianness, AggregatedProofType,  ProofType>(
+        proof, params);
+    AggregatedProofType _proof = types::make_placeholder_aggregated_proof<
+        Endianness, AggregatedProofType, ProofType>(filled_placeholder_proof);
+    BOOST_CHECK(_proof == proof);
+
+    std::vector<std::uint8_t> cv;
+    cv.resize(filled_placeholder_proof.length(), 0x00);
+    auto write_iter = cv.begin();
+    auto status = filled_placeholder_proof.write(write_iter, cv.size());
+    BOOST_CHECK(status == nil::marshalling::status_type::success);
+
+    if (output_file != "") {
+        print_placeholder_proof(cv.cbegin(), cv.cend(), false, output_file.c_str());
+    }
+
+    proof_marshalling_type test_val_read;
+    auto read_iter = cv.begin();
+    status = test_val_read.read(read_iter, cv.size());
+    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    auto constructed_val_read = types::make_placeholder_aggregated_proof<Endianness, AggregatedProofType, ProofType>(test_val_read);
     BOOST_CHECK(proof == constructed_val_read);
 }
 
@@ -1149,6 +1183,73 @@ BOOST_FIXTURE_TEST_CASE(proof_marshalling_test10, test_tools::random_test_initia
         preprocessed_public_data.common_data, proof, desc, constraint_system, lpc_scheme);
     BOOST_CHECK(verifier_res);
 }
+
+BOOST_FIXTURE_TEST_CASE(aggregated_proof_marshalling_test, test_tools::random_test_initializer<field_type>) {
+    auto circuit = circuit_test_7<field_type>(
+        alg_random_engines.template get_alg_engine<field_type>(),
+        generic_random_engine
+    );
+    plonk_table_description<field_type> desc(
+        placeholder_test_params::witness_columns,
+        placeholder_test_params::public_input_columns,
+        placeholder_test_params::constant_columns,
+        placeholder_test_params::selector_columns
+    );
+    using batch_lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using batch_lpc_scheme_type = typename commitments::lpc_commitment_scheme<batch_lpc_type>;
+    using batch_lpc_placeholder_params_type =
+        nil::crypto3::zk::snark::placeholder_params<circuit_params, batch_lpc_scheme_type>;
+
+    desc.rows_amount = circuit.table_rows;
+    desc.usable_rows_amount = circuit.usable_rows;
+    std::size_t table_rows_log = std::log2(circuit.table_rows);
+
+    typename policy_type::constraint_system_type constraint_system(
+        circuit.gates,
+        circuit.copy_constraints,
+        circuit.lookup_gates,
+        circuit.lookup_tables
+    );
+    typename policy_type::variable_assignment_type assignments = circuit.table;
+
+    typename batch_lpc_type::fri_type::params_type fri_params(
+        1, table_rows_log, placeholder_test_params::lambda, 4
+    );
+    batch_lpc_scheme_type lpc_scheme(fri_params);
+
+    typename placeholder_public_preprocessor<field_type, batch_lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_public_data = placeholder_public_preprocessor<field_type, batch_lpc_placeholder_params_type>::process(
+            constraint_system, assignments.public_table(), desc, lpc_scheme, 10
+        );
+
+    typename placeholder_private_preprocessor<field_type, batch_lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_private_data = placeholder_private_preprocessor<field_type, batch_lpc_placeholder_params_type>::process(
+            constraint_system, assignments.private_table(), desc);
+
+    auto proof = placeholder_prover<field_type, batch_lpc_placeholder_params_type>::process(
+        preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme
+    );
+    // now we get a vector of partial proofs
+    std::vector<placeholder_partial_proof<field_type, batch_lpc_placeholder_params_type>> partial_proofs;
+    for (std::size_t i = 0; i < 5; i++) {
+        partial_proofs.push_back(proof);
+    }
+    // and lpc aggregated proof
+    auto lpc_proof = generate_random_lpc_aggregated_proof<lpc_type>(
+        7, 5,
+        fri_params.step_list,
+        20,
+        false,
+        alg_random_engines.template get_alg_engine<field_type>(),
+        generic_random_engine
+    );
+    test_placeholder_aggregated_proof<
+        Endianness, placeholder_aggregated_proof<field_type, batch_lpc_placeholder_params_type>,
+        placeholder_proof<field_type, batch_lpc_placeholder_params_type>,
+        decltype(fri_params)>(
+            {partial_proofs, lpc_proof}, fri_params);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 template<
