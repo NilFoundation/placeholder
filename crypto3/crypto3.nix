@@ -34,8 +34,8 @@ in stdenv.mkDerivation {
     ];
 
   preBuild = ''
-    echo "build RAM-consuming tests with 4 cores only"
-    ninja -j4 -k 0
+    echo "build RAM-consuming tests with 3 cores only"
+    ninja -j3 -k 0
       crypto3_zk_systems_plonk_placeholder_placeholder_curves_test \
       marshalling_zk_placeholder_proof_test \
       pubkey_ecdsa_test \
@@ -53,7 +53,7 @@ in stdenv.mkDerivation {
       marshalling_zk_fri_commitment_test \
       marshalling_zk_kzg_commitment_test \
       || echo "Skip building tests. Ignore error if runTests=false"
-    echo "end building with 4 cores"
+    echo "end building with 3 cores"
   '';
 
   doCheck = runTests; # tests are inside crypto3-tests derivation
