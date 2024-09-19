@@ -211,8 +211,13 @@ namespace nil {
                         // 8. Run evaluation proofs
                         _proof.eval_proof.challenge = transcript.template challenge<FieldType>();
                         generate_evaluation_points();
+
                         if (!_skip_commitment_scheme_eval_proofs) {
                             _proof.eval_proof.eval_proof = _commitment_scheme.proof_eval(transcript);
+                        } else {
+                            // This is required for aggregated prover. If we do not run the LPC proof right now,
+                            // we still need to push the merkle tree roots into the transcript.
+                            _commitment_scheme.eval_polys_and_add_roots_to_transcipt(transcript);
                         }
 
                         return _proof;

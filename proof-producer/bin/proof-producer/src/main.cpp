@@ -130,6 +130,15 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                             prover_options.proof_of_work_output_file,
                             prover_options.consistency_checks_challenges_file);
                     break;
+                case nil::proof_generator::detail::ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF:
+                    prover_result = 
+                        prover.read_commitment_scheme_from_file(prover_options.commitment_scheme_state_path) &&
+                        prover.generate_consistency_checks_to_file(
+                            prover_options.combined_Q_polynomial_file,
+                            prover_options.consistency_checks_challenges_file,
+                            prover_options.proof_file_path
+                            );
+                    break;
             }
         } catch (const std::exception& e) {
             BOOST_LOG_TRIVIAL(error) << e.what();

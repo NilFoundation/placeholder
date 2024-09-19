@@ -73,7 +73,7 @@ namespace nil {
             // clang-format off
             auto options_appender = config.add_options()
                 ("stage", make_defaulted_option(prover_options.stage),
-                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q, aggregated-FRI). Defaults to 'all'.")
+                 "Stage of the prover to run, one of (all, preprocess, prove, verify, generate-aggregated-challenge, generate-combined-Q, aggregated-FRI, consistency-checks). Defaults to 'all'.")
                 ("proof,p", make_defaulted_option(prover_options.proof_file_path), "Proof file")
                 ("json,j", make_defaulted_option(prover_options.json_file_path), "JSON proof file")
                 ("common-data", make_defaulted_option(prover_options.preprocessed_common_data_path), "Preprocessed common data file")

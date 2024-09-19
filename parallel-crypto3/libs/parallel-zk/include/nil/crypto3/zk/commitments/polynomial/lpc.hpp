@@ -152,15 +152,7 @@ namespace nil {
                     proof_type proof_eval(transcript_type &transcript) {
                         PROFILE_SCOPE("LPC proof_eval");
 
-                        this->eval_polys();
-
-                        BOOST_ASSERT(this->_points.size() == this->_polys.size());
-                        BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
-
-                        // For each batch we have a merkle tree.
-                        for (auto const& it: this->_trees) {
-                            transcript(it.second.root());
-                        }
+                        eval_polys_and_add_roots_to_transcipt(transcript);
 
                         // Prepare z-s and combined_Q;
                         auto theta = transcript.template challenge<field_type>();
@@ -170,28 +162,27 @@ namespace nil {
                         return proof_type({this->_z, fri_proof});
                     }
 
-                    /** This function must be called for the cases where we want to skip the
-                     * round proof for FRI. Must be called once per instance of prover for the aggregated FRI.
-                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current
-                            prover in the previous step of the aggregated FRI protocol.
-                     * \param[in] transcript - This transcript is initialized from a challenge sent from the "Main" prover,
-                            on which the round proof was created for the polynomial F(x) = Sum(combined_Q).
-                     */
-                    lpc_proof_type proof_eval_lpc_proof(
-                            const polynomial_type& combined_Q, transcript_type &transcript) {
-
+                    void eval_polys_and_add_roots_to_transcipt(transcript_type &transcript) {
                         this->eval_polys();
 
                         BOOST_ASSERT(this->_points.size() == this->_polys.size());
                         BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
-
                         // For each batch we have a merkle tree.
                         for (auto const& it: this->_trees) {
                             transcript(it.second.root());
                         }
+                    }
 
-                        std::vector<typename fri_type::field_type::value_type> challenges =
-                            transcript.template challenges<typename fri_type::field_type>(this->_fri_params.lambda);
+                    /** This function must be called for the cases where we want to skip the 
+                     * round proof for FRI. Must be called once per instance of prover for the aggregated FRI.
+                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current 
+                            prover in the previous step of the aggregated FRI protocol.
+                     * \param[in] challenges - These challenges were sent from the "Main" prover,
+                            on which the round proof was created for the polynomial F(x) = Sum(combined_Q).
+                     */
+                    lpc_proof_type proof_eval_lpc_proof(
+                            const polynomial_type& combined_Q,
+                            const std::vector<typename fri_type::field_type::value_type>& challenges) {
 
                         typename fri_type::initial_proofs_batch_type initial_proofs =
                             nil::crypto3::zk::algorithms::query_phase_initial_proofs<fri_type, polynomial_type>(
@@ -436,7 +427,6 @@ namespace nil {
                     // Computes and returns the maximal power of theta used to compute the value of Combined_Q.
                     std::size_t compute_theta_power_for_combined_Q() {
                         std::size_t theta_power = 0;
-                        this->eval_polys();
                         this->build_points_map();
 
                         auto points = this->get_unique_points();

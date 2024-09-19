@@ -110,7 +110,7 @@ namespace nil {
                 PARTIAL_PROVE = 5,
                 COMPUTE_COMBINED_Q = 6,
                 GENERATE_AGGREGATED_FRI_PROOF = 7,
-                GENERATE_LPC_INITIAL_PROOF = 8,
+                GENERATE_CONSISTENCY_CHECKS_PROOF = 8,
                 MERGE_PROOFS = 9
             };
 
@@ -124,7 +124,8 @@ namespace nil {
                     {"partial-prove", ProverStage::PARTIAL_PROVE},
                     {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q},
                     {"merge-proofs", ProverStage::MERGE_PROOFS},
-                    {"aggregated-FRI", ProverStage::GENERATE_AGGREGATED_FRI_PROOF}
+                    {"aggregated-FRI", ProverStage::GENERATE_AGGREGATED_FRI_PROOF},
+                    {"consistency-checks", ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF}
                 };
                 auto it = stage_map.find(stage);
                 if (it == stage_map.end()) {
@@ -768,7 +769,7 @@ namespace nil {
 
             bool save_challenge_vector_to_file(
                 const std::vector<typename BlueprintField::value_type>& challenges,
-                const boost::filesystem::path &consistency_checks_challenges_output_file) {
+                const boost::filesystem::path& consistency_checks_challenges_output_file) {
 
                 using challenge_vector_marshalling_type = nil::crypto3::marshalling::types::field_element_vector<
                     typename BlueprintField::value_type, TTypeBase>;
@@ -781,6 +782,28 @@ namespace nil {
 
                 return detail::encode_marshalling_to_file<challenge_vector_marshalling_type>(
                     consistency_checks_challenges_output_file, marshalled_challenges);
+            }
+
+            std::optional<std::vector<typename BlueprintField::value_type>> read_challenge_vector_from_file(
+                const boost::filesystem::path& input_file) {
+
+                using challenge_vector_marshalling_type = nil::crypto3::marshalling::types::field_element_vector<
+                    typename BlueprintField::value_type, TTypeBase>;
+
+                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
+                    return std::nullopt;
+                }
+
+                auto marshalled_challenges = detail::decode_marshalling_from_file<challenge_vector_marshalling_type>(
+                    input_file);
+
+                if (!marshalled_challenges) {
+                    return std::nullopt;
+                }
+
+                return nil::crypto3::marshalling::types::make_field_element_vector<
+                    typename BlueprintField::value_type, Endianness>(marshalled_challenges.value());
             }
 
             bool generate_aggregated_FRI_proof_to_file(
@@ -822,6 +845,41 @@ namespace nil {
                 return save_fri_proof_to_file(fri_proof, aggregated_fri_proof_output_file) &&
                     save_proof_of_work(proof_of_work, proof_of_work_output_file) &&
                     save_challenge_vector_to_file(challenges, consistency_checks_challenges_output_file); 
+            }
+
+            bool save_lpc_consistency_proof_to_file(
+                    const typename LpcScheme::lpc_proof_type& lpc_consistency_proof,
+                    const boost::filesystem::path &output_file) {
+                // TODO(martun): consider changinge the class name 'inital_eval_proof'.
+                using lpc_consistency_proof_marshalling_type = nil::crypto3::marshalling::types::inital_eval_proof<
+                    TTypeBase, LpcScheme>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing LPC consistency proof to " << output_file << std::endl;
+
+                lpc_consistency_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_initial_eval_proof<Endianness, LpcScheme>(lpc_consistency_proof);
+
+                return detail::encode_marshalling_to_file<lpc_consistency_proof_marshalling_type>(
+                    output_file, marshalled_proof);
+            }
+
+            bool generate_consistency_checks_to_file(
+                const boost::filesystem::path& combined_Q_file,
+                const boost::filesystem::path& consistency_checks_challenges_output_file,
+                const boost::filesystem::path& output_proof_file) {
+                
+                std::optional<std::vector<typename BlueprintField::value_type>> challenges = read_challenge_vector_from_file(
+                    consistency_checks_challenges_output_file);
+                if (!challenges)
+                    return false; 
+
+                std::optional<polynomial_type> combined_Q = read_poly_from_file<polynomial_type>(combined_Q_file);
+                if (!combined_Q)
+                    return false;
+
+                typename LpcScheme::lpc_proof_type proof = lpc_scheme_->proof_eval_lpc_proof(
+                    combined_Q.value(), challenges.value()); 
+
+                return save_lpc_consistency_proof_to_file(proof, output_proof_file);
             }
 
         private:
