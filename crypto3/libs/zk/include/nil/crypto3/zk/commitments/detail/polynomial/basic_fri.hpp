@@ -1160,7 +1160,6 @@ namespace nil {
                     return proof;
                 }
 
-
                 template<typename FRI>
                 static bool verify_eval(
                     const typename FRI::proof_type                                                      &proof,

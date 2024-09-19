@@ -168,9 +168,9 @@ namespace nil {
                         return proof_type({this->_z, fri_proof});
                     }
 
-                    /** This function must be called for the cases where we want to skip the 
+                    /** This function must be called for the cases where we want to skip the
                      * round proof for FRI. Must be called once per instance of prover for the aggregated FRI.
-                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current 
+                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current
                             prover in the previous step of the aggregated FRI protocol.
                      * \param[in] transcript - This transcript is initialized from a challenge sent from the "Main" prover,
                             on which the round proof was created for the polynomial F(x) = Sum(combined_Q).
@@ -197,10 +197,10 @@ namespace nil {
                         return {this->_z, initial_proofs};
                     }
 
-                    /** This function must be called once for the aggregated FRI, to proof that polynomial 
+                    /** This function must be called once for the aggregated FRI, to proof that polynomial
                         'sum_poly' has low degree.
                      * \param[in] sum_poly - polynomial F(x) = Sum(combined_Q). Can be resized before used.
-                     * \param[in] transcript - This transcript is initialized on the main prover, which has digested 
+                     * \param[in] transcript - This transcript is initialized on the main prover, which has digested
                             challenges from all the other provers.
                      * \returns A pair containing the FRI proof and the vector of size 'lambda' containing the challenges used.
                      */
@@ -223,7 +223,7 @@ namespace nil {
                         std::vector<typename fri_type::precommitment_type> fri_trees;
                         std::vector<polynomial_type> fs;
 
-                        // Contains fri_roots and final_polynomial. 
+                        // Contains fri_roots and final_polynomial.
                         typename fri_type::commitments_part_of_proof commitments_proof;
 
                         // Commit to sum_poly.
@@ -247,8 +247,8 @@ namespace nil {
                             challenges);
 
                         fri_proof.fri_commitments_proof_part = std::move(commitments_proof);
-                        
-                        return {fri_proof, challenges}; 
+
+                        return {fri_proof, challenges};
                     }
 
                     typename fri_type::proof_type commit_and_fri_proof(
@@ -272,8 +272,8 @@ namespace nil {
                         return fri_proof;
                     }
 
-                    /** \brief Computes polynomial combined_Q. In case this function changes, 
-                               the function 'compute_theta_power_for_combined_Q' below should be changed accordingly. 
+                    /** \brief Computes polynomial combined_Q. In case this function changes,
+                               the function 'compute_theta_power_for_combined_Q' below should be changed accordingly.
                      *  \param theta The value of challenge. When called from aggregated FRI, this values is sent from
                                 the "main prover" machine.
                      *  \param starting_power When aggregated FRI is used, the value is not zero, it's the total degree of all
