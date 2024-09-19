@@ -141,9 +141,20 @@ Aggregate challenges, done once on the main prover
 Compute polynomial combined_Q, done on each prover
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
-    --stage="generate-combined-Q" \
+    --stage="compute-combined-Q" \
     --aggregated-challenge-file="aggregated_challenge.dat" \
     --combined-Q-starting-power=0  \
     --commitment-state-file="commitment_state.dat" \
     --combined-Q-polynomial-file="combined-Q.dat"
+
+Compute aggregated FRI proof done once on the main prover. This is a part of the complete proof.
+```bash
+./build/bin/proof-producer/proof-producer-single-threaded \
+    --stage="aggregated-FRI" \
+    --assignment-description-file="assignment-description.dat"
+    --aggregated-challenge-file="aggregated_challenge.dat" \
+    --input-combined-Q-polynomial-files "combined-Q-1.dat" "combined-Q-2.dat" \
+    --proof="aggregated_FRI_proof.bin" \
+    --proof-of-work-file="POW.dat" \
+    --consistency-checks-challenges-file="challenges.dat"
 ```

@@ -1088,6 +1088,26 @@ namespace nil {
                         precommitments, fri_params, challenges, g, fri_trees, fs, final_polynomial);
                 }
 
+                template<typename FRI,
+                    typename std::enable_if<
+                        std::is_base_of<
+                            commitments::detail::basic_batched_fri<
+                                typename FRI::field_type, typename FRI::merkle_tree_hash_type,
+                                typename FRI::transcript_hash_type,
+                                FRI::m, typename FRI::grinding_type>,
+                            FRI>::value,
+                        bool>::type = true>
+                static typename FRI::grinding_type::output_type run_grinding(
+                    const typename FRI::params_type &fri_params,
+                    typename FRI::transcript_type &transcript) {
+
+                    if (fri_params.use_grinding) {
+                        PROFILE_SCOPE("Basic FRI grinding phase");
+                        return FRI::grinding_type::generate(transcript, fri_params.grinding_parameter);
+                    }
+                    return typename FRI::grinding_type::output_type();
+                }
+
                 template<typename FRI, typename PolynomialType,
                     typename std::enable_if<
                         std::is_base_of<
@@ -1127,10 +1147,7 @@ namespace nil {
                             fri_params, transcript);
 
                     // Grinding
-                    if (fri_params.use_grinding) {
-                        PROFILE_SCOPE("Basic FRI grinding phase");
-                        proof.proof_of_work = FRI::grinding_type::generate(transcript, fri_params.grinding_parameter);
-                    }
+                    proof.proof_of_work = run_grinding<FRI>(fri_params, transcript);
 
                     // Query phase
                     proof.query_proofs = query_phase<FRI, PolynomialType>(
@@ -1142,6 +1159,7 @@ namespace nil {
 
                     return proof;
                 }
+
 
                 template<typename FRI>
                 static bool verify_eval(
