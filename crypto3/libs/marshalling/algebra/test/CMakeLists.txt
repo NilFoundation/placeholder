@@ -15,7 +15,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        crypto3::algebra
                        ${CMAKE_WORKSPACE_NAME}::marshalling-multiprecision
                        ${CMAKE_WORKSPACE_NAME}::marshalling-core
-
+                       crypto3::pch
                        Boost::unit_test_framework
                        Boost::random
                    )

@@ -11,7 +11,7 @@ include(CMTest)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        Boost::unit_test_framework
-
+                       crypto3::pch
                        crypto3::multiprecision
                        ${CMAKE_WORKSPACE_NAME}::marshalling-core)
 

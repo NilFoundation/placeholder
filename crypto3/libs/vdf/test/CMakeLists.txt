@@ -11,7 +11,7 @@ include(CMTest)
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        $<$<BOOL:${GMP_FOUND}>:${GMP_LIBRARIES}>
                        $<$<BOOL:${TOMMATH_FOUND}>:${TomMath_LIBRARIES}>
-
+                       crypto3::pch
                        Boost::unit_test_framework)
 
 macro(define_vdf_test name)

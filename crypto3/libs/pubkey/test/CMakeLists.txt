@@ -5,6 +5,7 @@ cm_find_package(${CMAKE_WORKSPACE_NAME}_random)
 cm_find_package(${CMAKE_WORKSPACE_NAME}_blueprint)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+    crypto3::pch
     ${CMAKE_WORKSPACE_NAME}::pkpad
     Boost::unit_test_framework)
 

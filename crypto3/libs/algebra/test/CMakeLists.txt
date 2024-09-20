@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------#
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-
+    crypto3::pch
     Boost::unit_test_framework
     Boost::random)
 

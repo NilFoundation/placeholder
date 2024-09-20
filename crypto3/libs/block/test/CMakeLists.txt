@@ -7,6 +7,7 @@
 #---------------------------------------------------------------------------#
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+                       crypto3::pch
                        Boost::unit_test_framework)
 
 macro(define_block_cipher_test name)

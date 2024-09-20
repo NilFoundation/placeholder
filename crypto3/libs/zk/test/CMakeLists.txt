@@ -13,8 +13,10 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
     "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>")
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+    crypto3::pch
     ${CMAKE_WORKSPACE_NAME}::random
     crypto3::marshalling-zk
+    crypto3::pch
     Boost::unit_test_framework
     Boost::log
     )

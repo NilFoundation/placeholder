@@ -13,6 +13,7 @@ cm_find_package(${CMAKE_WORKSPACE_NAME}_codec)
 cm_find_package(${CMAKE_WORKSPACE_NAME}_kdf)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+                       crypto3::pch
                        ${CMAKE_WORKSPACE_NAME}::block
                        ${CMAKE_WORKSPACE_NAME}::kdf
                        Boost::unit_test_framework)
