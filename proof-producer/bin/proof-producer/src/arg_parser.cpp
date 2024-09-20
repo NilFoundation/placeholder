@@ -107,8 +107,10 @@ namespace nil {
                  "Partial proofs. Used with 'merge-proofs' stage.")
                 ("aggregated-proof", po::value<std::vector<boost::filesystem::path>>(&prover_options.aggregated_proof_files)->multitoken(),
                  "Parts of aggregated proof. Used with 'merge-proofs' stage.")
-                ("last-proof", po::value<boost::filesystem::path>(&prover_options.last_proof_file)->multitoken(),
-                 "Last proof of aggregated proof. Used with 'merge-proofs' stage.")
+                ("initial-proof", po::value<std::vector<boost::filesystem::path>>(&prover_options.initial_proof_files)->multitoken(),
+                 "Inital proofs, produced by consistency-check stage. Used with 'merge-proofs' stage.")
+                ("aggregated-FRI-proof", po::value<boost::filesystem::path>(&prover_options.aggregated_FRI_proof_file),
+                 "Aggregated FRI proof part of the final proof. Used with 'merge-proofs' stage.")
                 ("input-combined-Q-polynomial-files", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_combined_Q_polynomial_files),
                  "Files containing polynomials combined-Q, 1 per prover instance.")
                 ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.");

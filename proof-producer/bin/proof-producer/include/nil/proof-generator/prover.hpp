@@ -704,41 +704,85 @@ namespace nil {
 
             bool merge_proofs(
                 const std::vector<boost::filesystem::path> &partial_proof_files,
-                const std::vector<boost::filesystem::path> &aggregated_proof_files,
-                const boost::filesystem::path &last_proof_file,
+                const std::vector<boost::filesystem::path> &initial_proof_files,
+                const boost::filesystem::path &aggregated_FRI_file,
                 const boost::filesystem::path &merged_proof_file)
             {
-                nil::crypto3::zk::snark::placeholder_aggregated_proof<BlueprintField, PlaceholderParams>
-                    merged_proof;
+                /* ZK types */
+                using placeholder_aggregated_proof_type = nil::crypto3::zk::snark::
+                    placeholder_aggregated_proof<BlueprintField, PlaceholderParams>;
+
+                using partial_proof_type = Proof;
+
+                using initial_proof_type = typename LpcScheme::lpc_proof_type;
+
+                /* Marshalling types */
+                using partial_proof_marshalled_type = nil::crypto3::marshalling::types::
+                    placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>;
+
+                using initial_proof_marshalling_type = nil::crypto3::marshalling::types::
+                    inital_eval_proof<TTypeBase, LpcScheme>;
+
+                using fri_proof_marshalling_type = nil::crypto3::marshalling::types::
+                    initial_fri_proof_type<TTypeBase, LpcScheme>;
+
+                using merged_proof_marshalling_type = nil::crypto3::marshalling::types::
+                    placeholder_aggregated_proof_type<TTypeBase, placeholder_aggregated_proof_type>;
+
+
+                placeholder_aggregated_proof_type merged_proof;
+
+                if (partial_proof_files.size() != initial_proof_files.size() ) {
+                    BOOST_LOG_TRIVIAL(error) << "Number of partial and initial proof files should match.";
+                    return false;
+                }
 
                 for(auto const& partial_proof_file: partial_proof_files) {
-                    using ProofMarshalling = nil::crypto3::marshalling::types::
-                        placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>;
-
                     BOOST_LOG_TRIVIAL(info) << "Reading partial proof from file \"" << partial_proof_file << "\"";
-                    auto marshalled_proof = detail::decode_marshalling_from_file<ProofMarshalling>(partial_proof_file, true);
-                    if (!marshalled_proof) {
+                    auto marshalled_partial_proof = detail::decode_marshalling_from_file<partial_proof_marshalled_type>(partial_proof_file, true);
+                    if (!marshalled_partial_proof) {
+                        BOOST_LOG_TRIVIAL(error) << "Error reading partial_proof from from \"" << partial_proof_file << "\"";
                         return false;
                     }
-                    auto partial_proof = nil::crypto3::marshalling::types::make_placeholder_proof<Endianness, Proof>(*marshalled_proof);
+
+                    partial_proof_type partial_proof = nil::crypto3::marshalling::types::
+                        make_placeholder_proof<Endianness, Proof>(*marshalled_partial_proof);
+
                     merged_proof.partial_proofs.emplace_back(partial_proof);
                 }
 
-                for(auto const& aggregated_proof_file: aggregated_proof_files) {
+                for(auto const& initial_proof_file: initial_proof_files) {
 
-                    /* TODO: Need marshalling for initial_proofs (lpc_proof_type) */
-                    BOOST_LOG_TRIVIAL(info) << "Reading aggregated part proof from file \"" << aggregated_proof_file << "\"";
-                    // merged_proof.aggregated_proof.intial_proofs_per_prover.emplace_back(initial_proof);
+                    BOOST_LOG_TRIVIAL(info) << "Reading initial proof from file \"" << initial_proof_file << "\"";
+                    auto initial_proof =
+                        detail::decode_marshalling_from_file<initial_proof_marshalling_type>(initial_proof_file);
+                    if (!initial_proof) {
+                        BOOST_LOG_TRIVIAL(error) << "Error reading lpc_consistency_proof from \"" << initial_proof_file << "\"";
+                    }
+
+                    merged_proof.aggregated_proof.intial_proofs_per_prover.emplace_back(
+                        nil::crypto3::marshalling::types::make_initial_eval_proof<Endianness, LpcScheme>(*initial_proof)
+                    );
                 }
 
-                /* TODO: Need marshalling for top-level proof, (fri_proof_type) */
-                BOOST_LOG_TRIVIAL(info) << "Reading single round part proof from file \"" << last_proof_file << "\"";
-                // merged_proof.fri_proof = ...
+                BOOST_LOG_TRIVIAL(info) << "Reading aggregated FRI proof from file \"" << aggregated_FRI_file << "\"";
 
+                auto marshalled_fri_proof = detail::decode_marshalling_from_file<fri_proof_marshalling_type>(aggregated_FRI_file);
+
+                if (!marshalled_fri_proof) {
+                    BOOST_LOG_TRIVIAL(error) << "Error reading fri_proof from \"" << aggregated_FRI_file << "\"";
+                    return false;
+                }
+                merged_proof.aggregated_proof.fri_proof =
+                    nil::crypto3::marshalling::types::make_initial_fri_proof<Endianness, LpcScheme>(*marshalled_fri_proof);
 
                 BOOST_LOG_TRIVIAL(info) << "Writing merged proof to \"" << merged_proof_file << "\"";
 
-                return true;
+                auto marshalled_proof = nil::crypto3::marshalling::types::fill_placeholder_aggregated_proof
+                    <Endianness, placeholder_aggregated_proof_type, partial_proof_type>
+                    (merged_proof, lpc_scheme_->get_fri_params());
+
+                return detail::encode_marshalling_to_file<merged_proof_marshalling_type>(merged_proof_file, marshalled_proof);
             }
 
             bool save_fri_proof_to_file(

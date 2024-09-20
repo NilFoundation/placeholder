@@ -110,9 +110,10 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result =
                         prover.merge_proofs(
                             prover_options.partial_proof_files,
-                            prover_options.aggregated_proof_files,
-                            prover_options.last_proof_file,
+                            prover_options.initial_proof_files,
+                            prover_options.aggregated_FRI_proof_file,
                             prover_options.proof_file_path);
+                    break;
                 case nil::proof_generator::detail::ProverStage::COMPUTE_COMBINED_Q:
                     prover_result = 
                         prover.read_commitment_scheme_from_file(prover_options.commitment_scheme_state_path) &&
