@@ -78,7 +78,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                             prover_options.json_file_path,
                             true/*skip verification*/);
                     break;
-                case nil::proof_generator::detail::ProverStage::PARTIAL_PROVE:
+                case nil::proof_generator::detail::ProverStage::GENERATE_PARTIAL_PROOF:
                     // Load preprocessed data from file and generate the proof.
                     prover_result =
                         prover.read_circuit(prover_options.circuit_file_path) &&
@@ -90,7 +90,8 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                         prover.generate_partial_proof_to_file(
                             prover_options.proof_file_path,
                             prover_options.challenge_file_path,
-                            prover_options.theta_power_file_path);
+                            prover_options.theta_power_file_path) &&
+                        prover.save_commitment_state_to_file(prover_options.updated_commitment_scheme_state_path);
                     break;
                 case nil::proof_generator::detail::ProverStage::VERIFY:
                     prover_result =

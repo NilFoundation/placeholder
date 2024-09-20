@@ -107,7 +107,7 @@ namespace nil {
                 PROVE = 2,
                 VERIFY = 3,
                 GENERATE_AGGREGATED_CHALLENGE = 4,
-                PARTIAL_PROVE = 5,
+                GENERATE_PARTIAL_PROOF = 5,
                 COMPUTE_COMBINED_Q = 6,
                 GENERATE_AGGREGATED_FRI_PROOF = 7,
                 GENERATE_CONSISTENCY_CHECKS_PROOF = 8,
@@ -121,7 +121,7 @@ namespace nil {
                     {"prove", ProverStage::PROVE},
                     {"verify", ProverStage::VERIFY},
                     {"generate-aggregated-challenge", ProverStage::GENERATE_AGGREGATED_CHALLENGE},
-                    {"partial-prove", ProverStage::PARTIAL_PROVE},
+                    {"generate-partial-proof", ProverStage::GENERATE_PARTIAL_PROOF},
                     {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q},
                     {"merge-proofs", ProverStage::MERGE_PROOFS},
                     {"aggregated-FRI", ProverStage::GENERATE_AGGREGATED_FRI_PROOF},
@@ -345,7 +345,7 @@ namespace nil {
             }
 
             bool save_preprocessed_common_data_to_file(boost::filesystem::path preprocessed_common_data_file) {
-                BOOST_LOG_TRIVIAL(info) << "Writing preprocessed common data to " << preprocessed_common_data_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing preprocessed common data to " << preprocessed_common_data_file;
                 auto marshalled_common_data =
                     nil::crypto3::marshalling::types::fill_placeholder_common_data<Endianness, CommonData>(
                         public_preprocessed_data_->common_data
@@ -361,7 +361,7 @@ namespace nil {
             }
 
             bool read_preprocessed_common_data_from_file(boost::filesystem::path preprocessed_common_data_file) {
-                BOOST_LOG_TRIVIAL(info) << "Read preprocessed common data from " << preprocessed_common_data_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Read preprocessed common data from " << preprocessed_common_data_file;
 
                 using CommonDataMarshalling = nil::crypto3::marshalling::types::placeholder_common_data<TTypeBase, CommonData>;
 
@@ -383,7 +383,7 @@ namespace nil {
                 using namespace nil::crypto3::marshalling::types;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing all preprocessed public data to " <<
-                    preprocessed_data_file << std::endl;
+                    preprocessed_data_file;
                 using PreprocessedPublicDataType = typename PublicPreprocessedData::preprocessed_data_type;
 
                 auto marshalled_preprocessed_public_data =
@@ -401,7 +401,7 @@ namespace nil {
             }
 
             bool read_public_preprocessed_data_from_file(boost::filesystem::path preprocessed_data_file) {
-                BOOST_LOG_TRIVIAL(info) << "Read preprocessed data from " << preprocessed_data_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Read preprocessed data from " << preprocessed_data_file;
 
                 using namespace nil::crypto3::marshalling::types;
 
@@ -424,7 +424,7 @@ namespace nil {
                 using namespace nil::crypto3::marshalling::types;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing commitment_state to " <<
-                    commitment_scheme_state_file << std::endl;
+                    commitment_scheme_state_file;
 
                 auto marshalled_lpc_state = fill_commitment_scheme<Endianness, LpcScheme>(
                     *lpc_scheme_);
@@ -439,7 +439,7 @@ namespace nil {
             }
 
             bool read_commitment_scheme_from_file(boost::filesystem::path commitment_scheme_state_file) {
-                BOOST_LOG_TRIVIAL(info) << "Read commitment scheme from " << commitment_scheme_state_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Read commitment scheme from " << commitment_scheme_state_file;
 
                 using namespace nil::crypto3::marshalling::types;
 
@@ -475,7 +475,7 @@ namespace nil {
             }
 
             bool read_circuit(const boost::filesystem::path& circuit_file_) {
-                BOOST_LOG_TRIVIAL(info) << "Read circuit from " << circuit_file_ << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Read circuit from " << circuit_file_;
 
                 using ConstraintMarshalling =
                     nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, ConstraintSystem>;
@@ -493,7 +493,7 @@ namespace nil {
             }
 
             bool read_assignment_table(const boost::filesystem::path& assignment_table_file_) {
-                BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_ << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_;
 
                 using TableValueMarshalling =
                     nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
@@ -513,7 +513,7 @@ namespace nil {
             }
 
             bool save_assignment_description(const boost::filesystem::path& assignment_description_file) {
-                BOOST_LOG_TRIVIAL(info) << "Writing assignment description to " << assignment_description_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing assignment description to " << assignment_description_file;
 
                 auto marshalled_assignment_description =
                     nil::crypto3::marshalling::types::fill_assignment_table_description<Endianness, BlueprintField>(
@@ -530,7 +530,7 @@ namespace nil {
             }
 
             bool read_assignment_description(const boost::filesystem::path& assignment_description_file_) {
-                BOOST_LOG_TRIVIAL(info) << "Read assignment description from " << assignment_description_file_ << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Read assignment description from " << assignment_description_file_;
 
                 using TableDescriptionMarshalling =
                     nil::crypto3::marshalling::types::plonk_assignment_table_description<TTypeBase>;
@@ -572,7 +572,7 @@ namespace nil {
                 using challenge_marshalling_type = nil::crypto3::marshalling::types::field_element<
                     TTypeBase, typename BlueprintField::value_type>;
 
-                BOOST_LOG_TRIVIAL(info) << "Writing challenge to " << challenge_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing challenge to " << challenge_file;
 
                 // marshall the challenge
                 challenge_marshalling_type marshalled_challenge(challenge);
@@ -658,7 +658,7 @@ namespace nil {
                 using polynomial_marshalling_type = typename nil::crypto3::marshalling::types::polynomial<
                     TTypeBase, PolynomialType>::type;
 
-                BOOST_LOG_TRIVIAL(info) << "Writing polynomial to " << output_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing polynomial to " << output_file;
 
                 polynomial_marshalling_type marshalled_poly = nil::crypto3::marshalling::types::fill_polynomial<Endianness, PolynomialType>(poly);
 
@@ -791,7 +791,7 @@ namespace nil {
                 using fri_proof_marshalling_type = nil::crypto3::marshalling::types::initial_fri_proof_type<
                     TTypeBase, LpcScheme>;
 
-                BOOST_LOG_TRIVIAL(info) << "Writing aggregated FRI proof to " << output_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing aggregated FRI proof to " << output_file;
 
                 fri_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_initial_fri_proof<Endianness, LpcScheme>(fri_proof);
 
@@ -803,7 +803,7 @@ namespace nil {
                 const typename FriType::grinding_type::output_type &proof_of_work, 
                 const boost::filesystem::path &output_file) {
                 using POW_marshalling_type = nil::marshalling::types::integral<TTypeBase, typename FriType::grinding_type::output_type>;
-                BOOST_LOG_TRIVIAL(info) << "Writing proof of work to " << output_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing proof of work to " << output_file;
 
                 POW_marshalling_type marshalled_pow(proof_of_work);
 
@@ -818,7 +818,7 @@ namespace nil {
                 using challenge_vector_marshalling_type = nil::crypto3::marshalling::types::field_element_vector<
                     typename BlueprintField::value_type, TTypeBase>;
 
-                BOOST_LOG_TRIVIAL(info) << "Writing challenges to " << consistency_checks_challenges_output_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing challenges to " << consistency_checks_challenges_output_file;
 
                 challenge_vector_marshalling_type marshalled_challenges = 
                     nil::crypto3::marshalling::types::fill_field_element_vector<typename BlueprintField::value_type, Endianness>(
@@ -898,7 +898,7 @@ namespace nil {
                 using lpc_consistency_proof_marshalling_type = nil::crypto3::marshalling::types::inital_eval_proof<
                     TTypeBase, LpcScheme>;
 
-                BOOST_LOG_TRIVIAL(info) << "Writing LPC consistency proof to " << output_file << std::endl;
+                BOOST_LOG_TRIVIAL(info) << "Writing LPC consistency proof to " << output_file;
 
                 lpc_consistency_proof_marshalling_type marshalled_proof = nil::crypto3::marshalling::types::fill_initial_eval_proof<Endianness, LpcScheme>(lpc_consistency_proof);
 

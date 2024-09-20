@@ -79,6 +79,7 @@ namespace nil {
                 ("common-data", make_defaulted_option(prover_options.preprocessed_common_data_path), "Preprocessed common data file")
                 ("preprocessed-data", make_defaulted_option(prover_options.preprocessed_public_data_path), "Preprocessed public data file")
                 ("commitment-state-file", make_defaulted_option(prover_options.commitment_scheme_state_path), "Commitment state data file")
+                ("updated-commitment-state-file", make_defaulted_option(prover_options.updated_commitment_scheme_state_path), "Updated commitment state data file")
                 ("circuit", po::value(&prover_options.circuit_file_path), "Circuit input file")
                 ("assignment-table,t", po::value(&prover_options.assignment_table_file_path), "Assignment table input file")
                 ("assignment-description-file", po::value(&prover_options.assignment_description_file_path), "Assignment description file")
