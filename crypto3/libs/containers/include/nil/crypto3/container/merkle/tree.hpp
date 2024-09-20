@@ -394,12 +394,12 @@ namespace nil {
                     //
                     template<class... Args>
                     reference emplace_back(Args &&..._args) {
-                        return _hashes.template emplace_back(_args...);
+                        return _hashes.template emplace_back<>(_args...);
                     }
 
                     template<class... Args>
                     iterator emplace(const_iterator _position, Args &&... _args) {
-                        return _hashes.template emplace(_position, _args...);
+                        return _hashes.template emplace<>(_position, _args...);
                     }
 
                     void pop_back() {
@@ -421,7 +421,7 @@ namespace nil {
                     void swap(merkle_tree_impl &other) {
                         _hashes.swap(other.hashes());
                         std::swap(_leaves, other.leaves());
-                        std::swap(_rc, other.rc());
+                        std::swap(_rc, other.row_count());
                         std::swap(_size, other.size());
                     }
 

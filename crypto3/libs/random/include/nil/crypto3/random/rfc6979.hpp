@@ -133,11 +133,11 @@ namespace nil {
                     for (const auto v : range) {
                         bitset_repr_type v_bitset_repr(v);
                         carried_bits = carry_bits(v_bitset_repr, carried_bits);
-                        result.template emplace_back(static_cast<ValueType>(v_bitset_repr.to_ullong()));
+                        result.template emplace_back<>(static_cast<ValueType>(v_bitset_repr.to_ullong()));
                     }
                     bitset_repr_type v_bitset_repr;
                     carry_bits(v_bitset_repr, carried_bits);
-                    result.template emplace_back(static_cast<ValueType>(v_bitset_repr.to_ullong()));
+                    result.template emplace_back<>(static_cast<ValueType>(v_bitset_repr.to_ullong()));
 
                     return result;
                 }
@@ -151,7 +151,7 @@ namespace nil {
                         auto adjusted_range = adjust_bitstring(range);
                         marshalling_integral_value_be_type marshalling_integral_value_be;
                         auto it = adjusted_range.cbegin();
-                        marshalling_integral_value_be.template read(it, modulus_octets);
+                        marshalling_integral_value_be.template read<>(it, modulus_octets);
                         result = marshalling_integral_value_be.value();
                     } else {
                         // TODO: creating copy of input range of modulus_octets size is a bottleneck:
@@ -163,7 +163,7 @@ namespace nil {
                         std::copy(std::crbegin(range), std::crend(range), std::rbegin(range_padded));
                         marshalling_integral_value_be_type marshalling_integral_value_be;
                         auto it = std::cbegin(range_padded);
-                        marshalling_integral_value_be.template read(it, range_padded.size());
+                        marshalling_integral_value_be.template read<>(it, range_padded.size());
                         result = marshalling_integral_value_be.value();
                     }
                     return result;

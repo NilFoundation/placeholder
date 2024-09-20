@@ -87,7 +87,7 @@ void check_expand_message(std::size_t len_in_bytes, const DstType &dst, const Ms
         return ret;
     };
     std::vector<std::uint8_t> uniform_bytes(len_in_bytes, 0);
-    Expander::template process(len_in_bytes, msg, dst, uniform_bytes);
+    Expander::template process<>(len_in_bytes, msg, dst, uniform_bytes);
     BOOST_CHECK(result_compare(uniform_bytes));
 }
 

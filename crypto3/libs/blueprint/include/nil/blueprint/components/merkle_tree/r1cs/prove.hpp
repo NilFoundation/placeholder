@@ -59,7 +59,7 @@ namespace nil {
                         std::vector<digest_variable<FieldType>> layer;
 
                         for (std::size_t j = 0; j < Arity; ++j) {
-                            layer.template emplace_back(
+                            layer.template emplace_back<>(
                                 digest_variable<FieldType>(this->bp, HashComponent::digest_bits));
                         }
 

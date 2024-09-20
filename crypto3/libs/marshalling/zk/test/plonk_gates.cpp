@@ -128,7 +128,7 @@ generate_random_plonk_gate(std::size_t vars_n, std::size_t depth, std::size_t co
     std::size_t selector_index = rand() % vars_n;
     std::vector<constraint_type> constraints;
     for (std::size_t i = 0; i < constr_n; i++) {
-        constraints.template emplace_back(
+        constraints.template emplace_back<>(
             generate_random_plonk_expression<Field, variable_type>( vars_n, depth )
         );
     }
@@ -162,7 +162,7 @@ generate_random_plonk_lookup_gate(std::size_t vars_n, std::size_t depth, std::si
     std::size_t selector_index = std::random_device()();
     std::vector<constraint_type> constraints;
     for (std::size_t i = 0; i < constr_n; i++) {
-        constraints.template emplace_back(generate_random_plonk_lookup_constraint<Field>(vars_n, depth, expr_n));
+        constraints.template emplace_back<>(generate_random_plonk_lookup_constraint<Field>(vars_n, depth, expr_n));
     }
     return {selector_index, constraints};
 }
@@ -506,7 +506,7 @@ void test_plonk_gates(std::size_t vars_n, std::size_t depth, std::size_t constr_
 
     std::vector<value_type> val;
     for (std::size_t i = 0; i < gates_n; i++) {
-        val.template emplace_back(generate_random_plonk_gate<Field>(vars_n, depth, constr_n));
+        val.template emplace_back<>(generate_random_plonk_gate<Field>(vars_n, depth, constr_n));
     }
 
     auto filled_val = types::fill_plonk_gates<Endianness, value_type>(val);
@@ -539,7 +539,7 @@ void test_plonk_lookup_gates(std::size_t vars_n, std::size_t depth, std::size_t 
 
     std::vector<value_type> val;
     for (std::size_t i = 0; i < gates_n; i++) {
-        val.template emplace_back(generate_random_plonk_lookup_gate<Field>(vars_n, depth, expr_n, constr_n));
+        val.template emplace_back<>(generate_random_plonk_lookup_gate<Field>(vars_n, depth, expr_n, constr_n));
     }
 
     auto filled_val = types::fill_plonk_lookup_gates<Endianness, value_type>(val);

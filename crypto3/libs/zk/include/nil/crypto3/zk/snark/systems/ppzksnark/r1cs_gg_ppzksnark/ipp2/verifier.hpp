@@ -508,15 +508,15 @@ namespace nil {
                     pc.merge_random(a_input1.begin(), a_input1.end(), b_input1.begin(), b_input1.end(), final_res.zab);
 
                     //  final_aB.0 = T = e(A,v1)e(w1,B)
-                    a_input1.template emplace_back(proof.tmipp.gipa.final_wkey.first);
-                    b_input1.template emplace(b_input1.begin(), proof.tmipp.gipa.final_vkey.first);
+                    a_input1.template emplace_back<>(proof.tmipp.gipa.final_wkey.first);
+                    b_input1.template emplace<>(b_input1.begin(), proof.tmipp.gipa.final_vkey.first);
                     pc.merge_random(a_input1.begin(), a_input1.end(), b_input1.begin(), b_input1.end(), final_res.tab);
 
                     //  final_aB.1 = U = e(A,v2)e(w2,B)
                     a_input1.pop_back();
-                    a_input1.template emplace_back(proof.tmipp.gipa.final_wkey.second);
+                    a_input1.template emplace_back<>(proof.tmipp.gipa.final_wkey.second);
                     b_input1.erase(b_input1.begin());
-                    b_input1.template emplace(b_input1.begin(), proof.tmipp.gipa.final_vkey.second);
+                    b_input1.template emplace<>(b_input1.begin(), proof.tmipp.gipa.final_vkey.second);
                     pc.merge_random(a_input1.begin(), a_input1.end(), b_input1.begin(), b_input1.end(), final_res.uab);
 
                     // MIPP
@@ -536,7 +536,7 @@ namespace nil {
 
                     // U = e(A,v2)
                     b_input2.pop_back();
-                    b_input2.template emplace_back(proof.tmipp.gipa.final_vkey.second);
+                    b_input2.template emplace_back<>(proof.tmipp.gipa.final_vkey.second);
                     pc.merge_random(a_input2.begin(), a_input2.end(), b_input2.begin(), b_input2.end(), final_res.uc);
 
                     if (final_z != final_res.zc) {
