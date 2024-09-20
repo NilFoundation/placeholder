@@ -1,9 +1,3 @@
-## Circifier, Assigner and Transpiler generated files:
-/*.crct
-/*.tbl
-/*.bin
-/*.sol
-
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
@@ -263,6 +257,10 @@ TSWLatexianTemp*
 *.dylib
 *.dll
 
+# Fortran module files
+*.mod
+*.smod
+
 # Compiled Static libraries
 *.lai
 *.la
@@ -334,9 +332,6 @@ fabric.properties
 
 .idea/
 
-# Visual Studio Code
-.vscode/
-
 # Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-249601023
 
 *.iml
@@ -345,6 +340,7 @@ modules.xml
 *.ipr
 
 ### CMake ###
+CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
 CMakeScripts
@@ -355,6 +351,7 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 build
+result
 
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:
@@ -596,6 +593,12 @@ TSWLatexianTemp*
 # Logs
 *.log
 
+# Patch files
+*.patch
+*.diff
+*.orig
+*.rej
+
 # Cache and temporary files
 *.pyc
 .DS_Store
@@ -621,6 +624,7 @@ callgrind.*
 /*.c
 /*.cpp
 /*.h
+/*.py
 /*.key
 /*.pem
 /*.der
@@ -631,12 +635,3 @@ callgrind.*
 
 .ycm_extra_config.py
 .color_coded
-
-# We don't want to commit Cargo.lock for examples
-examples/rust/Cargo.lock
-
-# direnv
-.direnv/
-
-# Nix build results directory
-/result
