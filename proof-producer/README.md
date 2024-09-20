@@ -176,10 +176,6 @@ Compute LPC consistency check proofs for polynomial combined_Q, done on each pro
 
 Merge proofs into one final proof:
 ```bash
-#!/bin/sh
-
-CIRCUIT1=fri_array_swap
-CIRCUIT2=merkle_tree_poseidon_cpp_example
 
 bin/proof-producer/proof-producer-single-threaded \
     --stage merge-proofs  \
@@ -187,7 +183,7 @@ bin/proof-producer/proof-producer-single-threaded \
     --partial-proof $CIRCUIT2-proof.dat \
     --initial-proof $CIRCUIT1-LPC_consistency_check_proof.bin \
     --initial-proof $CIRCUIT2-LPC_consistency_check_proof.bin \
-    --last-proof aggregated_FRI_proof.bin \
+    --aggregated-FRI-proof aggregated_FRI_proof.bin \
     --proof final-proof.dat
 ```
 
