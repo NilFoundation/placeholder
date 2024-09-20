@@ -118,7 +118,7 @@ Verify generated proof:
 Partial proof, ran on each prover.
 ```bash
 ./build/bin/proof-producer/proof-producer-single-threaded \
-    --stage partial-prove \
+    --stage generate-partial-proof \
     --grind-param 16 \
     --max-quotient-chunks 10 \
     --circuit           circuits-and-assignments/$CIRCUIT/circuit.crct \
@@ -126,6 +126,7 @@ Partial proof, ran on each prover.
     --common-data                  $CIRCUIT-common_data.dat \
     --preprocessed-data            $CIRCUIT-preprocessed.dat \
     --commitment-state-file        $CIRCUIT-commitment_state.dat \
+    --updated-commitment-state-file $CIRCUIT-updated_commitment_state.dat \
     --assignment-description-file  $CIRCUIT-assignment-description.dat \
     --challenge-file               $CIRCUIT-challenge.dat \
     --theta-power-file             $CIRCUIT-theta-power.txt \
