@@ -184,12 +184,12 @@
             enableDebug = false;
           });
           crypto3-clang = (pkgs.callPackage ./crypto3/crypto3.nix {
-            stdenv = pkgs.llvmPackages_18.stdenv;
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
           });
           crypto3-clang-sanitize = (pkgs.callPackage ./crypto3/crypto3.nix {
-            stdenv = pkgs.llvmPackages_18.stdenv;
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
             sanitize = true;
@@ -201,7 +201,7 @@
             crypto3 = packages.crypto3;
           });
           parallel-crypto3-clang = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
-            stdenv = pkgs.llvmPackages_18.stdenv;
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
             crypto3 = crypto3-clang;
@@ -213,7 +213,7 @@
             crypto3 = packages.crypto3;
           });
           evm-assigner-clang = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
-            stdenv = pkgs.llvmPackages_18.stdenv;
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
             crypto3 = crypto3-clang;
@@ -232,7 +232,7 @@
             crypto3 = packages.crypto3;
           });
           transpiler-clang = (pkgs.callPackage ./transpiler/transpiler.nix {
-            stdenv = pkgs.llvmPackages_18.stdenv;
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
             crypto3 = crypto3-clang;
@@ -246,7 +246,7 @@
             parallel-crypto3 = packages.parallel-crypto3;
           });
           proof-producer-clang = (pkgs.callPackage ./proof-producer/proof-producer.nix {
-            stdenv = pkgs.llvmPackages_18.stdenv;
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
             crypto3 = crypto3-clang;
