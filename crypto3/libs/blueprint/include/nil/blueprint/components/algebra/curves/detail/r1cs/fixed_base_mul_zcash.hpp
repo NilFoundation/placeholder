@@ -224,7 +224,7 @@ namespace nil {
                             detail::blueprint_variable<field_type> pad_i;
                             pad_i.allocate(bp);
                             bp.val(pad_i) = field_value_type::zero();
-                            padded_input.template emplace_back(pad_i);
+                            padded_input.template emplace_back<>(pad_i);
                         }
                         return padded_input;
                     }
