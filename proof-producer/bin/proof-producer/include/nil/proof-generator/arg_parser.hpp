@@ -48,8 +48,9 @@ namespace nil {
             boost::filesystem::path theta_power_file_path;
             std::vector<boost::filesystem::path> input_challenge_files;
             std::vector<boost::filesystem::path> partial_proof_files;
+            std::vector<boost::filesystem::path> initial_proof_files;
             std::vector<boost::filesystem::path> aggregated_proof_files;
-            boost::filesystem::path last_proof_file;
+            boost::filesystem::path aggregated_FRI_proof_file = "aggregated_FRI_proof.bin";
             boost::filesystem::path aggregated_challenge_file = "aggregated_challenge.dat";
             boost::filesystem::path consistency_checks_challenges_file = "consistency_check_challenges.dat";
             boost::filesystem::path combined_Q_polynomial_file = "combined_Q.dat";
