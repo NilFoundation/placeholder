@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------#
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-    crypto3::pch
+    crypto3_pch
     Boost::unit_test_framework
     Boost::random)
 
@@ -27,6 +27,8 @@ macro(define_runtime_algebra_test name)
 
     set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17
             CXX_STANDARD_REQUIRED TRUE)
+
+    target_precompile_headers(${test_name} REUSE_FROM crypto3_pch)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${test_name} PRIVATE "-fconstexpr-steps=2147483647" "-ftemplate-backtrace-limit=0")
