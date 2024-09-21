@@ -59,8 +59,8 @@
 #include <nil/crypto3/marshalling/zk/types/commitments/kzg.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/lpc.hpp>
 #include <nil/crypto3/marshalling/zk/types/placeholder/preprocessed_public_data.hpp>
+#include <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
 #include "./detail/circuits.hpp"
-#include "random_test_data_generation.hpp"
 
 
 using namespace nil::crypto3;
