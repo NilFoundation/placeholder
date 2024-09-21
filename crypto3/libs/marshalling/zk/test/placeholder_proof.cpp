@@ -82,7 +82,7 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/profiling.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
-#include <nil/crypto3/zk/test_tools/random_test_initializer.hpp>
+#include <nil/crypto3/zk/detail/random_test_initializer.hpp>
 
 #include <nil/crypto3/marshalling/zk/types/commitments/eval_storage.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/kzg.hpp>

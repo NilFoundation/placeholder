@@ -26,7 +26,7 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/crypto3/zk/test_tools/random_test_initializer.hpp>
+#include <nil/crypto3/zk/detail/random_test_initializer.hpp>
 
 #include <nil/crypto3/random/algebraic_random_device.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
@@ -236,7 +236,7 @@ BOOST_FIXTURE_TEST_CASE(assignment_table_marshalling_test, test_tools::random_te
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments, "circuit2");
     else
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments);
-    
+
     test_assignment_table_description<Endianness, plonk_table_description<field_type>>(desc);
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -295,7 +295,7 @@ BOOST_FIXTURE_TEST_CASE(assignment_table_marshalling_test, test_tools::random_te
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments, "circuit3");
     else
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments);
-    
+
     test_assignment_table_description<Endianness, plonk_table_description<field_type>>(desc);
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -356,7 +356,7 @@ BOOST_FIXTURE_TEST_CASE(assignment_table_marshalling_test, test_tools::random_te
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments, "circuit4");
     else
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments);
-    
+
     test_assignment_table_description<Endianness, plonk_table_description<field_type>>(desc);
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -477,7 +477,7 @@ BOOST_FIXTURE_TEST_CASE(assignment_table_marshalling_test, test_tools::random_te
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments, "circuit6");
     else
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments);
-    
+
     test_assignment_table_description<Endianness, plonk_table_description<field_type>>(desc);
 }
 BOOST_AUTO_TEST_SUITE_END()
@@ -535,7 +535,7 @@ BOOST_FIXTURE_TEST_CASE(assignment_table_marshalling_test, test_tools::random_te
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments, "circuit7");
     else
         test_assignment_table<Endianness, typename policy_type::variable_assignment_type>(desc.usable_rows_amount, assignments);
-    
+
     test_assignment_table_description<Endianness, plonk_table_description<field_type>>(desc);
 }
 BOOST_AUTO_TEST_SUITE_END()
