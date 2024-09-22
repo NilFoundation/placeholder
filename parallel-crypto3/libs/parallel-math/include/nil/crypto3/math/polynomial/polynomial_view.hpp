@@ -233,7 +233,7 @@ namespace nil {
 
                 template<class... Args>
                 reference emplace_back(Args&&... _args) {
-                    return it.template emplace_back(_args...);
+                    return it.template emplace_back<>(_args...);
                 }
 
                 void pop_back() {
@@ -249,7 +249,7 @@ namespace nil {
                 }
                 template<class... Args>
                 iterator emplace(const_iterator _position, Args&&... _args) {
-                    return it.template emplace(_position, _args...);
+                    return it.template emplace<>(_position, _args...);
                 }
 
                 iterator insert(const_iterator _position, size_type _n, const_reference _x) {
@@ -286,7 +286,7 @@ namespace nil {
                 }
 
                 void swap(polynomial_view& other) {
-                    it.swap(other.val);
+                    it.swap(other.data());
                 }
 
                 template<typename Range>
@@ -408,7 +408,7 @@ namespace nil {
                     }
                     nil::crypto3::math::condense(q);
 
-                    this->template assign(q.begin(), q.end());
+                    this->template assign<>(q.begin(), q.end());
                     return *this;
                 }
 
