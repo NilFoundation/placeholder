@@ -290,7 +290,7 @@ namespace nil {
 
                 template<class... Args>
                 reference emplace_back(Args&&... _args) {
-                    return val.template emplace_back(_args...);
+                    return val.template emplace_back<>(_args...);
                 }
 
                 void pop_back() {
@@ -306,7 +306,7 @@ namespace nil {
                 }
                 template<class... Args>
                 iterator emplace(const_iterator _position, Args&&... _args) {
-                    return val.template emplace(_position, _args...);
+                    return val.template emplace<>(_position, _args...);
                 }
 
                 iterator insert(const_iterator _position, size_type _n, const_reference _x) {
