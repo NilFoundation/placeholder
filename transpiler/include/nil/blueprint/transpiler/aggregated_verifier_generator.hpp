@@ -49,12 +49,10 @@
 
 namespace nil {
     namespace blueprint {
-        template<typename PlaceholderParams, typename AggregatedProofType, typename CommonDataType>
+        template<typename PlaceholderParams, typename AggregatedProofType>
         struct aggregated_verifier_generator {
             using field_type = typename PlaceholderParams::field_type;
             using proof_type = AggregatedProofType;
-            using common_data_type = CommonDataType;
-            using verification_key_type = typename common_data_type::verification_key_type;
             using commitment_scheme_type = typename PlaceholderParams::commitment_scheme_type;
             using constraint_system_type = typename PlaceholderParams::constraint_system_type;
             using columns_rotations_type = std::vector<std::set<int>>;
@@ -66,6 +64,32 @@ namespace nil {
             using binary_operation_type = typename constraint_system_type::binary_operation_type;
             using pow_operation_type = typename constraint_system_type::pow_operation_type;
             using assignment_table_type = typename PlaceholderParams::assignment_table_type;
+
+            static std::string generate_field_array2_from_64_hex_string(std::string str){
+                BOOST_ASSERT_MSG(str.size() == 64, "input string must be 64 hex characters long");
+                std::string first_half = str.substr(0, 32);
+                std::string second_half = str.substr(32, 32);
+                return  "{\"vector\": [{\"field\": \"0x" + first_half + "\"},{\"field\": \"0x" + second_half + "\"}]}";
+            }
+
+            template<typename HashType>
+            static inline std::string generate_hash(typename HashType::digest_type hashed_data){
+                if constexpr(std::is_same<HashType, nil::crypto3::hashes::sha2<256>>::value){
+                    std::stringstream out;
+                    out << hashed_data;
+                    return generate_field_array2_from_64_hex_string(out.str());
+                } else if constexpr(std::is_same<HashType, nil::crypto3::hashes::keccak_1600<256>>::value){
+                    std::stringstream out;
+                    out << hashed_data;
+                    return generate_field_array2_from_64_hex_string(out.str());
+                } else {
+                    std::stringstream out;
+                    out << "{\"field\": \"" <<  hashed_data <<  "\"}";
+                    return out.str();
+                }
+                BOOST_ASSERT_MSG(false, "unsupported merkle hash type");
+                return "unsupported merkle hash type";
+            }
 
             template<typename CommitmentSchemeType>
             static inline std::string generate_commitment(typename CommitmentSchemeType::commitment_type commitment) {
@@ -122,7 +146,7 @@ namespace nil {
                             << generate_commitment<typename PlaceholderParams::commitment_scheme_type>(commitment);
                         after_first = true;
                     }
-                    out << "\t\t]}," << std::endl;
+                    out << "\t\t]}]}," << std::endl;
                 }
                 // aggregated proof type
                 const auto &aggregated_proof = proof.aggregated_proof;
@@ -130,29 +154,30 @@ namespace nil {
                 // single fri proof checking that F(x) is low degree
 
                 // basic_fri::round_proofs_batch_type fri_round_proof
-                const auto &fri_round_proof = aggregated_proof.fri_round_proof;
+                const auto &fri_round_proof = aggregated_proof.fri_proof;
                 // which is in essence std::vector<std::vector<round_proof_type>> round_proofs;
                 out << "\t\t{\"array\":[" << std::endl;
                 bool after_first = false;
-                for (const auto &outer_proof_vector : fri_round_proof.round_proofs) {
+                for (const auto &outer_proof_vector : fri_round_proof.fri_round_proof.round_proofs) {
                     if (after_first) [[likely]] out << "," << std::endl;
                     out << "\t\t\t{\"array\":[" << std::endl;
                     bool after_first_inner = false;
                     for (const auto &round_proof : outer_proof_vector) {
                         if (after_first_inner) [[likely]] out << "," << std::endl;
                         BOOST_ASSERT_MSG(round_proof.y.size() == 1, "Unsupported step_list value");
-                        out << "\t\t\t\t{\"field\":\"" << round_proof.y[0][0] << "\"}," << std::endl;
-                        out << "\t\t\t\t{\"field\":\"" << round_proof.y[0][1] << "\"}";
-                        out << std::endl << "\t\t\t]}";
+                        out << "\t\t\t\t{\"array\":[" << std::endl;
+                        out << "\t\t\t\t\t{\"field\":\"" << round_proof.y[0][0] << "\"}," << std::endl;
+                        out << "\t\t\t\t\t{\"field\":\"" << round_proof.y[0][1] << "\"}";
+                        out << std::endl << "\t\t\t\t]}";
                         after_first_inner = true;
                     }
                     out << "\t\t\t]}" << std::endl;
                     after_first = true;
                 }
-                out << "\t\t]}," << std::endl;
+                out << "\t]}]}," << std::endl;
                 // typename basic_fri::commitments_part_of_proof fri_commitments_proof_part;
                 // consisting of std::vector<commitment_type> fri_roots;
-                auto &fri_commitments_proof_part = aggregated_proof.fri_commitments_proof_part;
+                auto &fri_commitments_proof_part = fri_round_proof.fri_commitments_proof_part;
                 out << "\t\t{\"array\":[" << std::endl;
                 after_first = false;
                 for (const auto &fri_root : fri_commitments_proof_part.fri_roots) {
@@ -173,9 +198,11 @@ namespace nil {
                 }
                 out << std::endl << "\t\t]}," << std::endl;
 
-                // std::vector<lpc_proof_type> intial_proofs_per_prover;
+                // std::vector<lpc_proof_type> initial_proofs_per_prover;
                 out << "\t\t{\"array\":[" << std::endl;
-                for (const auto &lpc_proof : proof.initial_proofs_per_prover) {
+                after_first = false;
+                for (const auto &lpc_proof : aggregated_proof.initial_proofs_per_prover) {
+                    if (after_first) [[likely]] out << "," << std::endl;
                     // eval_storage_type z;
                     out << "\t\t\t{\"array\":[" << std::endl;
                     const auto &eval_storage = lpc_proof.z;
@@ -194,47 +221,55 @@ namespace nil {
                     out << std::endl << "\t\t]}," << std::endl;
                     // and basic_fri::initial_proofs_batch_type initial_fri_proofs;
                     // which is std::vector<std::map<std::size_t, initial_proof_type>> initial_proofs;
-                    const auto &initial_proofs = lpc_proof.initial_fri_proofs;
+                    const auto &initial_proofs = lpc_proof.initial_fri_proofs.initial_proofs;
                     out << "\t\t{\"array\":[" << std::endl;
-                    after_first = false;
-                    for (const auto &[key, value] : initial_proofs) {
-                        if (after_first) [[likely]] out << "," << std::endl;
+                    bool map_after_first = false;
+                    for (const auto &initial_proofs_map : initial_proofs) {
+                        if (map_after_first) [[likely]] out << "," << std::endl;
                         out << "\t\t\t{\"struct\":[" << std::endl;
-                        // each initial proof is polynomials_values_type values;
-                        // which is std::vector<std::vector<std::array<value_type, FRI::m>>>
-                        // and merkle_proof_type p;
-                        after_first = true;
-                        // first the values
-                        // I have no idea if we have to store keys, I hope we do not
-                        const auto &values = value.values;
-                        bool outer_vec_after_first = false;
-                        for (const auto &outer_vector : values) {
-                            if (outer_vec_after_first) [[likely]] out << "," << std::endl;
-                            out << "\t\t\t\t{\"array\":[" << std::endl;
-                            bool inner_after_first = false;
-                            for (const auto &inner_vector : outer_vector) {
-                                if (inner_after_first) [[likely]] out << "," << std::endl;
-                                out << "\t\t\t\t\t{\"array\":[" << std::endl;
-                                bool array_after_first = false;
-                                for (const auto &elem : inner_vector) {
-                                    if (array_after_first) [[likely]] out << "," << std::endl;
-                                    out << "\t\t\t\t\t\t{\"field\":\"" << elem << "\"}";
-                                    array_after_first = true;
+                        bool inner_after_first = false;
+                        for (const auto &[index, value] : initial_proofs_map) {
+                            if (inner_after_first) [[likely]] out << "," << std::endl;
+                            // each initial proof is polynomials_values_type values;
+                            // which is std::vector<std::vector<std::array<value_type, FRI::m>>>
+                            // and merkle_proof_type p;
+                            // first the values
+                            // I have no idea if we have to store keys, I hope we do not
+                            const auto &values = value.values;
+                            bool outer_vec_after_first = false;
+                            for (const auto &outer_vector : values) {
+                                if (outer_vec_after_first) [[likely]] out << "," << std::endl;
+                                out << "\t\t\t\t{\"array\":[" << std::endl;
+                                bool core_after_first = false;
+                                for (const auto &inner_vector : outer_vector) {
+                                    if (core_after_first) [[likely]] out << "," << std::endl;
+                                    out << "\t\t\t\t\t{\"array\":[" << std::endl;
+                                    bool array_after_first = false;
+                                    for (const auto &elem : inner_vector) {
+                                        if (array_after_first) [[likely]] out << "," << std::endl;
+                                        out << "\t\t\t\t\t\t{\"field\":\"" << elem << "\"}";
+                                        array_after_first = true;
+                                    }
+                                    out << std::endl << "\t\t\t\t\t]}";
+                                    core_after_first = true;
                                 }
-                                out << std::endl << "\t\t\t\t\t]}";
-                                inner_after_first = true;
+                                out << std::endl << "\t\t\t\t]}";
+                                outer_vec_after_first = true;
                             }
-                            out << std::endl << "\t\t\t\t]";
-                            outer_vec_after_first = true;
+                            // we skip the merkle proof, as those are the same for all initial proofs
+                            // we serialize it right after this loop
+                            inner_after_first = true;
                         }
-                        out << std::endl << "\t\t]}," << std::endl;
-                        // we skip the merkle proof, as those are the same for all initial proofs
-                        // we serialize it right after this loop
+                        out << "\t\t\t]}" << std::endl;
+                        map_after_first = true;
                     }
+                    out << "\t\t]}" << std::endl;
+                    after_first = true;
                 }
                 out << "\t\t]}," << std::endl;
                 // and now serialize one of the merkle proofs
-                const auto &merkle_proof_path = proof.initial_proofs_per_prover.initial_proofs.begin()->second.p.path();
+                const auto &merkle_proof_path =
+                    aggregated_proof.initial_proofs_per_prover.begin()->initial_fri_proofs.initial_proofs.begin()->begin()->second.p.path();
                 out << "\t\t{\"array\":[" << std::endl;
                 after_first = false;
                 for (const auto &path_elem : merkle_proof_path) {
@@ -246,8 +281,9 @@ namespace nil {
                 }
                 out << std::endl << "\t\t]}," << std::endl;
                 // typename LPCParams::grinding_type::output_type proof_of_work;
-                out << "\t\t{\"field\":\"" << aggregated_proof.proof_of_work << "\"}" << std::endl;
-                out << "\t]}" << std::endl;
+                out << "\t{\"field\":\"" << aggregated_proof.proof_of_work << "\"}" << std::endl;
+                out << "]" << std::endl;
+                return out.str();
             }
 
             aggregated_verifier_generator(
