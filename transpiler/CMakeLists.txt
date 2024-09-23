@@ -39,10 +39,25 @@ target_link_libraries(crypto3_transpiler INTERFACE
                       crypto3::all
                       ${Boost_LIBRARIES})
 
-include(CMDeploy)
-cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-          INCLUDE include
-          NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
-
 include(CMTest)
 cm_add_test_subdirectory(test)
+
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+set(CONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/crypto3_transpiler)
+
+configure_package_config_file(
+        cmake/Config.cmake.in
+        crypto3_transpilerConfig.cmake
+        INSTALL_DESTINATION ${CONFIG_DIR}
+)
+
+# Install generated cmake config
+install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/crypto3_transpilerConfig.cmake
+        DESTINATION ${CONFIG_DIR}
+)
+
+# Install transpiler headers
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
