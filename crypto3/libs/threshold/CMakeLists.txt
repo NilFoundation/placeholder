@@ -12,8 +12,6 @@ include(CMConfig)
 
 cm_project(threshold WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
-cm_find_package(${CMAKE_WORKSPACE_NAME}_pubkey)
-
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
 add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE)

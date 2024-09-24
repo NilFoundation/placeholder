@@ -12,10 +12,6 @@ include(CMConfig)
 
 cm_project(kdf WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES C CXX)
 
-cm_find_package(${CMAKE_WORKSPACE_NAME}_block)
-cm_find_package(${CMAKE_WORKSPACE_NAME}_hash)
-cm_find_package(${CMAKE_WORKSPACE_NAME}_mac)
-
 option(CRYPTO3_KDF_HKDF "Build with HKDF support" TRUE)
 option(CRYPTO3_KDF_KDF1 "Build with HKDF support" TRUE)
 option(CRYPTO3_KDF_KDF1_18033 "Build with HKDF support" TRUE)
