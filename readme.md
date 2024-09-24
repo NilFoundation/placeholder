@@ -25,13 +25,18 @@ For most cases, you want to have an incremental build:
 ```
 nix develop .#crypto3-debug-tests
 cd crypto3/
-mkdir build && cd build
 eval "$configurePhase"
 eval "$buildPhase"
 eval "$checkPhase"
 ```
 
-
+if you want to build a single test:
+```
+nix develop .#crypto3-debug-tests
+cd crypto3/
+eval "$configurePhase"
+ninja TEST_NAME
+```
 
 To build and test an individual project (crypto3, for example):
 ```
