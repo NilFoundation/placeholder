@@ -11,10 +11,6 @@ cm_project(mac WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 include(CMDeploy)
 include(CMSetupVersion)
 
-cm_find_package(${CMAKE_WORKSPACE_NAME}_block)
-cm_find_package(${CMAKE_WORKSPACE_NAME}_hash)
-cm_find_package(${CMAKE_WORKSPACE_NAME}_modes)
-
 option(CRYPTO3_MAC_CBC "Build with CBC MAC support" TRUE)
 option(CRYPTO3_MAC_CMAC "Build with CMAC support" TRUE)
 option(CRYPTO3_MAC_HMAC "Build with HMAC support" TRUE)
