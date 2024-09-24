@@ -1,6 +1,5 @@
 cm_project(pkpad WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
-include(CMDeploy)
 include(CMSetupVersion)
 
 option(CRYPTO3_PK_PAD_EME_OAEP "Build with EME OAEP support" TRUE)
@@ -57,6 +56,7 @@ endif()
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
 add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE)
+add_library(${CMAKE_WORKSPACE_NAME}::${CURRENT_PROJECT_NAME} ALIAS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
 set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} PROPERTIES
                       EXPORT_NAME ${CURRENT_PROJECT_NAME})
@@ -73,10 +73,6 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
 
                            $<$<BOOL:${Boost_FOUND}>:${Boost_INCLUDE_DIRS}>)
-
-cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-          INCLUDE include
-          NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
 
 # Disabling tests because ./libs/pkpad/test/pkpad_emsa1_test is unable to find it's test data.
 # The paths need to be fixed.
