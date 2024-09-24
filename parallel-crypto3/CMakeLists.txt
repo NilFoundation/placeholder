@@ -29,7 +29,6 @@ endif()
 
 # TODO: check what is actually required here
 include(CMConfig)
-include(CMDeploy)
 include(CMSetupVersion)
 
 # TODO: beutify entire cmake tree of parallel crypto3 modules the same way we did in origin crypto3
