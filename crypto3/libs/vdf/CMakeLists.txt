@@ -69,9 +69,6 @@ elseif(CRYPTO3_VDF_BOOST)
     if(Boost_FOUND)
         cm_find_package(TomMath)
     endif()
-
-    cm_find_package(${CMAKE_WORKSPACE_NAME}_block)
-    cm_find_package(${CMAKE_WORKSPACE_NAME}_hash)
 endif()
 
 if(CRYPTO3_VDF_GMP OR CRYPTO3_VDF_MPIR)

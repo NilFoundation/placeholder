@@ -20,8 +20,6 @@ include(CMSetupVersion)
 
 cm_workspace(crypto3 SOURCES_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
-cm_find_package(${CMAKE_WORKSPACE_NAME}_random)
-
 cm_project(random WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
 cm_setup_version(VERSION 1.74.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})

@@ -12,9 +12,6 @@ include(CMConfig)
 
 cm_project(pbkdf WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
-cm_find_package(${CMAKE_WORKSPACE_NAME}_hash)
-cm_find_package(${CMAKE_WORKSPACE_NAME}_mac)
-
 option(CRYPTO3_PBKDF_PBKDF1 "Build with PBKDF1 support" TRUE)
 option(CRYPTO3_PBKDF_PBKDF2 "Build with PBKDF2 support" TRUE)
 option(CRYPTO3_PBKDF_PGP_S2K "Build with PGP S2K support" TRUE)
