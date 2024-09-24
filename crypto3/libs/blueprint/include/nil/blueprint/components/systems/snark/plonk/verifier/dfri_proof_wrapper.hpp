@@ -44,9 +44,8 @@ namespace nil {
                 public:
                     using field_type = typename PlaceholderParams::field_type;
                     using proof_type = nil::crypto3::zk::snark::placeholder_proof<field_type, PlaceholderParams>;
-                    using common_data_type = typename nil::crypto3::zk::snark::placeholder_public_preprocessor<field_type, PlaceholderParams>::preprocessed_data_type::common_data_type;
-                    placeholder_proof_wrapper(const common_data_type& common_data, const proof_type& proof, const std::vector<typename field_type::value_type>& evaluation_points)
-                        : common_data(common_data), proof(proof), points(evaluation_points) {
+                    dfri_proof_wrapper(const proof_type& proof, const std::vector<typename field_type::value_type>& evaluation_points)
+                        : proof(proof), points(evaluation_points) {
     
                         fill_vector();
                     }
@@ -64,7 +63,7 @@ namespace nil {
                     void fill_vector() {
 
 
-                        for(std::size_t i = 0; i < evaluation_points_num; i++){
+                        for(std::size_t i = 0; i < points.size(); i++){
                             _proof_field_vector.push_back(points[i]);
                         }
                         
@@ -139,7 +138,6 @@ namespace nil {
                         }
                     }
                 private:
-                    const common_data_type common_data;
                     const proof_type proof;
                     std::vector<typename field_type::value_type> points;
                     std::vector<typename field_type::value_type> _proof_field_vector;

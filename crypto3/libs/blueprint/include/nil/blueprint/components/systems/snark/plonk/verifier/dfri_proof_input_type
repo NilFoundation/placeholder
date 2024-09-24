@@ -123,9 +123,10 @@ namespace nil {
                         }
 
                         // Batched evaluations
+                        std::size_t itr = 0;
                         for(auto &[k, v]: eval_map){
-                            _evaluations[i] = var(0, cur++, false, var::column_type::public_input);
-                            var_vector.push_back(_evaluations[i]);
+                            _evaluations[itr++] = var(0, cur++, false, var::column_type::public_input);
+                            var_vector.push_back(_evaluations[itr]);
                         }
 
                         // Challenge

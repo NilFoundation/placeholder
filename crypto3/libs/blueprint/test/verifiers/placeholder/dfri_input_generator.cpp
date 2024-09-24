@@ -259,7 +259,7 @@ void export_to_json(ProofType const &proof, ParamsType const &fri_params, std::m
         first = true;
         for (auto [k, init_proof] : q.initial_proof) {
             if (!first) out << ",";
-            out << "{\"batch_id\":" << k << ", \"y\": [";
+            out << "{\"batch_id\":" << k << ", \"values\": [";
             first = true;
             for (auto &y : init_proof.values) {
                 if (!first)
@@ -268,7 +268,7 @@ void export_to_json(ProofType const &proof, ParamsType const &fri_params, std::m
                     first = false;
                 out << "[" << y[0][0] << "," << y[0][1] << "]";
             }
-            out << "],\"merkle_path\": [";
+            out << "],\"p\": {\"leaf_index\": " << init_proof.p.leaf_index() << ", \"root\": " << init_proof.p.root() << ",\"path\": [";
             first = true;
             for (auto &path : init_proof.p.path()) {
                 if (!first)
@@ -277,7 +277,7 @@ void export_to_json(ProofType const &proof, ParamsType const &fri_params, std::m
                     first = false;
                 out << "{\"position\":" << path[0].position() << ", \"hash\" :" << path[0].hash() << "}";
             }
-            out << "]}";
+            out << "]}}";
             first = false;
         }
         // round proofs
@@ -287,7 +287,7 @@ void export_to_json(ProofType const &proof, ParamsType const &fri_params, std::m
             if (!first)
                 out << ",";
             out << "{\"y\": [" << r.y[0][0] << ", " << r.y[0][1] << "]," << std::endl;
-            out << "\"merkle_path\": [";
+            out << "\"p\": {\"leaf_index\": " << r.p.leaf_index() << ", \"root\": " << r.p.root() << ",\"path\": [";
             first = true;
             for (auto &path : r.p.path()) {
                 if (!first)
@@ -296,7 +296,7 @@ void export_to_json(ProofType const &proof, ParamsType const &fri_params, std::m
                     first = false;
                 out << "{\"position\":" << path[0].position() << ", \"hash\" :" << path[0].hash() << "}";
             }
-            out << "]}";
+            out << "]}}";
             first = false;
         }
         out << "]}" << std::endl;
