@@ -83,6 +83,6 @@ setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET})
 
 # Declare multi-threaded target
 set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
-setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES actor::zk)
+setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all)
 
 install(TARGETS ${SINGLE_THREADED_TARGET} ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
