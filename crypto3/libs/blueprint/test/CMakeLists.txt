@@ -178,6 +178,7 @@ set(PLONK_TESTS_FILES
     "verifiers/flexible/pow_factor"
     "verifiers/flexible/linear_check"
     "verifiers/placeholder/verifier"
+    "verifiers/placeholder/dfri_verifier"
     "verifiers/placeholder/dfri_input_generator"
     "zkevm/bytecode"
     )

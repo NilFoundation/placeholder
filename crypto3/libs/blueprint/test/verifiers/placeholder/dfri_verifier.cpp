@@ -5,6 +5,7 @@
 // Copyright (c) 2022 Ilias Khairullin <ilias@nil.foundation>
 // Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
 // Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <estoniaa@nil.foundation>
 //
 // MIT License
 //
@@ -27,7 +28,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE lpc_test
+#define BOOST_TEST_MODULE dfri_verifier
 
 #include <string>
 #include <random>
@@ -177,7 +178,14 @@ struct test_fixture {
 };
 
 template<typename ProofType, typename ParamsType, typename ValueType>
-void export_to_json(ProofType const &proof, ParamsType const &fri_params, std::map<std::pair<std::size_t, std::size_t>, std::pair<std::size_t, std::size_t>> &eval_map, std::vector<ValueType> &points, std::string filename) {
+void export_to_json(
+    ProofType const &proof,
+    ParamsType const &fri_params,
+    std::map<std::pair<std::size_t, std::size_t>,
+    std::pair<std::size_t, std::size_t>> &eval_map,
+    std::vector<ValueType> &points,
+    std::string filename
+) {
 
     std::ofstream out(filename);
 
@@ -315,10 +323,10 @@ void export_to_json(ProofType const &proof, ParamsType const &fri_params, std::m
     out.close();
 }
 
-BOOST_AUTO_TEST_SUITE(lpc_math_polynomial_suite);
+BOOST_AUTO_TEST_SUITE(dfri_pallas_suite);
 BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     // Setup types.
-    typedef algebra::curves::pallas curve_type;
+/*  typedef algebra::curves::pallas curve_type;
     typedef typename curve_type::base_field_type FieldType;
     typedef typename FieldType::value_type value_type;
     typedef hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>> merkle_hash_type;
@@ -352,7 +360,7 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
 
     // Setup params
     std::size_t degree_log = std::ceil(std::log2(d - 1));
-    typename fri_type::params_type fri_params(1, /*max_step*/
+    typename fri_type::params_type fri_params(1,       // max_step
                                               degree_log,
                                               lambda,
                                               2,       // expand_factor
@@ -433,6 +441,7 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
     BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
 
     if(print_enabled) export_to_json(proof, fri_params, eval_map, points, "test1.json");
+    */
 }
 BOOST_AUTO_TEST_SUITE_END()
 

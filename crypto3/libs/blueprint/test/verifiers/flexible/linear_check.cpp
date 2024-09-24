@@ -36,7 +36,7 @@
 
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/components/systems/snark/plonk/placeholder/dfri_linear_check.hpp>
+#include <nil/blueprint/components/systems/snark/plonk/flexible/linear_check.hpp>
 
 #include "../../test_plonk_component.hpp"
 
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_dfri_linear_check_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_1_k_1) {
     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
-    using value_type = typename field_type::value_type;    
+    using value_type = typename field_type::value_type;
 
     static boost::random::mt19937 seed_seq;
     static nil::crypto3::random::algebraic_engine<field_type> generate_random(seed_seq);
@@ -152,9 +152,9 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_1_k_1) {
 
     std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(1,1)};
     std::size_t m = 1;
-    
+
     value_type expected_res = (y - z) * ((x - xi).inversed());
-    
+
     test_dfri_linear_check<field_type, 3>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 4>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 5>(public_inputs, expected_res, m, eval_map);
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_1_k_1) {
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_2) {
     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
-    using value_type = typename field_type::value_type;    
+    using value_type = typename field_type::value_type;
 
     static boost::random::mt19937 seed_seq;
     static nil::crypto3::random::algebraic_engine<field_type> generate_random(seed_seq);
@@ -182,9 +182,9 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_2) {
 
     std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(1,1), std::make_pair(1,2)};
     std::size_t m = 2;
-    
+
     value_type expected_res = (y - z[0]) * ((x - xi[0]).inversed()) + theta * (y - z[1]) * ((x - xi[1]).inversed());
-    
+
     test_dfri_linear_check<field_type, 3>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 4>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 5>(public_inputs, expected_res, m, eval_map);
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_2) {
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_1) {
     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
-    using value_type = typename field_type::value_type;    
+    using value_type = typename field_type::value_type;
 
     static boost::random::mt19937 seed_seq;
     static nil::crypto3::random::algebraic_engine<field_type> generate_random(seed_seq);
@@ -212,9 +212,9 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_1) {
 
     std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(1,1), std::make_pair(2,1)};
     std::size_t m = 2;
-    
+
     value_type expected_res = (y[0] - z[0]) * ((x - xi).inversed()) + theta * (y[1] - z[1]) * ((x - xi).inversed());
-    
+
     test_dfri_linear_check<field_type, 3>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 4>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 5>(public_inputs, expected_res, m, eval_map);
