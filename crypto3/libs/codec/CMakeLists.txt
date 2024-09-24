@@ -7,7 +7,6 @@
 #---------------------------------------------------------------------------#
 
 include(CMConfig)
-include(CMDeploy)
 include(CMSetupVersion)
 
 cm_project(codec WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES C CXX)
@@ -19,6 +18,7 @@ set(BUILD_WITH_CONFIGURATION_FILE_DIR "${CMAKE_CURRENT_LIST_DIR}/cmake" CACHE ST
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
 add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE)
+add_library(${CMAKE_WORKSPACE_NAME}::${CURRENT_PROJECT_NAME} ALIAS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
 if(CRYPTO3_CODEC_BASE58)
     target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE CRYPTO3_CODEC_BASE58)
@@ -38,10 +38,9 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 
                            ${Boost_INCLUDE_DIRS})
 
-cm_deploy(TARGETS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-          INCLUDE include
-          NAMESPACE ${CMAKE_WORKSPACE_NAME}::)
-
 # Some tests failed, so we are turning off tests for this submodule for now.
 # include(CMTest)
 # cm_add_test_subdirectory(test)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
