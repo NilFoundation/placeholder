@@ -148,6 +148,8 @@ namespace boost {
                             return i * cpp_int_modular_backend<Bits>::limb_bits + 
                                 boost::multiprecision::detail::find_msb(a.limbs()[i]);
                     } 
+                    if (a.limbs()[0] == 0) // TODO here should assert/throw
+                        return 1024; // Some big number to indicate that there is no bit 1
                     return boost::multiprecision::detail::find_msb(a.limbs()[0]);
                 }
 
