@@ -171,7 +171,19 @@ namespace nil {
                         out << std::endl << "\t\t\t\t]}";
                         after_first_inner = true;
                     }
-                    out << "\t\t\t]}" << std::endl;
+                    out << "\t\t\t]}," << std::endl;
+                    // serialize only hashes, as all paths are the same
+                    const auto &merkle_proof_path = outer_proof_vector.begin()->p.path();
+                    out << "\t\t\t{\"array\":[" << std::endl;
+                    bool path_after_first = false;
+                    for (const auto &path_elem : merkle_proof_path) {
+                        if (path_after_first) [[likely]] out << "," << std::endl;
+                        out << "\t\t\t\t" << generate_hash<typename commitment_scheme_type::lpc::merkle_hash_type>(
+                            path_elem[0].hash()
+                        );
+                        path_after_first = true;
+                    }
+                    out << std::endl << "\t\t\t]}";
                     after_first = true;
                 }
                 out << "\t]}]}," << std::endl;
@@ -233,12 +245,8 @@ namespace nil {
                             // each initial proof is polynomials_values_type values;
                             // which is std::vector<std::vector<std::array<value_type, FRI::m>>>
                             // and merkle_proof_type p;
-                            // first the values
-                            // I have no idea if we have to store keys, I hope we do not
                             const auto &values = value.values;
-                            bool outer_vec_after_first = false;
                             for (const auto &outer_vector : values) {
-                                if (outer_vec_after_first) [[likely]] out << "," << std::endl;
                                 out << "\t\t\t\t{\"array\":[" << std::endl;
                                 bool core_after_first = false;
                                 for (const auto &inner_vector : outer_vector) {
@@ -253,11 +261,20 @@ namespace nil {
                                     out << std::endl << "\t\t\t\t\t]}";
                                     core_after_first = true;
                                 }
-                                out << std::endl << "\t\t\t\t]}";
-                                outer_vec_after_first = true;
+                                out << std::endl << "\t\t\t\t]},";
                             }
-                            // we skip the merkle proof, as those are the same for all initial proofs
-                            // we serialize it right after this loop
+                            // serialize only hashes, as all paths are the same
+                            const auto &merkle_proof_path = initial_proofs_map.begin()->second.p.path();
+                            out << "\t\t\t\t{\"array\":[" << std::endl;
+                            bool path_after_first = false;
+                            for (const auto &path_elem : merkle_proof_path) {
+                                if (path_after_first) [[likely]] out << "," << std::endl;
+                                out << "\t\t\t\t\t" << generate_hash<typename commitment_scheme_type::lpc::merkle_hash_type>(
+                                    path_elem[0].hash()
+                                );
+                                path_after_first = true;
+                            }
+                            out << std::endl << "\t\t\t\t]}";
                             inner_after_first = true;
                         }
                         out << "\t\t\t]}" << std::endl;
@@ -267,7 +284,8 @@ namespace nil {
                     after_first = true;
                 }
                 out << "\t\t]}," << std::endl;
-                // and now serialize one of the merkle proofs
+                // and now serialize one of the merkle proof paths
+                // all of them should be the same
                 const auto &merkle_proof_path =
                     aggregated_proof.initial_proofs_per_prover.begin()->initial_fri_proofs.initial_proofs.begin()->begin()->second.p.path();
                 out << "\t\t{\"array\":[" << std::endl;
@@ -275,7 +293,7 @@ namespace nil {
                 for (const auto &path_elem : merkle_proof_path) {
                     if (after_first) [[likely]] out << "," << std::endl;
                     out << "\t\t\t\t" << generate_hash<typename commitment_scheme_type::lpc::merkle_hash_type>(
-                        path_elem[0].hash()
+                        path_elem[0].position()
                     );
                     after_first = true;
                 }
