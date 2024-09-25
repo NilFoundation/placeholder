@@ -333,9 +333,9 @@ struct test_setup_struct{
     using component_type = nil::blueprint::components::plonk_dfri_verifier<field_type>;
 
     typename component_type::fri_params_type                   component_fri_params;
-    std::map<std::size_t, std::size_t>                         batches_sizes;
+    std::map<std::size_t, std::size_t>                         batches_sizes; // It's a map just for compatibility with placeholder
     std::size_t                                                evaluation_points_amount;
-    std::map<std::pair<std::size_t, std::size_t>, std::size_t> eval_map;
+    std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> eval_map;
 };
 
 template<typename FieldType, std::size_t WitnessAmount>

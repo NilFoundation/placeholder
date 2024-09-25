@@ -88,7 +88,7 @@ namespace nil {
                 fri_params_type                                             fri_params;
                 std::map<std::size_t, std::size_t>                          batches_sizes;
                 std::size_t                                                 evaluation_points_amount;
-                std::map<std::pair<std::size_t, std::size_t>, std::size_t>  eval_map; //(batch_id,poly_id) => point_id
+                std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>>  eval_map; //(batch_id,poly_id) => point_id
 
                 struct challenges{
                     std::vector<var> fri_alphas;
@@ -117,7 +117,7 @@ namespace nil {
                         const fri_params_type &_fri_params,
                         const std::map<std::size_t, std::size_t> &_batches_sizes,
                         std::size_t  _evaluation_points_amount,
-                        const std::map<std::pair<std::size_t, std::size_t>, std::size_t> &_eval_map
+                        const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &_eval_map
                     ){
                         num_gates = 1;
                     }
@@ -132,7 +132,7 @@ namespace nil {
                     const fri_params_type                                            &fri_params,
                     const std::map<std::size_t, std::size_t>                         &batches_sizes,
                     std::size_t                                                      evaluation_points_amount,
-                    const std::map<std::pair<std::size_t, std::size_t>, std::size_t> &eval_map
+                    const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &eval_map
                 ) {
                     gate_manifest manifest = gate_manifest(gate_manifest_type(
                         witness_amount,
@@ -157,7 +157,7 @@ namespace nil {
                     const fri_params_type                       &_fri_params,
                     const std::map<std::size_t, std::size_t>    &_batches_sizes,
                     std::size_t                                 _evaluation_points_amount,
-                    const std::map<std::pair<std::size_t, std::size_t>, std::size_t> &_eval_map
+                    const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &_eval_map
                 ) {
                     return 15;
                 }
@@ -174,7 +174,7 @@ namespace nil {
                     const fri_params_type &_fri_params,
                     const std::map<std::size_t, std::size_t> &_batches_sizes,
                     std::size_t  _evaluation_points_amount,
-                    const std::map<std::pair<std::size_t, std::size_t>, std::size_t> &_eval_map
+                    const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &_eval_map
                 ):  component_type(witnesses, constants, public_inputs, get_manifest()),
                     fri_params(_fri_params),
                     batches_sizes(_batches_sizes),
