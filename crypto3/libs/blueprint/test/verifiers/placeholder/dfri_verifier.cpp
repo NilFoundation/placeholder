@@ -51,6 +51,7 @@
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
+#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
 #include <nil/crypto3/zk/commitments/type_traits.hpp>
@@ -59,8 +60,11 @@
 #include <nil/crypto3/random/algebraic_engine.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
+#include <nil/blueprint/components/systems/snark/plonk/verifier/dfri_verifier.hpp>
 #include <nil/crypto3/hash/poseidon.hpp>
+#include "../../test_plonk_component.hpp"
 
+using namespace nil;
 using namespace nil::crypto3;
 
 using dist_type = std::uniform_int_distribution<int>;
@@ -323,8 +327,88 @@ void export_to_json(
     out.close();
 }
 
+template<typename FieldType>
+struct test_setup_struct{
+    using field_type = FieldType;
+    using component_type = nil::blueprint::components::plonk_dfri_verifier<field_type>;
+
+    typename component_type::fri_params_type                   component_fri_params;
+    std::map<std::size_t, std::size_t>                         batches_sizes;
+    std::size_t                                                evaluation_points_amount;
+    std::map<std::pair<std::size_t, std::size_t>, std::size_t> eval_map;
+};
+
+template<typename FieldType, std::size_t WitnessAmount>
+void test_dfri_verifier(
+    const test_setup_struct<FieldType> &test_setup,
+    const nil::blueprint::components::detail::dfri_proof_wrapper<FieldType> &test_input
+){
+    std::cout << "Test with " << WitnessAmount << " witnesses" << std::endl;
+    using field_type = FieldType;
+    using val = typename field_type::value_type;
+    using constraint_system_type = nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
+    using table_description_type = nil::crypto3::zk::snark::plonk_table_description<field_type>;
+    using ColumnType = nil::crypto3::zk::snark::plonk_column<field_type>;
+    using assignment_table_type = nil::crypto3::zk::snark::plonk_table<field_type, ColumnType>;
+
+    std::array<std::uint32_t, WitnessAmount> witnesses;
+    for (std::uint32_t i = 0; i < WitnessAmount; i++) {
+        witnesses[i] = i;
+    }
+
+    using component_type = nil::blueprint::components::plonk_dfri_verifier<field_type>;
+    using var = crypto3::zk::snark::plonk_variable<val>;
+
+    component_type component_instance(
+        witnesses, std::array<std::uint32_t, 1>({0}), std::array<std::uint32_t, 0>(),
+        test_setup.component_fri_params, test_setup.batches_sizes,
+        test_setup.evaluation_points_amount, test_setup.eval_map //fri_params, batches_sizes, evaluation_points_num, eval_map
+    );
+
+    // TODO: remove it if we don't need test_plonk_component.
+    bool expected_res = true;
+    auto result_check = [&expected_res]( assignment_table_type &assignment, typename component_type::result_type &real_res) {
+            return true;
+    };
+
+    nil::blueprint::components::detail::dfri_proof_input_vars<field_type> input_vars;
+
+    table_description_type desc(WitnessAmount, 1, 1, 35); //Witness, public inputs, constants, selectors
+
+    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+    using hash_type = nil::crypto3::hashes::poseidon<poseidon_policy>;
+    nil::crypto3::test_component<component_type, field_type, hash_type, 9> (
+        component_instance, desc, test_input.vector(), result_check,
+        typename component_type::input_type(), nil::blueprint::connectedness_check_type::type::NONE,
+        test_setup.component_fri_params, test_setup.batches_sizes,
+        test_setup.evaluation_points_amount, test_setup.eval_map
+    );
+}
+
+template<typename field_type>
+void test_multiple_arithmetizations(
+    const test_setup_struct<field_type> &test_setup,
+    const nil::blueprint::components::detail::dfri_proof_wrapper<field_type> &test_input
+){
+    std::cout << "Load commitment params" << std::endl;
+    std::cout << "Load transcript state" << std::endl;
+    std::cout << "Load commitments" << std::endl;
+    std::cout << "Load evaluation points" << std::endl;
+    std::cout << "Load proof" << std::endl;
+
+    test_dfri_verifier<field_type,  15>(test_setup, test_input);
+    test_dfri_verifier<field_type,  42>(test_setup, test_input);
+    test_dfri_verifier<field_type,  84>(test_setup, test_input);
+    test_dfri_verifier<field_type, 168>(test_setup, test_input);
+}
+
+
 BOOST_AUTO_TEST_SUITE(dfri_pallas_suite);
+    using curve_type = algebra::curves::pallas;
+    using field_type = curve_type::base_field_type;
+    using val = typename field_type::value_type;
 BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
+
     // Setup types.
 /*  typedef algebra::curves::pallas curve_type;
     typedef typename curve_type::base_field_type FieldType;
@@ -360,12 +444,13 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
 
     // Setup params
     std::size_t degree_log = std::ceil(std::log2(d - 1));
-    typename fri_type::params_type fri_params(1,       // max_step
-                                              degree_log,
-                                              lambda,
-                                              2,       // expand_factor
-                                              true,    // use_grinding
-                                              12       // grinding_parameter
+    typename fri_type::params_type fri_params(
+        1,       // max_step
+        degree_log,
+        lambda,
+        2,       // expand_factor
+        true,    // use_grinding
+        12       // grinding_parameter
     );
 
     using lpc_scheme_type =
@@ -442,6 +527,9 @@ BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
 
     if(print_enabled) export_to_json(proof, fri_params, eval_map, points, "test1.json");
     */
+    test_setup_struct<field_type>  test_setup;
+    nil::blueprint::components::detail::dfri_proof_wrapper<field_type> test_input;
+    test_multiple_arithmetizations<field_type>(test_setup, test_input);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
