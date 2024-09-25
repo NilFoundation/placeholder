@@ -13,8 +13,6 @@ target_include_directories(${TARGET_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-find_package(actor_zk REQUIRED)
-
 find_package(proof-producer REQUIRED)
 
 target_link_libraries(${TARGET_NAME}
