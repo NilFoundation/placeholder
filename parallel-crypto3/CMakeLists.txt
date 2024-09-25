@@ -29,7 +29,6 @@ endif()
 
 # TODO: check what is actually required here
 include(CMConfig)
-include(CMDeploy)
 include(CMSetupVersion)
 
 # TODO: beutify entire cmake tree of parallel crypto3 modules the same way we did in origin crypto3
@@ -53,3 +52,20 @@ add_subdirectory(libs/parallelization-utils)
 add_subdirectory(libs/parallel-containers)
 add_subdirectory(libs/parallel-math)
 add_subdirectory(libs/parallel-zk)
+
+# Configure package file to be able to import headers
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
+set(CONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/parallel-crypto3)
+
+configure_package_config_file(
+        cmake/Config.cmake.in
+        parallel-crypto3Config.cmake
+        INSTALL_DESTINATION ${CONFIG_DIR}
+)
+
+install(
+        FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/parallel-crypto3Config.cmake
+        DESTINATION ${CONFIG_DIR}
+)

@@ -39,6 +39,11 @@
             runTests = true;
             sanitize = true;
           });
+          crypto3-clang-debug = (pkgs.callPackage ./crypto3/crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = false;
+            enableDebug = true;
+          });
           
           parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             runTests = false;
@@ -55,8 +60,14 @@
             runTests = true;
             crypto3 = crypto3;
           });
+          parallel-crypto3-clang-debug = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            enableDebug = true;
+            runTests = false;
+            crypto3 = crypto3-clang-debug;
+          });
 
-            evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
+          evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = false;
             enableDebug = false;
             crypto3 = crypto3;
@@ -70,6 +81,12 @@
             enableDebug = true;
             runTests = true;
             crypto3 = crypto3;
+          });
+          evm-assigner-clang-debug = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            enableDebug = true;
+            runTests = false;
+            crypto3 = crypto3-clang-debug;
           });
 
           zkevm-framework = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -90,6 +107,13 @@
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
           });
+          zkevm-framework-clang-debug = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            enableDebug = true;
+            runTests = false;
+            crypto3 = crypto3-clang-debug;
+            evm-assigner = evm-assigner-clang-debug;
+          });
 
           transpiler = (pkgs.callPackage ./transpiler/transpiler.nix {
             runTests = false;
@@ -105,6 +129,12 @@
             enableDebug = true;
             runTests = true;
             crypto3 = crypto3;
+          });
+          transpiler-clang-debug = (pkgs.callPackage ./transpiler/transpiler.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            enableDebug = true;
+            runTests = false;
+            crypto3 = crypto3-clang-debug;
           });
 
           proof-producer = (pkgs.callPackage ./proof-producer/proof-producer.nix {
@@ -127,6 +157,14 @@
             crypto3 = crypto3;
             transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
+          });
+          proof-producer-clang-debug = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            enableDebug = true;
+            runTests = false;
+            crypto3 = crypto3-clang-debug;
+            transpiler = transpiler-clang-debug;
+            parallel-crypto3 = parallel-crypto3-clang-debug;
           });
 
           # The "all" package will build all packages. Convenient for CI,
