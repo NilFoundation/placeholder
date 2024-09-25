@@ -3,8 +3,9 @@ project(parallel-crypto3)
 
 find_package(CM)
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "-ggdb -O0")
+if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
 endif()
 
 # This is useful due to some build systems (Ninja in particular) are piping
