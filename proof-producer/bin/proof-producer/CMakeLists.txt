@@ -46,10 +46,28 @@ function(setup_proof_generator_target)
     # actor-zk must come first.
     if(ARG_ADDITIONAL_DEPENDENCIES)
         foreach(lib IN LISTS ARG_ADDITIONAL_DEPENDENCIES)
-            target_link_libraries(${ARG_TARGET_NAME} ${lib})
             target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${lib})
         endforeach()
     endif()
+
+    target_include_directories(${ARG_TARGET_NAME}-lib INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
+
+    target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE
+        crypto3::all
+        crypto3::transpiler
+        Boost::filesystem
+        Boost::log
+        Boost::thread
+    )
+
+    target_include_directories(${ARG_TARGET_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(${ARG_TARGET_NAME} PRIVATE ${ARG_TARGET_NAME}-lib Boost::program_options)
 
     set_target_properties(${ARG_TARGET_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
@@ -63,37 +81,6 @@ function(setup_proof_generator_target)
         target_compile_options(${ARG_TARGET_NAME} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif ()
 
-    target_include_directories(${ARG_TARGET_NAME} PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    )
-
-    target_include_directories(${ARG_TARGET_NAME}-lib INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    )
-
-    target_link_libraries(${ARG_TARGET_NAME}
-        crypto3::all
-
-        crypto3_transpiler
-
-        Boost::filesystem
-        Boost::log
-        Boost::program_options
-        Boost::thread
-    )
-
-    target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE
-        crypto3::all
-
-        crypto3::transpiler
-
-        Boost::filesystem
-        Boost::log
-        Boost::program_options
-        Boost::thread
-    )
 endfunction()
 
 # Declare single-threaded target

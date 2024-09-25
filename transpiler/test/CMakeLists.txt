@@ -8,7 +8,7 @@
 
 include(CMTest)
 
-cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+cm_test_link_libraries(${CURRENT_PROJECT_NAME}
                       crypto3::all
                       ${Boost_LIBRARIES})
 

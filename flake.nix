@@ -94,8 +94,8 @@
             enableDebug = false;
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
-            transpiler = transpiler;
             proof-producer = proof-producer;
+            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -103,8 +103,8 @@
             enableDebug = false;
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
-            transpiler = transpiler;
             proof-producer = proof-producer;
+            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-debug-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -112,8 +112,8 @@
             runTests = true;
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
-            transpiler = transpiler;
             proof-producer = proof-producer;
+            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-clang-debug = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -233,7 +233,7 @@
             enableDebug = false;
             crypto3 = packages.crypto3;
             evm-assigner = evm-assigner-gcc;
-            transpiler = packages.transpiler;
+            transpiler = transpiler-gcc;
             proof-producer = proof-producer-gcc;
             parallel-crypto3 = packages.parallel-crypto3;
           });

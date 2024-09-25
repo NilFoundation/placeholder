@@ -21,7 +21,7 @@
 #include <optional>
 #include <utility>
 
-#include <nil/proof-generator/arg_parser.hpp>
+#include <arg_parser.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 #include <nil/proof-generator/prover.hpp>
 
