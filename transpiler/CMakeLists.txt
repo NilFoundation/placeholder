@@ -12,8 +12,12 @@ find_package(CM REQUIRED)
 include(CMConfig)
 include(CMSetupVersion)
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "-ggdb -O0")
+if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb") # gdb only works well with gcc
+    endif()
+    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
 endif()
 
 cm_workspace(crypto3)
