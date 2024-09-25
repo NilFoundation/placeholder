@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 option(BUILD_ASSIGNER_TESTS "Build unit tests" FALSE)
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "-ggdb -O0")
+if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
 endif()
 
 set(evmone_sources
