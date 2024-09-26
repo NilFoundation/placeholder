@@ -59,7 +59,8 @@ namespace nil {
             public:
                 //using placeholder_info_type = nil::crypto3::zk::snark::placeholder_info<SrcParams>;
                 using component_type =  plonk_component<BlueprintFieldType>;
-                using value_type = typename BlueprintFieldType::value_type;
+                using field_type = BlueprintFieldType;
+                using val = typename BlueprintFieldType::value_type;
                 using var = typename component_type::var;
 
                 using poseidon_component_type = plonk_flexible_poseidon<BlueprintFieldType>;
@@ -71,16 +72,8 @@ namespace nil {
 
                 std::size_t rows_amount; // calculator, please
 
-                // Internal structure that doesn't depend on commitment scheme types
-                // Parts from fri_params that are useful for this component
-                struct fri_params_type{
-                    std::size_t r;
-                    std::size_t lambda;
-                    value_type  omega;
-                    std::size_t domain_size;
-                    std::size_t initial_merkle_proof_size;
-                    std::size_t max_degree;
-                };
+                using fri_params_type = detail::dfri_component_params<field_type>;
+
 //              TODO: add constants from fixed batches. // TODO: think about them later
 //              It just costs a number of copy constraints and constant columns
 
@@ -88,7 +81,7 @@ namespace nil {
                 fri_params_type                                             fri_params;
                 std::map<std::size_t, std::size_t>                          batches_sizes;
                 std::size_t                                                 evaluation_points_amount;
-                std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>>  eval_map; //(batch_id,poly_id) => point_id
+                std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>>  eval_map; //(batch_id,poly_id) => point_id
 
                 struct challenges{
                     std::vector<var> fri_alphas;
@@ -117,7 +110,7 @@ namespace nil {
                         const fri_params_type &_fri_params,
                         const std::map<std::size_t, std::size_t> &_batches_sizes,
                         std::size_t  _evaluation_points_amount,
-                        const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &_eval_map
+                        const std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> &_eval_map
                     ){
                         num_gates = 1;
                     }
@@ -132,7 +125,7 @@ namespace nil {
                     const fri_params_type                                            &fri_params,
                     const std::map<std::size_t, std::size_t>                         &batches_sizes,
                     std::size_t                                                      evaluation_points_amount,
-                    const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &eval_map
+                    const std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> &eval_map
                 ) {
                     gate_manifest manifest = gate_manifest(gate_manifest_type(
                         witness_amount,
@@ -157,7 +150,7 @@ namespace nil {
                     const fri_params_type                       &_fri_params,
                     const std::map<std::size_t, std::size_t>    &_batches_sizes,
                     std::size_t                                 _evaluation_points_amount,
-                    const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &_eval_map
+                    const std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> &_eval_map
                 ) {
                     return 15;
                 }
@@ -174,7 +167,7 @@ namespace nil {
                     const fri_params_type &_fri_params,
                     const std::map<std::size_t, std::size_t> &_batches_sizes,
                     std::size_t  _evaluation_points_amount,
-                    const std::map<std::pair<std::size_t, std::size_t>, std::set<std::size_t>> &_eval_map
+                    const std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> &_eval_map
                 ):  component_type(witnesses, constants, public_inputs, get_manifest()),
                     fri_params(_fri_params),
                     batches_sizes(_batches_sizes),

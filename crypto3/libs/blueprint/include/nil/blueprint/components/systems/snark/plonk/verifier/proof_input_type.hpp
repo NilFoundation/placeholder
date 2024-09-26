@@ -235,8 +235,8 @@ namespace nil {
                                 var y1_var = var(0, cur++, false, var::column_type::public_input);
                                 var_vector.push_back(y0_var);
                                 var_vector.push_back(y1_var);
-                                _round_proof_values[i].push_back(y0_var);
-                                _round_proof_values[i].push_back(y1_var);
+                                round_proof_values[i].push_back(y0_var);
+                                round_proof_values[i].push_back(y1_var);
                             }
                             // Round proof hashes
                             for( std::size_t j = 0; j < placeholder_info.round_proof_layers_num; j++ ){

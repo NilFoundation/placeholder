@@ -44,22 +44,100 @@ namespace nil {
                     using val = typename BlueprintFieldType::value_type;
                     public:
                         dfri_proof_wrapper(){}
+                        template<typename ProofType>
+                        dfri_proof_wrapper(
+                            val                         transcript_initial_state,
+                            const std::map<std::size_t, val> &_commitments,
+                            const std::vector<val>      &evaluation_points,
+                            const ProofType             &proof
+                        ){
+                            // initial transcript state
+                            full_input.push_back(transcript_initial_state);
+
+                            // commitments
+                            for( const auto &[k,v]: _commitments ) full_input.push_back(v);
+
+                            // evaluation points
+                            for( std::size_t i = 0; i < evaluation_points.size(); i++ ) full_input.push_back(evaluation_points[i]);
+
+                            // evaluations
+                            auto batch_info = proof.z.get_batch_info();
+                            for(const auto& [k, v]: batch_info){
+                                for(std::size_t i = 0; i < v; i++){
+                                    BOOST_ASSERT(proof.z.get_poly_points_number(k, i) != 0);
+                                    for(std::size_t j = 0; j < proof.z.get_poly_points_number(k, i); j++){
+                                        full_input.push_back(proof.z.get(k, i, j));
+                                    }
+                                }
+                            }
+
+                            // fri roots
+                            for( std::size_t i = 0; i < proof.fri_proof.fri_roots.size(); i++){
+                                full_input.push_back(proof.fri_proof.fri_roots[i]);
+                            }
+                            // final polynomials
+                            for( std::size_t i = 0; i < proof.fri_proof.final_polynomial.size(); i++){
+                                full_input.push_back(proof.fri_proof.final_polynomial[i]);
+                            }
+                            // query proofs
+                            for( std::size_t q = 0; q < proof.fri_proof.query_proofs.size(); q++){
+                                const auto &query_proof = proof.fri_proof.query_proofs[q];
+                                // initial proof values
+                                for( const auto &[j, initial_proof]: query_proof.initial_proof){
+                                    for( std::size_t k = 0; k < initial_proof.values.size(); k++){
+                                        full_input.push_back(initial_proof.values[k][0][0]);
+                                        full_input.push_back(initial_proof.values[k][0][1]);
+                                    }
+                                }
+                                // merkle tree positions is stored only for the first initial proof
+                                for( const auto &[j, initial_proof]: query_proof.initial_proof){
+                                    for( std::size_t k = 0; k < initial_proof.p.path().size(); k++){
+                                        full_input.push_back(initial_proof.p.path()[k][0].position());
+                                    }
+                                    break;
+                                }
+
+                                // initial proof hashes are stored for all hashes.
+                                for( const auto &[j, initial_proof]: query_proof.initial_proof){
+                                    for( std::size_t k = 0; k < initial_proof.p.path().size(); k++){
+                                        full_input.push_back(initial_proof.p.path()[k][0].hash());
+                                    }
+                                }
+
+                                // round proof values
+                                for( std::size_t j = 0; j < query_proof.round_proofs.size(); j++){
+                                    const auto &round_proof = query_proof.round_proofs[j];
+                                    full_input.push_back(round_proof.y[0][0]);
+                                    full_input.push_back(round_proof.y[0][1]);
+                                }
+
+                                // round proof hashes
+                                for( std::size_t j = 0; j < query_proof.round_proofs.size(); j++){
+                                    const auto& p = query_proof.round_proofs[j].p;
+                                    for( std::size_t k = 0; k < p.path().size(); k++){
+                                        full_input.push_back(p.path()[k][0].hash());
+                                    }
+                                }
+                            }
+                        }
                         const std::vector<val> &vector() const{
                             return full_input;
                         }
                     private:
-                        val              initial_transcript_state;
-                        std::vector<val> commitments;
-                        std::vector<val> evaluation_points;
+                        // Just for testing purposes. Remove later.
+                        val                         initial_transcript_state;
+                        std::map<std::size_t, val>  commitments;             // Just for placeholder compatibility
+                        std::vector<val>            evaluation_points;
 
                         // Proof itself.
-                        std::vector<val> fri_roots;
                         std::vector<val> evaluations;
+                        std::vector<val> fri_roots;
+                        std::vector<val> final_polynomial;
                         std::vector<std::vector<val>> merkle_tree_positions; // Lambda merkle positions
                         std::vector<std::vector<val>> initial_proof_values;  // 2 x Lambda x |bathes_sizes_sum| initial proof values
                         std::vector<std::vector<val>> initial_proof_hashes;  // 2 x Lambda x batches_num initial proof hashes
-                        std::vector<val> round_proof_values;                 // Keep all values for all rounds into single array
-                        std::vector<val> round_proof_hashes;                 // Keep all hashes for all rounds into single array
+                        std::vector<std::vector<val>> round_proof_values;    // Keep all values for all rounds into single vector
+                        std::vector<std::vector<val>> round_proof_hashes;    // Keep all hashes for all rounds into single vector
                         std::vector<val> full_input;
                 };
             }
