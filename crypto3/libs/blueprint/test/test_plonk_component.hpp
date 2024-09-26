@@ -201,8 +201,7 @@ namespace nil {
                 assigner(component_instance, assignment, instance_input, start_row));
 
             // Stretched components do not have a manifest, as they are dynamically generated.
-            if constexpr (!blueprint::components::is_component_stretcher<
-                                    BlueprintFieldType, ComponentType>::value) {
+            if constexpr (!blueprint::components::is_component_stretcher < BlueprintFieldType, ComponentType>::value) {
                 BOOST_ASSERT_MSG(bp.num_gates() + bp.num_lookup_gates() ==
                                 component_type::get_gate_manifest(component_instance.witness_amount(),
                                                                   component_static_info_args...).get_gates_amount(),
