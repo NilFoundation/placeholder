@@ -403,6 +403,7 @@ namespace nil {
                                     start_row_index + constant_remapping[old_var.rotation],
                                     instance_input);
                             } else {
+                                assert(line_mapping.size() > old_var.rotation);
                                 new_var = move_var(
                                     old_var,
                                     start_row_index + line_mapping[old_var.rotation],
