@@ -37,10 +37,10 @@
 namespace nil {
     namespace blueprint {
         namespace components {
-            // Linear check with points (s,y0), (-s,y1) at point alpha
-            // Input: s, y0, y1, alpha
-            // Output: y = y0 + (y1 - y0)*(s - alpha)/(2s)
-            // DOES NOT CHECK THAT s != 0
+            // 
+            // Input: theta, x, {xi}, {y_ij}, {z_ij}
+            // Output: sum theta^l (yij - z_ij)/(x - xi_l)
+            // DOES NOT CHECK THAT x = xi
             template<typename ArithmetizationType, typename BlueprintFieldType>
             class dfri_linear_check;
 
@@ -55,37 +55,121 @@ namespace nil {
                 using manifest_type = plonk_component_manifest;
 
                 class gate_manifest_type : public component_gate_manifest {
+                    std::uint32_t num_gates;
                 public:
                     std::size_t m;
+                    std::size_t witness_amount;
                     std::uint32_t gates_amount() const override {
-                        return dfri_linear_check::gates_amount;
+                        return num_gates;
                     }
 
-                    gate_manifest_type(std::size_t m_) :m(m_) {};
+                    gate_manifest_type(std::size_t witness_amount_, std::size_t m_) :m(m_), witness_amount(witness_amount_) {
+                        num_gates = dfri_linear_check::get_gates_amount(witness_amount, m);
+                    };
+
+                    bool operator<(const component_gate_manifest *other) const override {
+                        return witness_amount < dynamic_cast<const gate_manifest_type*>(other)->witness_amount && 
+                                m < dynamic_cast<const gate_manifest_type*>(other)->m;
+                    }
                 };
 
                 static gate_manifest get_gate_manifest(std::size_t witness_amount, std::size_t m) {
-                    static gate_manifest manifest = gate_manifest(gate_manifest_type(m));
+                    gate_manifest manifest = gate_manifest(gate_manifest_type(witness_amount, m));
                     return manifest;
                 }
 
                 static manifest_type get_manifest() {
-                    static manifest_type manifest =
-                        manifest_type(std::shared_ptr<manifest_param>(new manifest_range_param(3, 15)), false);
+                    manifest_type manifest =
+                        manifest_type(std::shared_ptr<manifest_param>(new manifest_range_param(3, 150)), false);
                     return manifest;
                 }
 
                 const std::size_t m;
                 const std::vector<std::pair<std::size_t, std::size_t>> eval_map;
 
-                const std::vector<std::array<std::pair<std::size_t, std::size_t>, 9>> fullconfig =
-                    full_configuration(this->witness_amount(), 0, m);
+                const std::vector<std::pair<std::size_t, std::size_t>> optimal_layout = search_optimal_layout(this->witness_amount(), m);
+
+                const std::vector<std::array<std::pair<std::size_t, std::size_t>, 9>> fullconfig = full_configuration(this->witness_amount(), 0, m, optimal_layout);
 
                 constexpr static std::size_t get_rows_amount(std::size_t witness_amount, std::size_t m) {
-                    return m * std::ceil(9.0 / witness_amount);
+
+                    auto optimal_layout = search_optimal_layout(witness_amount, m);
+                    std::size_t rows = 0;
+                    for(const auto &[k, w] : optimal_layout){
+                        rows = std::max(rows, k * static_cast<std::size_t>(std::ceil(9.0 / w)));
+                    }
+                    return rows;
                 }
 
-                constexpr static const std::size_t gates_amount = 1;
+                constexpr static std::size_t get_gates_amount(std::size_t witness_amount, std::size_t m) {
+
+                    auto optimal_layout = search_optimal_layout(witness_amount, m);
+                    return optimal_layout.size();
+                }
+
+                static std::vector<std::pair<std::size_t, std::size_t>> search_optimal_layout(std::size_t witness_amount, std::size_t m){
+
+                    std::vector<std::vector<std::size_t>> best_rows;
+                    std::vector<std::vector<std::size_t>> gate_amounts;
+                    best_rows.resize(m+1);
+                    gate_amounts.resize(m+1);
+                    std::size_t nine = 9;
+                    for(std::size_t i = 0; i <= m; i++){
+                        best_rows[i] = std::vector<std::size_t>(witness_amount + 1);
+                        gate_amounts[i] = std::vector<std::size_t>(witness_amount + 1);
+                        std::fill(best_rows[i].begin(), best_rows[i].end(), 9999);
+                        std::fill(gate_amounts[i].begin(), gate_amounts[i].end(), 0);
+                        if(i > 0){
+                            for(std::size_t j = 3; j <= std::min(witness_amount, nine); j++){
+                                best_rows[i][j] =  i * (std::size_t) std::ceil(9.0 / j);    
+                                gate_amounts[i][j] = 1;
+                            }
+                        }
+                    }
+                    std::fill(best_rows[0].begin(), best_rows[0].end(), 0);
+                    
+                    
+                    std::map<std::pair<std::size_t, std::size_t>,std::pair<std::size_t, std::size_t>> config;
+                    
+                    for(std::size_t i = 1; i < witness_amount; i++){
+                        config[{0, i}] = std::make_pair(0, i);
+                    }
+                    for(std::size_t k = 1; k <= m; k++){
+                        for(std::size_t i = 1; i < 10; i++){
+                            config[{k, i}] = std::make_pair(k, i);
+                        }
+                        for(std::size_t i = 10; i <= witness_amount; i++){
+                            for(std::size_t j = 1; j <= 9; j++){
+                                for(std::size_t l = 0; l <= k; l++){
+                                    std::size_t row = std::max(best_rows[k - l][i - j], best_rows[l][j]);
+                                    auto gate_amount = gate_amounts[k-l][i - j] + gate_amounts[l][j];
+                                    if(row < best_rows[k][i] || (row == best_rows[k][i] && gate_amount <= gate_amounts[k][i])){
+                                        config[{k, i}] = std::make_pair(l, j);
+                                        best_rows[k][i] = row;
+                                        gate_amounts[k][i] = gate_amount;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    std::vector<std::pair<std::size_t, std::size_t>> trace;
+                    trace.resize(0);
+                    auto _m = m;
+                    auto _w = witness_amount;
+                    while(_m > 0){
+                        trace.push_back(config[{_m, _w}]);
+                        _m = _m - trace.back().first;
+                        _w = _w - trace.back().second;
+                    } 
+                    std::sort(trace.begin(), trace.end(), [](const std::pair<std::size_t,std::size_t> &left, const std::pair<std::size_t,std::size_t> &right) {
+                        return left.second > right.second;
+                    });
+
+                    return trace;
+                }
+
+                const std::size_t gates_amount = get_gates_amount(this->witness_amount(), m);
                 const std::size_t rows_amount = get_rows_amount(this->witness_amount(), m);
                 const std::string component_name = "dfri linear check component";
 
@@ -115,7 +199,7 @@ namespace nil {
                     var output;
 
                     result_type(const dfri_linear_check &component, std::uint32_t start_row_index) {
-
+                        // BOOST_ASSERT(component.fullconfig.size() == component.m);
                         output = var(component.W(component.fullconfig[component.m-1][8].first),
                                      start_row_index + component.fullconfig[component.m-1][8].second, false, var::column_type::witness);
                     }
@@ -125,7 +209,7 @@ namespace nil {
                     }
                 };
 
-                static std::array<std::pair<std::size_t, std::size_t>, 9> configure_blocks(std::size_t witness_amount,
+                static std::array<std::pair<std::size_t, std::size_t>, 9> configure_blocks(std::size_t witness_amount, std::size_t col,
                                                                                            std::size_t row) {
 
                     std::array<std::pair<std::size_t, std::size_t>, 9> locations;
@@ -133,7 +217,7 @@ namespace nil {
                     std::size_t r = 0, c = 0;
                     for (std::size_t i = 0; i < 9; i++) {
                         r = row + i / witness_amount;
-                        c = i % witness_amount;
+                        c = col + i % witness_amount;
                         locations[i] = std::make_pair(c, r);
                     }
 
@@ -141,29 +225,41 @@ namespace nil {
                 }
 
                 static std::vector<std::array<std::pair<std::size_t, std::size_t>, 9>>
-                    full_configuration(std::size_t witness_amount, std::size_t row, std::size_t m) {
+                    full_configuration(std::size_t witness_amount, std::size_t row, std::size_t m, const std::vector<std::pair<std::size_t, std::size_t>> &optimal_layout) {
 
                     std::vector<std::array<std::pair<std::size_t, std::size_t>, 9>> configs;
-                    std::size_t single_block_rows = std::ceil(9.0 / witness_amount);
+                    std::size_t single_block_rows;
+                    std::size_t last_col = 0;
 
-                    for (std::size_t i = 0; i < m; i++) {
-                        configs.push_back(configure_blocks(witness_amount, row + i * single_block_rows));
+                    std::cout << optimal_layout.size() << std::endl;
+                    for(const auto &[k, v] : optimal_layout){
+                        single_block_rows = std::ceil(9.0 / v);
+                        for (std::size_t i = 0; i < k; i++) {
+                            configs.push_back(configure_blocks(v, last_col, row + i * single_block_rows));
+                        }
+                        last_col += v;
                     }
 
+                    BOOST_ASSERT(last_col <= witness_amount);
+                    BOOST_ASSERT(configs.size() == m);
                     return configs;
                 }
 
                 template<typename ContainerType>
                 dfri_linear_check(ContainerType witness, std::size_t m_,
                                   std::vector<std::pair<std::size_t, std::size_t>> eval_map_) :
-                    component_type(witness, {}, {}, get_manifest()), m(m_), eval_map(eval_map_) {};
+                    component_type(witness, {}, {}, get_manifest()), m(m_), eval_map(eval_map_) {
+
+                    };
 
                 template<typename WitnessContainerType, typename ConstantContainerType,
                          typename PublicInputContainerType>
                 dfri_linear_check(WitnessContainerType witness, ConstantContainerType constant,
                                   PublicInputContainerType public_input, std::size_t m_,
                                   std::vector<std::pair<std::size_t, std::size_t>> eval_map_) :
-                    component_type(witness, constant, public_input, get_manifest()), m(m_), eval_map(eval_map_) {};
+                    component_type(witness, constant, public_input, get_manifest()), m(m_), eval_map(eval_map_) {
+
+                    };
 
                 dfri_linear_check(
                     std::initializer_list<typename component_type::witness_container_type::value_type> witnesses,
@@ -171,7 +267,9 @@ namespace nil {
                     std::initializer_list<typename component_type::public_input_container_type::value_type>
                         public_inputs,
                     std::size_t m_, std::vector<std::pair<std::size_t, std::size_t>> eval_map_) :
-                    component_type(witnesses, constants, public_inputs, get_manifest()), m(m_), eval_map(eval_map_) {};
+                    component_type(witnesses, constants, public_inputs, get_manifest()), m(m_), eval_map(eval_map_) {
+
+                    };
             };
 
             template<typename BlueprintFieldType>
@@ -188,6 +286,7 @@ namespace nil {
                 using value_type = typename BlueprintFieldType::value_type;
 
                 BOOST_ASSERT(component.fullconfig.size() == component.m);
+                BOOST_ASSERT(component.optimal_layout.size() == component.gates_amount);
 
                 std::size_t il, jl;
                 value_type x, xi, xsubxiinv, y, z, q, q_new;
@@ -230,7 +329,7 @@ namespace nil {
             }
 
             template<typename BlueprintFieldType>
-            std::size_t
+            std::vector<std::size_t>
                 generate_gates(const plonk_dfri_linear_check<BlueprintFieldType> &component,
                                circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
                                assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &assignment,
@@ -238,24 +337,33 @@ namespace nil {
 
                 using var = typename plonk_dfri_linear_check<BlueprintFieldType>::var;
 
-                int shift = (component.witness_amount() > 4) ? 0 : -1;
+                std::vector<std::size_t> selectors;
+                std::size_t last_col = 0;
+                for(auto &[k, v] : component.optimal_layout){
 
-                auto single_block = component.fullconfig[0];
-                var x = var(component.W(single_block[0].first), static_cast<int>(single_block[0].second + shift));
-                var xi = var(component.W(single_block[1].first), static_cast<int>(single_block[1].second + shift));
-                var xsubxiinv =
-                    var(component.W(single_block[2].first), static_cast<int>(single_block[2].second + shift));
-                var y = var(component.W(single_block[3].first), static_cast<int>(single_block[3].second + shift));
-                var z = var(component.W(single_block[4].first), static_cast<int>(single_block[4].second + shift));
-                var q = var(component.W(single_block[5].first), static_cast<int>(single_block[5].second + shift));
-                var theta = var(component.W(single_block[6].first), static_cast<int>(single_block[6].second + shift));
-                var q_last = var(component.W(single_block[7].first), static_cast<int>(single_block[7].second + shift));
-                var q_new = var(component.W(single_block[8].first), static_cast<int>(single_block[8].second + shift));
+                    int shift = (v > 4) ? 0 : -1;
+                    auto single_block = plonk_dfri_linear_check<BlueprintFieldType>::configure_blocks(v, last_col, 0);
+                    last_col += v;
 
-                auto constraint_1 = (x - xi) * xsubxiinv - 1;
-                auto constraint_2 = q * (x - xi) - (y - z);
-                auto constraint_3 = q_new - (q_last * theta + q);
-                return bp.add_gate({constraint_1, constraint_2, constraint_3});
+                    var x = var(component.W(single_block[0].first), static_cast<int>(single_block[0].second + shift));
+                    var xi = var(component.W(single_block[1].first), static_cast<int>(single_block[1].second + shift));
+                    var xsubxiinv =
+                        var(component.W(single_block[2].first), static_cast<int>(single_block[2].second + shift));
+                    var y = var(component.W(single_block[3].first), static_cast<int>(single_block[3].second + shift));
+                    var z = var(component.W(single_block[4].first), static_cast<int>(single_block[4].second + shift));
+                    var q = var(component.W(single_block[5].first), static_cast<int>(single_block[5].second + shift));
+                    var theta = var(component.W(single_block[6].first), static_cast<int>(single_block[6].second + shift));
+                    var q_last = var(component.W(single_block[7].first), static_cast<int>(single_block[7].second + shift));
+                    var q_new = var(component.W(single_block[8].first), static_cast<int>(single_block[8].second + shift));
+
+                    auto constraint_1 = (x - xi) * xsubxiinv - 1;
+                    auto constraint_2 = q * (x - xi) - (y - z);
+                    auto constraint_3 = q_new - (q_last * theta + q);
+
+                    selectors.push_back(bp.add_gate({constraint_1, constraint_2, constraint_3}));
+                }
+
+                return selectors;
             }
 
             template<typename BlueprintFieldType>
@@ -314,13 +422,22 @@ namespace nil {
 
                 generate_assignments_constant(component, bp, assignment, instance_input, start_row_index);
 
-                std::size_t selector_index = generate_gates(component, bp, assignment, instance_input);
+                std::vector<std::size_t> selector_index = generate_gates(component, bp, assignment, instance_input);
+                for(const auto &s : selector_index){
+                    std::cout << s << std::endl;
+                }
+                std::size_t single_block_rows;
+                std::size_t shift;
 
-                std::size_t single_block_rows = std::ceil(9.0 / component.witness_amount());
-                std::size_t shift = (component.witness_amount() > 4) ? 0 : 1;
-
-                for (std::size_t l = 0; l < component.m; l++) {
-                    assignment.enable_selector(selector_index, start_row_index + l * single_block_rows + shift);
+                std::size_t sel = 0;
+                for(auto &[k, v] : component.optimal_layout){
+                    shift = (v > 4) ? 0 : 1;
+                    single_block_rows = std::ceil(9.0 / v);
+                    for (std::size_t l = 0; l < k; l++) {
+                        assignment.enable_selector(selector_index[sel], start_row_index + l * single_block_rows + shift);
+                        // std::cout << "enable selector " << selector_index[sel] << " at row " << start_row_index + l * single_block_rows + shift << " for config " << l << std::endl;
+                    }
+                    sel++;
                 }
 
                 generate_copy_constraints(component, bp, assignment, instance_input, start_row_index);

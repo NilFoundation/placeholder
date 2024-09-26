@@ -36,13 +36,13 @@
 
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/components/systems/snark/plonk/placeholder/dfri_linear_check.hpp>
+#include <nil/blueprint/components/systems/snark/plonk/flexible/linear_check.hpp>
 
 #include "../../test_plonk_component.hpp"
 
 using namespace nil;
 
-template<typename BlueprintFieldType, std::size_t WitnessAmount>
+template<typename BlueprintFieldType, std::size_t WitnessAmount, std::size_t GatesAmount>
 void test_dfri_linear_check(const std::vector<typename BlueprintFieldType::value_type> &public_input, typename BlueprintFieldType::value_type expected_res,
                             std::size_t m,
                             std::vector<std::pair<std::size_t, std::size_t>> &eval_map) {
@@ -50,7 +50,7 @@ void test_dfri_linear_check(const std::vector<typename BlueprintFieldType::value
     constexpr std::size_t WitnessColumns = WitnessAmount;
     constexpr std::size_t PublicInputColumns = 1;
     constexpr std::size_t ConstantColumns = 1;
-    constexpr std::size_t SelectorColumns = 1;
+    constexpr std::size_t SelectorColumns = GatesAmount;
     zk::snark::plonk_table_description<BlueprintFieldType> desc(
         WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns);
     using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
@@ -155,13 +155,13 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_1_k_1) {
     
     value_type expected_res = (y - z) * ((x - xi).inversed());
     
-    test_dfri_linear_check<field_type, 3>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 4>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 5>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 6>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 7>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 8>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 9>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 3, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 4, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 5, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 6, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 7, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 8, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 9, 1>(public_inputs, expected_res, m, eval_map);
 
 }
 
@@ -185,13 +185,13 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_2) {
     
     value_type expected_res = (y - z[0]) * ((x - xi[0]).inversed()) + theta * (y - z[1]) * ((x - xi[1]).inversed());
     
-    test_dfri_linear_check<field_type, 3>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 4>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 5>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 6>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 7>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 8>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 9>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 3, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 4, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 5, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 6, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 7, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 8, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 9, 1>(public_inputs, expected_res, m, eval_map);
 
 }
 
@@ -215,13 +215,56 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_1) {
     
     value_type expected_res = (y[0] - z[0]) * ((x - xi).inversed()) + theta * (y[1] - z[1]) * ((x - xi).inversed());
     
-    test_dfri_linear_check<field_type, 3>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 4>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 5>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 6>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 7>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 8>(public_inputs, expected_res, m, eval_map);
-    test_dfri_linear_check<field_type, 9>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 3, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 4, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 5, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 6, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 7, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 8, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 9, 1>(public_inputs, expected_res, m, eval_map);
+
+}
+
+BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_20_k_1) {
+    using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
+    using value_type = typename field_type::value_type;    
+
+    static boost::random::mt19937 seed_seq;
+    static nil::crypto3::random::algebraic_engine<field_type> generate_random(seed_seq);
+
+    constexpr std::size_t m = 20;
+    value_type theta = generate_random();
+    value_type x     = generate_random();
+    std::array<value_type, m> y;
+    for(std::size_t i = 0; i < m; i++) {y[i] = generate_random();};
+    value_type xi  = generate_random();
+    std::array<value_type, m> z;
+    for(std::size_t i = 0; i < m; i++) {z[i] = generate_random();};
+
+    std::vector<value_type> public_inputs = {theta, x, xi};
+    public_inputs.insert(public_inputs.end(), y.begin(), y.end());
+    public_inputs.insert(public_inputs.end(), z.begin(), z.end());
+
+    std::vector<std::pair<std::size_t, std::size_t> > eval_map;
+    for(std::size_t i = 1; i <= m; i++) {
+        eval_map.push_back(std::make_pair(i,1));
+    }
+
+    
+    value_type expected_res = 0; 
+    value_type theta_acc = 1;
+    for(std::size_t i = 0; i < m; i++){
+        expected_res = expected_res + theta_acc * (y[i] - z[i]) * ((x - xi).inversed());
+        theta_acc = theta * theta_acc;
+    }
+
+    test_dfri_linear_check<field_type, 9, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 18, 2>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 27, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 15, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 21, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 24, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 30, 4>(public_inputs, expected_res, m, eval_map);
 
 }
 
