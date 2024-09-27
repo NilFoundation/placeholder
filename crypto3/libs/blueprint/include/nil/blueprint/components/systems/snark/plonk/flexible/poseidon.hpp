@@ -89,7 +89,6 @@ namespace nil {
                     std::uint32_t gates_amount() const override {
                         std::size_t blocks = flexible_poseidon::rounds_amount + 1;
                         std::size_t row_capacity = witness_amount/flexible_poseidon::state_size;
-                        std::cout << "Poseidon gates amount: " << ((blocks-1)%row_capacity == 0? (blocks-1)/row_capacity : (blocks-1)/row_capacity + 1) << std::endl;
                         return (blocks-1)%row_capacity == 0? (blocks-1)/row_capacity : (blocks-1)/row_capacity + 1;
                     }
                 };
@@ -131,6 +130,8 @@ namespace nil {
 
                 struct result_type {
                     std::array<var, state_size> output_state = {var(0, 0, false), var(0, 0, false), var(0, 0, false)};
+
+                    result_type() {}
 
                     result_type(const flexible_poseidon &component, std::uint32_t start_row_index) {
                         std::size_t blocks = rounds_amount + 1;

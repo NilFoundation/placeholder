@@ -71,7 +71,7 @@ namespace nil {
                         const FRIParamsType                      &fri_params,
                         const std::map<std::size_t, std::size_t> &batches_sizes,
                         std::size_t evaluation_points_amount,
-                        const std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> eval_map
+                        const std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> &eval_map
                     ) : var_vector({}) {
                         std::size_t cur = 0;
 
@@ -82,6 +82,7 @@ namespace nil {
                         // commitments
                         for( const auto& [k,v]:batches_sizes){
                             commitments[k] = var(0, cur++, false, var::column_type::public_input);
+                            commitments_vector.push_back(commitments[k]);
                             var_vector.push_back(commitments[k]);
                         }
                         // evaluation points
@@ -143,7 +144,7 @@ namespace nil {
                                 var_vector.push_back(hash_var);
                                 initial_proof_hashes[q].push_back(hash_var);
                             }
-                            // Round proof values"
+                            // Round proof values
                             for( std::size_t j = 0; j < fri_params.r; j++){
                                 var y0_var = var(0, cur++, false, var::column_type::public_input);
                                 var y1_var = var(0, cur++, false, var::column_type::public_input);
@@ -167,7 +168,8 @@ namespace nil {
 
                     // Information of dFRI test setup or result of earlier placeholder work.
                     var              initial_transcript_state;
-                    std::map<std::size_t, var> commitments;
+                    std::map<std::size_t, var> commitments; // Reserved for placeholder compatibility.
+                    std::vector<var> commitments_vector;    // It's more convenient for hash computation
                     std::vector<var> evaluation_points;
 
                     // Proof itself.
@@ -175,7 +177,7 @@ namespace nil {
                     std::vector<var> evaluations;
                     std::vector<std::vector<var>> merkle_tree_positions; // Lambda merkle positions
                     std::vector<std::vector<var>> initial_proof_values;  // 2 x Lambda x |bathes_sizes_sum| initial proof values
-                    std::vector<std::vector<var>> initial_proof_hashes;  // 2 x Lambda x batches_num initial proof hashes
+                    std::vector<std::vector<var>> initial_proof_hashes;  // 2 x Lambda x (exteneded_domain size log - 1) initial proof hashes
                     std::vector<std::vector<var>> round_proof_values;    // Keep all values for all rounds into single array
                     std::vector<std::vector<var>> round_proof_hashes;    // Keep all hashes for all rounds into single array,=
                     std::vector<var> final_polynomial;                   // Keep all hashes for all rounds into single array,=
