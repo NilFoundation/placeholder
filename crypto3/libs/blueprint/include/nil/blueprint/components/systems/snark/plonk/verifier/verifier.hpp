@@ -320,7 +320,6 @@ namespace nil {
 
                 using swap_component_type = typename component_type::swap_component_type;
                 using swap_input_type = typename swap_component_type::input_type;
-
                 using poseidon_component_type = typename component_type::poseidon_component_type;
                 using constant_pow_component_type = typename component_type::constant_pow_component_type;
                 using x_index_component_type = typename component_type::x_index_component_type;

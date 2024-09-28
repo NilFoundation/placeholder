@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -44,6 +45,7 @@
 
 #include <nil/blueprint/components/systems/snark/plonk/verifier/dfri_proof_wrapper.hpp>
 #include <nil/blueprint/components/systems/snark/plonk/verifier/dfri_proof_input_vars.hpp>
+#include <nil/blueprint/components/systems/snark/plonk/verifier/final_polynomial_check.hpp>
 #include <nil/blueprint/components/systems/snark/plonk/flexible/linear_check.hpp>
 #include <nil/blueprint/components/systems/snark/plonk/flexible/poseidon.hpp>
 #include <nil/blueprint/components/systems/snark/plonk/flexible/swap.hpp>
@@ -69,6 +71,7 @@ namespace nil {
                 using constant_pow_component_type = plonk_flexible_constant_pow<BlueprintFieldType>;
                 using x_index_component_type = plonk_flexible_x_index<BlueprintFieldType>;
                 using dfri_linear_check_component_type = plonk_dfri_linear_check<BlueprintFieldType>;
+                using final_polynomial_component_type = plonk_final_polynomial_check<BlueprintFieldType>;
 
                 std::size_t rows_amount; // calculator, please
 
@@ -115,9 +118,22 @@ namespace nil {
                             witness_amount,
                             (field_type::modulus - 1)/fri_params.domain_size
                         ).get_gates_amount();
+                        num_gates += constant_pow_component_type::get_gate_manifest(
+                            witness_amount,
+                            (1 << fri_params.r)
+                        ).get_gates_amount();
                         num_gates += x_index_component_type::get_gate_manifest(
                             witness_amount,
                             log2(fri_params.domain_size) - 1
+                        ).get_gates_amount();
+                        num_gates += colinear_checks_component_type::get_gate_manifest(
+                            witness_amount,
+                            fri_params.r
+                        ).get_gates_amount();
+                        num_gates += final_polynomial_component_type::get_gate_manifest(
+                            witness_amount,
+                            std::pow(2, std::log2(fri_params.max_degree + 1) - fri_params.r + 1) - 2,
+                            fri_params.lambda
                         ).get_gates_amount();
                     }
                     std::uint32_t gates_amount() const override {
@@ -157,13 +173,95 @@ namespace nil {
                     std::size_t                                 _evaluation_points_amount,
                     const std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> &_eval_map
                 ) {
-                    return 15;
+                    std::size_t rows_amount = 0;
+                    std::size_t poseidon_rows_amount = 0;
+                    std::size_t constant_pow_rows_amount = 0;
+                    std::size_t constant_pow2_rows_amount = 0;
+                    std::size_t colinear_checks_rows_amount = 0;
+                    std::size_t x_index_rows_amount = 0;
+
+                    std::size_t poseidon_rows = poseidon_component_type::get_rows_amount(witness_amount);
+                    std::size_t constant_pow_rows = constant_pow_component_type::get_rows_amount(witness_amount, (BlueprintFieldType::modulus - 1)/_fri_params.domain_size);
+                    std::size_t constant_pow2_rows = constant_pow_component_type::get_rows_amount(witness_amount, 1 << _fri_params.r);
+                    std::size_t x_index_rows = x_index_component_type::get_rows_amount(witness_amount, log2(_fri_params.domain_size) - 1);
+                    std::size_t colinear_checks_rows = colinear_checks_component_type::get_rows_amount(witness_amount, _fri_params.r);
+                    std::size_t final_polynomial_rows = final_polynomial_component_type::get_rows_amount(
+                        witness_amount, std::pow(2, std::log2(_fri_params.max_degree + 1) - _fri_params.r + 1) - 3, _fri_params.lambda
+                    );
+
+                    for( std::size_t i = 0; i < _batches_sizes.size()/2; i++){
+                        rows_amount += poseidon_rows;
+                        poseidon_rows_amount += poseidon_rows;
+                    }
+                    if( _batches_sizes.size()%2 ){
+                        rows_amount += poseidon_rows;
+                        poseidon_rows_amount += poseidon_rows;
+                    }
+
+                    for( std::size_t i = 0; i < _fri_params.r; i++){
+                        rows_amount += poseidon_rows;
+                        poseidon_rows_amount += poseidon_rows;
+                    }
+                    for( std::size_t i = 0; i < _fri_params.lambda; i++){
+                        rows_amount += poseidon_rows;
+                        poseidon_rows_amount += poseidon_rows;
+                    }
+
+                    for( std::size_t i = 0; i < _fri_params.lambda; i++){
+                        rows_amount += constant_pow_rows;
+                        rows_amount += constant_pow2_rows;
+                        constant_pow_rows_amount += constant_pow_rows;
+                        constant_pow2_rows_amount += constant_pow2_rows;
+                    }
+                    for( std::size_t i = 0; i < _fri_params.lambda; i++){
+                        rows_amount += x_index_rows;
+                        x_index_rows_amount +=  x_index_rows;
+                    }
+                    for( std::size_t i = 0; i < _fri_params.lambda; i++){
+                        rows_amount += colinear_checks_rows;
+                        colinear_checks_rows_amount += colinear_checks_rows;
+                    }
+                    for( std::size_t i = 0; i < _fri_params.lambda; i++){
+                        for( const auto &[batch_id,batch_size] : _batches_sizes ){
+                            for( std::size_t k = 0; k < batch_size; k++){
+                                rows_amount += poseidon_rows;
+                                poseidon_rows_amount += poseidon_rows;
+                            }
+                            for( std::size_t k = 0; k < log2(_fri_params.domain_size) - 1; k++){
+                                rows_amount += poseidon_rows;
+                                poseidon_rows_amount += poseidon_rows;
+                            }
+                        }
+                        for( std::size_t j = 0; j < _fri_params.r; j++){
+                            if(j != 0){ // Remove if when linear combination computation will be finished
+                                rows_amount += poseidon_rows;
+                                poseidon_rows_amount += poseidon_rows;
+                                for( std::size_t k = 0; k < log2(_fri_params.domain_size) - 1 - j; k++){
+                                    rows_amount += poseidon_rows;
+                                    poseidon_rows_amount += poseidon_rows;
+                                }
+                            }
+                        }
+                    }
+                    //std::cout << "get_rows_amount:" << rows_amount << std::endl;
+                    rows_amount += final_polynomial_rows;
+                    std::cout << "Component rows (without swaps):" << rows_amount << std::endl;
+                    std::cout << "\tposeidon rows         = " << poseidon_rows_amount << std::endl;
+                    std::cout << "\tfinal_polynomial_rows = " << final_polynomial_rows << std::endl;//Called only once
+                    std::cout << "\tconstant_pow_rows     = " << constant_pow_rows_amount << std::endl;
+                    std::cout << "\tconstant_pow2_rows    = " << constant_pow2_rows_amount << std::endl;
+                    std::cout << "\tx_index_rows          = " << x_index_rows_amount << std::endl;
+                    std::cout << "\tcolinear_checks_rows  = " << colinear_checks_rows_amount << std::endl;
+                    return rows_amount;
                 }
 
                 // Subcomponents list
-                poseidon_component_type     poseidon_instance;
-                constant_pow_component_type constant_pow_instance;
-                x_index_component_type      x_index_instance;
+                poseidon_component_type         poseidon_instance;
+                constant_pow_component_type     constant_pow_instance;
+                constant_pow_component_type     constant_pow2_instance;
+                x_index_component_type          x_index_instance;
+                colinear_checks_component_type  colinear_checks_instance;
+                final_polynomial_component_type final_polynomial_instance;
 
                 template <
                     typename WitnessContainerType,
@@ -182,7 +280,10 @@ namespace nil {
                     fri_params(_fri_params),
                     poseidon_instance(witnesses, constants, public_inputs),
                     constant_pow_instance(witnesses, constants, public_inputs, (BlueprintFieldType::modulus - 1)/fri_params.domain_size),
+                    constant_pow2_instance(witnesses, constants, public_inputs, 1 << fri_params.r),
                     x_index_instance(witnesses, constants, public_inputs, log2(fri_params.domain_size) - 1, fri_params.omega),
+                    colinear_checks_instance(witnesses, constants, public_inputs, fri_params.r),
+                    final_polynomial_instance(witnesses, constants, public_inputs, std::pow(2, std::log2(fri_params.max_degree + 1) - fri_params.r + 1) - 3, fri_params.lambda),
                     batches_sizes(_batches_sizes),
                     evaluation_points_amount(_evaluation_points_amount),
                     eval_map(_eval_map)
@@ -213,6 +314,10 @@ namespace nil {
                 using poseidon_component_type = typename component_type::poseidon_component_type;
                 using constant_pow_component_type = typename component_type::constant_pow_component_type;
                 using x_index_component_type = typename component_type::x_index_component_type;
+                using colinear_checks_component_type = typename component_type::colinear_checks_component_type;
+                using swap_component_type = typename component_type::swap_component_type;
+                using swap_input_type = typename swap_component_type::input_type;
+                using final_polynomial_component_type = typename component_type::final_polynomial_component_type;
                 using var = typename component_type::var;
 
                 var zero_var = var(component.C(0), start_row_index, false, var::column_type::constant);
@@ -224,11 +329,14 @@ namespace nil {
                 std::size_t swap_rows = 0;
 
                 typename component_type::challenges_struct c;
-                typename poseidon_component_type::input_type  poseidon_input; //Used for
+                typename poseidon_component_type::input_type  poseidon_input;
                 typename poseidon_component_type::result_type poseidon_output;
                 const auto &poseidon_instance = component.poseidon_instance;
                 const auto &constant_pow_instance = component.constant_pow_instance;
+                const auto &constant_pow2_instance = component.constant_pow2_instance;
                 const auto &x_index_instance = component.x_index_instance;
+                const auto &colinear_checks_instance = component.colinear_checks_instance;
+                const auto &final_polynomial_instance = component.final_polynomial_instance;
                 const auto &fri_params = component.fri_params;
                 poseidon_input.input_state[0] = instance_input.initial_transcript_state;
 
@@ -270,6 +378,7 @@ namespace nil {
                 }
 
                 std::vector<var> xs;
+                std::vector<var> xf;
                 for( std::size_t i = 0; i < fri_params.lambda; i++){
                     typename constant_pow_component_type::input_type constant_pow_input = {c.fri_xs[i]};
                     typename constant_pow_component_type::result_type constant_pow_output = generate_assignments(
@@ -278,6 +387,14 @@ namespace nil {
                     xs.push_back(constant_pow_output.y);
                     row+= constant_pow_instance.rows_amount;
                     constant_pow_rows += constant_pow_instance.rows_amount;
+
+                    constant_pow_input = {xs[i]};
+                    constant_pow_output = generate_assignments(
+                        constant_pow2_instance, assignment, constant_pow_input, row
+                    );
+                    xf.push_back(constant_pow_output.y);
+                    row+= constant_pow2_instance.rows_amount;
+                    constant_pow_rows += constant_pow2_instance.rows_amount;
                 }
 
                 // check correspondence between x, x_index and merkle path
@@ -293,6 +410,117 @@ namespace nil {
                     row += x_index_instance.rows_amount;
                 }
 
+                // Colinear checks
+                std::size_t colinear_checks_rows = 0;
+                for( std::size_t i = 0; i < fri_params.lambda; i++){
+                    typename colinear_checks_component_type::input_type colinear_checks_input(component.fri_params.r);
+                    colinear_checks_input.x = xs[i];
+                    colinear_checks_input.ys.push_back(zero_var); // Fix after 1st round will be ready
+                    colinear_checks_input.ys.push_back(zero_var); // Fix after 1st round will be ready
+                    colinear_checks_input.bs.push_back(zero_var); // Set it to x_index component output
+                    for( std::size_t j = 0; j < fri_params.r; j++){
+                        colinear_checks_input.ys.push_back(instance_input.round_proof_values[i][2*j]);
+                        colinear_checks_input.ys.push_back(instance_input.round_proof_values[i][2*j + 1]);
+                        colinear_checks_input.alphas.push_back(c.fri_alphas[j]);
+                        colinear_checks_input.bs.push_back(instance_input.merkle_tree_positions[i][instance_input.merkle_tree_positions[i].size() - j - 1]);
+                    }
+                    typename colinear_checks_component_type::result_type colinear_checks_output = generate_assignments(
+                        colinear_checks_instance, assignment, colinear_checks_input, row
+                    );
+                    row += colinear_checks_instance.rows_amount;
+                    colinear_checks_rows += colinear_checks_instance.rows_amount;
+                }
+
+                const auto &batches_sizes = component.batches_sizes;
+                std::size_t merkle_leaf_rows = 0;
+                std::size_t merkle_proof_rows = 0;
+                // Query Merkle proofs
+                std::vector<var> final_polynomial_evals;
+                for( std::size_t i = 0; i < fri_params.lambda; i++){
+                    std::size_t cur = 0;
+                    std::size_t cur_hash = 0;
+                    for( const auto &[batch_id,batch_size] : batches_sizes ){
+                        poseidon_input.input_state[0] = zero_var;
+                        for( std::size_t k = 0; k < batch_size; k++, cur+=2){
+                            poseidon_input.input_state[1] = instance_input.initial_proof_values[i][cur];
+                            poseidon_input.input_state[2] = instance_input.initial_proof_values[i][cur+1];
+//                            std::cout << "\t" << var_value(assignment, poseidon_input.input_state[1]) << "\t" << var_value(assignment, poseidon_input.input_state[2]) << std::endl;
+                            poseidon_output = generate_assignments(poseidon_instance, assignment, poseidon_input, row);
+                            poseidon_input.input_state[0] = poseidon_output.output_state[2];
+                            row += poseidon_instance.rows_amount;
+                            poseidon_rows += poseidon_instance.rows_amount;
+                            merkle_leaf_rows += poseidon_instance.rows_amount;
+                        }
+                        var hash_var = poseidon_output.output_state[2];
+//                        std::cout << "Leaf hash = " << var_value(assignment, hash_var) << std::endl;
+//                        std::cout << "First hash i = " << i << "; cur_hash = " << cur_hash << " = " << instance_input.initial_proof_hashes[i][cur_hash] << " = " << var_value(assignment, instance_input.initial_proof_hashes[i][cur_hash]) << std::endl;
+                        for( std::size_t k = 0; k < log2(fri_params.domain_size) - 1; k++){
+                            swap_input_type swap_input;
+                            swap_input.inp = {instance_input.merkle_tree_positions[i][k], instance_input.initial_proof_hashes[i][cur_hash], hash_var};
+                            auto swap_result = assignment.template add_input_to_batch<swap_component_type>(swap_input, 0);
+                            poseidon_input = {zero_var, swap_result.output[0], swap_result.output[1]};
+                            poseidon_output = generate_assignments(poseidon_instance, assignment, poseidon_input, row);
+//                            std::cout << "\t("
+//                                << var_value(assignment, poseidon_input.input_state[1]) << ", "
+//                                << var_value(assignment, poseidon_input.input_state[2]) << ", "
+//                                << ") => " << var_value(assignment, poseidon_output.output_state[2]) << std::endl;
+                            hash_var = poseidon_output.output_state[2];
+                            cur_hash++;
+                            row += poseidon_instance.rows_amount;
+                            poseidon_rows += poseidon_instance.rows_amount;
+                            merkle_proof_rows += poseidon_instance.rows_amount;
+                        }
+                    }
+
+                    // Round proofs
+                    cur = 0;
+                    cur_hash = 0;
+                    var hash_var;
+                    var y0; // Initialize after linear combination computation will be finished
+                    var y1; // Initialize after linear combination computation will be finished
+                    for( std::size_t j = 0; j < fri_params.r; j++){
+                        if(j != 0){ // Remove if when linear combination computation will be finished
+                            poseidon_input = {zero_var, y0, y1};
+                            poseidon_output = generate_assignments(poseidon_instance, assignment, poseidon_input, row);
+                            hash_var = poseidon_output.output_state[2];
+                            row += poseidon_instance.rows_amount;
+                            poseidon_rows += poseidon_instance.rows_amount;
+                            merkle_proof_rows += poseidon_instance.rows_amount;
+                            for( std::size_t k = 0; k < log2(fri_params.domain_size) - 1 - j; k++){
+                                swap_input_type swap_input;
+                                swap_input.inp = {instance_input.merkle_tree_positions[i][k], instance_input.round_proof_hashes[i][cur_hash], hash_var};
+                                auto swap_result = assignment.template add_input_to_batch<swap_component_type>(
+                                                        swap_input, 0);
+                                poseidon_input = {zero_var, swap_result.output[0], swap_result.output[1]};
+                                poseidon_output = generate_assignments(poseidon_instance, assignment, poseidon_input, row);
+                                row += poseidon_instance.rows_amount;
+                                poseidon_rows += poseidon_instance.rows_amount;
+                                merkle_proof_rows += poseidon_instance.rows_amount;
+                                hash_var = poseidon_output.output_state[2];
+                                cur_hash++;
+                            }
+                        }
+                        else {
+                            // TODO remove it when 1st round will be ready
+                            cur_hash += log2(fri_params.domain_size) - 1;
+                        }
+                        y0 = instance_input.round_proof_values[i][cur*2];
+                        y1 = instance_input.round_proof_values[i][cur*2 + 1];
+                        cur++;
+                    }
+                    swap_input_type swap_input;
+                    swap_input.inp = {instance_input.merkle_tree_positions[i][log2(fri_params.domain_size) - 1 - fri_params.r], y0, y1};
+                    auto swap_result = assignment.template add_input_to_batch<swap_component_type>(swap_input, 0);
+                    final_polynomial_evals.push_back(swap_result.output[0]);
+                    final_polynomial_evals.push_back(swap_result.output[1]);
+                }
+
+                //std::cout << "assignments: " << row - start_row_index << std::endl;
+                typename final_polynomial_component_type::input_type final_polynomial_input = {
+                    instance_input.final_polynomial, xf, final_polynomial_evals
+                };
+                generate_assignments(final_polynomial_instance, assignment, final_polynomial_input, row);
+                row += final_polynomial_instance.rows_amount;
 
                 const typename component_type::result_type result;
                 return result;
@@ -312,7 +540,11 @@ namespace nil {
                 using poseidon_component_type = typename component_type::poseidon_component_type;
                 using constant_pow_component_type = typename component_type::constant_pow_component_type;
                 using x_index_component_type = typename component_type::x_index_component_type;
+                using colinear_checks_component_type = typename component_type::colinear_checks_component_type;
                 using constraint_type = nil::crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
+                using swap_component_type = typename component_type::swap_component_type;
+                using swap_input_type = typename swap_component_type::input_type;
+                using final_polynomial_component_type = typename component_type::final_polynomial_component_type;
                 using var = typename component_type::var;
 
                 assignment.constant(0, start_row_index) = 0; //Zero constant
@@ -322,15 +554,18 @@ namespace nil {
                 std::size_t rows = 0;
                 std::size_t poseidon_rows = 0;
 
-                typename component_type::challenges_struct c;
-                typename poseidon_component_type::input_type  poseidon_input; //Used for
-                typename poseidon_component_type::result_type poseidon_output;
                 const auto &poseidon_instance = component.poseidon_instance;
                 const auto &constant_pow_instance = component.constant_pow_instance;
+                const auto &constant_pow2_instance = component.constant_pow2_instance;
                 const auto &x_index_instance = component.x_index_instance;
-                poseidon_input.input_state[0] = instance_input.initial_transcript_state;
-
+                const auto &colinear_checks_instance = component.colinear_checks_instance;
+                const auto &final_polynomial_instance = component.final_polynomial_instance;
                 const auto &fri_params = component.fri_params;
+
+                typename component_type::challenges_struct c;
+                typename poseidon_component_type::input_type  poseidon_input;
+                typename poseidon_component_type::result_type poseidon_output;
+                poseidon_input.input_state[0] = instance_input.initial_transcript_state;
 
                 // Transcript(commitments)
                 for( std::size_t i = 0; i < instance_input.commitments_vector.size()/2; i++){
@@ -367,6 +602,7 @@ namespace nil {
                 }
 
                 std::vector<var> xs;
+                std::vector<var> xf;
                 for( std::size_t i = 0; i < fri_params.lambda; i++){
                     typename constant_pow_component_type::input_type constant_pow_input = {c.fri_xs[i]};
                     typename constant_pow_component_type::result_type constant_pow_output = generate_circuit(
@@ -374,6 +610,13 @@ namespace nil {
                     );
                     xs.push_back(constant_pow_output.y);
                     row+= constant_pow_instance.rows_amount;
+
+                    constant_pow_input = {xs[i]};
+                    constant_pow_output = generate_circuit(
+                        constant_pow2_instance, bp, assignment, constant_pow_input, row
+                    );
+                    xf.push_back(constant_pow_output.y);
+                    row+= constant_pow2_instance.rows_amount;
                 }
 
                 for( std::size_t i = 0; i < fri_params.lambda; i++){
@@ -387,6 +630,101 @@ namespace nil {
                     );
                     row += x_index_instance.rows_amount;
                 }
+
+                // Colinear checks
+                for( std::size_t i = 0; i < component.fri_params.lambda; i++){
+                    typename colinear_checks_component_type::input_type colinear_checks_input(component.fri_params.r);
+                    colinear_checks_input.x = xs[i];
+                    colinear_checks_input.ys.push_back(zero_var); // Fix after 1st round will be ready
+                    colinear_checks_input.ys.push_back(zero_var); // Fix after 1st round will be ready
+                    colinear_checks_input.bs.push_back(zero_var); // Set it to x_index component output
+                    for( std::size_t j = 0; j < component.fri_params.r; j++){
+                        colinear_checks_input.ys.push_back(instance_input.round_proof_values[i][2*j]);
+                        colinear_checks_input.ys.push_back(instance_input.round_proof_values[i][2*j + 1]);
+                        colinear_checks_input.alphas.push_back(c.fri_alphas[j]);
+                        colinear_checks_input.bs.push_back(instance_input.merkle_tree_positions[i][instance_input.merkle_tree_positions[i].size() - j - 1]);
+                    }
+                    typename colinear_checks_component_type::result_type colinear_checks_output = generate_circuit(
+                        colinear_checks_instance, bp, assignment, colinear_checks_input, row
+                    );
+                    row += colinear_checks_instance.rows_amount;
+                }
+
+                // Query Merkle proofs
+                const auto &batches_sizes = component.batches_sizes;
+                std::vector<var> final_polynomial_evals;
+                for( std::size_t i = 0; i < fri_params.lambda; i++){
+                    std::size_t cur = 0;
+                    std::size_t cur_hash = 0;
+                    for( const auto &[batch_id,batch_size] : batches_sizes ){
+                        poseidon_input.input_state[0] = zero_var;
+                        for( std::size_t k = 0; k < batch_size; k++, cur+=2){
+                            poseidon_input.input_state[1] = instance_input.initial_proof_values[i][cur];
+                            poseidon_input.input_state[2] = instance_input.initial_proof_values[i][cur+1];
+                            poseidon_output = generate_circuit(poseidon_instance, bp, assignment, poseidon_input, row);
+                            poseidon_input.input_state[0] = poseidon_output.output_state[2];
+                            row += poseidon_instance.rows_amount;
+                        }
+                        var hash_var = poseidon_output.output_state[2];
+                        for( std::size_t k = 0; k < log2(fri_params.domain_size) - 1; k++){
+                            swap_input_type swap_input;
+                            swap_input.inp = {instance_input.merkle_tree_positions[i][k], instance_input.initial_proof_hashes[i][cur_hash], hash_var};
+                            auto swap_result = assignment.template add_input_to_batch<swap_component_type>(
+                                                    swap_input, 1);
+                            poseidon_input = {zero_var, swap_result.output[0], swap_result.output[1]};
+                            poseidon_output = generate_circuit(poseidon_instance, bp, assignment, poseidon_input, row);
+                            hash_var = poseidon_output.output_state[2];
+                            cur_hash++;
+                            row += poseidon_instance.rows_amount;
+                        }
+                        bp.add_copy_constraint({poseidon_output.output_state[2], instance_input.commitments.at(batch_id)});
+                    }
+
+                    // Compute y-s for first round
+                    // Round proofs
+                    cur = 0;
+                    cur_hash = 0;
+                    var hash_var;
+                    var y0; // initialize ys after linearity component will be finished
+                    var y1; // initialize ys after linearity component will be finished
+
+                    for( std::size_t j = 0; j < fri_params.r; j++){
+                        if(j != 0){ // Remove if when linearity check will be finished
+                            poseidon_input = {zero_var, y0, y1};
+                            poseidon_output = generate_circuit(poseidon_instance, bp, assignment, poseidon_input, row);
+                            hash_var = poseidon_output.output_state[2];
+                            row += poseidon_instance.rows_amount;
+                            for( std::size_t k = 0; k < log2(fri_params.domain_size) - 1 - j; k++){
+                                swap_input_type swap_input;
+                                swap_input.inp = {instance_input.merkle_tree_positions[i][k], instance_input.round_proof_hashes[i][cur_hash], hash_var};
+                                auto swap_result = assignment.template add_input_to_batch<swap_component_type>(
+                                                        swap_input, 1);
+                                poseidon_input = {zero_var, swap_result.output[0], swap_result.output[1]};
+                                poseidon_output = generate_circuit(poseidon_instance, bp, assignment, poseidon_input, row);
+                                row += poseidon_instance.rows_amount;
+                                hash_var = poseidon_output.output_state[2];
+                                cur_hash++;
+                            }
+                            bp.add_copy_constraint({poseidon_output.output_state[2], instance_input.fri_roots[j]});
+                        } else {
+                            cur_hash += log2(fri_params.domain_size) - 1;
+                        }
+                        y0 = instance_input.round_proof_values[i][cur*2];
+                        y1 = instance_input.round_proof_values[i][cur*2 + 1];
+                        cur++;
+                    }
+                    swap_input_type swap_input;
+                    swap_input.inp = {instance_input.merkle_tree_positions[i][log2(fri_params.domain_size) - 1 - fri_params.r], y0, y1};
+                    auto swap_result = assignment.template add_input_to_batch<swap_component_type>(swap_input, 1);
+                    final_polynomial_evals.push_back(swap_result.output[0]);
+                    final_polynomial_evals.push_back(swap_result.output[1]);
+                }
+
+                typename final_polynomial_component_type::input_type final_polynomial_input = {
+                    instance_input.final_polynomial, xf, final_polynomial_evals
+                };
+                generate_circuit(final_polynomial_instance, bp, assignment, final_polynomial_input, row);
+                row += final_polynomial_instance.rows_amount;
 
                 const typename component_type::result_type result;
                 return result;

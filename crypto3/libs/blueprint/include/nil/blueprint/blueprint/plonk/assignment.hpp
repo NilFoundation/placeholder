@@ -426,6 +426,8 @@ namespace nil {
             }
 
             virtual value_type witness(std::uint32_t witness_index, std::uint32_t row_index) const {
+                if( row_index >= this->_private_table._witnesses[witness_index].size() )
+                    std::cout << "Witness = " << witness_index << " " << row_index << " >= " <<  this->_private_table._witnesses[witness_index].size() << std::endl;
                 BLUEPRINT_RELEASE_ASSERT(witness_index < this->_private_table._witnesses.size());
                 BLUEPRINT_RELEASE_ASSERT(row_index < this->_private_table._witnesses[witness_index].size());
 

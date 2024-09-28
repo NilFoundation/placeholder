@@ -209,11 +209,18 @@ namespace nil {
             }
 
             if (start_row + component_instance.rows_amount >= public_input.size()) {
+                if(assignment.rows_amount() - start_row != component_instance.rows_amount )
+                    std::cout << assignment.rows_amount() - start_row << " != " <<
+                        component_instance.rows_amount << std::endl;
                 BOOST_ASSERT_MSG(assignment.rows_amount() - start_row == component_instance.rows_amount,
                                 "Component rows amount does not match actual rows amount.");
                 // Stretched components do not have a manifest, as they are dynamically generated.
                 if constexpr (!blueprint::components::is_component_stretcher<
                                     BlueprintFieldType, ComponentType>::value) {
+                    if(assignment.rows_amount() - start_row !=
+                                    component_type::get_rows_amount(component_instance.witness_amount(), component_static_info_args...))
+                        std::cout << assignment.rows_amount() - start_row << " != " <<
+                            component_type::get_rows_amount(component_instance.witness_amount(), component_static_info_args...) << std::endl;
                     BOOST_ASSERT_MSG(assignment.rows_amount() - start_row ==
                                     component_type::get_rows_amount(component_instance.witness_amount(),
                                                                     component_static_info_args...),
@@ -226,6 +233,7 @@ namespace nil {
             const std::size_t rows_after_const_batching =
                 assignment.finalize_constant_batches(bp, 0, std::max<std::size_t>(start_row, 1));
             const std::size_t rows_after_batching = std::max(rows_after_component_batching, rows_after_const_batching);
+            std::cout << "Rows after batching = " << rows_after_batching << std::endl;
             for (auto variable : component_result.all_vars()) {
                 if (assignment.get_batch_variable_map().count(variable)) {
                     variable.get() = assignment.get_batch_variable_map().at(variable);

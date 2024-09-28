@@ -226,14 +226,14 @@ namespace nil {
                     template<typename ContainerType>
                     expression_evaluation_component(ContainerType witness, constraint_type constraint_) :
                         component_type(witness, {}, {}, get_manifest(constraint_)), constraint(constraint_)
-                    {};
+                    { std::cout << "Expression evaluator constructor" << std::endl; };
 
                     template<typename WitnessContainerType, typename ConstantContainerType,
                              typename PublicInputContainerType>
                     expression_evaluation_component(WitnessContainerType witness, ConstantContainerType constant,
                                             PublicInputContainerType public_input, constraint_type constraint_) :
                         component_type(witness, constant, public_input, get_manifest(constraint_)), constraint(constraint_)
-                    {};
+                    {std::cout << "Expression evaluator constructor" << std::endl;};
 
                     expression_evaluation_component(
                         std::initializer_list<typename component_type::witness_container_type::value_type>
@@ -244,7 +244,7 @@ namespace nil {
                             public_inputs,
                         constraint_type constraint_) :
                         component_type(witnesses, constants, public_inputs, get_manifest(constraint_)), constraint(constraint_)
-                    {};
+                    {std::cout << "Expression evaluator constructor" << std::endl;};
                 };
             }    // namespace detail
 
@@ -280,7 +280,7 @@ namespace nil {
                 const typename plonk_expression_evaluation_component<BlueprintFieldType>::input_type
                     instance_input,
                 const std::size_t start_row_index) {
-
+                std::cout << "Expression evaluator generate circuit" << std::endl;
                 using component_type = plonk_expression_evaluation_component<BlueprintFieldType>;
                 using expression_evaluator_type = typename component_type::expression_evaluator_type;
 

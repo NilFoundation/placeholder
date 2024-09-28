@@ -388,7 +388,6 @@ prepare_small_test(){
 
     std::map<std::size_t, std::size_t> batches_sizes;
     batches_sizes[0] = 1;
-    batches_sizes[0] = 0;
     batches_sizes[2] = 3;
     batches_sizes[3] = 1;
     batches_sizes[4] = 2;
