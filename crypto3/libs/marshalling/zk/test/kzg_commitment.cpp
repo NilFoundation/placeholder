@@ -82,6 +82,11 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
 
+#include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/mnt6.hpp>
+
+
 #include "detail/circuits.hpp"
 
 
