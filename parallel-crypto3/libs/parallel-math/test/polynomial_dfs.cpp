@@ -1397,7 +1397,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test:
     std::cout << "Multiplication time: " << duration.count() << " microseconds." << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test, *boost::unit_test::disabled()) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
     std::vector<typename FieldType::value_type> values;
     std::size_t size = 131072 * 16;
     for (std::size_t i = 0; i < size; i++) {
