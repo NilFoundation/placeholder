@@ -45,6 +45,11 @@
 
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 
+#include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/mnt6.hpp>
+
+
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk;
 

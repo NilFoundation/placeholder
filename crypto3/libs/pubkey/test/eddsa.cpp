@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2021 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -34,74 +35,15 @@
 #include <nil/crypto3/pubkey/algorithm/sign.hpp>
 #include <nil/crypto3/pubkey/algorithm/verify.hpp>
 
+#include <nil/crypto3/algebra/curves/ed25519.hpp>
+#include <nil/crypto3/marshalling/algebra/types/curve_element.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/ed25519.hpp>
+
 #include <nil/crypto3/pubkey/eddsa.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::algebra;
 using namespace nil::marshalling;
-
-template<typename FieldParams>
-void print_field_element(std::ostream &os, const typename algebra::fields::detail::element_fp<FieldParams> &e) {
-    os << e.data << std::endl;
-}
-
-template<typename CurveGroupElement>
-void print_fp_projective_curve_group_element(std::ostream &os, const CurveGroupElement &e) {
-    os << std::hex << "( " << e.X.data << " : " << e.Y.data << " : " << e.Z.data << " )" << std::endl;
-}
-
-template<typename CurveGroupElement>
-void print_fp_extended_curve_group_element(std::ostream &os, const CurveGroupElement &e) {
-    os << std::hex << "( " << e.X.data << " : " << e.Y.data << " : " << e.T.data << " : " << e.Z.data << " )"
-       << std::endl;
-}
-
-template<typename CurveGroupElement>
-void print_fp_affine_curve_group_element(std::ostream &os, const CurveGroupElement &e) {
-    os << std::hex << "( " << e.X.data << " : " << e.Y.data << " )" << std::endl;
-}
-
-template<typename CurveGroupElement>
-void print_fp2_projective_curve_group_element(std::ostream &os, const CurveGroupElement &e) {
-    os << std::hex << "(" << e.X.data[0].data << " , " << e.X.data[1].data << ") : (" << e.Y.data[0].data << " , "
-       << e.Y.data[1].data << ") : (" << e.Z.data[0].data << " , " << e.Z.data[1].data << ")" << std::endl;
-}
-
-namespace boost {
-    namespace test_tools {
-        namespace tt_detail {
-            template<typename CurveParams>
-            struct print_log_value<curves::detail::curve_element<CurveParams,
-                                                                 curves::forms::twisted_edwards,
-                                                                 curves::coordinates::extended_with_a_minus_1>> {
-                void operator()(std::ostream &os,
-                                curves::detail::curve_element<CurveParams,
-                                                              curves::forms::twisted_edwards,
-                                                              curves::coordinates::extended_with_a_minus_1> const &p) {
-                    print_fp_extended_curve_group_element(os, p);
-                }
-            };
-
-            template<typename CurveParams>
-            struct print_log_value<curves::detail::curve_element<CurveParams,
-                                                                 curves::forms::twisted_edwards,
-                                                                 curves::coordinates::affine>> {
-                void operator()(std::ostream &os,
-                                curves::detail::curve_element<CurveParams,
-                                                              curves::forms::twisted_edwards,
-                                                              curves::coordinates::affine> const &p) {
-                    print_fp_affine_curve_group_element(os, p);
-                }
-            };
-
-            template<template<typename, typename> class P, typename K, typename V>
-            struct print_log_value<P<K, V>> {
-                void operator()(std::ostream &, P<K, V> const &) {
-                }
-            };
-        }    // namespace tt_detail
-    }        // namespace test_tools
-}    // namespace boost
 
 struct test_eddsa_params_foo {
     typedef std::vector<std::uint8_t> context_type;

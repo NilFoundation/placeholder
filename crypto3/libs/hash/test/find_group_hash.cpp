@@ -41,6 +41,8 @@
 #include <nil/crypto3/hash/find_group_hash.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
+#include <nil/crypto3/marshalling/algebra/processing/jubjub.hpp>
+
 using namespace nil::crypto3;
 using namespace nil::crypto3::algebra;
 
