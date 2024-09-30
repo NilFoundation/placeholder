@@ -24,8 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
-#define CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
+#pragma once
 
 #include <algorithm>
 #include <memory>
@@ -38,6 +37,7 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
+#include <nil/actor/core/sycl_parallelization_utils.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -83,7 +83,7 @@ namespace nil {
 
                     // swapping in place (from Storer's book)
                     // We can parallelize this look, since k and rk are pairs, they will never intersect.
-                    nil::crypto3::parallel_for(0, n,
+                    sycl_parallel_for(0, n,
                         [logn, &a](std::size_t k) {
                             const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
                             if (k < rk)
@@ -100,7 +100,7 @@ namespace nil {
 
                         // Here we can parallelize on the both loops with 'k' and 'm', because for each value of k and m
                         // the ranges of array 'a' used do not intersect. Think of these 2 loops as 1.
-                        wait_for_all(parallel_run_in_chunks<void>(
+                        sycl_run_in_chunks(
                             m * count_k,
                             [&a, m, count_k, inc, &omega_cache](std::size_t begin, std::size_t end) {
                                 size_t current_index = begin;
@@ -124,8 +124,7 @@ namespace nil {
                                             return;
                                     }
                                 }
-                            }, ThreadPool::PoolLevel::LOW
-                        ));
+                            }));
                     }
                 }
 
@@ -209,5 +208,3 @@ namespace nil {
         }        // namespace fft
     }            // namespace crypto3
 }    // namespace nil
-
-#endif    // ALGEBRA_FFT_BASIC_RADIX2_DOMAIN_AUX_HPP
