@@ -537,7 +537,7 @@ inline void test_big_integer_bit_operations()
 		NIL_CHECK( ! a.test_bit( 1 ) );
 		NIL_CHECK( a.test_bit( 0 ) );
 
-		a *= (dbl_limb_type)2;
+		a *= (limb_type)2;
 		NIL_CHECK( a.test_bit( 3 ) );
 		NIL_CHECK( ! a.test_bit( 2 ) );
 

@@ -15,6 +15,38 @@ namespace nil {
 namespace multiprecision {
 
 
+// Turns out, no need for this forward declaration
+
+// Forward declaration of the class.
+//template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
+//class binary_integer_over_array;
+
+
+// Forward declarations of some global functions.
+
+// Turns out, no need for this forward declarations.
+
+/// Regular multiplication of big integers with different limbs count.
+/// Caller is able to control number of the least significant limbs 
+/// of result of multiplication.
+//template< unsigned int R, 
+//		typename LimbType, unsigned int U1, unsigned int U2, typename DblLimbType >
+//binary_integer_over_array< LimbType, R, DblLimbType >
+//		multiply_by_limbs( 
+//				const binary_integer_over_array< LimbType, U1, DblLimbType >& a,
+//				const binary_integer_over_array< LimbType, U2, DblLimbType >& b );
+
+/// Regular multiplication of big integer on a primitive value.
+/// Caller is able to control number of the least significant limbs 
+/// of result of multiplication.
+//template< unsigned int R, 
+//		typename LimbType, unsigned int U1, typename DblLimbType >
+//binary_integer_over_array< LimbType, R, DblLimbType >
+//		multiply_by_limbs( 
+//				const binary_integer_over_array< LimbType, U1, DblLimbType >& a,
+//				const LimbType b );
+
+
 /// This class represents a big integer, which stores data as binary 
 /// digits in an 'std::array<>' class. This way, the data is sotred in 
 /// the stack memory.
@@ -23,17 +55,17 @@ class binary_integer_over_array
 {
 public:
 	typedef LimbType limb_type;
-	static constexpr unsigned int limbs_count = LimbsCount;
+	static constexpr unsigned int _limbs_count = LimbsCount;
 	typedef DblLimbType dbl_limb_type;
 
 	typedef binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
 			this_type;  // Synonym for this class
 
-protected:
-	typedef std::array< limb_type, limbs_count > limbs_type;
-
 	/// How many bits there are in a single limb.
-	static constexpr unsigned int limb_bits = sizeof(limb_type) * CHAR_BIT;
+	static constexpr unsigned int _limb_bits = sizeof(limb_type) * CHAR_BIT;
+
+protected:
+	typedef std::array< limb_type, _limbs_count > limbs_type;
 
 	/// The array, which stores all limbs of the integer.
 	/// '_limbs[0]' corresponds to the least significant limb.
@@ -41,11 +73,11 @@ protected:
 
 protected:
 	/// Increments by one the most-significant limbs, starting from 'limb_index'.
-	/// This is the same as adding "2^(limb_index * limb_bits)" to the 
+	/// This is the same as adding "2^(limb_index * _limb_bits)" to the 
 	/// entire number.
-	this_type& increment_from_limb( unsigned int limb_index ) {
+	constexpr this_type& increment_from_limb( unsigned int limb_index ) {
 		limb_type* ptr = _limbs.data() + limb_index;
-		limb_type* const ptr_end = _limbs.data() + limbs_count;
+		limb_type* const ptr_end = _limbs.data() + _limbs_count;
 		for ( ; ptr < ptr_end; ++ptr ) {
 			++(*ptr);
 			if ( *ptr != 0 )
@@ -55,11 +87,11 @@ protected:
 	}
 
 	/// Decrements by one the most-significant limbs, starting from 'limb_index'.
-	/// This is the same as subtracting "2^(limb_index * limb_bits)" from the 
+	/// This is the same as subtracting "2^(limb_index * _limb_bits)" from the 
 	/// entire number.
-	this_type& decrement_from_limb( unsigned int limb_index ) {
+	constexpr this_type& decrement_from_limb( unsigned int limb_index ) {
 		limb_type* ptr = _limbs.data() + limb_index;
-		limb_type* const ptr_end = _limbs.data() + limbs_count;
+		limb_type* const ptr_end = _limbs.data() + _limbs_count;
 		for ( ; ptr < ptr_end; ++ptr ) {
 			if ( *ptr > 0 ) {
 				--(*ptr);
@@ -73,32 +105,32 @@ protected:
 	/// Constructs value of this object from given 'value', which can 
 	/// have any size (in bytes)
 	template< typename RawT >
-	this_type& construct_from_raw( RawT value ) {
+	constexpr this_type& construct_from_raw( RawT value ) {
 		constexpr unsigned int value_bits = sizeof(value) * CHAR_BIT;
 				// Count of bits in 'value'.
-		std::fill_n( _limbs.data(), limbs_count, (limb_type)0 );
+		std::fill_n( _limbs.data(), _limbs_count, (limb_type)0 );
 				// At first, reset the number to 0.
 		// Check different cases
-		if constexpr ( value_bits <= limb_bits )
+		if constexpr ( value_bits <= _limb_bits )
 			_limbs[ 0 ] = value;
-		else if constexpr ( value_bits <= limb_bits * 2 ) {
+		else if constexpr ( value_bits <= _limb_bits * 2 ) {
 			// We must fill 2 limbs
 			_limbs[ 0 ] = (limb_type)value;
-			_limbs[ 1 ] = (limb_type)(value >> limb_bits);
+			_limbs[ 1 ] = (limb_type)(value >> _limb_bits);
 		}
-		else if constexpr ( value_bits <= limb_bits * 4 ) {
+		else if constexpr ( value_bits <= _limb_bits * 4 ) {
 			// We must fill 4 limbs
 			_limbs[ 0 ] = (limb_type)value;
-			_limbs[ 1 ] = (limb_type)(value >>= limb_bits);
-			_limbs[ 2 ] = (limb_type)(value >>= limb_bits);
-			_limbs[ 3 ] = (limb_type)(value >>= limb_bits);
+			_limbs[ 1 ] = (limb_type)(value >>= _limb_bits);
+			_limbs[ 2 ] = (limb_type)(value >>= _limb_bits);
+			_limbs[ 3 ] = (limb_type)(value >>= _limb_bits);
 		}
 		else {
 			// The general case, we iterate over limbs
 			limb_type* limb_ptr = _limbs.data();
 			*(limb_ptr++) = (limb_type)value;
-			while ( value != 0 && limb_ptr < _limbs.data() + limbs_count )
-				*(limb_ptr++) = (limb_type)(value >>= limb_bits);
+			while ( value != 0 && limb_ptr < _limbs.data() + _limbs_count )
+				*(limb_ptr++) = (limb_type)(value >>= _limb_bits);
 		}
 		return *this;
 	}
@@ -106,26 +138,27 @@ protected:
 	/// Converts value of this number into raw type 'RawT', which can 
 	/// have arbitrary number of bits.
 	template< typename RawT >
-	RawT convert_to_raw() const {
-		constexpr unsigned int value_bits = sizeof(value) * CHAR_BIT;
+	constexpr RawT convert_to_raw() const {
+		constexpr unsigned int raw_bits = sizeof(RawT) * CHAR_BIT;
 				// Count of bits in 'value'.
 		// Check different cases
-		if constexpr ( value_bits <= limb_bits )
+		if constexpr ( raw_bits <= _limb_bits )
 			return _limbs[ 0 ];
-		else if constexpr ( value_bits <= limb_bits * 2 )
-			return (RawT(_limbs[ 1 ]) << limb_bits) 
+		else if constexpr ( raw_bits <= _limb_bits * 2 )
+			return (RawT(_limbs[ 1 ]) << _limb_bits) 
 					| RawT(_limbs[ 0 ]);
-		else if constexpr ( value_bits <= limb_bits * 4 )
-			return (RawT(_limbs[ 3 ]) << (limb_bits*3)) 
-					| (RawT(_limbs[ 2 ]) << (limb_bits*2))
-					| (RawT(_limbs[ 1 ]) << limb_bits)
+		else if constexpr ( raw_bits <= _limb_bits * 4 )
+			return (RawT(_limbs[ 3 ]) << (_limb_bits*3) ) 
+					| (RawT(_limbs[ 2 ]) << (_limb_bits*2) )
+					| (RawT(_limbs[ 1 ]) << _limb_bits)
 					| RawT(_limbs[ 0 ]);
 		else {
 			RawT result( 0 );
-			for ( const limb_type* ptr = _limbs.data() + limbs_count - 1; 
+			for ( const limb_type* ptr = _limbs.data() + _limbs_count - 1; 
 					ptr >= _limbs.data();
 					--ptr ) {
-				result *= (dbl_limb_type)(1 << limb_bits);
+				//result *= (dbl_limb_type)(1 << _limb_bits);
+				result <<= _limb_bits;  // This line should work faster
 				result += *ptr;
 			}
 			return result;
@@ -135,32 +168,32 @@ protected:
 public:
 	/// Default constructor
 	/// Initializes to 0.
-	this_type() {
-		std::fill_n( _limbs.data(), limbs_count, (limb_type)0 );
+	constexpr binary_integer_over_array() {
+		std::fill_n( _limbs.data(), _limbs_count, (limb_type)0 );
 	}
 
 	/// Conversion constructors
-	this_type( unsigned char value )
+	constexpr binary_integer_over_array( unsigned char value )
 		{ construct_from_raw( value ); }
-	this_type( char value )
+	constexpr binary_integer_over_array( char value )
 		{ construct_from_raw( value ); }
-	this_type( unsigned short value )
+	constexpr binary_integer_over_array( unsigned short value )
 		{ construct_from_raw( value ); }
-	this_type( short value )
+	constexpr binary_integer_over_array( short value )
 		{ construct_from_raw( value ); }
-	this_type( unsigned int value )
+	constexpr binary_integer_over_array( unsigned int value )
 		{ construct_from_raw( value ); }
-	this_type( int value )
+	constexpr binary_integer_over_array( int value )
 		{ construct_from_raw( value ); }
-	this_type( unsigned long long value )
+	constexpr binary_integer_over_array( unsigned long long value )
 		{ construct_from_raw( value ); }
-	this_type( long long value )
+	constexpr binary_integer_over_array( long long value )
 		{ construct_from_raw( value ); }
 
 	/// Constructor
 	/// Creates the big integer equal to 'value'.
-//	this_type( limb_type value ) {
-//		std::fill_n( _limbs.data(), limbs_count, 0 );
+//	binary_integer_over_array( limb_type value ) {
+//		std::fill_n( _limbs.data(), _limbs_count, 0 );
 //		_limbs[ 0 ] = value;  // Place to the last limb
 //	}
 
@@ -168,34 +201,35 @@ public:
 	/// Creates the big integer equal to 'value'.
 	// Note: We declare this constructor as explicit, because otherwise 
 	// it causes a lot of ambiguity with constructor from "limb_type".
-//	explicit this_type( dbl_limb_type value ) {
-//		std::fill_n( _limbs.data(), limbs_count, 0 );
-//		_limbs[ 1 ] = (limb_type)(value >> limb_bits);
+//	explicit binary_integer_over_array( dbl_limb_type value ) {
+//		std::fill_n( _limbs.data(), _limbs_count, 0 );
+//		_limbs[ 1 ] = (limb_type)(value >> _limb_bits);
 //		_limbs[ 0 ] = (limb_type)value;
 //	}
 
 	/// Constructor
 	/// Allows to specify value of every limb separately.
 	/// The unspecified most significant limbs are filled with 0.
-	this_type( std::initializer_list< limb_type > digits ) {
+	constexpr binary_integer_over_array( std::initializer_list< limb_type > digits ) {
 		// Place the specified limbs, in reverse order
 		std::reverse_copy( digits.begin(), digits.end(), _limbs.data() );
 		// Fill upper limbs with '0'
-		std::fill( _limbs.data() + digits.size(), _limbs.data() + limbs_count, 0 );
+		std::fill( _limbs.data() + digits.size(), _limbs.data() + _limbs_count, 0 );
 	}
 
 	/// Convertion constructor
 	/// Narrows or widens provided other big integer object.
 	template< unsigned int OtherLimbsCount >
-	this_type( const binary_integer_over_array< LimbType, OtherLimbsCount, DblLimbType >& other ) {
-		if constexpr ( limbs_count < other.limbs_count ) {
+	constexpr binary_integer_over_array( 
+			const binary_integer_over_array< LimbType, OtherLimbsCount, DblLimbType >& other ) {
+		if constexpr ( _limbs_count < other._limbs_count ) {
 			// Narrowing
-			std::copy_n( other._limbs.data(), limbs_count, _limbs.data() );
+			std::copy_n( other.data(), _limbs_count, _limbs.data() );
 		}
 		else {
 			// Widening
-			std::copy_n( other._limbs.data(), other.limbs_count, _limbs.data() );
-			std::fill( _limbs.data() + other.limbs_count, _limbs.data() + limbs_count, 0 );
+			std::copy_n( other.data(), other._limbs_count, _limbs.data() );
+			std::fill( _limbs.data() + other._limbs_count, _limbs.data() + _limbs_count, 0 );
 		}
 	}
 
@@ -219,38 +253,48 @@ public:
 
 	/// Assignment operators
 //	this_type& operator=( limb_type value ) {
-//		std::fill_n( _limbs.data(), limbs_count, 0 );
+//		std::fill_n( _limbs.data(), _limbs_count, 0 );
 //		_limbs[ 0 ] = value;  // Place into the last limb
 //		return *this;
 //	}
 //	this_type& operator=( dbl_limb_type value ) {
-//		std::fill_n( _limbs.data(), limbs_count, 0 );
-//		_limbs[ 1 ] = (limb_type)(value >> limb_bits);
+//		std::fill_n( _limbs.data(), _limbs_count, 0 );
+//		_limbs[ 1 ] = (limb_type)(value >> _limb_bits);
 //		_limbs[ 0 ] = (limb_type)value;
 //		return *this;
 //	}
 
 	/// Access to underlying array.
-	limb_type* data() {
+	constexpr limb_type* data() {
 		return _limbs.data();
 	}
-	const limb_type* data() const {
+	constexpr const limb_type* data() const {
 		return _limbs.data();
 	}
 
 	/// Access to separate limbs, by index.
-	limb_type& operator[]( unsigned int index ) {
+	constexpr limb_type& operator[]( unsigned int index ) {
 		return _limbs[ index ];
 	}
-	limb_type operator[]( unsigned int index ) const {
+	constexpr limb_type operator[]( unsigned int index ) const {
 		return _limbs[ index ];
 	}
 
+	/// Access to count of limbs.
+	size_t size() const {
+		return _limbs.size();
+	}
+
+	/// Fills all limbs with 'arg' value.
+	void fill( limb_type arg ) {
+		_limbs.fill( arg );
+	}
+
 	// Addition
-	this_type& operator+=( const this_type& rhs ) {
+	constexpr this_type& operator+=( const this_type& rhs ) {
 		limb_type carry( 0 );
 		limb_type* this_ptr = _limbs.data();
-		limb_type* const this_ptr_end = _limbs.data() + limbs_count;
+		limb_type* const this_ptr_end = _limbs.data() + _limbs_count;
 		const limb_type* rhs_ptr = rhs._limbs.data();
 		for ( ; this_ptr < this_ptr_end; 
 				++this_ptr, ++rhs_ptr ) {
@@ -276,10 +320,10 @@ public:
 	}
 
 	// Subtraction
-	this_type& operator-=( const this_type& rhs ) {
+	constexpr this_type& operator-=( const this_type& rhs ) {
 		limb_type carry( 0 );
 		limb_type* this_ptr = _limbs.data();
-		limb_type* const this_ptr_end = _limbs.data() + limbs_count;
+		limb_type* const this_ptr_end = _limbs.data() + _limbs_count;
 		const limb_type* rhs_ptr = rhs._limbs.data();
 		for ( ; this_ptr < this_ptr_end; 
 				++this_ptr, ++rhs_ptr ) {
@@ -306,7 +350,7 @@ public:
 	}
 
 	/// Addition by regular number
-	this_type& operator+=( limb_type rhs ) {
+	constexpr this_type& operator+=( limb_type rhs ) {
 		limb_type* ptr = _limbs.data();
 		(*ptr) += rhs;
 		if ( *ptr < rhs )  // There was a carry
@@ -315,31 +359,31 @@ public:
 	}
 
 	/// Prefix increment
-	this_type& operator++() {
+	constexpr this_type& operator++() {
 		return increment_from_limb( 0 );
 	}
 
 	/// Postfix increment
-	this_type operator++( int ) {
+	constexpr this_type operator++( int ) {
 		this_type result( *this );
 		++(*this);
 		return result;
 	}
 
 	/// Prefix decrement
-	this_type& operator--() {
+	constexpr this_type& operator--() {
 		return decrement_from_limb( 0 );
 	}
 
 	/// Postfix decrement
-	this_type operator--( int ) {
+	constexpr this_type operator--( int ) {
 		this_type result( *this );
 		--(*this);
 		return result;
 	}
 
 	/// Subtraction by regular number
-	this_type& operator-=( limb_type rhs ) {
+	constexpr this_type& operator-=( limb_type rhs ) {
 		limb_type* ptr = _limbs.data();
 		if ( *ptr < rhs ) {  // There will be a carry
 			(*ptr) -= rhs;
@@ -350,99 +394,29 @@ public:
 		return *this;
 	}
 
-	/// Regular multiplication of big integers with different limbs count.
-	/// Caller is able to control number of the least significant limbs 
-	/// of result of multiplication.
-	template< unsigned int R, unsigned int U1, unsigned int U2 >
-	static binary_integer_over_array< limb_type, R, dbl_limb_type >
+	// Declaration as 'friend' function, so function with some value of 'R' 
+	// will be able to access the class with another value of 'R'.
+	template< unsigned int R_, 
+			typename LimbType_, unsigned int U1_, unsigned int U2_, typename DblLimbType_ >
+	friend binary_integer_over_array< LimbType_, R_, DblLimbType_ >
 			multiply_by_limbs( 
-					const binary_integer_over_array< limb_type, U1, dbl_limb_type >& a, 
-					const binary_integer_over_array< limb_type, U2, dbl_limb_type >& b ) {
-		binary_integer_over_array< limb_type, R, dbl_limb_type > r;
-		limb_type *r_low_ptr = r._limbs.data(), 
-				*r_high_ptr = r._limbs.data() + 1;
-		for ( int r_index = 0; 
-				r_index < R; 
-				++r_index, ++r_low_ptr, ++r_high_ptr ) {
-			// Now we are calculating "r[ r_index ]"
-			int a_index = r_index;
-			int b_index = 0;
-			if ( a_index >= U1 ) {  // 'a' hasn't that many limbs
-				b_index = a_index - (U1 - 1);
-				a_index = U1 - 1;
-			}
-			if ( b_index >= U2 )  // 'b' hasn't that many limbs too
-				break;  // All necessary limbs of result are calculated
-			const int a_last_index = 0;
-			const int b_last_index = U2 - 1;
-			// Iterate in parallel over a in [a_index -> a_last_index], 
-			//    and over 'b' in [b_index -> b_last_index].
-			for ( ; a_index >= a_last_index && b_index <= b_last_index; 
-					--a_index, ++b_index ) {
-				// Now we need to multiply 'a[ a_index ]' over 'b[ b_index ]', 
-				// and add the result to (*r_high_ptr, *r_low_ptr).
-				dbl_limb_type tmp( a[ a_index ] );
-				tmp *= b[ b_index ];
-				// Add to '*r_low_ptr'
-				assert( r_low_ptr < r._limbs.data() + R );
-				*r_low_ptr += (limb_type)tmp;
-				if ( *r_low_ptr < (limb_type)tmp )  // There was an overflow
-					r.increment_from_limb( r_index + 1 );
-				// Add to '*r_high_ptr'
-				if ( r_high_ptr < r._limbs.data() + R ) {  // Check that the result
-							// can fit also the high bits of multiplication
-					tmp >>= limb_bits;
-					*r_high_ptr += (limb_type)tmp;
-					if ( *r_high_ptr < (limb_type)tmp )  // There was an overflow
-						r.increment_from_limb( r_index + 2 );
-				}
-			}
-		}
-		return r;
-	}
+					const binary_integer_over_array< LimbType_, U1_, DblLimbType_ >& a,
+					const binary_integer_over_array< LimbType_, U2_, DblLimbType_ >& b );
 
-	/// Regular multiplication of big integer on a primitive value.
-	/// Caller is able to control number of the least significant limbs 
-	/// of result of multiplication.
-	template< unsigned int R, unsigned int U1 >
-	static binary_integer_over_array< limb_type, R, dbl_limb_type >
+	// Declaration as 'friend' function, so function with some value of 'R' 
+	// will be able to access the class with another value of 'R'.
+	template< unsigned int R_, 
+			typename LimbType_, unsigned int U1_, typename DblLimbType_ >
+	friend binary_integer_over_array< LimbType_, R_, DblLimbType_ >
 			multiply_by_limbs( 
-					const binary_integer_over_array< limb_type, U1, dbl_limb_type >& a, 
-					const limb_type b ) {
-		binary_integer_over_array< limb_type, R, dbl_limb_type > r;
-		limb_type *r_low_ptr = r._limbs.data(), 
-				*r_high_ptr = r._limbs.data() + 1;
-		for ( unsigned int r_index = 0; 
-				r_index < R; 
-				++r_index, ++r_low_ptr, ++r_high_ptr ) {
-			if ( r_index >= U1 )  // 'a' hasn't that many limbs
-				break;  // All necessary limbs of result are calculated
-			// Now we need to multiply 'a[ r_index ]' over 'b', 
-			// and add the result to (*r_high_ptr, *r_low_ptr).
-			dbl_limb_type tmp( a[ r_index ] );
-			tmp *= b;
-			// Add to '*r_low_ptr'
-			assert( r_low_ptr < r._limbs.data() + R );
-			*r_low_ptr += (limb_type)tmp;
-			if ( *r_low_ptr < (limb_type)tmp )  // There was an overflow
-				r.increment_from_limb( r_index + 1 );
-			// Add to '*r_high_ptr'
-			if ( r_high_ptr < r._limbs.data() + R ) {  // Check that the result
-						// can fit also the high bits of multiplication
-				tmp >>= limb_bits;
-				*r_high_ptr += (limb_type)tmp;
-				if ( *r_high_ptr < (limb_type)tmp )  // There was an overflow
-					r.increment_from_limb( r_index + 2 );
-			}
-		}
-		return r;
-	}
+					const binary_integer_over_array< LimbType_, U1_, DblLimbType_ >& a,
+					const LimbType_ b );
 
 	/// Multiplication
 	this_type& operator*=( const this_type& rhs ) {
 		// We can't multiply inplace, so write in a temporary
 		this_type result 
-				=  multiply_by_limbs< limbs_count >( *this, rhs );
+				= multiply_by_limbs< _limbs_count >( *this, rhs );
 		(*this) = result;
 		return *this;
 	}
@@ -451,7 +425,7 @@ public:
 	this_type& operator*=( limb_type rhs ) {
 		// We can't multiply inplace, so write in a temporary
 		this_type result 
-				=  multiply_by_limbs< limbs_count >( *this, rhs );
+				= multiply_by_limbs< _limbs_count >( *this, rhs );
 		(*this) = result;
 		return *this;
 	}
@@ -506,13 +480,13 @@ public:
 	}
 
 	/// Bit shift to right
-	this_type& operator>>=( unsigned int bits ) {
-		assert( bits < limb_bits );
+	constexpr this_type& operator>>=( unsigned int bits ) {
+		assert( bits < _limb_bits );
 				// We are not going to shift too long.
-		const unsigned int bits_complement = limb_bits - bits;
+		const unsigned int bits_complement = _limb_bits - bits;
 		limb_type *ptr = _limbs.data(), 
 				*next_ptr = _limbs.data() + 1;
-		limb_type* const ptr_end = _limbs.data() + limbs_count;
+		limb_type* const ptr_end = _limbs.data() + _limbs_count;
 		for ( ; next_ptr < ptr_end; 
 				++ptr, ++next_ptr ) {
 			(*ptr) >>= bits;
@@ -523,12 +497,12 @@ public:
 	}
 
 	/// Bit shift to left
-	this_type& operator<<=( unsigned int bits ) {
-		assert( bits < limb_bits );
+	constexpr this_type& operator<<=( unsigned int bits ) {
+		assert( bits < _limb_bits );
 				// We are not going to shift too long.
-		const unsigned int bits_complement = limb_bits - bits;
-		limb_type *ptr = _limbs.data() + limbs_count - 1, 
-				*next_ptr = _limbs.data() + limbs_count - 2;
+		const unsigned int bits_complement = _limb_bits - bits;
+		limb_type *ptr = _limbs.data() + _limbs_count - 1, 
+				*next_ptr = _limbs.data() + _limbs_count - 2;
 		limb_type* const ptr_end = _limbs.data();
 		for ( ; next_ptr >= ptr_end; 
 				--ptr, --next_ptr ) {
@@ -540,36 +514,36 @@ public:
 	}
 
 	/// Sets bit at 'index' to 1.
-	this_type& set_bit( unsigned int index ) {
+	constexpr this_type& set_bit( unsigned int index ) {
 		// Obtain parts of 'index'
-		unsigned int limb_index = index / limb_bits;
-		assert( limb_index < limbs_count );
-		unsigned int index_in_limb = index - (limb_index * limb_bits);
-		assert( index_in_limb < limb_bits );
+		unsigned int limb_index = index / _limb_bits;
+		assert( limb_index < _limbs_count );
+		unsigned int index_in_limb = index - (limb_index * _limb_bits);
+		assert( index_in_limb < _limb_bits );
 		// Set
 		_limbs[ limb_index ] |= limb_type( 1 ) << index_in_limb;
 		return *this;
 	}
 
 	/// Unsets bit at 'index' to 0.
-	this_type& unset_bit( unsigned int index ) {
+	constexpr this_type& unset_bit( unsigned int index ) {
 		// Obtain parts of 'index'
-		unsigned int limb_index = index / limb_bits;
-		assert( limb_index < limbs_count );
-		unsigned int index_in_limb = index - (limb_index * limb_bits);
-		assert( index_in_limb < limb_bits );
+		unsigned int limb_index = index / _limb_bits;
+		assert( limb_index < _limbs_count );
+		unsigned int index_in_limb = index - (limb_index * _limb_bits);
+		assert( index_in_limb < _limb_bits );
 		// Unset
 		_limbs[ limb_index ] &= ~( limb_type( 1 ) << index_in_limb );
 		return *this;
 	}
 
 	/// Checks if bit at 'index' is 1.
-	bool test_bit( unsigned int index ) const {
+	constexpr bool test_bit( unsigned int index ) const {
 		// Obtain parts of 'index'
-		unsigned int limb_index = index / limb_bits;
-		assert( limb_index < limbs_count );
-		unsigned int index_in_limb = index - (limb_index * limb_bits);
-		assert( index_in_limb < limb_bits );
+		unsigned int limb_index = index / _limb_bits;
+		assert( limb_index < _limbs_count );
+		unsigned int index_in_limb = index - (limb_index * _limb_bits);
+		assert( index_in_limb < _limb_bits );
 		// Check
 		return _limbs[ limb_index ] & (limb_type( 1 ) << index_in_limb);
 	}
@@ -602,7 +576,7 @@ public:
 	// it causes a lot of ambiguity with the conversion operator to "limb_type".
 //	explicit operator dbl_limb_type() const {
 //		dbl_limb_type result( _limbs[ 1 ] );  // Take one before last limb
-//		result <<= limb_bits;
+//		result <<= _limb_bits;
 //		result |= _limbs[ 0 ];  // and the last one.
 //		return result;
 //	}
@@ -616,11 +590,117 @@ public:
 };
 
 
+// Definition of some global functions
+
+
+/// Regular multiplication of big integers with different limbs count.
+/// Caller is able to control number of the least significant limbs 
+/// of result of multiplication.
+template< unsigned int R, 
+		typename LimbType, unsigned int U1, unsigned int U2, typename DblLimbType >
+inline binary_integer_over_array< LimbType, R, DblLimbType >
+		multiply_by_limbs( 
+				const binary_integer_over_array< LimbType, U1, DblLimbType >& a,
+				const binary_integer_over_array< LimbType, U2, DblLimbType >& b ) {
+	// Some typdefs and constants
+	typedef LimbType limb_type;
+	constexpr auto _limb_bits 
+			= binary_integer_over_array< LimbType, R, DblLimbType >::_limb_bits;
+	typedef DblLimbType dbl_limb_type;
+	// Prepare the result variable
+	binary_integer_over_array< limb_type, R, dbl_limb_type > r;
+	limb_type *r_low_ptr = r.data(), 
+			*r_high_ptr = r.data() + 1;
+	for ( int r_index = 0; 
+			r_index < R; 
+			++r_index, ++r_low_ptr, ++r_high_ptr ) {
+		// Now we are calculating "r[ r_index ]"
+		int a_index = r_index;
+		int b_index = 0;
+		if ( a_index >= U1 ) {  // 'a' hasn't that many limbs
+			b_index = a_index - (U1 - 1);
+			a_index = U1 - 1;
+		}
+		if ( b_index >= U2 )  // 'b' hasn't that many limbs too
+			break;  // All necessary limbs of result are calculated
+		const int a_last_index = 0;
+		const int b_last_index = U2 - 1;
+		// Iterate in parallel over a in [a_index -> a_last_index], 
+		//    and over 'b' in [b_index -> b_last_index].
+		for ( ; a_index >= a_last_index && b_index <= b_last_index; 
+				--a_index, ++b_index ) {
+			// Now we need to multiply 'a[ a_index ]' over 'b[ b_index ]', 
+			// and add the result to (*r_high_ptr, *r_low_ptr).
+			dbl_limb_type tmp( a[ a_index ] );
+			tmp *= b[ b_index ];
+			// Add to '*r_low_ptr'
+			assert( r_low_ptr < r.data() + R );
+			*r_low_ptr += (limb_type)tmp;
+			if ( *r_low_ptr < (limb_type)tmp )  // There was an overflow
+				r.increment_from_limb( r_index + 1 );
+			// Add to '*r_high_ptr'
+			if ( r_high_ptr < r.data() + R ) {  // Check that the result
+						// can fit also the high bits of multiplication
+				tmp >>= _limb_bits;
+				*r_high_ptr += (limb_type)tmp;
+				if ( *r_high_ptr < (limb_type)tmp )  // There was an overflow
+					r.increment_from_limb( r_index + 2 );
+			}
+		}
+	}
+	return r;
+}
+
+/// Regular multiplication of big integer on a primitive value.
+/// Caller is able to control number of the least significant limbs 
+/// of result of multiplication.
+template< unsigned int R, 
+		typename LimbType, unsigned int U1, typename DblLimbType >
+inline binary_integer_over_array< LimbType, R, DblLimbType >
+		multiply_by_limbs( 
+				const binary_integer_over_array< LimbType, U1, DblLimbType >& a,
+				const LimbType b ) {
+	// Some typdefs and constants
+	typedef LimbType limb_type;
+	constexpr auto _limb_bits
+		= binary_integer_over_array< LimbType, R, DblLimbType >::_limb_bits;
+	typedef DblLimbType dbl_limb_type;
+	// Prepare the result variable
+	binary_integer_over_array< limb_type, R, dbl_limb_type > r;
+	limb_type *r_low_ptr = r._limbs.data(), 
+			*r_high_ptr = r._limbs.data() + 1;
+	for ( unsigned int r_index = 0; 
+			r_index < R; 
+			++r_index, ++r_low_ptr, ++r_high_ptr ) {
+		if ( r_index >= U1 )  // 'a' hasn't that many limbs
+			break;  // All necessary limbs of result are calculated
+		// Now we need to multiply 'a[ r_index ]' over 'b', 
+		// and add the result to (*r_high_ptr, *r_low_ptr).
+		dbl_limb_type tmp( a[ r_index ] );
+		tmp *= b;
+		// Add to '*r_low_ptr'
+		assert( r_low_ptr < r._limbs.data() + R );
+		*r_low_ptr += (limb_type)tmp;
+		if ( *r_low_ptr < (limb_type)tmp )  // There was an overflow
+			r.increment_from_limb( r_index + 1 );
+		// Add to '*r_high_ptr'
+		if ( r_high_ptr < r._limbs.data() + R ) {  // Check that the result
+					// can fit also the high bits of multiplication
+			tmp >>= _limb_bits;
+			*r_high_ptr += (limb_type)tmp;
+			if ( *r_high_ptr < (limb_type)tmp )  // There was an overflow
+				r.increment_from_limb( r_index + 2 );
+		}
+	}
+	return r;
+}
+
+
 // Global operators
 
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
-inline binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
+inline constexpr binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
 operator+(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& lhs, 
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& rhs )
@@ -631,7 +711,7 @@ operator+(
 }
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
-inline binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
+inline constexpr binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
 operator+(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& lhs, 
 		LimbType rhs )
@@ -642,7 +722,7 @@ operator+(
 }
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
-inline binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
+inline constexpr binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
 operator+(
 		LimbType lhs, 
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& rhs )
@@ -653,7 +733,7 @@ operator+(
 }
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
-inline binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
+inline constexpr binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
 operator-(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& lhs, 
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& rhs )
@@ -664,7 +744,7 @@ operator-(
 }
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
-inline binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
+inline constexpr binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
 operator-(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& lhs, 
 		LimbType rhs )
@@ -680,8 +760,7 @@ operator*(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& lhs, 
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& rhs )
 {
-	return binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
-			::multiply_by_limbs< LimbsCount >( lhs, rhs );
+	return multiply_by_limbs< LimbsCount >( lhs, rhs );
 }
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
@@ -690,8 +769,7 @@ operator*(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& lhs, 
 		LimbType rhs )
 {
-	return binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
-			::multiply_by_limbs< LimbsCount >( lhs, rhs );
+	return multiply_by_limbs< LimbsCount >( lhs, rhs );
 }
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
@@ -700,8 +778,7 @@ operator*(
 		LimbType lhs, 
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& rhs )
 {
-	return binary_integer_over_array< LimbType, LimbsCount, DblLimbType >
-			::multiply_by_limbs< LimbsCount >( rhs, lhs );
+	return multiply_by_limbs< LimbsCount >( rhs, lhs );
 }
 
 template< typename LimbType, unsigned int LimbsCount, typename DblLimbType >
@@ -735,7 +812,7 @@ inline bool operator==(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& rhs )
 {
 	return std::equal(
-			lhs.data(), lhs.data() + lhs.limbs_count,
+			lhs.data(), lhs.data() + lhs._limbs_count,
 			rhs.data() );
 }
 
@@ -752,8 +829,8 @@ inline bool operator<(
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& lhs, 
 		const binary_integer_over_array< LimbType, LimbsCount, DblLimbType >& rhs )
 {
-	const LimbType* lhs_ptr = lhs.data() + lhs.limbs_count - 1;
-	const LimbType* rhs_ptr = rhs.data() + rhs.limbs_count - 1;
+	const LimbType* lhs_ptr = lhs.data() + lhs._limbs_count - 1;
+	const LimbType* rhs_ptr = rhs.data() + rhs._limbs_count - 1;
 	const LimbType* lhs_ptr_end = lhs.data();
 	for ( ; lhs_ptr >= lhs_ptr_end; 
 			--lhs_ptr, --rhs_ptr ) {
@@ -919,6 +996,15 @@ inline std::istream& operator>>(
 	//    instead.
 }
 
+
+/**
+ * ToDo:
+ * 
+ * Add faster comparison functions, when one of operands is 'limb_type'
+ *     ... don't force its conversion to 'BigInteger', followed by
+ *     comparison of 2 BigIntegers.
+ * 
+ */
 
 }
 }
