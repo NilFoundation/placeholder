@@ -61,10 +61,17 @@
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
+#include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
+#include <nil/crypto3/marshalling/zk/types/plonk/assignment_table.hpp>
 
 #include <functional>
 #include <utility>
 #include <map>
+
+using namespace nil;
+using namespace nil::crypto3;
+using namespace nil::blueprint;
+using namespace nil::crypto3::algebra;
 
 namespace nil {
     namespace blueprint {
@@ -79,28 +86,6 @@ namespace nil {
     }
 
     namespace crypto3 {
-        inline std::vector<std::size_t> generate_random_step_list(const std::size_t r, const std::size_t max_step) {
-            using dist_type = std::uniform_int_distribution<int>;
-            static std::random_device random_engine;
-
-            std::vector<std::size_t> step_list;
-            std::size_t steps_sum = 0;
-            while (steps_sum != r) {
-                if (r - steps_sum <= max_step) {
-                    while (r - steps_sum != 1) {
-                        step_list.emplace_back(r - steps_sum - 1);
-                        steps_sum += step_list.back();
-                    }
-                    step_list.emplace_back(1);
-                    steps_sum += step_list.back();
-                } else {
-                    step_list.emplace_back(dist_type(1, max_step)(random_engine));
-                    steps_sum += step_list.back();
-                }
-            }
-            return step_list;
-        }
-
         template<typename ComponentType, typename BlueprintFieldType>
         class plonk_test_assigner {
         public:
@@ -293,7 +278,7 @@ namespace nil {
                     bp.get_reserved_dynamic_tables(),
                     bp, assignment,
                     desc.usable_rows_amount,
-                    500000
+                    100000
                 );
             }
             desc.rows_amount = zk::snark::basic_padding(assignment);
@@ -306,6 +291,41 @@ namespace nil {
 #endif
             // assignment.export_table(std::cout);
             // bp.export_circuit(std::cout);
+
+#define BLUEPRINT_PLACEHOLDER_TABLE_CIRCUIT_PRINT_ENABLED
+#ifdef BLUEPRINT_PLACEHOLDER_TABLE_CIRCUIT_PRINT_ENABLED
+            using ArithmetizationType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
+            using AssignmentType = nil::blueprint::assignment<ArithmetizationType>;
+            using Endianness = nil::marshalling::option::big_endian;
+            using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+            std::cout << "Our assignment has " << assignment.rows_amount() << " elements" << std::endl;
+            {
+                std::ofstream otable;
+                otable.open("test_table.tbl", std::ios_base::binary | std::ios_base::out);
+                auto filled_val = nil::crypto3::marshalling::types::fill_assignment_table<Endianness, AssignmentType>(desc.usable_rows_amount, assignment);
+                std::vector<std::uint8_t> cv;
+                cv.resize(filled_val.length(), 0x00);
+                auto write_iter = cv.begin();
+                nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
+                otable.write(reinterpret_cast<char*>(cv.data()), cv.size());
+                otable.close();
+            }
+
+            // Print circuit
+            std::cout << "Our circuit has " << bp.num_gates() << " gates" << std::endl;
+            {
+                std::ofstream ocircuit;
+                ocircuit.open("test_circuit.crt", std::ios_base::binary | std::ios_base::out);
+                auto filled_val = nil::crypto3::marshalling::types::fill_plonk_constraint_system<Endianness, ArithmetizationType>(bp);
+                std::vector<std::uint8_t> cv;
+                cv.resize(filled_val.length(), 0x00);
+                auto write_iter = cv.begin();
+                nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
+                ocircuit.write(reinterpret_cast<char*>(cv.data()), cv.size());
+                ocircuit.close();
+            }
+#endif
 
             assert(blueprint::is_satisfied(bp, assignment) == expected_to_pass);
             return std::make_tuple(desc, bp, assignment);
@@ -399,10 +419,6 @@ namespace nil {
                                   (component_instance, input_desc, public_input, result_check, assigner, instance_input,
                                    expected_to_pass, connectedness_check, component_static_info_args...);
 
-#ifdef BLUEPRINT_PLACEHOLDER_TABLE_CIRCUIT_PRINT_ENABLED
-
-#endif
-
 // How to define it from crypto3 cmake?
 //#define BLUEPRINT_PLACEHOLDER_PROOF_GEN_ENABLED
 #ifdef BLUEPRINT_PLACEHOLDER_PROOF_GEN_ENABLED
@@ -422,20 +438,24 @@ namespace nil {
             typename fri_type::params_type fri_params(1,table_rows_log, Lambda, 2);
             commitment_scheme_type lpc_scheme(fri_params);
 
+            std::cout << "Preprocessor" << std::endl;
             typename nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, placeholder_params_type>::preprocessed_data_type
                 preprocessed_public_data = nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, placeholder_params_type>::process(
                     bp, assignments.public_table(), desc, lpc_scheme
                 );
 
+            std::cout << "Private preprocessor" << std::endl;
             typename nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, placeholder_params_type>::preprocessed_data_type
                 preprocessed_private_data = nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, placeholder_params_type>::process(
                     bp, assignments.private_table(), desc
                 );
 
+            std::cout << "Prover" << std::endl;
             auto proof = nil::crypto3::zk::snark::placeholder_prover<BlueprintFieldType, placeholder_params_type>::process(
                 preprocessed_public_data, preprocessed_private_data, desc, bp, lpc_scheme
             );
 
+            std::cout << "Verifier" << std::endl;
             bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<BlueprintFieldType, placeholder_params_type>::process(
                 preprocessed_public_data.common_data, proof, desc, bp, lpc_scheme
             );

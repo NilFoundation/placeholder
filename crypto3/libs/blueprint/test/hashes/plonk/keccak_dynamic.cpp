@@ -66,8 +66,8 @@ void test_keccaks(
 
     constexpr std::size_t WitnessesAmount = 15; // May be changed in next version
     constexpr std::size_t PublicInputColumns = 1;
-    constexpr std::size_t ConstantColumns = 8;
-    constexpr std::size_t SelectorColumns = 60;
+    constexpr std::size_t ConstantColumns = 16;
+    constexpr std::size_t SelectorColumns = 50;
     nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType> desc(WitnessesAmount, PublicInputColumns,
                                                                               ConstantColumns, SelectorColumns);
     using ArithmetizationType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
@@ -125,10 +125,12 @@ calculate_hash(std::vector<std::uint8_t> input){
 
 BOOST_AUTO_TEST_SUITE(bn254_test_suite)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::base_field_type;
+
 BOOST_AUTO_TEST_CASE(keccak_1_short_message) {
     nil::test_tools::random_test_initializer<field_type> rnd;
-    test_keccaks<field_type>({{{0},calculate_hash<field_type>({0})}}, rnd);
+    test_keccaks<field_type, 10>({{{0},calculate_hash<field_type>({0})}}, rnd);
 }
+
 BOOST_AUTO_TEST_CASE(keccak_2_short_messages) {
     nil::test_tools::random_test_initializer<field_type> rnd;
     test_keccaks<field_type>({{{0, 0},calculate_hash<field_type>({0, 0})}, {{1,2,3,4,5}, calculate_hash<field_type>({1,2,3,4,5})}}, rnd);
