@@ -203,6 +203,12 @@ namespace nil {
             // Stretched components do not have a manifest, as they are dynamically generated.
             if constexpr (!blueprint::components::is_component_stretcher<
                                     BlueprintFieldType, ComponentType>::value) {
+                if(bp.num_gates() + bp.num_lookup_gates() !=
+                                component_type::get_gate_manifest(component_instance.witness_amount(),
+                                                                  component_static_info_args...).get_gates_amount()){
+                    std::cout << bp.num_gates() + bp.num_lookup_gates() << " != " << component_type::get_gate_manifest(component_instance.witness_amount(),
+                                                                  component_static_info_args...).get_gates_amount() << std::endl;
+                }
                 BOOST_ASSERT_MSG(bp.num_gates() + bp.num_lookup_gates() ==
                                 component_type::get_gate_manifest(component_instance.witness_amount(),
                                                                   component_static_info_args...).get_gates_amount(),
@@ -210,6 +216,8 @@ namespace nil {
             }
 
             if (start_row + component_instance.rows_amount >= public_input.size()) {
+                if ( assignment.rows_amount() - start_row != component_instance.rows_amount )
+                    std::cout << assignment.rows_amount() << " != " << component_instance.rows_amount << std::endl;
                 BOOST_ASSERT_MSG(assignment.rows_amount() - start_row == component_instance.rows_amount,
                                 "Component rows amount does not match actual rows amount.");
                 // Stretched components do not have a manifest, as they are dynamically generated.
@@ -255,8 +263,8 @@ namespace nil {
                 // blueprint::detail::export_connectedness_zones(
                 //      zones, assignment, instance_input.all_vars(), start_row, rows_after_batching - start_row, std::cout);
 
-                // BOOST_ASSERT_MSG(is_connected,
-                //   "Component disconnected! See comment above this assert for a way to output a visual representation of the connectedness graph.");
+                BOOST_ASSERT_MSG(is_connected,
+                  "Component disconnected! See comment above this assert for a way to output a visual representation of the connectedness graph.");
             }
             desc.usable_rows_amount = assignment.rows_amount();
 
@@ -283,7 +291,7 @@ namespace nil {
                     bp.get_reserved_indices(),
                     bp.get_reserved_tables(),
                     bp.get_reserved_dynamic_tables(),
-                    bp, assignment, lookup_columns_indices, cur_selector_id,
+                    bp, assignment,
                     desc.usable_rows_amount,
                     500000
                 );
@@ -390,6 +398,10 @@ namespace nil {
                                   ComponentStaticInfoArgs...>
                                   (component_instance, input_desc, public_input, result_check, assigner, instance_input,
                                    expected_to_pass, connectedness_check, component_static_info_args...);
+
+#ifdef BLUEPRINT_PLACEHOLDER_TABLE_CIRCUIT_PRINT_ENABLED
+
+#endif
 
 // How to define it from crypto3 cmake?
 //#define BLUEPRINT_PLACEHOLDER_PROOF_GEN_ENABLED
