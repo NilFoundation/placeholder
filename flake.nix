@@ -122,6 +122,9 @@
             runTests = false;
             crypto3 = crypto3-clang-debug;
             evm-assigner = evm-assigner-clang-debug;
+            proof-producer = proof-producer;
+            transpiler = transpiler;
+            parallel-crypto3 = parallel-crypto3;
           });
 
           transpiler = (pkgs.callPackage ./transpiler/transpiler.nix {
