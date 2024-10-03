@@ -26,8 +26,8 @@
 #ifndef CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
 #define CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
 
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>

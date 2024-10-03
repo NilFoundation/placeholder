@@ -28,11 +28,11 @@
 
 #include <vector>
 
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
-#include <nil/crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
-#include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/basic_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
+#include <nil/parallel-crypto3/math/algorithms/unity_root.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 namespace nil {
     namespace crypto3 {

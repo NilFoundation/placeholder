@@ -35,8 +35,8 @@
 #include <nil/crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/pickles/expr.hpp>
 
-#include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/domains/basic_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 #include <array>
 #include <vector>

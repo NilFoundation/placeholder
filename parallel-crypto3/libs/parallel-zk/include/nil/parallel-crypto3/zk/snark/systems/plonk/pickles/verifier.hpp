@@ -38,7 +38,7 @@
 #include <nil/crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>
 #include <nil/crypto3/zk/transcript/kimchi_transcript.hpp>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 #include <vector>
 #include <tuple>

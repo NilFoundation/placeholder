@@ -28,10 +28,10 @@
 
 #include <vector>
 
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 
-#include <nil/crypto3/math/polynomial/basis_change.hpp>
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/basis_change.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>

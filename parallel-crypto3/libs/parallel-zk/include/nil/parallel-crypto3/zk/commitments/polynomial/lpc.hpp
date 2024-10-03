@@ -30,8 +30,8 @@
 #ifndef CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
 #define CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/lagrange_interpolation.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 #include <nil/crypto3/container/merkle/proof.hpp>

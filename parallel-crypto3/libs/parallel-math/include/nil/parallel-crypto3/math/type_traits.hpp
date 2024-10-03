@@ -28,16 +28,16 @@
 
 #include <vector>
 
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/domains/arithmetic_sequence_domain.hpp>
-#include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
-#include <nil/crypto3/math/domains/extended_radix2_domain.hpp>
-#include <nil/crypto3/math/domains/geometric_sequence_domain.hpp>
-#include <nil/crypto3/math/domains/step_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/arithmetic_sequence_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/basic_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/extended_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/geometric_sequence_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/step_radix2_domain.hpp>
 
-#include <nil/crypto3/math/detail/field_utils.hpp>
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/parallel-crypto3/math/detail/field_utils.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial_dfs.hpp>
 
 namespace nil {
     namespace crypto3 {

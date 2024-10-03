@@ -43,7 +43,7 @@
 #include <boost/timer/timer.hpp>
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
-#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 

@@ -32,10 +32,10 @@
 #include <iostream>
 #include <memory>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/polynomial/shift.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/shift.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>

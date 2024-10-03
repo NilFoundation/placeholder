@@ -31,9 +31,9 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <nil/crypto3/zk/math/expression.hpp>
 
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 
 namespace nil {
     namespace crypto3 {

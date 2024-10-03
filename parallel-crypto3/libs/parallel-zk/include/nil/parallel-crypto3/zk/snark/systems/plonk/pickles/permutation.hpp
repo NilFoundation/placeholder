@@ -1,7 +1,7 @@
 #ifndef CRYPTO3_ZK_BLUEPRINT_PLONK_PICKLES_PERMUTATION_HPP
 #define CRYPTO3_ZK_BLUEPRINT_PLONK_PICKLES_PERMUTATION_HPP
 
-#include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/basic_radix2_domain.hpp>
 
 namespace nil {
     namespace crypto3 {

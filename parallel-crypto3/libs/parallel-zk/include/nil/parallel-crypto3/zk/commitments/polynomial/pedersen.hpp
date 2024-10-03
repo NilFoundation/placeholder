@@ -28,7 +28,7 @@
 
 #include <vector>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 

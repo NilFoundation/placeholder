@@ -26,8 +26,8 @@
 #ifndef CRYPTO3_MATH_POLYNOMIAL_SHIFT_HPP
 #define CRYPTO3_MATH_POLYNOMIAL_SHIFT_HPP
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
 namespace nil {

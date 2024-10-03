@@ -50,16 +50,16 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/coset.hpp>
-#include <nil/crypto3/math/domains/arithmetic_sequence_domain.hpp>
-#include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
-#include <nil/crypto3/math/domains/extended_radix2_domain.hpp>
-#include <nil/crypto3/math/domains/geometric_sequence_domain.hpp>
-#include <nil/crypto3/math/domains/step_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/coset.hpp>
+#include <nil/parallel-crypto3/math/domains/arithmetic_sequence_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/basic_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/extended_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/geometric_sequence_domain.hpp>
+#include <nil/parallel-crypto3/math/domains/step_radix2_domain.hpp>
 
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/crypto3/math/polynomial/evaluate.hpp>
+#include <nil/parallel-crypto3/math/polynomial/evaluate.hpp>
 
 #include <typeinfo>
 

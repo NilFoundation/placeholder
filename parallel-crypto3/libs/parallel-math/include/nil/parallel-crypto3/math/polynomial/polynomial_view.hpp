@@ -30,7 +30,7 @@
 #include <algorithm>
 #include <vector>
 
-#include <nil/crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/parallel-crypto3/math/polynomial/basic_operations.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
 
 namespace nil {

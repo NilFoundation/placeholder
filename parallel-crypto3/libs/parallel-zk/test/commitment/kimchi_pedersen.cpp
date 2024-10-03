@@ -14,7 +14,7 @@
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 #include <nil/crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>

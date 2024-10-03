@@ -29,8 +29,8 @@
 #include <algorithm>
 #include <vector>
 
-#include <nil/crypto3/math/polynomial/basic_operations.hpp>
-#include <nil/crypto3/math/polynomial/xgcd.hpp>
+#include <nil/parallel-crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/parallel-crypto3/math/polynomial/xgcd.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -27,9 +27,9 @@
 #ifndef CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
 #define CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -30,8 +30,8 @@
 #include <unordered_map>
 #include <algorithm>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/domains/basic_radix2_domain.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>

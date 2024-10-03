@@ -34,10 +34,10 @@
 #include <string>
 #include <map>
 
-#include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/crypto3/math/detail/field_utils.hpp>
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/algorithms/unity_root.hpp>
+#include <nil/parallel-crypto3/math/detail/field_utils.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>

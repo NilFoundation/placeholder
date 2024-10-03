@@ -30,11 +30,11 @@
 #ifndef CRYPTO3_PLONK_PLACEHOLDER_TYPES_POLICY_HPP
 #define CRYPTO3_PLONK_PLACEHOLDER_TYPES_POLICY_HPP
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
-#include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/crypto3/math/detail/field_utils.hpp>
-#include <nil/crypto3/math/domains/evaluation_domain.hpp>
-#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/algorithms/unity_root.hpp>
+#include <nil/parallel-crypto3/math/detail/field_utils.hpp>
+#include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/proof.hpp>

@@ -32,7 +32,7 @@
 #include <boost/math/tools/polynomial_gcd.hpp>
 #include <boost/integer/extended_euclidean.hpp>
 
-#include <nil/crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/parallel-crypto3/math/polynomial/basic_operations.hpp>
 
 namespace nil {
     namespace crypto3 {

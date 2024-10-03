@@ -31,7 +31,7 @@
 #include <chrono>
 #include <set>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 

@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
 namespace nil {
     namespace crypto3 {

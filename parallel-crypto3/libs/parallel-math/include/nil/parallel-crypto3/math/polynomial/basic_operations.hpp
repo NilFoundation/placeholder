@@ -29,9 +29,9 @@
 #include <algorithm>
 #include <vector>
 
-#include <nil/crypto3/math/algorithms/unity_root.hpp>
-#include <nil/crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
-#include <nil/crypto3/math/detail/field_utils.hpp>
+#include <nil/parallel-crypto3/math/algorithms/unity_root.hpp>
+#include <nil/parallel-crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
+#include <nil/parallel-crypto3/math/detail/field_utils.hpp>
 #include <nil/crypto3/detail/type_traits.hpp>
 
 #include <nil/actor/core/parallelization_utils.hpp>
