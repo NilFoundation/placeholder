@@ -62,13 +62,7 @@ namespace nil {
                              typename Form = forms::short_weierstrass>
                     using g2_type = typename detail::bls12_g2<Version, Form, Coordinates>;
 #ifndef __ZKLLVM__
-
                     constexpr static const bool has_affine_pairing = false;
-
-                    // typedef typename pairing::pairing_policy<bls12<Version>,
-                    //                                          pairing::detail::bls12_pairing_functions<Version>>
-                    //     pairing;
-
 #endif
                     typedef typename policy_type::gt_field_type gt_type;
                 };
