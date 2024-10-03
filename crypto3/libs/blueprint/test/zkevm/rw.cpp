@@ -85,7 +85,7 @@ void test_zkevm_rw(
     using value_type = typename BlueprintFieldType::value_type;
     using var = crypto3::zk::snark::plonk_variable<value_type>;
 
-    using component_type = blueprint::components::zkevm_rw<ArithmetizationType, BlueprintFieldType>;
+    using component_type = nil::blueprint::components::zkevm_rw<ArithmetizationType, BlueprintFieldType>;
 
     typename component_type::input_type instance_input(rw_trace);
 
