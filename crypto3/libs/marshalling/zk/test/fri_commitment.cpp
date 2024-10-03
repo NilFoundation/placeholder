@@ -67,9 +67,10 @@
 
 #include <nil/crypto3/zk/commitments/detail/polynomial/basic_fri.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/detail/random_test_initializer.hpp>
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/fri.hpp>
 
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 #include <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
 
 using namespace nil::crypto3;
@@ -112,7 +113,7 @@ void test_fri_proof(typename FRI::proof_type &proof, typename nil::crypto3::mars
     BOOST_CHECK(proof == constructed_val_read);
 }
 
-BOOST_FIXTURE_TEST_SUITE(marshalling_fri_proof_elements, zk::test_tools::random_test_initializer<algebra::curves::bls12<381>::scalar_field_type>)
+BOOST_FIXTURE_TEST_SUITE(marshalling_fri_proof_elements, test_tools::random_test_initializer<algebra::curves::bls12<381>::scalar_field_type>)
     static constexpr std::size_t lambda = 40;
     static constexpr std::size_t m = 2;
 
@@ -218,7 +219,7 @@ BOOST_FIXTURE_TEST_SUITE(marshalling_fri_proof_elements, zk::test_tools::random_
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_FIXTURE_TEST_SUITE(marshalling_real_fri_proofs, zk::test_tools::random_test_initializer<algebra::curves::pallas::base_field_type>)
+BOOST_FIXTURE_TEST_SUITE(marshalling_real_fri_proofs, test_tools::random_test_initializer<algebra::curves::pallas::base_field_type>)
     using Endianness = nil::marshalling::option::big_endian;
 
 BOOST_AUTO_TEST_CASE(marshalling_fri_basic_test) {
