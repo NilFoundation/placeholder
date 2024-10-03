@@ -51,7 +51,7 @@
 #include <nil/blueprint/components/hashes/keccak/keccak_component.hpp>
 
 #include "../../test_plonk_component.hpp"
-#include "../../random_test_initializer.hpp"
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 
 template <typename BlueprintFieldType, std::size_t max_blocks = 10>
 void test_keccaks(
@@ -59,7 +59,7 @@ void test_keccaks(
         std::vector<uint8_t>,
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>
     >> input,
-    nil::test_tools::random_test_initializer<BlueprintFieldType> &rnd
+    nil::crypto3::test_tools::random_test_initializer<BlueprintFieldType> &rnd
 ){
     std::cout << "Test keccak with " << input.size() << " messages" << std::endl;
 
@@ -122,15 +122,15 @@ calculate_hash(std::vector<std::uint8_t> input){
 BOOST_AUTO_TEST_SUITE(bn254_test_suite)
     using field_type = nil::crypto3::algebra::curves::alt_bn128_254::base_field_type;
 BOOST_AUTO_TEST_CASE(keccak_1_short_message) {
-    nil::test_tools::random_test_initializer<field_type> rnd;
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
     test_keccaks<field_type>({{{0},calculate_hash<field_type>({0})}}, rnd);
 }
 BOOST_AUTO_TEST_CASE(keccak_2_short_messages) {
-    nil::test_tools::random_test_initializer<field_type> rnd;
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
     test_keccaks<field_type>({{{0, 0},calculate_hash<field_type>({0, 0})}, {{1,2,3,4,5}, calculate_hash<field_type>({1,2,3,4,5})}}, rnd);
 }
 BOOST_AUTO_TEST_CASE(keccak_1_N_message) {
-    nil::test_tools::random_test_initializer<field_type> rnd;
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
     std::size_t N = 5;
     for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++) {
         std:: cout << boost::unit_test::framework::master_test_suite().argv[i] << std::endl;
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(keccak_1_N_message) {
     test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
 }
 BOOST_AUTO_TEST_CASE(keccak_1_N_zeroes) {
-    nil::test_tools::random_test_initializer<field_type> rnd;
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
     std::size_t N = 5;
     for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++) {
         std:: cout << boost::unit_test::framework::master_test_suite().argv[i] << std::endl;
@@ -163,19 +163,19 @@ BOOST_AUTO_TEST_CASE(keccak_1_N_zeroes) {
     test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
 }
 BOOST_AUTO_TEST_CASE(keccak_1_long_message) {
-    nil::test_tools::random_test_initializer<field_type> rnd;
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
     std::vector<uint8_t> msg(500, 5);
     test_keccaks<field_type>({{msg,calculate_hash<field_type>(msg)}}, rnd);
 }
 BOOST_AUTO_TEST_CASE(keccak_2_long_messages) {
-    nil::test_tools::random_test_initializer<field_type> rnd;
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
     std::vector<uint8_t> msg1(136, 6);
     std::vector<uint8_t> msg2(277, 7);
     test_keccaks<field_type>({{msg1,calculate_hash<field_type>(msg1)}, {msg2,calculate_hash<field_type>(msg2)}}, rnd);
 }
 
 BOOST_AUTO_TEST_CASE(keccak_test_hello_world){
-    nil::test_tools::random_test_initializer<field_type> rnd;
+    nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
     std::vector<std::uint8_t> msg = {
         0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x33,
         0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x33, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x44, 0x55,
