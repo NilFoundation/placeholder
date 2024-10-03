@@ -94,7 +94,7 @@
 #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
 #include "./detail/circuits.hpp"
-#include "random_test_data_generation.hpp"
+#include <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
 
 using namespace nil;
 using namespace nil::crypto3;
