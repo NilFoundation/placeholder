@@ -524,7 +524,7 @@ namespace nil {
                     std::tuple<
                         // fri_proof_type fri_proof;
                         initial_fri_proof_type<TTypeBase, LPCScheme>,
-                        // std::vector<lpc_proof_type> intial_proofs_per_prover;
+                        // std::vector<lpc_proof_type> initial_proofs_per_prover;
                         nil::marshalling::types::standard_array_list<
                             TTypeBase,
                             inital_eval_proof<TTypeBase, LPCScheme>
@@ -552,7 +552,7 @@ namespace nil {
                         TTypeBase,
                         inital_eval_proof<TTypeBase, LPCScheme>
                     > filled_initial_proofs;
-                    for (const auto &initial_proof : proof.intial_proofs_per_prover) {
+                    for (const auto &initial_proof : proof.initial_proofs_per_prover) {
                         filled_initial_proofs.value().push_back(
                             fill_initial_eval_proof<Endianness, LPCScheme>(
                                 initial_proof
@@ -582,7 +582,7 @@ namespace nil {
                         std::get<0>(filled_proof.value()));
 
                     for (const auto &filled_initial_proof : std::get<1>(filled_proof.value()).value()) {
-                        proof.intial_proofs_per_prover.push_back(
+                        proof.initial_proofs_per_prover.push_back(
                             make_initial_eval_proof<Endianness, LPCScheme>(
                                 filled_initial_proof
                             )

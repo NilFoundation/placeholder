@@ -207,10 +207,8 @@ namespace nil {
                 out << "\t\t{\"array\":[" << std::endl;
                 auto batch_info = eval_proof.z.get_batch_info();
                 std::size_t sum = 0;
-                std::size_t poly_num = 0;
                 for(const auto& [k, v]: batch_info){
                     for(std::size_t i = 0; i < v; i++){
-                        poly_num++;
                         BOOST_ASSERT(eval_proof.z.get_poly_points_number(k, i) != 0);
                         for(std::size_t j = 0; j < eval_proof.z.get_poly_points_number(k, i); j++){
                             if( sum != 0 ) out << "," << std::endl;
@@ -486,10 +484,10 @@ namespace nil {
             };
 
             static inline std::string rot_string (int j){
-                if(j == 0) return "xi"; else
-                if(j == 1 ) return "xi*omega"; else
-                if(j == -1) return "xi/omega"; else
-                if(j > 0) return "xi*pow<" + to_string(j) + ">(omega)"; else
+                if(j == 0) return "xi";
+                if(j == 1 ) return "xi*omega";
+                if(j == -1) return "xi/omega";
+                if(j > 0) return "xi*pow<" + to_string(j) + ">(omega)";
                 if(j < 0) return "xi/pow<" + to_string(-j) + ">(omega)";
                 return "";
             }

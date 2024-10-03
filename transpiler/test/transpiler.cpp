@@ -71,6 +71,8 @@
 
 #include <nil/blueprint/transpiler/evm_verifier_gen.hpp>
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
+#include <nil/blueprint/transpiler/aggregated_verifier_generator.hpp>
+#include <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
 
 #include "./detail/circuits.hpp"
 
@@ -900,6 +902,80 @@ BOOST_FIXTURE_TEST_CASE(transpiler_test, test_initializer) {
         output_file.close();
     }
 }
+
+BOOST_FIXTURE_TEST_CASE(aggregated_proof_sanity_test, test_initializer) {
+    auto circuit = circuit_test_1<field_type>(
+        test_global_alg_rnd_engine<field_type>, test_global_rnd_engine
+    );
+    plonk_table_description<field_type> desc(
+        placeholder_test_params::witness_columns,
+        placeholder_test_params::public_input_columns,
+        placeholder_test_params::constant_columns,
+        placeholder_test_params::selector_columns
+    );
+    using batch_lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using batch_lpc_scheme_type = typename commitments::lpc_commitment_scheme<batch_lpc_type>;
+    using batch_lpc_placeholder_params_type =
+        nil::crypto3::zk::snark::placeholder_params<circuit_params, batch_lpc_scheme_type>;
+
+    desc.rows_amount = circuit.table_rows;
+    desc.usable_rows_amount = circuit.usable_rows;
+    std::size_t table_rows_log = std::log2(circuit.table_rows);
+
+    typename policy_type::constraint_system_type constraint_system(
+        circuit.gates,
+        circuit.copy_constraints,
+        circuit.lookup_gates,
+        circuit.lookup_tables
+    );
+    typename policy_type::variable_assignment_type assignments = circuit.table;
+
+    typename batch_lpc_type::fri_type::params_type fri_params(
+        1, table_rows_log, placeholder_test_params::lambda, 4
+    );
+    batch_lpc_scheme_type lpc_scheme(fri_params);
+
+    typename placeholder_public_preprocessor<field_type, batch_lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_public_data = placeholder_public_preprocessor<field_type, batch_lpc_placeholder_params_type>::process(
+            constraint_system, assignments.public_table(), desc, lpc_scheme, 10
+        );
+
+    typename placeholder_private_preprocessor<field_type, batch_lpc_placeholder_params_type>::preprocessed_data_type
+        preprocessed_private_data = placeholder_private_preprocessor<field_type, batch_lpc_placeholder_params_type>::process(
+            constraint_system, assignments.private_table(), desc);
+
+    auto proof = placeholder_prover<field_type, batch_lpc_placeholder_params_type>::process(
+        preprocessed_public_data, preprocessed_private_data, desc, constraint_system, lpc_scheme
+    );
+    // now we get a vector of partial proofs
+    std::vector<placeholder_partial_proof<field_type, batch_lpc_placeholder_params_type>> partial_proofs;
+    for (std::size_t i = 0; i < 5; i++) {
+        partial_proofs.push_back(proof);
+    }
+    // and lpc aggregated proof
+    auto lpc_proof = generate_random_lpc_aggregated_proof<lpc_type>(
+        7, 5,
+        fri_params.step_list,
+        2,
+        false,
+        test_global_alg_rnd_engine<field_type>, test_global_rnd_engine
+    );
+
+    using aggregated_proof_type = nil::crypto3::zk::snark::placeholder_aggregated_proof<
+        field_type, batch_lpc_placeholder_params_type>;
+    aggregated_proof_type aggregated_proof;
+    aggregated_proof.partial_proofs = partial_proofs;
+    aggregated_proof.aggregated_proof = lpc_proof;
+    nil::blueprint::aggregated_verifier_generator<batch_lpc_placeholder_params_type, aggregated_proof_type>
+        verifier_generator(desc);
+    auto json = verifier_generator.generate_input(
+        assignments.public_inputs(), aggregated_proof, {desc.usable_rows_amount + 1}
+    );
+    boost::property_tree::ptree ptree;
+    auto json_stream = std::istringstream(json);
+    boost::property_tree::read_json(json_stream, ptree);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(recursive_circuit2)

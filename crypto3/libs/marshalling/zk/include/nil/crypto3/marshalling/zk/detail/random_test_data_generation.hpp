@@ -67,7 +67,7 @@
 
 #include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
-#include <nil/crypto3/zk/test_tools/random_test_initializer.hpp>
+#include <nil/crypto3/zk/detail/random_test_initializer.hpp>
 
 using namespace nil::crypto3;
 
@@ -415,9 +415,9 @@ typename LPC::aggregated_proof_type generate_random_lpc_aggregated_proof(
     res.fri_proof = generate_random_lpc_intial_fri_proof<LPC>(
         d, max_batch_size, step_list, lambda, use_grinding, alg_rnd, rnd);
 
-    res.intial_proofs_per_prover.resize(lambda);
+    res.initial_proofs_per_prover.resize(lambda);
     for (std::size_t i = 0; i < lambda; i++) {
-        res.intial_proofs_per_prover[i] = generate_random_lpc_inital_proof<LPC>(
+        res.initial_proofs_per_prover[i] = generate_random_lpc_inital_proof<LPC>(
             d, max_batch_size, step_list, lambda, use_grinding, alg_rnd, rnd);
     }
 

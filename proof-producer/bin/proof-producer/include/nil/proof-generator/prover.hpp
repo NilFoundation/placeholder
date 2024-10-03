@@ -721,7 +721,7 @@ namespace nil {
                 }
                 polynomial_type combined_Q = lpc_scheme_->prepare_combined_Q(
                     challenge.value(), starting_power);
-                return save_poly_to_file(combined_Q, output_combined_Q_file); 
+                return save_poly_to_file(combined_Q, output_combined_Q_file);
             }
 
             bool merge_proofs(
@@ -782,7 +782,7 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(error) << "Error reading lpc_consistency_proof from \"" << initial_proof_file << "\"";
                     }
 
-                    merged_proof.aggregated_proof.intial_proofs_per_prover.emplace_back(
+                    merged_proof.aggregated_proof.initial_proofs_per_prover.emplace_back(
                         nil::crypto3::marshalling::types::make_initial_eval_proof<Endianness, LpcScheme>(*initial_proof)
                     );
                 }
@@ -822,7 +822,7 @@ namespace nil {
             }
 
             bool save_proof_of_work(
-                const typename FriType::grinding_type::output_type &proof_of_work, 
+                const typename FriType::grinding_type::output_type &proof_of_work,
                 const boost::filesystem::path &output_file) {
                 using POW_marshalling_type = nil::marshalling::types::integral<TTypeBase, typename FriType::grinding_type::output_type>;
                 BOOST_LOG_TRIVIAL(info) << "Writing proof of work to " << output_file;
@@ -842,7 +842,7 @@ namespace nil {
 
                 BOOST_LOG_TRIVIAL(info) << "Writing challenges to " << consistency_checks_challenges_output_file;
 
-                challenge_vector_marshalling_type marshalled_challenges = 
+                challenge_vector_marshalling_type marshalled_challenges =
                     nil::crypto3::marshalling::types::fill_field_element_vector<typename BlueprintField::value_type, Endianness>(
                         challenges);
 
@@ -873,10 +873,10 @@ namespace nil {
             }
 
             bool generate_aggregated_FRI_proof_to_file(
-                const boost::filesystem::path &aggregated_challenge_file, 
+                const boost::filesystem::path &aggregated_challenge_file,
                 const std::vector<boost::filesystem::path>& input_combined_Q_polynomial_files,
-                const boost::filesystem::path& aggregated_fri_proof_output_file, 
-                const boost::filesystem::path& proof_of_work_output_file, 
+                const boost::filesystem::path& aggregated_fri_proof_output_file,
+                const boost::filesystem::path& proof_of_work_output_file,
                 const boost::filesystem::path& consistency_checks_challenges_output_file) {
 
                 std::optional<typename BlueprintField::value_type> aggregated_challenge = read_challenge(
@@ -910,7 +910,7 @@ namespace nil {
 
                 return save_fri_proof_to_file(fri_proof, aggregated_fri_proof_output_file) &&
                     save_proof_of_work(proof_of_work, proof_of_work_output_file) &&
-                    save_challenge_vector_to_file(challenges, consistency_checks_challenges_output_file); 
+                    save_challenge_vector_to_file(challenges, consistency_checks_challenges_output_file);
             }
 
             bool save_lpc_consistency_proof_to_file(
@@ -932,18 +932,18 @@ namespace nil {
                 const boost::filesystem::path& combined_Q_file,
                 const boost::filesystem::path& consistency_checks_challenges_output_file,
                 const boost::filesystem::path& output_proof_file) {
-                
+
                 std::optional<std::vector<typename BlueprintField::value_type>> challenges = read_challenge_vector_from_file(
                     consistency_checks_challenges_output_file);
                 if (!challenges)
-                    return false; 
+                    return false;
 
                 std::optional<polynomial_type> combined_Q = read_poly_from_file<polynomial_type>(combined_Q_file);
                 if (!combined_Q)
                     return false;
 
                 typename LpcScheme::lpc_proof_type proof = lpc_scheme_->proof_eval_lpc_proof(
-                    combined_Q.value(), challenges.value()); 
+                    combined_Q.value(), challenges.value());
 
                 return save_lpc_consistency_proof_to_file(proof, output_proof_file);
             }
