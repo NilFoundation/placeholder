@@ -70,6 +70,7 @@
 #include <nil/crypto3/test_tools/random_test_initializer.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/fri.hpp>
 
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 #include <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
 
 using namespace nil::crypto3;
