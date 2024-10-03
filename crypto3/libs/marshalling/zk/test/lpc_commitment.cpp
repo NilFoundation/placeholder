@@ -65,7 +65,7 @@
 
 #include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
-#include "random_test_data_generation.hpp"
+#include <nil/crypto3/marshalling/zk/detail/random_test_data_generation.hpp>
 
 using namespace nil::crypto3;
 
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_SUITE(marshalling_random)
     using LPC = typename nil::crypto3::zk::commitments::batched_list_polynomial_commitment<field_type, lpc_params_type>;
     using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<LPC, math::polynomial<typename field_type::value_type>>;
 
-BOOST_FIXTURE_TEST_CASE(lpc_proof_test, zk::test_tools::random_test_initializer<field_type>) {
+BOOST_FIXTURE_TEST_CASE(lpc_proof_test, test_tools::random_test_initializer<field_type>) {
 
     typename FRI::params_type fri_params(1, r + 1, lambda, 4);
 
@@ -185,7 +185,7 @@ BOOST_FIXTURE_TEST_CASE(lpc_proof_test, zk::test_tools::random_test_initializer<
     test_lpc_proof<Endianness, lpc_scheme_type>(proof, fri_params);
 }
 
-BOOST_FIXTURE_TEST_CASE(lpc_aggregated_proof_test, zk::test_tools::random_test_initializer<field_type>) {
+BOOST_FIXTURE_TEST_CASE(lpc_aggregated_proof_test, test_tools::random_test_initializer<field_type>) {
     typename FRI::params_type fri_params(1, r + 1, lambda, 4);
 
     auto proof = generate_random_lpc_aggregated_proof<LPC>(
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_SUITE(marshalling_real)
     using transcript_hash_type = nil::crypto3::hashes::keccak_1600<256>;
     using merkle_tree_type = typename containers::merkle_tree<merkle_hash_type, 2>;
 
-BOOST_FIXTURE_TEST_CASE(batches_num_3_test, zk::test_tools::random_test_initializer<field_type>){
+BOOST_FIXTURE_TEST_CASE(batches_num_3_test, test_tools::random_test_initializer<field_type>){
     // Setup types.
     constexpr static const std::size_t lambda = 40;
     constexpr static const std::size_t k = 1;

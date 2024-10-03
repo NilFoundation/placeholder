@@ -61,7 +61,7 @@
 #include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
 #include <nil/crypto3/zk/commitments/batched_commitment.hpp>
-#include <nil/crypto3/zk/test_tools/random_test_initializer.hpp>
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 
 #include "circuits.hpp"
 

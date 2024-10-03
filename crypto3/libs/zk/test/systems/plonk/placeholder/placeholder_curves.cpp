@@ -53,7 +53,7 @@
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/poseidon.hpp>
 
-#include <nil/crypto3/zk/test_tools/random_test_initializer.hpp>
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 
 #include "circuits.hpp"
 #include "placeholder_test_runner.hpp"

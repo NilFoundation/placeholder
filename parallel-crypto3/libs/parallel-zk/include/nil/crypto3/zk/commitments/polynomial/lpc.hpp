@@ -173,9 +173,9 @@ namespace nil {
                         }
                     }
 
-                    /** This function must be called for the cases where we want to skip the 
+                    /** This function must be called for the cases where we want to skip the
                      * round proof for FRI. Must be called once per instance of prover for the aggregated FRI.
-                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current 
+                     * \param[in] combined_Q - Polynomial combined_Q was already computed by the current
                             prover in the previous step of the aggregated FRI protocol.
                      * \param[in] challenges - These challenges were sent from the "Main" prover,
                             on which the round proof was created for the polynomial F(x) = Sum(combined_Q).
@@ -679,7 +679,7 @@ namespace nil {
                     struct aggregated_proof_type {
                         bool operator==(const aggregated_proof_type &rhs) const {
                             return fri_proof == rhs.fri_proof &&
-                                intial_proofs_per_prover == rhs.intial_proofs_per_prover &&
+                                initial_proofs_per_prover == rhs.initial_proofs_per_prover &&
                                 proof_of_work == rhs.proof_of_work;
                         }
 
@@ -691,7 +691,7 @@ namespace nil {
                         fri_proof_type fri_proof;
 
                         // For each prover we have an initial proof.
-                        std::vector<lpc_proof_type> intial_proofs_per_prover;
+                        std::vector<lpc_proof_type> initial_proofs_per_prover;
 
                         typename LPCParams::grinding_type::output_type proof_of_work;
                     };

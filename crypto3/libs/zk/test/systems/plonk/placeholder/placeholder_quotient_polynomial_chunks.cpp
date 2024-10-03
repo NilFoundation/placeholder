@@ -39,7 +39,7 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 
 #include <nil/crypto3/hash/keccak.hpp>
-#include <nil/crypto3/zk/test_tools/random_test_initializer.hpp>
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 
 #include "circuits.hpp"
 #include "placeholder_test_runner.hpp"
