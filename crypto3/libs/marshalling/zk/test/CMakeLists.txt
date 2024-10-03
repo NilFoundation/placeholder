@@ -32,6 +32,7 @@ macro(define_marshalling_test test)
     cm_test(NAME ${full_test_name} SOURCES ${test}.cpp)
 
     target_include_directories(marshalling_zk_${name}_test PRIVATE
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../test_tools/include>"
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
             "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
 
