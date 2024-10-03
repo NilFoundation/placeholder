@@ -41,6 +41,7 @@
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
 #include <nil/actor/core/thread_pool.hpp>
+#include <nil/actor/core/parallelization_utils.hpp>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::math;
