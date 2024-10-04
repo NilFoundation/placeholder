@@ -28,11 +28,11 @@
 #ifndef CRYPTO3_ZK_PLONK_PLACEHOLDER_PARAMS_HPP
 #define CRYPTO3_ZK_PLONK_PLACEHOLDER_PARAMS_HPP
 
-#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/basic_fri.hpp>
-#include <nil/parallel-crypto3/zk/commitments/polynomial/lpc.hpp>
-#include <nil/parallel-crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/crypto3/zk/commitments/detail/polynomial/basic_fri.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 namespace nil {
     namespace crypto3 {

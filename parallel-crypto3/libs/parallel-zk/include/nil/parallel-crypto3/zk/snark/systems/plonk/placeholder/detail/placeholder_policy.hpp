@@ -36,9 +36,9 @@
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/proof.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/proof.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 
 namespace nil {
     namespace crypto3 {
