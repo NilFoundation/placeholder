@@ -28,9 +28,9 @@
 #ifndef CRYPTO3_ZK_PLONK_LOOKUP_TABLE_HPP
 #define CRYPTO3_ZK_PLONK_LOOKUP_TABLE_HPP
 
-#include <nil/crypto3/zk/math/expression_visitors.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/math/expression_visitors.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 #include <boost/assert.hpp>
 
 namespace nil {

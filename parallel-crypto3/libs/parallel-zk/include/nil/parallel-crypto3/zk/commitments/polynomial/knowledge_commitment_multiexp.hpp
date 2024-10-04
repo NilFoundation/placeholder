@@ -37,7 +37,7 @@
 
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -51,8 +51,8 @@
 #include <nil/parallel-crypto3/math/coset.hpp>
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/arithmetic_programs/qap.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/arithmetic_programs/qap.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 
 #include <nil/crypto3/algebra/fields/params.hpp>
 

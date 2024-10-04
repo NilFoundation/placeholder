@@ -28,13 +28,13 @@
 
 #include "bacs_examples.hpp"
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/bacs_ppzksnark.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/bacs_ppzksnark.hpp>
 
 #include "../r1cs_examples.hpp"
 
-#include <nil/crypto3/zk/snark/algorithms/generate.hpp>
-#include <nil/crypto3/zk/snark/algorithms/verify.hpp>
-#include <nil/crypto3/zk/snark/algorithms/prove.hpp>
+#include <nil/parallel-crypto3/zk/snark/algorithms/generate.hpp>
+#include <nil/parallel-crypto3/zk/snark/algorithms/verify.hpp>
+#include <nil/parallel-crypto3/zk/snark/algorithms/prove.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -26,8 +26,8 @@
 #ifndef CRYPTO3_ZK_SNARK_SET_COMMITMENT_HPP
 #define CRYPTO3_ZK_SNARK_SET_COMMITMENT_HPP
 
-#include <nil/crypto3/zk/snark/merkle_tree.hpp>
-#include <nil/crypto3/zk/snark/components/hashes/hash_io.hpp>
+#include <nil/parallel-crypto3/zk/snark/merkle_tree.hpp>
+#include <nil/parallel-crypto3/zk/snark/components/hashes/hash_io.hpp>
 
 namespace nil {
     namespace crypto3 {

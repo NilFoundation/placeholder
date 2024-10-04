@@ -39,12 +39,12 @@
 #include <vector>
 #include <set>
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_gate.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_table.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/lookup_gate.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/lookup_table.hpp>
 
 namespace nil {
     namespace crypto3 {

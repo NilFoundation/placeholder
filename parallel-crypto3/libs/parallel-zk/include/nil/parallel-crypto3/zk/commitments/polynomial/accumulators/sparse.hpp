@@ -35,7 +35,7 @@
 #include <boost/accumulators/framework/depends_on.hpp>
 #include <boost/accumulators/framework/parameters/sample.hpp>
 
-#include <nil/crypto3/zk/snark/accumulators/parameters/offset.hpp>
+#include <nil/parallel-crypto3/zk/snark/accumulators/parameters/offset.hpp>
 
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>
 

@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/private_key.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/private_key.hpp>
 
 namespace nil {
     namespace crypto3 {

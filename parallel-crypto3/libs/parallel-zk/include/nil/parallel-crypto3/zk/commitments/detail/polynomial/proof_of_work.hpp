@@ -32,7 +32,7 @@
 
 #include <nil/crypto3/random/algebraic_engine.hpp>
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>

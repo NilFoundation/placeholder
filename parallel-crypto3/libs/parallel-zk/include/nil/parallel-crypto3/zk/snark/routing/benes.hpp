@@ -43,7 +43,7 @@
 
 #include <vector>
 
-#include <nil/crypto3/zk/math/integer_permutation.hpp>
+#include <nil/parallel-crypto3/zk/math/integer_permutation.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -28,11 +28,11 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/container/accumulation_vector.hpp>
-#include <nil/crypto3/zk/snark/reductions/uscs_to_ssp.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/arithmetic_programs/ssp.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/uscs_ppzksnark/detail/basic_policy.hpp>
+#include <nil/parallel-crypto3/container/accumulation_vector.hpp>
+#include <nil/parallel-crypto3/zk/snark/reductions/uscs_to_ssp.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/arithmetic_programs/ssp.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/uscs_ppzksnark/detail/basic_policy.hpp>
 
 namespace nil {
     namespace crypto3 {

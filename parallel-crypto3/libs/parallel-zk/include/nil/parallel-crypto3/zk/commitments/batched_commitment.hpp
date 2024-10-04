@@ -37,9 +37,9 @@
 #include <nil/parallel-crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/parallel-crypto3/math/polynomial/lagrange_interpolation.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/commitments/type_traits.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/eval_storage.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/commitments/type_traits.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/eval_storage.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>

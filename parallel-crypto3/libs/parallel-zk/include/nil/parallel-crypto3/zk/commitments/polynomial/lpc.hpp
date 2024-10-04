@@ -33,11 +33,11 @@
 #include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 #include <nil/parallel-crypto3/math/polynomial/lagrange_interpolation.hpp>
 
-#include <nil/crypto3/container/merkle/tree.hpp>
-#include <nil/crypto3/container/merkle/proof.hpp>
+#include <nil/parallel-crypto3/container/merkle/tree.hpp>
+#include <nil/parallel-crypto3/container/merkle/proof.hpp>
 
-#include <nil/crypto3/zk/commitments/batched_commitment.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/basic_fri.hpp>
+#include <nil/parallel-crypto3/zk/commitments/batched_commitment.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/basic_fri.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>

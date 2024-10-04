@@ -37,7 +37,7 @@
 
 #include <nil/crypto3/hash/type_traits.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
-#include <nil/crypto3/container/merkle/node.hpp>
+#include <nil/parallel-crypto3/container/merkle/node.hpp>
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>

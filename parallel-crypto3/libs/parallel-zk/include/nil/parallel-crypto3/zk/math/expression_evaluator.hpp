@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <boost/variant/static_visitor.hpp>
 #include <boost/variant/apply_visitor.hpp>
-#include <nil/crypto3/zk/math/expression.hpp>
+#include <nil/parallel-crypto3/zk/math/expression.hpp>
 
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/polynomial/polynomial_dfs.hpp>

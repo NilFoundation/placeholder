@@ -3,12 +3,12 @@
 
 #include <vector>
 
-#include <nil/crypto3/zk/snark/reductions/r1cs_to_qap.hpp>
-#include <nil/crypto3/container/accumulation_vector.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/result.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/private_key.hpp>
+#include <nil/parallel-crypto3/zk/snark/reductions/r1cs_to_qap.hpp>
+#include <nil/parallel-crypto3/container/accumulation_vector.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/result.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/private_key.hpp>
 
 namespace nil {
     namespace crypto3 {

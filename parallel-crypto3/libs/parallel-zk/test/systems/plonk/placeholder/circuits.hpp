@@ -37,18 +37,18 @@
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/crypto3/zk/math/permutation.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/padding.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
+#include <nil/parallel-crypto3/zk/math/permutation.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/params.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/padding.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
 
 namespace nil {
     namespace crypto3 {

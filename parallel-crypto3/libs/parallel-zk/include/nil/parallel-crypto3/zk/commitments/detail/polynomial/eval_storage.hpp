@@ -25,8 +25,8 @@
 #ifndef CRYPTO3_ZK_PLACEHOLDER_EVAL_STORAGE_HPP
 #define CRYPTO3_ZK_PLACEHOLDER_EVAL_STORAGE_HPP
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/commitments/type_traits.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/commitments/type_traits.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -29,7 +29,7 @@
 
 #include <utility>
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
 namespace nil {
     namespace crypto3 {

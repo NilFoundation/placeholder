@@ -38,9 +38,9 @@
 #include <nil/crypto3/algebra/multiexp/policies.hpp>
 #include <nil/crypto3/algebra/multiexp/inner_product.hpp>
 
-#include <nil/crypto3/zk/transcript/kimchi_transcript.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail/kimchi_functions.hpp>
+#include <nil/parallel-crypto3/zk/transcript/kimchi_transcript.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/detail/kimchi_functions.hpp>
 
 namespace nil {
     namespace crypto3 {

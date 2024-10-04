@@ -29,10 +29,10 @@
 
 #include <algorithm>
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/padding.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/padding.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 #include <nil/parallel-crypto3/math/polynomial/polynomial_dfs.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
 namespace nil {
     namespace blueprint {

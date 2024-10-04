@@ -27,7 +27,7 @@
 
 #include <vector>
 
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/accumulator.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/accumulator.hpp>
 
 #include <nil/parallel-crypto3/math/polynomial/basic_operations.hpp>
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>

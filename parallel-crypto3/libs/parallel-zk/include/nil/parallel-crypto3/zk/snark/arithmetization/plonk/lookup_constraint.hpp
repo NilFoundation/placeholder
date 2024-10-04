@@ -28,8 +28,8 @@
 #ifndef CRYPTO3_ZK_PLONK_LOOKUP_CONSTRAINT_HPP
 #define CRYPTO3_ZK_PLONK_LOOKUP_CONSTRAINT_HPP
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
 
 namespace nil {
     namespace crypto3 {

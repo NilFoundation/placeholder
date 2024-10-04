@@ -52,8 +52,8 @@
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/arithmetic_programs/ssp.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/arithmetic_programs/ssp.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 
 namespace nil {
     namespace crypto3 {

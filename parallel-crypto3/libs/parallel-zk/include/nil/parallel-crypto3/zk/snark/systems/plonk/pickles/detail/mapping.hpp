@@ -3,7 +3,7 @@
 
 #include <nil/crypto3/algebra/curves/detail/forms/short_weierstrass/coordinates.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
 
 namespace nil {
     namespace crypto3 {

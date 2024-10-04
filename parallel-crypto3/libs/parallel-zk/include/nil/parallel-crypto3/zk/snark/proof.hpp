@@ -25,7 +25,7 @@
 #ifndef CRYPTO3_ZK_SNARK_PROOF_HPP
 #define CRYPTO3_ZK_SNARK_PROOF_HPP
 
-#include <nil/crypto3/zk/proof.hpp>
+#include <nil/parallel-crypto3/zk/proof.hpp>
 
 namespace nil {
     namespace crypto3 {

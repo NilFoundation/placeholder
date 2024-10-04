@@ -26,13 +26,13 @@
 #ifndef CRYPTO3_ZK_BACS_PPZKSNARK_BASIC_PROVER_HPP
 #define CRYPTO3_ZK_BACS_PPZKSNARK_BASIC_PROVER_HPP
 
-#include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/bacs.hpp>
-#include <nil/crypto3/zk/snark/reductions/bacs_to_r1cs.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/bacs.hpp>
+#include <nil/parallel-crypto3/zk/snark/reductions/bacs_to_r1cs.hpp>
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/bacs_ppzksnark/detail/basic_policy.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/bacs_ppzksnark/detail/basic_policy.hpp>
 
-#include <nil/crypto3/zk/algorithms/prove.hpp>
+#include <nil/parallel-crypto3/zk/algorithms/prove.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -59,17 +59,17 @@
 #include <vector>
 #include <tuple>
 
-#include <nil/crypto3/container/sparse_vector.hpp>
-#include <nil/crypto3/container/accumulation_vector.hpp>
+#include <nil/parallel-crypto3/container/sparse_vector.hpp>
+#include <nil/parallel-crypto3/container/accumulation_vector.hpp>
 
 #include <boost/multiprecision/number.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>

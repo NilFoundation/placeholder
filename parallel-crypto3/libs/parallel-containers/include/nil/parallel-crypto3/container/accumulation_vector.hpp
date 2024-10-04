@@ -30,7 +30,7 @@
 #include <iostream>
 #include <iterator>
 
-#include <nil/crypto3/container/sparse_vector.hpp>
+#include <nil/parallel-crypto3/container/sparse_vector.hpp>
 
 namespace nil {
     namespace crypto3 {

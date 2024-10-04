@@ -27,8 +27,8 @@
 #include <vector>
 #include <boost/variant/static_visitor.hpp>
 #include <boost/variant/apply_visitor.hpp>
-#include <nil/crypto3/zk/math/expression.hpp>
-#include <nil/crypto3/zk/math/non_linear_combination.hpp>
+#include <nil/parallel-crypto3/zk/math/expression.hpp>
+#include <nil/parallel-crypto3/zk/math/non_linear_combination.hpp>
 
 namespace nil {
     namespace crypto3 {

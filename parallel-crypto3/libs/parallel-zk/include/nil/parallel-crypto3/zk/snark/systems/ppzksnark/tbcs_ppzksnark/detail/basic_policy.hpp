@@ -50,11 +50,11 @@
 #ifndef CRYPTO3_ZK_TBCS_PPZKSNARK_TYPES_POLICY_HPP
 #define CRYPTO3_ZK_TBCS_PPZKSNARK_TYPES_POLICY_HPP
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/proving_key.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/keypair.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/proving_key.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/keypair.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
-#include <nil/crypto3/zk/snark/reductions/tbcs_to_uscs.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
+#include <nil/parallel-crypto3/zk/snark/reductions/tbcs_to_uscs.hpp>
 
 namespace nil {
     namespace crypto3 {

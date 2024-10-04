@@ -29,8 +29,8 @@
 #ifndef CRYPTO3_ZK_TBCS_EXAMPLES_HPP
 #define CRYPTO3_ZK_TBCS_EXAMPLES_HPP
 
-#include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark.hpp>
 
 namespace nil {
     namespace crypto3 {

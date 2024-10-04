@@ -16,8 +16,8 @@
 #include <nil/marshalling/algorithms/pack.hpp>
 #include <nil/marshalling/status_type.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
-// #include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/detail/mapping.hpp>
+// #include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
 
 namespace nil {
     namespace crypto3 {

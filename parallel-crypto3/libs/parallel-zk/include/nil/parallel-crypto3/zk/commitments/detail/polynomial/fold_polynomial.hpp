@@ -35,10 +35,10 @@
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 
-#include <nil/crypto3/container/merkle/tree.hpp>
-#include <nil/crypto3/container/merkle/proof.hpp>
+#include <nil/parallel-crypto3/container/merkle/tree.hpp>
+#include <nil/parallel-crypto3/container/merkle/proof.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
 
 namespace nil {
     namespace crypto3 {

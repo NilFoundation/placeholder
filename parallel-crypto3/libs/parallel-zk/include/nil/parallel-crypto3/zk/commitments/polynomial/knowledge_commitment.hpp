@@ -26,9 +26,9 @@
 #ifndef CRYPTO3_ZK_KNOWLEDGE_COMMITMENT_HPP
 #define CRYPTO3_ZK_KNOWLEDGE_COMMITMENT_HPP
 
-#include <nil/crypto3/container/sparse_vector.hpp>
+#include <nil/parallel-crypto3/container/sparse_vector.hpp>
 
-#include <nil/crypto3/zk/commitments/detail/polynomial/element_knowledge_commitment.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/element_knowledge_commitment.hpp>
 
 namespace nil {
     namespace crypto3 {

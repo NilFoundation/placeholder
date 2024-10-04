@@ -26,13 +26,13 @@
 #ifndef CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_HPP
 #define CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_HPP
 
-#include <nil/crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/private_key.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/public_key.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/result.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/proof_of_knowledge.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/vector_pairs.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/crs_operations.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/private_key.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/public_key.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/result.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/proof_of_knowledge.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/vector_pairs.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/crs_operations.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/algorithms/pair.hpp>

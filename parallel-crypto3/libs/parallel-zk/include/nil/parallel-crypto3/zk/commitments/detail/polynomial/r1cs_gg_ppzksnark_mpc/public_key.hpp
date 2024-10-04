@@ -25,7 +25,7 @@
 #ifndef CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_PUBLIC_KEY_HPP
 #define CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_PUBLIC_KEY_HPP
 
-#include <nil/crypto3/zk/commitments/detail/polynomial/element_proof_of_knowledge.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/element_proof_of_knowledge.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -31,8 +31,8 @@
 #include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 
-#include <nil/crypto3/zk/math/permutation.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/parallel-crypto3/zk/math/permutation.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 namespace nil {
     namespace crypto3 {

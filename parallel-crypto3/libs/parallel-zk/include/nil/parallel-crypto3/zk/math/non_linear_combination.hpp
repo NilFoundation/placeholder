@@ -33,7 +33,7 @@
 
 #include <vector>
 #include <unordered_map>
-#include <nil/crypto3/zk/math/expression.hpp>
+#include <nil/parallel-crypto3/zk/math/expression.hpp>
 
 namespace nil {
     namespace crypto3 {

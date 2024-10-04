@@ -1,12 +1,12 @@
 #ifndef CRYPTO3_ZK_POWERS_OF_TAU_HPP
 #define CRYPTO3_ZK_POWERS_OF_TAU_HPP
 
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/private_key.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/public_key.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/accumulator.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/result.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/proof_of_knowledge.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/vector_pairs.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/private_key.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/public_key.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/accumulator.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/powers_of_tau/result.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/proof_of_knowledge.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/vector_pairs.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/algorithms/pair.hpp>

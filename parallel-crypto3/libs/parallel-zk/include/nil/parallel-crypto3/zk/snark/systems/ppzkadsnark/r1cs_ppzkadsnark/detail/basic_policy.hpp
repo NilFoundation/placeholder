@@ -61,14 +61,14 @@
 
 #include <memory>
 
-#include <nil/crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
-#include <nil/crypto3/zk/snark/commitments/knowledge_commitment_multiexp.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
+#include <nil/parallel-crypto3/zk/snark/commitments/knowledge_commitment_multiexp.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 
-#include <nil/crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/prf.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/signature.hpp>
-#include <nil/crypto3/zk/snark/reductions/r1cs_to_qap.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/prf.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzkadsnark/r1cs_ppzkadsnark/signature.hpp>
+#include <nil/parallel-crypto3/zk/snark/reductions/r1cs_to_qap.hpp>
 
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>
 #include <nil/crypto3/algebra/multiexp/policies.hpp>

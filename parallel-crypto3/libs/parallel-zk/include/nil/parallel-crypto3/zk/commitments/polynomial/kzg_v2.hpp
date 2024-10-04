@@ -50,11 +50,11 @@
 
 #include <nil/crypto3/marshalling/algebra/types/curve_element.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
 #include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 
-#include <nil/crypto3/zk/commitments/batched_commitment.hpp>
-#include <nil/crypto3/zk/detail/field_element_consumer.hpp>
+#include <nil/parallel-crypto3/zk/commitments/batched_commitment.hpp>
+#include <nil/parallel-crypto3/zk/detail/field_element_consumer.hpp>
 
 using namespace nil::crypto3::math;
 

@@ -37,7 +37,7 @@
 
 #include <vector>
 
-#include <nil/crypto3/zk/math/linear_combination.hpp>
+#include <nil/parallel-crypto3/zk/math/linear_combination.hpp>
 
 namespace nil {
     namespace crypto3 {

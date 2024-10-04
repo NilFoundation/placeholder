@@ -42,13 +42,13 @@
 #ifndef CRYPTO3_ZK_SP_PCD_CIRCUITS_HPP
 #define CRYPTO3_ZK_SP_PCD_CIRCUITS_HPP
 
-#include <nil/crypto3/zk/snark/components/component_from_r1cs.hpp>
-#include <nil/crypto3/zk/snark/components/hashes/crh_component.hpp>
-#include <nil/crypto3/zk/snark/components/pairing/pairing_params.hpp>
-#include <nil/crypto3/zk/snark/components/verifiers/r1cs_ppzksnark_verifier_component.hpp>
+#include <nil/parallel-crypto3/zk/snark/components/component_from_r1cs.hpp>
+#include <nil/parallel-crypto3/zk/snark/components/hashes/crh_component.hpp>
+#include <nil/parallel-crypto3/zk/snark/components/pairing/pairing_params.hpp>
+#include <nil/parallel-crypto3/zk/snark/components/verifiers/r1cs_ppzksnark_verifier_component.hpp>
 
-#include <nil/crypto3/zk/snark/blueprint.hpp>
-#include <nil/crypto3/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/cp_handler.hpp>
+#include <nil/parallel-crypto3/zk/snark/blueprint.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/pcd/r1cs_pcd/compliance_predicate/cp_handler.hpp>
 
 namespace nil {
     namespace crypto3 {
