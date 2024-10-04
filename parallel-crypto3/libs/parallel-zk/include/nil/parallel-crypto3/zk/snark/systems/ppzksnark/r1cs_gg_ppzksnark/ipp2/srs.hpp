@@ -30,10 +30,10 @@
 #include <vector>
 #include <tuple>
 
-#include <nil/crypto3/zk/commitments/polynomial/kzg_ipp2.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/kzg_ipp2.hpp>
 
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/keypair.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/modes.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/keypair.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/modes.hpp>
 
 namespace nil {
     namespace crypto3 {
