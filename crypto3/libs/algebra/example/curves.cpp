@@ -32,20 +32,16 @@
 
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
-#include <nil/crypto3/algebra/curves/edwards.hpp>
 #include <nil/crypto3/algebra/curves/jubjub.hpp>
 #include <nil/crypto3/algebra/curves/babyjubjub.hpp>
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/curves/mnt6.hpp>
 
-//#include <nil/crypto3/algebra/curves/wei25519.hpp>
 #include <nil/crypto3/algebra/curves/secp_k1.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/secp_r1.hpp>
 
 using namespace nil::crypto3::algebra;
-
-// print dunctions can be made using arity in fields
 
 template<typename FpCurveGroup>
 void fp_curve_group_basic_math_examples() {
@@ -64,22 +60,17 @@ void fp_curve_group_basic_math_examples() {
 
     std::cout << "c1 - c2 value: " << (c1 - c2) << std::endl;
 
-    std::cout << "Doubled c1 value: " << (c1.doubled()) << std::endl;
-
-    group_value_type cd = c1.doubled();
-
-    // group_value_type cn = c1.normalize();
-    // std::cout << "c1 normalized value: " << (cn) << std::endl;
+    std::cout << "doubled c1 value: " << (c1 + c1) << std::endl;
 }
 
 
 
-template<typename Fp2CurveGroup>
-void fp2_curve_group_basic_math_examples() {
-    using group_value_type = typename Fp2CurveGroup::value_type;
-    using field_value_type = typename Fp2CurveGroup::field_type::value_type;
+template<typename FpCurveGroup>
+void fp2_and_3_curve_group_basic_math_examples() {
+    using group_value_type = typename FpCurveGroup::value_type;
+    using field_value_type = typename FpCurveGroup::field_type::value_type;
 
-    group_value_type c1 = group_value_type::one(), c2 = group_value_type::one().doubled();
+    group_value_type c1 = group_value_type::one(), c2 = group_value_type::one() + group_value_type::one();
 
     std::cout << "Curve element values: " << std::endl;
     std::cout << "c1 value: " << (c1) << std::endl;
@@ -90,36 +81,8 @@ void fp2_curve_group_basic_math_examples() {
 
     std::cout << "c1 - c2 value: " << (c1 - c2) << std::endl;
 
-    std::cout << "Doubled c1 value: " << (c1.doubled()) << std::endl;
+    std::cout << "doubled c1 value: " << (c1 + c1) << std::endl;
 
-    group_value_type cd = c1.doubled();
-
-    // group_value_type cn = c1.normalize();
-    // std::cout << "c1 normalized value: " << (cn) << std::endl;
-}
-
-template<typename Fp3CurveGroup>
-void fp3_curve_group_basic_math_examples() {
-    using group_value_type = typename Fp3CurveGroup::value_type;
-    using field_value_type = typename Fp3CurveGroup::field_type::value_type;
-
-    group_value_type c1 = group_value_type::one(), c2 = group_value_type::one().doubled();
-
-    std::cout << "Curve element values: " << std::endl;
-    std::cout << "c1 value: " << (c1) << std::endl;
-
-    std::cout << "c2 value: " << (c2) << std::endl;
-
-    std::cout << "c1 + c2 value: " << (c1 + c2) << std::endl;
-
-    std::cout << "c1 - c2 value: " << (c1 - c2) << std::endl;
-
-    std::cout << "Doubled c1 value: " << (c1.doubled()) << std::endl;
-
-    group_value_type cd = c1.doubled();
-
-    // group_value_type cn = c1.normalize();
-    // std::cout << "c1 normalized value: " << (cn) << std::endl;
 }
 
 int main() {
@@ -129,17 +92,17 @@ int main() {
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "ALT_BN128-254 curve g2 group basic math:" << std::endl;
-    fp2_curve_group_basic_math_examples<curves::alt_bn128<254>::g2_type<>>();
+    fp2_and_3_curve_group_basic_math_examples<curves::alt_bn128<254>::g2_type<>>();
 
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "BLS12-381 curve g1 group basic math:" << std::endl;
-    fp_curve_group_basic_math_examples<curves::bls12<381>::g1_type<>>();
+    fp2_and_3_curve_group_basic_math_examples<curves::bls12<381>::g1_type<>>();
 
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "BLS12-381 curve g2 group basic math:" << std::endl;
-    fp2_curve_group_basic_math_examples<curves::bls12<381>::g2_type<>>();
+    fp2_and_3_curve_group_basic_math_examples<curves::bls12<381>::g2_type<>>();
 
     std::cout << "----------------------------" << std::endl;
 
@@ -149,17 +112,7 @@ int main() {
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "BLS12-377 curve g2 group basic math:" << std::endl;
-    fp2_curve_group_basic_math_examples<curves::bls12<377>::g2_type<>>();
-
-    std::cout << "----------------------------" << std::endl;
-
-    std::cout << "Edwards curve g1 group basic math:" << std::endl;
-    fp_curve_group_basic_math_examples<curves::edwards<183>::g1_type<>>();
-
-    std::cout << "----------------------------" << std::endl;
-
-    std::cout << "Edwards curve g2 group basic math:" << std::endl;
-    fp3_curve_group_basic_math_examples<curves::edwards<183>::g2_type<>>();
+    fp2_and_3_curve_group_basic_math_examples<curves::bls12<377>::g2_type<>>();
 
     std::cout << "----------------------------" << std::endl;
 
@@ -168,13 +121,13 @@ int main() {
     using babyjubjub_g1_type = typename curves::babyjubjub::g1_type<>;
     using bjj_g1_f_v = typename babyjubjub_g1_type::field_type::value_type;
 
-    typename babyjubjub_g1_type::value_type 
-                        P1(bjj_g1_f_v(0x274DBCE8D15179969BC0D49FA725BDDF9DE555E0BA6A693C6ADB52FC9EE7A82C_cppui_modular254),
-                           bjj_g1_f_v(0x5CE98C61B05F47FE2EAE9A542BD99F6B2E78246231640B54595FEBFD51EB853_cppui_modular251)), 
-                        P2(bjj_g1_f_v(0x2491ABA8D3A191A76E35BC47BD9AFE6CC88FEE14D607CBE779F2349047D5C157_cppui_modular254),
-                           bjj_g1_f_v(0x2E07297F8D3C3D7818DBDDFD24C35583F9A9D4ED0CB0C1D1348DD8F7F99152D7_cppui_modular254)),
-                        P3(bjj_g1_f_v(0x11805510440A3488B3B811EAACD0EC7C72DDED51978190E19067A2AFAEBAF361_cppui_modular253),
-                           bjj_g1_f_v(0x1F07AA1B3C598E2FF9FF77744A39298A0A89A9027777AF9FA100DD448E072C13_cppui_modular253));
+    typename babyjubjub_g1_type::value_type
+        P1(bjj_g1_f_v(0x274DBCE8D15179969BC0D49FA725BDDF9DE555E0BA6A693C6ADB52FC9EE7A82C_cppui_modular254),
+            bjj_g1_f_v(0x5CE98C61B05F47FE2EAE9A542BD99F6B2E78246231640B54595FEBFD51EB853_cppui_modular251)),
+        P2(bjj_g1_f_v(0x2491ABA8D3A191A76E35BC47BD9AFE6CC88FEE14D607CBE779F2349047D5C157_cppui_modular254),
+            bjj_g1_f_v(0x2E07297F8D3C3D7818DBDDFD24C35583F9A9D4ED0CB0C1D1348DD8F7F99152D7_cppui_modular254)),
+        P3(bjj_g1_f_v(0x11805510440A3488B3B811EAACD0EC7C72DDED51978190E19067A2AFAEBAF361_cppui_modular253),
+            bjj_g1_f_v(0x1F07AA1B3C598E2FF9FF77744A39298A0A89A9027777AF9FA100DD448E072C13_cppui_modular253));
 
     std::cout << "BabyJubJub addition test: " << std::endl;
     typename babyjubjub_g1_type::value_type P1pP2 = P1 + P2;
@@ -188,7 +141,7 @@ int main() {
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "Mnt4 curve g2 group basic math:" << std::endl;
-    fp2_curve_group_basic_math_examples<curves::mnt4<298>::g2_type<>>();
+    fp2_and_3_curve_group_basic_math_examples<curves::mnt4<298>::g2_type<>>();
 
     std::cout << "----------------------------" << std::endl;
 
@@ -198,13 +151,13 @@ int main() {
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "Mnt6 curve g2 group basic math:" << std::endl;
-    fp3_curve_group_basic_math_examples<curves::mnt6<298>::g2_type<>>();
+    fp2_and_3_curve_group_basic_math_examples<curves::mnt6<298>::g2_type<>>();
 
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "Pallas curve g1 group basic math:" << std::endl;
     fp_curve_group_basic_math_examples<curves::pallas::g1_type<>>();
-    
+
      std::cout << "----------------------------" << std::endl;
 
     return 0;
