@@ -35,12 +35,12 @@
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/parallel-crypto3/container/accumulation_vector.hpp>
-#include <nil/parallel-crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
-#include <nil/parallel-crypto3/zk/commitments/polynomial/knowledge_commitment_multiexp.hpp>
+#include <nil/crypto3/container/accumulation_vector.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/knowledge_commitment.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/knowledge_commitment_multiexp.hpp>
 
-#include <nil/parallel-crypto3/zk/snark/reductions/r1cs_to_qap.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/detail/basic_policy.hpp>
+#include <nil/crypto3/zk/snark/reductions/r1cs_to_qap.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/detail/basic_policy.hpp>
 
 namespace nil {
     namespace crypto3 {

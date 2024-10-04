@@ -26,13 +26,13 @@
 #ifndef CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_GENERATOR_HPP
 #define CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_GENERATOR_HPP
 
-#include <nil/parallel-crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/uscs_ppzksnark.hpp>
-#include <nil/parallel-crypto3/zk/snark/reductions/tbcs_to_uscs.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/detail/basic_policy.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/proving_key.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/uscs_ppzksnark.hpp>
+#include <nil/crypto3/zk/snark/reductions/tbcs_to_uscs.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/detail/basic_policy.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/tbcs_ppzksnark/proving_key.hpp>
 
-#include <nil/parallel-crypto3/zk/snark/algorithms/generate.hpp>
+#include <nil/crypto3/zk/snark/algorithms/generate.hpp>
 
 namespace nil {
     namespace crypto3 {

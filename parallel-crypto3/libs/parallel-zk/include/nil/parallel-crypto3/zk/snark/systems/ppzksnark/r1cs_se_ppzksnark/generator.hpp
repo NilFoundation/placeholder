@@ -34,8 +34,8 @@
 
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 
-#include <nil/parallel-crypto3/zk/snark/reductions/r1cs_to_sap.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_se_ppzksnark/detail/basic_policy.hpp>
+#include <nil/crypto3/zk/snark/reductions/r1cs_to_sap.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_se_ppzksnark/detail/basic_policy.hpp>
 
 namespace nil {
     namespace crypto3 {

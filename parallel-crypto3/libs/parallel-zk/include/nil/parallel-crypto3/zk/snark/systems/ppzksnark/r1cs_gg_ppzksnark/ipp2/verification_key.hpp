@@ -26,9 +26,9 @@
 #ifndef CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFICATION_KEY_HPP
 #define CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFICATION_KEY_HPP
 
-#include <nil/parallel-crypto3/container/accumulation_vector.hpp>
+#include <nil/crypto3/container/accumulation_vector.hpp>
 
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/verification_key.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/verification_key.hpp>
 
 namespace nil {
     namespace crypto3 {

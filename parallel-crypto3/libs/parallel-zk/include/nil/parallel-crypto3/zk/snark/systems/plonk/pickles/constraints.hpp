@@ -1,8 +1,8 @@
 #ifndef CRYPTO3_ZK_PLONK_BATCHED_PICKLES_CONSTRAINTS_HPP
 #define CRYPTO3_ZK_PLONK_BATCHED_PICKLES_CONSTRAINTS_HPP
 
-#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
 
 namespace nil {
     namespace crypto3 {

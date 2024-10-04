@@ -34,7 +34,7 @@
 #include <nil/crypto3/algebra/multiexp/policies.hpp>
 #include <nil/crypto3/algebra/algorithms/pair.hpp>
 
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_se_ppzksnark/detail/basic_policy.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_se_ppzksnark/detail/basic_policy.hpp>
 
 namespace nil {
     namespace crypto3 {

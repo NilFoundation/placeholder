@@ -26,7 +26,7 @@
 #ifndef CRYPTO3_ZK_PLONK_BATCHED_KATE_PROOF_HPP
 #define CRYPTO3_ZK_PLONK_BATCHED_KATE_PROOF_HPP
 
-#include <nil/parallel-crypto3/zk/snark/commitments/batched_kate_commitment.hpp>
+#include <nil/crypto3/zk/snark/commitments/batched_kate_commitment.hpp>
 
 namespace nil {
     namespace crypto3 {

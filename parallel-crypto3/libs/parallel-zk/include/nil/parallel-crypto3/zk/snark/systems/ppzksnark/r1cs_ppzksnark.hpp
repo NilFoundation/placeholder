@@ -26,11 +26,11 @@
 #ifndef CRYPTO3_ZK_R1CS_PPZKSNARK_HPP
 #define CRYPTO3_ZK_R1CS_PPZKSNARK_HPP
 
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/detail/basic_policy.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/detail/basic_policy.hpp>
 
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/generator.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/prover.hpp>
-#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/verifier.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/generator.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/prover.hpp>
+#include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_ppzksnark/verifier.hpp>
 
 namespace nil {
     namespace crypto3 {
