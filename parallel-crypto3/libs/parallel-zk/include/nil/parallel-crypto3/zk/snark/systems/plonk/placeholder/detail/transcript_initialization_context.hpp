@@ -31,12 +31,12 @@
 #include <nil/crypto3/algebra/type_traits.hpp>
 #include <nil/crypto3/hash/block_to_field_elements_wrapper.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
 
 #include <nil/crypto3/marshalling/zk/types/placeholder/transcript_initialization_context.hpp>
 
