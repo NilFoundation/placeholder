@@ -38,8 +38,8 @@ namespace nil {
     namespace blueprint {
         namespace components {
             // 
-            // Input: theta, x, {xi}, {y_ij}, {z_ij}
-            // Output: sum theta^l (yij - z_ij)/(x - xi_l)
+            // Input: theta, x, {xi}, {y_i}, {z_ij}
+            // Output: sum theta^l (yi - z_ij)/(x - xi_j)
             // DOES NOT CHECK THAT x = xi
             template<typename ArithmetizationType, typename BlueprintFieldType>
             class dfri_linear_check;
@@ -107,65 +107,70 @@ namespace nil {
                     return optimal_layout.size();
                 }
 
-                static std::vector<std::pair<std::size_t, std::size_t>> search_optimal_layout(std::size_t witness_amount, std::size_t m){
-
-                    std::vector<std::vector<std::size_t>> best_rows;
-                    std::vector<std::vector<std::size_t>> gate_amounts;
-                    best_rows.resize(m+1);
-                    gate_amounts.resize(m+1);
-                    std::size_t nine = 9;
-                    for(std::size_t i = 0; i <= m; i++){
-                        best_rows[i] = std::vector<std::size_t>(witness_amount + 1);
-                        gate_amounts[i] = std::vector<std::size_t>(witness_amount + 1);
-                        std::fill(best_rows[i].begin(), best_rows[i].end(), 9999);
-                        std::fill(gate_amounts[i].begin(), gate_amounts[i].end(), 0);
-                        if(i > 0){
-                            for(std::size_t j = 3; j <= std::min(witness_amount, nine); j++){
-                                best_rows[i][j] =  i * (std::size_t) std::ceil(9.0 / j);    
-                                gate_amounts[i][j] = 1;
+                static std::vector<std::pair<std::size_t, std::size_t>> search_optimal_layout(std::size_t witness_amount, std::size_t m, bool optimized = true){
+                    
+                    std::vector<std::pair<std::size_t, std::size_t>> trace;
+                    if(optimized){
+                        std::vector<std::vector<std::size_t>> best_rows;
+                        std::vector<std::vector<std::size_t>> gate_amounts;
+                        best_rows.resize(m+1);
+                        gate_amounts.resize(m+1);
+                        std::size_t nine = 9;
+                        for(std::size_t i = 0; i <= m; i++){
+                            best_rows[i] = std::vector<std::size_t>(witness_amount + 1);
+                            gate_amounts[i] = std::vector<std::size_t>(witness_amount + 1);
+                            std::fill(best_rows[i].begin(), best_rows[i].end(), 9999);
+                            std::fill(gate_amounts[i].begin(), gate_amounts[i].end(), 0);
+                            if(i > 0){
+                                for(std::size_t j = 3; j <= std::min(witness_amount, nine); j++){
+                                    best_rows[i][j] =  i * (std::size_t) std::ceil(9.0 / j);    
+                                    gate_amounts[i][j] = 1;
+                                }
                             }
                         }
-                    }
-                    std::fill(best_rows[0].begin(), best_rows[0].end(), 0);
-                    
-                    
-                    std::map<std::pair<std::size_t, std::size_t>,std::pair<std::size_t, std::size_t>> config;
-                    
-                    for(std::size_t i = 1; i < witness_amount; i++){
-                        config[{0, i}] = std::make_pair(0, i);
-                    }
-                    for(std::size_t k = 1; k <= m; k++){
-                        for(std::size_t i = 1; i < 10; i++){
-                            config[{k, i}] = std::make_pair(k, i);
+                        std::fill(best_rows[0].begin(), best_rows[0].end(), 0);
+                        
+                        
+                        std::map<std::pair<std::size_t, std::size_t>,std::pair<std::size_t, std::size_t>> config;
+                        
+                        for(std::size_t i = 1; i < witness_amount; i++){
+                            config[{0, i}] = std::make_pair(0, i);
                         }
-                        for(std::size_t i = 10; i <= witness_amount; i++){
-                            for(std::size_t j = 1; j <= 9; j++){
-                                for(std::size_t l = 0; l <= k; l++){
-                                    std::size_t row = std::max(best_rows[k - l][i - j], best_rows[l][j]);
-                                    auto gate_amount = gate_amounts[k-l][i - j] + gate_amounts[l][j];
-                                    if(row < best_rows[k][i] || (row == best_rows[k][i] && gate_amount <= gate_amounts[k][i])){
-                                        config[{k, i}] = std::make_pair(l, j);
-                                        best_rows[k][i] = row;
-                                        gate_amounts[k][i] = gate_amount;
+                        for(std::size_t k = 1; k <= m; k++){
+                            for(std::size_t i = 1; i < 10; i++){
+                                config[{k, i}] = std::make_pair(k, i);
+                            }
+                            for(std::size_t i = 10; i <= witness_amount; i++){
+                                for(std::size_t j = 1; j <= 9; j++){
+                                    for(std::size_t l = 0; l <= k; l++){
+                                        std::size_t row = std::max(best_rows[k - l][i - j], best_rows[l][j]);
+                                        auto gate_amount = gate_amounts[k-l][i - j] + gate_amounts[l][j];
+                                        if(row < best_rows[k][i] || (row == best_rows[k][i] && gate_amount <= gate_amounts[k][i])){
+                                            config[{k, i}] = std::make_pair(l, j);
+                                            best_rows[k][i] = row;
+                                            gate_amounts[k][i] = gate_amount;
+                                        }
                                     }
                                 }
                             }
                         }
+                        
+                        
+                        trace.resize(0);
+                        auto _m = m;
+                        auto _w = witness_amount;
+                        while(_m > 0){
+                            trace.push_back(config[{_m, _w}]);
+                            _m = _m - trace.back().first;
+                            _w = _w - trace.back().second;
+                        } 
+                        std::sort(trace.begin(), trace.end(), [](const std::pair<std::size_t,std::size_t> &left, const std::pair<std::size_t,std::size_t> &right) {
+                            return left.second > right.second;
+                        });
                     }
-                    
-                    std::vector<std::pair<std::size_t, std::size_t>> trace;
-                    trace.resize(0);
-                    auto _m = m;
-                    auto _w = witness_amount;
-                    while(_m > 0){
-                        trace.push_back(config[{_m, _w}]);
-                        _m = _m - trace.back().first;
-                        _w = _w - trace.back().second;
-                    } 
-                    std::sort(trace.begin(), trace.end(), [](const std::pair<std::size_t,std::size_t> &left, const std::pair<std::size_t,std::size_t> &right) {
-                        return left.second > right.second;
-                    });
-
+                    else{
+                        trace.push_back({m, witness_amount});
+                    }
                     return trace;
                 }
 
@@ -178,7 +183,7 @@ namespace nil {
                     var x;
                     std::vector<var> xi;
                     std::vector<var> y;
-                    std::vector<std::vector<var>> z;
+                    std::vector<var> z;
 
                     std::vector<std::reference_wrapper<var>> all_vars() {
                         std::vector<std::reference_wrapper<var>> vars;
@@ -187,9 +192,7 @@ namespace nil {
                         vars.push_back(x);
                         vars.insert(vars.end(), xi.begin(), xi.end());
                         vars.insert(vars.end(), y.begin(), y.end());
-                        for (std::size_t i = 0; i < z.size(); i++) {
-                            vars.insert(vars.end(), z[i].begin(), z[i].end());
-                        }
+                        vars.insert(vars.end(), z.begin(), z.end());
 
                         return vars;
                     }
@@ -231,7 +234,6 @@ namespace nil {
                     std::size_t single_block_rows;
                     std::size_t last_col = 0;
 
-                    std::cout << optimal_layout.size() << std::endl;
                     for(const auto &[k, v] : optimal_layout){
                         single_block_rows = std::ceil(9.0 / v);
                         for (std::size_t i = 0; i < k; i++) {
@@ -247,7 +249,7 @@ namespace nil {
 
                 template<typename ContainerType>
                 dfri_linear_check(ContainerType witness, std::size_t m_,
-                                  std::vector<std::pair<std::size_t, std::size_t>> eval_map_) :
+                                  std::vector<std::pair<std::size_t, std::size_t>> &eval_map_) :
                     component_type(witness, {}, {}, get_manifest()), m(m_), eval_map(eval_map_) {
 
                     };
@@ -256,7 +258,7 @@ namespace nil {
                          typename PublicInputContainerType>
                 dfri_linear_check(WitnessContainerType witness, ConstantContainerType constant,
                                   PublicInputContainerType public_input, std::size_t m_,
-                                  std::vector<std::pair<std::size_t, std::size_t>> eval_map_) :
+                                  std::vector<std::pair<std::size_t, std::size_t>> &eval_map_) :
                     component_type(witness, constant, public_input, get_manifest()), m(m_), eval_map(eval_map_) {
 
                     };
@@ -266,7 +268,7 @@ namespace nil {
                     std::initializer_list<typename component_type::constant_container_type::value_type> constants,
                     std::initializer_list<typename component_type::public_input_container_type::value_type>
                         public_inputs,
-                    std::size_t m_, std::vector<std::pair<std::size_t, std::size_t>> eval_map_) :
+                    std::size_t m_, std::vector<std::pair<std::size_t, std::size_t>> &eval_map_) :
                     component_type(witnesses, constants, public_inputs, get_manifest()), m(m_), eval_map(eval_map_) {
 
                     };
@@ -284,22 +286,48 @@ namespace nil {
                 const std::uint32_t start_row_index) {
 
                 using value_type = typename BlueprintFieldType::value_type;
+                using var = typename plonk_dfri_linear_check<BlueprintFieldType>::var;
 
                 BOOST_ASSERT(component.fullconfig.size() == component.m);
                 BOOST_ASSERT(component.optimal_layout.size() == component.gates_amount);
+                BOOST_ASSERT(instance_input.z.size() == component.m);
 
                 std::size_t il, jl;
                 value_type x, xi, xsubxiinv, y, z, q, q_new;
                 value_type q_last = value_type::zero();
                 value_type theta = var_value(assignment, instance_input.theta);
+
+                std::vector<var> reordered_z = {};
+                std::vector<std::vector<std::size_t>> z_indices(instance_input.y.size(), std::vector<std::size_t>());
+                for(std::size_t l = 0; l < component.m; l++){
+                    il = component.eval_map[l].first;
+                    jl = component.eval_map[l].second;
+                    z_indices[il].push_back(jl);
+                }
+
+                for(std::size_t l = 0; l < component.m; l++){
+                    il = component.eval_map[l].first;
+                    jl = component.eval_map[l].second;
+                    std::size_t _index = 0;
+                    for(std::size_t i = 0; i < il; i++){
+                        _index += z_indices[i].size();
+                    }
+                    std::size_t j=0;
+                    while(jl != z_indices[il][j]){
+                        _index++;
+                        j++;
+                    }
+                    reordered_z.push_back(instance_input.z[_index]);
+                }
+
                 for (std::size_t l = 0; l < component.m; l++) {
-                    il = component.eval_map[component.m - l - 1].first - 1;
-                    jl = component.eval_map[component.m - l - 1].second - 1;
+                    il = component.eval_map[component.m - l - 1].first;
+                    jl = component.eval_map[component.m - l - 1].second;
                     x = var_value(assignment, instance_input.x);
                     xi = var_value(assignment, instance_input.xi[jl]);
                     xsubxiinv = (x - xi).inversed();
                     y = var_value(assignment, instance_input.y[il]);
-                    z = var_value(assignment, instance_input.z[il][jl]);
+                    z = var_value(assignment, reordered_z[component.m - l - 1]);
                     q = (y - z) * xsubxiinv;
                     q_new = q + theta * q_last;
 
@@ -325,6 +353,8 @@ namespace nil {
                     q_last = q_new;
                 }
 
+
+                // std::cout << "rows amount: " << component.rows_amount << std::endl;
                 return typename plonk_dfri_linear_check<BlueprintFieldType>::result_type(component, start_row_index);
             }
 
@@ -377,9 +407,33 @@ namespace nil {
                 using var = typename plonk_dfri_linear_check<BlueprintFieldType>::var;
 
                 std::size_t il, jl;
+                std::vector<var> reordered_z = {};
+                std::vector<std::vector<std::size_t>> z_indices(instance_input.y.size(), std::vector<std::size_t>());
+                for(std::size_t l = 0; l < component.m; l++){
+                    il = component.eval_map[l].first;
+                    jl = component.eval_map[l].second;
+                    z_indices[il].push_back(jl);
+                }
+                
+                std::size_t cur = 0;
+                for(std::size_t l = 0; l < component.m; l++){
+                    il = component.eval_map[l].first;
+                    jl = component.eval_map[l].second;
+                    std::size_t _index = 0;
+                    for(std::size_t i = 0; i < il; i++){
+                        _index += z_indices[i].size();
+                    }
+                    std::size_t j=0;
+                    while(jl != z_indices[il][j]){
+                        _index++;
+                        j++;
+                    }
+                    reordered_z.push_back(instance_input.z[_index]);
+                }
+
                 for (std::size_t l = 0; l < component.m; l++) {
-                    il = component.eval_map[component.m - l - 1].first - 1;
-                    jl = component.eval_map[component.m - l - 1].second - 1;
+                    il = component.eval_map[component.m - l - 1].first;
+                    jl = component.eval_map[component.m - l - 1].second;
 
                     var x = var(component.W(component.fullconfig[l][0].first),
                                 static_cast<int>(component.fullconfig[l][0].second + start_row_index), false);
@@ -397,7 +451,7 @@ namespace nil {
                     bp.add_copy_constraint({instance_input.x, x});
                     bp.add_copy_constraint({instance_input.xi[jl], xi});
                     bp.add_copy_constraint({instance_input.y[il], y});
-                    bp.add_copy_constraint({instance_input.z[il][jl], z});
+                    bp.add_copy_constraint({reordered_z[component.m - l - 1], z});
                     bp.add_copy_constraint({instance_input.theta, theta});
 
                     if (l >= 1) {
@@ -420,12 +474,11 @@ namespace nil {
                 const typename plonk_dfri_linear_check<BlueprintFieldType>::input_type &instance_input,
                 const std::size_t start_row_index) {
 
+
                 generate_assignments_constant(component, bp, assignment, instance_input, start_row_index);
 
                 std::vector<std::size_t> selector_index = generate_gates(component, bp, assignment, instance_input);
-                for(const auto &s : selector_index){
-                    std::cout << s << std::endl;
-                }
+
                 std::size_t single_block_rows;
                 std::size_t shift;
 

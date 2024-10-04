@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -39,112 +40,106 @@ namespace nil {
     namespace blueprint {
         namespace components {
             namespace detail{
-                template <typename PlaceholderParams>
+                template <typename BlueprintFieldType>
                 class dfri_proof_wrapper{
-                public:
-                    using field_type = typename PlaceholderParams::field_type;
-                    using proof_type = nil::crypto3::zk::snark::placeholder_proof<field_type, PlaceholderParams>;
-                    dfri_proof_wrapper(const proof_type& proof, const std::vector<typename field_type::value_type>& evaluation_points)
-                        : proof(proof), points(evaluation_points) {
-    
-                        fill_vector();
-                    }
-                public:
-                    std::vector<typename field_type::value_type> vector(){
-                        return _proof_field_vector;
-                    }
-                    std::vector<typename field_type::value_type> merkle_tree_positions(){
-                        return _merkle_tree_positions;
-                    }
-                    std::vector<typename field_type::value_type> initial_proof_hashes(){
-                        return _initial_proof_hashes;
-                    }
-                protected:
-                    void fill_vector() {
+                    using val = typename BlueprintFieldType::value_type;
+                    public:
+                        dfri_proof_wrapper(){}
+                        template<typename ProofType>
+                        dfri_proof_wrapper(
+                            val                         transcript_initial_state,
+                            const std::map<std::size_t, val> &_commitments,
+                            const std::vector<val>      &evaluation_points,
+                            const ProofType             &proof
+                        ){
+                            // initial transcript state
+                            full_input.push_back(transcript_initial_state);
 
+                            // commitments
+                            for( const auto &[k,v]: _commitments ) full_input.push_back(v);
 
-                        for(std::size_t i = 0; i < points.size(); i++){
-                            _proof_field_vector.push_back(points[i]);
-                        }
-                        
-                        _proof_field_vector.push_back(proof.eval_proof.challenge);
+                            // evaluation points
+                            for( std::size_t i = 0; i < evaluation_points.size(); i++ ) full_input.push_back(evaluation_points[i]);
 
-                        // TODO: Commitment scheme may be different
-                        auto eval_proof = proof.eval_proof.eval_proof;
-                        auto batch_info = eval_proof.z.get_batch_info();
-                        for(const auto& [k, v]: batch_info){
-                            for(std::size_t i = 0; i < v; i++){
-                                BOOST_ASSERT(eval_proof.z.get_poly_points_number(k, i) != 0);
-                                for(std::size_t j = 0; j < eval_proof.z.get_poly_points_number(k, i); j++){
-                                    _proof_field_vector.push_back(eval_proof.z.get(k, i, j));
-                                }
-                            }
-                        }
-
-                        for( std::size_t i = 0; i < eval_proof.fri_proof.fri_roots.size(); i++){
-                            _proof_field_vector.push_back(eval_proof.fri_proof.fri_roots[i]);
-                        }
-
-                        _merkle_tree_positions.resize(eval_proof.fri_proof.query_proofs.size());
-                        _initial_proof_values.resize(eval_proof.fri_proof.query_proofs.size());
-                        _initial_proof_hashes.resize(eval_proof.fri_proof.query_proofs.size());
-                        for( std::size_t i = 0; i < eval_proof.fri_proof.query_proofs.size(); i++){
-                            for( const auto &[j, initial_proof]: eval_proof.fri_proof.query_proofs[i].initial_proof){
-                                for( std::size_t k = 0; k < initial_proof.values.size(); k++){
-                                    _proof_field_vector.push_back(initial_proof.values[k][0][0]);
-                                    _proof_field_vector.push_back(initial_proof.values[k][0][1]);
-                                    _initial_proof_values[i].push_back(initial_proof.values[k][0][0]);
-                                    _initial_proof_values[i].push_back(initial_proof.values[k][0][1]);
+                            // evaluations
+                            auto batch_info = proof.z.get_batch_info();
+                            for(const auto& [k, v]: batch_info){
+                                for(std::size_t i = 0; i < v; i++){
+                                    BOOST_ASSERT(proof.z.get_poly_points_number(k, i) != 0);
+                                    for(std::size_t j = 0; j < proof.z.get_poly_points_number(k, i); j++){
+                                        full_input.push_back(proof.z.get(k, i, j));
+                                    }
                                 }
                             }
 
-                            std::size_t x_index = 0;
-                            for( const auto &[j, initial_proof]: eval_proof.fri_proof.query_proofs[i].initial_proof){
-                                _merkle_tree_positions[i].resize(initial_proof.p.path().size());
-                                std::cout << "Initial proof position ";
-                                for( std::size_t k = 0; k < initial_proof.p.path().size(); k++){
-                                    _proof_field_vector.push_back(initial_proof.p.path()[k][0].position());
-                                    _merkle_tree_positions[i][k] = initial_proof.p.path()[k][0].position();
-                                    std::cout << initial_proof.p.path()[k][0].position() << " ";
-                                }
-                                std::cout << " => " << x_index << std::endl;
-                                break;
+                            // fri roots
+                            for( std::size_t i = 0; i < proof.fri_proof.fri_roots.size(); i++){
+                                full_input.push_back(proof.fri_proof.fri_roots[i]);
                             }
+                            // final polynomials
+                            for( std::size_t i = 0; i < proof.fri_proof.final_polynomial.size(); i++){
+                                full_input.push_back(proof.fri_proof.final_polynomial[i]);
+                            }
+                            // query proofs
+                            for( std::size_t q = 0; q < proof.fri_proof.query_proofs.size(); q++){
+                                const auto &query_proof = proof.fri_proof.query_proofs[q];
+                                // initial proof values
+                                for( const auto &[j, initial_proof]: query_proof.initial_proof){
+                                    for( std::size_t k = 0; k < initial_proof.values.size(); k++){
+                                        full_input.push_back(initial_proof.values[k][0][0]);
+                                        full_input.push_back(initial_proof.values[k][0][1]);
+                                    }
+                                }
+                                // merkle tree positions is stored only for the first initial proof
+                                for( const auto &[j, initial_proof]: query_proof.initial_proof){
+                                    for( std::size_t k = 0; k < initial_proof.p.path().size(); k++){
+                                        full_input.push_back(initial_proof.p.path()[k][0].position());
+                                    }
+                                    break;
+                                }
 
-                            for( const auto &[j, initial_proof]: eval_proof.fri_proof.query_proofs[i].initial_proof){
-                                //std::cout << "Initial proof hashes: " << std::endl;
-                                for( std::size_t k = 0; k < initial_proof.p.path().size(); k++){
-                                    _proof_field_vector.push_back(initial_proof.p.path()[k][0].hash());
-                                    _initial_proof_hashes[i].push_back(initial_proof.p.path()[k][0].hash());
-                                    //std::cout << "\t" << _proof_field_vector.size() << " ";
-                                    //std::cout << "\t" << initial_proof.p.path()[k][0].hash() << std::endl;
+                                // initial proof hashes are stored for all hashes.
+                                for( const auto &[j, initial_proof]: query_proof.initial_proof){
+                                    for( std::size_t k = 0; k < initial_proof.p.path().size(); k++){
+                                        full_input.push_back(initial_proof.p.path()[k][0].hash());
+                                    }
                                 }
-                            }
-                            for( std::size_t j = 0; j < eval_proof.fri_proof.query_proofs[i].round_proofs.size(); j++){
-                                const auto &round_proof = eval_proof.fri_proof.query_proofs[i].round_proofs[j];
-                                _proof_field_vector.push_back(round_proof.y[0][0]);
-                                _proof_field_vector.push_back(round_proof.y[0][1]);
-                            }
-                            for( std::size_t j = 0; j < eval_proof.fri_proof.query_proofs[i].round_proofs.size(); j++){
-                                const auto& p = eval_proof.fri_proof.query_proofs[i].round_proofs[j].p;
-                                for( std::size_t k = 0; k < p.path().size(); k++){
-                                    _proof_field_vector.push_back(p.path()[k][0].hash());
-                                 }
+
+                                // round proof values
+                                for( std::size_t j = 0; j < query_proof.round_proofs.size(); j++){
+                                    const auto &round_proof = query_proof.round_proofs[j];
+                                    full_input.push_back(round_proof.y[0][0]);
+                                    full_input.push_back(round_proof.y[0][1]);
+                                }
+
+                                // round proof hashes
+                                for( std::size_t j = 0; j < query_proof.round_proofs.size(); j++){
+                                    const auto& p = query_proof.round_proofs[j].p;
+                                    for( std::size_t k = 0; k < p.path().size(); k++){
+                                        full_input.push_back(p.path()[k][0].hash());
+                                    }
+                                }
                             }
                         }
-
-                        for( std::size_t i = 0; i < eval_proof.fri_proof.final_polynomial.size(); i++){
-                            _proof_field_vector.push_back(eval_proof.fri_proof.final_polynomial[i]);
+                        const std::vector<val> &vector() const{
+                            return full_input;
                         }
-                    }
-                private:
-                    const proof_type proof;
-                    std::vector<typename field_type::value_type> points;
-                    std::vector<typename field_type::value_type> _proof_field_vector;
-                    std::vector<std::vector<typename field_type::value_type>> _merkle_tree_positions;
-                    // lambda * batches_num * 2 values. Convenient for merkle leaves calculation.
-                    std::vector<std::vector<typename field_type::value_type>> _initial_proof_values;
-                    std::vector<std::vector<typename field_type::value_type>> _initial_proof_hashes;
+                    private:
+                        // Just for testing purposes. Remove later.
+                        val                         initial_transcript_state;
+                        std::map<std::size_t, val>  commitments;             // Just for placeholder compatibility
+                        std::vector<val>            evaluation_points;
+
+                        // Proof itself.
+                        std::vector<val> evaluations;
+                        std::vector<val> fri_roots;
+                        std::vector<val> final_polynomial;
+                        std::vector<std::vector<val>> merkle_tree_positions; // Lambda merkle positions
+                        std::vector<std::vector<val>> initial_proof_values;  // 2 x Lambda x |bathes_sizes_sum| initial proof values
+                        std::vector<std::vector<val>> initial_proof_hashes;  // 2 x Lambda x batches_num initial proof hashes
+                        std::vector<std::vector<val>> round_proof_values;    // Keep all values for all rounds into single vector
+                        std::vector<std::vector<val>> round_proof_hashes;    // Keep all hashes for all rounds into single vector
+                        std::vector<val> full_input;
                 };
             }
         }

@@ -1,5 +1,11 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
+// Copyright (c) 2021 Mikhail Komarov <nemo@nil.foundation>
+// Copyright (c) 2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2022 Ilia Shirobokov <i.shirobokov@nil.foundation>
+// Copyright (c) 2022 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2022 Aleksei Moskvin <alalmoskvin@nil.foundation>
+// Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <estoniaa@nil.foundation>
 //
 // MIT License
 //
@@ -21,528 +27,492 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-#define BOOST_TEST_MODULE flexible_placeholder_verifier_test
 
+#define BOOST_TEST_MODULE dfri_verifier
+
+#include <string>
+#include <random>
+#include <regex>
 #include <iostream>
 #include <fstream>
 
 #include <boost/test/unit_test.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/data/monomorphic.hpp>
 
-#include <nil/crypto3/random/algebraic_engine.hpp>
-#include <nil/crypto3/random/algebraic_random_device.hpp>
-#include <nil/crypto3/hash/algorithm/hash.hpp>
-#include <nil/crypto3/hash/poseidon.hpp>
-
+#include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
+#include <nil/crypto3/algebra/curves/params/multiexp/bls12.hpp>
+#include <nil/crypto3/algebra/curves/params/wnaf/bls12.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/crypto3/math/algorithms/unity_root.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/commitments/detail/polynomial/eval_storage.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
+#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/crypto3/zk/commitments/type_traits.hpp>
 
-#include <nil/marshalling/status_type.hpp>
-#include <nil/marshalling/field_type.hpp>
-#include <nil/marshalling/endianness.hpp>
-// #include <nil/crypto3/marshalling/zk/types/commitments/eval_storage.hpp>
-#include <nil/crypto3/marshalling/zk/types/commitments/lpc.hpp>
-#include <nil/crypto3/marshalling/zk/types/placeholder/proof.hpp>
-#include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
-#include <nil/crypto3/marshalling/zk/types/plonk/assignment_table.hpp>
-#include <nil/crypto3/marshalling/zk/types/placeholder/common_data.hpp>
+#include <nil/crypto3/random/algebraic_random_device.hpp>
+#include <nil/crypto3/random/algebraic_engine.hpp>
+#include <nil/crypto3/algebra/random_element.hpp>
+
 #include <nil/blueprint/components/systems/snark/plonk/verifier/dfri_verifier.hpp>
-#include <nil/blueprint/components/systems/snark/plonk/verifier/dfri_proof_wrapper.hpp>
-
+#include <nil/crypto3/hash/poseidon.hpp>
 #include "../../test_plonk_component.hpp"
 
 using namespace nil;
+using namespace nil::crypto3;
 
-bool read_buffer_from_file(std::ifstream &ifile, std::vector<std::uint8_t> &v) {
-    char c;
-    char c1;
-    uint8_t b;
+using dist_type = std::uniform_int_distribution<int>;
 
-    ifile >> c;
-    if (c != '0')
-        return false;
-    ifile >> c;
-    if (c != 'x')
-        return false;
-    while (ifile) {
-        std::string str = "";
-        ifile >> c >> c1;
-        if (!isxdigit(c) || !isxdigit(c1))
-            return false;
-        str += c;
-        str += c1;
-        b = stoi(str, 0, 0x10);
-        v.push_back(b);
+inline std::vector<std::size_t>
+    generate_random_step_list(const std::size_t r, const std::size_t max_step, boost::random::mt11213b &rnd) {
+    std::vector<std::size_t> step_list;
+    std::size_t steps_sum = 0;
+    while (steps_sum != r) {
+        if (r - steps_sum <= max_step) {
+            while (r - steps_sum != 1) {
+                step_list.emplace_back(r - steps_sum - 1);
+                steps_sum += step_list.back();
+            }
+            step_list.emplace_back(1);
+            steps_sum += step_list.back();
+        } else {
+            step_list.emplace_back(dist_type(1, max_step)(rnd));
+            steps_sum += step_list.back();
+        }
     }
-    return true;
+    return step_list;
 }
 
-struct default_zkllvm_params {
-    using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
+template<typename FieldType>
+inline math::polynomial<typename FieldType::value_type>
+    generate_random_polynomial(std::size_t degree, nil::crypto3::random::algebraic_engine<FieldType> &rnd) {
+    math::polynomial<typename FieldType::value_type> result(degree);
+    std::generate(std::begin(result), std::end(result), [&rnd]() { return rnd(); });
+    return result;
+}
 
-    using constraint_system_type = nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
-    using table_description_type = nil::crypto3::zk::snark::plonk_table_description<field_type>;
-    using Endianness = nil::marshalling::option::big_endian;
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+template<typename FieldType>
+inline math::polynomial_dfs<typename FieldType::value_type>
+    generate_random_polynomial_dfs(std::size_t degree, nil::crypto3::random::algebraic_engine<FieldType> &rnd) {
+    math::polynomial<typename FieldType::value_type> data = generate_random_polynomial(degree, rnd);
+    math::polynomial_dfs<typename FieldType::value_type> result;
+    result.from_coefficients(data);
+    return result;
+}
 
-    using ColumnType = nil::crypto3::zk::snark::plonk_column<field_type>;
-    using assignment_table_type = nil::crypto3::zk::snark::plonk_table<field_type, ColumnType>;
+template<typename FieldType>
+inline std::vector<math::polynomial<typename FieldType::value_type>>
+    generate_random_polynomial_batch(std::size_t batch_size,
+                                     std::size_t degree,
+                                     nil::crypto3::random::algebraic_engine<FieldType> &rnd) {
+    std::vector<math::polynomial<typename FieldType::value_type>> result;
 
-    using ColumnsRotationsType = std::vector<std::set<int>>;
-    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
-    using Hash = nil::crypto3::hashes::poseidon<poseidon_policy>;
-    using transcript_hash_type = Hash;
-    using circuit_params_type = nil::crypto3::zk::snark::placeholder_circuit_params<field_type>;
+    for (std::size_t i = 0; i < batch_size; i++) {
+        result.push_back(generate_random_polynomial(degree, rnd));
+    }
+    return result;
+}
 
-    using lpc_params_type = nil::crypto3::zk::commitments::list_polynomial_commitment_params<Hash, Hash, 2>;
-    using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<field_type, lpc_params_type>;
-    using commitment_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
-    using commitment_scheme_params_type = typename commitment_scheme_type::fri_type::params_type;
-    using placeholder_params = nil::crypto3::zk::snark::placeholder_params<circuit_params_type, commitment_scheme_type>;
-    using policy_type = nil::crypto3::zk::snark::detail::placeholder_policy<field_type, placeholder_params>;
+template<typename FieldType>
+inline std::vector<math::polynomial_dfs<typename FieldType::value_type>>
+    generate_random_polynomial_dfs_batch(std::size_t batch_size,
+                                         std::size_t degree,
+                                         nil::crypto3::random::algebraic_engine<FieldType> &rnd) {
+    auto data = generate_random_polynomial_batch(batch_size, degree, rnd);
+    std::vector<math::polynomial_dfs<typename FieldType::value_type>> result;
 
-    using circuit_marshalling_type =
-        nil::crypto3::marshalling::types::plonk_constraint_system<default_zkllvm_params::TTypeBase,
-                                                                  constraint_system_type>;
-    using table_marshalling_type =
-        nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, assignment_table_type>;
-    static table_description_type load_table_description(std::string filename) {
-        std::ifstream iassignment;
-        iassignment.open(filename, std::ios_base::binary | std::ios_base::in);
-        BOOST_ASSERT(iassignment.is_open());
-        std::vector<std::uint8_t> v;
-        iassignment.seekg(0, std::ios_base::end);
-        const auto fsize = iassignment.tellg();
-        v.resize(fsize);
-        iassignment.seekg(0, std::ios_base::beg);
-        iassignment.read(reinterpret_cast<char *>(v.data()), fsize);
-        BOOST_ASSERT(iassignment);
-        iassignment.close();
+    for (std::size_t i = 0; i < data.size(); i++) {
+        math::polynomial_dfs<typename FieldType::value_type> dfs;
+        dfs.from_coefficients(data[i]);
+        result.push_back(dfs);
+    }
+    return result;
+}
 
-        table_marshalling_type marshalled_table_data;
-        auto read_iter = v.begin();
-        auto status = marshalled_table_data.read(read_iter, v.size());
-        auto [table_description, assignment_table] =
-            nil::crypto3::marshalling::types::make_assignment_table<Endianness, assignment_table_type>(
-                marshalled_table_data);
+std::size_t test_global_seed = 0;
+boost::random::mt11213b test_global_rnd_engine;
+template<typename FieldType>
+nil::crypto3::random::algebraic_engine<FieldType> test_global_alg_rnd_engine;
+bool print_enabled = false;
 
-        return table_description;
+struct test_fixture {
+    // Enumerate all fields used in tests;
+    using field1_type = algebra::curves::pallas::base_field_type;
+
+    test_fixture() {
+        test_global_seed = 0;
+        print_enabled = false;
+        for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc - 1); i++) {
+            if (std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--seed") {
+                if (std::string(boost::unit_test::framework::master_test_suite().argv[i + 1]) == "random") {
+                    std::random_device rd;
+                    test_global_seed = rd();
+                    std::cout << "Random seed=" << test_global_seed << std::endl;
+                    break;
+                }
+                if (std::regex_match(boost::unit_test::framework::master_test_suite().argv[i + 1],
+                                     std::regex(("((\\+|-)?[[:digit:]]+)(\\.(([[:digit:]]+)?))?")))) {
+                    test_global_seed = atoi(boost::unit_test::framework::master_test_suite().argv[i + 1]);
+                    break;
+                }
+            }
+            if (std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--print") {
+                print_enabled = true;
+            }
+        }
+        for (std::size_t i = 0; i < std::size_t(boost::unit_test::framework::master_test_suite().argc); i++) {
+            if (std::string(boost::unit_test::framework::master_test_suite().argv[i]) == "--print") {
+                print_enabled = true;
+            }
+        }
+
+        BOOST_TEST_MESSAGE("test_global_seed = " << test_global_seed);
+        test_global_rnd_engine = boost::random::mt11213b(test_global_seed);
+        test_global_alg_rnd_engine<field1_type> = nil::crypto3::random::algebraic_engine<field1_type>(test_global_seed);
     }
 
-    static constraint_system_type load_circuit(std::string filename) {
-        constraint_system_type constraint_system;
-        {
-            std::ifstream ifile;
-            ifile.open(filename, std::ios_base::binary | std::ios_base::in);
-            BOOST_ASSERT(ifile.is_open());
-
-            std::vector<std::uint8_t> v;
-            ifile.seekg(0, std::ios_base::end);
-            const auto fsize = ifile.tellg();
-            v.resize(fsize);
-            ifile.seekg(0, std::ios_base::beg);
-            ifile.read(reinterpret_cast<char *>(v.data()), fsize);
-            BOOST_ASSERT(ifile);
-            ifile.close();
-
-            circuit_marshalling_type marshalled_data;
-            auto read_iter = v.begin();
-            auto status = marshalled_data.read(read_iter, v.size());
-            constraint_system =
-                nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, constraint_system_type>(
-                    marshalled_data);
-        }
-        return constraint_system;
+    ~test_fixture() {
     }
 };
 
-// template<typename ValueType>
-// struct field_element_init{
+template<typename ProofType, typename ParamsType, typename ValueType>
+void export_to_json(
+    ProofType const &proof,
+    ParamsType const &fri_params,
+    const std::map<std::pair<std::size_t,std::size_t>, std::vector<std::size_t>> &eval_map,
+    const std::vector<ValueType> &points,
+    std::string filename
+) {
 
-//     template<typename ElementData>
-//     static inline ValueType process(const ElementData &element_data) {
-//         return ValueType(typename ValueType::integral_type(element_data.second.data()));
-//     }
-// };
+    std::ofstream out(filename);
 
-// TODO(martun): consider moving these functions to some shared location so other tests can re-use them.
-template<typename SrcParams>
-static typename nil::blueprint::components::detail::dfri_proof_wrapper<typename SrcParams::placeholder_params> load_proof_json(std::string filename) {
-    std::cout << "Loading proof from " << filename << std::endl;
+    bool first = true;
+    out << "{\"params\": {\"lambda\" : " << fri_params.lambda << ", \"expand_factor\": " << fri_params.expand_factor << ", \"batches_amount\": " <<  proof.z.get_batches().size();
+    out << ", \"batch_size\": [";
 
-    using Endianness = nil::marshalling::option::big_endian;
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    for(const auto &[k,v] : proof.z.get_batch_info()){
+        if (!first) out << ","; else first = false;
+        out << v;
+    }
+    out << "], \"evaluation_map\": [";
+    first = true;
+    for(auto &[k, v] : eval_map){
+        if (!first) out << ","; else first = false;
+        out << "{\"batch_id\": " << k.first << ", \"poly_id\": " << k.second << ",\"points\": [";
+        first = true;
+        for(auto &p: v) {
+            if (!first) out << ","; else first = false;
+            out << p;
+        }
+        out << "]}";
+        first = false;
+    }
 
-    boost::property_tree::ptree jsontree;
-    boost::property_tree::read_json(filename, jsontree);
+    out << "]},\"evaluation_points\": [";
+    first = true;
+    for(auto &p : points){
+        if (!first) out << ","; else first = false;
+        out << p;
+    }
+    out << "], \"lpc_proof\" :{\"evaluations\": [";
+    first = true;
+    for (std::size_t i : proof.z.get_batches()) {
+        if (!first) out << ","; else first = false;
+        out << "{\"batch_id\":" << i << ", \"batch\": [";
+        first = true;
+        for (std::size_t j = 0; j < proof.z.get_batch_size(i); j++) {
+            if (!first) out << ","; else first = false;
+            out << "{\"polynomial_index\":" << j << ", \"evaluation\":[";
+            first = true;
+            for (auto b : proof.z.get(i, j)) {
+                if (!first) out << ","; else first = false;
+                out << b << " ";
+            }
+            out << "]}";
+            first = false;
+        }
+        first = false;
+        out << "]}";
+    }
+    first = true;
+    out << "], \"fri_proof\": { \"fri_roots\": [";
+    for (auto &c : proof.fri_proof.fri_roots) {
+        if (!first) out << ","; else first = false;
+        out << c;
+    }
+    out << "],\"query_proofs\": [" << std::endl;
+    first = true;
+    for (auto &q : proof.fri_proof.query_proofs) {
+        // initial round proof
+        if (!first) out << ","; else first = false;
+        out << "{\"initial_round_proof\": [";
+        first = true;
+        for (auto [k, init_proof] : q.initial_proof) {
+            if (!first) out << ",";
+            out << "{\"batch_id\":" << k << ", \"y\": [";
+            first = true;
+            for (auto &y : init_proof.values) {
+                if (!first) out << ","; else first = false;
+                out << "[" << y[0][0] << "," << y[0][1] << "]";
+            }
+            out << "],\"merkle_path\": [";
+            first = true;
+            for (auto &path : init_proof.p.path()) {
+                if (!first) out << ","; else first = false;
+                out << "{\"position\":" << path[0].position() << ", \"hash\" :" << path[0].hash() << "}";
+            }
+            out << "]}";
+            first = false;
+        }
+        // round proofs
+        out << "], \"round_proofs\": [" << std::endl;
+        first = true;
+        for (auto &r : q.round_proofs) {
+            if (!first) out << ","; else first = false;
+            out << "{\"y\": [" << r.y[0][0] << ", " << r.y[0][1] << "]," << std::endl;
+            out << "\"merkle_path\": [";
+            first = true;
+            for (auto &path : r.p.path()) {
+                if (!first) out << ","; else first = false;
+                out << "{\"position\":" << path[0].position() << ", \"hash\" :" << path[0].hash() << "}";
+            }
+            out << "]}";
+            first = false;
+        }
+        out << "]}" << std::endl;
+        first = false;
+    }
+    out << "],\"final_polynomial\": [";
+    first = true;
+    for (auto &coeff : proof.fri_proof.final_polynomial) {
+        if (!first) out << ","; else first = false;
+        out << coeff;
+    }
+    out << "]}}}" << std::endl;
+    out.close();
+}
 
-    using PlaceholderParams = typename SrcParams::placeholder_params;
-    using field_type = typename PlaceholderParams::field_type;
-    using value_type = typename field_type::value_type;
+template<typename FieldType>
+struct test_setup_struct{
+    using field_type = FieldType;
+    using component_type = nil::blueprint::components::plonk_dfri_verifier<field_type>;
+
+    typename component_type::fri_params_type      component_fri_params;
+    std::map<std::size_t, std::size_t>            batches_sizes; // It's a map just for compatibility with placeholder
+    std::size_t                                   evaluation_points_amount;
+    std::map<std::pair<std::size_t, std::size_t>, std::vector<std::size_t>> eval_map;
+};
+
+template<typename FieldType>
+std::pair<test_setup_struct<FieldType>, nil::blueprint::components::detail::dfri_proof_wrapper<FieldType>>
+prepare_small_test(bool print_enable = false){
+    using field_type = FieldType;
+    using merkle_hash_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>>;
+    using transcript_hash_type =  hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<FieldType>>;
+
+    using val = typename field_type::value_type;
     using integral_type = typename field_type::integral_type;
-    using proof_type = nil::crypto3::zk::snark::placeholder_proof<field_type, PlaceholderParams>;
-    using common_data_type = typename nil::crypto3::zk::snark::
-        placeholder_public_preprocessor<field_type, PlaceholderParams>::preprocessed_data_type::common_data_type;
 
+    constexpr static const std::size_t lambda = 10;
+    constexpr static const std::size_t k = 1;
+    constexpr static const std::size_t d = 16;
+    constexpr static const std::size_t r = boost::static_log2<(d - k)>::value;
     constexpr static const std::size_t m = 2;
-    typedef std::array<typename field_type::value_type, m> polynomial_value_type;
-    typedef std::vector<polynomial_value_type> polynomial_values_type;
 
-    // For initial proof only, size of all values are similar
-    typedef std::vector<polynomial_values_type> polynomials_values_type;
+    using fri_type = zk::commitments::fri<FieldType, merkle_hash_type, transcript_hash_type, m>;
+    using lpc_params_type = zk::commitments::list_polynomial_commitment_params<merkle_hash_type, transcript_hash_type, m>;
+    using lpc_type = zk::commitments::list_polynomial_commitment<FieldType, lpc_params_type>;
 
-    using merkle_proof_type = typename containers::merkle_proof<typename SrcParams::Hash, 2>;
+    static_assert(zk::is_commitment<fri_type>::value);
+    static_assert(zk::is_commitment<lpc_type>::value);
+    static_assert(!zk::is_commitment<merkle_hash_type>::value);
+//    static_assert(!zk::is_commitment<merkle_tree_type>::value);
+    static_assert(!zk::is_commitment<std::size_t>::value);
 
-    proof_type placeholder_proof;
-    auto &eval_proof = placeholder_proof.eval_proof.eval_proof;
-    std::size_t i, j, b, k, q;
-    std::vector<value_type> evaluation_points;
+    constexpr static const std::size_t d_extended = d;
+    std::size_t extended_log = boost::static_log2<d_extended>::value;
+    std::vector<std::shared_ptr<math::evaluation_domain<FieldType>>> D =
+        math::calculate_domain_set<FieldType>(extended_log, r);
 
-    for (const auto &p : jsontree.get_child("evaluation_points")) {
-        evaluation_points.push_back(value_type(integral_type(p.second.data())));
-    }
+    // Setup params
+    std::size_t degree_log = std::ceil(std::log2(d - 1));
+    typename fri_type::params_type fri_params(
+        1,       // max_step
+        degree_log,
+        lambda,
+        2,       // expand_factor
+        false    // use_grinding
+    );
+    typename test_setup_struct<FieldType>::component_type::fri_params_type component_fri_params(fri_params);
 
-    const boost::property_tree::ptree lpc_proof = jsontree.get_child("lpc_proof");
+    using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<
+        lpc_type, math::polynomial_dfs<typename FieldType::value_type>
+    >;
+    lpc_scheme_type lpc_scheme_prover(fri_params);
+    lpc_scheme_type lpc_scheme_verifier(fri_params);
 
-    i=0;
-    for(const auto &batch_size : jsontree.get_child("params.batch_size")){
-        eval_proof.z.set_batch_size(i, batch_size.second.get_value<std::size_t>());
-        i++;
-    }
+    std::map<std::size_t, std::size_t> batches_sizes;
+    batches_sizes[0] = 1;
+    batches_sizes[2] = 3;
+    batches_sizes[3] = 1;
+    batches_sizes[4] = 2;
 
-
-    for(const auto &ev : lpc_proof.get_child("evaluations")){
-        std::size_t batch_id = ev.second.get_child("batch_id").get_value<std::size_t>();
-        std::size_t value_id = 0;
-        std::size_t poly_id  = 0;
-        std::size_t points   = 0;
-        for(const auto &batch : ev.second.get_child("batch")){
-            poly_id = batch.second.get_child("polynomial_index").get_value<std::size_t>();
-            points  = batch.second.get_child("evaluation").size();
-            eval_proof.z.set_poly_points_number(batch_id, poly_id, points);
-            i = 0;
-            for(const auto& value : batch.second.get_child("evaluation")){
-                eval_proof.z.set(batch_id, poly_id, i, value_type(integral_type(value.second.data())));
-                i++;
-            }
+    // Generate polynomials
+    for(auto &[k,v]: batches_sizes){
+        for(std::size_t i = 0; i < v; i++){
+            lpc_scheme_prover.append_to_batch(k, generate_random_polynomial_dfs(fri_params.max_degree, test_global_alg_rnd_engine<field_type>));
         }
     }
-    
-    const boost::property_tree::ptree fri_proof = lpc_proof.get_child("fri_proof");
-    for (const auto &fri_root : fri_proof.get_child("fri_roots")) {
-        eval_proof.fri_proof.fri_roots.push_back(value_type(integral_type(fri_root.second.data())));
+    // Commit
+    std::map<std::size_t, typename lpc_type::commitment_type> commitments;
+    for(auto &[k,v]: batches_sizes){
+        lpc_scheme_verifier.set_batch_size(k,v);
+        commitments[k] = lpc_scheme_prover.commit(k);
     }
 
-    
-    const boost::property_tree::ptree query_proofs = fri_proof.get_child("query_proofs");
-    eval_proof.fri_proof.query_proofs.resize(query_proofs.size());
-    BOOST_ASSERT(eval_proof.fri_proof.query_proofs.size() == jsontree.get<std::size_t>("params.lambda"));
-    q = 0;
-    for (const auto &query_proof : query_proofs) {
-        for (const auto &batch : query_proof.second.get_child("initial_round_proof")) {
-            std::size_t batch_id = batch.second.get_child("batch_id").get_value<std::size_t>();
+    std::size_t evaluation_points_amount = 3;
+    std::vector<val> evaluation_points;
+    for( std::size_t i = 0; i < evaluation_points_amount; i++ ){
+        evaluation_points.push_back(test_global_alg_rnd_engine<field_type>());
+    }
 
-            polynomials_values_type y;
-            y.resize(batch.second.get_child("values").size());
-            i = 0;
-            for (const auto &yi : batch.second.get_child("values")) {
-                y[i].resize(m-1);
-                j = 0;
-                for (const auto &yj : yi.second) {
-                    y[i][0][j] = value_type(integral_type(yj.second.data()));
-                    j++;
+    // Generate eval_map
+    std::map<std::pair<std::size_t,std::size_t>, std::vector<std::size_t>> eval_map;
+    for(auto &[k,v]: batches_sizes){
+        for(std::size_t i = 0; i < v; i++){
+            eval_map[{k,i}] = {0};
+            lpc_scheme_prover.append_eval_point(k, i, evaluation_points[0]);
+            lpc_scheme_verifier.append_eval_point(k, i, evaluation_points[0]);
+            for( std::size_t j = 1; j < evaluation_points_amount; j++ ){
+                if( test_global_rnd_engine() % 2 == 1 ) {
+                    eval_map[{k,i}].push_back(j);
+                    lpc_scheme_prover.append_eval_point(k, i, evaluation_points[j]);
+                    lpc_scheme_verifier.append_eval_point(k, i, evaluation_points[j]);
                 }
-                i++;
             }
-            merkle_proof_type merkle_path;
-            const auto path = batch.second.get_child("p");
-            std::size_t li = path.get_child("leaf_index").get_value<std::size_t>();
-            value_type root = value_type(integral_type(path.get_child("root").data()));
-
-            typename merkle_proof_type::path_type auth_path;
-            for (const auto &path_element : path.get_child("path")) {
-                auth_path.push_back({typename merkle_proof_type::path_element_type(
-                    value_type(integral_type(path_element.second.get_child("hash").data())),
-                    path_element.second.get_child("position").get_value<std::size_t>())});
-            }
-
-            eval_proof.fri_proof.query_proofs[q].initial_proof.insert({batch_id, {y, merkle_proof_type(li, root, auth_path)}});
         }
-
-        for(const auto &round_proof : query_proof.second.get_child("round_proofs")){
-            polynomial_values_type y;
-            y.resize(m-1);
-            i = 0;
-            for (const auto &yi : round_proof.second.get_child("y")) {
-                y[0][i] = value_type(integral_type(yi.second.data()));
-                i++;
-            }
-
-            merkle_proof_type merkle_path;
-            const auto path = round_proof.second.get_child("p");
-            std::size_t li = path.get_child("leaf_index").get_value<std::size_t>();
-            value_type root = value_type(integral_type(path.get_child("root").data()));
-
-            typename merkle_proof_type::path_type auth_path;
-            for (const auto &path_element : path.get_child("path")) {
-                auth_path.push_back({typename merkle_proof_type::path_element_type(
-                    value_type(integral_type(path_element.second.get_child("hash").data())),
-                    path_element.second.get_child("position").get_value<std::size_t>())});
-            }
-            eval_proof.fri_proof.query_proofs[q].round_proofs.push_back({y, merkle_proof_type(li, root, auth_path)});
-        }
-        q++;
     }
 
-    math::polynomial<typename field_type::value_type> final_polynomial;
-    for(const auto &coeffs : fri_proof.get_child("final_polynomial")){
-        final_polynomial.push_back(value_type(integral_type(coeffs.second.data())));
+    // Prove
+    zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_prover;
+    auto proof = lpc_scheme_prover.proof_eval(transcript_prover);
+
+    // Verify
+    zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type> transcript_verifier;
+    BOOST_CHECK(lpc_scheme_verifier.verify_eval(proof, commitments, transcript_verifier));
+
+    // Check transcript state
+    typename FieldType::value_type verifier_next_challenge = transcript_verifier.template challenge<FieldType>();
+    typename FieldType::value_type prover_next_challenge = transcript_prover.template challenge<FieldType>();
+    BOOST_CHECK(verifier_next_challenge == prover_next_challenge);
+
+    test_setup_struct<FieldType> component_setup = {
+        component_fri_params,
+        batches_sizes,
+        evaluation_points_amount,
+        eval_map
+    };
+    nil::blueprint::components::detail::dfri_proof_wrapper<FieldType> public_input(
+        0, // transcript initial state
+        commitments,
+        evaluation_points,
+        proof
+    );
+
+    if(print_enabled){
+        export_to_json(proof, fri_params, eval_map, evaluation_points, "data.json");
     }
-    eval_proof.fri_proof.final_polynomial = final_polynomial;
 
-    return nil::blueprint::components::detail::dfri_proof_wrapper<PlaceholderParams>(placeholder_proof, evaluation_points);
+    return {component_setup, public_input};
 }
 
-// template<typename PlaceholderParams>
-// static typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typename PlaceholderParams::field_type,
-// PlaceholderParams>::preprocessed_data_type::common_data_type load_common_data(std::string filename){
-//     std::ifstream ifile;
-//     ifile.open(filename, std::ios_base::binary | std::ios_base::in);
-//     BOOST_ASSERT(ifile.is_open());
+template<typename FieldType, std::size_t WitnessAmount>
+void test_dfri_verifier(
+    const test_setup_struct<FieldType> &test_setup,
+    const nil::blueprint::components::detail::dfri_proof_wrapper<FieldType> &test_input
+){
+    std::cout << "Test with " << WitnessAmount << " witnesses" << std::endl;
 
-//     std::vector<std::uint8_t> v;
-//     ifile.seekg(0, std::ios_base::end);
-//     const auto fsize = ifile.tellg();
-//     v.resize(fsize);
-//     ifile.seekg(0, std::ios_base::beg);
-//     ifile.read(reinterpret_cast<char*>(v.data()), fsize);
-//     BOOST_ASSERT(ifile);
-//     ifile.close();
+    using field_type = FieldType;
+    using val = typename field_type::value_type;
+    using constraint_system_type = nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
+    using table_description_type = nil::crypto3::zk::snark::plonk_table_description<field_type>;
+    using ColumnType = nil::crypto3::zk::snark::plonk_column<field_type>;
+    using assignment_table_type = nil::crypto3::zk::snark::plonk_table<field_type, ColumnType>;
 
-//     using common_data_type = typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typename
-//     PlaceholderParams::field_type, PlaceholderParams>::preprocessed_data_type::common_data_type;
+    std::array<std::uint32_t, WitnessAmount> witnesses;
+    for (std::uint32_t i = 0; i < WitnessAmount; i++) {
+        witnesses[i] = i;
+    }
 
-//     nil::crypto3::marshalling::types::placeholder_common_data<default_zkllvm_params::TTypeBase, common_data_type>
-//     marshalled_data; auto read_iter = v.begin(); auto status = marshalled_data.read(read_iter, v.size()); return
-//     nil::crypto3::marshalling::types::make_placeholder_common_data<nil::marshalling::option::big_endian,
-//     common_data_type>(
-//         marshalled_data
-//     );
-// }
+    using component_type = nil::blueprint::components::plonk_dfri_verifier<field_type>;
+    using var = crypto3::zk::snark::plonk_variable<val>;
 
-// template <std::size_t Witnesses>
-// struct dst_params{
-//     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
+    component_type component_instance(
+        witnesses, std::array<std::uint32_t, 1>({0}), std::array<std::uint32_t, 0>(),
+        test_setup.component_fri_params, test_setup.batches_sizes,
+        test_setup.evaluation_points_amount, test_setup.eval_map //fri_params, batches_sizes, evaluation_points_num, eval_map
+    );
 
-//     static constexpr std::size_t WitnessColumns = Witnesses;
-//     static constexpr std::size_t PublicInputColumns = 1;
-//     static constexpr std::size_t ConstantColumns = 2;
-//     static constexpr std::size_t SelectorColumns = 35;
+    // TODO: remove it if we don't need test_plonk_component.
+    bool expected_res = true;
+    auto result_check = [&expected_res]( assignment_table_type &assignment, typename component_type::result_type &real_res) {
+            return true;
+    };
 
-//     using constraint_system_type =
-//         nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
-//     using table_description_type =
-//         nil::crypto3::zk::snark::plonk_table_description<field_type>;
-//     using Endianness = nil::marshalling::option::big_endian;
-//     using TTypeBase = nil::marshalling::field_type<Endianness>;
+    nil::blueprint::components::detail::dfri_proof_input_vars<field_type> input_vars(
+        test_setup.component_fri_params,
+        test_setup.batches_sizes,
+        test_setup.evaluation_points_amount,
+        test_setup.eval_map
+    );
+    if(input_vars.all_vars().size() != test_input.vector().size())
+        std::cout << "Wrong public input column length " << input_vars.all_vars().size() << " != " << test_input.vector().size() << std::endl;
+    BOOST_ASSERT(input_vars.all_vars().size() == test_input.vector().size());
 
-//     using ColumnType = nil::crypto3::zk::snark::plonk_column<field_type>;
-//     using assignment_table_type =
-//         nil::crypto3::zk::snark::plonk_table<field_type, ColumnType>;
+    table_description_type desc(WitnessAmount, 1, 1, 35); //Witness, public inputs, constants, selectors
 
-//     using ColumnsRotationsType = std::vector<std::set<int>>;
-//     static const std::size_t Lambda = 9;//ParametersPolicy::lambda;
-//     using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
-//     using Hash = nil::crypto3::hashes::poseidon<poseidon_policy>;
-//     using circuit_params = nil::crypto3::zk::snark::placeholder_circuit_params<field_type>;
-// };
-
-// inline std::vector<std::size_t> generate_random_step_list(const std::size_t r, const int max_step) {
-//     using dist_type = std::uniform_int_distribution<int>;
-//     static std::random_device random_engine;
-
-//     std::vector<std::size_t> step_list;
-//     std::size_t steps_sum = 0;
-//     while (steps_sum != r) {
-//         if (r - steps_sum <= max_step) {
-//             while (r - steps_sum != 1) {
-//                 step_list.emplace_back(r - steps_sum - 1);
-//                 steps_sum += step_list.back();
-//             }
-//             step_list.emplace_back(1);
-//             steps_sum += step_list.back();
-//         } else {
-//             step_list.emplace_back(dist_type(1, max_step)(random_engine));
-//             steps_sum += step_list.back();
-//         }
-//     }
-//     return step_list;
-// }
-
-// template<typename SrcParams>
-// std::tuple<typename SrcParams::common_data_type, typename SrcParams::commitment_scheme_params_type, typename
-// SrcParams::proof_type> gen_test_proof(
-//     typename SrcParams::constraint_system_type constraint_system,
-//     typename SrcParams::table_description_type table_description,
-//     typename SrcParams::assignment_table_type assignment_table
-// ){
-//     using src_placeholder_params = typename SrcParams::placeholder_params;
-//     using field_type = typename SrcParams::field_type;
-//     using fri_params_type = typename SrcParams::lpc_type::fri_type::params_type;
-
-//     fri_params_type fri_params(0, std::ceil(std::log2(table_description.rows_amount)),
-//         src_placeholder_params::lambda, 4 /*expand_factor*/);
-//     typename SrcParams::commitment_scheme_type lpc_scheme(fri_params);
-
-//     std::cout <<"Preprocess public data" << std::endl;
-//     typename nil::crypto3::zk::snark::placeholder_public_preprocessor<
-//         field_type, src_placeholder_params>::preprocessed_data_type public_preprocessed_data =
-//     nil::crypto3::zk::snark::placeholder_public_preprocessor<field_type, src_placeholder_params>::process(
-//         constraint_system, assignment_table.move_public_table(), table_description, lpc_scheme
-//     );
-
-//     std::cout <<"Preprocess private data" << std::endl;
-//     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<
-//         field_type, src_placeholder_params>::preprocessed_data_type private_preprocessed_data =
-//         nil::crypto3::zk::snark::placeholder_private_preprocessor<field_type, src_placeholder_params>::process(
-//             constraint_system, assignment_table.move_private_table(), table_description
-//         );
-
-//     std::cout <<"Generate proof" << std::endl;
-//     typename SrcParams::proof_type proof = nil::crypto3::zk::snark::placeholder_prover<field_type,
-//     src_placeholder_params>::process(
-//         public_preprocessed_data, private_preprocessed_data, table_description, constraint_system, lpc_scheme
-//     );
-
-//     bool verification_result =
-//         nil::crypto3::zk::snark::placeholder_verifier<field_type, src_placeholder_params>::process(
-//             public_preprocessed_data, proof, table_description, constraint_system, lpc_scheme
-//         );
-//     std::cout <<"Proof verified" << std::endl;
-
-//     BOOST_ASSERT(verification_result);
-
-//     return std::make_tuple(public_preprocessed_data.common_data, fri_params, proof);
-// }
-
-template<typename SrcParams, typename DstParams>
-void test_flexible_verifier(
-    const typename SrcParams::constraint_system_type &constraint_system,
-    const typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typename SrcParams::field_type, SrcParams>::
-        preprocessed_data_type::common_data_type &common_data,
-    const typename nil::crypto3::zk::snark::placeholder_proof<typename SrcParams::field_type, SrcParams> &proof,
-    const typename SrcParams::commitment_scheme_params_type &fri_params) {
-    std::cout << "****************** Test flexible verifier with " << DstParams::WitnessColumns
-              << " witness rows ******************" << std::endl;
-    // using src_placeholder_params = typename SrcParams::placeholder_params;
-    // using field_type = typename SrcParams::field_type;
-    // using value_type = typename field_type::value_type;
-
-    // std::array<std::uint32_t, DstParams::WitnessColumns> witnesses;
-    // for (std::uint32_t i = 0; i < DstParams::WitnessColumns; i++) {
-    //     witnesses[i] = i;
-    // }
-    // using component_type = nil::blueprint::components::plonk_flexible_verifier<typename DstParams::field_type,
-    // SrcParams>; using var = crypto3::zk::snark::plonk_variable<value_type>;
-
-    // bool expected_res = true;
-    // auto result_check = [&expected_res](
-    //     typename DstParams::assignment_table_type &assignment,
-    //     typename component_type::result_type &real_res) {
-    //         return true;
-    // };
-
-    // nil::blueprint::components::detail::placeholder_proof_input_type<SrcParams> full_instance_input(common_data,
-    // constraint_system, fri_params); nil::blueprint::components::detail::placeholder_proof_wrapper<SrcParams>
-    // proof_ext(common_data, proof);
-
-    // std::size_t value_vector_size = proof_ext.vector().size();
-    // std::cout << "value vector size = " << value_vector_size << std::endl;
-    // std::cout << "var vector size =   " << full_instance_input.vector().size() << std::endl;
-    // BOOST_ASSERT(proof_ext.vector().size() == full_instance_input.vector().size());
-
-    // std::vector<typename field_type::value_type> public_input = proof_ext.vector();
-    // typename component_type::input_type instance_input(full_instance_input);
-
-    // std::array<std::uint32_t, DstParams::WitnessColumns> witness_ids;
-    // for (std::uint32_t i = 0; i < DstParams::WitnessColumns; i++) {
-    //     witness_ids[i] = i;
-    // }
-    // component_type component_instance(
-    //     witness_ids, std::array<std::uint32_t, 1>({0}), std::array<std::uint32_t, 0>(),
-    //     SrcParams(), constraint_system, common_data, fri_params
-    // );
-
-    // zk::snark::plonk_table_description<field_type> desc(
-    //     DstParams::WitnessColumns, DstParams::PublicInputColumns, DstParams::ConstantColumns,
-    //     DstParams::SelectorColumns);
-    // std::cout << "desc = " << desc.rows_amount << " " << desc.witness_columns << " " << desc.public_input_columns <<
-    // " " << desc.constant_columns << " " << desc.selector_columns << std::endl;
-
-    // nil::crypto3::test_component<component_type, field_type, typename DstParams::Hash, DstParams::Lambda> (
-    //     component_instance, desc, public_input, result_check,
-    //     instance_input, nil::blueprint::connectedness_check_type::type::NONE,
-    //     SrcParams(), constraint_system, common_data, fri_params
-    // );
-    // std::cout << "desc = " << desc.rows_amount << " " << desc.witness_columns << " " << desc.public_input_columns <<
-    // " " << desc.constant_columns << " " << desc.selector_columns << std::endl;
-
-    //    auto r_circuit0 = component_instance.generate_circuit(constraint_system, common_data);
-    //    auto [r_table_description0, r_asignment0] = component_instance.generate_assignment(constraint_system,
-    //    common_data, assignment_table.public_inputs(), proof);
+    using poseidon_policy = nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>;
+    using hash_type = nil::crypto3::hashes::poseidon<poseidon_policy>;
+    nil::crypto3::test_component<component_type, field_type, hash_type, 9> (
+        component_instance, desc, test_input.vector(), result_check,
+        input_vars, nil::blueprint::connectedness_check_type::type::NONE,
+        test_setup.component_fri_params, test_setup.batches_sizes,
+        test_setup.evaluation_points_amount, test_setup.eval_map
+    );
 }
 
-template<typename SrcParams>
-void test_multiple_arithmetizations(std::string folder_name) {
-    //    auto table_description = SrcParams::load_table_description(folder_name + "/assignment.tbl");
-    // std::cout << "Start loading" << std::endl;
-    //     auto constraint_system = SrcParams::load_circuit(folder_name + "/circuit.crct");
-    //     std::cout << "Loaded the constraint system" << std::endl;
+template<typename field_type>
+void test_multiple_arithmetizations(
+    const test_setup_struct<field_type> &test_setup,
+    const nil::blueprint::components::detail::dfri_proof_wrapper<field_type> &test_input
+){
+    std::cout << "Load commitment params" << std::endl;
+    std::cout << "Load transcript state" << std::endl;
+    std::cout << "Load commitments" << std::endl;
+    std::cout << "Load evaluation points" << std::endl;
+    std::cout << "Load proof" << std::endl;
 
-    //     auto common_data = load_common_data<SrcParams>(folder_name + "/common.dat");
-    //     std::cout << "Loaded the common data" << std::endl;
-
-    //     auto proof = load_proof<SrcParams>(folder_name + "/proof.bin");
-    //     std::cout << "Loaded the proof" << std::endl;
-    //     auto table_description = common_data.desc;
-    //     auto fri_params = common_data.commitment_params;
-
-    //     std::cout << "Usable rows = " << table_description.usable_rows_amount << std::endl;
-    //     std::cout << "Rows amount = " << table_description.rows_amount << std::endl;
-    //     std::cout << "Witness amount = " << table_description.witness_columns << std::endl;
-    //     std::cout << "Public input amount = " << table_description.public_input_columns << std::endl;
-    //     std::cout << "Constant amount = " << table_description.constant_columns << std::endl;
-    //     std::cout << "Selector amount = " << table_description.selector_columns << std::endl;
-    //     std::cout << "Lambda = " << fri_params.lambda << std::endl;
-
-    // //    auto [common_data, fri_params, proof] = gen_test_proof<SrcParams>(constraint_system, table_description,
-    // assignment_table);
-
-    //     test_flexible_verifier<SrcParams, dst_params<15>>(constraint_system, common_data, proof, fri_params);
-    //     test_flexible_verifier<SrcParams, dst_params<42>>(constraint_system, common_data, proof, fri_params);
-    //     test_flexible_verifier<SrcParams, dst_params<84>>(constraint_system, common_data, proof, fri_params);
-    //     test_flexible_verifier<SrcParams, dst_params<168>>(constraint_system, common_data, proof, fri_params);
+    test_dfri_verifier<field_type,  15>(test_setup, test_input);
+    test_dfri_verifier<field_type,  42>(test_setup, test_input);
+    test_dfri_verifier<field_type,  84>(test_setup, test_input);
+    test_dfri_verifier<field_type, 168>(test_setup, test_input);
 }
 
-BOOST_AUTO_TEST_SUITE(blueprint_pallas_test_suite)
 
-BOOST_AUTO_TEST_CASE(basic_test) {
-    // test_multiple_arithmetizations<default_zkllvm_params>("../test/verifiers/placeholder/data/merkle_tree_poseidon");
-    auto loaded_proof = load_proof_json<default_zkllvm_params>("test1.json");
+BOOST_AUTO_TEST_SUITE(dfri_pallas_suite);
+    using curve_type = algebra::curves::pallas;
+    using field_type = curve_type::base_field_type;
+    using val = typename field_type::value_type;
+BOOST_FIXTURE_TEST_CASE(lpc_basic_test, test_fixture) {
+    const auto &[test_setup, test_input] = prepare_small_test<field_type>(print_enabled);
+    test_multiple_arithmetizations<field_type>(test_setup, test_input);
 }
-
-// TODO: add vesta tests
-// Cannot add bls12 tests because poseidon circuit is not implemented for it.
-
 BOOST_AUTO_TEST_SUITE_END()
+

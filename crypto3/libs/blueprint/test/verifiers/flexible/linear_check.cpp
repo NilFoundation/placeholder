@@ -65,7 +65,7 @@ void test_dfri_linear_check(const std::vector<typename BlueprintFieldType::value
 
     std::vector<var> xi;
     std::vector<var> y;
-    std::vector<std::vector<var>> z;
+    std::vector<var> z;
 
     var theta = var(0, 0, false, var::column_type::public_input);
     var x = var(0, 1, false, var::column_type::public_input);
@@ -79,9 +79,9 @@ void test_dfri_linear_check(const std::vector<typename BlueprintFieldType::value
         auto il = eval_map[l].first;
         auto jl = eval_map[l].second;
 
-        eval_map_ij[il - 1]++;
-        I = std::max(I, il);
-        K = std::max(K, jl);
+        eval_map_ij[il]++;
+        I = std::max(I, il+1);
+        K = std::max(K, jl+1);
     }
 
     for (std::size_t i = 0; i < K; i++){
@@ -94,19 +94,19 @@ void test_dfri_linear_check(const std::vector<typename BlueprintFieldType::value
 
     ctr = I + K + 2;
     for(std::size_t i = 0; i < I; i++){
-        std::vector<var> z_i;
+        // std::vector<var> z_i;
         for(std::size_t j = 0; j < eval_map_ij[i]; j++){
-            z_i.push_back(var(0, ctr++, false, var::column_type::public_input));
+            z.push_back(var(0, ctr++, false, var::column_type::public_input));
         }
-        z.push_back(z_i);
+        // z.push_back(z_i);
     }
 
     typename component_type::input_type instance_input = {theta, x, xi, y, z};
 
 
     auto result_check = [&expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
-        std::cout << "expected: " << expected_res.data << std::endl;
-        std::cout << "real res: " << var_value(assignment, real_res.output).data << std::endl;
+        // std::cout << "expected: " << expected_res.data << std::endl;
+        // std::cout << "real res: " << var_value(assignment, real_res.output).data << std::endl;
         BOOST_ASSERT(var_value(assignment, real_res.output) == expected_res);
     };
 
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_1_k_1) {
 
     std::vector<value_type> public_inputs = {theta, x, xi, y, z};
 
-    std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(1,1)};
+    std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(0,0)};
     std::size_t m = 1;
     
     value_type expected_res = (y - z) * ((x - xi).inversed());
@@ -175,15 +175,15 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_2) {
     value_type theta = generate_random();
     value_type x     = generate_random();
     std::array<value_type, 2> xi = {generate_random(), generate_random()};
-    value_type y  = generate_random();
+    std::array<value_type, 2> y  = {generate_random(), generate_random()};
     std::array<value_type, 2> z  = {generate_random(), generate_random()};
 
-    std::vector<value_type> public_inputs = {theta, x, xi[0], xi[1], y, z[0], z[1]};
+    std::vector<value_type> public_inputs = {theta, x, xi[0], xi[1], y[0],y[1], z[0], z[1]};
 
-    std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(1,1), std::make_pair(1,2)};
+    std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(0,1), std::make_pair(1,0)};
     std::size_t m = 2;
     
-    value_type expected_res = (y - z[0]) * ((x - xi[0]).inversed()) + theta * (y - z[1]) * ((x - xi[1]).inversed());
+    value_type expected_res = (y[0] - z[0]) * ((x - xi[1]).inversed()) + theta * (y[1] - z[1]) * ((x - xi[0]).inversed());
     
     test_dfri_linear_check<field_type, 3, 1>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 4, 1>(public_inputs, expected_res, m, eval_map);
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_2_k_1) {
 
     std::vector<value_type> public_inputs = {theta, x, xi, y[0], y[1], z[0], z[1]};
 
-    std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(1,1), std::make_pair(2,1)};
+    std::vector<std::pair<std::size_t, std::size_t> > eval_map = {std::make_pair(0,0), std::make_pair(1,0)};
     std::size_t m = 2;
     
     value_type expected_res = (y[0] - z[0]) * ((x - xi).inversed()) + theta * (y[1] - z[1]) * ((x - xi).inversed());
@@ -246,8 +246,8 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_20_k_1) {
     public_inputs.insert(public_inputs.end(), z.begin(), z.end());
 
     std::vector<std::pair<std::size_t, std::size_t> > eval_map;
-    for(std::size_t i = 1; i <= m; i++) {
-        eval_map.push_back(std::make_pair(i,1));
+    for(std::size_t i = 0; i < m; i++) {
+        eval_map.push_back(std::make_pair(i,0));
     }
 
     
@@ -257,6 +257,95 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_20_k_1) {
         expected_res = expected_res + theta_acc * (y[i] - z[i]) * ((x - xi).inversed());
         theta_acc = theta * theta_acc;
     }
+
+    test_dfri_linear_check<field_type, 9, 1>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 18, 2>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 27, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 15, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 21, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 24, 3>(public_inputs, expected_res, m, eval_map);
+    test_dfri_linear_check<field_type, 30, 4>(public_inputs, expected_res, m, eval_map);
+
+}
+
+
+
+BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_13_k_3) {
+    using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
+    using value_type = typename field_type::value_type;    
+
+    constexpr std::size_t m = 13;
+    constexpr std::size_t k = 3;
+    constexpr std::size_t n = 7;
+    value_type theta = 0x17f3269be06ff6c76417c00b03b877502ec58a8292c09a689aad0de2e3e6a209_cppui_modular255;
+    value_type x   = 0x1109ad4c5183f69681888cf1ac9c73233ae4e3bd5ca9ad8e34b81c1a11794627_cppui_modular255;
+    std::array<value_type, n> y = {
+        0x109c08b6434fdac4656b1b3b9c169ea0bb3763c54a0f226544f2e7cbb07699d3_cppui_modular255,
+        0x29807c67ad0e77f1cb7df52eaacda8c8aeb7323998949e1e6dc96ace49d7ffdb_cppui_modular255,
+        0x1e3b7cc212edf2735ccafdfe4ed9cb66692b11ad423a6980084a7fc3fd3c174c_cppui_modular255,
+        0x2597470a24d0a2cbbbc6d526352a994e8238fc24baeb88e8101812c861ac984b_cppui_modular255,
+        0x1ce5a2c4753bad5ebe0a964361f32d6407d1b2b3424371d7202059510025a368_cppui_modular255,
+        0x171f218f4a75c541784cc7754b0ce73200eeb37529f6d49df003e453ca9243b4_cppui_modular255,
+        0xbd0de19ad7279aef43773c595c3d8b8cfd9c7469e3192e86f1f9abf3adb3ad2_cppui_modular255
+    };
+    
+    std::array<value_type, k> xi = {
+        0x3c4b5c29d2934183497c35596d868ddb8e0005397f67d2f26c91188ada9bd1c3_cppui_modular255,
+        0x21ec40745cf822c5d422dc11f80a07845c4cb6ba727804c56a340f52bcfc6ace_cppui_modular255,
+        0x15f359e7d0a1a4b1eff1de3a593890a472f721a83b8d7145bd1a4e830bc72298_cppui_modular255
+    };
+
+
+    std::vector<std::pair<std::size_t, std::size_t> > eval_map;
+    
+    eval_map.push_back(std::make_pair(0,0));  // (0, 0)
+    eval_map.push_back(std::make_pair(1,0));  // (2, 0)
+    eval_map.push_back(std::make_pair(2,0));  // (2, 1)
+    eval_map.push_back(std::make_pair(3,0));  // (2, 2)
+    eval_map.push_back(std::make_pair(4,0));  // (3, 0)
+    eval_map.push_back(std::make_pair(5,0));  // (4, 0)
+    eval_map.push_back(std::make_pair(6,0));  // (4, 1)
+    eval_map.push_back(std::make_pair(3,1));  // (2, 2)
+    eval_map.push_back(std::make_pair(4,1));  // (3, 0)
+    eval_map.push_back(std::make_pair(3,2));  // (2, 2)
+    eval_map.push_back(std::make_pair(4,2));  // (3, 0)
+    eval_map.push_back(std::make_pair(5,2));  // (4, 0)
+    eval_map.push_back(std::make_pair(6,2));  // (4, 1)
+
+    std::vector<std::vector<value_type>> z(n, std::vector<value_type>());
+    std::array<std::array<value_type, k>, n> z_ij;
+    
+    z_ij[0][0] = 0x20d25fb8470fd8fabc58145cb26ad8742c475753ae5ca5d8f3c1b44684ce4f0_cppui_modular255;
+    z_ij[1][0] = 0x33c5922b908b7477233c66f1794147c57e3efd2bb2521669380e8178fac300c1_cppui_modular255;
+    z_ij[2][0] = 0xd4c90ee14439e9196e9d185b8ca15dda515922c05ca40df31cf7f770e6aa49d_cppui_modular255;
+    z_ij[3][0] = 0x228cee3a770a9e2f04a8fa727b31864730a2183747a1ef6d6a2b6b0946d099a4_cppui_modular255;
+    z_ij[3][1] = 0x1784c045ae5ab50022bc3f598811196d5c195a66ec67b8d0aa43c45d321288bb_cppui_modular255;
+    z_ij[3][2] = 0x23df4e8277cb5df68d32d783b1887bfb179f15717571db08c5579894e8c0ea42_cppui_modular255;
+    z_ij[4][0] = 0x3806fca6f22cd78d49d22c125e67d81f6fd336faed8e8d16303309e4f9165b90_cppui_modular255;
+    z_ij[4][1] = 0x3e5190c6669cce05fb6b3d63156f59f100cea0ff9730894e6133407213b8fc4b_cppui_modular255;
+    z_ij[4][2] = 0x175df5a226a4870b5b45d0b050471dee42c433c8ecc42cab79829156528711bf_cppui_modular255;
+    z_ij[5][0] = 0x2e8f89d9ffb7318286019c2ff4b8eba03fa812c97243a3e636b158c25e858c70_cppui_modular255;
+    z_ij[5][2] = 0x29c647fa69040c8b336a6bd63fc97477441b147f4c98e6d9632ba3290f434b8d_cppui_modular255;
+    z_ij[6][0] = 0x2a6a12ac90b00570b8b7dcb18540363ee0d7069aab9ab74bc30e92b8c3534cf1_cppui_modular255;
+    z_ij[6][2] = 0xf244b829bb26edce0aed5a36c70c09c43e6e612cd9b328bbc6518f427fe5988_cppui_modular255;
+
+    for(std::size_t i=0; i<n; i++){
+        for(std::size_t j=0; j<k; j++){
+            if(z_ij[i][j] != 0){
+                z[i].push_back(z_ij[i][j]);
+            }
+        }
+    }
+
+    std::vector<value_type> public_inputs = {theta, x};
+    public_inputs.insert(public_inputs.end(), xi.begin(), xi.end());
+    public_inputs.insert(public_inputs.end(), y.begin(), y.end());
+    for(const auto &z_i : z){
+        public_inputs.insert(public_inputs.end(), z_i.begin(), z_i.end());
+    }
+    
+    
+    value_type expected_res = 0x349c635dc7675c9f442067d5ebd60641e51c89a1a049a4e3bf917fcc47c346c2_cppui_modular255;
 
     test_dfri_linear_check<field_type, 9, 1>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 18, 2>(public_inputs, expected_res, m, eval_map);
