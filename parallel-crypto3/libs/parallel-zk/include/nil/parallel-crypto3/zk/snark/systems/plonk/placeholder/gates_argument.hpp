@@ -36,21 +36,21 @@
 #include <nil/parallel-crypto3/math/polynomial/shift.hpp>
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/hash/sha2.hpp>
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
-#include <nil/crypto3/zk/math/expression.hpp>
-#include <nil/crypto3/zk/math/expression_evaluator.hpp>
-#include <nil/crypto3/zk/math/expression_visitors.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/parallel-crypto3/zk/math/expression.hpp>
+#include <nil/parallel-crypto3/zk/math/expression_evaluator.hpp>
+#include <nil/parallel-crypto3/zk/math/expression_visitors.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 

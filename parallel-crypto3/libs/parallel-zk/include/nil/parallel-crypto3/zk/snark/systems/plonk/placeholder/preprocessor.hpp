@@ -39,17 +39,17 @@
 #include <nil/parallel-crypto3/math/polynomial/polynomial.hpp>
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 
-#include <nil/crypto3/zk/math/expression.hpp>
-#include <nil/crypto3/zk/math/expression_visitors.hpp>
-#include <nil/crypto3/zk/math/permutation.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/detail/column_polynomial.hpp>
+#include <nil/parallel-crypto3/zk/math/expression.hpp>
+#include <nil/parallel-crypto3/zk/math/expression_visitors.hpp>
+#include <nil/parallel-crypto3/zk/math/permutation.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/detail/column_polynomial.hpp>
 #include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/transcript_initialization_context.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/detail/transcript_initialization_context.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 

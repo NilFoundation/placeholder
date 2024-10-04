@@ -43,11 +43,11 @@
 
 #include <nil/crypto3/container/merkle/tree.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
