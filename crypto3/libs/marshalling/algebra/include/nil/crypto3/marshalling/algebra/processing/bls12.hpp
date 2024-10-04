@@ -138,7 +138,6 @@ namespace nil {
                             point.to_affine();
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
-                            // We assume here, that write_data doesn't change the iter
                             write_data<params_type::bit_length(), endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
                                 iter);
@@ -181,13 +180,11 @@ namespace nil {
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
                             TIter write_iter = iter;
-                            // We assume here, that write_data doesn't change the iter
                             write_data<sizeof_field_element, endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(
                                     point_affine.X.data[1].data),
                                 write_iter);
                             write_iter += sizeof_field_element_chunks_count;
-                            // We assume here, that write_data doesn't change the iter
                             write_data<sizeof_field_element, endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(
                                     point_affine.X.data[0].data),
@@ -222,7 +219,6 @@ namespace nil {
                             point.to_affine();
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
-                            // We assume here, that write_data doesn't change the iter
                             write_data<params_type::bit_length(), endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
                                 iter);
@@ -265,13 +261,11 @@ namespace nil {
                         chunk_type m_unit = detail::evaluate_m_unit<chunk_type>(point, true);
                         if (!(I_bit & m_unit)) {
                             TIter write_iter = iter;
-                            // We assume here, that write_data doesn't change the iter
                             write_data<sizeof_field_element, endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(
                                     point_affine.X.data[1].data),
                                 write_iter);
                             write_iter += sizeof_field_element_chunks_count;
-                            // We assume here, that write_data doesn't change the iter
                             write_data<sizeof_field_element, endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(
                                     point_affine.X.data[0].data),

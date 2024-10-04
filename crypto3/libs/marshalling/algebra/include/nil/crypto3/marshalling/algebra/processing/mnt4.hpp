@@ -162,13 +162,11 @@ namespace nil {
                         auto point_affine = point.to_affine();
 
                         TIter write_iter = iter;
-                        // We assume here, that write_data doesn't change the iter
                         write_data<sizeof_field_element, endianness>(
                             static_cast<typename group_value_type::field_type::integral_type>(
                                 point_affine.X.data[1].data),
                             write_iter);
                         write_iter += sizeof_field_element_chunks_count;
-                        // We assume here, that write_data doesn't change the iter
                         write_data<sizeof_field_element, endianness>(
                             static_cast<typename group_value_type::field_type::integral_type>(
                                 point_affine.X.data[0].data),
