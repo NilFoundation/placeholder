@@ -416,29 +416,11 @@ namespace nil {
             desc.usable_rows_amount = assignment.rows_amount();
 
             if constexpr (nil::blueprint::use_lookups<component_type>()) {
-                // Components with lookups may use constant columns.
-                // But now all constants are placed in the first column.
-                // So we reserve the first column for non-lookup constants.
-                // Rather universal for testing
-                // We may start from zero if component doesn't use ordinary constants.
-                std::vector<size_t> lookup_columns_indices;
-                for(std::size_t i = 1; i < assignment.constants_amount(); i++) {
-                    lookup_columns_indices.push_back(i);
-                }
-
-                std::size_t cur_selector_id = 0;
-                for(const auto &gate: bp.gates()){
-                    cur_selector_id = std::max(cur_selector_id, gate.selector_index);
-                }
-                for(const auto &lookup_gate: bp.lookup_gates()){
-                    cur_selector_id = std::max(cur_selector_id, lookup_gate.tag_index);
-                }
-                cur_selector_id++;
                 desc.usable_rows_amount = zk::snark::pack_lookup_tables_horizontal(
                     bp.get_reserved_indices(),
                     bp.get_reserved_tables(),
                     bp.get_reserved_dynamic_tables(),
-                    bp, assignment, lookup_columns_indices, cur_selector_id,
+                    bp, assignment,
                     desc.usable_rows_amount,
                     500000
                 );
