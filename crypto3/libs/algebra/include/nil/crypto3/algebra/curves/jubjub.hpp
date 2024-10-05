@@ -30,9 +30,6 @@
 #include <nil/crypto3/algebra/curves/detail/jubjub/types.hpp>
 #include <nil/crypto3/algebra/curves/detail/jubjub/g1.hpp>
 
-// #include <nil/crypto3/algebra/pairing/edwards.hpp>
-// #include <nil/crypto3/algebra/pairing/detail/edwards/functions.hpp>
-
 namespace nil {
     namespace crypto3 {
         namespace algebra {

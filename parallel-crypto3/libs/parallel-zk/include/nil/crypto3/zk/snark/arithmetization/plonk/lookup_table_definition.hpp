@@ -137,7 +137,8 @@ namespace nil {
 
                     // Compute first selector index.
                     std::size_t cur_selector_id;
-                    for(std::size_t i = assignment.selectors_amount() - 1; i > 0; i-- ){
+                    for(std::size_t i = assignment.selectors_amount(); i > 0; ){
+                        i--;
                         cur_selector_id = i;
                         if (assignment.selector(cur_selector_id).size() != 0){
                             cur_selector_id++;
@@ -147,7 +148,8 @@ namespace nil {
 
                     // Compute available constant columns list
                     std::vector<std::size_t> constant_columns_ids;
-                    for(std::size_t i = assignment.constants_amount() - 1; i > 0; i-- ){
+                    for(std::size_t i = assignment.constants_amount(); i > 0;){
+                        i--;
                         if (assignment.constant(i).size() != 0){
                             break;
                         }
@@ -232,7 +234,8 @@ namespace nil {
 
                     // Compute first selector index.
                     std::size_t cur_selector_id;
-                    for(std::size_t i = assignment.selectors_amount() - 1; i > 0; i-- ){
+                    for(std::size_t i = assignment.selectors_amount(); i > 0; ){
+                        i--;
                         cur_selector_id = i;
                         if (assignment.selector(cur_selector_id).size() != 0){
                             cur_selector_id++;
@@ -242,7 +245,8 @@ namespace nil {
 
                     // Compute available constant columns list
                     std::vector<std::size_t> constant_columns_ids;
-                    for(std::size_t i = assignment.constants_amount() - 1; i > 0; i-- ){
+                    for(std::size_t i = assignment.constants_amount(); i > 0;){
+                        i--;
                         if (assignment.constant(i).size() != 0){
                             break;
                         }

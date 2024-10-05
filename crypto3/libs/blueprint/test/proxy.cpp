@@ -385,7 +385,10 @@ BOOST_AUTO_TEST_CASE(blueprint_proxy_call_pack_lookup_tables_test) {
         usable_rows_amount);
 
     std::set<uint32_t> lookup_constant_cols = {0, 1, 2, 3, 4};
+    auto s = assignment.get_lookup_constant_cols();
+    for( auto c: s) std::cout << c << "";
+    std::cout << std::endl;
     BOOST_ASSERT(assignment.get_lookup_constant_cols() == lookup_constant_cols);
-    std::set<uint32_t> lookup_selector_cols = {min_selector_index};
+    std::set<uint32_t> lookup_selector_cols = {0};
     BOOST_ASSERT(assignment.get_lookup_selector_cols() == lookup_selector_cols);
 }

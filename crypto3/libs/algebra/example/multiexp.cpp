@@ -65,12 +65,9 @@ test_instances_t<GroupType> generate_group_elements(std::size_t count, std::size
     test_instances_t<GroupType> result(count);
 
     for (size_t i = 0; i < count; i++) {
-
-        typename GroupType::value_type x = random_element<GroupType>().to_projective();    // djb requires input to be in special form
-
+        auto x = random_element<GroupType>();
         for (size_t j = 0; j < size; j++) {
             result[i].push_back(x);
-            // result[i].push_back(random_element<GroupType>());
         }
     }
 
@@ -103,8 +100,10 @@ run_result_t<GroupType> profile_multiexp(test_instances_t<GroupType> group_eleme
 
     std::vector<typename GroupType::value_type> answers;
     for (size_t i = 0; i < group_elements.size(); i++) {
-        answers.push_back(multiexp<GroupType, FieldType, MultiexpMethod>(group_elements[i].cbegin(), group_elements[i].cend(),
-                                                                  scalars[i].cbegin(), scalars[i].cend(), 1));
+        answers.push_back(
+            multiexp<MultiexpMethod>(
+                group_elements[i].cbegin(), group_elements[i].cend(),
+                scalars[i].cbegin(), scalars[i].cend(), 1));
     }
 
     long long time_delta = get_nsec_time() - start_time;
@@ -113,7 +112,9 @@ run_result_t<GroupType> profile_multiexp(test_instances_t<GroupType> group_eleme
 }
 
 template<typename GroupType, typename FieldType>
-void print_performance_csv(size_t expn_start, std::size_t expn_end_fast, std::size_t expn_end_naive, bool compare_answers) {
+void print_performance_csv(
+    size_t expn_start, std::size_t expn_end_fast, std::size_t expn_end_naive, bool compare_answers
+) {
     for (size_t expn = expn_start; expn <= expn_end_fast; expn++) {
         printf("%ld", expn);
         fflush(stdout);
@@ -122,12 +123,12 @@ void print_performance_csv(size_t expn_start, std::size_t expn_end_fast, std::si
         test_instances_t<FieldType> scalars = generate_scalars<FieldType>(10, 1 << expn);
 
         run_result_t<GroupType> result_bos_coster =
-            profile_multiexp<GroupType, FieldType, policies::multiexp_method_bos_coster<GroupType, FieldType>>(group_elements, scalars);
+            profile_multiexp<GroupType, FieldType, policies::multiexp_method_bos_coster>(group_elements, scalars);
         printf("\t%lld", result_bos_coster.first);
         fflush(stdout);
 
         run_result_t<GroupType> result_djb =
-            profile_multiexp<GroupType, FieldType, policies::multiexp_method_BDLO12<GroupType, FieldType>>(group_elements, scalars);
+            profile_multiexp<GroupType, FieldType, policies::multiexp_method_BDLO12>(group_elements, scalars);
         printf("\t%lld", result_djb.first);
         fflush(stdout);
 
@@ -137,7 +138,7 @@ void print_performance_csv(size_t expn_start, std::size_t expn_end_fast, std::si
 
         if (expn <= expn_end_naive) {
             run_result_t<GroupType> result_naive =
-                profile_multiexp<GroupType, FieldType, policies::multiexp_method_naive_plain<GroupType, FieldType>>(group_elements, scalars);
+                profile_multiexp<GroupType, FieldType, policies::multiexp_method_naive_plain>(group_elements, scalars);
             printf("\t%lld", result_naive.first);
             fflush(stdout);
 
@@ -151,12 +152,15 @@ void print_performance_csv(size_t expn_start, std::size_t expn_end_fast, std::si
 }
 
 int main() {
+    using g1 = curves::bls12<381>::g1_type<>;
+    using g2 = curves::bls12<381>::g2_type<>;
+    using scalar_field_type = curves::bls12<381>::scalar_field_type;
 
     std::cout << "Testing BLS12-381 G1" << std::endl;
-    print_performance_csv<curves::bls12<381>::g1_type, curves::bls12<381>::scalar_field_type>(2, 20, 14, true);
+    print_performance_csv<g1, scalar_field_type>(2, 20, 14, true);
 
     std::cout << "Testing BLS12-381 G2" << std::endl;
-    print_performance_csv<curves::bls12<381>::g2_type, curves::bls12<381>::scalar_field_type>(2, 20, 14, true);
+    print_performance_csv<g2, scalar_field_type>(2, 20, 14, true);
 
     return 0;
 }

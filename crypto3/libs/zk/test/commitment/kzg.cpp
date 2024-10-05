@@ -60,6 +60,11 @@
 #include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/kzg_v2.hpp>
 
+#include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/mnt6.hpp>
+
+
 using namespace nil::crypto3;
 using namespace nil::crypto3::math;
 

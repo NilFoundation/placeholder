@@ -23,8 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ALGEBRA_FIELDS_FIELD_HPP
-#define CRYPTO3_ALGEBRA_FIELDS_FIELD_HPP
+#pragma once
 
 #include <boost/multiprecision/number.hpp>
 #include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
@@ -71,5 +70,3 @@ namespace nil {
         }        // namespace algebra
     }            // namespace crypto3
 }    // namespace nil
-
-#endif    // CRYPTO3_ALGEBRA_FIELDS_FIELD_HPP
