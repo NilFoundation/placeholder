@@ -179,6 +179,10 @@
             parallel-crypto3 = parallel-crypto3-clang-debug;
           });
 
+          debug-tools = (pkgs.callPackage ./debug-tools/debug-tools.nix {
+            crypto3 = crypto3;
+          });
+
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.
           # The packages that have no changes will not be rebuilt, and instead
