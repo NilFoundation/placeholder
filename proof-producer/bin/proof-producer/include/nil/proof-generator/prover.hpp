@@ -40,22 +40,33 @@
 #include <nil/crypto3/marshalling/zk/types/plonk/assignment_table.hpp>
 #include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
 
-#include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
-
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/profiling.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/proof.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#ifdef MULTITHREADED
+  #include <nil/parallel-crypto3/math/algorithms/calculate_domain_set.hpp>
+  #include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+  #include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/params.hpp>
+  #include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+  #include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/detail/profiling.hpp>
+  #include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+  #include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+  #include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/proof.hpp>
+  #include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
+  #include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
+  #include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
+#else
+  #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
+  #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+  #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
+  #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+  #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/profiling.hpp>
+  #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
+  #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+  #include <nil/crypto3/zk/snark/systems/plonk/placeholder/proof.hpp>
+  #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
+  #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
+  #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#endif
 
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
-
-
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 

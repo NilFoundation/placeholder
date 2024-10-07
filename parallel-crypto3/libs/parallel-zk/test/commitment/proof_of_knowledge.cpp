@@ -8,7 +8,7 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 #include <nil/crypto3/algebra/pairing/bls12.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/proof_of_knowledge.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/proof_of_knowledge.hpp>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::zk::commitments;

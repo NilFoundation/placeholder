@@ -47,6 +47,7 @@ function(setup_proof_generator_target)
     if(ARG_ADDITIONAL_DEPENDENCIES)
         foreach(lib IN LISTS ARG_ADDITIONAL_DEPENDENCIES)
             target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${lib})
+            target_compile_definitions(${ARG_TARGET_NAME}-lib INTERFACE MULTITHREADED)
         endforeach()
     endif()
 

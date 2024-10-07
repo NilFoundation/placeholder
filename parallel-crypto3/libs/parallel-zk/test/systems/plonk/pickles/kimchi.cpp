@@ -44,10 +44,10 @@
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/verifier_index.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/verifier.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/verifier_index.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/verifier.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::zk::snark;

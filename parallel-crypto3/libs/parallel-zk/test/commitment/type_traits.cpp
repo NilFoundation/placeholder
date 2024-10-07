@@ -33,12 +33,12 @@
 
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
-// #include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/pedersen.hpp>
-#include <nil/crypto3/zk/commitments/type_traits.hpp>
+// #include <nil/parallel-crypto3/zk/commitments/polynomial/kzg.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/lpc.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/pedersen.hpp>
+#include <nil/parallel-crypto3/zk/commitments/type_traits.hpp>
 
 using namespace nil::crypto3;
 

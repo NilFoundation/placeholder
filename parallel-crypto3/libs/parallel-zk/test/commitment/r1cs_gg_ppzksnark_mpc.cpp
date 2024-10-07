@@ -10,8 +10,8 @@
 #include <nil/crypto3/algebra/curves/params/multiexp/bls12.hpp>
 #include <nil/crypto3/algebra/curves/params/wnaf/bls12.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/powers_of_tau.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/r1cs_gg_ppzksnark_mpc.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/powers_of_tau.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/r1cs_gg_ppzksnark_mpc.hpp>
 
 #include "../systems/ppzksnark/r1cs_examples.hpp"
 

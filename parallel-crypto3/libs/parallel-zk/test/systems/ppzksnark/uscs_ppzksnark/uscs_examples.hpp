@@ -29,8 +29,8 @@
 #ifndef CRYPTO3_ZK_USCS_EXAMPLES_HPP
 #define CRYPTO3_ZK_USCS_EXAMPLES_HPP
 
-#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
-#include <nil/crypto3/zk/snark/systems/ppzksnark/uscs_ppzksnark.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/ppzksnark/uscs_ppzksnark.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
