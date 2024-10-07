@@ -46,7 +46,7 @@
 #include <nil/parallel-crypto3/math/algorithms/unity_root.hpp>
 #include <nil/parallel-crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
 #include <nil/crypto3/algebra/curves/detail/marshalling.hpp>
 
 #include <nil/crypto3/algebra/curves/mnt6.hpp>
@@ -57,8 +57,8 @@
 #include <nil/crypto3/algebra/pairing/mnt4.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/mnt4.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/kzg_v2.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/kzg.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/kzg_v2.hpp>
 
 #include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>

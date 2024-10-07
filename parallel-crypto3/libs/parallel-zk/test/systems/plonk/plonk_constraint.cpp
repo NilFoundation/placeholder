@@ -40,11 +40,11 @@
 
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/params.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 using namespace nil::crypto3;
 

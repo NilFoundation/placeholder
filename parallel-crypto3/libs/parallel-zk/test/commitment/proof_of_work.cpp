@@ -30,13 +30,13 @@
 #include <nil/crypto3/algebra/fields/pallas/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/pallas/base_field.hpp>
 
-#include <nil/crypto3/zk/commitments/detail/polynomial/proof_of_work.hpp>
+#include <nil/parallel-crypto3/zk/commitments/detail/polynomial/proof_of_work.hpp>
 
 #include <nil/crypto3/hash/poseidon.hpp>
 #include <nil/crypto3/hash/detail/poseidon/poseidon_policy.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::zk::commitments;

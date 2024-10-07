@@ -38,11 +38,11 @@
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/expr.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/verifier_index.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/pickles/verifier.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/proof.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/expr.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/constants.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/verifier_index.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/pickles/verifier.hpp>
 
 #include <nil/parallel-crypto3/math/domains/basic_radix2_domain.hpp>
 

@@ -46,9 +46,9 @@
 #include <nil/parallel-crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/parallel-crypto3/math/algorithms/calculate_domain_set.hpp>
 
-#include <nil/crypto3/zk/commitments/polynomial/lpc.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/fri.hpp>
-#include <nil/crypto3/zk/commitments/type_traits.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/lpc.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/fri.hpp>
+#include <nil/parallel-crypto3/zk/commitments/type_traits.hpp>
 
 #include <nil/crypto3/random/algebraic_random_device.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>

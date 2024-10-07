@@ -48,20 +48,20 @@
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/permutation_argument.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/lookup_argument.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/gates_argument.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/permutation_argument.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/lookup_argument.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/gates_argument.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/gate.hpp>
-#include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/kzg.hpp>
-#include <nil/crypto3/zk/commitments/polynomial/kzg_v2.hpp>
-#include <nil/crypto3/zk/commitments/batched_commitment.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/parallel-crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/gate.hpp>
+#include <nil/parallel-crypto3/zk/transcript/fiat_shamir.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/kzg.hpp>
+#include <nil/parallel-crypto3/zk/commitments/polynomial/kzg_v2.hpp>
+#include <nil/parallel-crypto3/zk/commitments/batched_commitment.hpp>
 #include <nil/crypto3/test_tools/random_test_initializer.hpp>
 
 #include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>

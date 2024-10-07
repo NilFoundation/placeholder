@@ -47,7 +47,7 @@
 
 #include <nil/marshalling/algorithms/pack.hpp>
 #include <nil/marshalling/status_type.hpp>
-#include <nil/crypto3/zk/transcript/kimchi_transcript.hpp>
+#include <nil/parallel-crypto3/zk/transcript/kimchi_transcript.hpp>
 
 using namespace nil::crypto3;
 using curve_type = algebra::curves::vesta;

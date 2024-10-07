@@ -36,10 +36,10 @@
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 
-#include <nil/crypto3/zk/math/expression.hpp>
-#include <nil/crypto3/zk/math/expression_visitors.hpp>
-#include <nil/crypto3/zk/math/expression_evaluator.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/parallel-crypto3/zk/math/expression.hpp>
+#include <nil/parallel-crypto3/zk/math/expression_visitors.hpp>
+#include <nil/parallel-crypto3/zk/math/expression_evaluator.hpp>
+#include <nil/parallel-crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::crypto3::math;
