@@ -95,7 +95,6 @@
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
             proof-producer = proof-producer;
-            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -104,7 +103,6 @@
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
             proof-producer = proof-producer;
-            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-debug-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -113,7 +111,6 @@
             crypto3 = crypto3;
             evm-assigner = evm-assigner;
             proof-producer = proof-producer;
-            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-clang-debug = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -123,51 +120,25 @@
             crypto3 = crypto3-clang-debug;
             evm-assigner = evm-assigner-clang-debug;
             proof-producer = proof-producer-clang-debug;
-            transpiler = transpiler-clang-debug;
             parallel-crypto3 = parallel-crypto3-clang-debug;
-          });
-
-          transpiler = (pkgs.callPackage ./transpiler/transpiler.nix {
-            runTests = false;
-            enableDebug = false;
-            crypto3 = crypto3;
-          });
-          transpiler-tests = (pkgs.callPackage ./transpiler/transpiler.nix {
-            runTests = true;
-            enableDebug = false;
-            crypto3 = crypto3;
-          });
-          transpiler-debug-tests = (pkgs.callPackage ./transpiler/transpiler.nix {
-            enableDebug = true;
-            runTests = true;
-            crypto3 = crypto3;
-          });
-          transpiler-clang-debug = (pkgs.callPackage ./transpiler/transpiler.nix {
-            stdenv = pkgs.llvmPackages_19.stdenv;
-            enableDebug = true;
-            runTests = false;
-            crypto3 = crypto3-clang-debug;
           });
 
           proof-producer = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = false;
             enableDebug = false;
             crypto3 = crypto3;
-            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           proof-producer-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = true;
             enableDebug = false;
             crypto3 = crypto3;
-            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           proof-producer-debug-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             enableDebug = true;
             runTests = true;
             crypto3 = crypto3;
-            transpiler = transpiler;
             parallel-crypto3 = parallel-crypto3;
           });
           proof-producer-clang-debug = (pkgs.callPackage ./proof-producer/proof-producer.nix {
@@ -175,7 +146,6 @@
             enableDebug = true;
             runTests = false;
             crypto3 = crypto3-clang-debug;
-            transpiler = transpiler-clang-debug;
             parallel-crypto3 = parallel-crypto3-clang-debug;
           });
 
@@ -189,7 +159,7 @@
           # fetched from the cache.
           all = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3 evm-assigner zkevm-framework transpiler proof-producer];
+            paths = [ crypto3 evm-assigner zkevm-framework proof-producer];
           };
           default = all; 
         };
@@ -240,28 +210,14 @@
             enableDebug = false;
             crypto3 = packages.crypto3;
             evm-assigner = evm-assigner-gcc;
-            transpiler = transpiler-gcc;
             proof-producer = proof-producer-gcc;
             parallel-crypto3 = packages.parallel-crypto3;
-          });
-
-          transpiler-gcc = (pkgs.callPackage ./transpiler/transpiler.nix {
-            runTests = true;
-            enableDebug = false;
-            crypto3 = packages.crypto3;
-          });
-          transpiler-clang = (pkgs.callPackage ./transpiler/transpiler.nix {
-            stdenv = pkgs.llvmPackages_19.stdenv;
-            runTests = true;
-            enableDebug = false;
-            crypto3 = crypto3-clang;
           });
 
           proof-producer-gcc = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = true;
             enableDebug = false;
             crypto3 = packages.crypto3;
-            transpiler = packages.transpiler;
             parallel-crypto3 = packages.parallel-crypto3;
           });
           proof-producer-clang = (pkgs.callPackage ./proof-producer/proof-producer.nix {
@@ -269,13 +225,12 @@
             runTests = true;
             enableDebug = false;
             crypto3 = crypto3-clang;
-            transpiler = transpiler-clang;
             parallel-crypto3 = parallel-crypto3-clang;
           });
 
           all-clang = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang parallel-crypto3-clang evm-assigner-clang transpiler-clang proof-producer-clang ];
+            paths = [ crypto3-clang parallel-crypto3-clang evm-assigner-clang proof-producer-clang ];
           };
           all-sanitizers = pkgs.symlinkJoin {
             name = "all";
@@ -283,7 +238,7 @@
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-gcc parallel-crypto3-gcc evm-assigner-gcc zkevm-framework-gcc transpiler-gcc proof-producer-gcc ];
+            paths = [ crypto3-gcc parallel-crypto3-gcc evm-assigner-gcc zkevm-framework-gcc proof-producer-gcc ];
           };
           default = all-gcc;
         };
