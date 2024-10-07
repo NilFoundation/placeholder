@@ -49,14 +49,12 @@
 #include <nil/blueprint/blueprint/plonk/circuit_proxy.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment_proxy.hpp>
-//#include <nil/blueprint/utils/table_profiling.hpp>
+
 #include <nil/blueprint/utils/satisfiability_check.hpp>
 #include <nil/blueprint/component_stretcher.hpp>
 #include <nil/blueprint/utils/connectedness_check.hpp>
 
 #include <nil/crypto3/math/algorithms/calculate_domain_set.hpp>
-
-// #include "profiling_plonk_circuit.hpp"
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
