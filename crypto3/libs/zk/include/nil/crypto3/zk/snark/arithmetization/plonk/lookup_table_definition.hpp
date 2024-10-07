@@ -131,20 +131,29 @@ namespace nil {
                     const std::map<std::string, std::shared_ptr<dynamic_table_definition<FieldType>>> &dynamic_tables,
                     plonk_constraint_system<FieldType> &bp,
                     plonk_assignment_table<FieldType> &assignment,
-                    const std::vector<std::size_t> &constant_columns_ids,
                     std::size_t usable_rows
                 ){
-                    // std::cout << "Usable rows before: " << usable_rows << std::endl;
                     std::size_t usable_rows_after = usable_rows;
 
                     // Compute first selector index.
                     std::size_t cur_selector_id;
-                    for(std::size_t i = assignment.selectors_amount() - 1; i > 0; i-- ){
+                    for(std::size_t i = assignment.selectors_amount(); i > 0; ){
+                        i--;
                         cur_selector_id = i;
                         if (assignment.selector(cur_selector_id).size() != 0){
                             cur_selector_id++;
                             break;
                         }
+                    }
+
+                    // Compute available constant columns list
+                    std::vector<std::size_t> constant_columns_ids;
+                    for(std::size_t i = assignment.constants_amount(); i > 0;){
+                        i--;
+                        if (assignment.constant(i).size() != 0){
+                            break;
+                        }
+                        constant_columns_ids.push_back(i);
                     }
 
                     // Allocate constant columns
@@ -225,7 +234,8 @@ namespace nil {
 
                     // Compute first selector index.
                     std::size_t cur_selector_id;
-                    for(std::size_t i = assignment.selectors_amount() - 1; i > 0; i-- ){
+                    for(std::size_t i = assignment.selectors_amount(); i > 0; ){
+                        i--;
                         cur_selector_id = i;
                         if (assignment.selector(cur_selector_id).size() != 0){
                             cur_selector_id++;
@@ -235,7 +245,8 @@ namespace nil {
 
                     // Compute available constant columns list
                     std::vector<std::size_t> constant_columns_ids;
-                    for(std::size_t i = assignment.constants_amount() - 1; i > 0; i-- ){
+                    for(std::size_t i = assignment.constants_amount(); i > 0;){
+                        i--;
                         if (assignment.constant(i).size() != 0){
                             break;
                         }

@@ -68,6 +68,7 @@ macro(define_blueprint_test test)
 endmacro()
 
 set(COMMON_TEST_FILES
+    "test_plonk_component"
     "manifest"
     "detail/huang_lu"
     "gate_id"

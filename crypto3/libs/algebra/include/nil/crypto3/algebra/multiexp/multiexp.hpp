@@ -39,11 +39,12 @@ namespace nil {
     namespace crypto3 {
         namespace algebra {
             template<typename MultiexpMethod, typename InputBaseIterator, typename InputFieldIterator>
-            typename std::iterator_traits<InputBaseIterator>::value_type
-            multiexp(InputBaseIterator vec_start, InputBaseIterator vec_end, InputFieldIterator scalar_start,
-                     InputFieldIterator scalar_end, const std::size_t chunks_count) {
+            typename InputBaseIterator::value_type
+            multiexp(const InputBaseIterator vec_start, const InputBaseIterator vec_end,
+                     const InputFieldIterator scalar_start, const InputFieldIterator scalar_end,
+                     const std::size_t chunks_count) {
 
-                typedef typename std::iterator_traits<InputBaseIterator>::value_type base_value_type;
+                typedef typename InputBaseIterator::value_type base_value_type;
 
                 const std::size_t total_size = std::distance(vec_start, vec_end);
 
@@ -57,12 +58,12 @@ namespace nil {
                 base_value_type result = base_value_type::zero();
 
                 for (std::size_t i = 0; i < chunks_count; ++i) {
-                    result =
-                            result + MultiexpMethod::process(
-                                    vec_start + i * one_chunk_size,
-                                    (i == chunks_count - 1 ? vec_end : vec_start + (i + 1) * one_chunk_size),
-                                    scalar_start + i * one_chunk_size,
-                                    (i == chunks_count - 1 ? scalar_end : scalar_start + (i + 1) * one_chunk_size));
+                    result +=
+                        MultiexpMethod::process(
+                            vec_start + i * one_chunk_size,
+                            (i == chunks_count - 1 ? vec_end : vec_start + (i + 1) * one_chunk_size),
+                            scalar_start + i * one_chunk_size,
+                            (i == chunks_count - 1 ? scalar_end : scalar_start + (i + 1) * one_chunk_size));
                 }
 
                 return result;

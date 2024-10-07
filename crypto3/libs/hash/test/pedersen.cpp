@@ -37,6 +37,7 @@
 #include <boost/test/data/monomorphic.hpp>
 
 #include <nil/crypto3/algebra/curves/jubjub.hpp>
+#include <nil/crypto3/marshalling/algebra/processing/jubjub.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/pedersen.hpp>
