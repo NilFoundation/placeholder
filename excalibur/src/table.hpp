@@ -1,6 +1,7 @@
 // MIT License
 //
 // Copyright (c) 2023 Dmitrii Tabalin <d.tabalin@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,11 +31,13 @@
 #include <cstring>
 #include <memory>
 #include <sstream>
+#include <fstream>
 #include <vector>
 #include <utility>
 #include <set>
 #include <map>
 #include <filesystem>
+#include <optional>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/phoenix/phoenix.hpp>
@@ -73,8 +76,78 @@
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
+
+#include <nil/marshalling/field_type.hpp>
+#include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
+#include <nil/crypto3/marshalling/zk/types/plonk/assignment_table.hpp>
 
 #include "parsers.hpp"
+
+template <typename BlueprintFieldType>
+std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> load_circuit_from_file(
+    Glib::RefPtr<Gio::FileInputStream> stream,
+    std::size_t file_size
+){
+    using ConstraintSystemType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
+    using Endianness = nil::marshalling::option::big_endian;
+    using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+    ConstraintSystemType constraint_system;
+    {
+        std::vector<std::uint8_t> v(file_size);
+        stream->read(reinterpret_cast<char*>(v.data()), file_size);
+        if (!stream) {
+            std::cerr << "Cannot parse input file: unable to read data." << std::endl;
+            return std::nullopt;
+        }
+
+        nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, ConstraintSystemType> marshalled_data;
+        auto read_iter = v.begin();
+        auto status = marshalled_data.read(read_iter, v.size());
+        constraint_system =
+            nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, ConstraintSystemType>(
+                marshalled_data
+        );
+    }
+
+    return constraint_system;
+}
+
+template <typename BlueprintFieldType>
+std::optional<std::tuple<
+    nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>,
+    nil::crypto3::zk::snark::plonk_table<BlueprintFieldType, nil::crypto3::zk::snark::plonk_column<BlueprintFieldType>>
+>> load_table_from_file(
+    Glib::RefPtr<Gio::FileInputStream> stream,
+    std::size_t file_size
+){
+    using ColumnType = nil::crypto3::zk::snark::plonk_column<BlueprintFieldType>;
+    using AssignmentTableType = nil::crypto3::zk::snark::plonk_table<BlueprintFieldType, ColumnType>;
+    using TableDescriptionType = nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>;
+    using Endianness = nil::marshalling::option::big_endian;
+    using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+    AssignmentTableType assignment_table;
+    TableDescriptionType desc(0,0,0,0);
+    {
+        std::vector<std::uint8_t> v(file_size);
+        stream->read(reinterpret_cast<char*>(v.data()), file_size);
+        if (!stream) {
+            std::cerr << "Cannot parse input file: read failed." << std::endl;
+            return std::nullopt;
+        }
+        nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTableType>
+            marshalled_table_data;
+        auto read_iter = v.begin();
+        auto status = marshalled_table_data.read(read_iter, v.size());
+        std::tie(desc, assignment_table) =
+            nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTableType>(
+                marshalled_table_data
+            );
+    }
+    return std::make_tuple(desc, assignment_table);
+}
 
 
 std::string read_line_from_gstream(Glib::RefPtr<Gio::FileInputStream> stream,
@@ -229,7 +302,7 @@ public:
     using plonk_constraint_type = nil::crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
     using var = nil::crypto3::zk::snark::plonk_variable<value_type>;
 
-    static Glib::RefPtr<row_object> create(const std::vector<integral_type>& row_, std::size_t row_index_) {
+    static Glib::RefPtr<row_object> create(const std::vector<value_type>& row_, std::size_t row_index_) {
         return Glib::make_refptr_for_instance<row_object>(new row_object(row_, row_index_));
     }
 
@@ -367,12 +440,11 @@ public:
     }
 
 protected:
-    row_object(const std::vector<integral_type>& row_, std::size_t row_index_) :
+    row_object(const std::vector<value_type>& row_, std::size_t row_index_) :
             row_index(row_index_), cell_states(row_.size(), CellState::CellStateFlags::NORMAL),
             widgets(row_.size(), nullptr), widget_loaded(row_.size(), false),
-            copy_constraints_cache(row_.size()), constraints_cache(row_.size()) {
-        row.reserve(row_.size());
-        std::copy(row_.begin(), row_.end(), std::back_inserter(row));
+            copy_constraints_cache(row_.size()), constraints_cache(row_.size()),
+            row(row_), previous(nullptr), next(nullptr) {
         string_cache.reserve(row.size());
 
         for (std::size_t i = 0; i < row.size(); ++i) {
@@ -404,12 +476,10 @@ private:
 
 template<typename BlueprintFieldType>
 struct circuit_container {
-    // We have to roll a custom container for this because ArithmetizationParams are constexpr in the circuit.
     using plonk_constraint_type = nil::crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
     using plonk_gate_type = nil::crypto3::zk::snark::plonk_gate<BlueprintFieldType, plonk_constraint_type>;
     using plonk_copy_constraint_type = nil::crypto3::zk::snark::plonk_copy_constraint<BlueprintFieldType>;
 
-    circuit_sizes sizes;
     std::vector<plonk_gate_type> gates;
     std::vector<plonk_copy_constraint_type> copy_constraints;
     // TODO: add lookup gates
@@ -503,7 +573,7 @@ public:
 
     ExcaliburWindow() : table_view(), element_entry(), vbox_prime(), vbox_controls(), table_window(),
                         open_table_button("Open Table"),  open_circuit_button("Open Circuit"),
-                        save_table_button("Save"),
+                        //save_table_button("Save"),
                         constraints_view(), constraints_window() {
         set_title("Excalibur Circuit Viewer: pull the bugs from the stone");
         set_resizable(true);
@@ -530,7 +600,7 @@ public:
         vbox_controls.set_spacing(10);
         vbox_controls.set_orientation(Gtk::Orientation::HORIZONTAL);
         vbox_controls.append(open_table_button);
-        vbox_controls.append(save_table_button);
+        //vbox_controls.append(save_table_button);
         vbox_controls.append(open_circuit_button);
         vbox_controls.append(element_entry);
         vbox_prime.append(vbox_controls);
@@ -556,8 +626,8 @@ public:
         open_table_button.signal_clicked().connect(sigc::mem_fun(*this, &ExcaliburWindow::on_action_table_file_open));
         open_circuit_button.signal_clicked().connect(
             sigc::mem_fun(*this, &ExcaliburWindow::on_action_circuit_file_open));
-        save_table_button.signal_clicked().connect(
-            sigc::bind<0>(sigc::mem_fun(*this, &ExcaliburWindow::on_action_table_file_save), false));
+        //save_table_button.signal_clicked().connect(
+        //    sigc::bind<0>(sigc::mem_fun(*this, &ExcaliburWindow::on_action_table_file_save), false));
     }
 
     ~ExcaliburWindow() override {};
@@ -698,7 +768,8 @@ public:
         auto file_dialog = Gtk::FileDialog::create();
         file_dialog->set_modal(true);
         file_dialog->set_title("Open table file");
-        file_dialog->set_initial_folder(Gio::File::create_for_path(std::string(std::filesystem::current_path())));
+        file_dialog->set_initial_folder(Gio::File::create_for_path(
+            std::string(std::filesystem::current_path())));
         file_dialog->open(*this,
             sigc::bind<0>(sigc::mem_fun(*this,
                                         &ExcaliburWindow::on_table_file_open_dialog_response),
@@ -709,14 +780,15 @@ public:
         auto file_dialog = Gtk::FileDialog::create();
         file_dialog->set_modal(true);
         file_dialog->set_title("Open circuit file");
-        file_dialog->set_initial_folder(Gio::File::create_for_path(std::string(std::filesystem::current_path())));
+        file_dialog->set_initial_folder(Gio::File::create_for_path(
+            std::string(std::filesystem::current_path())));
         file_dialog->open(*this,
             sigc::bind<0>(sigc::mem_fun(*this,
                                         &ExcaliburWindow::on_circuit_file_open_dialog_response),
                           file_dialog));
     }
 
-    void on_action_table_file_save(bool wide_export) {
+    /*void on_action_table_file_save(bool wide_export) {
         auto file_dialog = Gtk::FileDialog::create();
         file_dialog->set_modal(true);
         file_dialog->set_title("Save table file");
@@ -724,7 +796,7 @@ public:
             sigc::bind<0>(sigc::bind<0>(sigc::mem_fun(*this, &ExcaliburWindow::on_table_file_save_dialog_response),
                                         file_dialog),
                           wide_export));
-    }
+    }*/
 
     void on_setup_column_item(std::size_t column, const Glib::RefPtr<Gtk::ListItem> &list_item) {
         auto button = Gtk::make_managed<Gtk::Button>();
@@ -841,62 +913,45 @@ public:
         auto file_info = result->query_info();
         auto file_size = file_info->get_size();
 
-        using boost::spirit::qi::phrase_parse;
-        // 200 should be enough for the first row
-        const std::size_t first_line_size = file_size < 200 ? file_size : 200;
-        char* buffer = new char[first_line_size + 1];
+        auto desc_table_pair =
+            load_table_from_file<BlueprintFieldType>(stream, file_size);
 
-        std::string first_line = read_line_from_gstream(stream, first_line_size, file_size, buffer);
-        if (first_line.empty()) {
-            std::cerr << "Failed to read the header line." << std::endl;
-            delete[] buffer;
+        stream->close();
+        if (!desc_table_pair) {
             return;
         }
 
-        table_sizes_parser<decltype(first_line.begin())> sizes_parser;
-        auto first_line_begin = first_line.begin();
-
-        bool r = phrase_parse(first_line_begin, first_line.end(), sizes_parser, boost::spirit::ascii::space, sizes);
-        if (!r || first_line_begin != first_line.end()) {
-            std::cerr << "Failed to parse the header line." << std::endl;
-            delete[] buffer;
-            return;
-        }
-
-        delete[] buffer;
-
-        auto predicted_line_size = (file_size - first_line.size()) / sizes.max_size * 2;
-        buffer = new char[predicted_line_size + 1];
-        table_row_parser<decltype(first_line.begin()), BlueprintFieldType> row_parser(sizes);
+        const auto &desc = std::get<0>(*desc_table_pair);
+        const auto &loaded_table = std::get<1>(*desc_table_pair);
+        sizes.witnesses_size = desc.witness_columns;
+        sizes.public_inputs_size = desc.public_input_columns;
+        sizes.constants_size = desc.constant_columns;
+        sizes.selectors_size = desc.selector_columns;
+        sizes.max_size = desc.rows_amount;
+        const std::size_t row_size = sizes.witnesses_size + sizes.public_inputs_size +
+                                     sizes.constants_size + sizes.selectors_size + 1;
 
         auto store = Gio::ListStore<row_object<BlueprintFieldType>>::create();
 
         for (std::uint32_t i = 0; i < sizes.max_size; i++) {
-            std::string line = read_line_from_gstream(stream, predicted_line_size, file_size, buffer);
-            if (line.empty()) {
-                std::cerr << "Failed to read line " << i + 1 << " of the file" << std::endl;
-                delete[] buffer;
-                return;
+            std::vector<value_type> row(row_size);
+            for (std::size_t j = 0; j < row_size; j++) {
+                if (j == 0) {
+                    row[j] = value_type(i);
+                } else  if (j < sizes.witnesses_size + 1) {
+                    row[j] = loaded_table.witness(j - 1)[i];
+                } else if (j < sizes.witnesses_size + sizes.public_inputs_size + 1) {
+                    row[j] = loaded_table.public_input(j - sizes.witnesses_size - 1)[i];
+                } else if (j < sizes.witnesses_size + sizes.public_inputs_size + sizes.constants_size + 1) {
+                    row[j] = loaded_table.constant(j - sizes.witnesses_size - sizes.public_inputs_size - 1)[i];
+                } else {
+                    row[j] =
+                        loaded_table.selector(
+                            j - sizes.witnesses_size - sizes.public_inputs_size - sizes.constants_size - 1)[i];
+                }
             }
-
-            auto line_begin = line.begin();
-            std::vector<integral_type> row;
-            row.push_back(i);
-            r = phrase_parse(line_begin, line.end(), row_parser, boost::spirit::ascii::space, row);
-            if (!r || line_begin != line.end()) {
-                std::cerr << "Failed to parse line " << i + 1 << " of the file" << std::endl;
-                delete[] buffer;
-                return;
-            }
-
             store->append(row_object<BlueprintFieldType>::create(row, i));
         }
-        std::cout << "Successfully parsed the file" << std::endl;
-        delete[] buffer;
-        stream->close();
-
-        std::size_t column_size = sizes.witnesses_size + sizes.public_inputs_size +
-                                  sizes.constants_size + sizes.selectors_size;
 
         auto get_column_name = [](const table_sizes &sizes, std::size_t i) {
             if (i == 0) {
@@ -933,7 +988,7 @@ public:
         auto constraint_store = Gio::ListStore<constraint_object<BlueprintFieldType>>::create();
         setup_constraint_view_from_store(constraint_store);
 
-        for (std::size_t i = 0; i < column_size + 1; i++) {
+        for (std::size_t i = 0; i < row_size; i++) {
             auto factory = Gtk::SignalListItemFactory::create();
             factory->signal_setup().connect(
                 sigc::bind<0>(sigc::mem_fun(*this, &ExcaliburWindow::on_setup_column_item), i));
@@ -963,100 +1018,28 @@ public:
         auto file_info = result->query_info();
         auto file_size = file_info->get_size();
 
-        using boost::spirit::qi::phrase_parse;
-        // 200 should be enough for the first row
-        const std::size_t first_line_size = file_size < 200 ? file_size : 200;
-        char* buffer = new char[first_line_size + 1];
-
-        std::string first_line = read_line_from_gstream(stream, first_line_size, file_size, buffer);
-        if (first_line.empty()) {
-            std::cerr << "Failed to read the header line." << std::endl;
-            delete[] buffer;
+        const auto loaded_circuit = load_circuit_from_file<BlueprintFieldType>(stream, file_size);
+        if (!loaded_circuit) {
             return;
         }
 
-        circuit_sizes_parser<decltype(first_line.begin())> sizes_parser;
-        auto first_line_begin = first_line.begin();
-
-        bool r = phrase_parse(first_line_begin, first_line.end(), sizes_parser, boost::spirit::ascii::space,
-                              circuit.sizes);
-        if (!r || first_line_begin != first_line.end()) {
-            std::cerr << "Failed to parse the header line." << std::endl;
-            delete[] buffer;
-            return;
+        circuit.gates.clear();
+        circuit.gates.reserve(loaded_circuit->gates().size());
+        for (std::size_t i = 0; i < loaded_circuit->gates().size(); i++) {
+            auto gate = &loaded_circuit->gates()[i];
+            circuit.gates.push_back(*gate);
         }
 
-        delete[] buffer;
-
-        auto predicted_line_size = (file_size - first_line.size()) / circuit.sizes.gates_size;
-        buffer = new char[predicted_line_size + 1];
-        circuit.gates.reserve(circuit.sizes.gates_size);
-        for (std::uint32_t i = 0; i < circuit.sizes.gates_size; i++) {
-            std::string line = read_line_from_gstream(stream, predicted_line_size, file_size, buffer);
-            if (line.empty()) {
-                std::cerr << "Failed to header line for " << i + 1 << "'th gate of the file" << std::endl;
-                delete[] buffer;
-                return;
-            }
-            gate_header gate_header;
-            auto line_begin = line.begin();
-            gate_header_parser<decltype(line.begin())> header_parser;
-            r = phrase_parse(line_begin, line.end(), header_parser, boost::spirit::ascii::space, gate_header);
-            if (!r || line_begin != line.end()) {
-                std::cerr << "Failed to parse gate header for " << i + 1 << "'th gate of the file" << std::endl;
-                delete[] buffer;
-                return;
-            }
-            std::vector<plonk_constraint_type> constraints;
-            constraints.reserve(gate_header.constraints_size);
-            gate_constraint_parser<decltype(line.begin()), BlueprintFieldType> constraint_parser;
-            for (std::size_t j = 0; j < gate_header.constraints_size; j++) {
-                plonk_constraint_type constraint;
-                line = read_line_from_gstream(stream, predicted_line_size, file_size, buffer);
-                if (line.empty()) {
-                    std::cerr << "Failed to read line for" << j << "'th constraint for" << i << "'th gate of the file"
-                              << std::endl;
-                    delete[] buffer;
-                    return;
-                }
-                line_begin = line.begin();
-                r = phrase_parse(line_begin, line.end(), constraint_parser, boost::spirit::ascii::space, constraint);
-                if (!r || line_begin != line.end()) {
-                    std::cerr << "Failed to parse gate constraint " << j + 1 << " for " << i + 1
-                              << "'th gate of the file" << std::endl;
-                    delete[] buffer;
-                    return;
-                }
-                constraints.push_back(constraint);
-            }
-
-            circuit.gates.emplace_back(plonk_gate_type(gate_header.selector_index, constraints));
-        }
         std::sort(circuit.gates.begin(), circuit.gates.end(),
                   [](const plonk_gate_type& a, const plonk_gate_type& b)
                     { return a.selector_index < b.selector_index; });
 
-        copy_constraint_parser<decltype(first_line.begin()), BlueprintFieldType> copy_constraint_parser;
-        circuit.copy_constraints.reserve(circuit.sizes.copy_constraints_size);
-        for (std::size_t i = 0; i < circuit.sizes.copy_constraints_size; i++) {
-            plonk_copy_constraint_type constraint;
-            std::string line = read_line_from_gstream(stream, predicted_line_size, file_size, buffer);
-            if (line.empty()) {
-                std::cerr << "Failed to read line for" << i << "'th copy constraint" << std::endl;
-                delete[] buffer;
-                return;
-            }
-            auto line_begin = line.begin();
-            r = phrase_parse(line_begin, line.end(), copy_constraint_parser, boost::spirit::ascii::space, constraint);
-            if (!r || line_begin != line.end()) {
-                std::cerr << "Failed to parse copy constraint " << i + 1 << std::endl;
-                delete[] buffer;
-                return;
-            }
-            circuit.copy_constraints.push_back(constraint);
+        circuit.copy_constraints.clear();
+        circuit.copy_constraints.reserve(loaded_circuit->copy_constraints().size());
+        for (std::size_t i = 0; i < loaded_circuit->copy_constraints().size(); i++) {
+            auto copy_constraint = &loaded_circuit->copy_constraints()[i];
+            circuit.copy_constraints.push_back(*copy_constraint);
         }
-
-        delete[] buffer;
 
         // Constraint cache building
         auto selection_model = dynamic_cast<Gtk::NoSelection*>(&*table_view.get_model());
@@ -1065,7 +1048,7 @@ public:
             return;
         }
         auto model = selection_model->get_model();
-        for (std::size_t i = 0; i < circuit.sizes.copy_constraints_size; i++) {
+        for (std::size_t i = 0; i < circuit.copy_constraints.size(); i++) {
             auto constraint = &circuit.copy_constraints[i];
             std::array<var, 2> variables = {constraint->first, constraint->second};
             for (auto &variable : variables) {
@@ -1074,7 +1057,7 @@ public:
             }
         }
         // Gate cache building
-        for (std::size_t i = 0; i < circuit.sizes.gates_size; i++) {
+        for (std::size_t i = 0; i < circuit.gates.size(); i++) {
             auto gate = &circuit.gates[i];
             for (std::size_t j = 0; j < gate->constraints.size(); j++) {
                 std::set<var> variable_set;
@@ -1312,7 +1295,7 @@ protected:
     Gtk::Entry element_entry;
     Gtk::Box vbox_prime, vbox_controls;
     Gtk::ScrolledWindow table_window;
-    Gtk::Button open_table_button, open_circuit_button, save_table_button;
+    Gtk::Button open_table_button, open_circuit_button;/*, save_table_button;*/
     Gtk::ListView constraints_view;
     Gtk::ScrolledWindow constraints_window;
 private:
