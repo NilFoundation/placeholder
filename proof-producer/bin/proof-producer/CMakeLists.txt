@@ -42,11 +42,17 @@ function(setup_proof_generator_target)
 
     add_library(${ARG_TARGET_NAME}-lib INTERFACE)
 
+    set(INTERFACE_LIBS
+        crypto3::transpiler
+        Boost::filesystem
+        Boost::log
+        Boost::thread
+    )
     # Make sure to add these dependencies before the others, since for multi-threaded version dependency on
     # actor-zk must come first.
     if(ARG_ADDITIONAL_DEPENDENCIES)
         foreach(lib IN LISTS ARG_ADDITIONAL_DEPENDENCIES)
-            target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${lib})
+            list(APPEND INTERFACE_LIBS ${lib})
         endforeach()
     endif()
 
@@ -55,18 +61,12 @@ function(setup_proof_generator_target)
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
 
-    target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE
-        crypto3::all
-        Boost::filesystem
-        Boost::log
-        Boost::thread
-    )
+    target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${INTERFACE_LIBS})
+    target_link_libraries(${ARG_TARGET_NAME} PRIVATE ${ARG_TARGET_NAME}-lib Boost::program_options)
 
     target_include_directories(${ARG_TARGET_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
-
-    target_link_libraries(${ARG_TARGET_NAME} PRIVATE ${ARG_TARGET_NAME}-lib Boost::program_options)
 
     set_target_properties(${ARG_TARGET_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
@@ -84,7 +84,7 @@ endfunction()
 
 # Declare single-threaded target
 set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
-setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET})
+setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
 
 
 # Declare multi-threaded target
