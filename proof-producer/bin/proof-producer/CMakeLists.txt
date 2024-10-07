@@ -57,7 +57,6 @@ function(setup_proof_generator_target)
 
     target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE
         crypto3::all
-        crypto3::transpiler
         Boost::filesystem
         Boost::log
         Boost::thread

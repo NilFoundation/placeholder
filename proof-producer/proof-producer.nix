@@ -5,7 +5,6 @@
   cmake,
   crypto3,
   parallel-crypto3,
-  transpiler,
   boost,
   gdb,
   cmake_modules,
@@ -25,7 +24,7 @@ in stdenv.mkDerivation {
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules crypto3 parallel-crypto3 transpiler ];
+  buildInputs = [cmake_modules crypto3 parallel-crypto3 ];
 
   cmakeFlags =
     [
