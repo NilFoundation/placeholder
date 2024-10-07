@@ -70,19 +70,9 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
      var(0, 1, false, var::column_type::public_input), var(0, 2, false, var::column_type::public_input)};
     typename component_type::input_type instance_input = {input_state_var};
 
-    #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-    for (std::uint32_t i = 0; i < component_type::state_size; i++){
-        std::cout << "input[" << i << "]   : " << public_input[i].data << "\n";
-    }
-    #endif
-
     auto result_check = [&expected_res](AssignmentType &assignment,
         typename component_type::result_type &real_res) {
         for (std::uint32_t i = 0; i < component_type::state_size; i++){
-            #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-            std::cout << "expected[" << i << "]: " << expected_res[i].data << "\n";
-            std::cout << "real[" << i << "]    : " << var_value(assignment, real_res.output_state[i]).data << "\n";
-            #endif
             assert(expected_res[i] == var_value(assignment, real_res.output_state[i]));
         }
     };
@@ -195,11 +185,5 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_poseidon_test_pallas_168) {
     test_poseidon_specfic_data<field_type, 168>();
     test_poseidon_random_data<field_type, random_data_tests_amount, 168>();
 }
-
-// BOOST_AUTO_TEST_CASE(blueprint_plonk_poseidon_test_bls12) {
-//     using field_type = typename crypto3::algebra::fields::bls12_fr<381>;
-//     test_poseidon_specfic_data<field_type>();
-//     test_poseidon_random_data<field_type, random_data_tests_amount>();
-// }
 
 BOOST_AUTO_TEST_SUITE_END()
