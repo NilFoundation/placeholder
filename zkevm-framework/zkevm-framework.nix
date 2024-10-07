@@ -5,6 +5,7 @@
   cmake,
   boost,
   gdb,
+  lldb,
   crypto3,
   ethash,
   intx,
@@ -25,7 +26,9 @@ in stdenv.mkDerivation rec {
 
   src = lib.sourceByRegex ./. [ ".*" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++ (lib.optional (!stdenv.isDarwin) gdb);
+  nativeBuildInputs =[ cmake ninja pkg-config ] ++
+                       (lib.optional (!stdenv.isDarwin) gdb) ++
+                       (lib.optional (stdenv.isDarwin) lldb);
 
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];

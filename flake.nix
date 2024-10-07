@@ -44,7 +44,7 @@
             runTests = false;
             enableDebug = true;
           });
-          
+
           parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             runTests = false;
             enableDebug = false;
@@ -161,7 +161,7 @@
             name = "all";
             paths = [ crypto3 evm-assigner zkevm-framework proof-producer];
           };
-          default = all; 
+          default = all;
         };
 
         checks = rec {

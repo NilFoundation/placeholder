@@ -7,6 +7,7 @@
   # We'll use boost183 by default, but you can override it
   boost_lib ? boost183,
   gdb,
+  lldb,
   ethash,
   intx,
   gtest,
@@ -22,7 +23,9 @@ in stdenv.mkDerivation rec {
 
   src = lib.sourceByRegex ./. [ ".*" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++ (lib.optional (!stdenv.isDarwin) gdb);
+  nativeBuildInputs = [ cmake ninja pkg-config ] ++
+                       (lib.optional (!stdenv.isDarwin) gdb) ++
+                       (lib.optional (stdenv.isDarwin) lldb);
 
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost_lib) else boost_lib) ];
