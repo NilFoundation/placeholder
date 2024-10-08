@@ -374,20 +374,21 @@ BOOST_AUTO_TEST_CASE(blueprint_proxy_call_pack_lookup_tables_test) {
     auto assignment_ptr = std::make_shared<assignment<ArithmetizationType>>(desc);
     assignment_proxy<ArithmetizationType> assignment(assignment_ptr, 0);
 
-    std::vector<std::size_t> lookup_columns_indices = {0, 1, 2, 3, 4};
     std::size_t usable_rows_amount = assignment.allocated_rows();
-    std::uint32_t min_selector_index = 5;
     bp.reserve_table("binary_xor_table/full");
 
     nil::crypto3::zk::snark::pack_lookup_tables_horizontal(
         bp.get_reserved_indices(),
         bp.get_reserved_tables(),
         bp.get_reserved_dynamic_tables(),
-        bp.get(), assignment.get(), lookup_columns_indices, min_selector_index,
+        bp.get(), assignment.get(),
         usable_rows_amount);
 
     std::set<uint32_t> lookup_constant_cols = {0, 1, 2, 3, 4};
+    auto s = assignment.get_lookup_constant_cols();
+    for( auto c: s) std::cout << c << "";
+    std::cout << std::endl;
     BOOST_ASSERT(assignment.get_lookup_constant_cols() == lookup_constant_cols);
-    std::set<uint32_t> lookup_selector_cols = {min_selector_index};
+    std::set<uint32_t> lookup_selector_cols = {0};
     BOOST_ASSERT(assignment.get_lookup_selector_cols() == lookup_selector_cols);
 }
