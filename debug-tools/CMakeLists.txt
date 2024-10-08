@@ -39,7 +39,7 @@ endif ()
 # If Nix is used, LSP could not guess the locations of implicit include
 # directories, so we need to include them explicitly.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
-  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES 
+  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 
@@ -85,6 +85,7 @@ endif()
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/bin/circgen")
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/bin/excalibur")
 
 include(CPack)
 
