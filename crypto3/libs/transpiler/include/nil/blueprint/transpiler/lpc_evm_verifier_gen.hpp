@@ -23,8 +23,8 @@
 //---------------------------------------------------------------------------//
 // @file Declaration of interfaces for PLONK unified addition component.
 //---------------------------------------------------------------------------//
-#ifndef __EVM_VERIFIER_GEN_HPP__
-#define __EVM_VERIFIER_GEN_HPP__
+#ifndef __LPC_EVM_VERIFIER_GEN_HPP__
+#define __LPC_EVM_VERIFIER_GEN_HPP__
 
 #include <string>
 #include <fstream>
@@ -55,7 +55,7 @@
 namespace nil {
     namespace blueprint {
         template <typename PlaceholderParams>
-        class evm_verifier_printer{
+        class lpc_evm_verifier_printer{
             using common_data_type = typename nil::crypto3::zk::snark::placeholder_public_preprocessor<
                 typename PlaceholderParams::field_type,
                 PlaceholderParams
@@ -211,7 +211,7 @@ namespace nil {
                 return result.str();
             }
         public:
-            evm_verifier_printer(
+            lpc_evm_verifier_printer(
                 const typename PlaceholderParams::constraint_system_type &constraint_system,
                 const common_data_type &common_data,
                 std::string folder_name,
@@ -949,4 +949,4 @@ namespace nil {
     }
 }
 
-#endif //__MODULAR_CONTRACTS_TEMPLATES_HPP__
+#endif //__LPC_EVM_VERIFIER_GEN_HPP__

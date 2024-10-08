@@ -10,8 +10,11 @@ include(CMTest)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                       crypto3::algebra
-                      crypto3::math
                       crypto3::hash
+                      crypto3::marshalling-algebra
+                      crypto3::marshalling-zk
+                      crypto3::math
+                      crypto3::random
                       crypto3::zk
                       ${Boost_LIBRARIES})
 
@@ -47,7 +50,8 @@ macro(define_transpiler_test name)
 endmacro()
 
 set(TESTS_NAMES
-    "transpiler"
+    "evm"
+    "recursion"
 )
 
 foreach(TEST_NAME ${TESTS_NAMES})
