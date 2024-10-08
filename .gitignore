@@ -353,6 +353,7 @@ compile_commands.json
 CTestTestfile.cmake
 build
 result
+CheckSSE.cmake
 
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:

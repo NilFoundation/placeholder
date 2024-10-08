@@ -1,12 +1,22 @@
 { lib,
   stdenv,
-  ninja,
-  pkg-config,
   cmake,
-  crypto3,
-  boost,
-  gdb,
   cmake_modules,
+  pkg-config,
+  boost,
+  clang,
+  clang-tools,
+  gtk4,
+  gtkmm4,
+  glibmm,
+  pcre2,
+  glib,
+  gdb,
+  lldb,
+  ninja,
+  pango,
+  pangomm,
+  crypto3,
   }:
 let
   inherit (lib) optional;
@@ -15,9 +25,13 @@ in stdenv.mkDerivation {
 
   src = lib.sourceByRegex ./. [ ".*" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++ (lib.optional (!stdenv.isDarwin) gdb);
+  nativeBuildInputs = [ cmake ninja pkg-config ] ++
+                       (lib.optional (!stdenv.isDarwin) gdb) ++
+                       (lib.optional (stdenv.isDarwin) lldb);
 
-  buildInputs = [ cmake_modules crypto3 ];
+  propagatedBuildInputs = [ boost crypto3 gtk4 gtkmm4 glibmm pcre2 glib pango pangomm ];
+
+  buildInputs = [ cmake_modules ];
 
   cmakeFlags =
     [
