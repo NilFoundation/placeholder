@@ -83,18 +83,18 @@ function(setup_proof_generator_target)
 endfunction()
 
 # Declare single-threaded target
-set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
-setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+set( "${CURRENT_PROJECT_NAME}-single-threaded")
+#setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
 
 
 # Declare multi-threaded target
 set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
 setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all)
 
-install(TARGETS ${SINGLE_THREADED_TARGET} ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
+install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # Install library
-install(TARGETS ${SINGLE_THREADED_TARGET}-lib ${MULTI_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS  ${MULTI_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
