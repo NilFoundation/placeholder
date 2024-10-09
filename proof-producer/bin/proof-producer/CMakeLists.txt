@@ -43,7 +43,6 @@ function(setup_proof_generator_target)
     add_library(${ARG_TARGET_NAME}-lib INTERFACE)
 
     set(INTERFACE_LIBS
-        crypto3::transpiler
         Boost::filesystem
         Boost::log
         Boost::thread
@@ -82,17 +81,20 @@ function(setup_proof_generator_target)
 
 endfunction()
 
-# Declare single-threaded target
-set( "${CURRENT_PROJECT_NAME}-single-threaded")
-#setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+find_package(crypto3)
+if (${crypto3_FOUND})
+  # Declare single-threaded target
+  set("${CURRENT_PROJECT_NAME}-single-threaded")
+  setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+else()
+  find_package(parallel-crypto3 REQUIRED)
+  # Declare multi-threaded target
+  set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
+  setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all)
+endif()
 
-
-# Declare multi-threaded target
-set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
-setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all)
 
 install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
-
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
