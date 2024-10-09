@@ -24,8 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MARSHALLING_MERKLE_PROOF_HPP
-#define CRYPTO3_MARSHALLING_MERKLE_PROOF_HPP
+#pragma once
 
 #include <ratio>
 #include <limits>
@@ -67,9 +66,7 @@ namespace nil {
                         TTypeBase,
                         // path_element_t
                         typename merkle_proof_path_element<TTypeBase, MerkleProof>::type,
-                        // TODO: use nil::marshalling::option::fixed_size_storage<MerkleProof::arity - 1>
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::uint64_t>>>;
+                        nil::marshalling::option::sequence_fixed_size<MerkleProof::arity - 1>>;
                 };
 
                 template<typename TTypeBase, typename MerkleProof, typename = void>
@@ -207,4 +204,3 @@ namespace nil {
         }        // namespace marshalling
     }            // namespace crypto3
 }    // namespace nil
-#endif    // CRYPTO3_MARSHALLING_MERKLE_PROOF_HPP
