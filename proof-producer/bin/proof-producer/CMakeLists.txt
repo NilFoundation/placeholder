@@ -89,6 +89,8 @@ if (${crypto3_FOUND})
 
   # Install library
   install(TARGETS  ${SINGLE_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)
+
 else()
   find_package(parallel-crypto3 REQUIRED)
   # Declare multi-threaded target
@@ -97,9 +99,8 @@ else()
 
   # Install library
   install(TARGETS  ${MULTI_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
 endif()
 
-
-install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
