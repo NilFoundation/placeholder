@@ -70,23 +70,23 @@
           evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = crypto3;
+            crypto3 = parallel-crypto3;
           });
           evm-assigner-tests = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3;
+            crypto3 = parallel-crypto3;
           });
           evm-assigner-debug-tests = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = crypto3;
+            crypto3 = parallel-crypto3;
           });
           evm-assigner-clang-debug = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = crypto3-clang-debug;
+            crypto3 = parallel-crypto3-clang-debug;
           });
 
           zkevm-framework = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -202,13 +202,13 @@
           evm-assigner-gcc = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = packages.crypto3;
+            crypto3 = packages.parallel-crypto3;
           });
           evm-assigner-clang = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3-clang;
+            crypto3 = parallel-crypto3-clang;
           });
 
           zkevm-framework-gcc = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
@@ -264,7 +264,7 @@
           };
           single-threaded = {
             type = "app";
-            program = "${self.packages.${system}.proof-producer}/bin/proof-producer-single-threaded";
+            program = "${self.packages.${system}.proof-producer-singlethreaded}/bin/proof-producer-single-threaded";
           };
           multi-threaded = {
             type = "app";
