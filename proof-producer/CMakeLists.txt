@@ -45,9 +45,6 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(crypto3 REQUIRED)
-find_package(parallel-crypto3 REQUIRED)
-
 # TODO: move thread to actor-core
 find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread)
 if(ENABLE_TESTS)
