@@ -128,6 +128,11 @@
             enableDebug = false;
             crypto3 = parallel-crypto3;
           });
+          proof-producer-singlethreaded = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            runTests = false;
+            enableDebug = false;
+            crypto3 = crypto3;
+          });
           proof-producer-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = true;
             enableDebug = false;
@@ -137,6 +142,11 @@
             enableDebug = true;
             runTests = true;
             crypto3 = parallel-crypto3;
+          });
+          proof-producer-singlethreaded-debug-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
+            enableDebug = true;
+            runTests = true;
+            crypto3 = crypto3;
           });
           proof-producer-clang-debug = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
