@@ -126,27 +126,23 @@
           proof-producer = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = crypto3;
-            parallel-crypto3 = parallel-crypto3;
+            crypto3 = parallel-crypto3;
           });
           proof-producer-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3;
-            parallel-crypto3 = parallel-crypto3;
+            crypto3 = parallel-crypto3;
           });
           proof-producer-debug-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = crypto3;
-            parallel-crypto3 = parallel-crypto3;
+            crypto3 = parallel-crypto3;
           });
           proof-producer-clang-debug = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = crypto3-clang-debug;
-            parallel-crypto3 = parallel-crypto3-clang-debug;
+            crypto3 = parallel-crypto3-clang-debug;
           });
 
           debug-tools = (pkgs.callPackage ./debug-tools/debug-tools.nix {
@@ -217,15 +213,13 @@
           proof-producer-gcc = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = packages.crypto3;
-            parallel-crypto3 = packages.parallel-crypto3;
+            crypto3 = packages.parallel-crypto3;
           });
           proof-producer-clang = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3-clang;
-            parallel-crypto3 = parallel-crypto3-clang;
+            crypto3 = parallel-crypto3-clang;
           });
 
           all-clang = pkgs.symlinkJoin {
