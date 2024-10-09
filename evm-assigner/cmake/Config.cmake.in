@@ -1,7 +1,6 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-find_dependency(crypto3 REQUIRED)
 find_dependency(intx REQUIRED)
 find_dependency(ethash REQUIRED)
 
