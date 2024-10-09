@@ -70,3 +70,27 @@ install(
         ${CMAKE_CURRENT_BINARY_DIR}/parallel-crypto3Config.cmake
         DESTINATION ${CONFIG_DIR}
 )
+# Re-pack crypto3 includes. Don't include the libs, that are re-written multithreaded way.
+install(DIRECTORY
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/algebra
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/bench
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/block
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/detail
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/hash
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/multiprecision
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/random
+          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/marshalling
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil/crypto3)
+
+install(DIRECTORY
+          ${PACKAGE_PREFIX_DIR}/include/nil/blueprint
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil)
+
+install(DIRECTORY
+          ${PACKAGE_PREFIX_DIR}/include/nil/marshalling
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil)
+
+install(DIRECTORY
+          ${PACKAGE_PREFIX_DIR}/include/nil/detail
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil)
+
