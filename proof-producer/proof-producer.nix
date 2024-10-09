@@ -4,7 +4,6 @@
   pkg-config,
   cmake,
   crypto3,
-  parallel-crypto3,
   boost,
   gdb,
   lldb,
@@ -27,7 +26,7 @@ in stdenv.mkDerivation {
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules crypto3 parallel-crypto3 ];
+  buildInputs = [cmake_modules crypto3 ];
 
   cmakeFlags =
     [
