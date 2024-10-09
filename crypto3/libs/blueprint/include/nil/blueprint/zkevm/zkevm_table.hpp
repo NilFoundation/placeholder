@@ -132,13 +132,15 @@ namespace nil {
 
             void assign_opcode(const zkevm_machine_interface &machine) {
                 auto opcode = machine.opcode();
-                std::cout << "Assign opcode " << opcode_to_string(machine.opcode())
-                    << " on row " << curr_row
-                    << " pc = " << machine.pc()
-                    << " stack_size = " << machine.stack_size()
-                    << " gas = " << machine.gas()
-                    << " is_error = " << machine.is_error()
-                    << std::endl;
+                if( machine.opcode() != zkevm_opcode::padding ){
+                    std::cout << "Assign opcode " << opcode_to_string(machine.opcode())
+                        << " on row " << curr_row
+                        << " pc = " << machine.pc()
+                        << " stack_size = " << machine.stack_size()
+                        << " gas = " << machine.gas()
+                        << " is_error = " << machine.is_error()
+                        << std::endl;
+                }
                 const auto &opcodes = circuit.get_opcodes();
                 auto opcode_it = opcodes.find(opcode);
                 if (opcode_it == opcodes.end()) {

@@ -60,7 +60,8 @@ void test_keccaks(
         std::vector<uint8_t>,
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>
     >> input,
-    nil::crypto3::test_tools::random_test_initializer<BlueprintFieldType> &rnd
+    nil::crypto3::test_tools::random_test_initializer<BlueprintFieldType> &rnd,
+    std::string output_path = ""
 ){
     std::cout << "Test keccak with " << input.size() << " messages, max_blocks = " << max_blocks << std::endl;
 
@@ -103,9 +104,10 @@ void test_keccaks(
     component_type component_instance =
         component_type(witnesses, std::array<std::uint32_t, 1> {0}, std::array<std::uint32_t, 1> {0}, max_blocks, limit_permutation_columns);
 
-    nil::crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(
+    nil::crypto3::test_component_extended<component_type, BlueprintFieldType, hash_type, Lambda>(
         component_instance, desc, public_input, result_check, instance_input,
-        nil::blueprint::connectedness_check_type::type::NONE,
+        true, nil::blueprint::connectedness_check_type::type::NONE,
+        output_path, false,
         max_blocks, limit_permutation_columns);
 }
 
@@ -128,7 +130,7 @@ BOOST_AUTO_TEST_SUITE(bn254_test_suite)
 
 BOOST_AUTO_TEST_CASE(keccak_1_short_message) {
     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-    test_keccaks<field_type, 10>({{{0},calculate_hash<field_type>({0})}}, rnd);
+    test_keccaks<field_type, 30>({{{0},calculate_hash<field_type>({0})}}, rnd, "./keccak_1_short_message");
 }
 
 BOOST_AUTO_TEST_CASE(keccak_2_short_messages) {

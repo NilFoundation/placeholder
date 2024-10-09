@@ -67,8 +67,6 @@
 #include <map>
 
 using namespace nil;
-using namespace nil::crypto3;
-using namespace nil::blueprint;
 using namespace nil::crypto3::algebra;
 
 namespace nil {

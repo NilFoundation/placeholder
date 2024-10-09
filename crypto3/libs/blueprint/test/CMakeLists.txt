@@ -183,10 +183,6 @@ set(PLONK_TESTS_FILES
     "verifiers/flexible/constant_pow"
     "verifiers/flexible/pow_factor"
     "verifiers/placeholder/verifier"
-    "zkevm/bytecode"
-    "zkevm/rw"
-    "zkevm/copy"
-    "zkevm/connections"
     )
 
 #set(FIELDS_TESTS_FILES
@@ -202,6 +198,10 @@ set(PLONK_TESTS_FILES
 #    )
 
 set(ZKEVM_TESTS_FILES
+    "zkevm/bytecode"
+    "zkevm/rw"
+    "zkevm/copy"
+    "zkevm/connections"
     "zkevm/state_selector"
     "zkevm/zkevm_word"
     "zkevm/state_transition"
@@ -216,6 +216,7 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/byte_ops"
     "zkevm/opcodes/bitwise"
     "zkevm/opcodes/err0"
+    "zkevm/opcodes/workload"
 )
 
 #set(CURVES_TESTS_FILES

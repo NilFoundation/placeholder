@@ -213,6 +213,16 @@ BOOST_AUTO_TEST_CASE(zkevm_byte_ops_test) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH32,zwordc(0x1234567890_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32,31);
     opcode_tester.push_opcode(zkevm_opcode::SAR);
+    // TODO: Fix this! It is a bug.
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32,zwordc(0x33_cppui_modular257));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32,zwordc(0x1_cppui_modular257));
+    // opcode_tester.push_opcode(zkevm_opcode::SAR);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32,zwordc(0x33_cppui_modular257));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32,zwordc(0x1_cppui_modular257));
+    // opcode_tester.push_opcode(zkevm_opcode::SHR);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32,zwordc(0x33_cppui_modular257));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32,zwordc(0x1_cppui_modular257));
+    // opcode_tester.push_opcode(zkevm_opcode::SHL);
     opcode_tester.push_opcode(zkevm_opcode::RETURN);
 
     zkevm_machine_type machine = get_empty_machine(zkevm_keccak_hash(opcode_tester.get_bytecode()));

@@ -207,6 +207,7 @@ namespace nil {
             // They definitely may be packed more effectively
             void allocate_dynamic_tables_columns(columns_manager_type &col_manager){
                 // Bytecode table
+                std::cout << "bytecode dynamic table witness amount = " << bytecode_table_component::witness_amount << std::endl;
                 for( std::size_t i = 0; i < bytecode_table_component::witness_amount; i++){
                     bytecode_witnesses.push_back(col_manager.allocate_witness_column());
                 }
@@ -510,6 +511,8 @@ namespace nil {
 
                 const std::size_t opcodes_amount = opcodes_info_instance.get_opcodes_amount();
                 const std::size_t opcode_selector_cols_amount = std::ceil(float(opcodes_amount)/4);
+                std::cout << "Implemented opcodes amount = " << opcodes_amount << std::endl;
+                std::cout << "Opcode selector cols amount = " << opcode_selector_cols_amount << std::endl;
                 for (std::size_t i = 0; i < opcode_selector_cols_amount; i++) {
                     opcode_selector_cols.push_back(col_manager.allocate_witness_column());
                 }
@@ -531,17 +534,20 @@ namespace nil {
                           -  state.opcode_parity()
                 );
 
+                std::cout << "Opcode range checked columns amount = " << opcode_range_checked_cols_amount << std::endl;
                 std::vector<std::size_t> opcode_range_checked_cols;
                 for(std::size_t i = 0; i < opcode_range_checked_cols_amount; i++) {
                     opcode_range_checked_cols.push_back(col_manager.allocate_witness_column());
                 }
                 opcode_cols = opcode_range_checked_cols; // range-checked columns are the first part of opcode columns
 
+                std::cout << "Opcode non range checked columns amount = " << opcode_other_cols_amount << std::endl;
                 for (std::size_t i = 0; i < opcode_other_cols_amount; i++) { // followed by some non-range-checked columns
                     opcode_cols.push_back(col_manager.allocate_witness_column());
                 }
 
                 const std::size_t row_selector_cols_amount = (max_opcode_height + max_opcode_height%2)/2;
+                std::cout << "Opcode row selector checked columns amount = " << row_selector_cols_amount << std::endl;
                 for (std::size_t i = 0; i < row_selector_cols_amount; i++) {
                     row_selector_cols.push_back(col_manager.allocate_witness_column());
                 }

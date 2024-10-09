@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(zkevm_err0_test_1) {
 
     // incorrect test logic, but we have no memory operations so
     opcode_tester.push_opcode(zkevm_opcode::ADD);
-    opcode_tester.push_opcode(zkevm_opcode::REVERT);
+    opcode_tester.push_opcode(zkevm_opcode::RETURN);
 
     zkevm_machine_type machine = get_empty_machine(zkevm_keccak_hash(opcode_tester.get_bytecode()));
     auto opcodes = opcode_tester.get_opcodes();

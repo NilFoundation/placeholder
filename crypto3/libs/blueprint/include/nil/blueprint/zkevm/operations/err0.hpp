@@ -135,6 +135,7 @@ namespace nil {
 
                 integral_type opcode = integral_type(opcode_num);
                 BOOST_ASSERT(opcode < 176);
+                // Do something with it.
                 // 176 is the maximum we can handle by using a "virtual selector" with 2 rows 44 columns and a dedicated parity cell
 
                 std::size_t b = static_cast<std::size_t>(opcode % 2),
