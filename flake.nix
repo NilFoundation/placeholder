@@ -92,35 +92,31 @@
           zkevm-framework = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = crypto3;
+            crypto3 = parallel-crypto3;
             evm-assigner = evm-assigner;
             proof-producer = proof-producer;
-            parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3;
+            crypto3 = parallel-crypto3;
             evm-assigner = evm-assigner;
             proof-producer = proof-producer;
-            parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-debug-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = crypto3;
+            crypto3 = parallel-crypto3;
             evm-assigner = evm-assigner;
             proof-producer = proof-producer;
-            parallel-crypto3 = parallel-crypto3;
           });
           zkevm-framework-clang-debug = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = crypto3-clang-debug;
+            crypto3 = parallel-crypto3-clang-debug;
             evm-assigner = evm-assigner-clang-debug;
             proof-producer = proof-producer-clang-debug;
-            parallel-crypto3 = parallel-crypto3-clang-debug;
           });
 
           proof-producer = (pkgs.callPackage ./proof-producer/proof-producer.nix {
@@ -214,10 +210,9 @@
           zkevm-framework-gcc = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = packages.crypto3;
             evm-assigner = evm-assigner-gcc;
             proof-producer = proof-producer-gcc;
-            parallel-crypto3 = packages.parallel-crypto3;
+            crypto3 = packages.parallel-crypto3;
           });
 
           proof-producer-gcc = (pkgs.callPackage ./proof-producer/proof-producer.nix {
