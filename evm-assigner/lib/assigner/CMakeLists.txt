@@ -17,7 +17,7 @@ add_library(${PROJECT_NAME} STATIC ${evmone_sources})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
-find_package(crypto3 REQUIRED)
+find_package(parallel-crypto3 REQUIRED)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -26,7 +26,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/evmone>)
 
 target_link_libraries(${PROJECT_NAME}
-                      PUBLIC intx::intx crypto3::all ethash::keccak)
+                      PUBLIC intx::intx parallel-crypto3::all ethash::keccak)
 
 set_target_properties(
     ${PROJECT_NAME}
