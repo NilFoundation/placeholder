@@ -51,7 +51,10 @@
 #include <nil/crypto3/marshalling/zk/types/commitments/commitment_params.hpp>
 #include <nil/crypto3/marshalling/zk/types/commitments/polys_evaluator.hpp>
 
+#include <boost/outcome.hpp>
 #include <nil/crypto3/zk/commitments/type_traits.hpp>
+
+namespace outcome = BOOST_OUTCOME_V2_NAMESPACE;
 
 namespace nil {
     namespace crypto3 {
@@ -368,7 +371,8 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename LPCScheme>
-                LPCScheme make_commitment_scheme(
+                outcome::result<LPCScheme, nil::marshalling::status_type>
+                make_commitment_scheme(
                     typename commitment_scheme_state<
                         nil::marshalling::field_type<Endianness>, LPCScheme,
                         std::enable_if_t<nil::crypto3::zk::is_lpc<LPCScheme>>>::type& filled_commitment_scheme
@@ -376,11 +380,12 @@ namespace nil {
                     using TTypeBase = typename nil::marshalling::field_type<Endianness>;
 
                     std::map<std::size_t, typename LPCScheme::precommitment_type> trees;
-                    // TODO(martun): this check must be made in release mode as well, maybe we need to start returning statuses
-                    // from make_ functions.
                     const auto& filled_tree_keys = std::get<0>(filled_commitment_scheme.value()).value();
                     const auto& filled_tree_values = std::get<1>(filled_commitment_scheme.value()).value();
-                    BOOST_ASSERT(filled_tree_keys.size() == filled_tree_values.size());
+
+                    if (filled_tree_keys.size() != filled_tree_values.size()) {
+                        return nil::marshalling::status_type::invalid_msg_data;
+                    }
 
                     for (std::size_t i = 0; i < filled_tree_keys.size(); i++) {
                         trees[std::size_t(filled_tree_keys[i].value())] =
@@ -395,7 +400,10 @@ namespace nil {
                     std::map<std::size_t, bool> batch_fixed;
                     const auto& batch_fixed_keys = std::get<4>(filled_commitment_scheme.value()).value();
                     const auto& batch_fixed_values = std::get<5>(filled_commitment_scheme.value()).value();
-                    BOOST_ASSERT(batch_fixed_keys.size() == batch_fixed_values.size());
+                    if (batch_fixed_keys.size() != batch_fixed_values.size()) {
+                        return nil::marshalling::status_type::invalid_msg_data;
+                    }
+
 
                     for (std::size_t i = 0; i < batch_fixed_keys.size(); i++) {
                         // Here we convert the value from type size_t back into a 'bool', which is not good.

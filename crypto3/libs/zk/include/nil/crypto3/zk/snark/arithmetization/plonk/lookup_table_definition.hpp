@@ -76,7 +76,7 @@ namespace nil {
                     plonk_lookup_table<FieldType> lookup_table;
                     std::string name;
 
-                    dynamic_table_definition(std::string _name): name(_name), defined(false) {}
+                    dynamic_table_definition(std::string _name): defined(false), name(_name) {}
 
                     void define(const plonk_lookup_table<FieldType> &table){
                         BOOST_ASSERT(!defined);

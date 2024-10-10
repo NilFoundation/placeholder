@@ -79,8 +79,6 @@ namespace nil {
                         if (compression) {
                             result |= C_bit;
                         }
-                        // TODO: check condition of infinite point
-                        // TODO: did not work as affine point should be fixed for zero-point
                         if (point.is_zero()) {
                             result |= I_bit;
                         } else if (compression && sign_gf_p<typename GroupValueType::field_type>(point.to_affine().Y)) {
