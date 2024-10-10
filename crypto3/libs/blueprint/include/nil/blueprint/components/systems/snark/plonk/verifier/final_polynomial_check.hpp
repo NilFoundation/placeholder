@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -67,36 +68,48 @@ namespace nil {
                 std::size_t power;
                 std::size_t lambda;
 
-                static const std::size_t rows_amount = 0;
+                std::size_t rows_amount;
                 static const std::size_t gates_amount = 0;
 
                 class gate_manifest_type : public component_gate_manifest {
                 public:
-                    gate_manifest_type() {}
-
-                    std::uint32_t gates_amount() const override {
-                        return final_polynomial_check::gates_amount;
+                    gate_manifest_type(std::size_t witness_amount, std::size_t power, std::size_t lambda) {
+                        if( power < 8 ) num_gates = 1; else num_gates = 2;
                     }
+                    std::uint32_t gates_amount() const override {
+                        return num_gates;
+                    }
+                    std::size_t num_gates;
                 };
 
                 static gate_manifest get_gate_manifest(
-                        std::size_t witness_amount,
-                        std::size_t power,
-                        std::size_t labmda) {
-                    static gate_manifest manifest = gate_manifest_type();
+                        std::size_t witness_amount, std::size_t _power, std::size_t _lambda) {
+                    static gate_manifest manifest = gate_manifest_type(witness_amount, _power, _lambda);
                     return manifest;
                 }
 
                 static manifest_type get_manifest(std::size_t power, std::size_t labmda) {
                     static manifest_type manifest =
-                        manifest_type(std::shared_ptr<manifest_param>(new manifest_single_value_param(3)), true);
+                        manifest_type(std::shared_ptr<manifest_param>(new manifest_single_value_param(15)), true);
                     return manifest;
                 }
 
-                constexpr static std::size_t get_rows_amount(std::size_t witness_amount,
-                                                             std::size_t power,
-                                                             std::size_t labmda) {
-                    return final_polynomial_check::rows_amount;
+                constexpr static std::size_t get_rows_amount(
+                    std::size_t witness_amount,
+                    std::size_t power,
+                    std::size_t lambda
+                ) {
+                    std::size_t rows_amount = 0;
+                    std::size_t poly_chunks = std::ceil(float(power) / 8);
+                    std::size_t points_per_row;
+
+                    if( power < 8){
+                        points_per_row = (witness_amount - power - 1) / 3;
+                    } else {
+                        points_per_row = (witness_amount - 8) / 5;
+                    }
+                    rows_amount = std::ceil(float(lambda) / points_per_row) * poly_chunks;
+                    return rows_amount;
                 }
 
                 struct input_type {
@@ -131,7 +144,7 @@ namespace nil {
                 template<typename ContainerType>
                 final_polynomial_check(ContainerType witness, std::size_t power_, std::size_t lambda_) :
                     component_type(witness, {}, {}, get_manifest(power_, lambda_)),
-                    power(power_), lambda(lambda_)
+                    power(power_), lambda(lambda_), rows_amount(get_rows_amount(witness.size(), power, lambda))
                 {};
 
                 template<typename WitnessContainerType, typename ConstantContainerType,
@@ -140,7 +153,7 @@ namespace nil {
                                        PublicInputContainerType public_input,
                                        std::size_t power_, std::size_t lambda_) :
                     component_type(witness, constant, public_input, get_manifest(power_, lambda_)),
-                    power(power_), lambda(lambda_)
+                    power(power_), lambda(lambda_), rows_amount(get_rows_amount(witness.size(), power_, lambda_))
                 {};
 
                 final_polynomial_check(
@@ -152,33 +165,8 @@ namespace nil {
                         public_inputs,
                     std::size_t power_, std::size_t lambda_) :
                     component_type(witnesses, constants, public_inputs, get_manifest(power_, lambda_)),
-                    power(power_), lambda(lambda_)
+                    power(power_), lambda(lambda_), rows_amount(get_rows_amount(witnesses.size(), power, lambda))
                 {};
-
-                inline std::tuple<constraint_type, constraint_type,
-                                    std::unordered_map<var, var>> build_mapping_and_constraints(
-                        const input_type &instance_input) const {
-
-                    std::unordered_map<var, var> coefficient_mapping;
-                    // map coefficients to themselves; we can directly put them into an expression
-                    for (auto coefficient : instance_input.coefficients) {
-                        coefficient_mapping[coefficient] = coefficient;
-                    }
-                    // the only relative vars present, thus cannot possibly conflict with the mapping
-                    var s_var = var(0, 0, true, var::column_type::witness),
-                        y_var = var(0, 1, true, var::column_type::witness);
-                    constraint_type constraint_s = instance_input.coefficients[0];
-                    for (std::size_t i = 1; i < instance_input.coefficients.size(); i++) {
-                        constraint_s = instance_input.coefficients[i] + s_var * constraint_s;
-                    }
-                    constraint_s = constraint_s - y_var;
-                    constraint_type constraint_m_s = instance_input.coefficients[0];
-                    for (std::size_t i = 1; i < instance_input.coefficients.size(); i++) {
-                        constraint_m_s = instance_input.coefficients[i] - s_var * constraint_m_s;
-                    }
-                    constraint_m_s = constraint_m_s - y_var;
-                    return std::make_tuple(constraint_s, constraint_m_s, coefficient_mapping);
-                }
             };
 
             template<typename BlueprintFieldType>
@@ -199,31 +187,37 @@ namespace nil {
                 using expression_evaluator_type = typename component_type::expression_evaluator_type;
                 using expression_evaluator_input_type = typename expression_evaluator_type::input_type;
                 using var = typename component_type::var;
+                using val = typename BlueprintFieldType::value_type;
 
                 BOOST_ASSERT(instance_input.coefficients.size() == component.power + 1);
                 BOOST_ASSERT(instance_input.points.size() == component.lambda);
                 BOOST_ASSERT(instance_input.values.size() == 2 * component.lambda);
 
-                auto mapping_and_constraints = component.build_mapping_and_constraints(instance_input);
-                for (std::size_t i = 0; i < instance_input.points.size(); i++) {
-                    var point = instance_input.points[i];
-                    var value = instance_input.values[2 * i],
-                        value_m = instance_input.values[2 * i + 1];
-                    std::unordered_map<var, var> mapping = std::get<2>(mapping_and_constraints);
-                    mapping.insert({var(0, 0, true, var::column_type::witness), point});
-                    mapping.insert({var(0, 1, true, var::column_type::witness), value});
-                    expression_evaluator_type evaluator(
-                        component._W, component._C, component._PI, std::get<0>(mapping_and_constraints));
-                    expression_evaluator_input_type input = {mapping};
-                    generate_assignments(evaluator, assignment, input, start_row_index);
-                    expression_evaluator_type evaluator_m(
-                        component._W, component._C, component._PI, std::get<1>(mapping_and_constraints));
-                    mapping.erase(var(0, 1, true, var::column_type::witness));
-                    mapping.insert({var(0, 1, true, var::column_type::witness), value_m});
-                    input = {mapping};
-                    generate_assignments(evaluator_m, assignment, input, start_row_index);
-                }
+                std::size_t power = component.power;
+                std::size_t lambda = component.lambda;
+                std::size_t poly_chunks = std::ceil(float(power) / 8);
+                std::size_t points_per_row = power < 8 ? (component.witness_amount() - power - 1) / 3: (component.witness_amount() - 8) / 5;
+                std::size_t rows_amount = std::ceil(float(lambda) / points_per_row) * poly_chunks;
+                var zero_var = var(component.C(0), start_row_index, false, var::column_type::constant);
+                std::size_t row = start_row_index;
+                std::size_t point = 0;
 
+                if( power < 8){
+                    for(std::size_t r = 0; r < rows_amount; r++){
+                        for( std::size_t i = 0; i < power + 1; i++ ){
+                            assignment.witness(component.W(i), row) = var_value(assignment, instance_input.coefficients[power - i]);
+                        }
+                        for( std::size_t i = 0; i < points_per_row; i++){
+                            if( point >= lambda ) point = lambda - 1;
+                            assignment.witness(component.W(power + 1 + 3 * i), row) = var_value(assignment, instance_input.points[point]);
+                            assignment.witness(component.W(power + 1 + 3 * i + 1), row) = var_value(assignment, instance_input.values[2 * point]);
+                            assignment.witness(component.W(power + 1 + 3 * i + 2), row) = var_value(assignment, instance_input.values[2 * point + 1]);
+                            point++;
+                        }
+                        row++;
+                    }
+                } else {
+                }
                 return typename component_type::result_type(component, start_row_index);
             }
 
@@ -244,34 +238,67 @@ namespace nil {
                 using expression_evaluator_input_type = typename expression_evaluator_type::input_type;
                 using var = typename component_type::var;
 
+                if( instance_input.coefficients.size() != component.power + 1 )
+                    std::cout << instance_input.coefficients.size() << " != " << component.power + 1 << std::endl;
                 BOOST_ASSERT(instance_input.coefficients.size() == component.power + 1);
                 BOOST_ASSERT(instance_input.points.size() == component.lambda);
                 BOOST_ASSERT(instance_input.values.size() == 2 * component.lambda);
 
-                var zero = assignment.add_batch_constant_variable(0);
+                using constraint_type = nil::crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
 
-                auto mapping_and_constraints = component.build_mapping_and_constraints(instance_input);
-                for (std::size_t i = 0; i < instance_input.points.size(); i++) {
-                    var point = instance_input.points[i];
-                    var value = instance_input.values[2 * i],
-                        value_m = instance_input.values[2 * i + 1];
-                    std::unordered_map<var, var> mapping = std::get<2>(mapping_and_constraints);
-                    mapping.insert({var(0, 0, true, var::column_type::witness), point});
-                    mapping.insert({var(0, 1, true, var::column_type::witness), value});
-                    expression_evaluator_type evaluator(
-                        component._W, component._C, component._PI, std::get<0>(mapping_and_constraints));
-                    expression_evaluator_input_type input = {mapping};
-                    auto result = generate_circuit(evaluator, bp, assignment, input, start_row_index);
-                    bp.add_copy_constraint({result.output, zero});
-                    expression_evaluator_type evaluator_m(
-                        component._W, component._C, component._PI, std::get<1>(mapping_and_constraints));
-                    mapping.erase(var(0, 1, true, var::column_type::witness));
-                    mapping.insert({var(0, 1, true, var::column_type::witness), value_m});
-                    input = {mapping};
-                    auto result_m = generate_circuit(evaluator_m, bp, assignment, input, start_row_index);
-                    bp.add_copy_constraint({result_m.output, zero});
+                std::size_t power = component.power;
+                std::size_t lambda = component.lambda;
+                std::size_t poly_chunks = std::ceil(float(power) / 8);
+                std::size_t points_per_row = power < 8 ? (component.witness_amount() - power - 1) / 3: (component.witness_amount() - 8) / 5;
+                std::size_t rows_amount = std::ceil(float(lambda) / points_per_row) * poly_chunks;
+                var zero_var = var(component.C(0), start_row_index, false, var::column_type::constant);
+                std::size_t row = start_row_index;
+                std::size_t point = 0;
+
+                if( power < 8){
+                    std::vector<constraint_type> constraints;
+
+                    std::vector<var> coefficients; coefficients.resize(power + 1);
+                    for( std::size_t i = 0; i < power + 1; i++ ){
+                        coefficients[i] = var( component.W(i), 0);
+                        for( std::size_t r = 0; r < rows_amount; r++ ){
+                            bp.add_copy_constraint({var(component.W(i), start_row_index +r, false), instance_input.coefficients[power-i]});
+                        }
+                    }
+                    for( std::size_t i = 0; i < points_per_row; i++){
+                        var xs(component.W(power + 1 + 3 * i), 0 );
+                        var y0(component.W(power + 1 + 3 * i + 1), 0 );
+                        var y1(component.W(power + 1 + 3 * i + 2), 0 );
+                        constraint_type y0_constr = coefficients[0];
+                        constraint_type y1_constr = coefficients[0];
+                        for( std::size_t j = 1; j < power + 1; j++ ){
+                            y0_constr = coefficients[j] - y0_constr * xs;
+                            y1_constr = coefficients[j] + y1_constr * xs;
+                        }
+                        y0_constr = y0 - y0_constr;
+                        y1_constr = y1 - y1_constr;
+                        constraints.push_back(y0_constr);
+                        constraints.push_back(y1_constr);
+                    }
+                    std::size_t point = 0;
+                    row = start_row_index;
+                    for( std::size_t r = 0; r < rows_amount; r++ ){
+                        for( std::size_t i = 0; i < points_per_row; i++){
+                            bp.add_copy_constraint({var(component.W(power + 1 + 3 * i), row, false), instance_input.points[point]});
+                            bp.add_copy_constraint({var(component.W(power + 1 + 3 * i + 1), row, false), instance_input.values[2 * point]});
+                            bp.add_copy_constraint({var(component.W(power + 1 + 3 * i + 2), row, false), instance_input.values[2 * point + 1]});
+                            point++;
+                            if( point >= lambda ) break; // Will break both loops because rows amount is computed correctly.
+                        }
+                        row++;
+                    }
+                    std::size_t selector_id = bp.add_gate(constraints);
+                    for( std::size_t i = 0; i < rows_amount; i++){
+                        assignment.enable_selector(selector_id, start_row_index + i);
+                    }
+                } else {
+                   BOOST_ASSERT("Not implemented");
                 }
-
                 return typename component_type::result_type(component, start_row_index);
             }
         }    // namespace components
