@@ -81,10 +81,11 @@ function(setup_proof_generator_target)
 
 endfunction()
 
-find_package(crypto3)
+find_package(crypto3 QUIET)
 if (${crypto3_FOUND})
   # Declare single-threaded target
   set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
+  message("Declare single-threaded target ${SINGLE_THREADED_TARGET}")
   setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
 
   # Install library
@@ -93,8 +94,8 @@ if (${crypto3_FOUND})
 
 else()
   find_package(parallel-crypto3 REQUIRED)
-  # Declare multi-threaded target
   set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
+  message("Declare multi-threaded target ${MULTI_THREADED_TARGET}")
   setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all)
 
   # Install library
