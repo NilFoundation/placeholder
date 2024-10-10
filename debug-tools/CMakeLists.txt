@@ -45,8 +45,6 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(crypto3 REQUIRED)
-
 find_package(Boost REQUIRED COMPONENTS filesystem log program_options)
 
 # Read version from VERSION file

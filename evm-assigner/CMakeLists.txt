@@ -110,24 +110,3 @@ endif()
 include(CTest)
 
 add_subdirectory(lib)
-
-# INSTALL
-
-set(CONFIG_PATH ${CMAKE_INSTALL_LIBDIR}/cmake/evm-assigner)
-set(TARGET_NAMESPACE evm-assigner::)
-install(EXPORT assignerTargets NAMESPACE ${TARGET_NAMESPACE} DESTINATION ${CONFIG_PATH})
-
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    cmake/Config.cmake.in
-    evm-assigner-config.cmake
-    INSTALL_DESTINATION ${CONFIG_PATH}
-)
-
-install(
-    FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/evm-assigner-config.cmake
-    DESTINATION ${CONFIG_PATH}
-)
-
-cable_add_archive_package()

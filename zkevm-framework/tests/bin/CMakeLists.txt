@@ -5,10 +5,10 @@ if(ENABLE_EXECUTABLES_TESTS)
 
     add_custom_target(test_run_assigner
         COMMAND $<TARGET_FILE:assigner>
-        -b ${CMAKE_SOURCE_DIR}/bin/assigner/example_data/call_block.json
+        -b ${CMAKE_CURRENT_LIST_DIR}../../../bin/assigner/example_data/call_block.json
         -t assignment
         -e pallas
-        -s ${CMAKE_SOURCE_DIR}/bin/assigner/example_data/state.json
+        -s ${CMAKE_CURRENT_LIST_DIR}../../../bin/assigner/example_data/state.json
         --input ""
         --input ""
         --input ""
@@ -17,8 +17,8 @@ if(ENABLE_EXECUTABLES_TESTS)
         --log-level debug
         DEPENDS
         $<TARGET_FILE:assigner>
-        ${CMAKE_SOURCE_DIR}/bin/assigner/example_data/call_block.json
-        ${CMAKE_SOURCE_DIR}/bin/assigner/example_data/state.json
+        ${CMAKE_CURRENT_LIST_DIR}../../../bin/assigner/example_data/call_block.json
+        ${CMAKE_CURRENT_LIST_DIR}../../../bin/assigner/example_data/state.json
         COMMENT "Running assigner integration test"
         VERBATIM
     )
@@ -26,7 +26,7 @@ if(ENABLE_EXECUTABLES_TESTS)
 
     # Initial integration test with generating data on cluster and passing them into assigner
     # Step 1: create Nil CLI config file
-    set(block_generator_script ${CMAKE_SOURCE_DIR}/bin/block_generator/block_generator.py)
+    set(block_generator_script ${CMAKE_CURRENT_LIST_DIR}../../../bin/block_generator/block_generator.py)
     add_custom_command(
         OUTPUT test_config.yaml
         COMMAND python3
