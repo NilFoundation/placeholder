@@ -26,8 +26,12 @@
 // - a linear_variable (i.e., x_i)
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_MATH_LINEAR_VARIABLE_HPP
-#define CRYPTO3_ZK_MATH_LINEAR_VARIABLE_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_MATH_LINEAR_VARIABLE_HPP
+#define PARALLEL_CRYPTO3_ZK_MATH_LINEAR_VARIABLE_HPP
+
+#ifdef CRYPTO3_ZK_MATH_LINEAR_VARIABLE_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <vector>
 

@@ -23,8 +23,14 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_POLYNOMIAL_BASIC_OPERATIONS_HPP
-#define CRYPTO3_MATH_POLYNOMIAL_BASIC_OPERATIONS_HPP
+#pragma once
+
+#ifndef PARALLEL_CRYPTO3_MATH_POLYNOMIAL_BASIC_OPERATIONS_HPP
+#define PARALLEL_CRYPTO3_MATH_POLYNOMIAL_BASIC_OPERATIONS_HPP
+
+#ifdef CRYPTO3_MATH_POLYNOMIAL_BASIC_OPERATIONS_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <algorithm>
 #include <vector>

@@ -24,8 +24,14 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_POLYNOMIAL_POLYNOM_DFS_VIEW_HPP
-#define CRYPTO3_MATH_POLYNOMIAL_POLYNOM_DFS_VIEW_HPP
+#pragma once
+
+#ifndef PARALLEL_CRYPTO3_MATH_POLYNOMIAL_POLYNOM_DFS_VIEW_HPP
+#define PARALLEL_CRYPTO3_MATH_POLYNOMIAL_POLYNOM_DFS_VIEW_HPP
+
+#ifdef CRYPTO3_MATH_POLYNOMIAL_POLYNOM_DFS_VIEW_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <algorithm>
 #include <vector>

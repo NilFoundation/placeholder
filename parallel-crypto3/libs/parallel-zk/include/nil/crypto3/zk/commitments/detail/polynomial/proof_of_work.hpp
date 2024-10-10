@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_PROOF_OF_WORK_HPP
-#define CRYPTO3_PROOF_OF_WORK_HPP
+#ifndef PARALLEL_CRYPTO3_PROOF_OF_WORK_HPP
+#define PARALLEL_CRYPTO3_PROOF_OF_WORK_HPP
+
+#ifdef CRYPTO3_PROOF_OF_WORK_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <boost/property_tree/ptree.hpp>
 

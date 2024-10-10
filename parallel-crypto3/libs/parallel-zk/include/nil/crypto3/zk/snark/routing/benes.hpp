@@ -38,8 +38,12 @@
 // Academic Press 1965
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_BENES_ROUTING_ALGORITHM_HPP
-#define CRYPTO3_ZK_BENES_ROUTING_ALGORITHM_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_BENES_ROUTING_ALGORITHM_HPP
+#define PARALLEL_CRYPTO3_ZK_BENES_ROUTING_ALGORITHM_HPP
+
+#ifdef CRYPTO3_ZK_BENES_ROUTING_ALGORITHM_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <vector>
 

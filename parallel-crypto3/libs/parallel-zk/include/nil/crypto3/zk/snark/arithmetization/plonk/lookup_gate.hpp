@@ -25,8 +25,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_PLONK_LOOKUP_GATE_HPP
-#define CRYPTO3_ZK_PLONK_LOOKUP_GATE_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLONK_LOOKUP_GATE_HPP
+#define PARALLEL_CRYPTO3_ZK_PLONK_LOOKUP_GATE_HPP
+
+#ifdef CRYPTO3_ZK_PLONK_LOOKUP_GATE_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>

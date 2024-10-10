@@ -1,5 +1,9 @@
-#ifndef CRYPTO3_ZK_POWERS_OF_TAU_HPP
-#define CRYPTO3_ZK_POWERS_OF_TAU_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_POWERS_OF_TAU_HPP
+#define PARALLEL_CRYPTO3_ZK_POWERS_OF_TAU_HPP
+
+#ifdef CRYPTO3_ZK_POWERS_OF_TAU_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/private_key.hpp>
 #include <nil/crypto3/zk/commitments/detail/polynomial/powers_of_tau/public_key.hpp>

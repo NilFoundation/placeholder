@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_PLONK_PADDING_HPP
-#define CRYPTO3_ZK_PLONK_PADDING_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLONK_PADDING_HPP
+#define PARALLEL_CRYPTO3_ZK_PLONK_PADDING_HPP
+
+#ifdef CRYPTO3_ZK_PLONK_PADDING_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/random/algebraic_random_device.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>

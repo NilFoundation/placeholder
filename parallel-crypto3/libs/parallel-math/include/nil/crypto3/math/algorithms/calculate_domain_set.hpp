@@ -23,8 +23,14 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
-#define CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
+#pragma once
+
+#ifndef PARALLEL_CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
+#define PARALLEL_CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
+
+#ifdef CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>

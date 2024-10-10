@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ACCUMULATORS_ZK_SPARSE_HPP
-#define CRYPTO3_ACCUMULATORS_ZK_SPARSE_HPP
+#ifndef PARALLEL_CRYPTO3_ACCUMULATORS_ZK_SPARSE_HPP
+#define PARALLEL_CRYPTO3_ACCUMULATORS_ZK_SPARSE_HPP
+
+#ifdef CRYPTO3_ACCUMULATORS_ZK_SPARSE_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <boost/container/static_vector.hpp>
 
