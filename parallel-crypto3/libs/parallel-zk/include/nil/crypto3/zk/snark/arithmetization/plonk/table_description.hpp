@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_DESCRIPTION_HPP
-#define CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_DESCRIPTION_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_DESCRIPTION_HPP
+#define PARALLEL_CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_DESCRIPTION_HPP
+
+#ifdef CRYPTO3_ZK_PLONK_PLACEHOLDER_TABLE_DESCRIPTION_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 #include <iostream>

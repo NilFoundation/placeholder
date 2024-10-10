@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_KNOWLEDGE_COMMITMENT_HPP
-#define CRYPTO3_ZK_KNOWLEDGE_COMMITMENT_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_KNOWLEDGE_COMMITMENT_HPP
+#define PARALLEL_CRYPTO3_ZK_KNOWLEDGE_COMMITMENT_HPP
+
+#ifdef CRYPTO3_ZK_KNOWLEDGE_COMMITMENT_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/container/sparse_vector.hpp>
 

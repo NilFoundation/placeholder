@@ -24,8 +24,14 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
-#define CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
+#pragma once
+
+#ifndef PARALLEL_CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
+#define PARALLEL_CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
+
+#ifdef CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>

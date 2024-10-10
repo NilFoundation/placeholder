@@ -25,8 +25,14 @@
 // @file Declaration of interfaces for a sparse vector.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_SPARSE_VECTOR_HPP
-#define CRYPTO3_ZK_SPARSE_VECTOR_HPP
+#pragma once
+
+#ifndef PARALLEL_CRYPTO3_ZK_SPARSE_VECTOR_HPP
+#define PARALLEL_CRYPTO3_ZK_SPARSE_VECTOR_HPP
+
+#ifdef CRYPTO3_ZK_SPARSE_VECTOR_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <iostream>
 #include <vector>

@@ -1,5 +1,9 @@
-#ifndef CRYPTO3_ZK_SNARK_PICKLES_TO_GROUP_MAP
-#define CRYPTO3_ZK_SNARK_PICKLES_TO_GROUP_MAP
+#ifndef PARALLEL_CRYPTO3_ZK_SNARK_PICKLES_TO_GROUP_MAP
+#define PARALLEL_CRYPTO3_ZK_SNARK_PICKLES_TO_GROUP_MAP
+
+#ifdef CRYPTO3_ZK_SNARK_PICKLES_TO_GROUP_MAP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/algebra/curves/detail/forms/short_weierstrass/coordinates.hpp>
 

@@ -28,8 +28,12 @@
 // - a linear combination (i.e., sum_i a_i * x_i).
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_MATH_LINEAR_COMBINATION_HPP
-#define CRYPTO3_ZK_MATH_LINEAR_COMBINATION_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_MATH_LINEAR_COMBINATION_HPP
+#define PARALLEL_CRYPTO3_ZK_MATH_LINEAR_COMBINATION_HPP
+
+#ifdef CRYPTO3_ZK_MATH_LINEAR_COMBINATION_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <vector>
 

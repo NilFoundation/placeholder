@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_SNARK_SET_COMMITMENT_HPP
-#define CRYPTO3_ZK_SNARK_SET_COMMITMENT_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_SNARK_SET_COMMITMENT_HPP
+#define PARALLEL_CRYPTO3_ZK_SNARK_SET_COMMITMENT_HPP
+
+#ifdef CRYPTO3_ZK_SNARK_SET_COMMITMENT_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/merkle_tree.hpp>
 #include <nil/crypto3/zk/snark/components/hashes/hash_io.hpp>
