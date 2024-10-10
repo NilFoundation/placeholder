@@ -137,6 +137,7 @@ namespace nil {
 
                     placeholder_proof<FieldType, ParamsType> process() {
                         PROFILE_SCOPE("Placeholder prover, total time");
+                        BOOST_LOG_TRIVIAL(info) << "running mutithreaded mode";
 
                         // 2. Commit witness columns and public_input columns
                         _commitment_scheme.append_to_batch(VARIABLE_VALUES_BATCH, _polynomial_table->witnesses());
