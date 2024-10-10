@@ -167,11 +167,10 @@ namespace nil {
                 std::size_t expand_factor,
                 std::size_t max_q_chunks,
                 std::size_t grind
-            )
-                : lambda_(lambda)
-                , expand_factor_(expand_factor)
-                , max_quotient_chunks_(max_q_chunks)
-                , grind_(grind) {
+            ) : expand_factor_(expand_factor),
+                max_quotient_chunks_(max_q_chunks),
+                lambda_(lambda),
+                grind_(grind) {
             }
 
             // The caller must call the preprocessor or load the preprocessed data before calling this function.
@@ -448,10 +447,18 @@ namespace nil {
 
                 auto marshalled_value = detail::decode_marshalling_from_file<CommitmentStateMarshalling>(
                     commitment_scheme_state_file);
+
                 if (!marshalled_value) {
                     return false;
                 }
-                lpc_scheme_.emplace(make_commitment_scheme<Endianness, LpcScheme>(*marshalled_value));
+
+                auto commitment_scheme = make_commitment_scheme<Endianness, LpcScheme>(*marshalled_value);
+                if (!commitment_scheme) {
+                    BOOST_LOG_TRIVIAL(error) << "Error decoding commitment scheme";
+                    return false;
+                }
+
+                lpc_scheme_.emplace(commitment_scheme.value());
                 return true;
             }
 

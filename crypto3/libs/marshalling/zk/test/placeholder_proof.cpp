@@ -1269,7 +1269,6 @@ template<
     std::size_t usable_rows_amount,
     bool UseGrinding = false>
 struct placeholder_kzg_test_fixture_v2 : public test_tools::random_test_initializer<typename curve_type::scalar_field_type> {
-    // TODO: move to common file
     using field_type = typename curve_type::scalar_field_type;
 
     struct placeholder_test_params {

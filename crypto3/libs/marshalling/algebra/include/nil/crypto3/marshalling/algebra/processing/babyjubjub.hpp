@@ -51,11 +51,14 @@ namespace nil {
         namespace marshalling {
             namespace processing {
 
-                // Encoding of babyjubjub curve as described in Nocturne:
+                // Encoding of babyjubjub curve as described in Nocturne (endianness not specified)
                 // https://nocturne-xyz.gitbook.io/nocturne/protocol-details/encodings
                 // Only Y coordinate is encoded, plus 's' - the "sign" of X coordinate
                 // uint256(signBit) << 254 | y
-                // TODO: update reference or invent our own rules
+                //
+                // Similar encoding is used here:
+                // https://zkkit.pse.dev/functions/_zk_kit_baby_jubjub.packPoint.html
+                // with implicit little-endian
 
                 template<typename Coordinates>
                 struct curve_element_writer<
@@ -132,9 +135,6 @@ namespace nil {
                         nil::marshalling::status_type>::type
                         process(group_value_type &point, TIter &iter)
                     {
-
-                        // somehow add size check of container pointed by iter
-                        // assert(TSize == std::distance(first, last));
                         using base_field_type = typename group_type::field_type;
                         using base_integral_type = typename base_field_type::integral_type;
                         using group_affine_value_type =
@@ -156,9 +156,6 @@ namespace nil {
                             return decoded_point_affine.error();
                         }
 
-                        // TODO: remove hard-coded call for type conversion, implement type conversion between
-                        // coordinates
-                        //  through operator
                         point = decoded_point_affine.value();
                         return nil::marshalling::status_type::success;
                     }
