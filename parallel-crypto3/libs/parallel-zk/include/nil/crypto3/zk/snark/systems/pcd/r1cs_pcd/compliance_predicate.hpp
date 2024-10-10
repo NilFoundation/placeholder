@@ -30,8 +30,12 @@
 // other auxiliary information), and then either accepts or rejects.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_COMPLIANCE_PREDICATE_HPP
-#define CRYPTO3_ZK_COMPLIANCE_PREDICATE_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_COMPLIANCE_PREDICATE_HPP
+#define PARALLEL_CRYPTO3_ZK_COMPLIANCE_PREDICATE_HPP
+
+#ifdef CRYPTO3_ZK_COMPLIANCE_PREDICATE_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <memory>
 #include <set>

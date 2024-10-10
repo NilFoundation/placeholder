@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_TRANSCRIPT_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_TRANSCRIPT_HPP
+#ifndef PARALLEL_CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_TRANSCRIPT_HPP
+#define PARALLEL_CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_TRANSCRIPT_HPP
+
+#ifdef CRYPTO3_R1CS_GG_PPZKSNARK_AGGREGATE_IPP2_TRANSCRIPT_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <vector>
 #include <type_traits>

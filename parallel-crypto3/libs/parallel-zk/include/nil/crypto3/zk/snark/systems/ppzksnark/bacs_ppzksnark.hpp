@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_BACS_PPZKSNARK_HPP
-#define CRYPTO3_ZK_BACS_PPZKSNARK_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_BACS_PPZKSNARK_HPP
+#define PARALLEL_CRYPTO3_ZK_BACS_PPZKSNARK_HPP
+
+#ifdef CRYPTO3_ZK_BACS_PPZKSNARK_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/systems/ppzksnark/bacs_ppzksnark/detail/basic_policy.hpp>
 

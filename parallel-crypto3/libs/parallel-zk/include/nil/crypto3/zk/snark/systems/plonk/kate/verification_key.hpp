@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
-#define CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
+#ifndef PARALLEL_CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
+#define PARALLEL_CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
+
+#ifdef CRYPTO3_PLONK_BATCHED_KATE_VERIFICATION_KEY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/commitments/batched_kate_commitment.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>

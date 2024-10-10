@@ -53,8 +53,12 @@
 // <https://eprint.iacr.org/2016/260>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
-#define CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
+#ifndef PARALLEL_CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
+#define PARALLEL_CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
+
+#ifdef CRYPTO3_MARSHALLING_R1CS_GG_PPZKSNARK_TYPES_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <vector>
 #include <tuple>

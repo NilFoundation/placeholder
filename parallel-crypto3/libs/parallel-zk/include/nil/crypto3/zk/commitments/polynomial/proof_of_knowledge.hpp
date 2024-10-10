@@ -22,8 +22,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_PROOF_OF_KNOWLEDGE_HPP
-#define CRYPTO3_ZK_PROOF_OF_KNOWLEDGE_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PROOF_OF_KNOWLEDGE_HPP
+#define PARALLEL_CRYPTO3_ZK_PROOF_OF_KNOWLEDGE_HPP
+
+#ifdef CRYPTO3_ZK_PROOF_OF_KNOWLEDGE_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/commitments/detail/polynomial/element_proof_of_knowledge.hpp>
 

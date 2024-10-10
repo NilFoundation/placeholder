@@ -25,8 +25,12 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MERKLE_PROOF_HPP
-#define CRYPTO3_MERKLE_PROOF_HPP
+#ifndef PARALLEL_CRYPTO3_MERKLE_PROOF_HPP
+#define PARALLEL_CRYPTO3_MERKLE_PROOF_HPP
+
+#ifdef CRYPTO3_MERKLE_PROOF_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <algorithm>
 #include <vector>

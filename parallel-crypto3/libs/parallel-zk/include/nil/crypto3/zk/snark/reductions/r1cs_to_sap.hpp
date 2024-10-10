@@ -46,8 +46,12 @@
 // <https://eprint.iacr.org/2017/540>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_R1CS_TO_SAP_BASIC_POLICY_HPP
-#define CRYPTO3_ZK_R1CS_TO_SAP_BASIC_POLICY_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_R1CS_TO_SAP_BASIC_POLICY_HPP
+#define PARALLEL_CRYPTO3_ZK_R1CS_TO_SAP_BASIC_POLICY_HPP
+
+#ifdef CRYPTO3_ZK_R1CS_TO_SAP_BASIC_POLICY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/math/coset.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
