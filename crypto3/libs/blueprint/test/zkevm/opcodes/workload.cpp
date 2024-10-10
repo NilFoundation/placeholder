@@ -89,16 +89,15 @@ BOOST_AUTO_TEST_CASE(zkevm_workload_test) {
     using zkevm_machine_type = zkevm_machine_interface;
     const std::vector<zkevm_opcode> implemented_opcodes = {
         zkevm_opcode::ADD, zkevm_opcode::SUB, zkevm_opcode::AND, zkevm_opcode::OR, zkevm_opcode::XOR
-        ,zkevm_opcode::BYTE
-        //, zkevm_opcode::SHL, zkevm_opcode::SHR
+        ,zkevm_opcode::BYTE, zkevm_opcode::SHL, zkevm_opcode::SHR
         ,zkevm_opcode::SAR, zkevm_opcode::SIGNEXTEND
         ,zkevm_opcode::EQ, zkevm_opcode::GT, zkevm_opcode::LT, zkevm_opcode::SGT, zkevm_opcode::SLT
         ,zkevm_opcode::DIV, zkevm_opcode::MOD, zkevm_opcode::SDIV, zkevm_opcode::SMOD, zkevm_opcode::ISZERO
         ,zkevm_opcode::ADDMOD, zkevm_opcode::MULMOD, zkevm_opcode::MUL, zkevm_opcode::NOT
     };
     const std::size_t num_of_opcodes = implemented_opcodes.size(),
-//                      workload = 16384;
-            workload = 63;
+        workload = 32767;
+//        workload = 63;
 
     assignment_type assignment(0, 0, 0, 0);
     circuit_type circuit;
@@ -109,7 +108,7 @@ BOOST_AUTO_TEST_CASE(zkevm_workload_test) {
         circuit.get_reserved_dynamic_tables(),
         circuit, assignment,
         assignment.rows_amount(),
-        65536
+        30000000
     );
 
     zkevm_table<field_type> zkevm_table(evm_circuit, assignment);
@@ -117,9 +116,9 @@ BOOST_AUTO_TEST_CASE(zkevm_workload_test) {
 
     // incorrect test logic, but we have no memory operations so
     for(std::size_t i = 0; i < workload; i++) {
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x11_cppui_modular257));
         opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x22_cppui_modular257));
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x0_cppui_modular257));
-        opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x1_cppui_modular257));
+        opcode_tester.push_opcode(zkevm_opcode::PUSH1, zwordc(0x33_cppui_modular257));
         opcode_tester.push_opcode(implemented_opcodes[i % num_of_opcodes]);
     }
     opcode_tester.push_opcode(zkevm_opcode::RETURN);

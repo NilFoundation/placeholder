@@ -158,7 +158,7 @@ namespace nil {
                 // |                                |                                | (j - b0")^{-1} | 0
                 // +--------------------------------+--------------------------------+----------------+
 
-                std::size_t position_0 = 5;
+                std::size_t position_0 = 4;
                 std::vector<var> result_chunks;
                 std::vector<var> input_a_chunks_0;
                 std::vector<var> r_chunks_0;
@@ -248,14 +248,14 @@ namespace nil {
                                                         a_neg *(1 - r_sum_0 * r_sum_inv)*(two_16 - 1 - result_chunks[i]))});
                 }
 
-                std::size_t position_05 = 4;
+                std::size_t position_05 = 3;
                 for(std::size_t i = 0; i < chunk_amount; i++) {
                     var rc  = var_gen(i,+1),
                         rcc = var_gen(chunk_amount + i, -1);
                     constraints.push_back({position_05, (rc - rcc)});
                 }
 
-                std::size_t position_1 = 3;
+                std::size_t position_1 = 2;
                 std::vector<var> a_chunks;
                 std::vector<var> b_chunks_1;
                 // we have two different constraints at two different positions
@@ -332,7 +332,7 @@ namespace nil {
 
                 // prove that (q < b) or (b = r = 0)
                 // note that in the latter case we have q = a to satisfy a = br + q
-                std::size_t position_2 = 2;
+                std::size_t position_2 = 1;
                 std::vector<var> b_chunks_2;
                 std::vector<var> q_chunks_2;
                 for (std::size_t i = 0; i < chunk_amount; i++) {
@@ -347,7 +347,7 @@ namespace nil {
                     v_chunks_2.push_back(var_gen(chunk_amount + i, 0));
                 }
 
-                for (std::size_t i = chunk_amount + 6; i < chunk_amount + 7 + carry_amount; i++) {
+                for (std::size_t i = chunk_amount + 7; i < chunk_amount + 7 + carry_amount; i++) {
                     t.push_back(var_gen(i, +1));
                 }
                 var z_var_2 = var_gen(chunk_amount + 5, +1);
@@ -382,18 +382,18 @@ namespace nil {
                 std::vector<var> indic_2;
                 std::vector<var> b_chunks_3;
                 for(std::size_t i = 0; i < chunk_amount; i++) {
-                    b_chunks_3.push_back(var_gen(i, -1));
-                    input_b_chunks.push_back(var_gen(i, 0));
-                    indic_1.push_back(var_gen(2*chunk_amount + i, 0));
-                    indic_2.push_back(var_gen(2*chunk_amount + i, +1));
+                    b_chunks_3.push_back(var_gen(i, 0));
+                    input_b_chunks.push_back(var_gen(i, +1));
+                    indic_1.push_back(var_gen(2*chunk_amount + i, +1));
+                    indic_2.push_back(var_gen(2*chunk_amount + i, -1));
                 }
-                var b0p_var = var_gen(chunk_amount, 0),
-                    b0pp_var = var_gen(chunk_amount + 1, 0),
-                    b0ppp_var = var_gen(chunk_amount + 2, 0),
-                    I1_var = var_gen(2*chunk_amount, -1),
-                    I2_var = var_gen(2*chunk_amount + 1, -1),
-                    z_var = var_gen(chunk_amount + 5, 0),
-                    tp_var = var_gen(chunk_amount + 5, 0);
+                var b0p_var = var_gen(chunk_amount, +1),
+                    b0pp_var = var_gen(chunk_amount + 1, +1),
+                    b0ppp_var = var_gen(chunk_amount + 2, +1),
+                    I1_var = var_gen(2*chunk_amount, 0),
+                    I2_var = var_gen(2*chunk_amount + 1, 0),
+                    z_var = var_gen(chunk_amount + 5, +1),
+                    tp_var = var_gen(chunk_amount + 6, +1);
 
                 // lookup constrain b0p < 16, b0pp < 16, b0ppp < 256
                 lookup_constraints.push_back({position_3, {range_check_table_index, {4096 * b0p_var}}});
@@ -435,8 +435,8 @@ namespace nil {
                 using integral_type = boost::multiprecision::number<
                     boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
-                word_type input_a = machine.stack_top();
-                word_type input_b = machine.stack_top(1);
+                word_type input_b = machine.stack_top();
+                word_type input_a = machine.stack_top(1);
 
                 auto is_negative = [](word_type x) {
                      return (integral_type(x) > zkevm_modulus/2 - 1);
@@ -451,7 +451,7 @@ namespace nil {
                 word_type a = abs_word(input_a);
 
                 int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
-                integral_type r_integral = integral_type(a) << shift;
+                integral_type r_integral = integral_type(a) >> shift;
 
                 word_type result = is_negative(input_a) ? (
                                      (r_integral == 0)? word_type(zkevm_modulus-1) : negate_word(word_type(r_integral))
@@ -597,12 +597,12 @@ namespace nil {
 
                 for (std::size_t i = 0; i < chunk_amount; i++) {
                     assignment.witness(witness_cols[2*chunk_amount + i], curr_row + 5) = (b0p - i).is_zero()? 0 : (b0p - i).inversed();
-                    assignment.witness(witness_cols[2*chunk_amount + i], curr_row + 6) = (b0pp - i).is_zero()? 0 : (b0pp - i).inversed();
+                    assignment.witness(witness_cols[2*chunk_amount + i], curr_row + 3) = (b0pp - i).is_zero()? 0 : (b0pp - i).inversed();
                 }
             }
 
             std::size_t rows_amount() override {
-                return 7;
+                return 6;
             }
         };
     }   // namespace blueprint

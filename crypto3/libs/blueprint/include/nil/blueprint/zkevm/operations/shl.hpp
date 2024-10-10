@@ -134,7 +134,7 @@ namespace nil {
                     I1_var = var_gen(2*chunk_amount, -1),
                     I2_var = var_gen(2*chunk_amount + 1, -1),
                     z_var = var_gen(chunk_amount + 5, -1),
-                    tp_var = var_gen(chunk_amount + 5, -1);
+                    tp_var = var_gen(chunk_amount + 6, -1);
 
                 // lookup constrain b0p < 16, b0pp < 16, b0ppp < 256
                 lookup_constraints.push_back({position_0, {range_check_table_index, {4096 * b0p_var}}});

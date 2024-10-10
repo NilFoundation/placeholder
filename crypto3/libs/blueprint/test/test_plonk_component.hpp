@@ -427,16 +427,18 @@ namespace nil {
             desc.usable_rows_amount = assignment.rows_amount();
 
             if constexpr (nil::blueprint::use_lookups<component_type>()) {
+                std::cout << "Pack lookup tables horizontal" << std::endl;
                 desc.usable_rows_amount = zk::snark::pack_lookup_tables_horizontal(
                     bp.get_reserved_indices(),
                     bp.get_reserved_tables(),
                     bp.get_reserved_dynamic_tables(),
                     bp, assignment,
                     desc.usable_rows_amount,
-                    100000
+                    500000
                 );
             }
             desc.rows_amount = zk::snark::basic_padding(assignment);
+            std::cout << "Rows amount = " << desc.rows_amount << std::endl;
 
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << "Usable rows: " << desc.usable_rows_amount << std::endl;
@@ -533,6 +535,7 @@ namespace nil {
             bool check_real_placeholder_proof,
             ComponentStaticInfoArgs... component_static_info_args
         ) {
+            std::cout << "Prepare compomemt" << std::endl;
             auto [desc, bp, assignments] = prepare_component<
                 ComponentType, BlueprintFieldType, Hash, Lambda,
                 PublicInputContainerType, FunctorResultCheck, PrivateInput,
@@ -546,6 +549,7 @@ namespace nil {
             );
 
             if( output_path != "" ){
+                std::cout << "Print to file" << std::endl;
                 print_bp_circuit_and_table_to_file(
                     output_path, bp, desc, assignments
                 );

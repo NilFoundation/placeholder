@@ -135,7 +135,7 @@ namespace nil {
                 // +--------------------------------+--------------------------------+----------------+
 
 
-                std::size_t position_1 = 3;
+                std::size_t position_1 = 2;
                 std::vector<var> a_chunks;
                 std::vector<var> b_chunks_1;
                 // we have two different constraints at two different positions
@@ -210,7 +210,7 @@ namespace nil {
 
                 // prove that (q < b) or (b = r = 0)
                 // note that in the latter case we have q = a to satisfy a = br + q
-                std::size_t position_2 = 2;
+                std::size_t position_2 = 1;
                 std::vector<var> b_chunks_2;
                 std::vector<var> q_chunks_2;
                 for (std::size_t i = 0; i < chunk_amount; i++) {
@@ -225,7 +225,7 @@ namespace nil {
                     v_chunks_2.push_back(var_gen(chunk_amount + i, 0));
                 }
 
-                for (std::size_t i = chunk_amount + 6; i < chunk_amount + 7 + carry_amount; i++) {
+                for (std::size_t i = chunk_amount + 7; i < chunk_amount + 7 + carry_amount; i++) {
                     t.push_back(var_gen(i, +1));
                 }
                 var z_var_2 = var_gen(chunk_amount + 5, +1);
@@ -270,7 +270,7 @@ namespace nil {
                                                                         v_chunks_2[3*(carry_amount-1)],
                                                                         q_chunks_2[3*(carry_amount-1)],
                                                                         t[carry_amount - 2], t[carry_amount - 1])});
-                // t[carry_amount-1] is 0 or 1, but should be 1 if z_var_2 = 1
+               // t[carry_amount-1] is 0 or 1, but should be 1 if z_var_2 = 1
                 constraints.push_back({position_2, (z_var_2  + (1 - z_var_2)* t[carry_amount-1]) * (1 - t[carry_amount-1])});
 
                 std::size_t position_3 = 1;
@@ -279,19 +279,19 @@ namespace nil {
                 std::vector<var> indic_2;
                 std::vector<var> b_chunks_3;
                 for(std::size_t i = 0; i < chunk_amount; i++) {
-                    b_chunks_3.push_back(var_gen(i, -1));
-                    input_b_chunks.push_back(var_gen(i, 0));
-                    indic_1.push_back(var_gen(2*chunk_amount + i, 0));
-                    indic_2.push_back(var_gen(2*chunk_amount + i, +1));
+                    b_chunks_3.push_back(var_gen(i, 0));
+                    input_b_chunks.push_back(var_gen(i, +1));
+                    indic_1.push_back(var_gen(2*chunk_amount + i, +1));
+                    indic_2.push_back(var_gen(2*chunk_amount + i, -1));
                 }
 
-                var b0p_var = var_gen(chunk_amount, 0),
-                    b0pp_var = var_gen(chunk_amount + 1, 0),
-                    b0ppp_var = var_gen(chunk_amount + 2, 0),
-                    I1_var = var_gen(2*chunk_amount, -1),
-                    I2_var = var_gen(2*chunk_amount + 1, -1),
-                    z_var = var_gen(chunk_amount + 5, 0),
-                    tp_var = var_gen(chunk_amount + 5, 0);
+                var b0p_var = var_gen(chunk_amount, +1),
+                    b0pp_var = var_gen(chunk_amount + 1, +1),
+                    b0ppp_var = var_gen(chunk_amount + 2, +1),
+                    I1_var = var_gen(2*chunk_amount, 0),
+                    I2_var = var_gen(2*chunk_amount + 1, 0),
+                    z_var = var_gen(chunk_amount + 5, +1),
+                    tp_var = var_gen(chunk_amount + 6, +1);
 
                 // lookup constrain b0p < 16, b0pp < 16, b0ppp < 256
                 lookup_constraints.push_back({position_3, {range_check_table_index, {4096 * b0p_var}}});
@@ -332,11 +332,11 @@ namespace nil {
                 using integral_type = boost::multiprecision::number<
                     boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
-                word_type a = machine.stack_top();
-                word_type input_b = machine.stack_top(1);
+                word_type input_b = machine.stack_top();
+                word_type a = machine.stack_top(1);
 
                 int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
-                integral_type r_integral = integral_type(a) << shift;
+                integral_type r_integral = integral_type(a) >> shift;
 
                 word_type b = word_type(integral_type(1) << shift);
 
@@ -367,10 +367,13 @@ namespace nil {
                 assignment_type &assignment = zkevm_table.get_assignment();
                 const std::size_t curr_row = zkevm_table.get_current_row();
                 // caluclate first row carries
+                auto first_row_carries_non_shifted =
+                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data;
                 auto first_row_carries =
                     first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data >> 128;
                 value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
+                BOOST_ASSERT(first_row_carries_non_shifted - c_1 * two128 - c_2 * two192 == 0);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);
                 // no need for c_2 chunks as there is only a single chunk
 
@@ -435,12 +438,12 @@ namespace nil {
 
                 for (std::size_t i = 0; i < chunk_amount; i++) {
                     assignment.witness(witness_cols[2*chunk_amount + i], curr_row + 3) = (b0p - i).is_zero()? 0 : (b0p - i).inversed();
-                    assignment.witness(witness_cols[2*chunk_amount + i], curr_row + 4) = (b0pp - i).is_zero()? 0 : (b0pp - i).inversed();
+                    assignment.witness(witness_cols[2*chunk_amount + i], curr_row + 1) = (b0pp - i).is_zero()? 0 : (b0pp - i).inversed();
                 }
             }
 
             std::size_t rows_amount() override {
-                return 5;
+                return 4;
             }
         };
     }   // namespace blueprint
