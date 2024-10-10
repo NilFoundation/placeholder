@@ -3,22 +3,19 @@
   ninja,
   pkg-config,
   cmake,
-  boost183,
-  # We'll use boost183 by default, but you can override it
-  boost_lib ? boost183,
+  boost,
   gdb,
   lldb,
-  ethash,
-  intx,
-  gtest,
+  cmake_modules,
+  crypto3,
   enableDebugging,
   enableDebug ? false,
   runTests ? false,
   }:
 let
   inherit (lib) optional;
-in stdenv.mkDerivation rec {
-  name = "evm-assigner";
+in stdenv.mkDerivation {
+  name = "Parallel Crypto3";
 
   src = lib.sourceByRegex ./. [ ".*" ];
 
@@ -27,22 +24,20 @@ in stdenv.mkDerivation rec {
                        (lib.optional (stdenv.isDarwin) lldb);
 
   # enableDebugging will keep debug symbols in boost
-  propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost_lib) else boost_lib) ];
+  propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [ethash intx gtest];
+  buildInputs = [cmake_modules crypto3];
 
   cmakeFlags =
-  [
+    [
       (if runTests then "-DBUILD_TESTS=TRUE" else "")
-      (if runTests then "-DBUILD_ASSIGNER_TESTS=TRUE" else "")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
-      "-G Ninja"
-  ];
+    ];
 
-  doCheck = runTests;
+  doCheck = runTests; # tests are inside crypto3-tests derivation
 
   shellHook = ''
     PS1="\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
-    echo "Welcome to evm-assigner development environment!"
+    echo "Welcome to Parallel Crypto3 development environment!"
   '';
 }

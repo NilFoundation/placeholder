@@ -48,123 +48,94 @@
           parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = crypto3;
           });
           parallel-crypto3-tests = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3;
           });
           parallel-crypto3-debug-tests = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = crypto3;
           });
           parallel-crypto3-clang-debug = (pkgs.callPackage ./parallel-crypto3/parallel-crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = crypto3-clang-debug;
           });
 
           evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = parallel-crypto3;
           });
           evm-assigner-tests = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = parallel-crypto3;
           });
           evm-assigner-debug-tests = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = parallel-crypto3;
           });
           evm-assigner-clang-debug = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = parallel-crypto3-clang-debug;
           });
 
           zkevm-framework = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = parallel-crypto3;
-            evm-assigner = evm-assigner;
-            proof-producer = proof-producer;
           });
           zkevm-framework-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = parallel-crypto3;
-            evm-assigner = evm-assigner;
-            proof-producer = proof-producer;
           });
           zkevm-framework-debug-tests = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = parallel-crypto3;
-            evm-assigner = evm-assigner;
-            proof-producer = proof-producer;
           });
           zkevm-framework-clang-debug = (pkgs.callPackage ./zkevm-framework/zkevm-framework.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = parallel-crypto3-clang-debug;
-            evm-assigner = evm-assigner-clang-debug;
-            proof-producer = proof-producer-clang-debug;
           });
 
           proof-producer = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = parallel-crypto3;
           });
           proof-producer-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = parallel-crypto3;
           });
           proof-producer-debug-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = parallel-crypto3;
           });
           proof-producer-clang-debug = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = parallel-crypto3-clang-debug;
           });
 
           proof-producer-singlethreaded = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = false;
             enableDebug = false;
-            crypto3 = crypto3;
           });
           proof-producer-singlethreaded-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             runTests = true;
             enableDebug = false;
-            crypto3 = crypto3;
           });
           proof-producer-singlethreaded-debug-tests = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             enableDebug = true;
             runTests = true;
-            crypto3 = crypto3;
           });
           proof-producer-singlethreaded-clang-debug = (pkgs.callPackage ./proof-producer/proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             enableDebug = true;
             runTests = false;
-            crypto3 = crypto3;
           });
 
           debug-tools = (pkgs.callPackage ./debug-tools/debug-tools.nix {
-            crypto3 = crypto3;
           });
 
           # The "all" package will build all packages. Convenient for CI,
