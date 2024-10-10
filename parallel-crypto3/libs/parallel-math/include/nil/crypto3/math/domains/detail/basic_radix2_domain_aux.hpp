@@ -24,8 +24,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
 #define PARALLEL_CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
 

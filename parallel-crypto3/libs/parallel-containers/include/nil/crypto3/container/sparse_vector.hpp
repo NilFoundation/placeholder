@@ -25,8 +25,6 @@
 // @file Declaration of interfaces for a sparse vector.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_ZK_SPARSE_VECTOR_HPP
 #define PARALLEL_CRYPTO3_ZK_SPARSE_VECTOR_HPP
 
