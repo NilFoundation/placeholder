@@ -16,14 +16,14 @@ target_include_directories(zkEVMAssignerRunner
 )
 
 find_package(Boost COMPONENTS REQUIRED log)
-find_package(evm-assigner REQUIRED)
 target_link_libraries(zkEVMAssignerRunner
                         PUBLIC
-                        evm-assigner::evm-assigner
+                        evm-assigner
                         NilCore
                         zkEVMJsonHelpers
                         zkEVMOutputArtifacts
                         zkEVMRpc
+                        crypto3::common
                         Boost::log
 )
 

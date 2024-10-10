@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 project(parallel-crypto3)
 
-find_package(CM)
+find_package(CM REQUIRED)
+include(CMConfig)
 
 if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
@@ -29,30 +30,23 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
 endif()
 
 # TODO: check what is actually required here
-include(CMConfig)
 include(CMSetupVersion)
 
 # TODO: beutify entire cmake tree of parallel crypto3 modules the same way we did in origin crypto3
-find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread random unit_test_framework)
-find_package(crypto3 REQUIRED)
-
-# HACK: since there are no more crypto3::submodule targets, we have to ALIAS any used
-#   target of such type to recently introduced crypto3::all target
-# TODO: update dependencies in actor modules
-add_library(crypto3::algebra ALIAS crypto3::all)
-add_library(crypto3::block ALIAS crypto3::all)
-add_library(crypto3::hash ALIAS crypto3::all)
-add_library(crypto3::multiprecision ALIAS crypto3::all)
-add_library(crypto3::random ALIAS crypto3::all)
-add_library(marshalling::core ALIAS crypto3::all)
-add_library(marshalling::crypto3_multiprecision ALIAS crypto3::all)
-add_library(marshalling::crypto3_algebra ALIAS crypto3::all)
-add_library(marshalling::crypto3_zk ALIAS crypto3::all)
+find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread random unit_test_framework container)
 
 add_subdirectory(libs/parallelization-utils)
 add_subdirectory(libs/parallel-containers)
 add_subdirectory(libs/parallel-math)
 add_subdirectory(libs/parallel-zk)
+
+add_library(${PROJECT_NAME}_all INTERFACE)
+add_library(${PROJECT_NAME}::all ALIAS ${PROJECT_NAME}_all)
+target_link_libraries(${PROJECT_NAME}_all INTERFACE
+    actor::containers
+    actor::math
+    actor::zk
+    actor::core)
 
 # Configure package file to be able to import headers
 include(CMakePackageConfigHelpers)
@@ -70,27 +64,3 @@ install(
         ${CMAKE_CURRENT_BINARY_DIR}/parallel-crypto3Config.cmake
         DESTINATION ${CONFIG_DIR}
 )
-# Re-pack crypto3 includes. Don't include the libs, that are re-written multithreaded way.
-install(DIRECTORY
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/algebra
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/bench
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/block
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/detail
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/hash
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/multiprecision
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/random
-          ${PACKAGE_PREFIX_DIR}/include/nil/crypto3/marshalling
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil/crypto3)
-
-install(DIRECTORY
-          ${PACKAGE_PREFIX_DIR}/include/nil/blueprint
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil)
-
-install(DIRECTORY
-          ${PACKAGE_PREFIX_DIR}/include/nil/marshalling
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil)
-
-install(DIRECTORY
-          ${PACKAGE_PREFIX_DIR}/include/nil/detail
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nil)
-

@@ -16,14 +16,13 @@
   ninja,
   pango,
   pangomm,
-  crypto3,
   }:
 let
   inherit (lib) optional;
 in stdenv.mkDerivation {
   name = "debug-tools";
 
-  src = lib.sourceByRegex ./. [ ".*" ];
+  src = lib.sourceByRegex ./. ["^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
@@ -36,6 +35,7 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       "-DCMAKE_BUILD_TYPE=Release"
+      "-DDEBUG_TOOLS_ENABLE=TRUE"
       "-G Ninja"
     ];
 

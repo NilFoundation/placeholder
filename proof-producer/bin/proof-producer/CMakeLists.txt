@@ -81,27 +81,18 @@ function(setup_proof_generator_target)
 
 endfunction()
 
-find_package(crypto3 QUIET)
-if (${crypto3_FOUND})
-  # Declare single-threaded target
-  set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
-  message("Declare single-threaded target ${SINGLE_THREADED_TARGET}")
-  setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
+setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
+setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all crypto3::common)
 
-  # Install library
-  install(TARGETS  ${SINGLE_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
-  install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)
+# Install
 
-else()
-  find_package(parallel-crypto3 REQUIRED)
-  set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
-  message("Declare multi-threaded target ${MULTI_THREADED_TARGET}")
-  setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all)
+install(TARGETS  ${SINGLE_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)
+install(TARGETS  ${MULTI_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
 
-  # Install library
-  install(TARGETS  ${MULTI_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
-  install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
-endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

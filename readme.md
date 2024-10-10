@@ -24,8 +24,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix
 For most cases, you want to have an incremental build:
 ```
 nix develop .#crypto3-debug-tests
-cd crypto3/
-eval "$configurePhase"
+eval "$configurePhase" // automatically move to the build directory
 eval "$buildPhase"
 eval "$checkPhase"
 ```
@@ -33,8 +32,7 @@ eval "$checkPhase"
 if you want to build a single test:
 ```
 nix develop .#crypto3-debug-tests
-cd crypto3/
-eval "$configurePhase"
+eval "$configurePhase" // automatically move to the build directory
 ninja TEST_NAME
 ```
 
