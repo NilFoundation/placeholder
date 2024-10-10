@@ -43,12 +43,11 @@ namespace nil {
                         using base_field_type = typename mnt6_types<298>::base_field_type;
                         using scalar_field_type = typename mnt6_types<298>::scalar_field_type;
 
-                        constexpr static const typename mnt6_types<298>::integral_type a =
-                            typename mnt6_types<298>::integral_type(
-                                0x0B);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename mnt6_types<298>::integral_type b =
-                            typename mnt6_types<298>::integral_type(
-                                0xD68C7B1DC5DD042E957B71C44D3D6C24E683FC09B420B1A2D263FDE47DDBA59463D0C65282_cppui_modular296);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename mnt6_types<298>::base_field_type::value_type
+                            a = 0x0B;
+                        constexpr static const typename mnt6_types<298>::base_field_type::value_type
+                            b = 0xD68C7B1DC5DD042E957B71C44D3D6C24E683FC09B420B1A2D263FDE47DDBA59463D0C65282_cppui_modular296;
                     };
 
                     template<>
@@ -111,9 +110,9 @@ namespace nil {
                     };
 
                     constexpr
-                        typename mnt6_types<298>::integral_type const mnt6_params<298, forms::short_weierstrass>::a;
+                        typename mnt6_types<298>::base_field_type::value_type const mnt6_params<298, forms::short_weierstrass>::a;
                     constexpr
-                        typename mnt6_types<298>::integral_type const mnt6_params<298, forms::short_weierstrass>::b;
+                        typename mnt6_types<298>::base_field_type::value_type const mnt6_params<298, forms::short_weierstrass>::b;
 
                     constexpr typename mnt6_g2_params<298, forms::short_weierstrass>::field_type::value_type const
                         mnt6_g2_params<298, forms::short_weierstrass>::a;

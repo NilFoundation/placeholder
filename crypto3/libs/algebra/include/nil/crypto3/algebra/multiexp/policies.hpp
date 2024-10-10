@@ -220,8 +220,7 @@ namespace nil {
                         typedef typename std::iterator_traits<InputBaseIterator>::value_type base_value_type;
                         typedef typename std::iterator_traits<InputFieldIterator>::value_type field_value_type;
 
-                        // TODO(martun): check that we did not break this, since integral_type is now a fixed size type.
-                        typedef typename field_value_type::integral_type non_fixed_precision_number_type;
+                        using integral_type = typename field_value_type::integral_type;
 
                         if (vec_start == vec_end) {
                             return base_value_type::zero();
@@ -231,7 +230,7 @@ namespace nil {
                             return (*scalar_start) * (*vec_start);
                         }
 
-                        std::vector<detail::ordered_exponent<non_fixed_precision_number_type>> opt_q;
+                        std::vector<detail::ordered_exponent<integral_type>> opt_q;
                         const std::size_t vec_len = scalar_end - scalar_start;
                         const std::size_t odd_vec_len = (vec_len % 2 == 1 ? vec_len : vec_len + 1);
                         opt_q.reserve(odd_vec_len);
@@ -246,8 +245,8 @@ namespace nil {
                              ++vec_it, ++scalar_it, ++i) {
                             g.emplace_back(*vec_it);
 
-                            opt_q.emplace_back(detail::ordered_exponent<non_fixed_precision_number_type>(
-                                i, non_fixed_precision_number_type(scalar_it->data)));
+                            opt_q.emplace_back(detail::ordered_exponent<integral_type>(
+                                i, integral_type(scalar_it->data)));
                         }
 
                         std::make_heap(opt_q.begin(), opt_q.end());
@@ -257,7 +256,7 @@ namespace nil {
                         if (vec_len != odd_vec_len) {
                             g.emplace_back(base_value_type::zero());
                             opt_q.emplace_back(
-                                detail::ordered_exponent<non_fixed_precision_number_type>(odd_vec_len - 1, 0ul));
+                                detail::ordered_exponent<integral_type>(odd_vec_len - 1, 0ul));
                         }
                         assert(g.size() % 2 == 1);
                         assert(opt_q.size() == g.size());
@@ -265,8 +264,8 @@ namespace nil {
                         base_value_type opt_result = base_value_type::zero();
 
                         while (true) {
-                            detail::ordered_exponent<non_fixed_precision_number_type> &a = opt_q[0];
-                            detail::ordered_exponent<non_fixed_precision_number_type> &b =
+                            detail::ordered_exponent<integral_type> &a = opt_q[0];
+                            detail::ordered_exponent<integral_type> &b =
                                 (opt_q[1] < opt_q[2] ? opt_q[2] : opt_q[1]);
 
                             const std::size_t abits = boost::multiprecision::msb(a.r) + 1;

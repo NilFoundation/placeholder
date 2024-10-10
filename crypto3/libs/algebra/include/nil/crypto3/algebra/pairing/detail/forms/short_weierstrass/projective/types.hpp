@@ -41,7 +41,6 @@ namespace nil {
 
                     public:
                         using integral_type = typename curve_type::base_field_type::integral_type;
-                        using extended_integral_type = typename curve_type::base_field_type::extended_integral_type;
 
                         using g1_field_value_type = typename curve_type::base_field_type::value_type;
                         using g2_field_value_type = typename curve_type::template g2_type<>::field_type::value_type;
@@ -53,10 +52,6 @@ namespace nil {
                         };
 
                         struct affine_ate_coeffs {
-                            // TODO: trim (not all of them are needed)
-                            g2_field_value_type old_RX;
-                            g2_field_value_type old_RY;
-                            g2_field_value_type gamma;
                             g2_field_value_type gamma_twist;
                             g2_field_value_type gamma_X;
                         };

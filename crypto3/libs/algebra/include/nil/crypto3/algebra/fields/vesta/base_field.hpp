@@ -50,7 +50,6 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
 #ifdef __ZKLLVM__
                     typedef __zkllvm_field_vesta_base value_type;
 #else

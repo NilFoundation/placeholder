@@ -2,6 +2,7 @@
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2020-2021 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -27,8 +28,6 @@
 #define BOOST_TEST_MODULE algebra_fields_static_test
 
 #include <iostream>
-#include <cstdint>
-#include <string>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -44,21 +43,12 @@
 #include <nil/crypto3/algebra/fields/fp6_3over2.hpp>
 #include <nil/crypto3/algebra/fields/fp12_2over3over2.hpp>
 
-// #include <nil/crypto3/algebra/fields/bn128/base_field.hpp>
-// #include <nil/crypto3/algebra/fields/bn128/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/scalar_field.hpp>
-// #include <nil/crypto3/algebra/fields/dsa_botan.hpp>
-// #include <nil/crypto3/algebra/fields/dsa_jce.hpp>
-// #include <nil/crypto3/algebra/fields/ed25519_fe.hpp>
-// #include <nil/crypto3/algebra/fields/ffdhe_ietf.hpp>
-// #include <nil/crypto3/algebra/fields/field.hpp>
-// #include <nil/crypto3/algebra/fields/modp_ietf.hpp>
-// #include <nil/crypto3/algebra/fields/modp_srp.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
@@ -66,6 +56,7 @@
 
 using namespace nil::crypto3::algebra;
 
+/*
 namespace boost {
     namespace test_tools {
         namespace tt_detail {
@@ -77,6 +68,7 @@ namespace boost {
         }    // namespace tt_detail
     }        // namespace test_tools
 }    // namespace boost
+*/
 
 typedef std::size_t constant_type;
 enum field_operation_test_constants : std::size_t { C1, constants_set_size };
@@ -97,8 +89,10 @@ enum field_operation_test_elements : std::size_t {
     elements_set_size
 };
 
-template<typename ElementsRange, typename ConstantsRange>
-constexpr bool check_field_operations_static(const ElementsRange &elements, const ConstantsRange &constants) {
+BOOST_AUTO_TEST_SUITE(fields_manual_static_tests)
+
+template<const auto& elements, const auto& constants>
+constexpr bool check_field_operations_static() {
     static_assert(elements[e1] + elements[e2] == elements[e1_plus_e2], "add error");
     static_assert(elements[e1] - elements[e2] == elements[e1_minus_e2], "sub error");
     static_assert(elements[e1] * elements[e2] == elements[e1_mul_e2], "mul error");
@@ -106,13 +100,26 @@ constexpr bool check_field_operations_static(const ElementsRange &elements, cons
     static_assert(elements[e2].inversed() == elements[e2_inv], "inv error");
 
     static_assert(elements[e1].pow(constants[C1]) == elements[e1_pow_C1], "pow error");
-    static_assert(elements[e2].squared() == elements[e2_pow_2], "sqr error");
-    static_assert((elements[e2].squared()).sqrt() == elements[e2_pow_2_sqrt], "sqrt error");
     static_assert(-elements[e1] == elements[minus_e1], "neg error");
+    static_assert(elements[e2].squared() == elements[e2_pow_2], "sqr error");
+
+    // TODO: fix this.
+    //
+    // Not all fields have .sqrt() method.
+    // The proper way to use has_function_sqrt is this:
+    //
+    // using field_value_type = fields::bls12_base_field<381>::value_type
+    // if constexpr (has_function_sqrt<const field_value_type, field_value_type>::value) {
+    // ...
+    // }
+    //
+    // This naiive approach with decltype does not work - the result is always false.
+    // We can't use direct typenames since _values_ are template arguments
+    if constexpr (has_function_sqrt<const decltype (elements[e1]), decltype (elements[e1])>::value ) {
+        static_assert((elements[e2].squared()).sqrt() == elements[e2_pow_2_sqrt], "sqrt error");
+    }
     return true;
 }
-
-BOOST_AUTO_TEST_SUITE(fields_manual_static_tests)
 
 BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fr) {
     using policy_type = fields::bls12_fr<381>;
@@ -121,32 +128,21 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fr) {
     using const_set_t = std::array<constant_type, constants_set_size>;
 
     // This is correct, bls12_fr<381> has 255-bit elements.
-    constexpr test_set_t elements1 = {0x209a9bf596288853d71eb5a070164b2d81fe36e956f8f70376712767fabb15d9_cppui_modular255,
-                                      0x661ad4fb4d130b7afaea293348f2107d9f4a62308af88282297733628cfc5ae7_cppui_modular255,
-                                      0x12c7c99db99e16869ecf06cbaf6683a5cd8af516e1f31d869fe85acb87b770bf_cppui_modular255,
-                                      0x2e6d6e4d72b2fa210f6e647530c612b5367178bbcbfed0804cf9f4046dbebaf3_cppui_modular255,
-                                      0x65915fd6511eb3afcf0648a4b4b1c3f298433ecaee3cdd97254aa3ce8a67303d_cppui_modular255,
-                                      0x413537eb2c5110a7ae3d6b40e02c965b03fc6dd2adf1ee06ece24ecff5762bb2_cppui_modular255,
-                                      0x1c40f7a911c57190db5382d3fc2d96473780452b78e60474add8fb7f1eddda6_cppui_modular255,
-                                      0x49757b377fe2a1de10c484db929a74ae02fdfae3aaab6098ea2ab8accfe613f0_cppui_modular255,
-                                      0x363f979f222c9970dc4291b62bc3e8d77c31c1b2caa88afeb414f3584b952000_cppui_modular255,
-                                      0x661ad4fb4d130b7afaea293348f2107d9f4a62308af88282297733628cfc5ae7_cppui_modular255,
-                                      0x53530b5d9374f4f45c1b2267998b8cd7d1bf6d19a90564fb898ed8970544ea28_cppui_modular255};
-    constexpr const_set_t constants1 = {811706348};
-
-    // TODO: the reason of the error "function parameter 'elements' with unknown value cannot be used in a constant
-    // expression" constexpr
-    //     bool res = check_field_operations_static(elements1, constants1);
-
-    static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
-    static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");
-    static_assert(elements1[e1] * elements1[e2] == elements1[e1_mul_e2], "mul error");
-    static_assert(elements1[e1].doubled() == elements1[e1_dbl], "dbl error");
-    static_assert(elements1[e2].inversed() == elements1[e2_inv], "inv error");
-    static_assert(elements1[e1].pow(constants1[C1]) == elements1[e1_pow_C1], "pow error");
-    static_assert(elements1[e2].squared() == elements1[e2_pow_2], "sqr error");
-    static_assert((elements1[e2].squared()).sqrt() == elements1[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements1[e1] == elements1[minus_e1], "neg error");
+    static constexpr test_set_t elements1 = {
+        0x209a9bf596288853d71eb5a070164b2d81fe36e956f8f70376712767fabb15d9_cppui_modular255,
+        0x661ad4fb4d130b7afaea293348f2107d9f4a62308af88282297733628cfc5ae7_cppui_modular255,
+        0x12c7c99db99e16869ecf06cbaf6683a5cd8af516e1f31d869fe85acb87b770bf_cppui_modular255,
+        0x2e6d6e4d72b2fa210f6e647530c612b5367178bbcbfed0804cf9f4046dbebaf3_cppui_modular255,
+        0x65915fd6511eb3afcf0648a4b4b1c3f298433ecaee3cdd97254aa3ce8a67303d_cppui_modular255,
+        0x413537eb2c5110a7ae3d6b40e02c965b03fc6dd2adf1ee06ece24ecff5762bb2_cppui_modular255,
+        0x01c40f7a911c57190db5382d3fc2d96473780452b78e60474add8fb7f1eddda6_cppui_modular255,
+        0x49757b377fe2a1de10c484db929a74ae02fdfae3aaab6098ea2ab8accfe613f0_cppui_modular255,
+        0x363f979f222c9970dc4291b62bc3e8d77c31c1b2caa88afeb414f3584b952000_cppui_modular255,
+        0x661ad4fb4d130b7afaea293348f2107d9f4a62308af88282297733628cfc5ae8_cppui_modular255,
+        0x53530b5d9374f4f45c1b2267998b8cd7d1bf6d19a90564fb898ed8970544ea28_cppui_modular255
+    };
+    static constexpr const_set_t constants1 = {811706348};
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq) {
@@ -155,7 +151,7 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq) {
     using test_set_t = std::array<value_type, elements_set_size>;
     using const_set_t = std::array<constant_type, constants_set_size>;
 
-    constexpr test_set_t elements1 = {
+    static constexpr test_set_t elements1 = {
         0x3d9cb62ebac9d6c7b94245d2d6144d500f218bb90a16a1e4f70d98fd44b4b9ee274de15a0a3d231dac1eaa449d31404_cppui_modular381,
         0x15c88779fc8a30cca95ec4bbf71aa4c302bccf7dc571e6e45fbf1ed24989ec23dff741ca00597f4ab1fc628304e8761b_cppui_modular381,
         0x19a252dce836ce3924f2e919247be99803aee83956135102af2ff8621dd537c2c26c1fdfa0fd517c8cbe4d274ebb8a1f_cppui_modular381,
@@ -167,17 +163,8 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq) {
         0x2e7ebd9b39f65a9485b32b52269baa84b2d33a80c8747c994b1e58c0caa09b4acf7685583898549db1029a1de657d8a_cppui_modular381,
         0x4388a703cf5b5cda1bce2fa4c31081461ba7c072e132bdb0771b3cead270a003eb4be34b0fa80b508029d7cfb173490_cppui_modular381,
         0x162746874dd3492dcf87835915ea6802638532c962e3a8a117bff9112265aa853c3721e910b02dcddf3d155bb62c96a7_cppui_modular381};
-    constexpr const_set_t constants1 = {865433380};
-
-    static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
-    static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");
-    static_assert(elements1[e1] * elements1[e2] == elements1[e1_mul_e2], "mul error");
-    static_assert(elements1[e1].doubled() == elements1[e1_dbl], "dbl error");
-    static_assert(elements1[e2].inversed() == elements1[e2_inv], "inv error");
-    static_assert(elements1[e1].pow(constants1[C1]) == elements1[e1_pow_C1], "pow error");
-    static_assert(elements1[e2].squared() == elements1[e2_pow_2], "sqr error");
-    static_assert((elements1[e2].squared()).sqrt() == elements1[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements1[e1] == elements1[minus_e1], "neg error");
+    static constexpr const_set_t constants1 = {865433380};
+    check_field_operations_static<elements1, constants1>();
 
     constexpr value_type not_square1 = {
         0x122ca301fc65d4c9fd02b7d919e691c448b3209081835c99fab65c12c0e60a25f7eabe1b506e494b45175b95a4a9ebfe_cppui_modular381,
@@ -192,7 +179,7 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq2) {
     using test_set_t = std::array<value_type, elements_set_size>;
     using const_set_t = std::array<constant_type, constants_set_size>;
 
-    constexpr test_set_t elements1 = {
+    static constexpr test_set_t elements1 = {
         {{
              0x5aa9d5160c21229d4c73871dab039631da3722131b00713055854b2e6ff4f8abe4430358fc70ba351fda87dc9abdbb2_cppui_modular381,
              0x2ccc1503d823ead782507cf3eb7c6b03ec4503bf8bb725111abe86ce8809f9c52ed32fa7178cdeb057f8ddb351b2de4_cppui_modular381,
@@ -237,17 +224,8 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq2) {
              0x14567498d8bdd47076546f44689b737446d3d963c1d50bac61d87dee0fb1a6996067cfc9218cf45c680157823653cef9_cppui_modular381,
              0x17345099fbfda7ecd2f69fe70493e62725b2fb48fac9a06e5584ea340e305687cbbecd043fdb3214b47f7224cae47cc7_cppui_modular381,
          }}};
-    constexpr const_set_t constants1 = {928943650};
-
-    static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
-    static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");
-    static_assert(elements1[e1] * elements1[e2] == elements1[e1_mul_e2], "mul error");
-    static_assert(elements1[e1].doubled() == elements1[e1_dbl], "dbl error");
-    static_assert(elements1[e2].inversed() == elements1[e2_inv], "inv error");
-    static_assert(elements1[e1].pow(constants1[C1]) == elements1[e1_pow_C1], "pow error");
-    static_assert(elements1[e2].squared() == elements1[e2_pow_2], "sqr error");
-    static_assert((elements1[e2].squared()).sqrt() == elements1[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements1[e1] == elements1[minus_e1], "neg error");
+    static constexpr const_set_t constants1 = {928943650};
+    check_field_operations_static<elements1, constants1>();
 
     constexpr value_type not_square1 = {
         0x72076a0fb063f674c504b550525707cbea30259021a274bc9dcba7a9fdaf9e36011466eea87f70870c4b91a400d3395_cppui_modular381,
@@ -260,6 +238,8 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq2) {
 BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq6) {
     using policy_type = fields::fp6_3over2<fields::bls12_fq<381>>;
     using value_type = typename policy_type::value_type;
+    using test_set_t = std::array<value_type, elements_set_size>;
+    using const_set_t = std::array<constant_type, constants_set_size>;
 
     constexpr value_type element1(
         {{0xe35bdcd1e6bea40fb5a65a36a415ef84cb2260e7c7a21b479352a56a257128bbd2f6b8e5d96dca7917292801387ca3f_cppui_modular381,
@@ -387,14 +367,21 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fq6) {
             0x179c40e15fb14491bb00b5467355bdea087379c855f07c7f95dabdaa660b48df35f9ad0fd2a1468688672cdc55fc95e_cppui_modular381,
         }});
 
-    static_assert(element1 + element2 == element_add, "add error");
-    static_assert(element1 - element2 == element_sub, "sub error");
-    static_assert(element1 * element2 == element_mul, "mul error");
-    static_assert(element1.doubled() == element_dbl, "dbl error");
-    static_assert(element2.inversed() == element_inv, "inv error");
-    static_assert(element1.pow(C1) == element_pow_C, "pow error");
-    static_assert(element2.squared() == element_pow_2, "pow error");
-    static_assert(-element1 == minus_element, "minus error");
+    static constexpr test_set_t elements1 = {
+        element1,
+        element2,
+        element_add,
+        element_sub,
+        element_mul,
+        element_dbl,
+        element_inv,
+        element_pow_C,
+        element_pow_2,
+        value_type(), // placeholder for sqrt (e2.squared()) as Fp6 does not support sqrt
+        minus_element };
+    static constexpr const_set_t constants1 = { C1 };
+
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq) {
@@ -403,7 +390,7 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq) {
     using test_set_t = std::array<value_type, elements_set_size>;
     using const_set_t = std::array<constant_type, constants_set_size>;
 
-    constexpr test_set_t elements1 = {
+    static constexpr test_set_t elements1 = {
         0x1a1f0b89abd62c63c669a0cafeaa872558eeb1dffedc21f8ded61768d6ae02a0b973de3139b_cppui_modular298,
         0x13557b8d70144c7c1a18ce98b3f9f52fbadbcda323d5cb293304f09f24b8ce2cf00cce7a2e9_cppui_modular298,
         0x2d7487171bea78dfe0826f63b2a47c5513ca7f8322b1ed2211db0807fb66d0cda980acab684_cppui_modular298,
@@ -415,17 +402,8 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq) {
         0xc5b94b8804b94b443d9fd27dd32200114bccb9ffa650ad2ef53048c53ad1c8723e31f1ba90_cppui_modular298,
         0x287a003fd725d9e62fc1ac6c94f2b9bcdb5a038feace4f7502e02161bc73c2a0759a47e5d18_cppui_modular298,
         0x21b070439b63f9fe8370da3a4a4227c73d471f530fc7f8a5570efa980a7e8e2cac33382ec66_cppui_modular298};
-    constexpr const_set_t constants1 = {72022261};
-
-    static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
-    static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");
-    static_assert(elements1[e1] * elements1[e2] == elements1[e1_mul_e2], "mul error");
-    static_assert(elements1[e1].doubled() == elements1[e1_dbl], "dbl error");
-    static_assert(elements1[e2].inversed() == elements1[e2_inv], "inv error");
-    static_assert(elements1[e1].pow(constants1[C1]) == elements1[e1_pow_C1], "pow error");
-    static_assert(elements1[e2].squared() == elements1[e2_pow_2], "sqr error");
-    static_assert((elements1[e2].squared()).sqrt() == elements1[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements1[e1] == elements1[minus_e1], "neg error");
+    static constexpr const_set_t constants1 = {72022261};
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq2) {
@@ -434,7 +412,7 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq2) {
     using test_set_t = std::array<value_type, elements_set_size>;
     using const_set_t = std::array<constant_type, constants_set_size>;
 
-    constexpr test_set_t elements1 = {
+    static constexpr test_set_t elements1 = {
         {{
              0x1151c6efca2088ebb32162cb5d04bd8f95a6c5e45cb9e83551692a0073e7315ee195036fcc9_cppui_modular298,
              0x2e2ba3c821f4d8efe6fc374a478954a2ea9081032d6e63cdc1398d234f189e0c31547552516_cppui_modular298,
@@ -479,22 +457,15 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq2) {
              0x2a7db4dd7d199d7696b91839ebe7f15d008f0b4eb1ea3268e47be8006d455f6e841212f0338_cppui_modular298,
              0xda3d80525454d7262de43bb01635a49aba5502fe135b6d074ab84dd9213f2c13452a10daeb_cppui_modular298,
          }}};
-    constexpr const_set_t constants1 = {11963068};
-
-    static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
-    static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");
-    static_assert(elements1[e1] * elements1[e2] == elements1[e1_mul_e2], "mul error");
-    static_assert(elements1[e1].doubled() == elements1[e1_dbl], "dbl error");
-    static_assert(elements1[e2].inversed() == elements1[e2_inv], "inv error");
-    static_assert(elements1[e1].pow(constants1[C1]) == elements1[e1_pow_C1], "pow error");
-    static_assert(elements1[e2].squared() == elements1[e2_pow_2], "sqr error");
-    static_assert((elements1[e2].squared()).sqrt() == elements1[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements1[e1] == elements1[minus_e1], "neg error");
+    static constexpr const_set_t constants1 = {11963068};
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq4) {
     using policy_type = fields::fp4<fields::mnt4<298>>;
     using value_type = typename policy_type::value_type;
+    using test_set_t = std::array<value_type, elements_set_size>;
+    using const_set_t = std::array<constant_type, constants_set_size>;
 
     constexpr value_type element1(
         {{
@@ -588,14 +559,21 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt4_fq4) {
             0x36f864850507bf411a10c3e6209ab5e5de6ad1a8846cfb54ed021d323d30c633e05bde10f9f_cppui_modular298,
         }});
 
-    static_assert(element1 + element2 == element_add, "add error");
-    static_assert(element1 - element2 == element_sub, "sub error");
-    static_assert(element1 * element2 == element_mul, "mul error");
-    static_assert(element1.doubled() == element_dbl, "dbl error");
-    static_assert(element2.inversed() == element_inv, "inv error");
-    static_assert(element1.pow(C1) == element_pow_C, "pow error");
-    static_assert(element2.squared() == element_pow_2, "pow error");
-    static_assert(-element1 == minus_element, "minus error");
+    static constexpr test_set_t elements1 = {
+        element1,
+        element2,
+        element_add,
+        element_sub,
+        element_mul,
+        element_dbl,
+        element_inv,
+        element_pow_C,
+        element_pow_2,
+        value_type(), // placeholder for sqrt (e2.squared()) as Fp4 does not support sqrt
+        minus_element };
+    static constexpr const_set_t constants1 = { C1 };
+
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq) {
@@ -604,7 +582,7 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq) {
     using test_set_t = std::array<value_type, elements_set_size>;
     using const_set_t = std::array<constant_type, constants_set_size>;
 
-    constexpr test_set_t elements1 = {
+    static constexpr test_set_t elements1 = {
         0x13e0a5422b598aaf0c031434995b02459b127b91c1d19c61a0b7e6305b367e9d6c4ecef24ca_cppui_modular298,
         0x3a2ee65237145a6fec8c095b3acfa5e6e969214f2b1dfb4f47fd258dd1eeadf4a606892870e_cppui_modular298,
         0x12400fc71b33bebcaeb4a28a8b3df93fee45cd9cd39fe31c283be5e77fe9785ec815581abd7_cppui_modular298,
@@ -616,17 +594,8 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq) {
         0x2a5232860338c9a2e55e313e9ccd6f738b5e09d156f002f151295a73f188f688a5228623423_cppui_modular298,
         0x1a0957b1025cbf25d4e71aa0e1d0905acccadf4ee31b945787c0048db4d063ea43976d78f3_cppui_modular298,
         0x27eed68b1be09bb33dd766d0af91aca6fb2353b2577e18331fc13fa652053595ddf1310db37_cppui_modular298};
-    constexpr const_set_t constants1 = {332771434};
-
-    static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
-    static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");
-    static_assert(elements1[e1] * elements1[e2] == elements1[e1_mul_e2], "mul error");
-    static_assert(elements1[e1].doubled() == elements1[e1_dbl], "dbl error");
-    static_assert(elements1[e2].inversed() == elements1[e2_inv], "inv error");
-    static_assert(elements1[e1].pow(constants1[C1]) == elements1[e1_pow_C1], "pow error");
-    static_assert(elements1[e2].squared() == elements1[e2_pow_2], "sqr error");
-    static_assert((elements1[e2].squared()).sqrt() == elements1[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements1[e1] == elements1[minus_e1], "neg error");
+    static constexpr const_set_t constants1 = {332771434};
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq3) {
@@ -635,7 +604,7 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq3) {
     using test_set_t = std::array<value_type, elements_set_size>;
     using const_set_t = std::array<constant_type, constants_set_size>;
 
-    constexpr test_set_t elements1 = {
+    static constexpr test_set_t elements1 = {
         {{
              0x2ca04ab44858078455357ce7027f603b2e60169f6e2728089c31d43de94857de0f8cf4fecff_cppui_modular298,
              0x17fe793178a3dc42295619e37d3c39c9ae5dc0a738d046d9744e9bdf8058661f0c3c82295af_cppui_modular298,
@@ -691,22 +660,16 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq3) {
              0x23d1029bce964a2020846121cbb07522e7d80e9ce07f6dbb4c2a89f72ce34e143e037dd6a52_cppui_modular298,
              0x23c9543d6f05905dcf6a86ae1907d42e3fb3c4d8cbdbf3e459074e7304483713fe28baada43_cppui_modular298,
          }}};
-    constexpr const_set_t constants1 = {1042617086};
+    static constexpr const_set_t constants1 = {1042617086};
 
-    static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
-    static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");
-    static_assert(elements1[e1] * elements1[e2] == elements1[e1_mul_e2], "mul error");
-    static_assert(elements1[e1].doubled() == elements1[e1_dbl], "dbl error");
-    static_assert(elements1[e2].inversed() == elements1[e2_inv], "inv error");
-    static_assert(elements1[e1].pow(constants1[C1]) == elements1[e1_pow_C1], "pow error");
-    static_assert(elements1[e2].squared() == elements1[e2_pow_2], "sqr error");
-    static_assert((elements1[e2].squared()).sqrt() == elements1[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements1[e1] == elements1[minus_e1], "neg error");
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq6) {
     using policy_type = fields::fp6_2over3<fields::mnt6<298>>;
     using value_type = typename policy_type::value_type;
+    using test_set_t = std::array<value_type, elements_set_size>;
+    using const_set_t = std::array<constant_type, constants_set_size>;
 
     constexpr value_type element1(
         {{
@@ -820,14 +783,20 @@ BOOST_AUTO_TEST_CASE(field_operation_test_mnt6_fq6) {
             0x2f70fa22554cd7104a2d0b0e3949ea7ef75b79d208d5c11575e08c1318ca1730c9954040f6d_cppui_modular298,
         }});
 
-    static_assert(element1 + element2 == element_add, "add error");
-    static_assert(element1 - element2 == element_sub, "sub error");
-    static_assert(element1 * element2 == element_mul, "mul error");
-    static_assert(element1.doubled() == element_dbl, "dbl error");
-    static_assert(element2.inversed() == element_inv, "inv error");
-    static_assert(element1.pow(C1) == element_pow_C, "pow error");
-    static_assert(element2.squared() == element_pow_2, "pow error");
-    static_assert(-element1 == minus_element, "minus error");
+    static constexpr test_set_t elements1 = {
+        element1,
+        element2,
+        element_add,
+        element_sub,
+        element_mul,
+        element_dbl,
+        element_inv,
+        element_pow_C,
+        element_pow_2,
+        value_type(), // placeholder for sqrt (e2.squared()) as Fp6 does not support sqrt
+        minus_element };
+    static constexpr const_set_t constants1 = { C1 };
+    check_field_operations_static<elements1, constants1>();
 }
 
 BOOST_AUTO_TEST_CASE(test_goldilocks) {

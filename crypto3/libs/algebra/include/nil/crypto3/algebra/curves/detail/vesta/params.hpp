@@ -36,7 +36,6 @@ namespace nil {
         namespace algebra {
             namespace curves {
                 namespace detail {
-                 
 
                     /**
                      * @brief https://zips.z.cash/protocol/protocol.pdf#pallasandvesta
@@ -48,17 +47,9 @@ namespace nil {
                         using scalar_field_type = typename vesta_types::scalar_field_type;
 #ifdef __ZKLLVM__
 #else
-                        constexpr static typename vesta_types::integral_type a = typename vesta_types::integral_type(0)  ; ///< coefficient
-                                                                                                             ///< Short
-                                                                                                             ///< Weierstrass
-                                                                                                             ///< curves
-                                                                                                             ///< y^2=x^3+a*x+b
-                        constexpr static typename vesta_types::integral_type b = typename vesta_types::integral_type(5) ;  ///< coefficient
-                                                                                                             ///<  of
-                                                                                                             ///< Short
-                                                                                                             ///< Weierstrass
-                                                                                                             ///< curves
-                                                                                                             ///< y^2=x^3+a*x+b
+                        /* Short Weierstrass curve: y^2 = x^3 + a*x +b */
+                        constexpr static typename vesta_types::base_field_type::value_type a = 0u;
+                        constexpr static typename vesta_types::base_field_type::value_type b = 5u;
 #endif
                     };
 
@@ -81,19 +72,17 @@ namespace nil {
                             field_type::value_type::zero(), field_type::value_type::zero()};
 #endif
 
+                        // Generator: (-1, 2)
                         constexpr static std::array<typename field_type::value_type, 2> one_fill = {
-                            // TODO(martun): This is "modulus - 1". Figure out what are the other commented constants below.
-                            0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000000_cppui_modular255,
-                                //0x7706c37b5a84128a3884a5d71811f1b55da3230ffb17a8ab0b32e48d31a6685c_cppui_modular255),
+                            field_type::modulus - 1,
                             typename field_type::value_type(2u)};
-                                //0x0f60480c7a5c0e1140340adc79d6a2bf0cb57ad049d025dc38d80c77985f0329_cppui_modular255)};
 #endif
                     };
 
 #ifdef __ZKLLVM__
 #else
-                    constexpr typename vesta_types::integral_type vesta_params<forms::short_weierstrass>::a;
-                    constexpr typename vesta_types::integral_type vesta_params<forms::short_weierstrass>::b;
+                    constexpr typename vesta_types::base_field_type::value_type vesta_params<forms::short_weierstrass>::a;
+                    constexpr typename vesta_types::base_field_type::value_type vesta_params<forms::short_weierstrass>::b;
 
                     constexpr std::array<typename vesta_g1_params<forms::short_weierstrass>::field_type::value_type, 2>
                         vesta_g1_params<forms::short_weierstrass>::zero_fill;

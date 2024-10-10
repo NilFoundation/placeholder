@@ -56,6 +56,8 @@ set(RUNTIME_TESTS_NAMES
         "fields"
         "fields_static"
         "pairing"
+        "type_traits"
+        "multiexp"
 )
 
 set(COMPILE_TIME_TESTS_NAMES
