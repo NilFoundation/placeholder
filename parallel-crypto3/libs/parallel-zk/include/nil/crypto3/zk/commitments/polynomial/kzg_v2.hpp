@@ -26,8 +26,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_COMMITMENTS_KZG_V2_HPP
-#define CRYPTO3_ZK_COMMITMENTS_KZG_V2_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_COMMITMENTS_KZG_V2_HPP
+#define PARALLEL_CRYPTO3_ZK_COMMITMENTS_KZG_V2_HPP
+
+#ifdef CRYPTO3_ZK_COMMITMENTS_KZG_V2_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <tuple>
 #include <vector>

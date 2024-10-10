@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
-#define CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
+#ifndef PARALLEL_CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
+#define PARALLEL_CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
+
+#ifdef CRYPTO3_PUBKEY_ACCUMULATORS_PARAMETERS_KEY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <boost/parameter/keyword.hpp>
 

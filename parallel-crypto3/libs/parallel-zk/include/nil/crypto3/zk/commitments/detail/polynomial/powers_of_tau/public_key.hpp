@@ -22,8 +22,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_POWERS_OF_TAU_PUBLIC_KEY_HPP
-#define CRYPTO3_ZK_POWERS_OF_TAU_PUBLIC_KEY_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_POWERS_OF_TAU_PUBLIC_KEY_HPP
+#define PARALLEL_CRYPTO3_ZK_POWERS_OF_TAU_PUBLIC_KEY_HPP
+
+#ifdef CRYPTO3_ZK_POWERS_OF_TAU_PUBLIC_KEY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/commitments/detail/polynomial/element_proof_of_knowledge.hpp>
 

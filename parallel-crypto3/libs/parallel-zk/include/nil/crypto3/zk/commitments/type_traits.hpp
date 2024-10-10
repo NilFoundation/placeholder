@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_COMMITMENTS_TYPE_TRAITS_HPP
-#define CRYPTO3_ZK_COMMITMENTS_TYPE_TRAITS_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_COMMITMENTS_TYPE_TRAITS_HPP
+#define PARALLEL_CRYPTO3_ZK_COMMITMENTS_TYPE_TRAITS_HPP
+
+#ifdef CRYPTO3_ZK_COMMITMENTS_TYPE_TRAITS_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <type_traits>
 #include <boost/tti/tti.hpp>

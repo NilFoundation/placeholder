@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_MATH_PLONK_PERMUTATION_HPP
-#define CRYPTO3_ZK_MATH_PLONK_PERMUTATION_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_MATH_PLONK_PERMUTATION_HPP
+#define PARALLEL_CRYPTO3_ZK_MATH_PLONK_PERMUTATION_HPP
+
+#ifdef CRYPTO3_ZK_MATH_PLONK_PERMUTATION_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 namespace nil {
     namespace crypto3 {
