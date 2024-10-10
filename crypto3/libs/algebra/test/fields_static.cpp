@@ -44,21 +44,12 @@
 #include <nil/crypto3/algebra/fields/fp6_3over2.hpp>
 #include <nil/crypto3/algebra/fields/fp12_2over3over2.hpp>
 
-// #include <nil/crypto3/algebra/fields/bn128/base_field.hpp>
-// #include <nil/crypto3/algebra/fields/bn128/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/scalar_field.hpp>
-// #include <nil/crypto3/algebra/fields/dsa_botan.hpp>
-// #include <nil/crypto3/algebra/fields/dsa_jce.hpp>
-// #include <nil/crypto3/algebra/fields/ed25519_fe.hpp>
-// #include <nil/crypto3/algebra/fields/ffdhe_ietf.hpp>
-// #include <nil/crypto3/algebra/fields/field.hpp>
-// #include <nil/crypto3/algebra/fields/modp_ietf.hpp>
-// #include <nil/crypto3/algebra/fields/modp_srp.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>

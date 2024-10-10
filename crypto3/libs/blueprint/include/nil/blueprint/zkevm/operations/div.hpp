@@ -92,8 +92,6 @@ namespace nil {
                 auto var_gen = [&witness_cols](std::size_t i, int32_t offset = 0) {
                     return zkevm_operation<BlueprintFieldType>::var_gen(witness_cols, i, offset);
                 };
-                const std::size_t range_check_table_index =
-                    zkevm_circuit.get_circuit().get_reserved_indices().at("chunk_16_bits/full");
                 constraint_type position_1 = zkevm_circuit.get_opcode_row_constraint(2, this->rows_amount());
                 std::vector<var> a_chunks;
                 std::vector<var> b_chunks_1;
