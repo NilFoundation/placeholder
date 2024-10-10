@@ -33,6 +33,7 @@
           crypto3-debug-tests = (pkgs.callPackage ./crypto3/crypto3.nix {
             enableDebug = true;
             runTests = true;
+            sanitize = true;
           });
           crypto3-sanitize = (pkgs.callPackage ./crypto3/crypto3.nix {
             enableDebug = true;
@@ -67,7 +68,7 @@
             crypto3 = crypto3-clang-debug;
           });
 
-          evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
+            evm-assigner = (pkgs.callPackage ./evm-assigner/evm-assigner.nix {
             runTests = false;
             enableDebug = false;
             crypto3 = parallel-crypto3;
