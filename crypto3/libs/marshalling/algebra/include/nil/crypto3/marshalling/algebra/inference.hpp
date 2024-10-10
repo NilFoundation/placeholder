@@ -63,7 +63,7 @@ namespace nil {
         class is_compatible;
 
         template<typename T>
-        class is_compatible <T, typename std::enable_if<nil::crypto3::algebra::is_group_element<T>::value>::type> {
+        class is_compatible <T, typename std::enable_if<nil::crypto3::algebra::is_curve_element<T>::value>::type> {
             using default_endianness = option::big_endian;
         public:
             template <typename TEndian = default_endianness>

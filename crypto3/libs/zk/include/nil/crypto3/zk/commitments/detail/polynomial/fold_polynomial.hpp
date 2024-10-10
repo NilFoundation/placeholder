@@ -85,7 +85,9 @@ namespace nil {
                         typename FieldType::value_type acc = alpha;
 
                         for (std::size_t i = 0; i <= f_folded.degree(); i++) {
-                            f_folded[i] = two_inversed * ((1u + acc) * f[i] + (1u - acc) * f[domain->size() / 2 + i]);
+                            f_folded[i] = two_inversed * (
+                                    (typename FieldType::value_type(1u) + acc) * f[i] +
+                                    (typename FieldType::value_type(1u) - acc) * f[domain->size() / 2 + i]);
                             acc *= omega_inversed;
                         }
 

@@ -42,7 +42,6 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
-#include <nil/crypto3/algebra/curves/detail/marshalling.hpp>
 
 #include <nil/marshalling/algorithms/pack.hpp>
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
@@ -52,16 +51,6 @@ void print_byteblob(TIter iter_begin, TIter iter_end) {
     for (TIter it = iter_begin; it != iter_end; it++) {
         std::cout << std::hex << int(*it) << std::endl;
     }
-}
-
-template<typename FieldParams>
-void print_field_element(typename nil::crypto3::algebra::fields::detail::element_fp<FieldParams> e) {
-    std::cout << std::hex << e.data << std::endl;
-}
-
-template<typename FieldParams>
-void print_field_element(typename nil::crypto3::algebra::fields::detail::element_fp2<FieldParams> e) {
-    std::cout << std::hex << e.data[0].data << " " << e.data[1].data << std::endl;
 }
 
 template<typename T, typename Endianness>

@@ -83,20 +83,14 @@ namespace nil {
                         using scalar_field_type = typename curve25519_types::scalar_field_type;
 #ifdef __ZKLLVM__
 #else
-                        constexpr static typename curve25519_types::integral_type a = typename curve25519_types::integral_type(
-                            0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffec_cppui_modular255);    ///< coefficient
-                                                                                                             ///< of
-                                                                                                             ///< Twisted
-                                                                                                             ///< Edwards
-                                                                                                             ///< curves
-                                                                                                             ///< $a*x^2+y^2=1+d*x^2*y^2$
-                        constexpr static typename curve25519_types::integral_type d = typename curve25519_types::integral_type(
-                            0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3_cppui_modular255);    ///< coefficient
-                                                                                                             ///< of
-                                                                                                             ///< Twisted
-                                                                                                             ///< Edwards
-                                                                                                             ///< curves
-                                                                                                             ///< $a*x^2+y^2=1+d*x^2*y^2$
+                        /* Coefficients of Twisted Edwards form:
+                         * a*x^2 + y^2 = 1 + d * x^2 * y^2
+                         * a = -1, d = -121665/121666
+                         * */
+                        constexpr static typename base_field_type::value_type a =
+                            base_field_type::modulus - 1;
+                        constexpr static typename base_field_type::value_type d =
+                            - base_field_type::value_type(121665) / base_field_type::value_type(121666);
 #endif
                     };
 
@@ -136,8 +130,8 @@ namespace nil {
                     constexpr std::array<typename curve25519_g1_params<forms::montgomery>::field_type::value_type, 2>
                         curve25519_g1_params<forms::montgomery>::one_fill;
 
-                    constexpr typename curve25519_types::integral_type curve25519_params<forms::twisted_edwards>::a;
-                    constexpr typename curve25519_types::integral_type curve25519_params<forms::twisted_edwards>::d;
+                    constexpr typename curve25519_types::base_field_type::value_type curve25519_params<forms::twisted_edwards>::a;
+                    constexpr typename curve25519_types::base_field_type::value_type curve25519_params<forms::twisted_edwards>::d;
 
                     constexpr std::array<typename curve25519_g1_params<forms::twisted_edwards>::field_type::value_type,
                                          2>

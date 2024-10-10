@@ -53,8 +53,7 @@ namespace nil {
 
                             if (boost::multiprecision::bit_test(exponent, i)) {
                                 found_one = true;
-                                // TODO(martun): create an operator *= for this.
-                                result = result * base;
+                                result *= base;
                             }
                         }
 
