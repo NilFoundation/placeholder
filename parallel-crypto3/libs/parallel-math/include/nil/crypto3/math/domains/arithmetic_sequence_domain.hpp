@@ -23,8 +23,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_MATH_ARITHMETIC_SEQUENCE_DOMAIN_HPP
 #define PARALLEL_CRYPTO3_MATH_ARITHMETIC_SEQUENCE_DOMAIN_HPP
 

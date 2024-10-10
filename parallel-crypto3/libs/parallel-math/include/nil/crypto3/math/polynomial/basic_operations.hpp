@@ -23,8 +23,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_MATH_POLYNOMIAL_BASIC_OPERATIONS_HPP
 #define PARALLEL_CRYPTO3_MATH_POLYNOMIAL_BASIC_OPERATIONS_HPP
 
