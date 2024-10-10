@@ -23,8 +23,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
 #define PARALLEL_CRYPTO3_MATH_CALCULATE_DOMAIN_SET_HPP
 

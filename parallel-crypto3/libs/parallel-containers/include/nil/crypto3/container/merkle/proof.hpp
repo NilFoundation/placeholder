@@ -25,8 +25,6 @@
 //  SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_MERKLE_PROOF_HPP
 #define PARALLEL_CRYPTO3_MERKLE_PROOF_HPP
 

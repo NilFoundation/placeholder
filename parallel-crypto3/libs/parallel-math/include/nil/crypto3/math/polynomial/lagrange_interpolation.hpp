@@ -24,8 +24,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
 #define PARALLEL_CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
 

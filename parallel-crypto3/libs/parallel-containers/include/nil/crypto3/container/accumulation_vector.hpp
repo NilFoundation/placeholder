@@ -24,8 +24,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#pragma once
-
 #ifndef PARALLEL_CRYPTO3_ZK_SNARK_ACCUMULATION_VECTOR_HPP
 #define PARALLEL_CRYPTO3_ZK_SNARK_ACCUMULATION_VECTOR_HPP
 
