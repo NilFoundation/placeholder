@@ -132,6 +132,8 @@ namespace nil {
                 struct result_type {
                     std::array<var, state_size> output_state = {var(0, 0, false), var(0, 0, false), var(0, 0, false)};
 
+                    result_type() {}
+                    
                     result_type(const flexible_poseidon &component, std::uint32_t start_row_index) {
                         std::size_t blocks = rounds_amount + 1;
                         std::size_t row_capacity = component.witness_amount()/state_size;

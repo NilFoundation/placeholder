@@ -177,6 +177,7 @@ set(PLONK_TESTS_FILES
     "verifiers/flexible/constant_pow"
     "verifiers/flexible/pow_factor"
     "verifiers/flexible/linear_check"
+    "verifiers/flexible/negate"
     "verifiers/placeholder/verifier"
     "verifiers/placeholder/dfri_verifier"
     "verifiers/placeholder/dfri_input_generator"

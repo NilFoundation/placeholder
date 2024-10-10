@@ -41,6 +41,7 @@ namespace nil {
             // Input: theta, x, {xi}, {y_i}, {z_ij}
             // Output: sum theta^l (yi - z_ij)/(x - xi_j)
             // DOES NOT CHECK THAT x = xi
+            // TODO: combine constraints under single gate
             template<typename ArithmetizationType, typename BlueprintFieldType>
             class dfri_linear_check;
 
