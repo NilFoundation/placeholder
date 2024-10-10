@@ -49,12 +49,19 @@ BOOST_AUTO_TEST_CASE(zkevm_mod_ops_test) {
     using zkevm_machine_type = zkevm_machine_interface;
     assignment_type assignment(0, 0, 0, 0);
     circuit_type circuit;
-    zkevm_circuit<field_type> zkevm_circuit(assignment, circuit, 199);
-    zkevm_table<field_type> zkevm_table(zkevm_circuit, assignment);
-    zkevm_machine_type machine = get_empty_machine();
+    zkevm_circuit<field_type> zkevm_circuit(assignment, circuit, 199, 65536);
+    nil::crypto3::zk::snark::pack_lookup_tables_horizontal(
+        circuit.get_reserved_indices(),
+        circuit.get_reserved_tables(),
+        circuit.get_reserved_dynamic_tables(),
+        circuit, assignment,
+        assignment.rows_amount(),
+        65536
+    );
 
     // incorrect test logic, but we have no memory operations so
     // error about division on zero?
+    zkevm_opcode_tester opcode_tester;
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0); // N
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257)); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2); // a
@@ -103,8 +110,22 @@ BOOST_AUTO_TEST_CASE(zkevm_mod_ops_test) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x6789012345_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+
     opcode_tester.push_opcode(zkevm_opcode::RETURN);
-    zkevm_table.finalize_test();
+
+    zkevm_table<field_type> zkevm_table(zkevm_circuit, assignment);
+    zkevm_machine_type machine = get_empty_machine(zkevm_keccak_hash(opcode_tester.get_bytecode()));
+    auto opcodes = opcode_tester.get_opcodes();
+    for( std::size_t i = 0; i < opcodes.size(); i++ ){
+        machine.apply_opcode(opcodes[i].first, opcodes[i].second); zkevm_table.assign_opcode(machine);
+    }
+
+    typename zkevm_circuit<field_type>::bytecode_table_component::input_type bytecode_input;
+    bytecode_input.new_bytecode(opcode_tester.get_bytecode());
+    bytecode_input.new_bytecode({0x60,0x40,0x60,0x80, 0xF3});
+
+    zkevm_table.finalize_test(bytecode_input);
+
     // assignment.export_table(std::cout);
     // circuit.export_circuit(std::cout);
     nil::crypto3::zk::snark::basic_padding(assignment);
