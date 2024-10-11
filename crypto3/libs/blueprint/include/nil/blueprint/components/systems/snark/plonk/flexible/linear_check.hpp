@@ -92,7 +92,7 @@ namespace nil {
 
                 const std::vector<std::array<std::pair<std::size_t, std::size_t>, 9>> fullconfig = full_configuration(this->witness_amount(), 0, m, optimal_layout);
 
-                constexpr static std::size_t get_rows_amount(std::size_t witness_amount, std::size_t m) {
+                static std::size_t get_rows_amount(std::size_t witness_amount, std::size_t m) {
 
                     auto optimal_layout = search_optimal_layout(witness_amount, m);
                     std::size_t rows = 0;
