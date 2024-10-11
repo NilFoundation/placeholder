@@ -8,6 +8,7 @@
 #---------------------------------------------------------------------------#
 
 add_custom_target(${CURRENT_PROJECT_NAME}_test_suite_modular_cpp_int_tests)
+add_custom_target(${CURRENT_PROJECT_NAME}_test_suite_big_integer_tests)
 
 cm_test_link_libraries(
     ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
@@ -48,6 +49,16 @@ macro(define_modular_cpp_int_test name)
 
 endmacro(define_modular_cpp_int_test)
 
+macro(define_big_integer_test name)
+    define_runtime_multiprecision_test(${name})
+
+    set(test_name "${CURRENT_PROJECT_NAME}_${name}_test")
+    target_compile_definitions(${test_name} PUBLIC -DTEST_CPP_INT)
+    # target_link_libraries(${test_name} no_eh_support)
+    add_dependencies(${CURRENT_PROJECT_NAME}_test_suite_big_integer_tests ${test_name})
+
+endmacro(define_big_integer_test)
+
 set(RUNTIME_TESTS_NAMES
     "inverse"
     "jacobi"
@@ -59,10 +70,20 @@ set(MODULAR_TESTS_NAMES
     "modular_adaptor_fixed"
 )
 
+set(BIG_INTEGER_TESTS_NAMES
+    "big_integer"
+    "big_integer_comparision"
+    "big_integer_modular"
+)
+
 foreach(TEST_NAME ${RUNTIME_TESTS_NAMES})
     define_runtime_multiprecision_test(${TEST_NAME})
 endforeach()
 
 foreach(TEST_NAME ${MODULAR_TESTS_NAMES})
     define_modular_cpp_int_test(${TEST_NAME})
+endforeach()
+
+foreach(TEST_NAME ${BIG_INTEGER_TESTS_NAMES})
+    define_big_integer_test(${TEST_NAME})
 endforeach()
