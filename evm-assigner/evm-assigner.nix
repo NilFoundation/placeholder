@@ -22,6 +22,7 @@ in stdenv.mkDerivation rec {
   name = "evm-assigner";
 
   src = lib.sourceByRegex ./. [ ".*" ];
+  hardeningDisable = [ "fortify" ];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++

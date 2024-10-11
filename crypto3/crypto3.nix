@@ -18,6 +18,7 @@ in stdenv.mkDerivation {
   name = "Crypto3";
 
   src = lib.sourceByRegex ./. [ ".*" ];
+  hardeningDisable = [ "fortify" ];
 
   nativeBuildInputs = [ cmake ninja pkg-config ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++

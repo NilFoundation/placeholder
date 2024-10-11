@@ -24,6 +24,7 @@ in stdenv.mkDerivation rec {
   name = "zkevm-framework";
 
   src = lib.sourceByRegex ./. [ ".*" ];
+  hardeningDisable = [ "fortify" ];
 
   nativeBuildInputs =[ cmake ninja pkg-config ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
