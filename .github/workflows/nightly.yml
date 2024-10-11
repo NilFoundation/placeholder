@@ -2,7 +2,7 @@ name: Nightly Testing
 
 on:
   schedule:
-    - cron: "5 * * * *"
+    - cron: "*/5 * * * *"
 
 jobs:
   test-linux-sanitizers:
