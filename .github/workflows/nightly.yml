@@ -1,0 +1,14 @@
+name: Nightly Testing
+
+on:
+  schedule:
+    - cron: "5 * * * *"
+
+jobs:
+  test-linux-sanitizers:
+    name: Linux Crypto3 Test and sanitize with clang
+    uses: ./.github/workflows/clang-sanitizers-linux-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
