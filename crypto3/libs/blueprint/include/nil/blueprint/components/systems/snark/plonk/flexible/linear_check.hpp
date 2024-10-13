@@ -41,7 +41,6 @@ namespace nil {
             // Input: theta, x, {xi}, {y_i}, {z_ij}
             // Output: sum theta^l (yi - z_ij)/(x - xi_j)
             // DOES NOT CHECK THAT x = xi
-            // TODO: combine constraints under single gate
             template<typename ArithmetizationType, typename BlueprintFieldType>
             class dfri_linear_check;
 
@@ -102,7 +101,7 @@ namespace nil {
                     return rows;
                 }
 
-                constexpr static std::size_t get_gates_amount(std::size_t witness_amount, std::size_t m) {
+                static std::size_t get_gates_amount(std::size_t witness_amount, std::size_t m) {
 
                     auto optimal_layout = search_optimal_layout(witness_amount, m);
                     return optimal_layout.size();

@@ -175,7 +175,7 @@ namespace nil {
                 //     return ordered_eval_map.size();
                 // };
 
-                constexpr static std::size_t get_rows_amount(
+                static std::size_t get_rows_amount(
                     std::size_t witness_amount,
                     const fri_params_type &_fri_params,
                     const std::map<std::size_t, std::size_t> &_batches_sizes,
