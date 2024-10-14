@@ -50,7 +50,7 @@ namespace nil {
             using assignment_type = typename op_type::assignment_type;
             using value_type = typename BlueprintFieldType::value_type;
             using var = typename op_type::var;
-            using state_var = state_var<BlueprintFieldType>;
+            using state_var = state_variable<BlueprintFieldType>;
 
             zkevm_jumpi_operation() {
                 this->stack_input = 2;
@@ -96,11 +96,13 @@ namespace nil {
                 // 2 lookups to RW circuit
                 // Lookup to bytecode with JUMPDEST
 
+                std::vector<std::pair<std::size_t, constraint_type>> constraints;
+                std::vector<std::pair<std::size_t, lookup_constraint_type>> lookup_constraints;
+
+                const auto &state = zkevm_circuit.get_state();
                 auto witness_cols = zkevm_circuit.get_opcode_cols();
                 std::size_t range_checked_cols_amount = zkevm_circuit.get_opcode_range_checked_cols_amount();
                 jumpi_map m(witness_cols, range_checked_cols_amount);
-
-                std::vector<std::pair<std::size_t, constraint_type>> constraints;
 
                 // May be checked not all chunks but lower for example
                 // Should be checked for EVM
@@ -108,9 +110,20 @@ namespace nil {
                 for(std::size_t i = 0; i < m.chunks.size(); i++){
                     sum_constraint += m.chunks[i];
                 }
-                constraints.push_back({0, m.non_zero() * 1 - m.non_zero()});
+                constraints.push_back({0, m.non_zero() * (1 - m.non_zero())});
                 constraints.push_back({0, m.non_zero() - sum_constraint * m.s_inv()});
-                return {{gate_class::MIDDLE_OP, {constraints, {}}}};
+
+
+                lookup_constraints.push_back({ 0, {zkevm_circuit.get_bytecode_table_id(), {
+                    m.non_zero(),
+                    m.non_zero() * m.dest(),
+                    m.non_zero() * (zkevm_circuit.get_opcodes_info().get_opcode_value(zkevm_opcode::JUMPDEST)), // Should be a constant
+                    m.non_zero(),
+                    m.non_zero() * state.bytecode_hash_hi(),
+                    m.non_zero() * state.bytecode_hash_lo()
+                }}});
+
+                return {{gate_class::MIDDLE_OP, {constraints, lookup_constraints}}};
             }
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {

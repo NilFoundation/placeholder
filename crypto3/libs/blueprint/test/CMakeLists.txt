@@ -217,6 +217,7 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/bitwise"
     "zkevm/opcodes/err0"
     "zkevm/opcodes/workload"
+    "zkevm/opcodes/jumps"
 )
 
 #set(CURVES_TESTS_FILES

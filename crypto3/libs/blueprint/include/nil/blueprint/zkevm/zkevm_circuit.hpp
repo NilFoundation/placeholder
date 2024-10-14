@@ -126,7 +126,7 @@ namespace nil {
             using arithmetization_type = crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
             using assignment_type = nil::blueprint::assignment<arithmetization_type>;
             using circuit_type = nil::blueprint::circuit<arithmetization_type>;
-            using state_var_type = state_var<BlueprintFieldType>;
+            using state_var = state_variable<BlueprintFieldType>;
             using zkevm_state_type = zkevm_vars<BlueprintFieldType>;
             using columns_manager_type = columns_manager<BlueprintFieldType>;
             using zkevm_operation_type = zkevm_operation<BlueprintFieldType>;
@@ -140,7 +140,7 @@ namespace nil {
 
             zkevm_circuit(assignment_type &assignment_, circuit_type &circuit, std::size_t _max_rows = 249, std::size_t _max_bytecode_size = 100, std::size_t start_row_index_ = 1)
                 :assignment(assignment_), opcodes_info_instance(opcodes_info::instance()),
-                 start_row_index(start_row_index_), max_rows(_max_rows), max_bytecode_size(_max_bytecode_size),
+                 start_row_index(start_row_index_), max_rows(_max_rows % 2? _max_rows: _max_rows-1), max_bytecode_size(_max_bytecode_size),
                  lookup_tables_indices(circuit.get_reserved_indices())
             {
                 columns_manager_type col_manager(assignment); // Just helps us to deal with assignment table columns
@@ -306,6 +306,14 @@ namespace nil {
 
             const std::vector<std::uint32_t> &get_bytecode_witnesses() const{
                 return bytecode_witnesses;
+            }
+
+            std::size_t get_range_check_table_id() const{
+                return range_check_table_index;
+            }
+
+            std::size_t get_bytecode_table_id() const{
+                return bytecode_table_index;
             }
 
         private:
@@ -487,8 +495,8 @@ namespace nil {
                 opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::padding] = std::make_shared<zkevm_padding_operation<BlueprintFieldType>>();
 
-                const std::size_t range_check_table_index = circuit.get_reserved_indices().at("chunk_16_bits/full");
-                const std::size_t bytecode_table_index = circuit.get_reserved_indices().at("zkevm_bytecode");
+                range_check_table_index = circuit.get_reserved_indices().at("chunk_16_bits/full");
+                bytecode_table_index = circuit.get_reserved_indices().at("zkevm_bytecode");
                 std::cout << "Range check table index = " << range_check_table_index << std::endl;
                 std::cout << "Bytecode table index = " << bytecode_table_index << std::endl;
 
@@ -597,6 +605,7 @@ namespace nil {
                 constraint_type gas_transitions;
                 constraint_type bytecode_lookup_dynamic_selector;
 
+                std::map <std::size_t, std::vector<lookup_constraint_type>> lookup_map;
                 for (auto opcode_it : opcodes) {
                     if( opcode_it.second->stack_input != opcodes_info_instance.get_opcode_stack_input(opcode_it.first))
                         std::cout << "WRONG stack_input for " << opcode_to_string(opcode_it.first) << ": " <<  opcode_it.second->stack_input << " != " << opcodes_info_instance.get_opcode_stack_input(opcode_it.first) << std::endl;
@@ -605,7 +614,6 @@ namespace nil {
                     if( opcode_it.second->gas_cost != opcodes_info_instance.get_opcode_cost(opcode_it.first))
                         std::cout << "WRONG gas_cost for " << opcode_to_string(opcode_it.first)  << ": " <<  opcode_it.second->gas_cost << " != " << opcodes_info_instance.get_opcode_cost(opcode_it.first) << std::endl;
                     std::size_t opcode_height = opcode_it.second->rows_amount();
-                    //std::cout << "Gates for " << opcode_to_string(opcode_it.first) << std::endl;
 
                     if (opcode_height > max_opcode_height) {
                         BOOST_ASSERT("Opcode height exceeds maximum, please update max_opcode_height constant.");
@@ -648,8 +656,8 @@ namespace nil {
                                         new_lookup_expressions.push_back(curr_opt_constraint * lookup_expr * row_selector * start_selector);
                                     }
                                     middle_lookup_constraints.push_back({lookup_table, new_lookup_expressions});
-                                }
-                                break;*/
+                                }*/
+                                break;
                             case zkevm_opcode_gate_class::MIDDLE_OP:
                                 //std::cout << "Middle constraints from " << opcode_to_string(opcode_it.first) << std::endl;
                                 for (auto constraint_pair : gate_it.second.first) {
@@ -661,19 +669,45 @@ namespace nil {
                                     virtual_selector[gate_id_type(constraint_pair.second)] +=
                                         opcode_row_selector_constraint(opcode_num, local_row);
                                 }
-                                for (auto lookup_constraint_pair : gate_it.second.second) {
-                                    // TODO:: do same trick with polynomial constraints for lookup constraints with similar lookup tables.
-                                    std::size_t local_row = lookup_constraint_pair.first;
-                                    if( opcode_it.second->rows_amount() % 2 ) local_row++;
-                                    lookup_constraint_type lookup_constraint = lookup_constraint_pair.second;
-                                    auto lookup_table = lookup_constraint.table_id;
-                                    auto lookup_expressions = lookup_constraint.lookup_input;
-                                    std::vector<constraint_type> new_lookup_expressions;
+                                {
+                                    // Table_id => position => {constraints}
+                                    // You cannot add lookup constraints with similar positions
+                                    std::map<std::size_t, std::map<std::size_t, std::vector<lookup_constraint_type>>> opcode_lookup_map;
+                                    for (auto lookup_constraint_pair : gate_it.second.second) {
+                                        // TODO:: we can put lookup constraints into one if they are i
+                                        std::size_t local_row = lookup_constraint_pair.first;
+                                        if( opcode_it.second->rows_amount() % 2 ) local_row++;
+                                        lookup_constraint_type lookup_constraint = lookup_constraint_pair.second;
+                                        auto lookup_table = lookup_constraint.table_id;
+                                        auto lookup_expressions = lookup_constraint.lookup_input;
+                                        std::vector<constraint_type> new_lookup_expressions;
 
-                                    for(auto lookup_expr : lookup_expressions) {
-                                        new_lookup_expressions.push_back( opcode_row_selector_constraint(opcode_num, local_row) * lookup_expr );
+                                        for(auto lookup_expr : lookup_expressions) {
+                                            new_lookup_expressions.push_back( opcode_row_selector_constraint(opcode_num, local_row) * lookup_expr );
+                                        }
+                                        //middle_lookup_constraints.push_back({lookup_table, new_lookup_expressions});
+
+                                        if( opcode_lookup_map.find(lookup_table) == opcode_lookup_map.end() )
+                                            opcode_lookup_map[lookup_table] = {};
+                                        if( opcode_lookup_map[lookup_table].find(local_row) == opcode_lookup_map[lookup_table].end() )
+                                            opcode_lookup_map[lookup_table][local_row] = {};
+                                        opcode_lookup_map[lookup_table][local_row].push_back({lookup_table, new_lookup_expressions});
                                     }
-                                    middle_lookup_constraints.push_back({lookup_table, new_lookup_expressions});
+                                    for( auto &[table_id,positioned_constraints]: opcode_lookup_map ){
+                                        for( auto &[position, lookup_constraint_list] : positioned_constraints){
+                                            if( lookup_map.find(table_id) == lookup_map.end() ) lookup_map[table_id] = {};
+                                            for( std::size_t ind = 0; ind < lookup_constraint_list.size(); ind++ ){
+                                                if( ind < lookup_map[table_id].size() ){
+                                                    //BOOST_ASSERT(lookup_map[table_id][ind].lookup_input.size() == lookup_constraint_list[ind].lookup_input.size());
+                                                    for( std::size_t ind2 = 0; ind2 < lookup_constraint_list[ind].lookup_input.size(); ind2++ )
+                                                        lookup_map[table_id][ind].lookup_input[ind2] = lookup_map[table_id][ind].lookup_input[ind2] + lookup_constraint_list[ind].lookup_input[ind2];
+                                                }
+                                                else{
+                                                    lookup_map[table_id].push_back(lookup_constraint_list[ind]);
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                                 break;
                             case zkevm_opcode_gate_class::LAST_OP:
@@ -690,7 +724,14 @@ namespace nil {
                     gas_transitions += opcode_row_selector_constraint(opcode_num, 0) * opcode_it.second->gas_transition(*this);
                     pc_transitions += opcode_row_selector_constraint(opcode_num, 0) * opcode_it.second->pc_transition(*this);
                     stack_size_transitions += opcode_row_selector_constraint(opcode_num, 0) * opcode_it.second->stack_size_transition(*this);
+                    real_opcode += opcode_selector_constraint(opcode_num) * opcode_byte;
                 }
+                for( auto &[k,v]: lookup_map ){
+                    for( auto &lc: v){
+                        middle_lookup_constraints.push_back(lc);
+                    }
+                }
+                std::cout << "Lookup constraints amount = " << middle_lookup_constraints.size() << std::endl;
                 // ensure first line of each opcode has correct internal row number
                 middle_constraints.push_back(opcode_first_line_constraint * state.step_start());
 
@@ -698,6 +739,7 @@ namespace nil {
                 middle_constraints.push_back(stack_size_transitions);
                 middle_constraints.push_back(pc_transitions);
                 middle_constraints.push_back(gas_transitions);
+                middle_constraints.push_back(state.real_opcode() - real_opcode);
 
                 for(const auto c : virtual_selector) {
                     constraint_type constraint = constraint_list[c.first];
@@ -722,10 +764,12 @@ namespace nil {
                 circuit.add_lookup_gate(middle_selector, middle_lookup_constraints);
             }
 
+
             constraint_type gas_transitions;
             constraint_type pc_transitions;
             constraint_type stack_size_transitions;
             constraint_type opcode_transitions;
+            constraint_type real_opcode;
 
             zkevm_state_type state;
             // static selectors used to mark the places where the circuit starts/ends and when the circuit is acitve
@@ -757,6 +801,8 @@ namespace nil {
             std::size_t max_bytecode_size; // For correct connection with bytecode circuit
             std::size_t start_row_index;
             std::size_t end_row_index;
+            std::size_t range_check_table_index;
+            std::size_t bytecode_table_index;
             typename lookup_library<BlueprintFieldType>::left_reserved_type lookup_tables_indices;
 
             static const std::size_t opcode_range_checked_cols_amount = 32;

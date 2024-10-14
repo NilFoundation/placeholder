@@ -40,9 +40,9 @@ namespace nil {
         // In this case variable is defined only by witness column id.
         // It's useful to have some convenient functions for rotations for circuit construction and absolute variables for assignment.
         template<typename BlueprintFieldType>
-        struct state_var:public crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>{
+        struct state_variable:public crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>{
             using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
-            state_var(std::uint32_t witness_id = 0, typename var::column_type t = var::column_type::witness): var(witness_id, 0, true, t){}
+            state_variable(std::uint32_t witness_id = 0, typename var::column_type t = var::column_type::witness): var(witness_id, 0, true, t){}
             var operator() () const {
                 return var(this->index, 0, true, this->type);
             }
@@ -65,7 +65,7 @@ namespace nil {
         template<typename BlueprintFieldType>
         struct zkevm_vars {
             using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
-            using state_var = state_var<BlueprintFieldType>;
+            using state_var = state_variable<BlueprintFieldType>;
         public:
             state_var pc;
             state_var stack_size;
@@ -75,6 +75,7 @@ namespace nil {
             state_var real_opcode;          // real_opcode is real opcode that will be looked up in bytecode table
             state_var bytecode_hash_hi;     // will be looked up in bytecode table
             state_var bytecode_hash_lo;     // will be lookup up in bytecode table
+            state_var tx_status;             // error indicator may be set by error opcodes and for usual opcodes too
 
             state_var row_counter;          // Decreasing row counter
             state_var step_start;           // 1 in first line of new opcode, 0 otherwise

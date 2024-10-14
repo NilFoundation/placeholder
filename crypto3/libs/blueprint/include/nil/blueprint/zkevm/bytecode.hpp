@@ -56,7 +56,7 @@ namespace nil {
                 using keccak_table_component_type = plonk_keccak_table<BlueprintFieldType>;
                 using component_type = plonk_component<BlueprintFieldType>;
                 using var = typename component_type::var;
-                using state_var = state_var<BlueprintFieldType>;
+                using state_var = state_variable<BlueprintFieldType>;
                 using manifest_type = plonk_component_manifest;
                 using value_type = typename BlueprintFieldType::value_type;
 

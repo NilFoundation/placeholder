@@ -111,9 +111,10 @@ BOOST_AUTO_TEST_CASE(zkevm_cmp_test) {
     opcode_tester.push_opcode(zkevm_opcode::RETURN);
 
     zkevm_machine_type machine = get_empty_machine(zkevm_keccak_hash(opcode_tester.get_bytecode()));
-    auto opcodes = opcode_tester.get_opcodes();
-    for( std::size_t i = 0; i < opcodes.size(); i++ ){
-        machine.apply_opcode(opcodes[i].first, opcodes[i].second);  zkevm_table.assign_opcode(machine);
+    while(true) {
+        machine.apply_opcode(opcode_tester.get_opcode_by_pc(machine.pc_next()).first, opcode_tester.get_opcode_by_pc(machine.pc_next()).second);
+        zkevm_table.assign_opcode(machine);
+        if( machine.tx_finish()) break;
     }
 
     typename zkevm_circuit<field_type>::bytecode_table_component::input_type bytecode_input;

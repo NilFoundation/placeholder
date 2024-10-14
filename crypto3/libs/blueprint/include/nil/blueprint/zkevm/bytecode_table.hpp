@@ -45,45 +45,42 @@ namespace nil {
         namespace components {
             class bytecode_input_type {
             public:
-                using data_type = std::vector<std::pair<std::vector<std::uint8_t>, zkevm_word_type>>;
+                typedef std::vector<std::pair<std::vector<std::uint8_t>, zkevm_word_type>> data_type;
 
                 bytecode_input_type() {}
 
                 void fill_bytecodes(const data_type &_bytecodes ){
-                    BOOST_ASSERT(bytecodes == nullptr);
-                    bytecodes = std::make_shared<data_type>();
-                    *bytecodes = _bytecodes;
+                    BOOST_ASSERT(bytecodes.size() == 0);
+                    bytecodes = _bytecodes;
                 }
 
                 const data_type &get_bytecodes() const{
-                    BOOST_ASSERT(bytecodes != nullptr);
-                    return *bytecodes;
+                    return bytecodes;
                 }
 
                 // For real usage. Bytecodes order doesn't matter
                 std::size_t new_bytecode(std::pair<std::vector<std::uint8_t>, zkevm_word_type> hashed_pair){
-                    if( bytecodes == nullptr ) bytecodes = std::make_shared<data_type>();
-                    bytecodes->push_back(hashed_pair);
-                    return bytecodes->size() - 1;
+                    bytecodes.push_back(hashed_pair);
+                    return bytecodes.size() - 1;
                 }
 
                 // TODO two versions -- with keccak and poseidon.
                 // Keccak is more universal because we have poseidon implementation only for pallas curve
                 std::size_t new_bytecode(std::vector<std::uint8_t> code = {}){
-                    if( bytecodes == nullptr ) bytecodes = std::make_shared<data_type>();
                     zkevm_word_type hash = zkevm_keccak_hash(code);
-                    bytecodes->push_back({code, hash});
-                    return bytecodes->size() - 1;
+                    bytecodes.push_back({code, hash});
+                    return bytecodes.size() - 1;
                 }
 
                 // For small tests where we define opcode sequences manually
                 void push_byte(std::size_t code_id, std::uint8_t b){
-                    BOOST_ASSERT(bytecodes != nullptr && code_id < bytecodes->size());
-                    (*bytecodes)[code_id].first.push_back(b);
-                    (*bytecodes)[code_id].second = zkevm_keccak_hash((*bytecodes)[code_id].first);
+                    BOOST_ASSERT(code_id < bytecodes.size());
+                    bytecodes[code_id].first.push_back(b);
+                    bytecodes[code_id].second = zkevm_keccak_hash(bytecodes[code_id].first);
                 }
             private:
-                std::shared_ptr<data_type> bytecodes; // EVM contracts bytecodes
+                // TODO: prevent copying
+                data_type bytecodes; // EVM contracts bytecodes
             };
 
             // Component for bytecode table
@@ -97,7 +94,7 @@ namespace nil {
             public:
                 using component_type = plonk_component<BlueprintFieldType>;
                 using var = typename component_type::var;
-                using state_var = state_var<BlueprintFieldType>;
+                using state_var = state_variable<BlueprintFieldType>;
                 using manifest_type = plonk_component_manifest;
                 using value_type = typename BlueprintFieldType::value_type;
 

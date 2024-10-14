@@ -50,7 +50,7 @@ namespace nil {
             using assignment_type = typename op_type::assignment_type;
             using value_type = typename BlueprintFieldType::value_type;
             using var = typename op_type::var;
-            using state_var = state_var<BlueprintFieldType>;
+            using state_var = state_variable<BlueprintFieldType>;
 
             zkevm_jump_operation() {
                 this->stack_input = 1;
@@ -58,21 +58,28 @@ namespace nil {
                 this->gas_cost = 8;
             }
 
-            constexpr static const value_type two_16 = 65536;
-            constexpr static const value_type two_32 = 4294967296;
-            constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
-
             std::map<gate_class, std::pair<
                 std::vector<std::pair<std::size_t, constraint_type>>,
                 std::vector<std::pair<std::size_t, lookup_constraint_type>>
             >> generate_gates(zkevm_circuit_type &zkevm_circuit) override {
+                std::vector<std::pair<std::size_t, lookup_constraint_type>> lookup_constraints;
+                const std::vector<std::size_t> &witness_cols = zkevm_circuit.get_opcode_cols();
+                var destination = zkevm_operation<BlueprintFieldType>::var_gen(witness_cols, 0, 0);
+                const auto &state = zkevm_circuit.get_state();
+
+                std::size_t position = 0;
+                lookup_constraints.push_back({ position, {zkevm_circuit.get_bytecode_table_id(), {
+                    destination - destination + 1, // Should be a constant
+                    destination,
+                    destination - destination + zkevm_circuit.get_opcodes_info().get_opcode_value(zkevm_opcode::JUMPDEST), // Should be a constant
+                    destination - destination + 1, // Should be a constant
+                    state.bytecode_hash_hi(),
+                    state.bytecode_hash_lo()
+                }}});
+
                 // TODO:
                 // Lookup to RW stack
-                // Lookup to bytecode JUMPDEST's
-                return {{gate_class::MIDDLE_OP, {{}, {}}}};
+                return {{gate_class::MIDDLE_OP, {{}, lookup_constraints}}};
             }
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
@@ -117,24 +124,17 @@ namespace nil {
                 this->gas_cost = 1;
             }
 
-            constexpr static const value_type two_16 = 65536;
-            constexpr static const value_type two_32 = 4294967296;
-            constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
-
             std::map<gate_class, std::pair<
                 std::vector<std::pair<std::size_t, constraint_type>>,
                 std::vector<std::pair<std::size_t, lookup_constraint_type>>
                 >>
                 generate_gates(zkevm_circuit_type &zkevm_circuit) override {
-                // TODO : generate gates
+                // No gates. Just state transition
                 return {{gate_class::MIDDLE_OP, {{}, {}}}};
             }
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
-                std::cout << "Generate assignments and gates for JUMPDEST" << std::endl;
+                // No assignments. Just state transition
             }
 
             std::size_t rows_amount() override {

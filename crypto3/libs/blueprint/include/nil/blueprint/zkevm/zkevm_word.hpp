@@ -146,6 +146,17 @@ namespace nil {
             return result;
         }
 
+        std::array<std::size_t, 16> w_to_16(const zkevm_word_type &val){
+            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
+            std::array<std::size_t, 16> result;
+            integral_type tmp(val);
+            for(std::size_t i = 0; i < 16; i++){
+                result[15-i] = std::size_t(tmp & 0xFFFF); tmp >>=  16;
+            }
+            return result;
+        }
+
         template <typename BlueprintFieldType>
         std::array<typename BlueprintFieldType::value_type, 2> w_to_128(const zkevm_word_type &val){
             std::array<typename BlueprintFieldType::value_type, 2> result;

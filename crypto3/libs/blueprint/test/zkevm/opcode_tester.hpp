@@ -191,6 +191,8 @@ namespace nil {
                 push_opcode(opcode, additional_input);
             }
             void push_opcode(const zkevm_opcode opcode, const std::vector<std::uint8_t> &additional_input = {}){
+                std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                pc_opcode_map[bytecode.size()] = opcodes.size();
                 opcodes.push_back({opcode, additional_input});
                 bytecode.push_back(opcodes_info_instance.get_opcode_value(opcode));
                 bytecode.insert(bytecode.end(), additional_input.begin(), additional_input.end() );
@@ -201,10 +203,14 @@ namespace nil {
             const std::vector<std::pair<zkevm_opcode, std::vector<std::uint8_t>>> &get_opcodes() const {
                 return opcodes;
             }
+            const std::pair<zkevm_opcode, std::vector<std::uint8_t>> get_opcode_by_pc(std::size_t pc) const {
+                return opcodes.at(pc_opcode_map.at(pc));
+            }
         private:
             opcodes_info              opcodes_info_instance;
             std::vector<std::uint8_t> bytecode;
             std::vector<std::pair<zkevm_opcode, std::vector<std::uint8_t>>> opcodes;
+            std::map<std::size_t, std::size_t> pc_opcode_map;
         };
     }   // namespace blueprint
 }    // namespace nil

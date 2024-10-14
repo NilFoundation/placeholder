@@ -151,6 +151,7 @@ namespace nil {
                 }
             }
 
+            std::cout << "Gates checked. Check lookups" << std::endl;
             for (const auto& i : used_lookup_gates) {
                 crypto3::zk::snark::plonk_column<BlueprintFieldType> selector =
                     assignments.crypto3::zk::snark::

@@ -52,7 +52,7 @@ namespace nil {
                 using var = typename component_type::var;
                 using manifest_type = plonk_component_manifest;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
-                using state_var = state_var<BlueprintFieldType>;
+                using state_var = state_variable<BlueprintFieldType>;
 
                 std::size_t options_amount;
 
@@ -242,7 +242,7 @@ namespace nil {
                 const std::size_t start_row_index) {
 
                 using component_type = plonk_index_selector<BlueprintFieldType>;
-                using state_var = state_var<BlueprintFieldType>;
+                using state_var = state_variable<BlueprintFieldType>;
 
                 std::size_t selector_index = generate_gates(component, bp, assignment, instance_input);
                 assignment.enable_selector(selector_index, start_row_index, start_row_index);

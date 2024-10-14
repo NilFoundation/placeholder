@@ -47,10 +47,10 @@ namespace nil {
                 std::size_t gas;
                 std::size_t pc;
 
-                bool is_error;
+                bool tx_finish;
                 zkevm_opcode error_opcode;
 
-                state_type():is_error(false){}
+                state_type():tx_finish(false){}
 
                 state_type(
                     zkevm_opcode _opcode,
@@ -59,12 +59,12 @@ namespace nil {
                     std::vector<uint8_t> _memory,
                     std::size_t _gas,
                     std::size_t _pc
-                ): opcode(_opcode), additional_input(_additional_input), stack(_stack), memory(_memory), gas(_gas), pc(_pc), is_error(false)
+                ): opcode(_opcode), additional_input(_additional_input), stack(_stack), memory(_memory), gas(_gas), pc(_pc), tx_finish(false)
                 {}
 
                 zkevm_word_type stack_pop(){
-                    if(stack.size() == 0){
-                        is_error = true;
+                    if(stack.size() == 0 ){
+                        tx_finish = true;
                         error_opcode = opcode;
                         opcode = zkevm_opcode::err0;
                         std::cout << "stack_pop error" << std::endl;
@@ -214,6 +214,7 @@ namespace nil {
                             stack_pop();
                             stack_pop();
                             pc++; gas -= 2;
+                            tx_finish = true;
                             break;
                         case zkevm_opcode::NOT:{
                             word_type a = stack_pop();
@@ -405,6 +406,23 @@ namespace nil {
                             pc++; gas -= 3;
                             break;
                         }
+                        case zkevm_opcode::JUMP:{
+                            word_type addr = stack_pop();
+                            //TODO: add JUMPDEST error processing
+                            pc = w_to_16(addr)[15]; gas -= 8;
+                            break;
+                        }
+                        case zkevm_opcode::JUMPI:{
+                            word_type addr = stack_pop();
+                            word_type state = stack_pop();
+                            //TODO: add JUMPDEST error processing
+                            pc = state? w_to_16(addr)[15]: pc+1; gas -= 10;
+                            break;
+                        }
+                        case zkevm_opcode::JUMPDEST:{
+                            pc++; gas -= 1;
+                            break;
+                        }
                         case zkevm_opcode::err0:{
                             BOOST_ASSERT(false);
                             break;
@@ -412,6 +430,12 @@ namespace nil {
                         default:
                             std::cout << "Test machine unknown opcode " << opcode_to_string(opcode) << std::endl;
                             BOOST_ASSERT_MSG(false, "Opcode is not implemented inside test machine");
+                    }
+                    if( stack.size() > 1024 ) {
+                        tx_finish = true;
+                        error_opcode = opcode;
+                        opcode = zkevm_opcode::err0;
+                        std::cout << "stack overflow error" << std::endl;
                     }
                 }
             };
@@ -450,17 +474,19 @@ namespace nil {
                 zkevm_opcode _opcode,
                 std::vector<std::uint8_t>  param = {}
             ){
-                BOOST_ASSERT(!current_state.is_error);
+                BOOST_ASSERT(!current_state.tx_finish);
                 current_state = new_state;
+                //std::cout << "Current state.pc = " << current_state.pc << " opcode = " << opcode_to_string(_opcode) << std::endl;
                 current_state.opcode = new_state.opcode = _opcode;
                 current_state.additional_input = new_state.additional_input = zkevm_word_from_bytes(param);
                 new_state.run_opcode();
-                if( new_state.is_error ){
-                    current_state.is_error = true;
+                if( new_state.tx_finish ){
+                    std::cout << "Final opcode = " << opcode_to_string(current_state.opcode) << std::endl;
+                    current_state.tx_finish = true;
+                    current_state.error_opcode = current_state.opcode;
                     current_state.opcode = new_state.opcode;
-                    current_state.error_opcode = new_state.error_opcode;
                 }
-                return current_state.is_error;
+                return current_state.tx_finish;
             }
 
             void padding_state(){
@@ -488,6 +514,10 @@ namespace nil {
                 return current_state.pc;
             }
 
+            const std::size_t pc_next() const {
+                return new_state.pc;
+            }
+
             const std::size_t gas() const {
                 return current_state.gas;
             }
@@ -512,8 +542,8 @@ namespace nil {
                 return current_state.memory;
             }
 
-            const bool is_error() const {
-                return current_state.is_error;
+            const bool tx_finish() const {
+                return current_state.tx_finish;
             }
 
             const zkevm_opcode error_opcode() const {

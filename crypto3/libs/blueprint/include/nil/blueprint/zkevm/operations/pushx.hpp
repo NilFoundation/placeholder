@@ -62,31 +62,48 @@ namespace nil {
                 std::vector<std::pair<std::size_t, constraint_type>>,
                 std::vector<std::pair<std::size_t, lookup_constraint_type>>
                 >>
-                generate_gates(zkevm_circuit_type &zkevm_circuit) override {
-
+                generate_gates(zkevm_circuit_type &zkevm_circuit) override
+            {
+                const auto& state = zkevm_circuit.get_state();
                 std::vector<std::pair<std::size_t, constraint_type>> constraints;
+                std::vector<std::pair<std::size_t, lookup_constraint_type>> lookup_constraints;
 
-                constexpr const std::size_t chunk_amount = 16;
                 const std::vector<std::size_t> &witness_cols = zkevm_circuit.get_opcode_cols();
                 auto var_gen = [&witness_cols](std::size_t i, int32_t offset = 0) {
                     return zkevm_operation<BlueprintFieldType>::var_gen(witness_cols, i, offset);
                 };
 
                 // Table layout                                             Row #
-                // +---------+--------+------------------+------------------+
-                // |  bytes  |00000000|                  |                  | 0
-                // +---------+--------+------------------+------------------+
+                // +---------+--------+------------------+---------------------+
+                // |  bytes  |b0      | b1       | b2       | ... |  b31       |
+                // +---------+--------+------------------+---------------------+
+                // |  bytes  |255 - b0| 255 - b1 | 255 - b2 | ... |  255 -b31  |
+                // +---------+--------+------------------+---------------------+
 
-                std::size_t position = 0;
+                std::size_t position = 1;
 
                 // this will need dynamic lookups into bytecode and memory circuits, but for now we just check
-                // that all chunks after ]byte_count/2[ are 0
+                // Only bytes after byte_count may be non-zero
 
-                for(std::size_t i = (byte_count + 1)/2; i < chunk_amount; i++) {
+                for(std::size_t i = 0; i < 32 - byte_count; i++) {
                     constraints.push_back({position, var_gen(i)});
+                    constraints.push_back({position, var_gen(i) + var_gen(i, +1) - 255}); // Byte range check
                 }
 
-                return {{gate_class::MIDDLE_OP, {constraints, {}}}};
+                // For other bytes
+                for(std::size_t i = 32-byte_count; i < 32; i++) {
+                    constraints.push_back({position, var_gen(i) + var_gen(i, +1) - 255}); // Byte range check
+                    lookup_constraints.push_back({ position, {zkevm_circuit.get_bytecode_table_id(), {
+                        var_gen(i) - var_gen(i) + 1,
+                        state.pc() + i - (32 - byte_count) + 1,
+                        var_gen(i),
+                        var_gen(i) - var_gen(i),
+                        state.bytecode_hash_hi(),
+                        state.bytecode_hash_lo()
+                    }}});
+                }
+
+                return {{gate_class::MIDDLE_OP, {constraints, lookup_constraints}}};
             }
 
             void generate_assignments(
@@ -98,15 +115,14 @@ namespace nil {
                 zkevm_word_type a = word_type(integral_type(bytecode_input) &
                                         ((integral_type(1) << (8*byte_count)) - 1)); // use only byte_count lowest bytes
 
-                const std::vector<value_type> chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
+                const std::array<std::uint8_t, 32> bytes = w_to_8(a);
                 const std::vector<std::size_t> &witness_cols = zkevm_table.get_opcode_cols();
                 assignment_type &assignment = zkevm_table.get_assignment();
                 const std::size_t curr_row = zkevm_table.get_current_row();
-                std::size_t chunk_amount = 16;
 
-                // TODO: replace with memory access
-                for (std::size_t i = 0; i < chunk_amount; i++) {
-                    assignment.witness(witness_cols[i], curr_row) = chunks[i];
+                for (std::size_t i = 0; i < 32; i++) {
+                    assignment.witness(witness_cols[i], curr_row) = bytes[i];
+                    assignment.witness(witness_cols[i], curr_row + 1) = 255 - bytes[i]; // For range-checking
                 }
             }
 
@@ -115,7 +131,7 @@ namespace nil {
             }
 
             std::size_t rows_amount() override {
-                return 1;
+                return 2;
             }
         };
     }   // namespace blueprint
