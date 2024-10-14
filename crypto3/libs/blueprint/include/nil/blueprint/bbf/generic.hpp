@@ -46,7 +46,7 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
 
-            enum class GenerationStage { ASSIGNMENT = 0, CIRCUIT = 1 };
+            enum class GenerationStage { ASSIGNMENT = 0, CONSTRAINTS = 1 };
 
             enum column_type { witness, public_input, constant, COLUMN_TYPES };
 
@@ -389,7 +389,7 @@ namespace nil {
             };
 
             template<typename FieldType>
-            class context<FieldType, GenerationStage::CIRCUIT> : public basic_context<FieldType> { // circuit-specific definition
+            class context<FieldType, GenerationStage::CONSTRAINTS> : public basic_context<FieldType> { // circuit-specific definition
                 using constraint_id_type = gate_id<FieldType>;
                 using var = crypto3::zk::snark::plonk_variable<typename FieldType::value_type>;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;

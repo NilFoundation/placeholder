@@ -183,13 +183,13 @@ namespace nil {
                 const std::size_t start_row_index) {
 
                 using context_type = typename nil::blueprint::bbf::context<BlueprintFieldType,
-                                                  nil::blueprint::bbf::GenerationStage::CIRCUIT>;
+                                                  nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
                 using Is_Zero = typename nil::blueprint::bbf::is_zero<BlueprintFieldType,
-                                                  nil::blueprint::bbf::GenerationStage::CIRCUIT>;
+                                                  nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
                 using Choice_Function = typename nil::blueprint::bbf::choice_function<BlueprintFieldType,
-                                                  nil::blueprint::bbf::GenerationStage::CIRCUIT,3>;
+                                                  nil::blueprint::bbf::GenerationStage::CONSTRAINTS,3>;
                 using Carry_On_Addition = typename nil::blueprint::bbf::carry_on_addition<BlueprintFieldType,
-                                                  nil::blueprint::bbf::GenerationStage::CIRCUIT,3,16>;
+                                                  nil::blueprint::bbf::GenerationStage::CONSTRAINTS,3,16>;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<BlueprintFieldType>;
                 using lookup_constraint_type = crypto3::zk::snark::plonk_lookup_constraint<BlueprintFieldType>;
