@@ -1,5 +1,9 @@
-#ifndef CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
-#define CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
+#define PARALLEL_CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
+
+#ifdef CRYPTO3_ZK_PLONK_BATCHED_PICKLES_EXPR_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/systems/plonk/pickles/permutation.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>

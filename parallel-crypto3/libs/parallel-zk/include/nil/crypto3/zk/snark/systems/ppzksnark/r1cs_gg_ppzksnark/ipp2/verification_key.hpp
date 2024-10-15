@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFICATION_KEY_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFICATION_KEY_HPP
+#ifndef PARALLEL_CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFICATION_KEY_HPP
+#define PARALLEL_CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFICATION_KEY_HPP
+
+#ifdef CRYPTO3_R1CS_GG_PPZKSNARK_IPP2_VERIFICATION_KEY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/container/accumulation_vector.hpp>
 

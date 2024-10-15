@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_PLONK_BATCHED_PICKLES_ALPHAS_HPP
-#define CRYPTO3_ZK_PLONK_BATCHED_PICKLES_ALPHAS_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLONK_BATCHED_PICKLES_ALPHAS_HPP
+#define PARALLEL_CRYPTO3_ZK_PLONK_BATCHED_PICKLES_ALPHAS_HPP
+
+#ifdef CRYPTO3_ZK_PLONK_BATCHED_PICKLES_ALPHAS_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/systems/plonk/pickles/detail.hpp>
 #include <nil/crypto3/zk/commitments/polynomial/kimchi_pedersen.hpp>

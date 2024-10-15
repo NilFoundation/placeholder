@@ -39,8 +39,12 @@
 // <http://eprint.iacr.org/2014/595>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_SP_PCD_CIRCUITS_HPP
-#define CRYPTO3_ZK_SP_PCD_CIRCUITS_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_SP_PCD_CIRCUITS_HPP
+#define PARALLEL_CRYPTO3_ZK_SP_PCD_CIRCUITS_HPP
+
+#ifdef CRYPTO3_ZK_SP_PCD_CIRCUITS_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/components/component_from_r1cs.hpp>
 #include <nil/crypto3/zk/snark/components/hashes/crh_component.hpp>

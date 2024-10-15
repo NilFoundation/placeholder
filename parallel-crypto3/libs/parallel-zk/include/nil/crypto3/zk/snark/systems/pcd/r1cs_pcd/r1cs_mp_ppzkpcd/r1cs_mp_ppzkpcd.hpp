@@ -51,8 +51,12 @@
 // Alessandro Chiesa, Eran Tromer, Madars Virza,
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_MP_PPZKPCD_HPP
-#define CRYPTO3_R1CS_MP_PPZKPCD_HPP
+#ifndef PARALLEL_CRYPTO3_R1CS_MP_PPZKPCD_HPP
+#define PARALLEL_CRYPTO3_R1CS_MP_PPZKPCD_HPP
+
+#ifdef CRYPTO3_R1CS_MP_PPZKPCD_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <memory>
 #include <vector>

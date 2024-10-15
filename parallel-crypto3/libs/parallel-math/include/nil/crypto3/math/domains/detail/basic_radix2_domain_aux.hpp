@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
-#define CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
+#ifndef PARALLEL_CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
+#define PARALLEL_CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
+
+#ifdef CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_AUX_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <algorithm>
 #include <memory>

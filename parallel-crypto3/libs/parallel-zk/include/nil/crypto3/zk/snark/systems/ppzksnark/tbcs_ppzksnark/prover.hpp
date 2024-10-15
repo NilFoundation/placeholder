@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_PROVER_HPP
-#define CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_PROVER_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_PROVER_HPP
+#define PARALLEL_CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_PROVER_HPP
+
+#ifdef CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_PROVER_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 #include <nil/crypto3/zk/snark/reductions/tbcs_to_uscs.hpp>

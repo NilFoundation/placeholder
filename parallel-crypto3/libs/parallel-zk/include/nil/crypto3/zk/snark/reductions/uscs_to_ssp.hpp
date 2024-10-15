@@ -45,8 +45,12 @@
 // <http://eprint.iacr.org/2014/718>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_USCS_TO_SSP_REDUCTION_HPP
-#define CRYPTO3_ZK_USCS_TO_SSP_REDUCTION_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_USCS_TO_SSP_REDUCTION_HPP
+#define PARALLEL_CRYPTO3_ZK_USCS_TO_SSP_REDUCTION_HPP
+
+#ifdef CRYPTO3_ZK_USCS_TO_SSP_REDUCTION_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/math/coset.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>

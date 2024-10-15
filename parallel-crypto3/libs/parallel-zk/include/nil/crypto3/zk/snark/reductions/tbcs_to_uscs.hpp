@@ -42,8 +42,12 @@
 // <http://www0.cs.ucl.ac.uk/staff/J.Groth/NIZKJournal.pdf>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_TBCS_TO_USCS_BASIC_POLICY_HPP
-#define CRYPTO3_ZK_TBCS_TO_USCS_BASIC_POLICY_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_TBCS_TO_USCS_BASIC_POLICY_HPP
+#define PARALLEL_CRYPTO3_ZK_TBCS_TO_USCS_BASIC_POLICY_HPP
+
+#ifdef CRYPTO3_ZK_TBCS_TO_USCS_BASIC_POLICY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
