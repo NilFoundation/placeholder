@@ -51,8 +51,8 @@ template <typename BlueprintFieldType>
 void test_bbf_wrapper(std::vector<typename BlueprintFieldType::value_type> public_input) {
     constexpr std::size_t WitnessColumns = 15;    // TODO
     constexpr std::size_t PublicInputColumns = 1; // TODO
-    constexpr std::size_t ConstantColumns = 1;    // TODO
-    constexpr std::size_t SelectorColumns = 5;    // TODO
+    constexpr std::size_t ConstantColumns = 3;    // TODO
+    constexpr std::size_t SelectorColumns = 9;    // TODO
 
     // table configuration
     zk::snark::plonk_table_description<BlueprintFieldType> desc(

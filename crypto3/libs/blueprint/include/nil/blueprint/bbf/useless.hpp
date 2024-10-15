@@ -21,11 +21,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// @file Declaration of interfaces for PLONK BBF is_zero component class
+// @file Declaration of interfaces for PLONK BBF useless component class
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_IS_ZERO_COMPONENT_HPP
-#define CRYPTO3_BLUEPRINT_PLONK_BBF_IS_ZERO_COMPONENT_HPP
+#ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_USELESS_COMPONENT_HPP
+#define CRYPTO3_BLUEPRINT_PLONK_BBF_USELESS_COMPONENT_HPP
 
 #include <functional>
 
@@ -43,7 +43,7 @@ namespace nil {
         namespace bbf {
 
             template<typename FieldType, GenerationStage stage>
-            class is_zero : public generic_component<FieldType, stage> {
+            class useless : public generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
                 using generic_component<FieldType, stage>::allocate;
                 using generic_component<FieldType, stage>::copy_constrain;
@@ -55,33 +55,23 @@ namespace nil {
                     using typename generic_component<FieldType,stage>::TYPE;
 
                 public:
-                    TYPE input;
-                    TYPE res;
-
-                    is_zero(context_type &context_object, TYPE input_x, bool make_links = true) :
+                    useless(context_type &context_object, bool make_links = true) :
                         generic_component<FieldType,stage>(context_object) {
 
-                        TYPE X, I, R;
+                        TYPE X[3];
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                            X = input_x;
-                            I = (X == 0) ? 0 : X.inversed();
+                            X[0] = 3; X[1] = 14; X[2] = 15;
                         }
 
-                        allocate(X,0,0);
-                        allocate(I,0,2);
+                        allocate(X[0],0,0);
+                        allocate(X[1],0,1);
+                        allocate(X[2],0,2);
 
-                        if (make_links) {
-                            copy_constrain(X,input_x);
-                        }
-
-                        R = 1 - X*I;
-                        allocate(R,0,1);
-
-                        constrain(X*R);
-
-                        input = X;
-                        res = R;
+                        std::vector<std::size_t> lookup_cols = {0};
+                        lookup_table("dummy_dynamic",lookup_cols,0,3);
+                        lookup_table("dummy_dynamic2",lookup_cols,1,1);
+                        lookup(X[0],"dummy_dynamic");
                     };
             };
 
@@ -89,4 +79,4 @@ namespace nil {
     } // namespace blueprint
 } // namespace nil
 
-#endif // CRYPTO3_BLUEPRINT_PLONK_BBF_IS_ZERO_COMPONENT_HPP
+#endif // CRYPTO3_BLUEPRINT_PLONK_BBF_USELESS_COMPONENT_HPP
