@@ -40,6 +40,9 @@
 #include <nil/blueprint/bbf/is_zero.hpp>
 #include <nil/blueprint/bbf/choice_function.hpp>
 #include <nil/blueprint/bbf/carry_on_addition.hpp>
+#include <nil/blueprint/bbf/useless.hpp>
+
+#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_table_definition.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -85,7 +88,7 @@ namespace nil {
                     return 3;
                 }
 
-                constexpr static const std::size_t gates_amount = 5; // TODO: this is very unoptimized!
+                constexpr static const std::size_t gates_amount = 6; // TODO: this is very unoptimized!
                 const std::size_t rows_amount = get_rows_amount(this->witness_amount());
                 const std::size_t empty_rows_amount = get_empty_rows_amount();
                 const std::string component_name = "wrapper of BBF-components";
@@ -121,6 +124,11 @@ namespace nil {
                          std::initializer_list<typename component_type::public_input_container_type::value_type>
                              public_inputs) :
                     component_type(witnesses, constants, public_inputs, get_manifest()) {};
+
+                std::map<std::string, std::size_t> component_lookup_tables() const{
+                    std::map<std::string, std::size_t> lookup_tables;
+                    return lookup_tables;
+                }
             };
 
             template<typename BlueprintFieldType>
@@ -143,6 +151,8 @@ namespace nil {
                                                   nil::blueprint::bbf::GenerationStage::ASSIGNMENT,3>;
                 using Carry_On_Addition = typename nil::blueprint::bbf::carry_on_addition<BlueprintFieldType,
                                                   nil::blueprint::bbf::GenerationStage::ASSIGNMENT,3,16>;
+                using Useless = typename nil::blueprint::bbf::useless<BlueprintFieldType,
+                                                  nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
                 //using TYPE = typename Is_Zero::TYPE;
                 using TYPE = typename context_type::TYPE;
 
@@ -171,6 +181,10 @@ namespace nil {
 
                 // ct.print_witness_allocation_log();
 
+                std::vector<std::size_t> ct4_area = {12};
+                context_type ct4 = ct.subcontext(ct4_area,0,4);
+                Useless c4 = Useless(ct4);
+
                 return typename plonk_bbf_wrapper<BlueprintFieldType>::result_type(component, start_row_index);
             }
 
@@ -190,10 +204,15 @@ namespace nil {
                                                   nil::blueprint::bbf::GenerationStage::CONSTRAINTS,3>;
                 using Carry_On_Addition = typename nil::blueprint::bbf::carry_on_addition<BlueprintFieldType,
                                                   nil::blueprint::bbf::GenerationStage::CONSTRAINTS,3,16>;
+                using Useless = typename nil::blueprint::bbf::useless<BlueprintFieldType,
+                                                  nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<BlueprintFieldType>;
                 using lookup_constraint_type = crypto3::zk::snark::plonk_lookup_constraint<BlueprintFieldType>;
                 using TYPE = typename context_type::TYPE;
+
+                using component_type = plonk_bbf_wrapper<BlueprintFieldType>;
+                using var = typename component_type::var;
 
                 context_type ct = context_type(assignment,8,start_row_index); // max_rows = 8
                 Is_Zero c1 = Is_Zero(ct, instance_input.x);
@@ -208,6 +227,10 @@ namespace nil {
                 std::vector<std::size_t> ct3_area = {7,8,9,10,11};
                 context_type ct3 = ct.subcontext(ct3_area,0,4);
                 Carry_On_Addition c3 = Carry_On_Addition(ct3, input_x, input_y);
+
+                std::vector<std::size_t> ct4_area = {12};
+                context_type ct4 = ct.subcontext(ct4_area,0,4);
+                Useless c4 = Useless(ct4);
 
                 ct.optimize_gates();
 
@@ -236,6 +259,10 @@ namespace nil {
                     bp.add_copy_constraint(cc);
                 }
 
+                // compatibility layer: dynamic lookup tables
+                std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>
+                    dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
+
                 // compatibility layer: lookup constraint list
                 std::vector<std::pair<std::vector<std::pair<std::string,std::vector<constraint_type>>>, std::set<std::size_t>>>
                 lookup_constraints = ct.get_lookup_constraints();
@@ -245,7 +272,11 @@ namespace nil {
                     for(const auto& single_lookup_constraint : lookup_list) {
                         std::string table_name = single_lookup_constraint.first;
                         if (lookup_tables.find(table_name) == lookup_tables.end()) {
-                            bp.reserve_table(table_name);
+                            if (dynamic_lookup_tables.find(table_name) != dynamic_lookup_tables.end()) {
+                                bp.reserve_dynamic_table(table_name);
+                            } else {
+                                bp.reserve_table(table_name);
+                            }
                             lookup_tables.insert(table_name);
                         }
                         std::size_t table_index = bp.get_reserved_indices().at(table_name);
@@ -256,6 +287,26 @@ namespace nil {
                         assignment.enable_selector(selector_index, row_index);
                     }
                 }
+
+                for(const auto& [name, area] : dynamic_lookup_tables) {
+                    bp.register_dynamic_table(name);
+                    std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
+                    for(std::size_t row_index : area.second) {
+                        assignment.enable_selector(selector_index,row_index);
+                    }
+                    crypto3::zk::snark::plonk_lookup_table<BlueprintFieldType> table_specs;
+                    table_specs.tag_index = selector_index;
+                    table_specs.columns_number = area.first.size();
+                    std::vector<var> dynamic_lookup_cols;
+                    for(const auto& c : area.first) {
+                        dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness)); // TODO: does this make sense?!
+                    }
+                    table_specs.lookup_options = {dynamic_lookup_cols};
+                    bp.define_dynamic_table(name,table_specs);
+                }
+
+                // std::cout << "Gates amount = " << bp.num_gates() << "\n";
+                // std::cout << "Lookup gates amount = " << bp.num_lookup_gates() << "\n";
 
                 return typename plonk_bbf_wrapper<BlueprintFieldType>::result_type(component, start_row_index);
             }

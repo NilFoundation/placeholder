@@ -305,6 +305,7 @@ namespace nil {
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_constraint_type = std::pair<std::string,std::vector<typename FieldType::value_type>>;
+                using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>;
                 using basic_context<FieldType>::col_map;
                 public:
                     using TYPE = typename FieldType::value_type;
@@ -349,6 +350,9 @@ namespace nil {
                     void lookup(std::vector<TYPE> &C, std::string table_name) {
                         // TODO: actually check membership of C in table?
                     }
+                    void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
+                        // most probably do nothing
+                    }
 
                     void optimize_gates() {
                         BOOST_LOG_TRIVIAL(error) << "optimize_gates() called at assignment stage.\n";
@@ -360,6 +364,11 @@ namespace nil {
                     std::vector<plonk_copy_constraint> get_copy_constraints() {
                         BOOST_LOG_TRIVIAL(error) << "get_copy_constraints() called at assignment stage.\n";
                         return {};
+                    }
+                    dynamic_lookup_table_container_type& get_dynamic_lookup_tables() {
+                        dynamic_lookup_table_container_type res;
+                        BOOST_LOG_TRIVIAL(error) << "get_dynamic_lookup_tables() called at assignment stage.\n";
+                        return res;
                     }
                     std::vector<std::pair<std::vector<lookup_constraint_type>, std::set<std::size_t>>> get_lookup_constraints() {
                         BOOST_LOG_TRIVIAL(error) << "get_lookup_constraints() called at assignment stage.\n";
@@ -400,6 +409,8 @@ namespace nil {
                                                                    std::pair<std::vector<constraint_type>,std::set<std::size_t>>>;
                                                                    // ^^^ expressions, rows
                 using lookup_constraint_type = std::pair<std::string,std::vector<constraint_type>>; // NB: NOT exactly as plonk!!!
+                using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>;
+                                                            // ^^^ name -> (columns, rows)
                 using basic_context<FieldType>::col_map;
 
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
@@ -417,6 +428,8 @@ namespace nil {
                     std::shared_ptr<copy_constraints_container_type> copy_constraints;
                     // lookup constraints with table name, unique id and row list
                     std::shared_ptr<lookup_constraints_container_type> lookup_constraints;
+                    // dynamic lookup tables
+                    std::shared_ptr<dynamic_lookup_table_container_type> lookup_tables;
 
                     void add_constraint(TYPE &C_rel, std::size_t row) {
                         constraint_id_type C_id = constraint_id_type(C_rel);
@@ -526,6 +539,24 @@ namespace nil {
                         add_lookup_constraint(table_name, res, row);
                     }
 
+                    void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
+                        if (lookup_tables->find(name) != lookup_tables->end()) {
+                            BOOST_LOG_TRIVIAL(error) << "Double declaration of dynamic lookup table '" << name << "'!\n";
+                        }
+                        BOOST_ASSERT(lookup_tables->find(name) == lookup_tables->end());
+                        std::vector<std::size_t> cols;
+                        std::set<std::size_t> rows;
+
+                        for(std::size_t i = 0; i < W.size(); i++) {
+                            cols.push_back(col_map[column_type::witness][W[i]]);
+                        }
+                        for(std::size_t i = 0; i < num_rows; i++) {
+                            rows.insert(get_row(from_row + i)); // store absolute row numbers
+                        }
+
+                        lookup_tables->insert({name,{cols,rows}});
+                    }
+
                     void optimize_gates() {
                         // NB: std::map<constraint_id_type, std::pair<constraint_type, std::set<std::size_t>>> constraints;
                         // intended to
@@ -565,6 +596,10 @@ namespace nil {
 
                     std::vector<plonk_copy_constraint>& get_copy_constraints() {
                         return *copy_constraints;
+                    }
+
+                    dynamic_lookup_table_container_type& get_dynamic_lookup_tables() {
+                        return *lookup_tables;
                     }
 
                     std::vector<std::pair<std::vector<lookup_constraint_type>, std::set<std::size_t>>> get_lookup_constraints() {
@@ -613,17 +648,22 @@ namespace nil {
                          return res;
                     }
 
-                    context(assignment_type &at, std::size_t max_rows) : basic_context<FieldType>(at, max_rows) {
+                    context(assignment_type &at, std::size_t max_rows) :
+                        basic_context<FieldType>(at, max_rows) {
+
                         constraints = std::make_shared<constraints_container_type>();
                         copy_constraints = std::make_shared<copy_constraints_container_type>();
                         lookup_constraints = std::make_shared<lookup_constraints_container_type>();
+                        lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
                     };
 
                     context(assignment_type &at, std::size_t max_rows, std::size_t row_shift) :
                         basic_context<FieldType>(at, max_rows, row_shift) {
+
                         constraints = std::make_shared<constraints_container_type>();
                         copy_constraints = std::make_shared<copy_constraints_container_type>();
                         lookup_constraints = std::make_shared<lookup_constraints_container_type>();
+                        lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
                     };
 
             };
@@ -665,6 +705,10 @@ namespace nil {
                     void lookup(TYPE &C, std::string table_name) {
                         std::vector<TYPE> input = {C};
                         ct.lookup(input,table_name);
+                    }
+
+                    void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
+                        ct.lookup_table(name,W,from_row,num_rows);
                     }
 
                     generic_component(context_type &context_object, // context object, created outside
