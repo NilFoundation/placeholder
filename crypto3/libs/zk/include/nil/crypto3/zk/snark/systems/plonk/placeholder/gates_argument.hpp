@@ -236,7 +236,6 @@ namespace nil {
                             F[0] += evaluator.evaluate();
                         }
 
-                        F[0] *= mask_polynomial;
                         return F;
                     }
 
@@ -269,7 +268,6 @@ namespace nil {
                             F[0] += gate_result;
                         }
 
-                        F[0] *= mask_value;
                         return F;
                     }
                 };

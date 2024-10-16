@@ -49,9 +49,9 @@ namespace nil {
                 public component<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> {
             public:
                 using manifest_type = nil::blueprint::plonk_component_manifest;
-                using witness_container_type = std::vector<std::uint32_t>;
-                using constant_container_type = std::vector<std::uint32_t>;
-                using public_input_container_type = std::vector<std::uint32_t>;
+                using witness_container_type = std::vector<std::int32_t>;
+                using constant_container_type = std::vector<std::int32_t>;
+                using public_input_container_type = std::vector<std::int32_t>;
 
                 witness_container_type _W;
                 constant_container_type _C;

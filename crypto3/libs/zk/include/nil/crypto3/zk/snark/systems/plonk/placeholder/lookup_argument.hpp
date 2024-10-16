@@ -6,6 +6,7 @@
 // Copyright (c) 2023 Elena Tatuzova <e.tatuzova@nil.foundation>
 // Copyright (c) 2023 Martun Karapetyan <martun@nil.foundation>
 // Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -464,7 +465,6 @@ namespace nil {
                                     v += theta_acc * lookup_tag * c;
                                     theta_acc *= theta;
                                 }
-                                v *= mask_assignment;
                                 lookup_value_ptr->push_back(v);
                             }
                         }
@@ -754,8 +754,6 @@ namespace nil {
                                     shifted_v += theta_acc * evaluations[shifted_key1]* shifted_selector_value;
                                     theta_acc *= theta;
                                 }
-                                v *= mask_value;
-                                shifted_v *= shifted_mask_value;
                                 lookup_value.push_back(v);
                                 shifted_lookup_value.push_back(shifted_v);
                             }
