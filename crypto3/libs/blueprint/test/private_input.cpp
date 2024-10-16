@@ -57,7 +57,7 @@ void test_add(const typename FieldType::value_type &a, const typename FieldType:
 
     using component_type = blueprint::components::addition<ArithmetizationType, BlueprintFieldType, nil::blueprint::basic_non_native_policy<BlueprintFieldType>>;
 
-    const std::size_t private_index = AssignmentType::private_storage_index;
+    const std::int64_t private_index = AssignmentType::private_storage_index;
 
     typename component_type::input_type instance_input = {
         var(private_index, 0, false, var::column_type::public_input),
