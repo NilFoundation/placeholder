@@ -28,6 +28,8 @@
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_GENERIC_HPP
 
 #include <functional>
+#include <sstream>
+#include <vector>
 
 #include <boost/log/trivial.hpp>
 
@@ -40,27 +42,26 @@
 //#include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/gate_id.hpp>
 
-#include <nil/blueprint/bbf/bool_field.hpp>
-
 namespace nil {
     namespace blueprint {
         namespace bbf {
 
             enum class GenerationStage { ASSIGNMENT = 0, CONSTRAINTS = 1 };
 
-            enum column_type { witness, public_input, constant, COLUMN_TYPES };
+            enum column_type { witness = 0, public_input = 1, constant = 2, COLUMN_TYPES_COUNT = 3};
 
             std::ostream &operator<<(std::ostream &os, const column_type &t) {
                 std::map<column_type, std::string> type_map = {
                     {column_type::witness, "witness"},
                     {column_type::public_input, "public input"},
                     {column_type::constant, "constant"},
-                    {column_type::COLUMN_TYPES, " "}
+                    {column_type::COLUMN_TYPES_COUNT, " "}
                 };
                 os << type_map[t];
                 return os;
             }
 
+            // Checks if an expression is just a single variable.
             template<typename VariableType>
             class expression_is_variable_visitor : public boost::static_visitor<bool> {
             public:
@@ -84,6 +85,8 @@ namespace nil {
                 }
             };
 
+            // Returns the range of rows used by the given expression. The first bool value returns if the expression
+            // has any variables or not, I.E. if it's false, the other 2 values have no meaning.
             template<typename VariableType>
             class expression_row_range_visitor : public boost::static_visitor<std::tuple<bool,int32_t,int32_t>> {
             public:
@@ -128,6 +131,7 @@ namespace nil {
                 }
             };
 
+            // Converts the given expression to become relative to the fiven row shift using rotations.
             template<typename VariableType>
             class expression_relativize_visitor : public boost::static_visitor<crypto3::math::expression<VariableType>> {
             private:
@@ -172,44 +176,96 @@ namespace nil {
                 }
             };
 
+            // A class for storing the information on which cells in the assignment table is already allocated/used.
+            template<typename FieldType>
+            class allocation_log {
+            public:
+                using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
+
+                allocation_log(const assignment_description_type& desc) {
+                    log[column_type::witness] = std::vector<std::vector<bool>>(
+                        desc.witness_columns, std::vector<bool>(desc.usable_rows_amount));
+                    log[column_type::public_input] = std::vector<std::vector<bool>>(
+                        desc.public_input_columns, std::vector<bool>(desc.usable_rows_amount));
+                    log[column_type::constant] = std::vector<std::vector<bool>>(
+                        desc.constant_columns, std::vector<bool>(desc.usable_rows_amount));
+                }
+
+                bool is_allocated(std::size_t col, std::size_t row, column_type t) {
+                    if (col >= log[t].size() || row >= log[t][col].size()) {
+                        std::stringstream error;
+                        error << "Invalid value col = " << col << ", row = " << row 
+                            << " when checking if a " << t << " cell is allocated. We have "
+                            << log[t].size() << " columns each having "
+                            << log[t][col].size() << " rows.";
+                        throw std::out_of_range(error.str());
+                    }
+                    return log[t][col][row];
+                }
+
+                void mark_allocated(std::size_t col, std::size_t row, column_type t) {
+                    if (col >= log[t].size() || row >= log[t][col].size()) {
+                        std::stringstream error;
+                        error << "Invalid value col = " << col << ", row = " << row 
+                            << " when marking a " << t << " cell allocated. We have "
+                            << log[t].size() << " columns each having "
+                            << log[t][col].size() << " rows.";
+                        throw std::out_of_range(error.str());
+                    }
+                    log[t][col][row] = true;
+                }
+
+            private:
+                std::vector<std::vector<bool>> log[column_type::COLUMN_TYPES_COUNT];
+            };
+
             template<typename FieldType>
             class basic_context {
-                using bool_field = crypto3::algebra::fields::bool_field;
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
-                using allocation_log_type = assignment<crypto3::zk::snark::plonk_constraint_system<bool_field>>;
-
-                private:
-                    std::shared_ptr<allocation_log_type> al;
-                protected:
-                    std::vector<std::size_t> col_map[COLUMN_TYPES];
-                    std::size_t row_shift = 0; // united, for all column types
-                    std::size_t max_rows;
-                    std::size_t current_row[COLUMN_TYPES];
+                using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 public:
+                    basic_context(const assignment_description_type& desc, std::size_t max_rows_)
+                        : current_row{0, 0, 0} // For all types of columns start from 0. TODO: this might not be a good idea
+                        , max_rows(max_rows_)
+                        , alloc_log(std::make_shared<allocation_log<FieldType>>(desc))
+                    {
+                        for(std::size_t i = 0; i < desc.witness_columns; i++) {
+                            col_map[column_type::witness].push_back(i);
+                        }
+                        for(std::size_t i = 0; i < desc.public_input_columns; i++) {
+                            col_map[column_type::public_input].push_back(i);
+                        }
+                        for(std::size_t i = 0; i < desc.constant_columns; i++) {
+                            col_map[column_type::constant].push_back(i);
+                        }
+                    }
+
+                    basic_context(const assignment_description_type& desc, std::size_t max_rows_, std::size_t row_shift_)
+                        : basic_context(desc, max_rows_) {
+                        row_shift = row_shift_;
+                    }
+
                     std::size_t get_col(std::size_t col, column_type t) {
                         if (col >= col_map[t].size()) {
-                            BOOST_LOG_TRIVIAL(error) << "Column ("<< t <<") out of range ("<< col <<" >= " << (col_map[t].size()) << ").\n";
+                            std::stringstream ss;
+                            ss << "Column ("<< t <<") out of range ("<< col <<" >= " << (col_map[t].size()) << ").";
+                            throw std::out_of_range(ss.str());
                         }
-                        BOOST_ASSERT(col < col_map[t].size());
                         return col_map[t][col];
                     }
+
                     std::size_t get_row(std::size_t row) {
                         if (row >= max_rows) {
-                            BOOST_LOG_TRIVIAL(error) << "Row out of range (" << row << " >= " << max_rows << ").\n";
+                            std::stringstream ss;
+                            ss << "Row out of range (" << row << " >= " << max_rows << ").";
+                            throw std::out_of_range(ss.str());
                         }
-                        BOOST_ASSERT(row < max_rows);
                         return row + row_shift;
                     }
 
                     bool is_allocated(std::size_t col, std::size_t row, column_type t) {
-                        bool_field::value_type cell;
-                        switch (t) {
-                            case column_type::witness:      cell = al->witness(get_col(col,t),get_row(row)); break;
-                            case column_type::public_input: cell = al->public_input(get_col(col,t),get_row(row)); break;
-                            case column_type::constant:     cell = al->constant(get_col(col,t),get_row(row)); break;
-                        }
-                        return (cell == bool_field::value_type::one());
+                        return alloc_log->is_allocated(get_col(col,t),get_row(row), t);
                     }
 
                     void print_witness_allocation_log() {
@@ -219,19 +275,14 @@ namespace nil {
                         std::cout << "\n";
                         for(std::size_t i = 0; i < max_rows; i++) {
                             for(std::size_t j = 0; j < col_map[column_type::witness].size(); j++) {
-                                std::cout << " " << (is_allocated(j,i,column_type::witness) ? "*" : "_") << " ";
+                                std::cout << " " << (is_allocated(j, i, column_type::witness) ? "*" : "_") << " ";
                             }
                             std::cout << "\n";
                         }
                     }
 
                     void mark_allocated(std::size_t col, std::size_t row, column_type t) {
-                        BOOST_ASSERT(row < max_rows);
-                        switch (t) {
-                            case column_type::witness:      al->witness(get_col(col,t),get_row(row)) = 1; break;
-                            case column_type::public_input: al->public_input(get_col(col,t),get_row(row)) = 1; break;
-                            case column_type::constant:     al->constant(get_col(col,t),get_row(row)) = 1; break;
-                        }
+                        alloc_log->mark_allocated(get_col(col,t),get_row(row), t);
                     }
 
                     std::pair<std::size_t, std::size_t> next_free_cell(column_type t) {
@@ -240,7 +291,7 @@ namespace nil {
                                     hsize = col_map[t].size();
                         bool found = false;
 
-                        while((!found) && (current_row[t] < max_rows)) {
+                        while ((!found) && (current_row[t] < max_rows)) {
                             if (col >= hsize) {
                                 current_row[t]++;
                                 row = current_row[t];
@@ -253,52 +304,33 @@ namespace nil {
                         }
 
                         if (!found) {
-                            BOOST_LOG_TRIVIAL(error) << "Insufficient space for allocation.\n";
+                            throw std::runtime_error("Insufficient space for allocation.");
                         }
-                        BOOST_ASSERT(found);
 
                         return {col, row};
                     }
 
                     void new_line(column_type t) {
-                        std::size_t col;
-                        do {
-                            auto [c, r] = next_free_cell(t);
-                            col = c;
-                            if (col > 0) {
-                                current_row[t]++;
+                        while (next_free_cell(t).first > 0) {
+                            current_row[t]++;
+                            if (current_row[t] == max_rows) {
+                                throw std::runtime_error("Insufficient space for starting a new row.");
                             }
-                        } while ((col > 0) && (current_row[t] < max_rows));
-
-                        if (current_row[t] == max_rows) {
-                            BOOST_LOG_TRIVIAL(error) << "Insufficient space for starting a new row.\n";
                         }
-                        BOOST_ASSERT(col == 0);
                     }
 
-                    basic_context(assignment_type &at, std::size_t max_rows_) :
-                        current_row{0, 0, 0}, // For all types of columns start from 0. TODO: this might not be a good idea
-                        max_rows(max_rows_)
-                    {
-                        al = std::make_shared<allocation_log_type>(at.witnesses_amount(),
-                            at.public_inputs_amount(), at.constants_amount(), at.selectors_amount());
-                        for(std::size_t i = 0; i < at.witnesses_amount(); i++) {
-                            col_map[column_type::witness].push_back(i);
-                        }
-                        for(std::size_t i = 0; i < at.public_inputs_amount(); i++) {
-                            col_map[column_type::public_input].push_back(i);
-                        }
-                        for(std::size_t i = 0; i < at.constants_amount(); i++) {
-                            col_map[column_type::constant].push_back(i);
-                        }
-                    };
-                    basic_context(assignment_type &at, std::size_t max_rows_, std::size_t row_shift_) :
-                        basic_context(at,max_rows_) {
-                        row_shift = row_shift_;
-                    };
+                private:
+                    std::shared_ptr<allocation_log<FieldType>> alloc_log;
+
+                protected:
+                    std::vector<std::size_t> col_map[column_type::COLUMN_TYPES_COUNT];
+                    std::size_t row_shift = 0; // united, for all column types
+                    std::size_t max_rows;
+                    std::size_t current_row[column_type::COLUMN_TYPES_COUNT];
             };
 
-            template<typename FieldType, GenerationStage stage> class context;
+            template<typename FieldType, GenerationStage stage>
+            class context;
 
             template<typename FieldType>
             class context<FieldType, GenerationStage::ASSIGNMENT> : public basic_context<FieldType> { // assignment-specific definition
@@ -307,6 +339,7 @@ namespace nil {
                 using lookup_constraint_type = std::pair<std::string,std::vector<typename FieldType::value_type>>;
                 using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>;
                 using basic_context<FieldType>::col_map;
+
                 public:
                     using TYPE = typename FieldType::value_type;
                     using basic_context<FieldType>::get_col;
@@ -314,14 +347,23 @@ namespace nil {
                     using basic_context<FieldType>::is_allocated;
                     using basic_context<FieldType>::mark_allocated;
 
-                private:
-                    // reference to actual assignment table
-                    assignment_type &at;
-
                 public:
+
+                    context(assignment_type &assignment_table, std::size_t max_rows)
+                        : basic_context<FieldType>(assignment_table.get_description(), max_rows)
+                        , at(assignment_table)
+                    { };
+
+                    context(assignment_type &assignment_table, std::size_t max_rows, std::size_t row_shift)
+                        : basic_context<FieldType>(assignment_table.get_description(), max_rows, row_shift)
+                        , at(assignment_table)
+                    { };
+
                     void allocate(TYPE &C, size_t col, size_t row, column_type t) {
                         if (is_allocated(col, row, t)) {
-                            BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
+                            std::stringstream ss;
+                            ss << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
+                            throw std::logic_error(ss.str());
                         }
                         switch (t) {
                             // NB: we use get_col/get_row here because active area might differ
@@ -338,20 +380,21 @@ namespace nil {
                                 BOOST_ASSERT(C == at.constant(get_col(col,t), get_row(row)));
                             break;
                         }
-                        mark_allocated(col,row,t);
+                        mark_allocated(col, row, t);
                     }
+
                     void copy_constrain(TYPE &A, TYPE &B) {
                         if (A != B) {
                             // NB: This might be an error, but we don't stop execution,
                             // because we want to be able to run tests-to-fail.
-                            BOOST_LOG_TRIVIAL(warning) << "Assignment violates copy constraint (" << A << " != " << B << ")\n";
+                            BOOST_LOG_TRIVIAL(warning) << "Assignment violates copy constraint (" << A << " != " << B << ")";
                         }
                     }
                     void constrain(TYPE C) {
                         if (C != 0) {
                             // NB: This might be an error, but we don't stop execution,
                             // because we want to be able to run tests-to-fail.
-                            BOOST_LOG_TRIVIAL(warning) << "Assignment violates polynomial constraint (" << C << " != 0)\n";
+                            BOOST_LOG_TRIVIAL(warning) << "Assignment violates polynomial constraint (" << C << " != 0)";
                         }
                     }
                     void lookup(std::vector<TYPE> &C, std::string table_name) {
@@ -362,15 +405,13 @@ namespace nil {
                     }
 
                     void optimize_gates() {
-                        BOOST_LOG_TRIVIAL(error) << "optimize_gates() called at assignment stage.\n";
+                        throw std::logic_error("optimize_gates() called at assignment stage.");
                     }
                     std::vector<std::pair<std::vector<TYPE>, std::set<std::size_t>>> get_constraints() {
-                        BOOST_LOG_TRIVIAL(error) << "get_constraints() called at assignment stage.\n";
-                        return {};
+                        throw std::logic_error("get_constraints() called at assignment stage.");
                     }
                     std::vector<plonk_copy_constraint> get_copy_constraints() {
-                        BOOST_LOG_TRIVIAL(error) << "get_copy_constraints() called at assignment stage.\n";
-                        return {};
+                        throw std::logic_error("get_copy_constraints() called at assignment stage.");
                     }
                     dynamic_lookup_table_container_type& get_dynamic_lookup_tables() {
                         dynamic_lookup_table_container_type res;
@@ -378,30 +419,31 @@ namespace nil {
                         return res;
                     }
                     std::vector<std::pair<std::vector<lookup_constraint_type>, std::set<std::size_t>>> get_lookup_constraints() {
-                        BOOST_LOG_TRIVIAL(error) << "get_lookup_constraints() called at assignment stage.\n";
-                        return {};
+                        throw std::logic_error("get_lookup_constraints() called at assignment stage.");
                     }
 
-                    context subcontext(std::vector<std::size_t> W, std::size_t new_row_shift, std::size_t new_max_rows) {
-                         context res = *this;
-                         std::vector<std::size_t> new_W = {};
-                         for(std::size_t i = 0; i < W.size(); i++) {
-                             new_W.push_back(col_map[column_type::witness][W[i]]);
-                         }
-                         res.col_map[column_type::witness] = new_W;
-                         res.row_shift += new_row_shift;
-                         res.max_rows = new_max_rows;
-                         res.current_row[column_type::witness] = 0; // reset to 0, because in the new column set everything is different
-                         return res;
+                    context subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
+                        context res = *this;
+                        std::vector<std::size_t> new_W = {};
+                        for(std::size_t i = 0; i < W.size(); i++) {
+                            new_W.push_back(col_map[column_type::witness][W[i]]);
+                        }
+                        res.col_map[column_type::witness] = new_W;
+                        res.row_shift += new_row_shift;
+                        res.max_rows = new_max_rows;
+                        res.current_row[column_type::witness] = 0; // reset to 0, because in the new column set everything is different
+                        return res;
                     }
 
-                    context(assignment_type &assignment_table, std::size_t max_rows) :
-                         basic_context<FieldType>(assignment_table,max_rows), at(assignment_table)
-                    { };
+                    context fresh_subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
+                        context res = subcontext(W, new_row_shift, new_max_rows);
+                        // TODO: Maybe we should create a fresh assignment table here?
+                        return res;
+                    }
 
-                    context(assignment_type &assignment_table, std::size_t max_rows, std::size_t row_shift) :
-                         basic_context<FieldType>(assignment_table,max_rows,row_shift), at(assignment_table)
-                    { };
+                private:
+                    // reference to the actual assignment table
+                    assignment_type &at;
             };
 
             template<typename FieldType>
@@ -422,6 +464,8 @@ namespace nil {
                 using basic_context<FieldType>::col_map;
 
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
+
                 public:
                     using TYPE = constraint_type;
                     using basic_context<FieldType>::get_col;
@@ -429,36 +473,20 @@ namespace nil {
                     using basic_context<FieldType>::is_allocated;
                     using basic_context<FieldType>::mark_allocated;
 
-                private:
-                    // constraints (with unique id), and the rows they are applied to
-                    std::shared_ptr<constraints_container_type> constraints;
-                    // copy constraints as in BP
-                    std::shared_ptr<copy_constraints_container_type> copy_constraints;
-                    // lookup constraints with table name, unique id and row list
-                    std::shared_ptr<lookup_constraints_container_type> lookup_constraints;
-                    // dynamic lookup tables
-                    std::shared_ptr<dynamic_lookup_table_container_type> lookup_tables;
-                    // constants
-                    assignment_type constants_storage = assignment_type(0,0,0,0);
-
-                    void add_constraint(TYPE &C_rel, std::size_t row) {
-                        constraint_id_type C_id = constraint_id_type(C_rel);
-                        if (constraints->find(C_id) != constraints->end()) {
-                            constraints->at(C_id).second.insert(row);
-                        } else {
-                            constraints->insert({C_id, {C_rel, {row}}});
-                        }
-                    }
-                    void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t row) {
-                        constraint_id_type C_id = constraint_id_type(C_rel);
-                        if (lookup_constraints->find({table_name,C_id}) != lookup_constraints->end()) {
-                            lookup_constraints->at({table_name,C_id}).second.insert(row);
-                        } else {
-                            lookup_constraints->insert({{table_name,C_id}, {C_rel, {row}}});
-                        }
-                    }
-
                 public:
+
+                    context(const assignment_description_type& desc, std::size_t max_rows)
+                            : desc(desc)
+                            , basic_context<FieldType>(desc, max_rows) {
+                        reset_storage();
+                    }
+
+                    context(const assignment_description_type& desc, std::size_t max_rows, std::size_t row_shift)
+                            : desc(desc)
+                            , basic_context<FieldType>(desc, max_rows, row_shift) {
+                        reset_storage();
+                    }
+
                     void allocate(TYPE &C, size_t col, size_t row, column_type t) {
                         if (is_allocated(col, row, t)) {
                             BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
@@ -466,11 +494,12 @@ namespace nil {
                         if (t == column_type::constant) {
                             auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(C);
                             if (has_vars) {
-                                BOOST_LOG_TRIVIAL(error) << "Trying to assign constraint " << C << " to constant cell!\n";
+                                std::stringstream error;
+                                error << "Trying to assign constraint " << C << " to constant cell!";
+                                throw std::invalid_argument(error.str());
                             }
-                            BOOST_ASSERT(!has_vars);
-                            value_type C_val = C.evaluate(0,constants_storage);
-                            constants_storage.constant(get_col(col,t), get_row(row)) = C_val; // store the constant
+                            value_type C_val = C.evaluate(0, *constants_storage);
+                            constants_storage->constant(get_col(col,t), get_row(row)) = C_val; // store the constant
                         }
                         var res = var(get_col(col,t), get_row(row), // get_col/get_row are active-area-aware
                                       false, // false = use absolute cell address
@@ -478,8 +507,9 @@ namespace nil {
                         if ((C != TYPE()) && (t == column_type::witness)) { // TODO: TYPE() - is this ok? NB: we only constrain witnesses!
                             constrain(res - C);
                         }
+
                         C = res;
-                        mark_allocated(col,row,t);
+                        mark_allocated(col, row, t);
                     }
 
                     void copy_constrain(TYPE &A, TYPE &B) {
@@ -654,42 +684,72 @@ namespace nil {
                         return res;
                     }
 
-                    context subcontext(std::vector<std::size_t> W, std::size_t new_row_shift, std::size_t new_max_rows) {
-                         context res = *this;
-                         std::vector<std::size_t> new_W = {};
-                         for(std::size_t i = 0; i < W.size(); i++) {
-                             new_W.push_back(col_map[column_type::witness][W[i]]);
-                         }
-                         res.col_map[column_type::witness] = new_W;
-                         res.row_shift += new_row_shift;
-                         res.max_rows = new_max_rows;
-                         res.current_row[column_type::witness] = 0; // reset to 0, because in the new column set everything is different
-                         return res;
+                    context subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
+                        context res = *this;
+                        std::vector<std::size_t> new_W = {};
+                        for(std::size_t i = 0; i < W.size(); i++) {
+                            new_W.push_back(col_map[column_type::witness][W[i]]);
+                        }
+                        res.col_map[column_type::witness] = new_W;
+                        res.row_shift += new_row_shift;
+                        res.max_rows = new_max_rows;
+                        res.current_row[column_type::witness] = 0; // reset to 0, because in the new column set everything is different
+                        return res;
                     }
+
+                    void reset_storage() {
+                        constraints = std::make_shared<constraints_container_type>();
+                        copy_constraints = std::make_shared<copy_constraints_container_type>();
+                        lookup_constraints = std::make_shared<lookup_constraints_container_type>();
+                        lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
+                        constants_storage = std::make_shared<assignment_type>(0, 0, desc.constant_columns, 0);
+                    }
+
                     auto get_constants() {
-                        return constants_storage.constants();
+                        return constants_storage->constants();
                     }
 
-                    context(assignment_type &at, std::size_t max_rows) :
-                        basic_context<FieldType>(at, max_rows) {
+                    // This one will create its own set of constraint storages.
+                    context fresh_subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
+                        context res = subcontext(W, new_row_shift, new_max_rows);
+                        res.reset_storage();
+                        return res;
+                    } 
 
-                        constraints = std::make_shared<constraints_container_type>();
-                        copy_constraints = std::make_shared<copy_constraints_container_type>();
-                        lookup_constraints = std::make_shared<lookup_constraints_container_type>();
-                        lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
-                        constants_storage = assignment_type(0,0,at.constants_amount(),0);
-                    };
 
-                    context(assignment_type &at, std::size_t max_rows, std::size_t row_shift) :
-                        basic_context<FieldType>(at, max_rows, row_shift) {
+                private:
 
-                        constraints = std::make_shared<constraints_container_type>();
-                        copy_constraints = std::make_shared<copy_constraints_container_type>();
-                        lookup_constraints = std::make_shared<lookup_constraints_container_type>();
-                        lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
-                        constants_storage = assignment_type(0,0,at.constants_amount(),0);
-                    };
+                    void add_constraint(TYPE &C_rel, std::size_t row) {
+                        constraint_id_type C_id = constraint_id_type(C_rel);
+                        if (constraints->find(C_id) != constraints->end()) {
+                            constraints->at(C_id).second.insert(row);
+                        } else {
+                            constraints->insert({C_id, {C_rel, {row}}});
+                        }
+                    }
 
+                    void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t row) {
+                        constraint_id_type C_id = constraint_id_type(C_rel);
+                        if (lookup_constraints->find({table_name,C_id}) != lookup_constraints->end()) {
+                            lookup_constraints->at({table_name,C_id}).second.insert(row);
+                        } else {
+                            lookup_constraints->insert({{table_name,C_id}, {C_rel, {row}}});
+                        }
+                    }
+
+                    // Assignment description will be used when resetting the context.
+                    assignment_description_type desc;
+
+                    // constraints (with unique id), and the rows they are applied to
+                    std::shared_ptr<constraints_container_type> constraints;
+                    // copy constraints as in BP
+                    std::shared_ptr<copy_constraints_container_type> copy_constraints;
+                    // lookup constraints with table name, unique id and row list
+                    std::shared_ptr<lookup_constraints_container_type> lookup_constraints;
+                    // dynamic lookup tables
+                    std::shared_ptr<dynamic_lookup_table_container_type> lookup_tables;
+                    // constants
+                    std::shared_ptr<assignment_type> constants_storage;
             };
 
             template<typename FieldType, GenerationStage stage>
@@ -707,7 +767,7 @@ namespace nil {
                 public:
                     void allocate(TYPE &C, column_type t = column_type::witness) {
                         auto [col, row] = ct.next_free_cell(t);
-                        ct.allocate(C,col,row,t);
+                        ct.allocate(C, col, row, t);
                     }
 
                     void allocate(TYPE &C, size_t col, size_t row, column_type t = column_type::witness) {

@@ -54,9 +54,10 @@ void test_bbf_wrapper(std::vector<typename BlueprintFieldType::value_type> publi
     constexpr std::size_t ConstantColumns = 3;    // TODO
     constexpr std::size_t SelectorColumns = 9;    // TODO
 
-    // table configuration
+    // table configuration, TODO: We need 108 rows because test_plonk_component.hpp places the component at a random row 0..100.
+    // In practice it's placed at row 82.
     zk::snark::plonk_table_description<BlueprintFieldType> desc(
-        WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns);
+        WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns, 108, 108);
 
     using ArithmetizationType = zk::snark::plonk_constraint_system<BlueprintFieldType>;
     using AssignmentType = assignment<ArithmetizationType>;
