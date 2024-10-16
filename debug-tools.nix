@@ -28,7 +28,7 @@ in stdenv.mkDerivation {
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
-  propagatedBuildInputs = [ boost crypto3 gtk4 gtkmm4 glibmm pcre2 glib pango pangomm ];
+  propagatedBuildInputs = [ boost gtk4 gtkmm4 glibmm pcre2 glib pango pangomm ];
 
   buildInputs = [ cmake_modules ];
 
