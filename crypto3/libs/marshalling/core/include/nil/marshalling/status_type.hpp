@@ -97,6 +97,7 @@ namespace nil {
                         case status_type::error_status_amount:
                             return "unreachable";
                     }
+                    return "unreachable";
                 }
         };
     }    // namespace marshalling

@@ -44,15 +44,15 @@ namespace nil {
                     std::vector<ConstraintType> constraints;
                     std::int64_t selector_index;
 
-                    plonk_gate(std::size_t selector_index, const ConstraintType &constraint) :
+                    plonk_gate(std::int64_t selector_index, const ConstraintType &constraint) :
                         constraints(std::vector<ConstraintType>({constraint})), selector_index(selector_index) {
                     }
 
-                    plonk_gate(std::size_t selector_index, const std::initializer_list<ConstraintType> &&constraints) :
+                    plonk_gate(std::int64_t selector_index, const std::initializer_list<ConstraintType> &&constraints) :
                         constraints(constraints), selector_index(selector_index) {
                     }
 
-                    plonk_gate(std::size_t selector_index, const std::vector<ConstraintType> &constraints) :
+                    plonk_gate(std::int64_t selector_index, const std::vector<ConstraintType> &constraints) :
                         constraints(constraints), selector_index(selector_index) {
                     }
 

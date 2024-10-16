@@ -44,7 +44,7 @@ namespace nil {
                 template<typename TTypeBase, typename LookupTable>
                 using plonk_lookup_table = nil::marshalling::types::bundle<
                     TTypeBase, std::tuple<
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>, // tag_index
+                        nil::marshalling::types::integral<TTypeBase, std::int64_t>, // tag_index
                         nil::marshalling::types::integral<TTypeBase, std::size_t>, // columns_number
 
                         nil::marshalling::types::array_list<
@@ -77,7 +77,7 @@ namespace nil {
                     }
                     return plonk_lookup_table<TTypeBase, LookupTable>(
                         std::make_tuple(
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>(table.tag_index),
+                            nil::marshalling::types::integral<TTypeBase, std::int64_t>(table.tag_index),
                             nil::marshalling::types::integral<TTypeBase, std::size_t>(table.columns_number),
                             filled_options
                         )
@@ -88,7 +88,7 @@ namespace nil {
                 LookupTable make_plonk_lookup_table(
                     const plonk_lookup_table<nil::marshalling::field_type<Endianness>, LookupTable> &filled_table
                 ) {
-                    std::size_t tag_index = std::get<0>(filled_table.value()).value();
+                    std::int64_t tag_index = std::get<0>(filled_table.value()).value();
                     std::size_t columns_number = std::get<1>(filled_table.value()).value();
                     LookupTable result(columns_number, tag_index);
 

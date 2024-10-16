@@ -300,7 +300,7 @@ namespace nil {
                     // Change after implementing minimized permutation_argument
                 }
 
-                std::vector<std::uint32_t> all_witnesses() const{
+                std::vector<std::int32_t> all_witnesses() const{
                     return this->_W;
                 }
 
@@ -333,7 +333,7 @@ namespace nil {
 
                 typename component_type::challenges challenges;
                 constant_pow_component_type constant_pow_instance(
-                    component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}), std::array<std::uint32_t, 0>(),
+                    component.all_witnesses(), std::array<std::int32_t, 1>({component.C(0)}), std::array<std::int32_t, 0>(),
                     (BlueprintFieldType::modulus - 1)/component.fri_domain_size
                 );
 
@@ -352,7 +352,7 @@ namespace nil {
                 var vk1_var = var(component.C(0), start_row_index+3, false, var::column_type::constant);
 
                 typename poseidon_component_type::input_type poseidon_input = {zero_var, vk0_var, vk1_var};
-                poseidon_component_type poseidon_instance(component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}), std::array<std::uint32_t, 0>());
+                poseidon_component_type poseidon_instance(component.all_witnesses(), std::array<std::int32_t, 1>({component.C(0)}), std::array<std::int32_t, 0>());
                 std::cout << "Poseidon prepared" << std::endl;
                 auto poseidon_output = generate_assignments(poseidon_instance, assignment, poseidon_input, row);
 
@@ -446,7 +446,7 @@ namespace nil {
                 }
 
                 x_index_component_type x_index_instance(
-                    component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}), std::array<std::uint32_t, 0>(),
+                    component.all_witnesses(), std::array<std::int32_t, 1>({component.C(0)}), std::array<std::int32_t, 0>(),
                     component.fri_initial_merkle_proof_size, component.fri_omega
                 );
                 for( std::size_t i = 0; i < component.fri_params_lambda; i++){
@@ -463,8 +463,8 @@ namespace nil {
 
                 std::size_t colinear_checks_rows = 0;
                 colinear_checks_component_type colinear_checks_instance(
-                    component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}),
-                    std::array<std::uint32_t, 0>(), component.fri_params_r
+                    component.all_witnesses(), std::array<std::int32_t, 1>({component.C(0)}),
+                    std::array<std::int32_t, 0>(), component.fri_params_r
                 );
                 for( std::size_t i = 0; i < component.fri_params_lambda; i++){
                     typename colinear_checks_component_type::input_type colinear_checks_input(component.fri_params_r);
@@ -604,11 +604,11 @@ namespace nil {
                 var vk1_var = var(component.C(0), start_row_index+3, false, var::column_type::constant);
 
                 typename poseidon_component_type::input_type poseidon_input = {zero_var, vk0_var, vk1_var};
-                poseidon_component_type poseidon_instance(component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}), std::array<std::uint32_t, 0>());
+                poseidon_component_type poseidon_instance(component.all_witnesses(), std::array<std::int32_t, 1>({component.C(0)}), std::array<std::int32_t, 0>());
                 auto poseidon_output = generate_circuit(poseidon_instance, bp, assignment, poseidon_input, row);
 
                 constant_pow_component_type constant_pow_instance(
-                    component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}), std::array<std::uint32_t, 0>(),
+                    component.all_witnesses(), std::array<std::int32_t, 1>({component.C(0)}), std::array<std::int32_t, 0>(),
                     (BlueprintFieldType::modulus - 1)/component.fri_domain_size
                 );
 
@@ -684,7 +684,7 @@ namespace nil {
                 }
 
                 x_index_component_type x_index_instance(
-                    component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}), std::array<std::uint32_t, 0>(),
+                    component.all_witnesses(), std::array<std::int32_t, 1>({component.C(0)}), std::array<std::int32_t, 0>(),
                     component.fri_initial_merkle_proof_size, component.fri_omega
                 );
                 for( std::size_t i = 0; i < component.fri_params_lambda; i++){
@@ -700,8 +700,8 @@ namespace nil {
                 }
 
                 colinear_checks_component_type colinear_checks_instance(
-                    component.all_witnesses(), std::array<std::uint32_t, 1>({component.C(0)}),
-                    std::array<std::uint32_t, 0>(), component.fri_params_r
+                    component.all_witnesses(), std::array<std::int64_t, 1>({component.C(0)}),
+                    std::array<std::int64_t, 0>(), component.fri_params_r
                 );
                 for( std::size_t i = 0; i < component.fri_params_lambda; i++){
                     typename colinear_checks_component_type::input_type colinear_checks_input(component.fri_params_r);

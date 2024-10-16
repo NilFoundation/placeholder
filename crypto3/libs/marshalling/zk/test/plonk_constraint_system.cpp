@@ -533,3 +533,69 @@ BOOST_FIXTURE_TEST_CASE(constraint_system_marshalling_test, test_tools::random_t
         test_constraint_system<Endianness, typename policy_type::constraint_system_type>(constraint_system);
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(placeholder_circuit8)
+    using Endianness = nil::marshalling::option::big_endian;
+    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using curve_type = algebra::curves::pallas;
+    using field_type = typename curve_type::base_field_type;
+
+    constexpr static const std::size_t table_rows_log = 4;
+    constexpr static const std::size_t table_rows = 1 << table_rows_log;
+    constexpr static const std::size_t usable_rows = 14;
+
+    struct placeholder_test_params {
+        using merkle_hash_type = hashes::keccak_1600<512>;
+        using transcript_hash_type = hashes::keccak_1600<512>;
+
+        constexpr static const std::size_t witness_columns = witness_columns_8;
+        constexpr static const std::size_t public_input_columns = public_columns_8;
+        constexpr static const std::size_t constant_columns = constant_columns_8;
+        constexpr static const std::size_t selector_columns = selector_columns_8;
+
+        constexpr static const std::size_t lambda = 40;
+        constexpr static const std::size_t m = 2;
+    };
+
+    using circuit_params = placeholder_circuit_params<field_type>;
+    using transcript_type = typename transcript::fiat_shamir_heuristic_sequential<typename placeholder_test_params::transcript_hash_type>;
+    using lpc_params_type = commitments::list_polynomial_commitment_params<
+        typename placeholder_test_params::merkle_hash_type,
+        typename placeholder_test_params::transcript_hash_type,
+        placeholder_test_params::m
+    >;
+
+    using lpc_type = commitments::list_polynomial_commitment<field_type, lpc_params_type>;
+    using lpc_scheme_type = typename commitments::lpc_commitment_scheme<lpc_type>;
+    using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
+    using policy_type = zk::snark::detail::placeholder_policy<field_type, circuit_params>;
+
+BOOST_FIXTURE_TEST_CASE(constraint_system_marshalling_test, test_tools::random_test_initializer<field_type>) {
+    auto circuit = circuit_test_8<field_type>(
+        alg_random_engines.template get_alg_engine<field_type>(),
+        generic_random_engine
+    );
+    plonk_table_description<field_type> desc(
+        placeholder_test_params::witness_columns,
+        placeholder_test_params::public_input_columns,
+        placeholder_test_params::constant_columns,
+        placeholder_test_params::selector_columns
+    );
+
+    desc.rows_amount = circuit.table_rows;
+    desc.usable_rows_amount = circuit.usable_rows;
+
+    typename policy_type::constraint_system_type constraint_system(
+        circuit.gates,
+        circuit.copy_constraints,
+        circuit.lookup_gates,
+        circuit.lookup_tables
+    );
+    typename policy_type::variable_assignment_type assignments = circuit.table;
+
+    if(has_argv("--print"))
+        test_constraint_system<Endianness, typename policy_type::constraint_system_type>(constraint_system, "circuit7");
+    else
+        test_constraint_system<Endianness, typename policy_type::constraint_system_type>(constraint_system);
+}
+BOOST_AUTO_TEST_SUITE_END()
