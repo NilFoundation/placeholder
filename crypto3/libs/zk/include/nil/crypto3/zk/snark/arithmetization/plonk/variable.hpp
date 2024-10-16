@@ -75,14 +75,14 @@ namespace nil {
                     /**
                      * Mnemonic typedefs.
                      */
-                    std::size_t index;
+                    std::int32_t index;
                     std::int32_t rotation;
                     bool relative;
                     column_type type;
 
                     constexpr plonk_variable() : index(0), rotation(0), relative(false), type(column_type::uninitialized) {};
 
-                    constexpr plonk_variable(const std::size_t index,
+                    constexpr plonk_variable(const std::int32_t index,
                                              std::int32_t rotation,
                                              bool relative = true,
                                              column_type type = column_type::witness) :

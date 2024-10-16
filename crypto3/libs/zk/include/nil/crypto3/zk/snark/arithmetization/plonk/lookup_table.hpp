@@ -45,7 +45,7 @@ namespace nil {
                     using lookup_options_type = std::vector<std::vector<variable_type>>;
 
                     std::size_t columns_number;
-                    std::size_t tag_index;
+                    std::int64_t tag_index;
                     lookup_options_type lookup_options;
 
                     bool operator==(const plonk_lookup_table<FieldType> &other) const {

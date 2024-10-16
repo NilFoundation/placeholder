@@ -44,7 +44,7 @@ namespace nil {
                     typedef typename ConstraintType::variable_type variable_type;
 
                     std::vector<ConstraintType> constraints;
-                    std::size_t tag_index;
+                    std::int64_t tag_index;
 
                     plonk_lookup_gate(  ) : tag_index(0) {
                     }
