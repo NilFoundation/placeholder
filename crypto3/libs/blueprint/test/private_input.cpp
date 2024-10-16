@@ -57,7 +57,7 @@ void test_add(const typename FieldType::value_type &a, const typename FieldType:
 
     using component_type = blueprint::components::addition<ArithmetizationType, BlueprintFieldType, nil::blueprint::basic_non_native_policy<BlueprintFieldType>>;
 
-    const std::int64_t private_index = AssignmentType::private_storage_index;
+    const std::size_t private_index = AssignmentType::private_storage_index;
 
     typename component_type::input_type instance_input = {
         var(private_index, 0, false, var::column_type::public_input),
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_private_input_copy_constraints) {
 
     using var = crypto3::zk::snark::plonk_variable<typename field_type::value_type>;
 
-    const std::size_t private_index = AssignmentType::private_storage_index;
+    const std::int64_t private_index = AssignmentType::private_storage_index;
     blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<field_type>> bp;
 
     auto private_1 = var(private_index, 0, false, var::column_type::public_input),
