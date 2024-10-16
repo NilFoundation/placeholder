@@ -147,6 +147,7 @@ namespace nil {
                     );
 
                     friend class nil::blueprint::assignment<plonk_constraint_system<FieldType>>;
+                    friend class plonk_table<FieldType, ColumnType>;
                 };
 
                 template<typename FieldType, typename ColumnType>
@@ -304,6 +305,7 @@ namespace nil {
                     );
 
                     friend class nil::blueprint::assignment<plonk_constraint_system<FieldType>>;
+                    friend class plonk_table<FieldType, ColumnType>;
                 };
 
                 template<typename FieldType, typename ColumnType>
@@ -371,16 +373,58 @@ namespace nil {
                         return _private_table.witness(index);
                     }
 
+                    typename field_type::value_type &witness(
+                        std::uint32_t witness_index, std::uint32_t row_index) {
+
+                        if (witness_column_size(witness_index) <= row_index)
+                            this->_private_table._witnesses[witness_index].resize(row_index + 1);
+
+                        return this->_private_table._witnesses[witness_index][row_index];
+                    }
+
                     const ColumnType& public_input(std::uint32_t index) const {
                         return _public_table.public_input(index);
                     }
+
+                    typename field_type::value_type &public_input(
+                        std::uint32_t public_input_index, std::uint32_t row_index) {
+
+                        if (public_input_column_size(public_input_index) <= row_index)
+                            this->_public_table._public_inputs[public_input_index].resize(row_index + 1);
+
+                        return this->_public_table._public_inputs[public_input_index][row_index];
+                    }
+
 
                     const ColumnType& constant(std::uint32_t index) const {
                         return _public_table.constant(index);
                     }
 
+                    typename field_type::value_type &constant(
+                        std::uint32_t constant_index, std::uint32_t row_index) {
+
+                        if (constant_column_size(constant_index) <= row_index)
+                            this->_public_table._constants[constant_index].resize(row_index + 1);
+
+                        return this->_public_table._constants[constant_index][row_index];
+                    }
+
                     const ColumnType& selector(std::uint32_t index) const {
                         return _public_table.selector(index);
+                    }
+
+                    typename field_type::value_type &selector(
+                        std::uint32_t selector_index, std::uint32_t row_index) {
+
+                        if (selector_column_size(selector_index) <= row_index)
+                            this->_public_table._selectors[selector_index].resize(row_index + 1);
+
+                        return this->_public_table._selectors[selector_index][row_index];
+                    }
+
+                    void enable_selector(const std::size_t selector_index, const std::size_t row_index) {
+
+                        selector(selector_index, row_index) = field_type::value_type::one();
                     }
 
                     virtual void fill_constant(std::uint32_t index, const ColumnType& column) {
@@ -561,6 +605,22 @@ namespace nil {
                 template<typename FieldType>
                 using plonk_polynomial_dfs_table =
                     plonk_table<FieldType, math::polynomial_dfs<typename FieldType::value_type>>;
+
+                template<typename FieldType>
+                typename FieldType::value_type var_value(
+                        const plonk_assignment_table<FieldType> &input_assignment,
+                        const crypto3::zk::snark::plonk_variable<typename FieldType::value_type> &input_var) {
+                    using var_column_type =
+                        typename crypto3::zk::snark::plonk_variable<typename FieldType::value_type>::column_type;
+                    switch(input_var.type){
+                        case var_column_type::witness:
+                            return input_assignment.witness(input_var.index)[input_var.rotation];
+                        case var_column_type::public_input:
+                            return input_assignment.public_input(input_var.index)[input_var.rotation];
+                        default:
+                            return input_assignment.constant(input_var.index)[input_var.rotation];
+                    }
+                }
 
             }    // namespace snark
         }        // namespace zk

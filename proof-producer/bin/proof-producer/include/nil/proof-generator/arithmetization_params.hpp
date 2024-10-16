@@ -14,8 +14,8 @@
 // limitations under the License.
 //---------------------------------------------------------------------------//
 
-#ifndef PROOF_GENERATOR_ARITHMETIZATION_PARAMS_HPP
-#define PROOF_GENERATOR_ARITHMETIZATION_PARAMS_HPP
+#ifndef ZKEMV_FRAMEWORK_ARITHMETIZATION_PARAMS_HPP
+#define ZKEMV_FRAMEWORK_ARITHMETIZATION_PARAMS_HPP
 
 #include <array>
 #include <tuple>
