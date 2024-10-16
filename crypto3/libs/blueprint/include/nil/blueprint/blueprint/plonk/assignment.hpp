@@ -121,6 +121,7 @@ namespace nil {
             std::vector<value_type> assignment_private_storage;
             // for variables used in component batching
             std::vector<value_type> assignment_batch_private_storage;
+
             using batcher_type = boost::type_erasure::any<
                 boost::mpl::vector<
                     has_add_input<_batch, _input_type, _result_type>,
@@ -137,10 +138,12 @@ namespace nil {
                     boost::type_erasure::relaxed>,
                 _batch>;
             std::set<batcher_type> component_batches;
+
             // technically we can delete this one after finalization
             // but tests require it to replace the outputs
             std::unordered_map<var, var> batch_variable_map;
-            // for constants which we are going to try to put into aribtrary places
+
+            // for constants which we are going to try to put into arbitrary places
             boost::container::stable_vector<value_type> assignment_batch_constant_storage;
             std::set<std::pair<std::reference_wrapper<const value_type>, std::size_t>, constant_set_compare_type>
                 assignment_batch_constant_storage_set;
@@ -164,6 +167,10 @@ namespace nil {
             assignment(const crypto3::zk::snark::plonk_table_description<BlueprintFieldType> &desc)
                 : zk_type(desc.witness_columns, desc.public_input_columns,
                           desc.constant_columns, desc.selector_columns) {
+            }
+
+            crypto3::zk::snark::plonk_table_description<BlueprintFieldType> get_description() const {
+                return zk_type::get_description();
             }
 
             template<typename ComponentType, typename... ComponentParams>
