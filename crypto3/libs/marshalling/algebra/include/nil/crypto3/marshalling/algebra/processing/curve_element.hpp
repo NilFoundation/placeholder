@@ -28,10 +28,6 @@
 #define CRYPTO3_MARSHALLING_PROCESSING_CURVE_ELEMENT_HPP
 
 #include <cstddef>
-#include <cstdint>
-#include <type_traits>
-#include <limits>
-#include <iterator>
 
 #include <nil/marshalling/endianness.hpp>
 #include <nil/marshalling/status_type.hpp>
@@ -46,8 +42,7 @@ namespace nil {
     namespace crypto3 {
         namespace marshalling {
             namespace processing {
-                // TODO: add marshalling algorithm specification template parameter and specialize parameters depending
-                //  on the algorithm and curve group if needed
+
                 template<typename Group>
                 struct curve_element_marshalling_params {
                     using group_type = Group;
@@ -78,13 +73,9 @@ namespace nil {
                 };
 
 
-                // TODO: do not specify marshalling algorithm by curve group, instead specify marshalling procedure only
-                //  by form, coordinates and specification policy
                 template<typename Endianness, typename Group>
                 struct curve_element_writer;
 
-                // TODO: do not specify marshalling algorithm by curve group, instead specify marshalling procedure only
-                //  by form, coordinates and specification policy
                 template<typename Endianness, typename Group>
                 struct curve_element_reader;
 

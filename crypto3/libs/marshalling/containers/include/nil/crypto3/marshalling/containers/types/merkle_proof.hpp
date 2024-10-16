@@ -67,7 +67,7 @@ namespace nil {
                         TTypeBase,
                         // path_element_t
                         typename merkle_proof_path_element<TTypeBase, MerkleProof>::type,
-                        // TODO: use nil::marshalling::option::fixed_size_storage<MerkleProof::arity - 1>
+                        // layer
                         nil::marshalling::option::sequence_size_field_prefix<
                             nil::marshalling::types::integral<TTypeBase, std::uint64_t>>>;
                 };

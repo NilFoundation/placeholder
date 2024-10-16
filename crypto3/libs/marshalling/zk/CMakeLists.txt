@@ -44,10 +44,6 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
 
 cm_add_test_subdirectory(test)
 
-if(BUILD_EXAMPLES)
-    add_subdirectory(example)
-endif()
-
 if((CMAKE_COMPILER_IS_GNUCC) OR ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang"))
     set(extra_flags_list -Wall -Wextra -Wcast-align -Wcast-qual
         -Wctor-dtor-privacy -Wmissing-include-dirs -Woverloaded-virtual

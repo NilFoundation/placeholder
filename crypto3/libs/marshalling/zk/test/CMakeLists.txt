@@ -50,16 +50,11 @@ macro(define_marshalling_test test)
 
 endmacro()
 
-# r1cs tests are failing compilation, turning them off for now.
 set(TESTS_NAMES
         "merkle_proof"
         "merkle_tree"
         "accumulation_vector"
         "sparse_vector"
-#        "r1cs_gg_ppzksnark_primary_input"
-#        "r1cs_gg_ppzksnark_proof"
-#        "r1cs_gg_ppzksnark_verification_key"
-#        "r1cs_gg_ppzksnark"
         "kzg_commitment"
         "fri_commitment"
         "lpc_commitment"

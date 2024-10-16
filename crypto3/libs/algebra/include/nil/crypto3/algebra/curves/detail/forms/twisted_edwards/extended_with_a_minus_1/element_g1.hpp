@@ -221,20 +221,17 @@ namespace nil {
 
                         /*************************  Arithmetic operations  ***********************************/
 
-                        constexpr curve_element operator=(const curve_element &other) {
-                            // handle special cases having to do with O
+                        constexpr curve_element& operator=(curve_element<params_type, form, curves::coordinates::affine> const &other) {
                             this->X = other.X;
                             this->Y = other.Y;
-                            this->T = other.T;
-                            this->Z = other.Z;
-
+                            this->T = other.X*other.Y;
+                            this->Z = field_value_type::one();
                             return *this;
                         }
 
                         static curve_element from_affine(curve_element<params_type, form, curves::coordinates::affine> const &other) {
                             return curve_element(other.X, other.Y, other.X*other.Y, field_value_type::one());
                         }
-
 
                         template<typename Backend,
                                  boost::multiprecision::expression_template_option ExpressionTemplates>

@@ -387,8 +387,8 @@ namespace nil {
                             // May be different size, because real degree may be less than before. So put int in the end
                             typename polynomial<TTypeBase, typename FRI::polynomial_type>::type,
 
-                            // proof of work. TODO: how to do it optional?
-                            nil::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>  //proof of work*/
+                            // proof of work.
+                            nil::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>
                         >
                     >;
                 };

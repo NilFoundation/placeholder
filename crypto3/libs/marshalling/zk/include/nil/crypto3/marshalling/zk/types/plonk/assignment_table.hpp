@@ -47,7 +47,8 @@ namespace nil {
                 /////////   Marshalling the assignment table description.
                 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                // TODO(we may consider to use this construct when marshalling the assignment table.)
+                // Table description is marshalled separately, so it can be used in
+                // other parts of system (e.g. DFRI).
                 template<typename TTypeBase>
                 using plonk_assignment_table_description = nil::marshalling::types::bundle<
                     TTypeBase, std::tuple<

@@ -69,7 +69,7 @@ namespace nil {
             // we expect that most of the operations would only use MIDDLE_OP
             virtual std::map<gate_class, std::vector<constraint_type>> generate_gates(zkevm_circuit_type &zkevm_circuit) = 0;
 
-            virtual void generate_assignments(zkevm_circuit_type &zkevm_circuit, zkevm_machine_interface &machine);
+            virtual void generate_assignments(zkevm_circuit_type &zkevm_circuit, zkevm_machine_interface &machine) = 0;
             // should return the same rows amount for everyс operation right now
             // here in case we would make it dynamic in the future
             virtual std::size_t rows_amount() = 0;

@@ -103,14 +103,6 @@ namespace nil {
                     ));
                 }
 
-                // TODO(martun): We don't need the opposite conversion for now, only for testing purposes.
-                // template<typename Endianness, typename TranscriptInitializationContextType>
-                // TranscriptInitializationContextType
-                // make_transcript_initialization_context(
-                //     const transcript_initialization_context<nil::marshalling::field_type<Endianness>, TranscriptInitializationContextType> &filled_init_context
-                // ) {
-                // }
-
             }    // namespace types
         }        // namespace marshalling
     }            // namespace crypto3

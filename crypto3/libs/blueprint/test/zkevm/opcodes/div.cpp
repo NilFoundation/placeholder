@@ -35,7 +35,7 @@
 #include <nil/blueprint/zkevm/zkevm_circuit.hpp>
 #include "../opcode_tester.hpp"
 
-#include <nil/blueprint/zkevm/operations/mul.hpp>
+#include <nil/blueprint/zkevm/operations/div.hpp>
 
 using namespace nil::blueprint;
 using namespace nil::crypto3::algebra;

@@ -132,7 +132,8 @@ void test_lpc_state_recovery(const LPC& lpc_commitment_scheme) {
 
     auto filled_lpc_scheme = nil::crypto3::marshalling::types::fill_commitment_scheme<Endianness, LPC>(lpc_commitment_scheme);
     auto _lpc_commitment_scheme = nil::crypto3::marshalling::types::make_commitment_scheme<Endianness, LPC>(filled_lpc_scheme);
-    BOOST_CHECK(lpc_commitment_scheme == _lpc_commitment_scheme);
+    BOOST_CHECK(_lpc_commitment_scheme.has_value());
+    BOOST_CHECK(lpc_commitment_scheme == _lpc_commitment_scheme.value());
 
     std::vector<std::uint8_t> cv;
     cv.resize(filled_lpc_scheme.length(), 0x00);
@@ -144,9 +145,10 @@ void test_lpc_state_recovery(const LPC& lpc_commitment_scheme) {
     auto read_iter = cv.begin();
     test_val_read.read(read_iter, cv.size());
     BOOST_CHECK(status == nil::marshalling::status_type::success);
-    LPC constructed_val_read =
+    auto constructed_val_read =
             nil::crypto3::marshalling::types::make_commitment_scheme<Endianness, LPC>(test_val_read);
-    BOOST_CHECK(lpc_commitment_scheme == constructed_val_read);
+    BOOST_CHECK(constructed_val_read.has_value());
+    BOOST_CHECK(lpc_commitment_scheme == constructed_val_read.value());
 }
 
 BOOST_AUTO_TEST_SUITE(marshalling_random)

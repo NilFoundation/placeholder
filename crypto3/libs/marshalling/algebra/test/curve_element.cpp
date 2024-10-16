@@ -90,9 +90,6 @@ void test_group_element(T val) {
 
     using unit_type = unsigned char;
 
-    // TODO: add incorrect blobs
-    // TODO: add bits container checks
-    //
     static_assert(nil::marshalling::is_compatible<T>::value);
     nil::marshalling::status_type status;
 
