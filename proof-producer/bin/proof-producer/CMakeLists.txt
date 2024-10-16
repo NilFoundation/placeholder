@@ -40,12 +40,11 @@ function(setup_proof_generator_target)
         src/main.cpp
     )
 
-    add_library(${ARG_TARGET_NAME}-lib INTERFACE)
-
     set(INTERFACE_LIBS
         Boost::filesystem
         Boost::log
         Boost::thread
+        proof_generatorPreset
     )
     # Make sure to add these dependencies before the others, since for multi-threaded version dependency on
     # actor-zk must come first.
@@ -55,17 +54,11 @@ function(setup_proof_generator_target)
         endforeach()
     endif()
 
-    target_include_directories(${ARG_TARGET_NAME}-lib INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    )
-
-    target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${INTERFACE_LIBS})
-    target_link_libraries(${ARG_TARGET_NAME} PRIVATE 
-        ${ARG_TARGET_NAME}-lib 
+    target_link_libraries(${ARG_TARGET_NAME} PRIVATE
+        ${INTERFACE_LIBS}
         Boost::program_options
-        proof_generatorOutputArtifacts
-    )
+        proof_generatorAssigner
+        proof_generatorOutputArtifacts)
 
     target_include_directories(${ARG_TARGET_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -93,11 +86,8 @@ setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEP
 
 # Install
 
-install(TARGETS  ${SINGLE_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)
-install(TARGETS  ${MULTI_THREADED_TARGET}-lib EXPORT proof-producerTargets DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
-
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
