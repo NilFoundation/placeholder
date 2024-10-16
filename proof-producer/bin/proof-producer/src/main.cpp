@@ -36,7 +36,8 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
             prover_options.lambda,
             prover_options.expand_factor,
             prover_options.max_quotient_chunks,
-            prover_options.grind
+            prover_options.grind,
+            prover_options.circuit_name
         );
         bool prover_result;
         try {
@@ -56,6 +57,21 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                         prover.save_public_preprocessed_data_to_file(prover_options.preprocessed_public_data_path) &&
                         prover.save_commitment_state_to_file(prover_options.commitment_scheme_state_path) &&
                         prover.print_evm_verifier(prover_options.evm_verifier_path);
+                    break;
+                case nil::proof_generator::detail::ProverStage::PRESET:
+                    prover_result = prover.setup_prover();
+                    if (!prover_options.circuit_file_path.empty() && prover_result) {
+                        prover_result = prover.save_circuit_to_file(prover_options.circuit_file_path);
+                    }
+                    if (!prover_options.assignment_table_file_path.empty() && prover_result) {
+                        prover_result = prover.save_assignment_table_to_file(prover_options.assignment_table_file_path);
+                    }
+                    break;
+                case nil::proof_generator::detail::ProverStage::ASSIGNMENT:
+                    prover_result = prover.setup_prover() && prover.fill_assignment_table(prover_options.trace_file_path);
+                    if (!prover_options.assignment_table_file_path.empty() && prover_result) {
+                        prover_result = prover.save_assignment_table_to_file(prover_options.assignment_table_file_path);
+                    }
                     break;
                 case nil::proof_generator::detail::ProverStage::PREPROCESS:
                     prover_result =

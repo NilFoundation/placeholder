@@ -57,11 +57,14 @@
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
 #include <nil/blueprint/transpiler/lpc_evm_verifier_gen.hpp>
 
+#include <nil/proof-generator/preset/preset.hpp>
+#include <nil/proof-generator/assigner/assigner.hpp>
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/assignment_table_writer.hpp>
 #include <nil/proof-generator/circuit_writer.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
+#include <nil/blueprint/blueprint/plonk/assignment.hpp>
 namespace nil {
     namespace proof_generator {
         namespace detail {
@@ -106,20 +109,24 @@ namespace nil {
 
             enum class ProverStage {
                 ALL = 0,
-                PREPROCESS = 1,
-                PROVE = 2,
-                VERIFY = 3,
-                GENERATE_AGGREGATED_CHALLENGE = 4,
-                GENERATE_PARTIAL_PROOF = 5,
-                COMPUTE_COMBINED_Q = 6,
-                GENERATE_AGGREGATED_FRI_PROOF = 7,
-                GENERATE_CONSISTENCY_CHECKS_PROOF = 8,
-                MERGE_PROOFS = 9
+                PRESET = 1,
+                ASSIGNMENT = 2,
+                PREPROCESS = 3,
+                PROVE = 4,
+                VERIFY = 5,
+                GENERATE_AGGREGATED_CHALLENGE = 6,
+                GENERATE_PARTIAL_PROOF = 7,
+                COMPUTE_COMBINED_Q = 8,
+                GENERATE_AGGREGATED_FRI_PROOF = 9,
+                GENERATE_CONSISTENCY_CHECKS_PROOF = 10,
+                MERGE_PROOFS = 11
             };
 
             ProverStage prover_stage_from_string(const std::string& stage) {
                 static std::unordered_map<std::string, ProverStage> stage_map = {
                     {"all", ProverStage::ALL},
+                    {"preset", ProverStage::PRESET},
+                    {"fill-assignment", ProverStage::ASSIGNMENT},
                     {"preprocess", ProverStage::PREPROCESS},
                     {"prove", ProverStage::PROVE},
                     {"verify", ProverStage::VERIFY},
@@ -162,7 +169,7 @@ namespace nil {
             using FriType = typename Lpc::fri_type;
             using FriParams = typename FriType::params_type;
             using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
-            using AssignmentTable = nil::crypto3::zk::snark::plonk_table<BlueprintField, Column>;
+            using AssignmentTable = nil::crypto3::zk::snark::plonk_assignment_table<BlueprintField>;
             using TTypeBase = nil::marshalling::field_type<Endianness>;
 
             using TableMarshalling = nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
@@ -171,11 +178,13 @@ namespace nil {
                 std::size_t lambda,
                 std::size_t expand_factor,
                 std::size_t max_q_chunks,
-                std::size_t grind
+                std::size_t grind,
+                std::string circuit_name
             ) : expand_factor_(expand_factor),
                 max_quotient_chunks_(max_q_chunks),
                 lambda_(lambda),
-                grind_(grind) {
+                grind_(grind),
+                circuit_name_(circuit_name){
             }
 
             bool print_evm_verifier(
@@ -570,11 +579,32 @@ namespace nil {
                 return true;
             }
 
-            bool read_assignment_table(const boost::filesystem::path& assignment_table_file_) {
-                BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_;
+            bool save_assignment_table_to_file(boost::filesystem::path assignment_table_file_path) {
+                using namespace nil::crypto3::marshalling::types;
+
+                if (assignment_table_file_path.empty()) {
+                    BOOST_LOG_TRIVIAL(error) << "Output assignment table file is not defined";
+                    return false;
+                }
+                if (!assignment_table_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "Assignment table is not initialized";
+                    return false;
+                }
+                BOOST_LOG_TRIVIAL(info) << "Writing assignment_table to " <<
+                    assignment_table_file_path;
+
+                bool res = true;
+                if (res) {
+                    BOOST_LOG_TRIVIAL(info) << "Assignment table written.";
+                }
+                return res;
+            }
+
+            bool read_assignment_table(const boost::filesystem::path& assignment_table_file_path) {
+                BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_path;
 
                 auto marshalled_table =
-                    detail::decode_marshalling_from_file<TableMarshalling>(assignment_table_file_);
+                    detail::decode_marshalling_from_file<TableMarshalling>(assignment_table_file_path);
                 if (!marshalled_table) {
                     return false;
                 }
@@ -1041,11 +1071,39 @@ namespace nil {
                 return save_lpc_consistency_proof_to_file(proof, output_proof_file);
             }
 
+            bool setup_prover() {
+                const auto err = CircuitFactory<BlueprintField>::initialize_circuit(circuit_name_, constraint_system_, assignment_table_, table_description_);
+                if (err) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't initialize circuit " << circuit_name_ << ": " << err.value();
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool fill_assignment_table(const boost::filesystem::path& trace_file_path) {
+                if (!constraint_system_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "Circuit is not initialized";
+                    return false;
+                }
+                if (!assignment_table_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "Assignment table is not initialized";
+                    return false;
+                }
+                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_file_path);
+                if (err) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table rom trace " << trace_file_path << ": " << err.value();
+                    return false;
+                }
+                return true;
+            }
+
         private:
             const std::size_t expand_factor_;
             const std::size_t max_quotient_chunks_;
             const std::size_t lambda_;
             const std::size_t grind_;
+            const std::string circuit_name_;
 
             std::optional<PublicPreprocessedData> public_preprocessed_data_;
 
