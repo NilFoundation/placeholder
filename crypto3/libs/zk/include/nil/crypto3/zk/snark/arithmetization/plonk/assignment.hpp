@@ -33,6 +33,7 @@
 #include <nil/crypto3/random/algebraic_engine.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -102,7 +103,8 @@ namespace nil {
                         }
                     }
 
-                    ColumnType get_variable_value(const VariableType& var, std::shared_ptr<math::evaluation_domain<FieldType>> domain) const {
+                    ColumnType get_variable_value(const VariableType& var,
+                            std::shared_ptr<math::evaluation_domain<FieldType>> domain) const {
                          if (var.rotation == 0) {
                              return get_variable_value_without_rotation(var);
                          }
@@ -339,6 +341,12 @@ namespace nil {
                                 std::size_t selectors_amount)
                         : _private_table(witnesses_amount)
                         , _public_table(public_inputs_amount, constants_amount, selectors_amount) {
+                    }
+
+                    crypto3::zk::snark::plonk_table_description<FieldType> get_description() const {
+                        return crypto3::zk::snark::plonk_table_description<FieldType>(
+                            witnesses_amount(), public_inputs_amount(), constants_amount(), selectors_amount(),
+                            rows_amount(), std::pow(2, std::ceil(std::log2(rows_amount()))));
                     }
 
                     template <typename InputVariableType>
