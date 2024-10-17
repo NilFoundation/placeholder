@@ -52,6 +52,9 @@ namespace nil {
             namespace snark {
 
                 /************************* PLONK constraint system ****************************/
+                constexpr static int const PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED = -1;
+                constexpr static int const PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED = -2; // Useful for lookup tables
+                constexpr static int const PLONK_CONSTRAINT_SYSTEM_SPECIAL_SELECTORS_AMOUNT = 2;
 
                 template<typename FieldType>
                 struct plonk_constraint_system {
