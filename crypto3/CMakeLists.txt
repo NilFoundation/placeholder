@@ -73,10 +73,8 @@ add_library(${CMAKE_WORKSPACE_NAME}_all INTERFACE)
 add_library(${CMAKE_WORKSPACE_NAME}::all ALIAS ${CMAKE_WORKSPACE_NAME}_all)
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_all INTERFACE
     crypto3::algebra
-    crypto3::block
     crypto3::blueprint
     crypto3::transpiler
-    crypto3::codec
     crypto3::containers
     crypto3::hash
     crypto3::marshalling-algebra
@@ -85,11 +83,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_all INTERFACE
     crypto3::marshalling-zk
     crypto3::math
     crypto3::multiprecision
-    crypto3::passhash
-    crypto3::pubkey
     crypto3::random
-    crypto3::stream
-    crypto3::threshold
     crypto3::zk)
 
 add_library(${CMAKE_WORKSPACE_NAME}_common INTERFACE)
@@ -97,21 +91,16 @@ add_library(${CMAKE_WORKSPACE_NAME}::common ALIAS ${CMAKE_WORKSPACE_NAME}_common
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_common INTERFACE
     crypto3::algebra
     crypto3::benchmark_tools
-    crypto3::block
     crypto3::blueprint
     crypto3::transpiler
-    crypto3::codec
     crypto3::hash
     crypto3::marshalling-algebra
     crypto3::marshalling-core
     crypto3::marshalling-multiprecision
     crypto3::marshalling-zk
     crypto3::multiprecision
-    crypto3::passhash
-    crypto3::pubkey
     crypto3::random
-    crypto3::stream
-    crypto3::threshold)
+)
 
 if(BUILD_BENCH_TESTS)
     add_subdirectory(benchmarks)

@@ -29,8 +29,6 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
 
                       ${CMAKE_WORKSPACE_NAME}::algebra
                       ${CMAKE_WORKSPACE_NAME}::hash
-                      ${CMAKE_WORKSPACE_NAME}::mac
-                      ${CMAKE_WORKSPACE_NAME}::stream
 
                       crypto3::marshalling-algebra
 
