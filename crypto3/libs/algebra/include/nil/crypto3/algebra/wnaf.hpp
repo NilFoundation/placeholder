@@ -28,7 +28,7 @@
 #include <nil/crypto3/multiprecision/wnaf.hpp>
 
 #include <nil/crypto3/algebra/curves/params.hpp>
-#include "nil/crypto3/algebra/type_traits.hpp"
+#include <nil/crypto3/algebra/type_traits.hpp>
 
 namespace nil {
     namespace crypto3 {

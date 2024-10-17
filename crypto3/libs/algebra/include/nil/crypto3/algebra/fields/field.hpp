@@ -55,16 +55,6 @@ namespace nil {
                         boost::multiprecision::backends::cpp_int_modular_backend<modulus_bits>>
                         integral_type;
 
-                    /*
-                    // TODO(martun): check why extended integral type must be 16x wider.
-                    // Extended integral holds the target exponent for Gt group.
-                    // For largest supported pairing-friendly groups (BLS12-381 and BLS12-377)
-                    // The embedding degree is k = 12, the target exponent p^k - 1 fits.
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<16 * modulus_bits>>
-                        extended_integral_type;
-                        */
-
                     typedef boost::multiprecision::backends::cpp_int_modular_backend<modulus_bits> modular_backend;
 
                     typedef boost::multiprecision::backends::modular_params<modular_backend> modular_params_type;
