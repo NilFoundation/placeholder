@@ -709,10 +709,6 @@ namespace nil {
                                 "\t\t\tstate.l_shifted = addmod( state.l_shifted, mulmod(state.shifted_selector_value, mulmod( state.theta_acc, basic_marshalling.get_uint256_be(blob, " << _var_indices.at(shifted_var) * 0x20 << "), modulus), modulus), modulus);" << std::endl;
                             lookup_str << "\t\t\tstate.theta_acc = mulmod(state.theta_acc, state.theta, modulus);" << std::endl;
                         }
-                        lookup_str <<
-                            "\t\t\tl = mulmod( l, state.mask, modulus);" << std::endl;
-                        lookup_str <<
-                            "\t\t\tstate.l_shifted = mulmod( state.l_shifted, state.shifted_mask, modulus);" << std::endl;
                         lookup_str << "\t\t\tstate.g = mulmod(state.g, addmod( state.factor, addmod(l, mulmod(state.beta, state.l_shifted, modulus), modulus), modulus), modulus);" << std::endl;
                         j++;
                     }
