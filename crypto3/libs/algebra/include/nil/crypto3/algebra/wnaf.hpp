@@ -28,6 +28,7 @@
 #include <nil/crypto3/multiprecision/wnaf.hpp>
 
 #include <nil/crypto3/algebra/curves/params.hpp>
+#include "nil/crypto3/algebra/type_traits.hpp"
 
 namespace nil {
     namespace crypto3 {
@@ -66,10 +67,12 @@ namespace nil {
                 return res;
             }
 
-            // TODO: check, that CurveGroupValueType is a curve group element. Otherwise it has no wnaf_window_table
             template<typename CurveGroupValueType, typename Backend,
                      boost::multiprecision::expression_template_option ExpressionTemplates>
-            CurveGroupValueType opt_window_wnaf_exp(const CurveGroupValueType &base,
+            std::enable_if_t<
+                is_curve_group<typename CurveGroupValueType::group_type>::value,
+                CurveGroupValueType>
+            opt_window_wnaf_exp(const CurveGroupValueType &base,
                                                     const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar,
                                                     const std::size_t scalar_bits) {
                 std::size_t best = 0;

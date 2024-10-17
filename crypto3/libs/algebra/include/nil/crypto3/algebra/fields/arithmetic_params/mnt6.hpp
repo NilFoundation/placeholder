@@ -27,7 +27,6 @@
 #define CRYPTO3_ALGEBRA_FIELDS_MNT6_ARITHMETIC_PARAMS_HPP
 
 #include <nil/crypto3/algebra/fields/params.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/mnt4.hpp>
 
 #include <nil/crypto3/algebra/fields/fp3.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
@@ -82,7 +81,8 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::modular_backend modular_backend;
                     typedef typename policy_type::integral_type integral_type;
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
+                    using extended_integral_type = boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<3 * policy_type::modulus_bits>>;
 
                     constexpr static const std::size_t s = 0x22;
                     constexpr static const extended_integral_type t =

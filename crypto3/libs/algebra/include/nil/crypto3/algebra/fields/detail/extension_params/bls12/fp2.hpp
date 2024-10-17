@@ -55,7 +55,10 @@ namespace nil {
                         using field_type = fields::fp2<base_field_type>;
 
                         typedef typename policy_type::integral_type integral_type;
-                        typedef typename policy_type::extended_integral_type extended_integral_type;
+
+                        typedef boost::multiprecision::number<
+                            boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>
+                            extended_integral_type;
 
                         constexpr static const integral_type modulus = policy_type::modulus;
 
@@ -77,10 +80,6 @@ namespace nil {
                         constexpr static const extended_integral_type group_order_minus_one_half =
                                 0x1521BD25C61AFE3A5E93C75511792F4F16E48728738235A3372CF249A4F45E82853167E8B6EE5377A98A49984BC77808EB430CE430C2E3D949742D43848D024B35FC8F69F38DBA18B1619C1B1089E7EBE76B58EBB1C1755935500000E38C71C_cppui_modular761;
 
-                        /*constexpr static const std::array<non_residue_type, 2> Frobenius_coeffs_c1 =
-                           {non_residue_type(0x01),
-                            non_residue_type(0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA_cppui_modular381)};*/
-
                         constexpr static const std::array<integral_type, 2> Frobenius_coeffs_c1 = {
                                 0x01,
                                 0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA_cppui_modular381};
@@ -101,7 +100,11 @@ namespace nil {
                         using field_type = fields::fp2<base_field_type>;
 
                         typedef typename policy_type::integral_type integral_type;
-                        typedef typename policy_type::extended_integral_type extended_integral_type;
+
+                        typedef boost::multiprecision::number<
+                            boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>
+                            extended_integral_type;
+
 
                         constexpr static const integral_type modulus = policy_type::modulus;
 
@@ -122,10 +125,6 @@ namespace nil {
 
                         constexpr static const extended_integral_type group_order_minus_one_half =
                                 0x16983E85DD7FD912B489DD9B0931E25DC5C3ED257749F8FAF38A09EED26AE04E80C57DC833066E00A7389281526B62305555545DB857018C1925CAC31C64EB5E5FDE91AF8E04D256D1347970DEC00399C692A780000008508C00000000000_cppui_modular753;
-
-                        /*constexpr static const std::array<non_residue_type, 2> Frobenius_coeffs_c1 =
-                           {non_residue_type(0x01),
-                            non_residue_type(0x1AE3A4617C510EAC63B05C06CA1493B1A22D9F300F5138F1EF3622FBA094800170B5D44300000008508C00000000000_cppui_modular377)};*/
 
                         constexpr static const std::array<integral_type, 2> Frobenius_coeffs_c1 = {
                                 0x01,
