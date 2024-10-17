@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.27)
+
+project(placeholder)
+
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/crypto3")
+if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/parallel-crypto3")
+endif()
+if (${ZKEVM_FRAMEWORK_ENABLE})
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/evm-assigner")
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/zkevm-framework")
+endif()
+if ((${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/proof-producer")
+endif()
+if (${DEBUG_TOOLS_ENABLE})
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/debug-tools")
+endif()

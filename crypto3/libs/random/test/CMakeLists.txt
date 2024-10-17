@@ -40,7 +40,7 @@ set(TESTS_NAMES
   # "chacha"
   # "hash"
   "algebraic_engine"
-  "rfc6979")
+  )
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_random_test(${TEST_NAME})

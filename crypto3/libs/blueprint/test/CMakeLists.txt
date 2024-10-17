@@ -49,7 +49,12 @@ macro(define_blueprint_test test)
     target_include_directories(${full_test_name} PRIVATE
                                ${Boost_INCLUDE_DIRS})
 
-    target_link_libraries(${full_test_name} crypto3::blueprint crypto3::algebra crypto3::zk)
+    target_link_libraries(${full_test_name}
+        crypto3::blueprint
+        crypto3::algebra
+        crypto3::zk
+        crypto3::random
+    )
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
 

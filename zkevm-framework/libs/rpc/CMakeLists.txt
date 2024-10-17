@@ -7,5 +7,6 @@ target_include_directories(zkEVMRpc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 
 install(TARGETS zkEVMRpc
         DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
