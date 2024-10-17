@@ -80,7 +80,10 @@ namespace nil {
                         const plonk_polynomial_dfs_table<FieldType> &assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
-                        std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type>& variable_values_out) {
+                        std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type>& variable_values_out,
+                        const polynomial_dfs_type &mask_polynomial,
+                        const polynomial_dfs_type &lagrange_0
+                    ) {
 
                         std::unordered_map<polynomial_dfs_variable_type, size_t> variable_counts;
 
@@ -94,26 +97,40 @@ namespace nil {
                         visitor.visit(expr);
 
                         for (const auto& [var, count]: variable_counts) {
-                            // We may have variable values in required sizes in some cases.
                             if (variable_values_out.find(var) != variable_values_out.end())
                                 continue;
-                            polynomial_dfs_type assignment = assignments.get_variable_value(var, domain); 
-                            if (count > 1) {
-                                assignment.resize(extended_domain_size, domain, extended_domain);
+                            // We may have variable values in required sizes in some cases.
+                            if( var.index >= 0 ) {
+                                polynomial_dfs_type assignment = assignments.get_variable_value(var, domain);
+                                if (count > 1) {
+                                    assignment.resize(extended_domain_size, domain, extended_domain);
+                                }
+                                variable_values_out[var] = assignment;
+                            }  else {
+                                switch( var.index ){
+                                    case PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED:
+                                        variable_values_out[var] = mask_polynomial;
+                                        break;
+                                    case PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED:
+                                        variable_values_out[var] = mask_polynomial - lagrange_0;
+                                        break;
+                                    default:
+                                        BOOST_ASSERT_MSG(false, "Unknown special selector");
+                                }
                             }
-                            variable_values_out[var] = assignment;
                         }
                     }
 
-                    static inline std::array<polynomial_dfs_type, argument_size>
-                        prove_eval(
-                            const typename policy_type::constraint_system_type &constraint_system,
-                            const plonk_polynomial_dfs_table<FieldType>
-                                &column_polynomials,
-                            std::shared_ptr<math::evaluation_domain<FieldType>> original_domain,
-                            std::uint32_t max_gates_degree,
-                            const polynomial_dfs_type &mask_polynomial,
-                            transcript_type& transcript) {
+                    static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
+                        const typename policy_type::constraint_system_type &constraint_system,
+                        const plonk_polynomial_dfs_table<FieldType>
+                            &column_polynomials,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> original_domain,
+                        std::uint32_t max_gates_degree,
+                        const polynomial_dfs_type &mask_polynomial,
+                        const polynomial_dfs_type &lagrange_0,
+                        transcript_type& transcript
+                    ) {
                         PROFILE_SCOPE("gate_argument_time");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
@@ -168,8 +185,9 @@ namespace nil {
                                 }
                             }
 
-                            auto selector = polynomial_dfs_variable_type(
-                                gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector);
+                            BOOST_ASSERT(gate.selector_index >= -PLONK_CONSTRAINT_SYSTEM_SPECIAL_SELECTORS_AMOUNT);
+                            polynomial_dfs_variable_type selector = polynomial_dfs_variable_type(
+                                    gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector);
 
                             for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                                 gate_results[i] *= selector;
@@ -184,8 +202,11 @@ namespace nil {
                             if (i != 0 && extended_domain_sizes[i] != extended_domain_sizes[i-1]) {
                                 variable_values.clear();
                             }
-                            build_variable_value_map(expressions[i], column_polynomials, original_domain,
-                                extended_domain_sizes[i], variable_values);
+                            build_variable_value_map(
+                                expressions[i], column_polynomials, original_domain,
+                                extended_domain_sizes[i], variable_values,
+                                mask_polynomial, lagrange_0
+                            );
 
                             math::cached_expression_evaluator<polynomial_dfs_variable_type> evaluator(
                                 expressions[i], [&assignments=variable_values, domain_size=extended_domain_sizes[i]]
@@ -197,7 +218,6 @@ namespace nil {
                             F[0] += evaluator.evaluate();
                         }
 
-                        F[0] *= mask_polynomial;
                         return F;
                     }
 
@@ -230,7 +250,6 @@ namespace nil {
                             F[0] += gate_result;
                         }
 
-                        F[0] *= mask_value;
                         return F;
                     }
                 };

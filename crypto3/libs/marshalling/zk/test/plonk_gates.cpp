@@ -125,7 +125,7 @@ generate_random_plonk_gate(std::size_t vars_n, std::size_t depth, std::size_t co
     using variable_type = typename nil::crypto3::zk::snark::plonk_variable<typename Field::value_type>;
     using constraint_type = typename nil::crypto3::zk::snark::plonk_constraint<Field, variable_type>;
 
-    std::size_t selector_index = rand() % vars_n;
+    std::int32_t selector_index = rand() % vars_n;
     std::vector<constraint_type> constraints;
     for (std::size_t i = 0; i < constr_n; i++) {
         constraints.template emplace_back<>(
@@ -159,7 +159,7 @@ generate_random_plonk_lookup_gate(std::size_t vars_n, std::size_t depth, std::si
     using variable_type = typename nil::crypto3::zk::snark::plonk_variable<typename Field::value_type>;
     using constraint_type = typename nil::crypto3::zk::snark::plonk_lookup_constraint<Field, variable_type>;
 
-    std::size_t selector_index = std::random_device()();
+    std::int64_t selector_index = std::random_device()();
     std::vector<constraint_type> constraints;
     for (std::size_t i = 0; i < constr_n; i++) {
         constraints.template emplace_back<>(generate_random_plonk_lookup_constraint<Field>(vars_n, depth, expr_n));

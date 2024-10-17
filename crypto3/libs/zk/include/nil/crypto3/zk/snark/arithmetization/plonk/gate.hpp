@@ -35,7 +35,6 @@ namespace nil {
     namespace crypto3 {
         namespace zk {
             namespace snark {
-
                 template<typename FieldType, typename ConstraintType>
                 struct plonk_gate {
                     typedef FieldType field_type;
@@ -43,17 +42,17 @@ namespace nil {
                     typedef typename ConstraintType::variable_type variable_type;
 
                     std::vector<ConstraintType> constraints;
-                    std::size_t selector_index;
+                    std::int64_t selector_index;
 
-                    plonk_gate(std::size_t selector_index, const ConstraintType &constraint) :
+                    plonk_gate(std::int64_t selector_index, const ConstraintType &constraint) :
                         constraints(std::vector<ConstraintType>({constraint})), selector_index(selector_index) {
                     }
 
-                    plonk_gate(std::size_t selector_index, const std::initializer_list<ConstraintType> &&constraints) :
+                    plonk_gate(std::int64_t selector_index, const std::initializer_list<ConstraintType> &&constraints) :
                         constraints(constraints), selector_index(selector_index) {
                     }
 
-                    plonk_gate(std::size_t selector_index, const std::vector<ConstraintType> &constraints) :
+                    plonk_gate(std::int64_t selector_index, const std::vector<ConstraintType> &constraints) :
                         constraints(constraints), selector_index(selector_index) {
                     }
 

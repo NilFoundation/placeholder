@@ -43,15 +43,15 @@ namespace nil {
             namespace types {
                 template<typename TTypeBase, typename Variable, typename = void>
                 struct variable;
-                
+
                 //********************************* plonk_variable ***************************/
                 template<typename TTypeBase, typename VariableType>
                 struct variable<TTypeBase, VariableType> {
                     using type = nil::marshalling::types::bundle<
                         TTypeBase,
                         std::tuple<
-                            // std::size_t index
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                            // std::int64_t index
+                            nil::marshalling::types::integral<TTypeBase, std::int64_t>,
                             // std::int32_t rotation
                             nil::marshalling::types::integral<TTypeBase, std::int32_t>,
                             //bool relative
@@ -66,15 +66,15 @@ namespace nil {
                 fill_variable(const Variable &var) {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
                     using result_type = typename variable<TTypeBase, Variable>::type;
-                    using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
+                    using int64_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::int64_t>;
                     using int32_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::int32_t>;
                     using octet_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::uint8_t>;
                     using bool_marshalling_type = nil::marshalling::types::integral<TTypeBase, bool>;
 
                     return result_type(std::make_tuple(
-                        size_t_marshalling_type(var.index), 
+                        int64_t_marshalling_type(var.index),
                         int32_marshalling_type(var.rotation),
-                        bool_marshalling_type(var.relative), 
+                        bool_marshalling_type(var.relative),
                         octet_marshalling_type(var.type)
                     ));
                 }
@@ -92,7 +92,7 @@ namespace nil {
                 //****************** vector of plonk_variable *************************/
                 template<typename TTypeBase, typename VariableType>
                 using variables = nil::marshalling::types::array_list<
-                    TTypeBase, 
+                    TTypeBase,
                     typename variable<TTypeBase, VariableType>::type,
                     nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
                 >;

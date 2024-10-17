@@ -782,10 +782,7 @@ struct placeholder_kzg_test_fixture_v2 : public test_tools::random_test_initiali
 
     using policy_type = zk::snark::detail::placeholder_policy<field_type, kzg_placeholder_params_type>;
 
-    using circuit_type =
-        circuit_description<field_type,
-        placeholder_circuit_params<field_type>,
-        UsableRowsAmount>;
+    using circuit_type = circuit_description<field_type, placeholder_circuit_params<field_type>>;
 
     placeholder_kzg_test_fixture_v2()
         : desc(WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns)

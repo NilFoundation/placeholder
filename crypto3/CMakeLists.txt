@@ -24,7 +24,7 @@ option(BUILD_DOCS "Build with configuring Doxygen documentation compiler" FALSE)
 option(SANITIZE "Build sanitizers" FALSE)
 
 if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -fdiagnostics-color=always")
     set(BOOST_FORCEINLINE "OFF") # improves debugging traces
 endif()
 
@@ -49,7 +49,7 @@ endif ()
 # If Nix is used, LSP could not guess the locations of implicit include
 # directories, so we need to include them explicitly.
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
-  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES 
+  set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 

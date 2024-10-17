@@ -45,8 +45,8 @@ namespace nil {
                 template<typename TTypeBase, typename PlonkGate>
                 using plonk_lookup_gate = nil::marshalling::types::bundle<
                     TTypeBase, std::tuple<
-                        // std::size_t selector_index
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                        // std::int64_t selector_index
+                        nil::marshalling::types::integral<TTypeBase, std::int64_t>,
                         // std::vector<plonk_lookup_constraint<FieldType>> constraints
                         nil::marshalling::types::array_list<
                             TTypeBase,
@@ -61,6 +61,7 @@ namespace nil {
                 plonk_lookup_gate<nil::marshalling::field_type<Endianness>, PlonkGate> fill_plonk_lookup_gate(const PlonkGate &gate) {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
                     using result_type = plonk_lookup_gate<TTypeBase, PlonkGate>;
+                    using int64_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::int64_t>;
                     using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
 
                     using constraint_marshalling_type = plonk_lookup_constraint<TTypeBase, typename PlonkGate::constraint_type>;
@@ -75,14 +76,14 @@ namespace nil {
                         );
                     }
 
-                    return result_type(std::make_tuple(size_t_marshalling_type(gate.tag_index), filled_constraints));
+                    return result_type(std::make_tuple(int64_t_marshalling_type(gate.tag_index), filled_constraints));
                 }
 
                 template<typename Endianness, typename PlonkGate>
                 PlonkGate make_plonk_lookup_gate(
                     const plonk_lookup_gate<nil::marshalling::field_type<Endianness>, PlonkGate> &filled_gate) {
 
-                    std::size_t selector_index = std::get<0>(filled_gate.value()).value();
+                    std::int64_t selector_index = std::get<0>(filled_gate.value()).value();
                     std::vector<typename PlonkGate::constraint_type> constraints;
 
                     for (std::size_t i = 0; i < std::get<1>(filled_gate.value()).value().size(); i++) {

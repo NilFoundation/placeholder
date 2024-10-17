@@ -190,6 +190,7 @@ namespace nil {
                             preprocessed_public_data.common_data.basic_domain,
                             preprocessed_public_data.common_data.max_gates_degree,
                             mask_polynomial,
+                            preprocessed_public_data.common_data.lagrange_0,
                             transcript
                         )[0];
 
