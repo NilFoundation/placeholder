@@ -186,26 +186,8 @@ namespace nil {
                             }
 
                             BOOST_ASSERT(gate.selector_index >= -PLONK_CONSTRAINT_SYSTEM_SPECIAL_SELECTORS_AMOUNT);
-                            polynomial_dfs_variable_type selector;
-                            if( gate.selector_index >= 0 ) {
-                                selector = polynomial_dfs_variable_type(
+                            polynomial_dfs_variable_type selector = polynomial_dfs_variable_type(
                                     gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector);
-                            } else {
-                                switch(gate.selector_index){
-                                    case PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED:
-                                        selector = polynomial_dfs_variable_type(
-                                            gate.selector_index, -1, false, polynomial_dfs_variable_type::column_type::selector
-                                        );
-                                        break;
-                                    case PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED:
-                                        selector = polynomial_dfs_variable_type(
-                                            gate.selector_index, -2, false, polynomial_dfs_variable_type::column_type::selector
-                                        );
-                                        break;
-                                    default:
-                                        BOOST_ASSERT_MSG(false, "Unknown special selector");
-                                }
-                            }
 
                             for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                                 gate_results[i] *= selector;

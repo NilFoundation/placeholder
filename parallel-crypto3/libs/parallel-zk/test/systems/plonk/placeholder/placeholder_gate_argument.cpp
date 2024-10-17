@@ -146,9 +146,9 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
 
         std::array<math::polynomial_dfs<typename field_type::value_type>, 1> prover_res =
                 placeholder_gates_argument<field_type, lpc_placeholder_params_type>::prove_eval(
+                        constraint_system, polynomial_table, preprocessed_public_data.common_data.basic_domain,
                         preprocessed_public_data.common_data.max_gates_degree,
-                        mask_polynomial,
-                        preprocessed_public_data.common_data.lagrange_0,
+                        mask_polynomial, preprocessed_public_data.common_data.lagrange_0,
                         prover_transcript
                 );
 

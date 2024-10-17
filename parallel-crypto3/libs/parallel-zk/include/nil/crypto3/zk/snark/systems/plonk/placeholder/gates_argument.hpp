@@ -83,13 +83,12 @@ namespace nil {
                         const plonk_polynomial_dfs_table<FieldType> &assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
-                        std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type>& variable_values_out,
+                        std::unordered_map<variable_type, polynomial_dfs_type>& variable_values_out,
                         const polynomial_dfs_type &mask_polynomial,
                         const polynomial_dfs_type &lagrange_0
                     ) {
 
                         std::unordered_map<variable_type, size_t> variable_counts;
-
                         std::vector<variable_type> variables;
 
                         math::expression_for_each_variable_visitor<variable_type> visitor(
@@ -205,26 +204,7 @@ namespace nil {
                                 }
                             }
                             BOOST_ASSERT(gate.selector_index >= -PLONK_CONSTRAINT_SYSTEM_SPECIAL_SELECTORS_AMOUNT);
-                            polynomial_dfs_variable_type selector;
-                            if( gate.selector_index >= 0 ) {
-                                selector = polynomial_dfs_variable_type(
-                                    gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector);
-                            } else {
-                                switch(gate.selector_index){
-                                    case PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED:
-                                        selector = polynomial_dfs_variable_type(
-                                            gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector
-                                        );
-                                        break;
-                                    case PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED:
-                                        selector = polynomial_dfs_variable_type(
-                                            gate.selector_index, 0, false, polynomial_dfs_variable_type::column_type::selector
-                                        );
-                                        break;
-                                    default:
-                                        BOOST_ASSERT_MSG(false, "Unknown special selector");
-                                }
-                            }
+                            variable_type selector(gate.selector_index, 0, false, variable_type::column_type::selector);
                             for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                                 gate_results[i] *= selector;
                                 expressions[i] += gate_results[i];

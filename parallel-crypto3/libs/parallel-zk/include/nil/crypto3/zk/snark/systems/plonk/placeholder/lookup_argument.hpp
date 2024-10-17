@@ -707,6 +707,7 @@ namespace nil {
                                     BOOST_ASSERT(j1 < usable_rows_amount);
                                     append_to_sorted(val);
                                 }
+                                sorting_map[val] = 1;
                             }
                         }
 
