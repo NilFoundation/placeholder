@@ -61,8 +61,12 @@
 // <https://eprint.iacr.org/2017/540>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_SE_PPZKSNARK_TYPES_POLICY_HPP
-#define CRYPTO3_R1CS_SE_PPZKSNARK_TYPES_POLICY_HPP
+#ifndef PARALLEL_CRYPTO3_R1CS_SE_PPZKSNARK_TYPES_POLICY_HPP
+#define PARALLEL_CRYPTO3_R1CS_SE_PPZKSNARK_TYPES_POLICY_HPP
+
+#ifdef CRYPTO3_R1CS_SE_PPZKSNARK_TYPES_POLICY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 #include <nil/crypto3/zk/snark/reductions/r1cs_to_sap.hpp>

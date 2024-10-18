@@ -27,8 +27,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
-#define CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
+#define PARALLEL_CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
+
+#ifdef CRYPTO3_ZK_LIST_POLYNOMIAL_COMMITMENT_SCHEME_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>

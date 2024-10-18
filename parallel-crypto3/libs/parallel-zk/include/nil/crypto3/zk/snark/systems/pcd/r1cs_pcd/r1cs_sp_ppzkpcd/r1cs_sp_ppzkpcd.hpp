@@ -53,8 +53,12 @@
 // <http://eprint.iacr.org/2014/595>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_R1CS_SP_PPZKPCD_HPP
-#define CRYPTO3_ZK_R1CS_SP_PPZKPCD_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_R1CS_SP_PPZKPCD_HPP
+#define PARALLEL_CRYPTO3_ZK_R1CS_SP_PPZKPCD_HPP
+
+#ifdef CRYPTO3_ZK_R1CS_SP_PPZKPCD_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <memory>
 

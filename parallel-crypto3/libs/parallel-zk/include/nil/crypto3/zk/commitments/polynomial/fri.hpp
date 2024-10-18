@@ -27,8 +27,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_FRI_COMMITMENT_SCHEME_HPP
-#define CRYPTO3_ZK_FRI_COMMITMENT_SCHEME_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_FRI_COMMITMENT_SCHEME_HPP
+#define PARALLEL_CRYPTO3_ZK_FRI_COMMITMENT_SCHEME_HPP
+
+#ifdef CRYPTO3_ZK_FRI_COMMITMENT_SCHEME_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 

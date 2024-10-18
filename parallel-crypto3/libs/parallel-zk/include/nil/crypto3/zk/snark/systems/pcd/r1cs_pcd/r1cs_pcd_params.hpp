@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_R1CS_PCD_PARAMS_HPP
-#define CRYPTO3_ZK_R1CS_PCD_PARAMS_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_R1CS_PCD_PARAMS_HPP
+#define PARALLEL_CRYPTO3_ZK_R1CS_PCD_PARAMS_HPP
+
+#ifdef CRYPTO3_ZK_R1CS_PCD_PARAMS_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <memory>
 #include <vector>

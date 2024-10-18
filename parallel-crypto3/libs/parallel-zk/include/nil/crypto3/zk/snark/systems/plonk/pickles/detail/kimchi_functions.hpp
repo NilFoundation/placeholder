@@ -1,5 +1,9 @@
-#ifndef CRYPTO3_ZK_KIMCHI_FUNCTIONS
-#define CRYPTO3_ZK_KIMCHI_FUNCTIONS
+#ifndef PARALLEL_CRYPTO3_ZK_KIMCHI_FUNCTIONS
+#define PARALLEL_CRYPTO3_ZK_KIMCHI_FUNCTIONS
+
+#ifdef CRYPTO3_ZK_KIMCHI_FUNCTIONS
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 namespace nil {
     namespace crypto3 {

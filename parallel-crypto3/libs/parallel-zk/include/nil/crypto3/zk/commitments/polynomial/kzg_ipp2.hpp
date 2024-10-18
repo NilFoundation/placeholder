@@ -51,8 +51,12 @@
 // verifier of the Groth16 verification protocol since we pack two vectors in
 // one commitment.
 
-#ifndef CRYPTO3_ZK_COMMITMENTS_KZG_IPP2_HPP
-#define CRYPTO3_ZK_COMMITMENTS_KZG_IPP2_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_COMMITMENTS_KZG_IPP2_HPP
+#define PARALLEL_CRYPTO3_ZK_COMMITMENTS_KZG_IPP2_HPP
+
+#ifdef CRYPTO3_ZK_COMMITMENTS_KZG_IPP2_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <tuple>
 #include <vector>

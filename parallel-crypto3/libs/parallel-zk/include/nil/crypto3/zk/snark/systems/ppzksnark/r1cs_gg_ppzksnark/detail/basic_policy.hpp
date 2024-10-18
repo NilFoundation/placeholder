@@ -54,8 +54,12 @@
 // <https://eprint.iacr.org/2016/260>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
-#define CRYPTO3_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
+#ifndef PARALLEL_CRYPTO3_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
+#define PARALLEL_CRYPTO3_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
+
+#ifdef CRYPTO3_R1CS_GG_PPZKSNARK_BASIC_POLICY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/modes.hpp>
 #include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/proving_key.hpp>

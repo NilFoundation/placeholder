@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_HPP
-#define CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_HPP
+#define PARALLEL_CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_HPP
+
+#ifdef CRYPTO3_ZK_R1CS_GG_PPZKSNARK_MPC_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/private_key.hpp>
 #include <nil/crypto3/zk/commitments/detail/polynomial/r1cs_gg_ppzksnark_mpc/public_key.hpp>

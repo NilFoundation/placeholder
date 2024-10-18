@@ -59,8 +59,12 @@
 // <http://eprint.iacr.org/2014/718>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
-#define CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
+#ifndef PARALLEL_CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
+#define PARALLEL_CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
+
+#ifdef CRYPTO3_USCS_PPZKSNARK_TYPES_POLICY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/uscs.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/arithmetic_programs/ssp.hpp>

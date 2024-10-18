@@ -31,8 +31,12 @@
 // that the output is zero.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_BACS_TO_R1CS_BASIC_POLICY_HPP
-#define CRYPTO3_ZK_BACS_TO_R1CS_BASIC_POLICY_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_BACS_TO_R1CS_BASIC_POLICY_HPP
+#define PARALLEL_CRYPTO3_ZK_BACS_TO_R1CS_BASIC_POLICY_HPP
+
+#ifdef CRYPTO3_ZK_BACS_TO_R1CS_BASIC_POLICY_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/bacs.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>

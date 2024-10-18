@@ -1,5 +1,9 @@
-#ifndef CRYPTO3_ZK_VECTOR_PAIRS_HPP
-#define CRYPTO3_ZK_VECTOR_PAIRS_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_VECTOR_PAIRS_HPP
+#define PARALLEL_CRYPTO3_ZK_VECTOR_PAIRS_HPP
+
+#ifdef CRYPTO3_ZK_VECTOR_PAIRS_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include<vector>
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>

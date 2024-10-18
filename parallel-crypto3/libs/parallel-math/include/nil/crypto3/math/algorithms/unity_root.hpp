@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_UNITY_ROOT_HPP
-#define CRYPTO3_MATH_UNITY_ROOT_HPP
+#ifndef PARALLEL_CRYPTO3_MATH_UNITY_ROOT_HPP
+#define PARALLEL_CRYPTO3_MATH_UNITY_ROOT_HPP
+
+#ifdef CRYPTO3_MATH_UNITY_ROOT_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <type_traits>
 #include <complex>

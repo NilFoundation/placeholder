@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_R1CS_GG_PPZKSNARK_ENCRYPTED_INPUT_PROVER_HPP
-#define CRYPTO3_ZK_R1CS_GG_PPZKSNARK_ENCRYPTED_INPUT_PROVER_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_R1CS_GG_PPZKSNARK_ENCRYPTED_INPUT_PROVER_HPP
+#define PARALLEL_CRYPTO3_ZK_R1CS_GG_PPZKSNARK_ENCRYPTED_INPUT_PROVER_HPP
+
+#ifdef CRYPTO3_ZK_R1CS_GG_PPZKSNARK_ENCRYPTED_INPUT_PROVER_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/systems/ppzksnark/r1cs_gg_ppzksnark/prover.hpp>
 

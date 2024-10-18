@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_GENERATOR_HPP
-#define CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_GENERATOR_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_GENERATOR_HPP
+#define PARALLEL_CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_GENERATOR_HPP
+
+#ifdef CRYPTO3_ZK_TBCS_PPZKSNARK_BASIC_GENERATOR_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/snark/arithmetization/circuit_satisfaction_problems/tbcs.hpp>
 #include <nil/crypto3/zk/snark/systems/ppzksnark/uscs_ppzksnark.hpp>
