@@ -73,8 +73,8 @@ namespace nil {
                 is_curve_group<typename CurveGroupValueType::group_type>::value,
                 CurveGroupValueType>
             opt_window_wnaf_exp(const CurveGroupValueType &base,
-                                                    const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar,
-                                                    const std::size_t scalar_bits) {
+                const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar,
+                const std::size_t scalar_bits) {
                 std::size_t best = 0;
                 for (long i =
                          curves::wnaf_params<typename CurveGroupValueType::group_type>::wnaf_window_table.size() - 1;
