@@ -41,25 +41,13 @@ namespace nil {
                         using base_field_type = typename jubjub_types::base_field_type;
                         using scalar_field_type = typename jubjub_types::scalar_field_type;
 
-                        // Edwards representation constants a and d
+                        // Edwards representation:
+                        // a x^2 + y^2 = 1 + d x^2 y^2
+                        // Constants a (-1) and d (-10240/10241)
                         constexpr static const typename jubjub_types::integral_type
-                            a =    ///< twisted Edwards elliptic curve
-                            0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000000_cppui_modular255;    ///< described
-                                                                                                            ///< by
-                                                                                                            ///< equation
-                                                                                                            ///< ax^2 +
-                                                                                                            ///< y^2 = 1
-                                                                                                            ///< +
-                                                                                                            ///< dx^2y^2
+                            a = 0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000000_cppui_modular255;
                         constexpr static const typename jubjub_types::integral_type
-                            d =    ///< twisted Edwards elliptic curve
-                            0x2A9318E74BFA2B48F5FD9207E6BD7FD4292D7F6D37579D2601065FD6D6343EB1_cppui_modular254;    ///< described
-                                                                                                            ///< by
-                                                                                                            ///< equation
-                                                                                                            ///< ax^2 +
-                                                                                                            ///< y^2 = 1
-                                                                                                            ///< +
-                                                                                                            ///< dx^2y^2
+                            d = 0x2A9318E74BFA2B48F5FD9207E6BD7FD4292D7F6D37579D2601065FD6D6343EB1_cppui_modular255;
                         static constexpr std::size_t cofactor = 8;
                     };
 
@@ -71,13 +59,13 @@ namespace nil {
                         using base_field_type = typename jubjub_types::base_field_type;
                         using scalar_field_type = typename jubjub_types::scalar_field_type;
 
-                        // Montgomery representation constants A and B
+                        // Montgomery representation:
+                        // B * y^2 = x^3 + A * x^2 + x
+                        // constants A and B
                         constexpr static const typename jubjub_types::integral_type
-                            A =                ///< Montgomery elliptic curve
-                            0xA002_cppui_modular16;    ///< described by equation b*y^2 = x^3 + a*x^2 + x
+                            A = 0xA002_cppui_modular255;
                         constexpr static const typename jubjub_types::integral_type
-                            B =      ///< Montgomery elliptic curve
-                            0x01;    ///< described by equation b*y^2 = x^3 + a*x^2 + x
+                            B = 0x0001_cppui_modular255;
                         static constexpr std::size_t cofactor = 8;
                     };
 
@@ -115,12 +103,11 @@ namespace nil {
                         template<typename Coordinates>
                         using group_type = jubjub_types::g1_type<forms::montgomery, Coordinates>;
 
-                        // TODO: check correctness of the base point coordinates
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
                                 0x52a47af6ec47deb77d663b6a45b148d1ccdaa4e2299ecfbd5504c409b3ea62c0_cppui_modular255),
                             typename field_type::value_type(
-                                0x399b020832f6a499ba9d5334ca932dc9faaeea860e9a49a8f8854f55f3b676d4_cppui_modular254)};
+                                0x20bc4f2e8cff38006618840fd0f9b6d6e8ddec99c37916874e2fd6d5c6558938_cppui_modular254)};
                     };
 
                     constexpr std::array<typename jubjub_g1_params<forms::montgomery>::base_field_type::value_type,

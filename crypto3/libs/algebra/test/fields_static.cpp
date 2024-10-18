@@ -88,21 +88,6 @@ enum field_operation_test_elements : std::size_t {
     elements_set_size
 };
 
-template<typename ElementsRange, typename ConstantsRange>
-constexpr bool check_field_operations_static(const ElementsRange &elements, const ConstantsRange &constants) {
-    static_assert(elements[e1] + elements[e2] == elements[e1_plus_e2], "add error");
-    static_assert(elements[e1] - elements[e2] == elements[e1_minus_e2], "sub error");
-    static_assert(elements[e1] * elements[e2] == elements[e1_mul_e2], "mul error");
-    static_assert(elements[e1].doubled() == elements[e1_dbl], "dbl error");
-    static_assert(elements[e2].inversed() == elements[e2_inv], "inv error");
-
-    static_assert(elements[e1].pow(constants[C1]) == elements[e1_pow_C1], "pow error");
-    static_assert(elements[e2].squared() == elements[e2_pow_2], "sqr error");
-    static_assert((elements[e2].squared()).sqrt() == elements[e2_pow_2_sqrt], "sqrt error");
-    static_assert(-elements[e1] == elements[minus_e1], "neg error");
-    return true;
-}
-
 BOOST_AUTO_TEST_SUITE(fields_manual_static_tests)
 
 BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fr) {
@@ -124,10 +109,6 @@ BOOST_AUTO_TEST_CASE(field_operation_test_bls12_381_fr) {
                                       0x661ad4fb4d130b7afaea293348f2107d9f4a62308af88282297733628cfc5ae7_cppui_modular255,
                                       0x53530b5d9374f4f45c1b2267998b8cd7d1bf6d19a90564fb898ed8970544ea28_cppui_modular255};
     constexpr const_set_t constants1 = {811706348};
-
-    // TODO: the reason of the error "function parameter 'elements' with unknown value cannot be used in a constant
-    // expression" constexpr
-    //     bool res = check_field_operations_static(elements1, constants1);
 
     static_assert(elements1[e1] + elements1[e2] == elements1[e1_plus_e2], "add error");
     static_assert(elements1[e1] - elements1[e2] == elements1[e1_minus_e2], "sub error");

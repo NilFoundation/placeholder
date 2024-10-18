@@ -52,10 +52,6 @@ namespace nil {
                         };
 
                         struct affine_ate_coeffs {
-                            // TODO: trim (not all of them are needed)
-                            g2_field_value_type old_RX;
-                            g2_field_value_type old_RY;
-                            g2_field_value_type gamma;
                             g2_field_value_type gamma_twist;
                             g2_field_value_type gamma_X;
                         };

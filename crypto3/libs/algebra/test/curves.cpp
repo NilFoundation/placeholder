@@ -422,6 +422,7 @@ BOOST_DATA_TEST_CASE(curve_operation_test_jubjub_g1, string_data("curve_operatio
 BOOST_AUTO_TEST_CASE(curve_operation_test_babyjubjub_g1) {
     using policy_type = curves::babyjubjub::g1_type<>;
     using integral_type = typename policy_type::field_type::value_type::integral_type;
+    using scalar_value_type = typename policy_type::params_type::scalar_field_type::value_type;
 
     typename policy_type::value_type P1(
         typename policy_type::field_type::value_type(
@@ -470,7 +471,7 @@ BOOST_AUTO_TEST_CASE(curve_operation_test_babyjubjub_g1) {
                 typename policy_type::field_type::value_type(
                     0x12aa55c3cc7ff986c520ddcae3927877e682f01bed87628f643f34905692880e_cppui_modular252));
 
-    BOOST_CHECK_EQUAL(et_s1P5, static_cast<integral_type>(3u) * P5);
+    BOOST_CHECK_EQUAL(et_s1P5, scalar_value_type(3u) * P5);
     BOOST_CHECK_EQUAL(et_s2P5, integral_type("14035240266687799601661095864649209771790948434046947201833777492504781204499") *
                                P5);
     BOOST_CHECK_EQUAL(et_s1P6, integral_type("20819045374670962167435360035096875258406992893633759881276124905556507972311") *

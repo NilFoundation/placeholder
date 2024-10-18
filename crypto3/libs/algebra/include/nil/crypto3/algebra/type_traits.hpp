@@ -78,19 +78,11 @@ namespace nil {
             BOOST_TTI_HAS_FUNCTION(mixed_add)
 
             template<typename T>
-            struct is_curve {
-                static const bool value = has_type_base_field_type<T>::value && has_type_scalar_field_type<T>::value &&
-                                          has_type_g1_type<T>::value && has_type_g2_type<T>::value &&
-                                          has_type_gt_type<T>::value;
-                typedef T type;
-            };
-
-            // TODO: we should add some other params to curve group policy to identify it more clearly
-            template<typename T>
             struct is_curve_group {
-                static const bool value = has_type_value_type<T>::value && has_type_field_type<T>::value &&
-                                          has_static_member_data_value_bits<T, const std::size_t>::value &&
-                                          has_type_curve_type<T>::value;
+                static const bool value =
+                    has_type_base_field_type<T>::value &&
+                    has_type_scalar_field_type<T>::value &&
+                    has_type_g1_type<T>::value;
                 typedef T type;
             };
 
