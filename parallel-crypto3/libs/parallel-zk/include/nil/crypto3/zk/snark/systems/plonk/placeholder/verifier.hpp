@@ -331,6 +331,38 @@ namespace nil {
                             }
                         }
 
+                        typename FieldType::value_type mask_value = FieldType::value_type::one() -
+                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 0) -
+                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 0);
+                        typename FieldType::value_type shifted_mask_value = FieldType::value_type::one() -
+                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 1) -
+                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 1);
+
+                        // All rows selector
+                        {
+                            auto key = std::make_tuple(
+                                PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0,
+                                plonk_variable<typename FieldType::value_type>::column_type::selector
+                            );
+                            columns_at_y[key] = mask_value;
+                        }
+                        {
+                            auto key = std::make_tuple(
+                                PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 1,
+                                plonk_variable<typename FieldType::value_type>::column_type::selector
+                            );
+                            columns_at_y[key] = shifted_mask_value;
+                        }
+                        // All rows selector
+                        {
+                            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
+                            columns_at_y[key] = mask_value - common_data.lagrange_0.evaluate(proof.eval_proof.challenge);
+                        }
+                        {
+                            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1, plonk_variable<typename FieldType::value_type>::column_type::selector);
+                            columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(proof.eval_proof.challenge * common_data.basic_domain->get_domain_element(1));
+                        }
+
                         // 6. lookup argument
                         bool is_lookup_enabled = (constraint_system.lookup_gates().size() > 0);
                         std::array<typename FieldType::value_type, lookup_parts> lookup_argument;
@@ -365,10 +397,7 @@ namespace nil {
                         std::array<typename FieldType::value_type, 1> gate_argument =
                         placeholder_gates_argument<FieldType, ParamsType>::verify_eval(
                             constraint_system.gates(), columns_at_y, proof.eval_proof.challenge,
-                            FieldType::value_type::one() -
-                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 0) -
-                            proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 0),
-                            transcript
+                            mask_value, transcript
                         );
 
                         std::array<typename FieldType::value_type, f_parts> alphas =

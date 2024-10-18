@@ -83,10 +83,12 @@ namespace nil {
                         const plonk_polynomial_dfs_table<FieldType> &assignments,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain,
                         std::size_t extended_domain_size,
-                        std::unordered_map<variable_type, polynomial_dfs_type>& variable_values_out) {
+                        std::unordered_map<variable_type, polynomial_dfs_type>& variable_values_out,
+                        const polynomial_dfs_type &mask_polynomial,
+                        const polynomial_dfs_type &lagrange_0
+                    ) {
 
                         std::unordered_map<variable_type, size_t> variable_counts;
-
                         std::vector<variable_type> variables;
 
                         math::expression_for_each_variable_visitor<variable_type> visitor(
@@ -108,7 +110,7 @@ namespace nil {
                             math::make_evaluation_domain<FieldType>(extended_domain_size);
 
                         parallel_for(0, variables.size(),
-                            [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size](std::size_t i) {
+                            [&variables, &variable_values_out, &assignments, &domain, &extended_domain, extended_domain_size, &mask_polynomial, &lagrange_0](std::size_t i) {
                                 const variable_type& var = variables[i];
 
                                 // Convert the variable to polynomial_dfs variable type.
@@ -116,7 +118,13 @@ namespace nil {
                                     static_cast<typename polynomial_dfs_variable_type::column_type>(
                                         static_cast<std::uint8_t>(var.type)));
 
-                                polynomial_dfs_type assignment = assignments.get_variable_value(var_dfs, domain);
+                                polynomial_dfs_type assignment;
+                                if( var.index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector){
+                                    assignment = mask_polynomial;
+                                } else if( var.index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED && var.type == variable_type::column_type::selector) {
+                                    assignment = mask_polynomial - lagrange_0;
+                                } else
+                                    assignment = assignments.get_variable_value(var_dfs, domain);
 
                                 // In parallel version we always resize the assignment poly, it's better for parallelization.
                                 // if (count > 1) {
@@ -125,15 +133,16 @@ namespace nil {
                             }, ThreadPool::PoolLevel::HIGH);
                     }
 
-                    static inline std::array<polynomial_dfs_type, argument_size>
-                        prove_eval(
-                            const typename policy_type::constraint_system_type &constraint_system,
-                            const plonk_polynomial_dfs_table<FieldType>
-                                &column_polynomials,
-                            std::shared_ptr<math::evaluation_domain<FieldType>> original_domain,
-                            std::uint32_t max_gates_degree,
-                            const polynomial_dfs_type &mask_polynomial,
-                            transcript_type& transcript) {
+                    static inline std::array<polynomial_dfs_type, argument_size> prove_eval(
+                        const typename policy_type::constraint_system_type &constraint_system,
+                        const plonk_polynomial_dfs_table<FieldType>
+                            &column_polynomials,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> original_domain,
+                        std::uint32_t max_gates_degree,
+                        const polynomial_dfs_type &mask_polynomial,
+                        const polynomial_dfs_type &lagrange_0,
+                        transcript_type& transcript
+                    ) {
                         PROFILE_SCOPE("gate_argument_time");
 
                         // max_gates_degree that comes from the outside does not take into account multiplication
@@ -186,8 +195,7 @@ namespace nil {
                                     }
                                 }
                             }
-                            auto selector = variable_type(
-                                gate.selector_index, 0, false, variable_type::column_type::selector);
+                            variable_type selector(gate.selector_index, 0, false, variable_type::column_type::selector);
                             for (size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                                 gate_results[i] *= selector;
                                 expressions[i] += gate_results[i];
@@ -199,9 +207,12 @@ namespace nil {
                         F[0] = polynomial_dfs_type::zero();
                         for (std::size_t i = 0; i < extended_domain_sizes.size(); ++i) {
                             std::unordered_map<variable_type, polynomial_dfs_type> variable_values;
-                            
-                            build_variable_value_map(expressions[i], column_polynomials, original_domain,
-                                extended_domain_sizes[i], variable_values);
+
+                            build_variable_value_map(
+                                expressions[i], column_polynomials, original_domain,
+                                extended_domain_sizes[i], variable_values,
+                                mask_polynomial, lagrange_0
+                            );
 
                             polynomial_dfs_type result(extended_domain_sizes[i] - 1, extended_domain_sizes[i]);
                             wait_for_all(parallel_run_in_chunks<void>(
@@ -212,7 +223,7 @@ namespace nil {
                                         // Don't use cache here. In practice it's slower to maintain the cache
                                         // than to re-compute the subexpression value when value type is field element.
                                         math::expression_evaluator<variable_type> evaluator(
-                                            expressions[i], 
+                                            expressions[i],
                                             [&assignments=variable_values, j]
                                                 (const variable_type &var) -> const typename FieldType::value_type& {
                                                     return assignments[var][j];
@@ -220,10 +231,9 @@ namespace nil {
                                         result[j] = evaluator.evaluate();
                                     }
                             }, ThreadPool::PoolLevel::HIGH));
-                            
+
                             F[0] += result;
                         };
-                        F[0] *= mask_polynomial;
                         return F;
                     }
 
@@ -256,7 +266,6 @@ namespace nil {
                             F[0] += gate_result;
                         }
 
-                        F[0] *= mask_value;
                         return F;
                     }
                 };

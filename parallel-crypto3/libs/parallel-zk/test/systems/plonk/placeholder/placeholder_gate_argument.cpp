@@ -147,7 +147,10 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
         std::array<math::polynomial_dfs<typename field_type::value_type>, 1> prover_res =
                 placeholder_gates_argument<field_type, lpc_placeholder_params_type>::prove_eval(
                         constraint_system, polynomial_table, preprocessed_public_data.common_data.basic_domain,
-                        preprocessed_public_data.common_data.max_gates_degree, mask_polynomial, prover_transcript);
+                        preprocessed_public_data.common_data.max_gates_degree,
+                        mask_polynomial, preprocessed_public_data.common_data.lagrange_0,
+                        prover_transcript
+                );
 
         // Challenge phase
         typename field_type::value_type y = algebra::random_element<field_type>();
@@ -203,6 +206,17 @@ BOOST_AUTO_TEST_SUITE(placeholder_gate_argument)
 
         auto mask_value = field_type::value_type::one() - preprocessed_public_data.q_last.evaluate(y) -
                           preprocessed_public_data.q_blind.evaluate(y);
+
+        // All rows selector
+        {
+                auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+                columns_at_y[key] = mask_value;
+        }
+        // All rows selector except the first row
+        {
+                auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+                columns_at_y[key] = mask_value - preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+        }
         std::array<typename field_type::value_type, 1> verifier_res =
                 placeholder_gates_argument<field_type, lpc_placeholder_params_type>::verify_eval(
                         constraint_system.gates(), columns_at_y, y, mask_value, verifier_transcript);

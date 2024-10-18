@@ -210,6 +210,25 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit3_lookup_test)
         special_selector_values_shifted[0] = preprocessed_public_data.q_last.evaluate(y * omega);
         special_selector_values_shifted[1] = preprocessed_public_data.q_blind.evaluate(y * omega);
 
+       // All rows selector
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) ;
+        }
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 1, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) ;
+        }
+        // All rows selector
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) - preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+        }
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) - preprocessed_public_data.common_data.lagrange_0.evaluate(y * omega);
+        }
+
         placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> lookup_verifier;
         std::array<typename field_type::value_type, argument_size> verifier_res = lookup_verifier.verify_eval(
                 preprocessed_public_data.common_data,
@@ -390,6 +409,25 @@ BOOST_AUTO_TEST_SUITE(placeholder_circuit4_lookup_test)
         std::vector<typename field_type::value_type> special_selector_values_shifted(2);
         special_selector_values_shifted[0] = preprocessed_public_data.q_last.evaluate(y * omega);
         special_selector_values_shifted[1] = preprocessed_public_data.q_blind.evaluate(y * omega);
+
+       // All rows selector
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) ;
+        }
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, 1, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) ;
+        }
+        // All rows selector
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y) -preprocessed_public_data.q_blind.evaluate(y) - preprocessed_public_data.common_data.lagrange_0.evaluate(y);
+        }
+        {
+            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1, plonk_variable<typename field_type::value_type>::column_type::selector);
+            columns_at_y[key] = 1 - preprocessed_public_data.q_last.evaluate(y * omega) -preprocessed_public_data.q_blind.evaluate(y * omega) - preprocessed_public_data.common_data.lagrange_0.evaluate(y * omega);
+        }
 
         placeholder_lookup_argument_verifier<field_type, lpc_type, lpc_placeholder_params_type> verifier;
         std::array<typename field_type::value_type, argument_size> verifier_res = verifier.verify_eval(

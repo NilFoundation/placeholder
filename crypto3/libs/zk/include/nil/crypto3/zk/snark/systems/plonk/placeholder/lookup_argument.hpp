@@ -162,14 +162,16 @@ namespace nil {
                             0, basic_domain->m, FieldType::value_type::zero());
                         polynomial_dfs_type mask_assignment =
                             one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
+                        polynomial_dfs_type lagrange0 = preprocessed_data.common_data.lagrange_0;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
-                            prepare_lookup_value(mask_assignment);
+                            prepare_lookup_value(mask_assignment, lagrange0);
                         auto& lookup_value = *lookup_value_ptr;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_input_ptr =
-                            prepare_lookup_input();
+                            prepare_lookup_input(mask_assignment, lagrange0);
                         auto& lookup_input = *lookup_input_ptr;
+
 
                         // 3. Lookup_input and lookup_value are ready
                         //    Now sort them!
@@ -427,7 +429,9 @@ namespace nil {
                     }
 
                     std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_value(
-                            const polynomial_dfs_type& mask_assignment) {
+                        const polynomial_dfs_type &mask_assignment,
+                        const polynomial_dfs_type &lagrange0
+                    ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup value");
 
                         typename FieldType::value_type theta_acc;
@@ -436,7 +440,14 @@ namespace nil {
                         auto lookup_value_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
-                            const polynomial_dfs_type &lookup_tag = plonk_columns.selector(l_table.tag_index);
+                            polynomial_dfs_type lookup_tag;
+                            if( l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED ){
+                                lookup_tag = mask_assignment;
+                            } else if( l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ){
+                                lookup_tag = mask_assignment - lagrange0;
+                            } else {
+                                lookup_tag = plonk_columns.selector(l_table.tag_index);
+                            }
                             for (std::size_t o_id = 0; o_id < l_table.lookup_options.size(); o_id++) {
                                 polynomial_dfs_type v = (typename FieldType::value_type(t_id + 1)) * lookup_tag;
                                 theta_acc = theta;
@@ -446,14 +457,16 @@ namespace nil {
                                     v += theta_acc * lookup_tag * c;
                                     theta_acc *= theta;
                                 }
-                                v *= mask_assignment;
                                 lookup_value_ptr->push_back(v);
                             }
                         }
                         return std::move(lookup_value_ptr);
                     }
 
-                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input() {
+                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input(
+                        const polynomial_dfs_type &mask_assignment,
+                        const polynomial_dfs_type &lagrange0
+                    ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
 
                         auto value_type_to_polynomial_dfs = [](
@@ -470,7 +483,13 @@ namespace nil {
                         auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         for (const auto &gate : lookup_gates) {
                             math::expression<DfsVariableType> expr;
-                            polynomial_dfs_type lookup_selector = plonk_columns.selector(gate.tag_index);
+                            polynomial_dfs_type lookup_selector;
+                            if( gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED ){
+                                lookup_selector = mask_assignment;
+                            } else if( gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ){
+                                lookup_selector = mask_assignment - lagrange0;
+                            } else
+                                lookup_selector = plonk_columns.selector(gate.tag_index);
                             for (const auto &constraint : gate.constraints) {
                                 polynomial_dfs_type l = lookup_selector * (typename FieldType::value_type(constraint.table_id));
                                 theta_acc = theta;
@@ -589,10 +608,7 @@ namespace nil {
                         std::unordered_map<typename FieldType::value_type, std::size_t> sorting_map;
                         for (std::size_t i = 0; i < reduced_value.size(); i++) {
                             for (std::size_t j = 0; j < usable_rows_amount; j++) {
-                                if(sorting_map.find(reduced_value[i][j]) != sorting_map.end())
-                                    sorting_map[reduced_value[i][j]]++;
-                                else
-                                    sorting_map[reduced_value[i][j]] = 1;
+                                sorting_map[reduced_value[i][j]] = 1;
                             }
                         }
 
@@ -611,8 +627,6 @@ namespace nil {
                         );
                         std::size_t i1 = 0;
                         std::size_t j1 = 0;
-                        typename FieldType::value_type prev = FieldType::value_type::zero();
-
                         auto append_to_sorted = [usable_rows_amount, &sorted, &i1, &j1] (
                                 const typename FieldType::value_type& value) {
                             sorted[i1][j1] = value;
@@ -624,24 +638,12 @@ namespace nil {
 
                         for (std::size_t i = 0; i < reduced_value.size(); i++) {
                             for (std::size_t j = 0; j < usable_rows_amount; j++) {
-                                if (reduced_value[i][j] != prev) {
-                                    if (prev == FieldType::value_type::zero()) {
-                                        BOOST_ASSERT(j1 < usable_rows_amount);
-                                        append_to_sorted(prev);
-                                    } else {
-                                        for (std::size_t k = 0; k < sorting_map[prev]; k++) {
-                                            BOOST_ASSERT(j1 < usable_rows_amount);
-                                            append_to_sorted(prev);
-                                        }
-                                    }
-                                    prev = reduced_value[i][j];
+                                typename FieldType::value_type val = reduced_value[i][j];
+                                for (std::size_t k = 0; k < sorting_map[val]; k++) {
+                                    BOOST_ASSERT(j1 < usable_rows_amount);
+                                    append_to_sorted(val);
                                 }
-                            }
-                        }
-                        if (prev != FieldType::value_type::zero()) {
-                            for (std::size_t k = 0; k < sorting_map[prev]; k++) {
-                                //BOOST_ASSERT(j1 < usable_rows_amount);
-                                append_to_sorted(prev);
+                                sorting_map[val] = 1;
                             }
                         }
 
@@ -719,8 +721,8 @@ namespace nil {
                             const auto &table = lookup_tables[t_id];
                             auto key = std::tuple(table.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
                             auto shifted_key = std::tuple(table.tag_index, 1, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            auto selector_value = evaluations[key];
-                            auto shifted_selector_value = evaluations[shifted_key];
+                            typename FieldType::value_type selector_value  = evaluations[key];;
+                            typename FieldType::value_type shifted_selector_value  = evaluations[shifted_key];;
                             for( std::size_t o_id = 0; o_id < table.lookup_options.size(); o_id++){
                                 typename FieldType::value_type v = selector_value * (t_id + 1);
                                 typename FieldType::value_type shifted_v = shifted_selector_value * (t_id + 1);
@@ -734,8 +736,6 @@ namespace nil {
                                     shifted_v += theta_acc * evaluations[shifted_key1]* shifted_selector_value;
                                     theta_acc *= theta;
                                 }
-                                v *= mask_value;
-                                shifted_v *= shifted_mask_value;
                                 lookup_value.push_back(v);
                                 shifted_lookup_value.push_back(shifted_v);
                             }
@@ -746,7 +746,7 @@ namespace nil {
                         for( std::size_t g_id = 0; g_id < lookup_gates.size(); g_id++ ){
                             const auto &gate = lookup_gates[g_id];
                             auto key = std::tuple(gate.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            auto selector_value = evaluations[key];
+                            typename FieldType::value_type selector_value= evaluations[key];
                             for( std::size_t c_id = 0; c_id < gate.constraints.size(); c_id++){
                                 const auto &constraint = gate.constraints[c_id];
                                 typename FieldType::value_type l = selector_value * constraint.table_id;
