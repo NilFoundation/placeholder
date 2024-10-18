@@ -4,11 +4,6 @@ project(parallel-crypto3)
 find_package(CM REQUIRED)
 include(CMConfig)
 
-if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
-    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
-endif()
-
 # The file compile_commands.json is generated in build directory, so LSP could
 # pick it up and guess all include paths, defines and other stuff.
 # If Nix is used, LSP could not guess the locations of implicit include
