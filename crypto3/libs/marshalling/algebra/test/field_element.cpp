@@ -41,7 +41,6 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
-#include <nil/crypto3/algebra/curves/detail/marshalling.hpp>
 
 #include <nil/marshalling/algorithms/pack.hpp>
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
@@ -58,7 +57,6 @@ void test_field_element(T val) {
 
     using namespace nil::crypto3::marshalling;
 
-    std::size_t units_bits = 8;
     using unit_type = unsigned char;
     using field_element_type = types::field_element<nil::marshalling::field_type<Endianness>,
         T>;

@@ -143,11 +143,6 @@ namespace nil {
                             return *this;
                         }
 
-                        element_fp12_2over3over2 sqrt() const {
-
-                            // TODO: compute squared root with Tonelli--Shanks
-                        }
-
                         element_fp12_2over3over2 squared() const {
 
                             return (*this) * (*this);    // maybe can be done more effective
@@ -177,9 +172,6 @@ namespace nil {
 
                         template<typename PowerType>
                         element_fp12_2over3over2 Frobenius_map(const PowerType &pwr) const {
-                            // return element_fp12_2over3over2(data[0].Frobenius_map(pwr),
-                            //                                 policy_type::Frobenius_coeffs_c1[pwr % 12] *
-                            //                                 data[1].Frobenius_map(pwr)});
                             return element_fp12_2over3over2(data[0].Frobenius_map(pwr),
                                                             typename policy_type::non_residue_type(
                                                                 policy_type::Frobenius_coeffs_c1[(pwr % 12) * 2],
