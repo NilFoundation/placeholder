@@ -117,7 +117,6 @@ namespace nil {
                     const typename FRI::initial_proof_type &initial_proof
                 ) {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
-                    using value_type = typename FRI::field_type::value_type;
                     using filled_type = fri_initial_proof_type<TTypeBase, FRI>;
                     using outer_list_type = nil::marshalling::types::standard_array_list<
                         TTypeBase,

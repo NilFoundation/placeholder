@@ -29,6 +29,8 @@
 
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/jacobian_with_a4_0/types.hpp>
 
+#include <optional>
+
 namespace nil {
     namespace crypto3 {
         namespace algebra {
@@ -55,8 +57,13 @@ namespace nil {
                 public:
                     /* https://link.springer.com/chapter/10.1007/978-3-642-28496-0_25#preview
                      * */
-                    static typename gt_type::value_type process(const typename gt_type::value_type &elt) {
-                        /* TODO: check elt == 0 ? */
+                    static std::optional<typename gt_type::value_type>
+                    process(const typename gt_type::value_type &elt) {
+
+                        if (elt.is_zero()) {
+                            return std::nullopt;
+                        }
+
                         auto f1 = elt.unitary_inversed();
                         auto f2 = elt.inversed();
                         auto r = f1 * f2;

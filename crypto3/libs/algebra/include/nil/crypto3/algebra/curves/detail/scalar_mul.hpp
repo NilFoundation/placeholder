@@ -166,19 +166,21 @@ namespace nil {
                         return scalar_mul(right, left);
                     }
 
-                    template<typename GroupValueType, typename FieldValueType>
-                    typename std::enable_if<is_curve_group<typename GroupValueType::group_type>::value &&
-                                                !is_field<typename GroupValueType::group_type>::value &&
-                                                is_field<typename FieldValueType::field_type>::value &&
-                                                !is_extended_field<typename FieldValueType::field_type>::value,
-                                            GroupValueType>::type
-                        operator*(const GroupValueType &left, const FieldValueType &right) {
+                    template<typename GroupValueType>
+                    GroupValueType operator*(const GroupValueType &left,
+                            const typename GroupValueType::params_type::scalar_field_type::value_type &right) {
+                        return left * static_cast<typename GroupValueType::params_type::scalar_field_type::integral_type>(right.data);
 
-                        // TODO(martun): consider deleting this function, and forcing all the callers to convert to the
-                        // required type before multiplication.
-                        return left * static_cast<typename GroupValueType::params_type::scalar_field_type::integral_type>(
-                            typename FieldValueType::integral_type(right.data));
                     }
+
+                    template<typename GroupValueType>
+                    GroupValueType operator*(
+                            const typename GroupValueType::params_type::scalar_field_type::value_type &right,
+                            const GroupValueType &left) {
+                        return left * static_cast<typename GroupValueType::params_type::scalar_field_type::integral_type>(right.data);
+
+                    }
+
 
                     template<typename GroupValueType, typename FieldValueType>
                     typename std::enable_if<is_curve_group<typename GroupValueType::group_type>::value &&

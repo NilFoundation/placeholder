@@ -57,7 +57,11 @@ namespace nil {
                         using field_type = fields::fp2<base_field_type>;
 
                         typedef typename policy_type::integral_type integral_type;
-                        typedef typename policy_type::extended_integral_type extended_integral_type;
+
+                        typedef boost::multiprecision::number<
+                            boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>
+                            extended_integral_type;
+
 
                         constexpr static const integral_type modulus = policy_type::modulus;
 
