@@ -12,8 +12,6 @@ cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(ZK_PLACEHOLDER_DEBUG_ENABLED TRUE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
-    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
 endif()
 
 find_package(CM REQUIRED)
@@ -22,17 +20,6 @@ include(CMDeploy)
 include(CMSetupVersion)
 
 cm_project(proof-producer WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES CXX)
-
-# This is useful due to some build systems (Ninja in particular) are piping
-# compiler output and compiler switches it's output to plain text
-option (FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." FALSE)
-if (${FORCE_COLORED_OUTPUT})
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-       add_compile_options (-fdiagnostics-color=always)
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-       add_compile_options (-fcolor-diagnostics)
-    endif ()
-endif ()
 
 # The file compile_commands.json is generated in build directory, so LSP could
 # pick it up and guess all include paths, defines and other stuff.

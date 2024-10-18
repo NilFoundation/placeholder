@@ -10,6 +10,8 @@ cmake_minimum_required(VERSION 3.21)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+message("PARALLEL_CRYPTO3_ENABLE=${PARALLEL_CRYPTO3_ENABLE} PROOF_PRODUCER_ENABLE=${PROOF_PRODUCER_ENABLE} ZKEVM_FRAMEWORK_ENABLE=${ZKEVM_FRAMEWORK_ENABLE}")
+
 find_package(CM REQUIRED)
 include(CMConfig)
 include(CMSetupVersion)
@@ -21,28 +23,6 @@ option(Boost_USE_STATIC_LIBS "Use static libraries for Boost" OFF)
 option(CMAKE_ENABLE_TESTS "Enable tests" FALSE) # used by CMTest module
 option(BUILD_BENCH_TESTS "Build performance benchmark tests" FALSE)
 option(BUILD_DOCS "Build with configuring Doxygen documentation compiler" FALSE)
-option(SANITIZE "Build sanitizers" FALSE)
-
-if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
-    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
-endif()
-
-if(${SANITIZE})
-  add_compile_options(-fsanitize=undefined,address,leak)
-  add_link_options(-fsanitize=undefined,address,leak)
-endif()
-
-# This is useful due to some build systems (Ninja in particular) are piping
-# compiler output and compiler switches it's output to plain text
-option (FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." FALSE)
-if (${FORCE_COLORED_OUTPUT})
-    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-       add_compile_options (-fdiagnostics-color=always)
-    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-       add_compile_options (-fcolor-diagnostics)
-    endif ()
-endif ()
 
 # The file compile_commands.json is generated in build directory, so LSP could
 # pick it up and guess all include paths, defines and other stuff.
