@@ -40,7 +40,9 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       ${CMAKE_WORKSPACE_NAME}::marshalling-containers
                   )
 
-cm_add_test_subdirectory(test)
+if(BUILD_CRYPTO3_TESTS)
+    cm_add_test_subdirectory(test)
+endif()
 
 if((CMAKE_COMPILER_IS_GNUCC) OR ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang"))
     set(extra_flags_list -Wall -Wextra -Wcast-align -Wcast-qual
