@@ -12,11 +12,6 @@ find_package(CM REQUIRED)
 include(CMConfig)
 include(CMSetupVersion)
 
-if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
-    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
-endif()
-
 cm_project(transpiler WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME} LANGUAGES ASM C CXX)
 
 cm_setup_version(VERSION 0.1.0 PREFIX ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})

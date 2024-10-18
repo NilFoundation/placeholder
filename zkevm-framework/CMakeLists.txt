@@ -8,11 +8,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/libs/json_helpers/cmake ${CMAK
 option(BUILD_DOCS "Build documentation" FALSE)
 option(ENABLE_TESTS "Enable tests" FALSE)
 
-if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb")
-    set(BOOST_FORCEINLINE "OFF") # improves debugging traces
-endif()
-
 add_subdirectory(libs)
 add_subdirectory(bin)
 
