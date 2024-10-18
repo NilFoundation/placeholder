@@ -19,7 +19,7 @@ jobs:
 
       - name: Run checks for crypto3
         run: |
-          nix build -L .?#checks.x86_64-linux.crypto3
+          nix build -L .?#checks.x86_64-linux.crypto3-gcc
         env:
           NIX_CONFIG: |
             cores = 4
