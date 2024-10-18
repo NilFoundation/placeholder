@@ -606,7 +606,7 @@ namespace nil {
                     selectors_assignment[0].resize(test_circuit.usable_rows);
                     for(std::size_t i = 0; i < witness_columns; i++) {
                         private_assignment[i].resize(test_circuit.usable_rows);
-                        private_assignment[i][0] = private_assignment[i][2] = public_input_assignment[0][i] = 
+                        private_assignment[i][0] = private_assignment[i][2] = public_input_assignment[0][i] =
                             typename FieldType::value_type(rnd() % witness_columns);
                         private_assignment[i][1] = 1u;
                         plonk_variable<typename FieldType::value_type> pi(
@@ -1046,6 +1046,121 @@ namespace nil {
                     lookup_table3.append_option({c5});
                     lookup_table3.append_option({c6});
                     test_circuit.lookup_tables.push_back(lookup_table3);
+
+                    return test_circuit;
+                }
+
+                // Selector -1 test:
+                //      Table 1: options: {C1, C2}
+                // Lookup gate1:
+                //      PI + W1, \in Table 1 selector -1
+                // Gate1
+                //     W1 - PI * 2 = 0, selector -1
+                // -------------------------
+                // | PI  | W1  |  C1  | C2 |
+                // -------------------------
+                // |   a | 2*a |  0   | 42 |
+                // |   a | 2*a |  3   | 45 |
+                // |   a | 2*a |  6   | 48 |
+                // |   a | 2*a |  9   | 51 |
+                // |   a | 2*a | 12   | 54 |
+                // |   a | 2*a | 15   | 57 |
+                // |   a | 2*a | 18   | 60 |
+                // |   a | 2*a | 21   |    |
+                // |   a | 2*a | 24   |    |
+                // |   a | 2*a | 27   |    |
+                // |   a | 2*a | 30   |    |
+                // |   a | 2*a | 33   |    |
+                // |   a | 2*a | 36   |    |
+                // |   a | 2*a | 39   |    |
+                // -------------------------
+                template<typename FieldType>
+                circuit_description<FieldType, placeholder_circuit_params<FieldType>> circuit_test_8(
+                        typename nil::crypto3::random::algebraic_engine<FieldType> alg_rnd = nil::crypto3::random::algebraic_engine<FieldType>(),
+                        boost::random::mt11213b rnd = boost::random::mt11213b()
+                    ) {
+                    using assignment_type = typename FieldType::value_type;
+                    using var = nil::crypto3::zk::snark::plonk_variable<assignment_type>;
+
+                    constexpr static const std::size_t witness_columns = 1;
+                    constexpr static const std::size_t public_columns =  1;
+                    constexpr static const std::size_t constant_columns = 2;
+                    constexpr static const std::size_t selector_columns = 0;
+                    constexpr static const std::size_t table_columns =
+                            witness_columns + public_columns + constant_columns + selector_columns;
+                    constexpr static const std::size_t usable_rows = 14;
+                    constexpr static const std::size_t max_input_value = 2; //(usable_rows - 1) * 2;
+
+                    typedef placeholder_circuit_params<FieldType> circuit_params;
+
+                    circuit_description<FieldType, circuit_params> test_circuit;
+                    test_circuit.usable_rows = usable_rows;
+
+                    std::vector<std::vector<typename FieldType::value_type>> table(table_columns);
+                    for (std::size_t j = 0; j < table_columns; j++) {
+                        table[j].resize(test_circuit.usable_rows);
+                    }
+                    for (std::size_t j = 0; j < usable_rows; j++) {
+                        table[1][j] = rnd() % max_input_value;  // Public input
+                        table[0][j] = table[1][j] * 2;          // Witness
+                        table[2][j] = j == 0? 0: 3 * (j - 1);      // Static lookup table 1
+                        table[3][j] = j == 0? 0: 3 * (j - 1 + usable_rows - 1 );      // Static lookup table 2
+                    }
+
+                    std::vector<plonk_column<FieldType>> private_assignment(witness_columns);
+                    for (std::size_t i = 0; i < witness_columns; i++) {
+                        private_assignment[i] = table[i];
+                    }
+
+                    std::vector<plonk_column<FieldType>> public_input_assignment(public_columns);
+                    for (std::size_t i = 0; i < public_columns; i++) {
+                        public_input_assignment[i] = table[i + witness_columns];
+                    }
+
+                    std::vector<plonk_column<FieldType>> constant_assignment(constant_columns);
+                    for (std::size_t i = 0; i < constant_columns; i++) {
+                        constant_assignment[i] = table[i + witness_columns + public_columns];
+                    }
+
+                    std::vector<plonk_column<FieldType>> selector_assignment(selector_columns);
+                    for (std::size_t i = 0; i < selector_columns; i++) {
+                        selector_assignment[i] = table[i + witness_columns + public_columns + constant_columns];
+                    }
+
+                    test_circuit.table = plonk_assignment_table<FieldType>(
+                        plonk_private_assignment_table<FieldType>(private_assignment),
+                        plonk_public_assignment_table<FieldType>(
+                            public_input_assignment,
+                            constant_assignment,
+                            selector_assignment
+                        )
+                    );
+                    test_circuit.table_rows = zk_padding(test_circuit.table, alg_rnd);
+
+                    std::vector<plonk_constraint<FieldType>> constraints;
+                    var pi(0,0,true,var::column_type::public_input);
+                    var w(0,0,true,var::column_type::witness);
+                    var c0(0,0,true,var::column_type::constant);
+                    var c1(0,0,true,var::column_type::constant);
+                    constraints.push_back(2 * pi - w);
+                    plonk_gate<FieldType, plonk_constraint<FieldType>> add_gate(
+                        PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED, constraints
+                    );
+                    test_circuit.gates.push_back(add_gate);
+
+                    plonk_lookup_table<FieldType> lookup_table(
+                        1, PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED
+                    ); // switched on everywhere except the first row.
+                    lookup_table.append_option({c0});
+                    lookup_table.append_option({c1});
+                    test_circuit.lookup_tables.push_back(lookup_table);
+
+                    std::vector<plonk_lookup_constraint<FieldType>> lookup_constraints;
+                    lookup_constraints.push_back({1, {pi + w}});
+                    plonk_lookup_gate<FieldType, plonk_lookup_constraint<FieldType>> lookup_gate(
+                        PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, lookup_constraints
+                    );
+                    test_circuit.lookup_gates.push_back(lookup_gate);
 
                     return test_circuit;
                 }

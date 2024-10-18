@@ -50,8 +50,9 @@ namespace nil {
     namespace crypto3 {
         namespace zk {
             namespace snark {
-
                 /************************* PLONK constraint system ****************************/
+                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED = std::numeric_limits<std::size_t>::max();
+                constexpr static std::size_t const PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED = std::numeric_limits<std::size_t>::max() - 1; // Useful for lookup tables
 
                 template<typename FieldType>
                 struct plonk_constraint_system {

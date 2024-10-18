@@ -416,6 +416,7 @@ void test_multiple_arithmetizations(std::string folder_name){
 BOOST_AUTO_TEST_SUITE(blueprint_pallas_test_suite)
 
 BOOST_AUTO_TEST_CASE(basic_test) {
+//    test_multiple_arithmetizations<default_zkllvm_params>("../libs/blueprint/test/verifiers/placeholder/data/merkle_tree_poseidon");
     test_multiple_arithmetizations<default_zkllvm_params>("../test/verifiers/placeholder/data/merkle_tree_poseidon");
 }
 

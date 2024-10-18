@@ -1293,8 +1293,7 @@ struct placeholder_kzg_test_fixture_v2 : public test_tools::random_test_initiali
 
     using circuit_type =
         circuit_description<field_type,
-        placeholder_circuit_params<field_type>,
-        usable_rows_amount>;
+        placeholder_circuit_params<field_type>>;
 
     placeholder_kzg_test_fixture_v2()
         : desc(WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns)
