@@ -13,6 +13,13 @@ if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     set(BOOST_FORCEINLINE "OFF") # improves debugging traces
 endif()
 
+option(SANITIZE "Build sanitizers" FALSE)
+if(${SANITIZE})
+  add_compile_options(-fsanitize=undefined,address,leak)
+  add_link_options(-fsanitize=undefined,address,leak)
+endif()
+
+
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/crypto3")
 if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/parallel-crypto3")
