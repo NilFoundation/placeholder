@@ -216,6 +216,7 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/byte_ops"
     "zkevm/opcodes/bitwise"
     "zkevm/opcodes/err0"
+    "zkevm/opcodes/err1"
     "zkevm/opcodes/workload"
     "zkevm/opcodes/jumps"
 )

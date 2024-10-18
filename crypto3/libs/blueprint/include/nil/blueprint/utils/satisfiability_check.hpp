@@ -249,8 +249,10 @@ namespace nil {
                                 }
                             } catch (std::out_of_range &e) {
                                 std::cout << "Lookup table " << table_name << " not found." << std::endl;
-                                std::cout << "Table_id = " << lookup_gates[i].constraints[j].table_id << " table_name " << table_name << std::endl;
+                                std::cout << "Table id = " << lookup_gates[i].constraints[j].table_id << " table_name " << table_name << std::endl;
                                 return false;
+                            } catch (...){
+                                std::cout << "Other exception" << std::endl;
                             }
                         }
                     }

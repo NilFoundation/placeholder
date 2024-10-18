@@ -44,6 +44,7 @@ namespace nil {
                 word_type   additional_input;
                 zkevm_stack stack;
                 std::vector<uint8_t> memory;
+                std::vector<uint8_t> bytecode;
                 std::size_t gas;
                 std::size_t pc;
 
@@ -53,14 +54,17 @@ namespace nil {
                 state_type():tx_finish(false){}
 
                 state_type(
+                    std::vector<uint8_t> &_bytecode,
                     zkevm_opcode _opcode,
                     word_type    _additional_input,
                     zkevm_stack  _stack,
-                    std::vector<uint8_t> _memory,
+                    std::vector<uint8_t> &_memory,
                     std::size_t _gas,
                     std::size_t _pc
-                ): opcode(_opcode), additional_input(_additional_input), stack(_stack), memory(_memory), gas(_gas), pc(_pc), tx_finish(false)
-                {}
+                ): opcode(_opcode), additional_input(_additional_input), stack(_stack), memory(_memory), gas(_gas), pc(_pc), tx_finish(false), bytecode(_bytecode)
+                {
+                    std::size_t i = 0;
+                }
 
                 zkevm_word_type stack_pop(){
                     if(stack.size() == 0 ){
@@ -410,6 +414,13 @@ namespace nil {
                             word_type addr = stack_pop();
                             //TODO: add JUMPDEST error processing
                             pc = w_to_16(addr)[15]; gas -= 8;
+                            // 0x5B -- JUMPDEST opcode. TODO: do function opcode_to_value more convenient
+                            if( pc > bytecode.size() || bytecode[pc] != 0x5B ) {
+                                tx_finish = true;
+                                error_opcode = opcode;
+                                opcode = zkevm_opcode::err1;
+                                std::cout << "bad jump destination error" << std::endl;
+                            }
                             break;
                         }
                         case zkevm_opcode::JUMPI:{
@@ -417,6 +428,12 @@ namespace nil {
                             word_type state = stack_pop();
                             //TODO: add JUMPDEST error processing
                             pc = state? w_to_16(addr)[15]: pc+1; gas -= 10;
+                            if( state && (pc > bytecode.size() || bytecode[pc] != 0x5B) ) {
+                                tx_finish = true;
+                                error_opcode = opcode;
+                                opcode = zkevm_opcode::err1;
+                                std::cout << "bad jump destination error" << std::endl;
+                            }
                             break;
                         }
                         case zkevm_opcode::JUMPDEST:{
@@ -424,6 +441,10 @@ namespace nil {
                             break;
                         }
                         case zkevm_opcode::err0:{
+                            BOOST_ASSERT(false);
+                            break;
+                        }
+                        case zkevm_opcode::err1:{
                             BOOST_ASSERT(false);
                             break;
                         }
@@ -441,9 +462,11 @@ namespace nil {
             };
 
             zkevm_machine_interface(
+                std::vector<uint8_t> _bytecode,
                 word_type         _bytecode_hash,
                 unsigned long int _init_gas
-            ) : bytecode_hash(_bytecode_hash) {
+            ) : bytecode(_bytecode),bytecode_hash(_bytecode_hash), is_opcode(fill_is_opcode(_bytecode)) {
+                current_state.bytecode = bytecode;
                 current_state.gas = new_state.gas = _init_gas;
                 current_state.pc = new_state.pc = 0;
             }
@@ -460,6 +483,7 @@ namespace nil {
                 word_type   _additional_input
             ){
                 current_state = state_type(
+                    bytecode,
                     _opcode,
                     _additional_input,
                     zkevm_stack(_stack),
@@ -477,6 +501,7 @@ namespace nil {
                 BOOST_ASSERT(!current_state.tx_finish);
                 current_state = new_state;
                 //std::cout << "Current state.pc = " << current_state.pc << " opcode = " << opcode_to_string(_opcode) << std::endl;
+                current_state.bytecode = new_state.bytecode = bytecode;
                 current_state.opcode = new_state.opcode = _opcode;
                 current_state.additional_input = new_state.additional_input = zkevm_word_from_bytes(param);
                 new_state.run_opcode();
@@ -549,11 +574,44 @@ namespace nil {
             const zkevm_opcode error_opcode() const {
                 return current_state.error_opcode;
             }
+
+            const std::size_t bytecode_length() const {
+                return bytecode.size();
+            }
+
+            const std::uint8_t bytecode_byte(std::size_t i) const {
+                BOOST_ASSERT(i < bytecode.size());
+                return bytecode[i];
+            }
+
+            const bool is_bytecode_byte_opcode(std::size_t i) const {
+                BOOST_ASSERT(i < is_opcode.size());
+                return is_opcode[i];
+            }
             word_type         bytecode_hash;
+        protected:
+            std::vector<bool> fill_is_opcode(const std::vector<uint8_t> &_bytecode){
+                std::vector<bool> result(_bytecode.size());
+                auto it = result.begin();
+                while(it != result.end() ){
+                    *it = true;
+                    if( _bytecode[it - result.begin()] > 0x5f &&  _bytecode[it - result.begin()] < 0x80 ){
+                        std::size_t push_size = _bytecode[it - result.begin()] - 0x5f;
+                        for( std::size_t i = 0; i < push_size; i++){
+                            it++;
+                            *it = false;
+                        }
+                    }
+                    it++;
+                }
+                return result;
+            }
 
         private:
             state_type        current_state;
             state_type        new_state;
+            std::vector<uint8_t> bytecode;
+            std::vector<bool>  is_opcode;
             bool opcode_added;
         };
     }

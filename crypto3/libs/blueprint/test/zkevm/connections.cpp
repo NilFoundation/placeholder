@@ -236,7 +236,7 @@ void test_zkevm(std::string path){
         65536
     );
 
-    zkevm_machine_type machine = get_empty_machine(zkevm_keccak_hash(bytecode0));
+    zkevm_machine_type machine = get_empty_machine(bytecode, zkevm_keccak_hash(bytecode0));
 
     boost::property_tree::ptree ptrace = trace.get_child("result.structLogs");
     std::cout << "PT = " << ptrace.size() << std::endl;

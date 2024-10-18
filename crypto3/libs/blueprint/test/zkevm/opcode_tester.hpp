@@ -33,8 +33,8 @@
 
 namespace nil {
     namespace blueprint {
-        zkevm_machine_interface get_empty_machine(zkevm_word_type bytecode_hash = 0, unsigned long int init_gas = 65537) { // just some default value for initial gas
-            return zkevm_machine_interface(bytecode_hash, init_gas);
+        zkevm_machine_interface get_empty_machine(std::vector<std::uint8_t> bytecode = {}, zkevm_word_type bytecode_hash = 0, unsigned long int init_gas = 65537) { // just some default value for initial gas
+            return zkevm_machine_interface(bytecode, bytecode_hash, init_gas);
         }
 
         std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {

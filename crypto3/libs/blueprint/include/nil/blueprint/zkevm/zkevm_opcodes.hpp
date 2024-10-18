@@ -183,6 +183,7 @@ namespace nil {
             X(INVALID) \
             X(SELFDESTRUCT) \
             X(err0) \
+            X(err1) \
             X(padding)
 
         enum zkevm_opcode {
@@ -412,7 +413,8 @@ namespace nil {
                     {zkevm_opcode::SELFDESTRUCT, 0xff, 5000, 1, 1, 0},
                     // these are not real opcodes, they are for exception processing
                     {zkevm_opcode::err0, 0x100, 0, 0, 0, 0}, // not enough static gas or incorrect stack size
-                    {zkevm_opcode::padding, 0x101, 0, 1, 0, 0} // empty opcode for the fixed circuit size
+                    {zkevm_opcode::err1, 0x101, 0, 0, 0, 0}, // not enough static gas or incorrect stack size
+                    {zkevm_opcode::padding, 0x102, 0, 1, 0, 0} // empty opcode for the fixed circuit size
                 };
                 for(std::size_t i = 0; i < opcode_data.size(); i++) {
                     auto [opcode_mnemo, opcode_byte, opcode_cost, opcode_dynamic, stack_input, stack_output] = opcode_data[i];

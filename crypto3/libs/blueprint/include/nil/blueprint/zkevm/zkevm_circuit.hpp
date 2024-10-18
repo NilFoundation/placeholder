@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -58,6 +59,7 @@
 #include <nil/blueprint/zkevm/operations/mulmod.hpp>
 #include <nil/blueprint/zkevm/operations/pushx.hpp>
 #include <nil/blueprint/zkevm/operations/err0.hpp>
+#include <nil/blueprint/zkevm/operations/err1.hpp>
 #include <nil/blueprint/zkevm/operations/memory.hpp>
 #include <nil/blueprint/zkevm/operations/storage.hpp>
 #include <nil/blueprint/zkevm/operations/callvalue.hpp>
@@ -493,6 +495,7 @@ namespace nil {
 
                 // fake opcodes for errors and padding
                 opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::err1] = std::make_shared<zkevm_err1_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::padding] = std::make_shared<zkevm_padding_operation<BlueprintFieldType>>();
 
                 range_check_table_index = circuit.get_reserved_indices().at("chunk_16_bits/full");

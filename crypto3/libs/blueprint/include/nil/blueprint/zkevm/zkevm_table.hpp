@@ -114,7 +114,7 @@ namespace nil {
             ) {
                 BOOST_ASSERT_MSG(curr_row != 0, "Row underflow in finalization");
 
-                zkevm_machine_interface empty_machine(0, 0);
+                zkevm_machine_interface empty_machine({}, 0, 0);
                 empty_machine.padding_state();
                 while(curr_row - circuit.get_start_row_index() < circuit.get_max_rows()-1){
                     assign_opcode(empty_machine);
