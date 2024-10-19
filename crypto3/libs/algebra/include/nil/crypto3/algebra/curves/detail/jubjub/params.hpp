@@ -45,7 +45,7 @@ namespace nil {
                         // a x^2 + y^2 = 1 + d x^2 y^2
                         // Constants a (-1) and d (-10240/10241)
                         constexpr static const typename jubjub_types::integral_type
-                            a = 0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000000_cppui_modular255;
+                            a = base_field_type::modulus - 1;
                         constexpr static const typename jubjub_types::integral_type
                             d = 0x2A9318E74BFA2B48F5FD9207E6BD7FD4292D7F6D37579D2601065FD6D6343EB1_cppui_modular255;
                         static constexpr std::size_t cofactor = 8;

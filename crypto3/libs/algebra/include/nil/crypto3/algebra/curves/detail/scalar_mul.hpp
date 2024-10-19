@@ -133,6 +133,24 @@ namespace nil {
                         return point;
                     }
 
+#if 0
+                    template<typename GroupValueType, typename FieldValueType>
+                    typename std::enable_if<is_elliptic_curve_scalar<GroupValueType, FieldValueType>::value,
+                            GroupValueType>::type
+                        operator*(const FieldValueType &scalar, const GroupValueType &point) {
+                        return scalar_mul(point, scalar.data);
+                    }
+
+                    template<typename GroupValueType, typename FieldValueType>
+                    typename std::enable_if<is_elliptic_curve_scalar<GroupValueType, FieldValueType>::value,
+                            GroupValueType>::type
+                        operator*(const GroupValueType &point,const FieldValueType &scalar) {
+                        return scalar_mul(point, scalar.data);
+                    }
+#endif
+
+
+#if 0
                     template<typename GroupValueType,
                              typename Backend, typename SafeType,
                              boost::multiprecision::expression_template_option ExpressionTemplates>
@@ -166,21 +184,21 @@ namespace nil {
                         return scalar_mul(right, left);
                     }
 
-                    template<typename GroupValueType>
-                    GroupValueType operator*(const GroupValueType &left,
-                            const typename GroupValueType::params_type::scalar_field_type::value_type &right) {
-                        return left * static_cast<typename GroupValueType::params_type::scalar_field_type::integral_type>(right.data);
+                    /*
+                    template<typename GroupValueType, typename FieldValueType>
+                    typename std::enable_if<is_curve_group<typename GroupValueType::group_type>::value &&
+                                                !is_field<typename GroupValueType::group_type>::value &&
+                                                is_field<typename FieldValueType::field_type>::value &&
+                                                !is_extended_field<typename FieldValueType::field_type>::value,
+                                            GroupValueType>::type
+                        operator*(const GroupValueType &left, const FieldValueType &right) {
 
+                        // TODO(martun): consider deleting this function, and forcing all the callers to convert to the
+                        // required type before multiplication.
+                        return left * static_cast<typename GroupValueType::params_type::scalar_field_type::integral_type>(
+                            typename FieldValueType::integral_type(right.data));
                     }
-
-                    template<typename GroupValueType>
-                    GroupValueType operator*(
-                            const typename GroupValueType::params_type::scalar_field_type::value_type &right,
-                            const GroupValueType &left) {
-                        return left * static_cast<typename GroupValueType::params_type::scalar_field_type::integral_type>(right.data);
-
-                    }
-
+                    */
 
                     template<typename GroupValueType, typename FieldValueType>
                     typename std::enable_if<is_curve_group<typename GroupValueType::group_type>::value &&
@@ -193,6 +211,7 @@ namespace nil {
                         return right * left;
                     }
 
+#endif
                     template<typename GroupValueType>
                     constexpr GroupValueType operator*(const GroupValueType &left, const std::size_t &right) {
 
@@ -204,6 +223,7 @@ namespace nil {
 
                         return right * left;
                     }
+
                 }    // namespace detail
             }        // namespace curves
         }            // namespace algebra

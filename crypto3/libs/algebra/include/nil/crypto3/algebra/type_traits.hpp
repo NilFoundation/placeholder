@@ -54,6 +54,7 @@ namespace nil {
             BOOST_TTI_HAS_TYPE(g2_type)
             BOOST_TTI_HAS_TYPE(gt_type)
 
+            BOOST_TTI_HAS_TEMPLATE(g1_type)
             BOOST_TTI_HAS_TEMPLATE(g2_type)
 
             BOOST_TTI_HAS_TYPE(group_type)
@@ -256,6 +257,25 @@ namespace nil {
                         typename T::group_type
                     >::value;
             };
+
+            /*
+            template<typename T>
+            struct is_elliptic_curve_group_element {
+                static const bool value =
+                    !is_field_element<T>::value && !is_extended_field_element<T>::value &&
+                    (is_g1_group_element<T>::value || is_g2_group_element<T>::value);
+            };
+
+            template<typename curve_group_element, typename scalar_value_type>
+            struct is_elliptic_curve_scalar {
+                static const bool value =
+                    is_elliptic_curve_group_element<curve_group_element>::value &&
+                    boost::is_same<
+                        typename curve_group_element::curve_type::scalar_field_type::value_type,
+                        scalar_value_type
+                    >::value;
+            };
+            */
 
             template<typename T>
             struct is_complex : std::false_type { };
