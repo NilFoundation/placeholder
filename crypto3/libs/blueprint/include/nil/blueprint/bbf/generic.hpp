@@ -329,7 +329,14 @@ namespace nil {
                             // to be _relative_ to the active area
                             case column_type::witness:      at.witness(get_col(col,t), get_row(row)) = C;      break;
                             case column_type::public_input: at.public_input(get_col(col,t), get_row(row)) = C; break;
-                            case column_type::constant:     at.constant(get_col(col,t), get_row(row)) = C;     break;
+                            case column_type::constant:
+                                // constants should already be assigned at this point
+                                if (C != at.constant(get_col(col,t), get_row(row))) {
+                                    BOOST_LOG_TRIVIAL(error) << "Constant " << C << "doesn't match previous assignment "
+                                                             << at.constant(get_col(col,t), get_row(row)) << "\n";
+                                }
+                                BOOST_ASSERT(C == at.constant(get_col(col,t), get_row(row)));
+                            break;
                         }
                         mark_allocated(col,row,t);
                     }
@@ -400,7 +407,8 @@ namespace nil {
             template<typename FieldType>
             class context<FieldType, GenerationStage::CONSTRAINTS> : public basic_context<FieldType> { // circuit-specific definition
                 using constraint_id_type = gate_id<FieldType>;
-                using var = crypto3::zk::snark::plonk_variable<typename FieldType::value_type>;
+                using value_type = typename FieldType::value_type;
+                using var = crypto3::zk::snark::plonk_variable<value_type>;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using constraints_container_type = std::map<constraint_id_type, std::pair<constraint_type, std::set<std::size_t>>>;
@@ -430,6 +438,8 @@ namespace nil {
                     std::shared_ptr<lookup_constraints_container_type> lookup_constraints;
                     // dynamic lookup tables
                     std::shared_ptr<dynamic_lookup_table_container_type> lookup_tables;
+                    // constants
+                    assignment_type constants_storage = assignment_type(0,0,0,0);
 
                     void add_constraint(TYPE &C_rel, std::size_t row) {
                         constraint_id_type C_id = constraint_id_type(C_rel);
@@ -453,10 +463,19 @@ namespace nil {
                         if (is_allocated(col, row, t)) {
                             BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
                         }
+                        if (t == column_type::constant) {
+                            auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(C);
+                            if (has_vars) {
+                                BOOST_LOG_TRIVIAL(error) << "Trying to assign constraint " << C << " to constant cell!\n";
+                            }
+                            BOOST_ASSERT(!has_vars);
+                            value_type C_val = C.evaluate(0,constants_storage);
+                            constants_storage.constant(get_col(col,t), get_row(row)) = C_val; // store the constant
+                        }
                         var res = var(get_col(col,t), get_row(row), // get_col/get_row are active-area-aware
                                       false, // false = use absolute cell address
                                       static_cast<typename var::column_type>(t));
-                        if (C != TYPE()) { // TODO: is this ok?
+                        if ((C != TYPE()) && (t == column_type::witness)) { // TODO: TYPE() - is this ok? NB: we only constrain witnesses!
                             constrain(res - C);
                         }
                         C = res;
@@ -647,6 +666,9 @@ namespace nil {
                          res.current_row[column_type::witness] = 0; // reset to 0, because in the new column set everything is different
                          return res;
                     }
+                    auto get_constants() {
+                        return constants_storage.constants();
+                    }
 
                     context(assignment_type &at, std::size_t max_rows) :
                         basic_context<FieldType>(at, max_rows) {
@@ -655,6 +677,7 @@ namespace nil {
                         copy_constraints = std::make_shared<copy_constraints_container_type>();
                         lookup_constraints = std::make_shared<lookup_constraints_container_type>();
                         lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
+                        constants_storage = assignment_type(0,0,at.constants_amount(),0);
                     };
 
                     context(assignment_type &at, std::size_t max_rows, std::size_t row_shift) :
@@ -664,6 +687,7 @@ namespace nil {
                         copy_constraints = std::make_shared<copy_constraints_container_type>();
                         lookup_constraints = std::make_shared<lookup_constraints_container_type>();
                         lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
+                        constants_storage = assignment_type(0,0,at.constants_amount(),0);
                     };
 
             };
