@@ -157,6 +157,8 @@ namespace nil {
                 using TYPE = typename context_type::TYPE;
 
                 context_type ct = context_type(assignment, 8, start_row_index); // max_rows = 8
+                TYPE const_test = 5;
+                ct.allocate(const_test,0,0,bbf::column_type::constant);
 
                 Is_Zero c1 = Is_Zero(ct, var_value(assignment, instance_input.x));
 
@@ -215,6 +217,9 @@ namespace nil {
                 using var = typename component_type::var;
 
                 context_type ct = context_type(assignment,8,start_row_index); // max_rows = 8
+                TYPE const_test = TYPE() + 5; // TODO: this is a workaround!!! we need a normal way to assign constants to constraint type!
+                ct.allocate(const_test,0,0,bbf::column_type::constant);
+
                 Is_Zero c1 = Is_Zero(ct, instance_input.x);
 
                 std::array<TYPE,3> input_x = {instance_input.cx[0],instance_input.cx[1],instance_input.cx[2]};
@@ -288,6 +293,7 @@ namespace nil {
                     }
                 }
 
+                // compatibility layer: dynamic lookup tables - continued
                 for(const auto& [name, area] : dynamic_lookup_tables) {
                     bp.register_dynamic_table(name);
                     std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
@@ -303,6 +309,17 @@ namespace nil {
                     }
                     table_specs.lookup_options = {dynamic_lookup_cols};
                     bp.define_dynamic_table(name,table_specs);
+                }
+
+                // compatibility layer: constants
+                auto c_list = ct.get_constants();
+                // std::cout << "const list size = " << c_list.size() << "\n";
+                for(std::size_t i = 0; i < c_list.size(); i++) { // columns
+                    // std::cout << "column size = " << c_list[i].size() << "\n";
+                    for(std::size_t j = 0; j < c_list[i].size(); j++) { // rows
+                        // std::cout << i << ", " << j << ": " << c_list[i][j] << "\n";
+                        assignment.constant(component.C(i), j) = c_list[i][j];
+                    }
                 }
 
                 // std::cout << "Gates amount = " << bp.num_gates() << "\n";
