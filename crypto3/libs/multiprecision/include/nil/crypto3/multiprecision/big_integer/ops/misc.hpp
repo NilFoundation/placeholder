@@ -21,20 +21,13 @@
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
-#ifdef BOOST_MSVC
-#pragma warning(push)
-#pragma warning(disable : 4702)
-#pragma warning(disable : 4127)  // conditional expression is constant
-#pragma warning( \
-    disable : 4146)  // unary minus operator applied to unsigned type, result still unsigned
-#endif
-
 namespace nil::crypto3::multiprecision {
     // TODO refactor
     template<class R, unsigned Bits>
     inline constexpr
         typename std::enable_if<boost::multiprecision::detail::is_integral<R>::value, void>::type
-        eval_convert_to(R *result, const big_integer<Bits> &backend) {
+        convert_to(R *result, const big_integer<Bits> &backend) {
+        using detail::limb_type;
         if constexpr (boost::multiprecision::backends::numeric_limits_workaround<R>::digits <
                       big_integer<Bits>::limb_bits) {
             if (boost::multiprecision::detail::is_signed<R>::value &&
@@ -44,8 +37,9 @@ namespace nil::crypto3::multiprecision {
                 return;
             }
             *result = static_cast<R>(backend.limbs()[0]);
-        } else
+        } else {
             *result = static_cast<R>(backend.limbs()[0]);
+        }
 
         unsigned shift = big_integer<Bits>::limb_bits;
         unsigned i = 1;
@@ -94,7 +88,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr bool eval_is_zero(const big_integer<Bits> &val) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr bool is_zero(const big_integer<Bits> &val) noexcept {
         // std::all_of is not constexpr, so writing manually.
         for (std::size_t i = 0; i < val.size(); ++i) {
             if (val.limbs()[i] != 0) {
@@ -108,7 +102,7 @@ namespace nil::crypto3::multiprecision {
     // Get the location of the least-significant-bit:
     //
     template<unsigned Bits>
-    inline constexpr unsigned eval_lsb(const big_integer<Bits> &a) {
+    inline constexpr unsigned lsb(const big_integer<Bits> &a) {
         //
         // Find the index of the least significant limb that is non-zero:
         //
@@ -125,7 +119,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<unsigned Bits>
-    inline constexpr unsigned eval_msb(const big_integer<Bits> &a) {
+    inline constexpr unsigned msb(const big_integer<Bits> &a) {
         //
         // Find the index of the most significant bit that is non-zero:
         //
@@ -141,17 +135,10 @@ namespace nil::crypto3::multiprecision {
         return boost::multiprecision::detail::find_msb(a.limbs()[0]);
     }
 
-#ifdef BOOST_GCC
-//
-// We really shouldn't need to be disabling this warning, but it really does appear to be
-// spurious.  The warning appears only when in release mode, and asserts are on.
-//
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#endif
-
     template<unsigned Bits>
-    inline constexpr bool eval_bit_test(const big_integer<Bits> &val, std::size_t index) noexcept {
+    inline constexpr bool bit_test(const big_integer<Bits> &val, std::size_t index) noexcept {
+        using detail::limb_type;
+
         unsigned offset = index / big_integer<Bits>::limb_bits;
         unsigned shift = index % big_integer<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
@@ -161,12 +148,10 @@ namespace nil::crypto3::multiprecision {
         return static_cast<bool>(val.limbs()[offset] & mask);
     }
 
-#ifdef BOOST_GCC
-#pragma GCC diagnostic pop
-#endif
-
     template<unsigned Bits>
-    inline constexpr void eval_bit_set(big_integer<Bits> &val, std::size_t index) {
+    inline constexpr void bit_set(big_integer<Bits> &val, std::size_t index) {
+        using detail::limb_type;
+
         unsigned offset = index / big_integer<Bits>::limb_bits;
         unsigned shift = index % big_integer<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
@@ -177,7 +162,9 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<unsigned Bits>
-    inline constexpr void eval_bit_unset(big_integer<Bits> &val, std::size_t index) noexcept {
+    inline constexpr void bit_unset(big_integer<Bits> &val, std::size_t index) noexcept {
+        using detail::limb_type;
+
         unsigned offset = index / big_integer<Bits>::limb_bits;
         unsigned shift = index % big_integer<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
@@ -189,7 +176,9 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<unsigned Bits>
-    inline constexpr void eval_bit_flip(big_integer<Bits> &val, std::size_t index) {
+    inline constexpr void bit_flip(big_integer<Bits> &val, std::size_t index) {
+        using detail::limb_type;
+
         unsigned offset = index / big_integer<Bits>::limb_bits;
         unsigned shift = index % big_integer<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
@@ -206,7 +195,10 @@ namespace nil::crypto3::multiprecision {
     inline constexpr
         typename std::enable_if<boost::multiprecision::detail::is_unsigned<Integer>::value,
                                 Integer>::type
-        eval_integer_modulus(const big_integer<Bits> &a, Integer mod) {
+        integer_modulus(const big_integer<Bits> &a, Integer mod) {
+        using detail::limb_type;
+        using detail::double_limb_type;
+
         if constexpr (sizeof(Integer) <= sizeof(limb_type)) {
             if (mod <= (std::numeric_limits<limb_type>::max)()) {
                 const int n = a.size();
@@ -230,8 +222,8 @@ namespace nil::crypto3::multiprecision {
         typename std::enable_if<boost::multiprecision::detail::is_signed<Integer>::value &&
                                     boost::multiprecision::detail::is_integral<Integer>::value,
                                 Integer>::type
-        eval_integer_modulus(const big_integer<Bits> &x, Integer val) {
-        return eval_integer_modulus(x, boost::multiprecision::detail::unsigned_abs(val));
+        integer_modulus(const big_integer<Bits> &x, Integer val) {
+        return integer_modulus(x, boost::multiprecision::detail::unsigned_abs(val));
     }
 
     template<unsigned Bits>
@@ -242,27 +234,4 @@ namespace nil::crypto3::multiprecision {
         }
         return result;
     }
-
-#ifdef BOOST_MSVC
-#pragma warning(pop)
-#endif
-
 }  // namespace nil::crypto3::multiprecision
-
-// TODO
-// namespace detail {
-
-//     // We need to specialize this class, because big_integer does not have
-//     // signed_types. All we have changed here is Backend::signed_types ->
-//     // Backend::unsigned_types, this will work for our use cases.
-//     template<class Val, unsigned Bits>
-//     struct canonical_imp<Val, big_integer<Bits>, std::integral_constant<int, 0>> {
-//         static constexpr int index =
-//             find_index_of_large_enough_type<typename big_integer<Bits>::unsigned_types, 0,
-//                                             bits_of<Val>::value>::value;
-//         using type = typename dereference_tuple<index, typename
-//         big_integer<Bits>::unsigned_types,
-//                                                 Val>::type;
-//     };
-
-// }  // namespace detail
