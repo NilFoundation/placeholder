@@ -44,8 +44,6 @@
 #include <nil/crypto3/algebra/algorithms/pair.hpp>
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>
 #include <nil/crypto3/algebra/multiexp/policies.hpp>
-#include <nil/crypto3/algebra/curves/detail/marshalling.hpp>
-#include <nil/crypto3/algebra/marshalling.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/hash/block_to_field_elements_wrapper.hpp>
 
@@ -251,7 +249,6 @@ namespace nil {
                     using batch_of_polynomials_type = std::vector<polynomial_type>;
                     using evals_type = std::vector<std::vector<scalar_value_type>>;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<TranscriptHashType>;
-                    using serializer = typename nil::marshalling::curve_element_serializer<curve_type>;
                     using multi_commitment_type = std::vector<single_commitment_type>;
 
                     using commitment_type = std::vector<std::uint8_t>; // Used in placeholder because it's easy to push it into transcript

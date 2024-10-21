@@ -220,7 +220,6 @@ namespace nil {
                         typedef typename std::iterator_traits<InputBaseIterator>::value_type base_value_type;
                         typedef typename std::iterator_traits<InputFieldIterator>::value_type field_value_type;
 
-                        // TODO(martun): check that we did not break this, since integral_type is now a fixed size type.
                         typedef typename field_value_type::integral_type non_fixed_precision_number_type;
 
                         if (vec_start == vec_end) {

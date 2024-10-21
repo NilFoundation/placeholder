@@ -28,31 +28,11 @@
 
 #include <nil/crypto3/algebra/pairing/pairing_policy.hpp>
 
+#include <optional>
+
 namespace nil {
     namespace crypto3 {
         namespace algebra {
-
-            // template<typename PairingCurveType>
-            // typename PairingCurveType::pairing::affine_ate_g1_precomp
-            //     affine_ate_precompute_g1(const typename PairingCurveType::pairing::g1_type::value_type &P) {
-
-            //     return PairingCurveType::pairing::affine_ate_precompute_g1(P);
-            // }
-
-            // template<typename PairingCurveType>
-            // typename PairingCurveType::pairing::affine_ate_g2_precomp
-            //     affine_ate_precompute_g2(const typename PairingCurveType::pairing::g2_type::value_type &P) {
-
-            //     return PairingCurveType::pairing::affine_ate_precompute_g2(P);
-            // }
-
-            // template<typename PairingCurveType>
-            // typename PairingCurveType::pairing::gt_type::value_type
-            //     affine_ate_miller_loop(const typename PairingCurveType::pairing::affine_ate_g1_precomp &prec_P,
-            //                            const typename PairingCurveType::pairing::affine_ate_g2_precomp &prec_Q) {
-
-            //     return PairingCurveType::pairing::affine_ate_miller_loop(prec_P, prec_Q);
-            // }
 
             template<typename PairingCurveType, typename PairingPolicy = pairing::pairing_policy<PairingCurveType>>
             typename PairingPolicy::g1_precomputed_type
@@ -89,7 +69,7 @@ namespace nil {
 #endif
 
             template<typename PairingCurveType, typename PairingPolicy = pairing::pairing_policy<PairingCurveType>>
-            typename PairingCurveType::gt_type::value_type
+            std::optional<typename PairingCurveType::gt_type::value_type>
                 pair_reduced(const typename PairingCurveType::template g1_type<>::value_type &v1,
                              const typename PairingCurveType::template g2_type<>::value_type &v2) {
 
@@ -111,7 +91,7 @@ namespace nil {
             }
 
             template<typename PairingCurveType, typename PairingPolicy = pairing::pairing_policy<PairingCurveType>>
-            typename PairingCurveType::gt_type::value_type
+            std::optional<typename PairingCurveType::gt_type::value_type>
                 final_exponentiation(const typename PairingCurveType::gt_type::value_type &elt) {
 
                 return PairingPolicy::final_exponentiation::process(elt);

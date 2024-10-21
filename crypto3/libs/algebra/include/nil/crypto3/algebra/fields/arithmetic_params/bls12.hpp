@@ -83,7 +83,9 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::modular_backend modular_backend;
                     typedef typename policy_type::integral_type integral_type;
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
+
+                    using extended_integral_type = boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>;
 
                     constexpr static const std::size_t s = 0x03;
                     constexpr static const extended_integral_type t =
@@ -177,7 +179,9 @@ namespace nil {
                     typedef typename policy_type::modular_type modular_type;
                     typedef typename policy_type::modular_backend modular_backend;
                     typedef typename policy_type::integral_type integral_type;
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
+
+                    using extended_integral_type = boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>;
 
                     constexpr static const std::size_t s = 0x2F;
                     constexpr static const extended_integral_type t =

@@ -61,7 +61,6 @@ namespace nil {
                 typename polynomial<nil::marshalling::field_type<Endianness>, PolynomialType, std::enable_if_t<
                         nil::crypto3::math::is_polynomial<PolynomialType>::value>>::type
                 fill_polynomial(const PolynomialType &f) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
 
                     std::vector<typename PolynomialType::value_type> val;
                     for( auto it=f.begin(); it != f.end(); it++){ val.push_back(*it); }

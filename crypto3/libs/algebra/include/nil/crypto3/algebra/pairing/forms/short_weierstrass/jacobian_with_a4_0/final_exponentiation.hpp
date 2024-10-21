@@ -28,6 +28,8 @@
 
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/jacobian_with_a4_0/types.hpp>
 
+#include <optional>
+
 namespace nil {
     namespace crypto3 {
         namespace algebra {
@@ -114,12 +116,13 @@ namespace nil {
                     }
 
                 public:
-                    static typename gt_type::value_type process(const typename gt_type::value_type &elt) {
+                    static std::optional<typename gt_type::value_type>
+                    process(const typename gt_type::value_type &elt) {
 
-                        /* OLD naive version:
-                            typename gt_type::value_type result =
-                                elt^final_exponent;
-                        */
+                        if (elt.is_zero()) {
+                            return std::nullopt;
+                        }
+
                         typename gt_type::value_type A = final_exponentiation_first_chunk(elt);
                         typename gt_type::value_type result = final_exponentiation_last_chunk(A);
 

@@ -51,11 +51,13 @@ endmacro()
 
 set(RUNTIME_TESTS_NAMES
         "curves"
+        "curves_simple"
         "short_weierstrass_coordinates"
         "curves_static"
         "fields"
         "fields_static"
         "pairing"
+        "type_traits"
 )
 
 set(COMPILE_TIME_TESTS_NAMES
