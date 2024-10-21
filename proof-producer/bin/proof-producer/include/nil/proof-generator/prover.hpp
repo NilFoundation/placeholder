@@ -55,7 +55,7 @@
 
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
 
-
+#include <nil/proof-generator/preset/preset.hpp>
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
@@ -103,15 +103,16 @@ namespace nil {
 
             enum class ProverStage {
                 ALL = 0,
-                PREPROCESS = 1,
-                PROVE = 2,
-                VERIFY = 3,
-                GENERATE_AGGREGATED_CHALLENGE = 4,
-                GENERATE_PARTIAL_PROOF = 5,
-                COMPUTE_COMBINED_Q = 6,
-                GENERATE_AGGREGATED_FRI_PROOF = 7,
-                GENERATE_CONSISTENCY_CHECKS_PROOF = 8,
-                MERGE_PROOFS = 9
+                PRESET = 1,
+                PREPROCESS = 2,
+                PROVE = 3,
+                VERIFY = 4,
+                GENERATE_AGGREGATED_CHALLENGE = 5,
+                GENERATE_PARTIAL_PROOF = 6,
+                COMPUTE_COMBINED_Q = 7,
+                GENERATE_AGGREGATED_FRI_PROOF = 8,
+                GENERATE_CONSISTENCY_CHECKS_PROOF = 9,
+                MERGE_PROOFS = 10
             };
 
             ProverStage prover_stage_from_string(const std::string& stage) {
@@ -482,6 +483,19 @@ namespace nil {
                 return verification_result;
             }
 
+            bool save_circuit_to_file(boost::filesystem::path circuit_file) {
+                using namespace nil::crypto3::marshalling::types;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing circuit to " <<
+                    circuit_file;
+
+                bool res = true;
+                if (res) {
+                    BOOST_LOG_TRIVIAL(info) << "Circuit written.";
+                }
+                return res;
+            }
+
             bool read_circuit(const boost::filesystem::path& circuit_file_) {
                 BOOST_LOG_TRIVIAL(info) << "Read circuit from " << circuit_file_;
 
@@ -505,6 +519,19 @@ namespace nil {
 
                 constraint_system_.emplace(std::move(circuit));
                 return true;
+            }
+
+            bool save_assignment_table_to_file(boost::filesystem::path assignment_table_file) {
+                using namespace nil::crypto3::marshalling::types;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing assignment_table to " <<
+                    assignment_table_file;
+
+                bool res = true;
+                if (res) {
+                    BOOST_LOG_TRIVIAL(info) << "Assignment table written.";
+                }
+                return res;
             }
 
             bool read_assignment_table(const boost::filesystem::path& assignment_table_file_) {
@@ -953,6 +980,17 @@ namespace nil {
                     combined_Q.value(), challenges.value());
 
                 return save_lpc_consistency_proof_to_file(proof, output_proof_file);
+            }
+
+            bool setup_prover(const std::string& circuit_name) {
+
+                const auto err = CircuitFactory<BlueprintField>::initialize_circuit(circuit_name, constraint_system_, assignment_table_);
+                if (err) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't initialize circuit " << circuit_name << ": " << err.value();
+                    return false;
+                }
+
+                return true;
             }
 
         private:
