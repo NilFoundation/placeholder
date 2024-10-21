@@ -722,11 +722,11 @@ namespace nil {
                         ct.constrain(C);
                     }
 
-                    void lookup(std::vector<TYPE> &C, std::string table_name) {
+                    void lookup(std::vector<TYPE> C, std::string table_name) {
                         ct.lookup(C,table_name);
                     }
 
-                    void lookup(TYPE &C, std::string table_name) {
+                    void lookup(TYPE C, std::string table_name) {
                         std::vector<TYPE> input = {C};
                         ct.lookup(input,table_name);
                     }
