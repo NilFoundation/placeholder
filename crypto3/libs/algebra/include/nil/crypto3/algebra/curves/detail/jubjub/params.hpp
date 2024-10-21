@@ -103,6 +103,14 @@ namespace nil {
                         template<typename Coordinates>
                         using group_type = jubjub_types::g1_type<forms::montgomery, Coordinates>;
 
+
+                        /* Generator in Montgomery form
+                         * Birational equivalence with Twisted Edwards form:
+                         * E(x,y) to M(u,v):
+                         * $$(x,y) \mapsto (u,v) = \left(\frac{1+y}{1-y}, \frac{1+y}{(1-y)x}\right)$$
+                         * M(u,v) to E(x,y):
+                         * $$(u,v) \mapsto (x,y) = \left(\frac{u}{v}, \frac{u-1}{u+1}\right)$$
+                         */
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
                                 0x52a47af6ec47deb77d663b6a45b148d1ccdaa4e2299ecfbd5504c409b3ea62c0_cppui_modular255),
