@@ -56,14 +56,13 @@ namespace nil {
             template <typename, typename = std::void_t<>>
             struct has_type_g1_type : std::false_type {};
             template <typename T>
-                struct has_type_g1_type<T, std::void_t<typename T::template g1_type<>>> : std::true_type {};
+            struct has_type_g1_type<T, std::void_t<typename T::template g1_type<>>> : std::true_type {};
 
             // BOOST_TTI_HAS_TYPE(g2_type) does not work properly on g2_type since it is a template
             template <typename, typename = std::void_t<>>
             struct has_type_g2_type : std::false_type {};
             template <typename T>
-                struct has_type_g2_type<T, std::void_t<typename T::template g2_type<>>> : std::true_type {};
-
+            struct has_type_g2_type<T, std::void_t<typename T::template g2_type<>>> : std::true_type {};
 
             BOOST_TTI_HAS_TYPE(group_type)
 
@@ -88,15 +87,41 @@ namespace nil {
 
             BOOST_TTI_HAS_FUNCTION(inversed)
 
+#if 0
+            /** @brief is typename T an elliptic curve */
+            template <typename T>
+            constexpr bool is_curve =
+                    has_type_base_field_type<T>::value &&
+                    has_type_scalar_field_type<T>::value &&
+                    has_type_g1_type<T>::value;
+
+            template <typename T>
+            constexpr bool is_curve_group =
+                is_curve<T> &&
+                has_type_value_type<T>::value;
+#endif
+
+#if 1
             template<typename T>
             struct is_curve {
-                static const bool value =
+                static constexpr bool value =
                     has_type_base_field_type<T>::value &&
                     has_type_scalar_field_type<T>::value &&
                     has_type_g1_type<T>::value;
                 typedef T type;
             };
 
+            /** @brief is typename T either g1 or g2 group */
+            template<typename T>
+            struct is_curve_group {
+                static constexpr bool value =
+                    is_curve<typename T::curve_type>::value &&
+                    has_type_value_type<T>::value;
+                typedef T type;
+            };
+#endif
+
+            /** @brief is typename T a field */
             template<typename T>
             struct is_field {
                 static const bool value =
@@ -109,6 +134,7 @@ namespace nil {
                 typedef T type;
             };
 
+            /** @brief is typename T an extended field (e.g. Fp2) */
             template<typename T>
             struct is_extended_field {
                 static const bool value =
@@ -137,12 +163,11 @@ namespace nil {
             struct is_curve_element {
                 static const bool value =
                     has_type_field_type<T>::value &&
-                    has_type_curve_type<T>::value &&
                     has_type_group_type<T>::value &&
                     has_static_member_function_zero<T, T>::value &&
                     has_static_member_function_one<T, T>::value &&
-                    has_function_is_zero<T, bool>::value &&
-                    has_function_is_well_formed<T, bool>::value &&
+                    has_function_is_zero<const T, bool>::value &&
+                    has_function_is_well_formed<const T, bool>::value &&
                     has_function_double_inplace<T, void>::value &&
                     has_plus_operator<T>::value &&
                     has_ostream_output_operator<T>::value

@@ -49,6 +49,7 @@ namespace nil {
                             typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
                     {
                         if (scalar.is_zero()) {
+                            base = CurveElementType::zero();
                             return;
                         }
 
@@ -131,6 +132,15 @@ namespace nil {
                         return point * scalar;
                     }
 
+                    // TODO: temporary implementation due to absence of GroupValueType type_trait
+                    //  Should be implemented as class method
+                    template<typename CurveElementType>
+                    std::enable_if_t<is_curve_element<CurveElementType>::value, bool>
+                    subgroup_check(const CurveElementType &point) {
+                        /* Point can be multiplied only by scalar, scalar is modulo prime subgroup */
+                        auto scalar_modulus = CurveElementType::group_type::curve_type::scalar_field_type::modulus;
+                        return (point * (scalar_modulus -1) + point).is_zero();
+                    }
 
 #if 0
                     template<typename CurveElementType,

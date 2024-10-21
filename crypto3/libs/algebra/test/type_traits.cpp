@@ -107,10 +107,26 @@ void test_extended_field_types()
 template<typename curve_group_type>
 void test_curve_group_types()
 {
+    BOOST_ASSERT( is_curve_group<curve_group_type>::value );
+    BOOST_ASSERT( has_type_curve_type<curve_group_type>::value );
+
     BOOST_ASSERT( has_type_value_type<curve_group_type>::value );
-    
     using value_type = typename curve_group_type::value_type;
-    BOOST_ASSERT( has_ostream_output_operator<value_type>::value );
+
+    BOOST_ASSERT( has_type_field_type<value_type>::value );
+    BOOST_ASSERT( has_type_group_type<value_type>::value );
+
+    BOOST_ASSERT( (has_static_member_function_zero<value_type, value_type>::value) );
+    BOOST_ASSERT( (has_static_member_function_one<value_type, value_type>::value) );
+    BOOST_ASSERT( (has_function_is_zero<const value_type, bool>::value) );
+    BOOST_ASSERT( (has_function_is_well_formed<const value_type, bool>::value) );
+    BOOST_ASSERT( (has_function_double_inplace<value_type, void>::value) );
+
+    BOOST_ASSERT( has_plus_operator<value_type>::value );
+    BOOST_ASSERT( has_ostream_output_operator<value_type>::value);
+
+    BOOST_ASSERT( is_curve_element<value_type>::value );
+
 }
 
 template<typename curve_type>

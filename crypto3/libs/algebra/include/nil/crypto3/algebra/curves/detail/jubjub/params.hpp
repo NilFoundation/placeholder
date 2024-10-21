@@ -61,11 +61,14 @@ namespace nil {
 
                         // Montgomery representation:
                         // B * y^2 = x^3 + A * x^2 + x
+                        // https://en.wikipedia.org/wiki/Montgomery_curve#Equivalence_with_twisted_Edwards_curves
                         // constants A and B
+                        // A = 2 (a + d) / (a - d)
+                        // B = 4 / (a - d)
                         constexpr static const typename jubjub_types::base_field_type::value_type
                             A = 0xA002_cppui_modular255;
                         constexpr static const typename jubjub_types::base_field_type::value_type
-                            B = 0x0001_cppui_modular255;
+                            B = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffff5ffd_cppui_modular255;
                         static constexpr std::size_t cofactor = 8;
                     };
 
@@ -103,13 +106,15 @@ namespace nil {
                         template<typename Coordinates>
                         using group_type = jubjub_types::g1_type<forms::montgomery, Coordinates>;
 
-
                         /* Generator in Montgomery form
                          * Birational equivalence with Twisted Edwards form:
-                         * E(x,y) to M(u,v):
-                         * $$(x,y) \mapsto (u,v) = \left(\frac{1+y}{1-y}, \frac{1+y}{(1-y)x}\right)$$
-                         * M(u,v) to E(x,y):
-                         * $$(u,v) \mapsto (x,y) = \left(\frac{u}{v}, \frac{u-1}{u+1}\right)$$
+                         * https://en.wikipedia.org/wiki/Montgomery_curve#Equivalence_with_twisted_Edwards_curves
+                         *
+                         * M(u,v) from E(x,y):
+                         *
+                         * (u,v) = ( (1+y)/(1-y), (1+y)/(x*(1-y)) )
+                         *
+                         * These coordinates are acquired from generator defined above.
                          */
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(

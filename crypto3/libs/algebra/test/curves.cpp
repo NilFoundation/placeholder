@@ -163,8 +163,8 @@ void check_curve_operations_twisted_edwards(
 
     using scalar = typename CurveGroup::params_type::scalar_field_type::value_type;
 
-    BOOST_CHECK_MESSAGE((points[p1]*(scalar::modulus)).is_zero(), "Point p1 subgroup check");
-    BOOST_CHECK_MESSAGE((points[p2]*(scalar::modulus)).is_zero(), "Point p2 subgroup check");
+    BOOST_CHECK_MESSAGE(subgroup_check(points[p1]), "Point p1 subgroup check");
+    BOOST_CHECK_MESSAGE(subgroup_check(points[p2]), "Point p2 subgroup check");
 
     BOOST_CHECK_EQUAL(points[p1] + points[p2], points[p1_plus_p2]);
     BOOST_CHECK_EQUAL(points[p1] - points[p2], points[p1_minus_p2]);

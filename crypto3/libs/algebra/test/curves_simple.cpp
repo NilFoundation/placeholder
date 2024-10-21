@@ -60,19 +60,29 @@
 #include <nil/crypto3/algebra/fields/fp3.hpp>
 
 #include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/algebra/random_element.hpp>
 
 using namespace nil::crypto3::algebra;
 
 int main()
 {
-    using curve = curves::pallas;
+    using curve = curves::jubjub;
+    using scalar = typename curve::scalar_field_type;
+    using scalar_value = typename scalar::value_type;
 
-    auto G = curve::template g1_type<>::value_type::one();
-    typename curve::scalar_field_type::value_type dodeca(12u);
+    using curve_g1_group = typename curve::template g1_type<>;
+    using curve_point = typename curve::template g1_type<>::value_type;
 
-    curves::detail::scalar_mul_inplace(G, dodeca);
+    std::cout << (is_field<scalar>::value && !is_extended_field<scalar>::value) << std::endl;
 
-    std::cout << G;
+    scalar_value x = random_element<scalar>(); // tries wrong implementation
+    std::cout << x << std::endl;
+
+//    curve_point p1 = random_element<curve_g1_group>();
+//    std::cout << p1 << std::endl;
+
+
+
 
     return 0;
 }
