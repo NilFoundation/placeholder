@@ -7,6 +7,8 @@
   gdb,
   lldb,
   cmake_modules,
+  crypto3,
+  opensycl,
   enableDebugging,
   enableDebug ? false,
   runTests ? false,
@@ -19,7 +21,7 @@ in stdenv.mkDerivation {
   src = lib.sourceByRegex ./. ["^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
   hardeningDisable = [ "fortify" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++
+  nativeBuildInputs = [ cmake ninja pkg-config opensycl ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
