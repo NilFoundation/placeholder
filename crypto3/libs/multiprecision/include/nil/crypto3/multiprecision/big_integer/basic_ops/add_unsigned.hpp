@@ -13,7 +13,7 @@
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
-namespace nil::crypto3::multiprecision {
+namespace nil::crypto3::multiprecision::detail {
     template<unsigned Bits>
     inline constexpr void add_unsigned_constexpr(big_integer<Bits>& result,
                                                  const big_integer<Bits>& a,
@@ -288,4 +288,4 @@ namespace nil::crypto3::multiprecision {
     }
 
 #endif
-}  // namespace nil::crypto3::multiprecision
+}  // namespace nil::crypto3::multiprecision::detail

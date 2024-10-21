@@ -9,10 +9,10 @@
 #include <exception>
 #include <ios>
 #include <iostream>
+#include <ranges>
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <utility>
 
 // TODO(ioxid): replace with custom code
 #include <boost/multiprecision/cpp_int.hpp>
@@ -30,22 +30,25 @@ namespace nil::crypto3::multiprecision {
             Bits, Bits, boost::multiprecision::unsigned_magnitude,
             boost::multiprecision::unchecked>>;
 
+        using limb_type = detail::limb_type;
+        using double_limb_type = detail::double_limb_type;
+        using signed_limb_type = detail::signed_limb_type;
+        using signed_double_limb_type = detail::signed_double_limb_type;
+
         using unsigned_types = std::tuple<limb_type, double_limb_type>;
         using signed_types = std::tuple<signed_limb_type, signed_double_limb_type>;
 
         // Storage
 
-        using limb_type = limb_type;
-        using double_limb_type = double_limb_type;
-        using limb_pointer = limb_type*;
-        using const_limb_pointer = const limb_type*;
+        using limb_pointer = detail::limb_pointer;
+        using const_limb_pointer = detail::const_limb_pointer;
+        static constexpr unsigned limb_bits = detail::limb_bits;
+        static constexpr unsigned max_limb_value = detail::max_limb_value;
 
-        static constexpr unsigned limb_bits = sizeof(limb_type) * CHAR_BIT;
-        static constexpr limb_type max_limb_value = ~static_cast<limb_type>(0u);
         static constexpr unsigned internal_limb_count =
-            (Bits / limb_bits) + (((Bits % limb_bits) != 0u) ? 1 : 0);
+            (Bits / limb_bits) + (((Bits % limb_bits) != 0u) ? 1u : 0u);
         static constexpr limb_type upper_limb_mask =
-            (Bits % limb_bits) ? (limb_type(1) << (Bits % limb_bits)) - 1 : (~limb_type(0));
+            (Bits % limb_bits) ? (limb_type(1) << (Bits % limb_bits)) - 1 : (~limb_type(0u));
 
         //
         // Helper functions for getting at our internal data, and manipulating storage:
@@ -88,24 +91,14 @@ namespace nil::crypto3::multiprecision {
         }
 
         // TODO(ioxid): forbid signed, implement comparison with signed instead
-        template<class UI, std::enable_if_t<std::is_integral_v<UI> /*&& std::is_unsigned_v<UI>*/,
-                                            bool> = true>
-        inline constexpr big_integer(UI val) noexcept {
+        template<class T,
+                 std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
+        inline constexpr big_integer(T val) noexcept {
             if (val < 0) {
                 std::cerr << "big_integer: assignment from negative integer" << std::endl;
                 std::terminate();
             }
-            // TODO(ioxid): support assignment from uint64_t and uint128_t
-            do_assign_integral(static_cast<limb_type>(val));
-        }
-
-        // Move constructors
-
-        inline constexpr big_integer(big_integer&& other) noexcept { do_assign(other); }
-
-        template<unsigned Bits2>
-        inline constexpr big_integer(big_integer<Bits2>&& other) noexcept {
-            do_assign(other);
+            do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
         }
 
         // Copy construction
@@ -128,35 +121,24 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        // Move assignment
-
-        inline constexpr auto& operator=(big_integer&& other) noexcept {
-            do_assign(other);
-            return *this;
-        }
-        template<unsigned Bits2>
-        inline constexpr big_integer& operator=(big_integer<Bits2>&& other) noexcept {
-            do_assign(other);
-            return *this;
-        }
-
         // Assignment from other types
 
         // TODO(ioxid): forbid signed, implement comparison with signed instead
-        template<class UI>
+        template<typename T>
         inline constexpr
-            typename std::enable_if_t<std::is_integral_v<UI> /*&& std::is_unsigned_v<UI>*/,
+            typename std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/,
                                       big_integer&>
-            operator=(UI val) noexcept {
+            operator=(T val) noexcept {
             if (val < 0) {
                 std::cerr << "big_integer: assignment from negative integer" << std::endl;
                 std::terminate();
             }
-            do_assign_integral(val);
+            do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
             return *this;
         }
 
         inline constexpr auto& operator=(const char* s) {
+            // TODO(ioxid): rewrite without cpp_int
             cpp_int_type value;
             value = s;
             this->from_cpp_int(value);
@@ -175,55 +157,58 @@ namespace nil::crypto3::multiprecision {
 
         // cpp_int conversion
 
-        inline constexpr void from_cpp_int(const cpp_int_type& other) {
-            // Here we need other.size(), not this->size(), because cpp_int may not use all the
-            // limbs it has, but we will.
-            for (unsigned i = 0; i < other.backend().size(); ++i) {
-                this->limbs()[i] = other.backend().limbs()[i];
-            }
-            // Zero out the rest.
-            for (unsigned i = other.backend().size(); i < this->size(); ++i) {
-                this->limbs()[i] = 0;
+        inline constexpr void from_cpp_int(cpp_int_type cppint) {
+            for (limb_type& limb : m_data) {
+                limb = static_cast<limb_type>(cppint & static_cast<limb_type>(-1));
+                cppint >>= limb_bits;
             }
         }
 
         // Converting to cpp_int. We need this for multiplication, division and string
-        // conversions. Since these operations are rare, there's no reason to implement then for
+        // conversions. Since these operations are rare, there's no reason to implement them for
         // big_integer, converting to cpp_int does not result to performance penalty.
         inline constexpr cpp_int_type to_cpp_int() const {
             cpp_int_type result;
-            // TODO(ioxid): not constexpr?
-            // result.backend().resize(this->size(), this->size());
-            // for (unsigned i = 0; i < this->size(); ++i) {
-            //     result.backend().limbs()[i] = this->limbs()[i];
-            // }
-            // result.backend().normalize();
-            return std::move(result);
+            for (const limb_type limb : m_data | std::views::reverse) {
+                result <<= limb_bits;
+                result |= limb;
+            }
+            return result;
         }
 
         // cast to integral types
 
-        template<typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
         explicit inline constexpr operator T() const {
-            return static_cast<T>(this->limbs()[0]);
+            if constexpr (sizeof(T) <= sizeof(limb_type)) {
+                return static_cast<T>(this->limbs()[0]);
+            } else {
+                constexpr std::size_t n = sizeof(T) / sizeof(limb_type);
+                T result = 0;
+                for (std::size_t i = 0; i < n; ++i) {
+                    result <<= limb_bits;
+                    result |= limbs()[n - i - 1];
+                }
+                return result;
+            }
         }
 
       private:
-        inline constexpr void do_assign_integral(limb_type i) noexcept {
-            // TODO(ioxid): support assignment from uint64_t and uint128_t
-            *this->limbs() = i;
-            this->zero_after(1);
-            this->normalize();
-        }
-
-        inline constexpr void do_assign_integral(double_limb_type i) noexcept {
-            // TODO(ioxid): support assignment from uint128_t
-            static_assert(sizeof(i) == 2 * sizeof(limb_type), "Failed integer size check");
-            auto p = this->limbs();
-            *p = static_cast<limb_type>(i);
-            if (this->size() > 1) {
-                p[1] = static_cast<limb_type>(i >> limb_bits);
-                this->zero_after(2);
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        inline constexpr void do_assign_integral(T a) noexcept {
+            if constexpr (sizeof(T) <= sizeof(limb_type)) {
+                this->limbs()[0] = a;
+                this->zero_after(1);
+            } else {
+                static_assert(sizeof(T) % sizeof(limb_type) == 0);
+                constexpr std::size_t n = sizeof(T) / sizeof(limb_type);
+                for (std::size_t i = 0; i < n; ++i) {
+                    limbs()[i] = a & static_cast<T>(static_cast<limb_type>(-1));
+                    a >>= limb_bits;
+                }
+                zero_after(n);
             }
             this->normalize();
         }

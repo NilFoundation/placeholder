@@ -19,237 +19,225 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_params.hpp"
+#include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 
 namespace nil::crypto3::multiprecision {
-    // fixed precision modular big integer which supports compile-time execution
-    template<typename big_integer_t, typename modular_params_storage_t>
-    class modular_big_integer {
-      public:
-        constexpr static auto Bits = big_integer_t::Bits;
-        using limb_type = typename big_integer_t::limb_type;
-        using double_limb_type = typename big_integer_t::double_limb_type;
-        using modular_params_t = modular_params<big_integer_t>;
-        using Backend_type = big_integer_t;
+    namespace detail {
+        // fixed precision modular big integer which supports compile-time execution
+        template<typename big_integer_t_, typename modular_ops_storage_t>
+        class modular_big_integer_impl {
+          public:
+            using big_integer_t = big_integer_t_;
+            constexpr static auto Bits = big_integer_t::Bits;
+            using limb_type = typename big_integer_t::limb_type;
+            using double_limb_type = typename big_integer_t::double_limb_type;
+            using modular_ops_t = modular_ops<big_integer_t>;
 
-        using unsigned_types = typename big_integer_t::unsigned_types;
-        using signed_types = typename big_integer_t::signed_types;
+            using unsigned_types = typename big_integer_t::unsigned_types;
+            using signed_types = typename big_integer_t::signed_types;
 
-      protected:
-        using policy_type = typename modular_params_t::policy_type;
-        using Backend_padded_limbs = typename policy_type::Backend_padded_limbs;
-        using Backend_doubled_limbs = typename policy_type::Backend_doubled_limbs;
-        modular_params_storage_t modular_params_storage;
+          private:
+            using policy_type = typename modular_ops_t::policy_type;
+            using big_integer_padded_limbs = typename policy_type::big_integer_padded_limbs;
+            using big_integer_doubled_limbs = typename policy_type::big_integer_doubled_limbs;
 
-      public:
-        // This version of conversion
-        constexpr typename big_integer_t::cpp_int_type to_cpp_int() const {
-            big_integer_t tmp;
-            modular_params_storage.modular_params().adjust_regular(tmp, this->base_data());
-            return tmp.to_cpp_int();
+            // Constructors
+
+          protected:
+            inline constexpr modular_big_integer_impl(modular_ops_storage_t&& modular_ops_storage)
+                : m_modular_ops_storage(std::move(modular_ops_storage)) {}
+
+          public:
+            // Comparison
+
+            constexpr bool compare_eq(const modular_big_integer_impl& o) const {
+                // TODO(ioxid): ensure modulus comparison is done in compile time when possible
+                return modular_ops().compare_eq(o.modular_ops()) && m_base == o.m_base;
+            }
+
+            template<class T>
+            constexpr int compare_eq(const T& val) const {
+                // TODO(ioxid): should compare adjusted?
+                return m_base == val;
+            }
+
+            // cpp_int conversion
+
+            constexpr typename big_integer_t::cpp_int_type to_cpp_int() const {
+                return modular_ops().adjusted_regular(m_base).to_cpp_int();
+            }
+
+            // String conversion
+
+            inline std::string str(std::streamsize digits = 0,
+                                   std::ios_base::fmtflags f = std::ios_base::fmtflags(0)) const {
+                // TODO(ioxid): add module to output
+                return modular_ops().adjusted_regular(m_base).str(digits, f);
+            }
+
+            // TODO(ioxid): why is it here
+            // Mathemetical operations
+
+            inline constexpr void negate() {
+                if (m_base != m_zero) {
+                    auto initial_m_base = m_base;
+                    m_base = modular_ops().get_mod();
+                    m_base -= initial_m_base;
+                }
+            }
+
+            // TODO(ioxid): who needs this and why is it an assignment operator
+            // This function sets default modulus value to zero to make sure it fails if not used
+            // with compile-time fixed modulus.
+            modular_big_integer_impl& operator=(const char* s) {
+                using ui_type = typename std::tuple_element<0, unsigned_types>::type;
+                ui_type zero = 0u;
+
+                if (s && (*s == '(')) {
+                    std::string part;
+                    const char* p = ++s;
+                    while (*p && (*p != ',') && (*p != ')')) {
+                        ++p;
+                    }
+                    part.assign(s, p);
+                    if (!part.empty()) {
+                        m_base = part.c_str();
+                    } else {
+                        m_base = zero;
+                    }
+                    s = p;
+                    if (*p && (*p != ')')) {
+                        ++p;
+                        while (*p && (*p != ')')) {
+                            ++p;
+                        }
+                        part.assign(s + 1, p);
+                    } else {
+                        part.erase();
+                    }
+                    if (!part.empty()) {
+                        m_modular_ops_storage.set_modular_ops(part.c_str());
+                    } else {
+                        m_modular_ops_storage.set_modular_ops(zero);
+                    }
+                } else {
+                    m_base = s;
+                    m_modular_ops_storage.set_modular_ops(zero);
+                }
+                return *this;
+            }
+
+            constexpr auto& base_data() { return m_base; }
+            constexpr const auto& base_data() const { return m_base; }
+
+            constexpr auto& modular_ops() { return m_modular_ops_storage.modular_ops(); }
+            constexpr const auto& modular_ops() const {
+                return m_modular_ops_storage.modular_ops();
+            }
+
+          protected:
+            modular_ops_storage_t m_modular_ops_storage;
+
+            big_integer_t m_base;
+            static constexpr big_integer_t m_zero =
+                static_cast<typename std::tuple_element<0, unsigned_types>::type>(0u);
+            ;
+        };
+
+        template<unsigned Bits, typename big_integer_t1, typename big_integer_t2,
+                 typename modular_ops_storage_t>
+        constexpr void assign_components(
+            modular_big_integer_impl<big_integer<Bits>, modular_ops_storage_t>& result,
+            const big_integer_t1& a, const big_integer_t2& b) {
+            BOOST_ASSERT_MSG(Bits == msb(b) + 1,
+                             "modulus precision should match used big_integer_t");
+
+            result.set_modular_ops(b);
+            result.modular_ops().adjust_modular(result.base_data(), a);
         }
+    }  // namespace detail
 
-        constexpr auto mod_data() { return modular_params_storage.modular_params(); }
-        constexpr auto mod_data() const { return modular_params_storage.modular_params(); }
+    template<const auto& modulus>
+    struct modular_big_integer_ct
+        : public detail::modular_big_integer_impl<
+              std::decay_t<decltype(modulus)>,
+              detail::modular_ops_storage_ct<std::decay_t<decltype(modulus)>, modulus>> {
+        using base_type = detail::modular_big_integer_impl<
+            std::decay_t<decltype(modulus)>,
+            detail::modular_ops_storage_ct<std::decay_t<decltype(modulus)>, modulus>>;
 
-        constexpr big_integer_t& base_data() { return m_base; }
-        constexpr const big_integer_t& base_data() const { return m_base; }
+        using typename base_type::big_integer_t;
 
-        constexpr modular_big_integer() {}
+        constexpr modular_big_integer_ct() : base_type({}) {}
 
-        constexpr modular_big_integer(const modular_big_integer& o) : m_base(o.base_data()) {
-            modular_params_storage.set_modular_params(o.modular_params_storage.modular_params());
-        }
-
-        constexpr modular_big_integer(modular_big_integer&& o) noexcept
-            : m_base(std::move(o.base_data())) {
-            modular_params_storage.set_modular_params(
-                std::move(o.modular_params_storage.modular_params()));
-        }
-
-        template<typename UI, typename std::enable_if_t<std::is_integral_v<UI> &&
-                                                        std::is_unsigned_v<UI>> const* = nullptr>
-        constexpr modular_big_integer(UI b, const big_integer_t& m) : m_base(limb_type(b)) {
-            modular_params_storage.set_modular_params(m);
-            modular_params_storage.modular_params().adjust_modular(m_base);
+        template<unsigned Bits2>
+        constexpr explicit modular_big_integer_ct(const big_integer<Bits2>& b) : base_type({}) {
+            this->modular_ops().adjust_modular(this->m_base, b);
         }
 
         // A method for converting a signed integer to a modular adaptor. We are not supposed to
         // have this, but in the code we already have conversion for an 'int' into modular type. In
         // the future we must remove.
-        template<typename SI, typename std::enable_if_t<std::is_integral_v<SI> &&
-                                                        std::is_signed_v<SI>> const* = nullptr>
-        constexpr modular_big_integer(SI b) : m_base(limb_type(0u)) {
+        template<typename SI,
+                 typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
+        constexpr modular_big_integer_ct(SI b) : base_type({}) {
             if (b >= 0) {
-                m_base = static_cast<limb_type>(b);
+                this->m_base = static_cast<std::make_unsigned_t<SI>>(b);
             } else {
-                m_base = modular_params_storage.modular_params().get_mod();
-                eval_subtract(m_base, static_cast<limb_type>(-b));
+                this->m_base = this->modular_ops().get_mod();
+                // TODO(ioxid): should work not just with limb_type
+                this->m_base -= static_cast<detail::limb_type>(-b);
             }
 
             // This method must be called only for compile time modular params.
-            // modular_params_storage.set_modular_params(m);
-            modular_params_storage.modular_params().adjust_modular(m_base);
+            // modular_ops_storage.set_modular_ops(m);
+            this->modular_ops().adjust_modular(this->m_base);
         }
 
-        template<typename UI, typename std::enable_if_t<std::is_integral_v<UI> &&
-                                                        std::is_unsigned_v<UI>> const* = nullptr>
-        constexpr modular_big_integer(UI b) : m_base(static_cast<limb_type>(b)) {
-            // This method must be called only for compile time modular params.
-            // modular_params_storage.set_modular_params(m);
-            modular_params_storage.modular_params().adjust_modular(m_base);
+        template<typename UI, typename std::enable_if_t<
+                                  std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
+        constexpr modular_big_integer_ct(UI b) : base_type({}) {
+            this->m_base = b;
+            this->modular_ops().adjust_modular(this->m_base);
         }
-
-        template<typename SI, typename std::enable_if_t<std::is_integral_v<SI> &&
-                                                        std::is_signed_v<SI>> const* = nullptr>
-        constexpr modular_big_integer(SI b, const modular_params_t& m) : m_base(limb_type(0u)) {
-            if (b >= 0) {
-                m_base = static_cast<limb_type>(b);
-            } else {
-                m_base = modular_params_storage.modular_params().get_mod();
-                eval_subtract(m_base, static_cast<limb_type>(-b));
-            }
-
-            modular_params_storage.set_modular_params(m);
-            modular_params_storage.modular_params().adjust_modular(m_base);
-        }
-
-        template<typename UI, typename std::enable_if_t<std::is_integral_v<UI> &&
-                                                        std::is_unsigned_v<UI>> const* = nullptr>
-        constexpr modular_big_integer(UI b, const modular_params_t& m)
-            : m_base(static_cast<limb_type>(b)) {
-            modular_params_storage.set_modular_params(m);
-            modular_params_storage.modular_params().adjust_modular(m_base);
-        }
-
-        // TODO
-        // // We may consider to remove this constructor later, and set Bits2 to Bits only,
-        // // but we need it for use cases from h2f/h2c,
-        // // where a larger number of 512 or 256 bits is passed to a field of 255 or 254 bits.
-        // template<unsigned Bits2>
-        // constexpr modular_big_integer(const number<big_integer<Bits2>> &b,
-        //                                          const number<big_integer_t> &m) {
-        //     modular_params_storage.set_modular_params(m.big_integer_t());
-        //     modular_params_storage.modular_params().adjust_modular(m_base, b.big_integer_t());
-        // }
-
-        // We may consider to remove this constructor later, and set Bits2 to Bits only,
-        // but we need it for use cases from h2f/h2c,
-        // where a larger number of 512 or 256 bits is passed to a field of 255 or 254 bits.
-        template<unsigned Bits2>
-        constexpr modular_big_integer(const big_integer<Bits2>& b, const modular_params_t& m) {
-            modular_params_storage.set_modular_params(m);
-            modular_params_storage.modular_params().adjust_modular(m_base, b);
-        }
-
-        // We may consider to remove this constructor later, and set Bits2 to Bits only,
-        // but we need it for use cases from h2f/h2c,
-        // where a larger number of 512 or 256 bits is passed to a field of 255 or 254 bits.
-        template<unsigned Bits2>
-        constexpr explicit modular_big_integer(const big_integer<Bits2>& b) {
-            // This method must be called only for compile time modular params.
-            // modular_params_storage.set_modular_params(m);
-            modular_params_storage.modular_params().adjust_modular(m_base, b);
-        }
-
-        // This function sets default modulus value to zero to make sure it fails if not used with
-        // compile-time fixed modulus.
-        modular_big_integer& operator=(const char* s) {
-            using ui_type = typename std::tuple_element<0, unsigned_types>::type;
-            ui_type zero = 0u;
-
-            if (s && (*s == '(')) {
-                std::string part;
-                const char* p = ++s;
-                while (*p && (*p != ',') && (*p != ')')) {
-                    ++p;
-                }
-                part.assign(s, p);
-                if (!part.empty()) {
-                    m_base = part.c_str();
-                } else {
-                    m_base = zero;
-                }
-                s = p;
-                if (*p && (*p != ')')) {
-                    ++p;
-                    while (*p && (*p != ')')) {
-                        ++p;
-                    }
-                    part.assign(s + 1, p);
-                } else {
-                    part.erase();
-                }
-                if (!part.empty()) {
-                    modular_params_storage.set_modular_params(part.c_str());
-                } else {
-                    modular_params_storage.set_modular_params(zero);
-                }
-            } else {
-                m_base = s;
-                modular_params_storage.set_modular_params(zero);
-            }
-            return *this;
-        }
-
-        constexpr bool compare_eq(const modular_big_integer& o) const {
-            return !(modular_params_storage.modular_params())
-                        .compare(o.modular_params_storage.modular_params()) &&
-                   !base_data().compare(o.base_data());
-        }
-
-        template<class T>
-        constexpr int compare_eq(const T& val) const {
-            return !base_data().compare(val);
-        }
-
-        constexpr modular_big_integer& operator=(const modular_big_integer& o) {
-            m_base = o.base_data();
-            modular_params_storage.set_modular_params(o.modular_params_storage.modular_params());
-
-            return *this;
-        }
-
-        constexpr modular_big_integer& operator=(modular_big_integer&& o) noexcept {
-            m_base = o.base_data();
-            modular_params_storage.set_modular_params(o.modular_params_storage.modular_params());
-
-            return *this;
-        }
-
-        ~modular_big_integer() = default;
-
-        // If we want to print a value, we must first convert it back to normal form.
-        inline std::string str(std::streamsize dig, std::ios_base::fmtflags f) const {
-            big_integer_t tmp;
-            modular_params_storage.modular_params().adjust_regular(tmp, m_base);
-            return tmp.str(dig, f);
-        }
-
-        inline constexpr void negate() {
-            if (m_base == m_zero) {
-                auto initial_m_base = m_base;
-                m_base = modular_params_storage.modular_params().get_mod();
-                eval_subtract(m_base, initial_m_base);
-            }
-        }
-
-      protected:
-        big_integer_t m_base;
-        static constexpr big_integer_t m_zero =
-            static_cast<typename std::tuple_element<0, unsigned_types>::type>(0u);
-        ;
     };
 
-    template<unsigned Bits, typename big_integer_t1, typename big_integer_t2,
-             typename modular_params_storage_t>
-    constexpr void assign_components(
-        modular_big_integer<big_integer<Bits>, modular_params_storage_t>& result,
-        const big_integer_t1& a, const big_integer_t2& b) {
-        BOOST_ASSERT_MSG(Bits == eval_msb(b) + 1,
-                         "modulus precision should match used big_integer_t");
+    template<unsigned Bits>
+    struct modular_big_integer_rt
+        : public detail::modular_big_integer_impl<
+              big_integer<Bits>, detail::modular_ops_storage_rt<big_integer<Bits>>> {
+        using base_type =
+            detail::modular_big_integer_impl<big_integer<Bits>,
+                                             detail::modular_ops_storage_rt<big_integer<Bits>>>;
 
-        result.set_modular_params(b);
-        result.modular_params().adjust_modular(result.base_data(), a);
-    }
+        using typename base_type::big_integer_t;
+
+          template<typename SI,
+                 std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
+        constexpr modular_big_integer_rt(SI b, const big_integer_t& m): base_type(m) {
+            if (b >= 0) {
+                this->m_base = b;
+            } else {
+                this->m_base = this->modular_ops().get_mod();
+                // TODO(ioxid): should work not just with limb_type
+                this->m_base -= static_cast<detail::limb_type>(-b);
+            }
+
+            this->modular_ops().adjust_modular(this->m_base);
+        }
+
+        template<typename UI, typename std::enable_if_t<
+                                  std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
+        constexpr modular_big_integer_rt(UI b, const big_integer_t& m) : base_type(m) {
+            this->m_base = b;
+            this->modular_ops().adjust_modular(this->m_base);
+        }
+
+        // TODO(ioxid): move adjust modular to impl constructor
+        template<unsigned Bits2>
+        constexpr modular_big_integer_rt(const big_integer<Bits2>& b, const big_integer_t& m)
+            : base_type(m) {
+            this->modular_ops().adjust_modular(this->m_base, b);
+        }
+    };
 }  // namespace nil::crypto3::multiprecision

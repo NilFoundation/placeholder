@@ -10,12 +10,12 @@
 // #include <boost/multiprecision/detail/constexpr.hpp>
 #include <type_traits>
 
+#include "nil/crypto3/multiprecision/big_integer/basic_ops/add_unsigned.hpp"
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
-#include "nil/crypto3/multiprecision/big_integer/ops/add_unsigned.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
-namespace nil::crypto3::multiprecision {
+namespace nil::crypto3::multiprecision::detail {
 
     template<unsigned Bits>
     inline constexpr void add_unsigned(big_integer<Bits>& result, const big_integer<Bits>& a,
@@ -91,84 +91,80 @@ namespace nil::crypto3::multiprecision {
     // above:
     //
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_add(big_integer<Bits>& result,
-                                                   const big_integer<Bits>& o) noexcept {
-        eval_add(result, result, o);
+    NIL_CO3_MP_FORCEINLINE constexpr void add(big_integer<Bits>& result, const big_integer<Bits>& a,
+                                              const big_integer<Bits>& b) noexcept {
+        add_unsigned(result, a, b);
     }
     template<unsigned Bits>
-    inline constexpr void eval_add(big_integer<Bits>& result, const big_integer<Bits>& a,
-                                   const big_integer<Bits>& b) noexcept {
-        add_unsigned(result, a, b);
+    NIL_CO3_MP_FORCEINLINE constexpr void add(big_integer<Bits>& result,
+                                              const big_integer<Bits>& o) noexcept {
+        add(result, result, o);
     }
 
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_add(big_integer<Bits>& result,
-                                                   const limb_type& o) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr void add(big_integer<Bits>& result,
+                                              const limb_type& o) noexcept {
         add_unsigned(result, result, o);
     }
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_add(big_integer<Bits>& result,
-                                                   const big_integer<Bits>& a,
-                                                   const limb_type& o) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr void add(big_integer<Bits>& result, const big_integer<Bits>& a,
+                                              const limb_type& o) noexcept {
         add_unsigned(result, a, o);
     }
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_subtract(big_integer<Bits>& result,
-                                                        const limb_type& o) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr void subtract(big_integer<Bits>& result,
+                                                   const limb_type& o) noexcept {
         subtract_unsigned(result, result, o);
     }
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_subtract(big_integer<Bits>& result,
-                                                        const big_integer<Bits>& a,
-                                                        const limb_type& o) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr void subtract(big_integer<Bits>& result,
+                                                   const big_integer<Bits>& a,
+                                                   const limb_type& o) noexcept {
         subtract_unsigned(result, a, o);
     }
 
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_increment(big_integer<Bits>& result) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr void increment(big_integer<Bits>& result) noexcept {
         if ((result.limbs()[0] < big_integer<Bits>::max_limb_value)) {
             ++result.limbs()[0];
         } else {
-            eval_add(result, (limb_type)1);
+            add(result, static_cast<limb_type>(1u));
         }
     }
 
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_decrement(big_integer<Bits>& result) noexcept {
-        constexpr const limb_type one = 1;
-
+    NIL_CO3_MP_FORCEINLINE constexpr void decrement(big_integer<Bits>& result) noexcept {
         if (result.limbs()[0]) {
             --result.limbs()[0];
         } else {
-            eval_subtract(result, one);
+            subtract(result, static_cast<limb_type>(1u));
         }
     }
 
     template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_subtract(big_integer<Bits>& result,
-                                                        const big_integer<Bits>& o) noexcept {
-        eval_subtract(result, result, o);
-    }
-
-    template<unsigned Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr void eval_subtract(big_integer<Bits>& result,
-                                                        const big_integer<Bits>& a,
-                                                        const big_integer<Bits>& b) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr void subtract(big_integer<Bits>& result,
+                                                   const big_integer<Bits>& a,
+                                                   const big_integer<Bits>& b) noexcept {
         subtract_unsigned(result, a, b);
     }
-
-    template<unsigned Bits1, unsigned Bits2>
-    NIL_CO3_MP_FORCEINLINE constexpr typename std::enable_if<(Bits1 >= Bits2)>::type eval_subtract(
-        big_integer<Bits1>& result, const big_integer<Bits2>& o) noexcept {
-        big_integer<Bits1> o_larger = o;
-        eval_subtract(result, result, o_larger);
+    template<unsigned Bits>
+    NIL_CO3_MP_FORCEINLINE constexpr void subtract(big_integer<Bits>& result,
+                                                   const big_integer<Bits>& o) noexcept {
+        subtract(result, result, o);
     }
 
     template<unsigned Bits1, unsigned Bits2>
-    NIL_CO3_MP_FORCEINLINE constexpr typename std::enable_if<(Bits1 >= Bits2)>::type eval_subtract(
+    NIL_CO3_MP_FORCEINLINE constexpr typename std::enable_if<(Bits1 >= Bits2)>::type subtract(
+        big_integer<Bits1>& result, const big_integer<Bits2>& o) noexcept {
+        big_integer<Bits1> o_larger = o;
+        subtract(result, result, o_larger);
+    }
+
+    template<unsigned Bits1, unsigned Bits2>
+    NIL_CO3_MP_FORCEINLINE constexpr typename std::enable_if<(Bits1 >= Bits2)>::type subtract(
         big_integer<Bits1>& result, const big_integer<Bits1>& a,
         const big_integer<Bits2>& b) noexcept {
         big_integer<Bits1> b_larger = b;
         subtract_unsigned(result, a, b_larger);
     }
-}  // namespace nil::crypto3::multiprecision
+}  // namespace nil::crypto3::multiprecision::detail
