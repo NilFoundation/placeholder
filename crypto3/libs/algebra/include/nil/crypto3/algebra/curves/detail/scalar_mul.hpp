@@ -42,6 +42,97 @@ namespace nil {
         namespace algebra {
             namespace curves {
                 namespace detail {
+
+                    template<typename CurveElementType>
+                    constexpr void scalar_mul_inplace(
+                            CurveElementType &base,
+                            typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
+                    {
+                        if (scalar.is_zero()) {
+                            return;
+                        }
+
+                        const size_t window_size = 3;
+                        auto integral_scalar = static_cast<typename CurveElementType::params_type::scalar_field_type::integral_type>(scalar.data);
+
+                        auto naf = boost::multiprecision::eval_find_wnaf_a(window_size + 1, integral_scalar.backend());
+                        std::array<CurveElementType, 1ul << window_size > table;
+                        CurveElementType dbl = base;
+                        dbl.double_inplace();
+                        for (size_t i = 0; i < 1ul << window_size; ++i) {
+                            table[i] = base;
+                            base += dbl;
+                        }
+
+                        base = CurveElementType::zero();
+                        bool found_nonzero = false;
+                        for (long i = naf.size() - 1; i >= 0; --i) {
+                            if (found_nonzero) {
+                                base.double_inplace();
+                            }
+
+                            if (naf[i] != 0) {
+                                found_nonzero = true;
+                                if (naf[i] > 0) {
+                                    base += table[naf[i] / 2];
+                                } else {
+                                    base -= table[(-naf[i]) / 2];
+                                }
+                            }
+                        }
+                    }
+
+                    template<typename CurveElementType>
+                    constexpr CurveElementType& operator *= (
+                            CurveElementType& point,
+                            typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
+                    {
+                        scalar_mul_inplace(point, scalar.data);
+                        return point;
+                    }
+
+                    template<typename CurveElementType>
+                    constexpr CurveElementType operator * (
+                            CurveElementType const& point,
+                            typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
+                    {
+                        CurveElementType res = point;
+                        scalar_mul_inplace(res, scalar.data);
+                        return res;
+                    }
+
+                    template<typename CurveElementType>
+                    constexpr CurveElementType operator * (
+                            typename CurveElementType::params_type::scalar_field_type::value_type const& scalar,
+                            CurveElementType const& point)
+                    {
+                        CurveElementType res = point;
+                        scalar_mul_inplace(res, scalar.data);
+                        return res;
+                    }
+
+                    template<typename CurveElementType>
+                    std::enable_if_t<is_curve_element<CurveElementType>::value, CurveElementType>
+                    constexpr operator * (
+                            const CurveElementType &point,
+                            const std::size_t &multiplier)
+                    {
+                        typename CurveElementType::params_type::scalar_field_type::value_type scalar(multiplier);
+                        return point * scalar;
+                    }
+
+                    template<typename CurveElementType>
+                    std::enable_if_t<is_curve_element<CurveElementType>::value, CurveElementType>
+                    constexpr operator * (
+                            const std::size_t &multiplier,
+                            const CurveElementType &point)
+                    {
+                        typename CurveElementType::params_type::scalar_field_type::value_type scalar(multiplier);
+                        return point * scalar;
+                    }
+
+
+#if 0
                     template<typename CurveElementType,
                              typename Backend,
                              boost::multiprecision::expression_template_option ExpressionTemplates>
@@ -133,7 +224,7 @@ namespace nil {
                         return point;
                     }
 
-#if 0
+#if 1
                     template<typename GroupValueType, typename FieldValueType>
                     typename std::enable_if<is_elliptic_curve_scalar<GroupValueType, FieldValueType>::value,
                             GroupValueType>::type
@@ -223,6 +314,7 @@ namespace nil {
 
                         return right * left;
                     }
+#endif
 
                 }    // namespace detail
             }        // namespace curves

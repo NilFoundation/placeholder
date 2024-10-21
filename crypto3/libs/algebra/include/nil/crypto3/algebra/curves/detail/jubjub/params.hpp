@@ -44,15 +44,15 @@ namespace nil {
                         // Edwards representation:
                         // a x^2 + y^2 = 1 + d x^2 y^2
                         // Constants a (-1) and d (-10240/10241)
-                        constexpr static const typename jubjub_types::integral_type
+                        constexpr static const typename jubjub_types::base_field_type::value_type
                             a = base_field_type::modulus - 1;
-                        constexpr static const typename jubjub_types::integral_type
+                        constexpr static const typename jubjub_types::base_field_type::value_type
                             d = 0x2A9318E74BFA2B48F5FD9207E6BD7FD4292D7F6D37579D2601065FD6D6343EB1_cppui_modular255;
                         static constexpr std::size_t cofactor = 8;
                     };
 
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::twisted_edwards>::a;
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::twisted_edwards>::d;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::twisted_edwards>::a;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::twisted_edwards>::d;
 
                     template<>
                     struct jubjub_params<forms::montgomery> {
@@ -62,15 +62,15 @@ namespace nil {
                         // Montgomery representation:
                         // B * y^2 = x^3 + A * x^2 + x
                         // constants A and B
-                        constexpr static const typename jubjub_types::integral_type
+                        constexpr static const typename jubjub_types::base_field_type::value_type
                             A = 0xA002_cppui_modular255;
-                        constexpr static const typename jubjub_types::integral_type
+                        constexpr static const typename jubjub_types::base_field_type::value_type
                             B = 0x0001_cppui_modular255;
                         static constexpr std::size_t cofactor = 8;
                     };
 
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::montgomery>::A;
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::montgomery>::B;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::montgomery>::A;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::montgomery>::B;
 
                     template<>
                     struct jubjub_g1_params<forms::twisted_edwards> : public jubjub_params<forms::twisted_edwards> {

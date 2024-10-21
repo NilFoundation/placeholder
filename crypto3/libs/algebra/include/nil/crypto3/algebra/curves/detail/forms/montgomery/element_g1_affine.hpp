@@ -273,11 +273,11 @@ namespace nil {
                          * @return doubled element from group G1
                          */
                         constexpr void double_inplace() {
-                            if ( 2 * params_type::B * this->Y == field_value_type::zero() ) {
+                            const field_value_type two(2u);
+                            if ( two * params_type::B * this->Y == field_value_type::zero() ) {
                                 this->is_inf_point = true;
                             }
                             if (!this->is_zero()) {
-                                const field_value_type two(2u);
                                 const field_value_type three(3u);
                                 const field_value_type A(params_type::A);
                                 const field_value_type B(params_type::B);

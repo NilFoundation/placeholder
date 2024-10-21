@@ -47,8 +47,8 @@ namespace nil {
 #ifdef __ZKLLVM__
 #else
                         /* Short Weierstrass curve: y^2 = x^3 + a*x +b */
-                        constexpr static typename pallas_types::integral_type a = 0u;
-                        constexpr static typename pallas_types::integral_type b = 5u;
+                        constexpr static typename pallas_types::base_field_type::value_type a = 0u;
+                        constexpr static typename pallas_types::base_field_type::value_type b = 5u;
 #endif
                     };
 
@@ -80,8 +80,8 @@ namespace nil {
 
 #ifdef __ZKLLVM__
 #else
-                    constexpr typename pallas_types::integral_type pallas_params<forms::short_weierstrass>::a;
-                    constexpr typename pallas_types::integral_type pallas_params<forms::short_weierstrass>::b;
+                    constexpr typename pallas_types::base_field_type::value_type pallas_params<forms::short_weierstrass>::a;
+                    constexpr typename pallas_types::base_field_type::value_type pallas_params<forms::short_weierstrass>::b;
 
                     constexpr std::array<typename pallas_g1_params<forms::short_weierstrass>::field_type::value_type, 2>
                         pallas_g1_params<forms::short_weierstrass>::zero_fill;

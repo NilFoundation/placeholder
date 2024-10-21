@@ -33,6 +33,7 @@ namespace nil {
         namespace algebra {
             namespace fields {
                 namespace detail {
+                    /*
                     template<typename FieldElement, typename Integral,
                             typename = typename std::enable_if<is_field_element<FieldElement>::value &&
                                                                std::is_constructible<FieldElement, Integral>::value>::type>
@@ -88,6 +89,7 @@ namespace nil {
                     constexpr FieldElement operator/(Integral A, const FieldElement &B) {
                         return FieldElement(A) / B;
                     }
+                    */
                 }    // namespace detail
             }        // namespace fields
         }            // namespace algebra
