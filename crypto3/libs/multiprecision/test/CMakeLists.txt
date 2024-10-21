@@ -27,7 +27,7 @@ macro(define_runtime_multiprecision_test name)
         ${Boost_INCLUDE_DIRS}
     )
 
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 23
         CXX_STANDARD_REQUIRED TRUE)
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -74,6 +74,7 @@ set(BIG_INTEGER_TESTS_NAMES
     "big_integer"
     "big_integer_comparision"
     "big_integer_modular"
+    "big_integer_modular_comprehensive"
 )
 
 foreach(TEST_NAME ${RUNTIME_TESTS_NAMES})

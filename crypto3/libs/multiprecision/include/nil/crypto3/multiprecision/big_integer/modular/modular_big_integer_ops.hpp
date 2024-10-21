@@ -14,19 +14,19 @@
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
+#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_ops_impl.hpp"
 
 namespace nil::crypto3::multiprecision {
 
     // Comparison
 
 // TODO(ioxid): comparison with big_integer and basic types (including signed)
-#define CRYPTO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL(op)                        \
-    template<typename big_integer_t, typename modular_params_t>                   \
-    inline constexpr bool operator op(                                            \
-        const modular_big_integer<big_integer_t, modular_params_t>& a,            \
-        const modular_big_integer<big_integer_t, modular_params_t>& b) noexcept { \
-        return a.compare_eq(b) op true;                                           \
+#define CRYPTO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL(op)                                  \
+    template<typename big_integer_t, typename modular_ops_t>                                \
+    inline constexpr bool operator op(                                                      \
+        const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& a,            \
+        const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& b) noexcept { \
+        return a.compare_eq(b) op true;                                                     \
     }
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL(==)
@@ -40,9 +40,11 @@ namespace nil::crypto3::multiprecision {
         template<typename T>
         constexpr bool is_modular_big_integer_v = false;
 
-        template<typename big_integer_t, typename modular_params_t>
-        constexpr bool
-            is_modular_big_integer_v<modular_big_integer<big_integer_t, modular_params_t>> = true;
+        template<unsigned Bits>
+        constexpr bool is_modular_big_integer_v<modular_big_integer_rt<Bits>> = true;
+
+        template<const auto& modulus>
+        constexpr bool is_modular_big_integer_v<modular_big_integer_ct<modulus>> = true;
 
         template<typename T>
         constexpr bool is_integral_v =
@@ -50,8 +52,7 @@ namespace nil::crypto3::multiprecision {
     }  // namespace modular_detail
 
     namespace detail {
-        template<typename T,
-                 std::enable_if_t<modular_detail::is_modular_big_integer_v<T>, bool> = true>
+        template<typename T, std::enable_if_t<modular_detail::is_modular_big_integer_v<T>, int> = 0>
         constexpr std::size_t get_bits() {
             return T::Bits;
         }
@@ -64,7 +65,7 @@ namespace nil::crypto3::multiprecision {
         std::enable_if_t<modular_detail::is_integral_v<T1> && modular_detail::is_integral_v<T2> && \
                              (modular_detail::is_modular_big_integer_v<T1> ||                      \
                               modular_detail::is_modular_big_integer_v<T2>),                       \
-                         bool> = true,                                                             \
+                         int> = 0,                                                                 \
         typename result_t = T1>
 
 #define CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                              \
@@ -72,35 +73,39 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<modular_detail::is_modular_big_integer_v<modular_big_integer_t> && \
                                   modular_detail::is_integral_v<T> &&                            \
                                   detail::get_bits<T>() <= modular_big_integer_t::Bits,          \
-                              bool> = true>
+                              int> = 0>
 
 #define CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE                                          \
     template<typename modular_big_integer_t,                                                   \
              std::enable_if_t<modular_detail::is_modular_big_integer_v<modular_big_integer_t>, \
-                              bool> = true>
+                              int> = 0>
 
     // Arithmetic operations
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
-        result_t tmp{a};
-        // eval_add(tmp, b);
-        return tmp;
+        BOOST_ASSERT(a.modular_ops().compare_eq(b.modular_ops()));
+        result_t result{a};
+        a.modular_ops().add(result.base_data(), b.base_data());
+        return result;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator+=(modular_big_integer_t& a, const T& b) noexcept {
-        // eval_add<modular_big_integer_t::Bits>(a, b);
+        BOOST_ASSERT(a.modular_ops().compare_eq(b.modular_ops()));
+        a.modular_ops().add(a.base_data(), b.base_data());
         return a;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator++(modular_big_integer_t& a) noexcept {
-        // eval_increment(a);
+        // TODO(ioxid): implement faster
+        a += static_cast<modular_big_integer_t>(1u);
         return a;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator++(modular_big_integer_t& a, int) noexcept {
         auto copy = a;
-        // eval_increment(a);
+        // TODO(ioxid): implement faster
+        a += static_cast<modular_big_integer_t>(1u);
         return copy;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
@@ -108,24 +113,26 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
-        result_t tmp;
-        // eval_subtract(tmp, a, b);
+        result_t tmp{a};
+        detail::subtract(tmp, b);
         return tmp;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator-=(modular_big_integer_t& a, const T& b) {
-        // eval_subtract(a, b);
+        detail::subtract(a, b);
         return a;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator--(modular_big_integer_t& a) noexcept {
-        // eval_decrement(a);
+        // TODO(ioxid): implement faster
+        a -= static_cast<modular_big_integer_t>(1u);
         return a;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator--(modular_big_integer_t& a, int) noexcept {
         auto copy = a;
-        // eval_decrement(a);
+        // TODO(ioxid): implement faster
+        a -= static_cast<modular_big_integer_t>(1u);
         return copy;
     }
 
@@ -138,34 +145,51 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
+        BOOST_ASSERT(a.modular_ops().compare_eq(b.modular_ops()));
         result_t result{a};
-        eval_multiply(result, b);
+        a.modular_ops().mul(result.base_data(), b.base_data());
         return result;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator*=(modular_big_integer_t& a, const T& b) noexcept {
-        // eval_multiply(a, b);
+        BOOST_ASSERT(a.modular_ops().compare_eq(b.modular_ops()));
+        a.modular_ops().add(a.base_data(), b.base_data());
         return a;
     }
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
         result_t result;
-        // eval_divide(result, a, b);
+        eval_divide(result, a, b);
         return result;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator/=(modular_big_integer_t& a, const T& b) noexcept {
-        // eval_divide(a, b);
+        eval_divide(a, b);
         return a;
+    }
+
+    template<class big_integer_t, typename modular_ops_t>
+    constexpr bool is_zero(
+        const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& val) noexcept {
+        return is_zero(val.base_data());
+    }
+
+    // Hash
+
+    template<typename big_integer_t, typename modular_ops_t>
+    inline constexpr std::size_t hash_value(
+        const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& val) noexcept {
+        return hash_value(val.base_data());
     }
 
     // IO
 
-    template<unsigned Bits, typename modular_params_t>
+    template<unsigned Bits, typename modular_ops_t>
     std::ostream& operator<<(
-        std::ostream& os, const modular_big_integer<big_integer<Bits>, modular_params_t>& value) {
-        os << value.base_data();
+        std::ostream& os,
+        const detail::modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& value) {
+        os << value.str();
         return os;
     }
 
@@ -173,29 +197,3 @@ namespace nil::crypto3::multiprecision {
 #undef CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
 #undef CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
 }  // namespace nil::crypto3::multiprecision
-
-// TODO(ioxid): should use this optimization?
-// // We need to specialize this function, because default boost implementation is "return
-// a.compare(b)
-// // == 0;", which is waay slower.
-// template<unsigned Bits, typename modular_params_t, expression_template_option
-// ExpressionTemplates> inline constexpr bool operator==(
-//     const number<big_integer_ts::modular_big_integer<big_integer<Bits>, modular_params_t>,
-//                  ExpressionTemplates> &a,
-//     const number<big_integer_ts::modular_big_integer<big_integer<Bits>, modular_params_t>,
-//                  ExpressionTemplates> &b) {
-//     return a.big_integer_t().compare_eq(b.big_integer_t());
-// }
-//
-// // We need to specialize this function, because default boost implementation is "return
-// a.compare(b)
-// // == 0;", which is waay slower.
-// template<unsigned Bits, typename modular_params_t, expression_template_option
-// ExpressionTemplates> inline constexpr bool operator!=(
-//     const number<big_integer_ts::modular_big_integer<big_integer<Bits>, modular_params_t>,
-//                  ExpressionTemplates> &a,
-//     const number<big_integer_ts::modular_big_integer<big_integer<Bits>, modular_params_t>,
-//                  ExpressionTemplates> &b) {
-//     return !a.big_integer_t().compare_eq(b.big_integer_t());
-// }
-// }
