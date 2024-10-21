@@ -164,15 +164,15 @@ namespace nil {
                             0, basic_domain->m, FieldType::value_type::one());
                         polynomial_dfs_type zero_polynomial(
                             0, basic_domain->m, FieldType::value_type::zero());
-                        polynomial_dfs_type mask_assignment =
-                            one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
+                        polynomial_dfs_type mask_assignment = one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
+                        polynomial_dfs_type lagrange0 = preprocessed_data.common_data.lagrange_0;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
-                            prepare_lookup_value(mask_assignment);
+                            prepare_lookup_value(mask_assignment, lagrange0);
                         auto& lookup_value = *lookup_value_ptr;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_input_ptr =
-                            prepare_lookup_input();
+                            prepare_lookup_input(mask_assignment, lagrange0);
                         auto& lookup_input = *lookup_input_ptr;
 
                         // 3. Lookup_input and lookup_value are ready
@@ -280,10 +280,10 @@ namespace nil {
 
                             polynomial_dfs_type current_poly = V_L;
                             polynomial_dfs_type previous_poly = V_L;
-                            // We need to store all the values of current_poly. Suddenly this increases the RAM usage, but 
+                            // We need to store all the values of current_poly. Suddenly this increases the RAM usage, but
                             // there's no other way to parallelize this loop.
                             std::vector<polynomial_dfs_type> all_polys(1, V_L);
-                            
+
                             for (std::size_t i = 0; i < lookup_alphas.size(); ++i) {
 
                                 parallel_for(0, preprocessed_data.common_data.desc.usable_rows_amount,
@@ -310,7 +310,7 @@ namespace nil {
                                     }
                                 },
                                 ThreadPool::PoolLevel::HIGH));
- 
+
                             std::size_t last = lookup_alphas.size();
                             F_dfs_2_parts.back() = previous_poly * gs[last] - V_L_shifted * hs[last];
                             F_dfs[2] += polynomial_sum<FieldType>(std::move(F_dfs_2_parts));
@@ -373,11 +373,11 @@ namespace nil {
                                 parallel_for(lookup_part_start_indices[current_part], lookup_part_start_indices[current_part + 1],
                                     [&g_multipliers, &one, &beta, &part1, &gamma, &lookup_input, &lookup_value, &lookup_part_start_indices, &current_part, this](std::size_t i) {
                                     if (i < lookup_input.size()) {
-                                        g_multipliers[i - lookup_part_start_indices[current_part]] = 
+                                        g_multipliers[i - lookup_part_start_indices[current_part]] =
                                             (one + beta) * (gamma + lookup_input[i]);
                                     } else {
                                         auto lookup_shifted = math::polynomial_shift(lookup_value[i - lookup_input.size()], 1, this->basic_domain->m);
-                                        g_multipliers[i - lookup_part_start_indices[current_part]] = 
+                                        g_multipliers[i - lookup_part_start_indices[current_part]] =
                                             part1 + lookup_value[i - lookup_input.size()] + beta * lookup_shifted;
                                     }
                                 }, ThreadPool::PoolLevel::HIGH);
@@ -414,7 +414,7 @@ namespace nil {
                                 parallel_for(lookup_part_start_indices[current_part], lookup_part_start_indices[current_part + 1],
                                     [&sorted, &h_multipliers, &one, &beta, &gamma, &lookup_part_start_indices, &current_part, this](std::size_t i) {
                                     auto sorted_shifted = math::polynomial_shift(sorted[i], 1, this->basic_domain->m);
-                                    h_multipliers[i - lookup_part_start_indices[current_part]] = 
+                                    h_multipliers[i - lookup_part_start_indices[current_part]] =
                                         (one + beta) * gamma + sorted[i] + beta * sorted_shifted;
 
                                 }, ThreadPool::PoolLevel::HIGH);
@@ -468,14 +468,22 @@ namespace nil {
                     }
 
                     std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_value(
-                            const polynomial_dfs_type& mask_assignment) {
+                        const polynomial_dfs_type &mask_assignment,
+                        const polynomial_dfs_type &lagrange0
+                    ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup value");
 
                         // Prepare lookup value
                         auto lookup_value_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         for (std::size_t t_id = 0; t_id < lookup_tables.size(); t_id++) {
                             const plonk_lookup_table<FieldType> &l_table = lookup_tables[t_id];
-                            const polynomial_dfs_type &lookup_tag = plonk_columns.selector(l_table.tag_index);
+                            polynomial_dfs_type lookup_tag;
+                            if(l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED )
+                                lookup_tag = mask_assignment;
+                            else if( l_table.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED )
+                                lookup_tag = mask_assignment - lagrange0;
+                            else
+                                lookup_tag = plonk_columns.selector(l_table.tag_index);
 
                             // Increase the size to fit the next table values.
                             std::size_t lookup_values_used = lookup_value_ptr->size();
@@ -489,14 +497,16 @@ namespace nil {
                                         v += theta_acc * lookup_tag * plonk_columns.constant(l_table.lookup_options[o_id][i].index);
                                         theta_acc *= this->theta;
                                     }
-                                    v *= mask_assignment;
                                     (*lookup_value_ptr)[lookup_values_used + o_id] = v;
                                 }, ThreadPool::PoolLevel::HIGH);
                         }
                         return std::move(lookup_value_ptr);
                     }
 
-                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input() {
+                    std::unique_ptr<std::vector<polynomial_dfs_type>> prepare_lookup_input(
+                        const polynomial_dfs_type &mask_assignment,
+                        const polynomial_dfs_type &lagrange0
+                    ) {
                         PROFILE_SCOPE("Lookup argument preparing lookup input");
 
                         using polynomial_dfs_variable_type = plonk_variable<polynomial_dfs_type>;
@@ -504,7 +514,14 @@ namespace nil {
                         // Prepare lookup input
                         auto lookup_input_ptr = std::make_unique<std::vector<polynomial_dfs_type>>();
                         for (const auto &gate : lookup_gates) {
-                            polynomial_dfs_type lookup_selector = plonk_columns.selector(gate.tag_index);
+                            polynomial_dfs_type lookup_selector;
+                            if( gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED ){
+                                lookup_selector = mask_assignment;
+                            } else if( gate.tag_index == PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED ){
+                                lookup_selector = mask_assignment - lagrange0;
+                            } else {
+                                lookup_selector = plonk_columns.selector(gate.tag_index);
+                            }
 
                             // Increase the size to fit the next table values.
                             std::size_t lookup_inputs_used = lookup_input_ptr->size();
@@ -528,7 +545,7 @@ namespace nil {
 
                                         // For each variable with a rotation pre-compute its value.
                                         std::unordered_map<polynomial_dfs_variable_type, polynomial_dfs_type> rotated_variable_values;
-                
+
                                         math::expression_for_each_variable_visitor<polynomial_dfs_variable_type> visitor(
                                             [&rotated_variable_values, &assignments=plonk_columns, &domain=basic_domain]
                                             (const polynomial_dfs_variable_type& var) {
@@ -538,7 +555,7 @@ namespace nil {
                                         });
                                         visitor.visit(expr);
 
-                                        math::cached_expression_evaluator<DfsVariableType> evaluator(expr, 
+                                        math::cached_expression_evaluator<DfsVariableType> evaluator(expr,
                                             [&domain=basic_domain, &assignments=plonk_columns, &rotated_variable_values]
                                             (const polynomial_dfs_variable_type &var) -> const polynomial_dfs_type& {
                                                 if (var.rotation == 0) {
@@ -638,10 +655,7 @@ namespace nil {
                         std::unordered_map<typename FieldType::value_type, std::size_t> sorting_map;
                         for (std::size_t i = 0; i < reduced_value.size(); i++) {
                             for (std::size_t j = 0; j < usable_rows_amount; j++) {
-                                if(sorting_map.find(reduced_value[i][j]) != sorting_map.end())
-                                    sorting_map[reduced_value[i][j]]++;
-                                else
-                                    sorting_map[reduced_value[i][j]] = 1;
+                                sorting_map[reduced_value[i][j]] = 1;
                             }
                         }
 
@@ -660,7 +674,6 @@ namespace nil {
                         );
                         std::size_t i1 = 0;
                         std::size_t j1 = 0;
-                        typename FieldType::value_type prev = FieldType::value_type::zero();
 
                         auto append_to_sorted = [usable_rows_amount, &sorted, &i1, &j1] (
                                 const typename FieldType::value_type& value) {
@@ -673,24 +686,12 @@ namespace nil {
 
                         for (std::size_t i = 0; i < reduced_value.size(); i++) {
                             for (std::size_t j = 0; j < usable_rows_amount; j++) {
-                                if (reduced_value[i][j] != prev) {
-                                    if (prev == FieldType::value_type::zero()) {
-                                        BOOST_ASSERT(j1 < usable_rows_amount);
-                                        append_to_sorted(prev);
-                                    } else {
-                                        for (std::size_t k = 0; k < sorting_map[prev]; k++) {
-                                            BOOST_ASSERT(j1 < usable_rows_amount);
-                                            append_to_sorted(prev);
-                                        }
-                                    }
-                                    prev = reduced_value[i][j];
+                                typename FieldType::value_type val = reduced_value[i][j];
+                                for (std::size_t k = 0; k < sorting_map[val]; k++) {
+                                    BOOST_ASSERT(j1 < usable_rows_amount);
+                                    append_to_sorted(val);
                                 }
-                            }
-                        }
-                        if (prev != FieldType::value_type::zero()) {
-                            for (std::size_t k = 0; k < sorting_map[prev]; k++) {
-                                //BOOST_ASSERT(j1 < usable_rows_amount);
-                                append_to_sorted(prev);
+                                sorting_map[val] = 1;
                             }
                         }
 
@@ -783,8 +784,6 @@ namespace nil {
                                     shifted_v += theta_acc * evaluations[shifted_key1]* shifted_selector_value;
                                     theta_acc *= theta;
                                 }
-                                v *= mask_value;
-                                shifted_v *= shifted_mask_value;
                                 lookup_value.push_back(v);
                                 shifted_lookup_value.push_back(shifted_v);
                             }

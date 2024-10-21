@@ -70,14 +70,6 @@ std::optional<std::string> initialize_sha256_circuit(
     nil::blueprint::components::generate_circuit(component_instance, sha256_circuit,
                                                  sha256_table, input, 0);
 
-    std::size_t cur_selector_id = 0;
-    for (const auto& gate : sha256_circuit.gates()) {
-        cur_selector_id = std::max(cur_selector_id, gate.selector_index);
-    }
-    for (const auto& lookup_gate : sha256_circuit.lookup_gates()) {
-        cur_selector_id = std::max(cur_selector_id, lookup_gate.tag_index);
-    }
-    cur_selector_id++;
     nil::crypto3::zk::snark::pack_lookup_tables_horizontal(
         sha256_circuit.get_reserved_indices(), sha256_circuit.get_reserved_tables(),
         sha256_circuit.get_reserved_dynamic_tables(), sha256_circuit, sha256_table,

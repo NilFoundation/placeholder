@@ -205,19 +205,6 @@ contract modular_verifier_$TEST_NAME$ is IModularVerifier{
             uint256 theta = transcript.get_field_challenge(tr_state, modulus);
 
             state.F[7] = modular_gate_argument.verify(blob[table_offset:table_end_offset], theta);
-            state.F[7] = mulmod(
-                state.F[7],
-                addmod(
-                    1,
-                    modulus - addmod(
-                        basic_marshalling.get_uint256_be(blob, special_selectors_offset),
-                        basic_marshalling.get_uint256_be(blob, special_selectors_offset + 0x40),
-                        modulus
-                    ),
-                    modulus
-                ),
-                modulus
-            );
 //            console.log("F[0] = ", state.F[0]);
 //            console.log("F[1] = ", state.F[1]);
 //            console.log("F[2] = ", state.F[2]);
