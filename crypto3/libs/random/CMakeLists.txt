@@ -43,7 +43,9 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(CMTest)
-cm_add_test_subdirectory(test)
+if(BUILD_CRYPTO3_TESTS)
+    cm_add_test_subdirectory(test)
+endif()
 
 if(BUILD_EXAMPLES)
     add_subdirectory(example)
