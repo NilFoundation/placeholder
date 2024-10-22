@@ -188,7 +188,6 @@ set(PLONK_TESTS_FILES
     "verifiers/placeholder/verifier"
     "verifiers/placeholder/dfri_verifier"
     "verifiers/placeholder/dfri_input_generator"
-    "zkevm/bytecode"
     )
 
 #set(FIELDS_TESTS_FILES
@@ -211,6 +210,8 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/add_sub"
     "zkevm/opcodes/mul"
     "zkevm/opcodes/div"
+    "zkevm/bytecode"
+    "zkevm-bbf/bytecode"
     )
 
 #set(CURVES_TESTS_FILES

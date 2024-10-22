@@ -29,6 +29,10 @@
 #include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 
+#include <nil/crypto3/hash/type_traits.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
+#include <nil/crypto3/hash/keccak.hpp>
+
 namespace nil {
     namespace blueprint {
 
@@ -88,6 +92,29 @@ namespace nil {
                 value_copy >>= chunk_size;
             }
             return chunks;
+        }
+        zkevm_word_type zkevm_keccak_hash(std::vector<uint8_t> input){
+            nil::crypto3::hashes::keccak_1600<256>::digest_type d = nil::crypto3::hash<nil::crypto3::hashes::keccak_1600<256>>(input);
+            nil::crypto3::algebra::fields::field<256>::integral_type n(d);
+            zkevm_word_type result(n);
+
+            return result;
+        }
+
+        template <typename BlueprintFieldType>
+        typename BlueprintFieldType::value_type w_hi(const zkevm_word_type &val){
+            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
+            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_cppui_modular257;
+            return (integral_type(val) & mask) >> 128;
+        }
+
+        template <typename BlueprintFieldType>
+        typename BlueprintFieldType::value_type w_lo(const zkevm_word_type &val){
+            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
+            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257;
+            return integral_type(val) & mask;
         }
     }   // namespace blueprint
 }   // namespace nil

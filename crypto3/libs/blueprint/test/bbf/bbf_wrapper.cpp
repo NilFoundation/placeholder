@@ -51,7 +51,7 @@ template <typename BlueprintFieldType>
 void test_bbf_wrapper(std::vector<typename BlueprintFieldType::value_type> public_input) {
     constexpr std::size_t WitnessColumns = 15;    // TODO
     constexpr std::size_t PublicInputColumns = 1; // TODO
-    constexpr std::size_t ConstantColumns = 3;    // TODO
+    constexpr std::size_t ConstantColumns = 4;    // TODO
     constexpr std::size_t SelectorColumns = 9;    // TODO
 
     // table configuration, TODO: We need 108 rows because test_plonk_component.hpp places the component at a random row 0..100.
