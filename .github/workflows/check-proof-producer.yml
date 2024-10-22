@@ -158,7 +158,7 @@ jobs:
 
       - name: List artifacts
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
-        run: find .
+        run: find . -printf '%t %p\n'
 
       - name: Make proofs for pairs
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
@@ -169,41 +169,25 @@ jobs:
           fi
           targets_str=$(echo "${{ needs.prepare-targets.outputs.prover-targets }}" | awk '{$1=$1};1' | sed '/^$/d' | tr '\n' ' ' | sed 's/ $//')
           echo "targets from input: ${targets_str}"
-          ${{ github.workspace }}/proof-producer/tests/make_proof_for_pairs.sh --use-nix ${extra_args} ${targets_str}
+          targets_arr=($targets_str)
+          new_targets_str=""
+          for artifact in "${targets_arr[@]}"; do
+            new_artifact_name=transpiler_output_"$artifact"
+            mv "$artifact" "$new_artifact_name"
+            new_targets_str="$new_targets_str $new_artifact_name"
+          done
+          echo "targets for output: ${new_targets_str}"
+          ${{ github.workspace }}/proof-producer/tests/make_proof_for_pairs.sh --use-nix ${extra_args} ${new_targets_str}
+          # Leave only relevant transpiler_output_* folders
+          rm -rf ${RUNNER_TEMP}/transpiler_output/
+          mkdir -p ${RUNNER_TEMP}/transpiler_output/
+          mv transpiler_output_* ${RUNNER_TEMP}/transpiler_output/
+          rm -rf *
+          mv ${RUNNER_TEMP}/transpiler_output/* .
 
-      - name: Download transpiler output artifact
-        id: download-to-artifact
-        uses: dawidd6/action-download-artifact@v3
-        with:
-          repo: NilFoundation/zkLLVM
-          name: ${{ env.TO_ARTIFACT_NAME }}
-          path: ${{ steps.strings.outputs.artifact-dir }}
-          run_id: ${{ needs.get-zkllvm-run.outputs.run-id }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge proofs into transpiler output
+      - name: List artifacts
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
-        run: |
-          copy_failed=0
-          while read dir; do
-            base_name=${dir#./transpiler_output_}
-
-            if [[ -d "$base_name" ]]; then
-              if ! cp "${base_name}/proof.bin" "${dir}/"; then
-                # fails if artifact contains dirs targets we didn't produce proofs for
-                echo "Failed to copy proof.bin to ${dir}" >&2
-                copy_failed=1
-              else
-                echo "proof.bin added to ${dir}"
-              fi
-            else
-              echo "Error: No matching directory found for ${dir}" >&2
-            fi
-          done < <(find . -type d -name "transpiler_output_*")
-
-          if [ $copy_failed -eq 1 ]; then
-            echo "One or more copy operations failed." >&2
-          fi
+        run: find . -printf '%t %p\n'
 
       - name: Set aritfact name
         id: artifact-name
@@ -215,7 +199,7 @@ jobs:
         with:
           name: ${{ steps.artifact-name.outputs.merged }}
           path: |
-            ${{ steps.strings.outputs.artifact-dir }}/transpiler_output_*
+            ${{ steps.strings.outputs.artifact-dir }}
 
       # TODO: add package derivation to nix, upload its result
       # - name: Upload .deb package
