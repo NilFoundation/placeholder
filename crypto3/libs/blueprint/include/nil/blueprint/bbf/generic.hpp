@@ -131,7 +131,7 @@ namespace nil {
                 }
             };
 
-            // Converts the given expression to become relative to the fiven row shift using rotations.
+            // Converts the given expression to become relative to the given row shift using rotations.
             template<typename VariableType>
             class expression_relativize_visitor : public boost::static_visitor<crypto3::math::expression<VariableType>> {
             private:
@@ -192,11 +192,17 @@ namespace nil {
                 }
 
                 bool is_allocated(std::size_t col, std::size_t row, column_type t) {
-                    if (col >= log[t].size() || row >= log[t][col].size()) {
+                    if (col >= log[t].size()) {
                         std::stringstream error;
-                        error << "Invalid value col = " << col << ", row = " << row 
+                        error << "Invalid value col = " << col 
                             << " when checking if a " << t << " cell is allocated. We have "
-                            << log[t].size() << " columns each having "
+                            << log[t].size() << " columns.";
+                        throw std::out_of_range(error.str());
+                    }
+                    if (row >= log[t][col].size()) {
+                        std::stringstream error;
+                        error << "Invalid value row = " << row 
+                            << " when checking if a " << t << " cell is allocated. Column " << col << " has "
                             << log[t][col].size() << " rows.";
                         throw std::out_of_range(error.str());
                     }
@@ -204,11 +210,17 @@ namespace nil {
                 }
 
                 void mark_allocated(std::size_t col, std::size_t row, column_type t) {
-                    if (col >= log[t].size() || row >= log[t][col].size()) {
+                    if (col >= log[t].size()) {
                         std::stringstream error;
-                        error << "Invalid value col = " << col << ", row = " << row 
+                        error << "Invalid value col = " << col 
                             << " when marking a " << t << " cell allocated. We have "
-                            << log[t].size() << " columns each having "
+                            << log[t].size() << " columns.";
+                        throw std::out_of_range(error.str());
+                    }
+                    if (row >= log[t][col].size()) {
+                        std::stringstream error;
+                        error << "Invalid value row = " << row 
+                            << " when marking a " << t << " cell allocated. Column " << col << " has "
                             << log[t][col].size() << " rows.";
                         throw std::out_of_range(error.str());
                     }
@@ -323,6 +335,14 @@ namespace nil {
                     std::shared_ptr<allocation_log<FieldType>> alloc_log;
 
                 protected:
+                    static assignment_description_type add_rows_to_description(
+                        const assignment_description_type& input_desc, std::size_t max_rows) {
+                        assignment_description_type desc = input_desc;
+                        desc.usable_rows_amount += max_rows;
+                        desc.rows_amount = std::pow(2, std::ceil(std::log2(desc.usable_rows_amount)));
+                        return desc;
+                    }
+
                     std::vector<std::size_t> col_map[column_type::COLUMN_TYPES_COUNT];
                     std::size_t row_shift = 0; // united, for all column types
                     std::size_t max_rows;
@@ -335,10 +355,12 @@ namespace nil {
             template<typename FieldType>
             class context<FieldType, GenerationStage::ASSIGNMENT> : public basic_context<FieldType> { // assignment-specific definition
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_constraint_type = std::pair<std::string,std::vector<typename FieldType::value_type>>;
                 using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>;
                 using basic_context<FieldType>::col_map;
+                using basic_context<FieldType>::add_rows_to_description;
 
                 public:
                     using TYPE = typename FieldType::value_type;
@@ -350,12 +372,12 @@ namespace nil {
                 public:
 
                     context(assignment_type &assignment_table, std::size_t max_rows)
-                        : basic_context<FieldType>(assignment_table.get_description(), max_rows)
+                        : basic_context<FieldType>(add_rows_to_description(assignment_table.get_description(), max_rows), max_rows)
                         , at(assignment_table)
                     { };
 
                     context(assignment_type &assignment_table, std::size_t max_rows, std::size_t row_shift)
-                        : basic_context<FieldType>(assignment_table.get_description(), max_rows, row_shift)
+                        : basic_context<FieldType>(add_rows_to_description(assignment_table.get_description(), max_rows), max_rows, row_shift)
                         , at(assignment_table)
                     { };
 
@@ -462,6 +484,7 @@ namespace nil {
                 using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>;
                                                             // ^^^ name -> (columns, rows)
                 using basic_context<FieldType>::col_map;
+                using basic_context<FieldType>::add_rows_to_description;
 
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
@@ -475,15 +498,23 @@ namespace nil {
 
                 public:
 
+                    /**
+                     * \param[in] desc - this assignment table description actually shows the used part of the table,
+                     *                   and 'max_rows' rows will be added to it.
+                     */
                     context(const assignment_description_type& desc, std::size_t max_rows)
-                            : desc(desc)
-                            , basic_context<FieldType>(desc, max_rows) {
+                            : desc(add_rows_to_description(desc, max_rows))
+                            , basic_context<FieldType>(add_rows_to_description(desc, max_rows), max_rows) {
                         reset_storage();
                     }
 
+                    /**
+                     * \param[in] desc - this assignment table description actually shows the used part of the table,
+                     *                   and 'max_rows' rows will be added to it.
+                     */
                     context(const assignment_description_type& desc, std::size_t max_rows, std::size_t row_shift)
-                            : desc(desc)
-                            , basic_context<FieldType>(desc, max_rows, row_shift) {
+                            : desc(add_rows_to_description(desc, max_rows))
+                            , basic_context<FieldType>(add_rows_to_description(desc, max_rows), max_rows, row_shift) {
                         reset_storage();
                     }
 
