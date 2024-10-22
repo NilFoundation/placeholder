@@ -29,7 +29,7 @@ make_proof_for_pair() {
     if [ -f "$crct_file" ]; then
         mkdir -p "$proof_dir"  # Ensure the output directory exists
         echo -n "Processing $tbl_file and $crct_file (proof will be at $proof_dir; binary name: $proof_generator_binary): "
-        if $proof_generator_binary -t "$tbl_file" --circuit "$crct_file" --proof "$proof_dir/proof.bin" ${args_to_forward[@]}; then
+        if $proof_generator_binary -t "$tbl_file" --circuit "$crct_file" --proof "$proof_dir/proof.bin" --evm-verifier $proof_dir/ ${args_to_forward[@]}; then
             color_green "success"
         else
             color_red "failed"
