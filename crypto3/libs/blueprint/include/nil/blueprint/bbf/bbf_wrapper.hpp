@@ -219,12 +219,8 @@ namespace nil {
                 // get_description() function returns the actual number of rows used. In order to allow more rows to be used we
                 // must add the max_rows to the returned sizes.
                 std::size_t max_rows = 8;
-                auto desc = assignment.get_description();
-                desc.usable_rows_amount += max_rows;
-                desc.rows_amount = std::pow(2, std::ceil(std::log2(desc.usable_rows_amount)));
-
-                context_type ct = context_type(desc, max_rows, start_row_index); // max_rows = 8
-                TYPE const_test = TYPE() + 5; // TODO: this is a workaround!!! we need a normal way to assign constants to constraint type!
+                context_type ct = context_type(assignment.get_description(), max_rows, start_row_index); // max_rows = 8
+                TYPE const_test = 5; // TODO: this is a workaround!!! we need a normal way to assign constants to constraint type!
                 ct.allocate(const_test,0,0,bbf::column_type::constant);
 
                 Is_Zero c1 = Is_Zero(ct, instance_input.x);
