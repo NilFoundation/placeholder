@@ -660,13 +660,19 @@ namespace nil {
 
             template<typename FieldType, GenerationStage stage>
             class generic_component {
+            public:
+                using TYPE = typename std::conditional<static_cast<bool>(stage),
+                             crypto3::zk::snark::plonk_constraint<FieldType>,
+                             typename FieldType::value_type>::type;
+                using context_type = context<FieldType, stage>;
+                using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
+                struct table_params {
+                    std::size_t witnesses;
+                    std::size_t public_inputs;
+                    std::size_t constants;
+                    std::size_t rows;
+                };
                 public:
-                    struct table_params {
-                        std::size_t witnesses;
-                        std::size_t public_inputs;
-                        std::size_t constants;
-                        std::size_t rows;
-                    };
                     using TYPE = typename std::conditional<static_cast<bool>(stage),
                                  crypto3::zk::snark::plonk_constraint<FieldType>,
                                  typename FieldType::value_type>::type;
@@ -680,6 +686,11 @@ namespace nil {
                 static table_params get_minimal_requirements() {
                     return {0,0,0,0};
                 }
+
+            public:
+                    static table_params get_minimal_requirements() {
+                        return {0,0,0,0};
+                    }
 
                 void allocate(TYPE &C, column_type t = column_type::witness) {
                     auto [col, row] = ct.next_free_cell(t);
