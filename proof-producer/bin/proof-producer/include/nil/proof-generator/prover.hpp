@@ -196,17 +196,14 @@ namespace nil {
 
                 // Does not support public input columns.
                 if( table_description_->public_input_columns != 0 ) {
-                    std::cout << "I have real input" << std::endl;
                     std::size_t max_non_zero = 0;
                     const auto&public_input = assignment_table_->public_input(0);
-                    std::cout << "Public input size = " << public_input.size() << std::endl;
                     for (std::size_t i = 0; i < public_input.size(); i++) {
                         std::cout << "i = " << i << public_input[i] << std::endl;
                         if (public_input[i] != 0u) {
                             max_non_zero = i + 1;
                         }
                     }
-                    std::cout << "Max non zero = "  << max_non_zero << std::endl;
                     for (std::size_t i = 0; i < std::min(public_input.size(), max_non_zero); i++) {
                         pi_stream << public_input[i] << "\n";
                     }
