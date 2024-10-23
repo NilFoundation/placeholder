@@ -53,10 +53,18 @@ namespace nil {
                             return;
                         }
 
+                        std::cout << "Multiplying by scalar: " << scalar << std::endl;
+
                         const size_t window_size = 3;
                         auto integral_scalar = static_cast<typename CurveElementType::params_type::scalar_field_type::integral_type>(scalar.data);
+                        std::cout << "Integral scalar: " << integral_scalar << std::endl;
 
                         auto naf = boost::multiprecision::eval_find_wnaf_a(window_size + 1, integral_scalar.backend());
+                        std::cout << "naf: ";
+                        for(auto x: naf) {
+                            std::cout << x << " ";
+                        }
+                        std::cout << std::endl;
                         std::array<CurveElementType, 1ul << window_size > table;
                         CurveElementType dbl = base;
                         dbl.double_inplace();
