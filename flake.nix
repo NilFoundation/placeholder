@@ -33,6 +33,7 @@
           crypto3-debug-tests = (pkgs.callPackage ./crypto3.nix {
             enableDebug = true;
             runTests = true;
+            sanitize = true;
           });
           crypto3-sanitize = (pkgs.callPackage ./crypto3.nix {
             enableDebug = true;
