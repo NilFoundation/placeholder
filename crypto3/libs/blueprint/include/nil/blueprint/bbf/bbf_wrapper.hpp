@@ -216,8 +216,6 @@ namespace nil {
                 using component_type = plonk_bbf_wrapper<BlueprintFieldType>;
                 using var = typename component_type::var;
 
-                // get_description() function returns the actual number of rows used. In order to allow more rows to be used we
-                // must add the max_rows to the returned sizes.
                 std::size_t max_rows = 8;
                 context_type ct = context_type(assignment.get_description(), max_rows, start_row_index); // max_rows = 8
                 TYPE const_test = 5; // TODO: this is a workaround!!! we need a normal way to assign constants to constraint type!

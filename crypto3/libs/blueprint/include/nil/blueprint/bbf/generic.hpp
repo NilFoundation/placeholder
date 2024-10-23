@@ -33,6 +33,7 @@
 
 #include <boost/log/trivial.hpp>
 
+#include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
@@ -41,196 +42,14 @@
 #include <nil/blueprint/component.hpp>
 //#include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/gate_id.hpp>
+#include <nil/blueprint/bbf/expresion_visitor_helpers.hpp>
+#include <nil/blueprint/bbf/allocation_log.hpp>
+#include <nil/blueprint/bbf/enums.hpp>
+#include <nil/blueprint/bbf/row_selector.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
-
-            enum class GenerationStage { ASSIGNMENT = 0, CONSTRAINTS = 1 };
-
-            enum column_type { witness = 0, public_input = 1, constant = 2, COLUMN_TYPES_COUNT = 3};
-
-            std::ostream &operator<<(std::ostream &os, const column_type &t) {
-                std::map<column_type, std::string> type_map = {
-                    {column_type::witness, "witness"},
-                    {column_type::public_input, "public input"},
-                    {column_type::constant, "constant"},
-                    {column_type::COLUMN_TYPES_COUNT, " "}
-                };
-                os << type_map[t];
-                return os;
-            }
-
-            // Checks if an expression is just a single variable.
-            template<typename VariableType>
-            class expression_is_variable_visitor : public boost::static_visitor<bool> {
-            public:
-                expression_is_variable_visitor() {}
-
-                static bool is_var(const crypto3::math::expression<VariableType>& expr) {
-                    expression_is_variable_visitor v = expression_is_variable_visitor();
-                    return boost::apply_visitor(v, expr.get_expr());
-                }
-
-                bool operator()(const crypto3::math::term<VariableType>& term) {
-                    return ((term.get_vars().size() == 1) && term.get_coeff().is_one());
-                }
-
-                bool operator()(const crypto3::math::pow_operation<VariableType>& pow) {
-                    return false;
-                }
-
-                bool operator()(const crypto3::math::binary_arithmetic_operation<VariableType>& op) {
-                    return false;
-                }
-            };
-
-            // Returns the range of rows used by the given expression. The first bool value returns if the expression
-            // has any variables or not, I.E. if it's false, the other 2 values have no meaning.
-            template<typename VariableType>
-            class expression_row_range_visitor : public boost::static_visitor<std::tuple<bool,int32_t,int32_t>> {
-            public:
-                expression_row_range_visitor() {}
-
-                static std::tuple<bool,int32_t,int32_t> row_range(const crypto3::math::expression<VariableType>& expr) {
-                    expression_row_range_visitor v = expression_row_range_visitor();
-                    return boost::apply_visitor(v, expr.get_expr());
-                }
-
-                std::tuple<bool,int32_t,int32_t> operator()(const crypto3::math::term<VariableType>& term) {
-                    bool has_vars = false;
-                    int32_t min_row, max_row;
-
-                    if (term.get_vars().size() > 0) {
-                        has_vars = true;
-                        min_row = term.get_vars()[0].rotation;
-                        max_row = term.get_vars()[0].rotation;
-                        for(std::size_t i = 1; i < term.get_vars().size(); i++) {
-                            min_row = std::min(min_row, term.get_vars()[i].rotation);
-                            max_row = std::max(max_row, term.get_vars()[i].rotation);
-                        }
-                    }
-                    return {has_vars, min_row, max_row};
-                }
-
-                std::tuple<bool,int32_t,int32_t> operator()(const crypto3::math::pow_operation<VariableType>& pow) {
-                    return boost::apply_visitor(*this, pow.get_expr().get_expr());
-                }
-
-                std::tuple<bool,int32_t,int32_t> operator()(const crypto3::math::binary_arithmetic_operation<VariableType>& op) {
-                    auto [A_has_vars, A_min, A_max] = boost::apply_visitor(*this, op.get_expr_left().get_expr());
-                    auto [B_has_vars, B_min, B_max] = boost::apply_visitor(*this, op.get_expr_right().get_expr());
-
-                    if (!A_has_vars) {
-                        return {B_has_vars, B_min, B_max};
-                    }
-                    if (!B_has_vars) {
-                        return {A_has_vars, A_min, A_max};
-                    }
-                    return {true, std::min(A_min,B_min), std::max(A_max,B_max)};
-                }
-            };
-
-            // Converts the given expression to become relative to the given row shift using rotations.
-            template<typename VariableType>
-            class expression_relativize_visitor : public boost::static_visitor<crypto3::math::expression<VariableType>> {
-            private:
-                int32_t shift;
-            public:
-                expression_relativize_visitor(int32_t shift_) : shift(shift_) {}
-
-                static crypto3::math::expression<VariableType>
-                relativize(const crypto3::math::expression<VariableType>& expr, int32_t shift) {
-                    expression_relativize_visitor v = expression_relativize_visitor(shift);
-                    return boost::apply_visitor(v, expr.get_expr());
-                }
-
-                crypto3::math::expression<VariableType>
-                operator()(const crypto3::math::term<VariableType>& term) {
-                    std::vector<VariableType> vars = term.get_vars();
-
-                    for(std::size_t i = 0; i < vars.size(); i++) {
-                        vars[i].relative = true;
-                        vars[i].rotation += shift;
-                        if (std::abs(vars[i].rotation) > 1) {
-                            BOOST_LOG_TRIVIAL(warning) << "Rotation exceeds 1 after relativization in term " << term << ".\n";
-                        }
-                    }
-
-                    return crypto3::math::term<VariableType>(vars, term.get_coeff());
-                }
-
-                crypto3::math::expression<VariableType>
-                operator()(const crypto3::math::pow_operation<VariableType>& pow) {
-                    return crypto3::math::pow_operation<VariableType>(
-                        boost::apply_visitor(*this, pow.get_expr().get_expr()),
-                        pow.get_power());
-                }
-
-                crypto3::math::expression<VariableType>
-                operator()(const crypto3::math::binary_arithmetic_operation<VariableType>& op) {
-                    return crypto3::math::binary_arithmetic_operation<VariableType>(
-                        boost::apply_visitor(*this, op.get_expr_left().get_expr()),
-                        boost::apply_visitor(*this, op.get_expr_right().get_expr()),
-                        op.get_op());
-                }
-            };
-
-            // A class for storing the information on which cells in the assignment table is already allocated/used.
-            template<typename FieldType>
-            class allocation_log {
-            public:
-                using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
-
-                allocation_log(const assignment_description_type& desc) {
-                    log[column_type::witness] = std::vector<std::vector<bool>>(
-                        desc.witness_columns, std::vector<bool>(desc.usable_rows_amount));
-                    log[column_type::public_input] = std::vector<std::vector<bool>>(
-                        desc.public_input_columns, std::vector<bool>(desc.usable_rows_amount));
-                    log[column_type::constant] = std::vector<std::vector<bool>>(
-                        desc.constant_columns, std::vector<bool>(desc.usable_rows_amount));
-                }
-
-                bool is_allocated(std::size_t col, std::size_t row, column_type t) {
-                    if (col >= log[t].size()) {
-                        std::stringstream error;
-                        error << "Invalid value col = " << col 
-                            << " when checking if a " << t << " cell is allocated. We have "
-                            << log[t].size() << " columns.";
-                        throw std::out_of_range(error.str());
-                    }
-                    if (row >= log[t][col].size()) {
-                        std::stringstream error;
-                        error << "Invalid value row = " << row 
-                            << " when checking if a " << t << " cell is allocated. Column " << col << " has "
-                            << log[t][col].size() << " rows.";
-                        throw std::out_of_range(error.str());
-                    }
-                    return log[t][col][row];
-                }
-
-                void mark_allocated(std::size_t col, std::size_t row, column_type t) {
-                    if (col >= log[t].size()) {
-                        std::stringstream error;
-                        error << "Invalid value col = " << col 
-                            << " when marking a " << t << " cell allocated. We have "
-                            << log[t].size() << " columns.";
-                        throw std::out_of_range(error.str());
-                    }
-                    if (row >= log[t][col].size()) {
-                        std::stringstream error;
-                        error << "Invalid value row = " << row 
-                            << " when marking a " << t << " cell allocated. Column " << col << " has "
-                            << log[t][col].size() << " rows.";
-                        throw std::out_of_range(error.str());
-                    }
-                    log[t][col][row] = true;
-                }
-
-            private:
-                std::vector<std::vector<bool>> log[column_type::COLUMN_TYPES_COUNT];
-            };
-
             template<typename FieldType>
             class basic_context {
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
@@ -358,7 +177,7 @@ namespace nil {
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_constraint_type = std::pair<std::string,std::vector<typename FieldType::value_type>>;
-                using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>;
+                using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>, row_selector>>;
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
 
@@ -429,7 +248,7 @@ namespace nil {
                     void optimize_gates() {
                         throw std::logic_error("optimize_gates() called at assignment stage.");
                     }
-                    std::vector<std::pair<std::vector<TYPE>, std::set<std::size_t>>> get_constraints() {
+                    std::vector<std::pair<std::vector<TYPE>, row_selector>> get_constraints() {
                         throw std::logic_error("get_constraints() called at assignment stage.");
                     }
                     std::vector<plonk_copy_constraint> get_copy_constraints() {
@@ -440,7 +259,7 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(error) << "get_dynamic_lookup_tables() called at assignment stage.\n";
                         return res;
                     }
-                    std::vector<std::pair<std::vector<lookup_constraint_type>, std::set<std::size_t>>> get_lookup_constraints() {
+                    std::vector<std::pair<std::vector<lookup_constraint_type>, row_selector>> get_lookup_constraints() {
                         throw std::logic_error("get_lookup_constraints() called at assignment stage.");
                     }
 
@@ -475,13 +294,13 @@ namespace nil {
                 using var = crypto3::zk::snark::plonk_variable<value_type>;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
-                using constraints_container_type = std::map<constraint_id_type, std::pair<constraint_type, std::set<std::size_t>>>;
+                using constraints_container_type = std::map<constraint_id_type, std::pair<constraint_type, row_selector>>;
                 using copy_constraints_container_type = std::vector<plonk_copy_constraint>; // TODO: maybe it's a set, not a vec?
                 using lookup_constraints_container_type = std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
-                                                                   std::pair<std::vector<constraint_type>,std::set<std::size_t>>>;
+                                                                   std::pair<std::vector<constraint_type>,row_selector>>;
                                                                    // ^^^ expressions, rows
                 using lookup_constraint_type = std::pair<std::string,std::vector<constraint_type>>; // NB: NOT exactly as plonk!!!
-                using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>;
+                using dynamic_lookup_table_container_type = std::map<std::string,std::pair<std::vector<std::size_t>,row_selector>>;
                                                             // ^^^ name -> (columns, rows)
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
@@ -575,36 +394,33 @@ namespace nil {
                     }
 
                     void lookup(std::vector<TYPE> &C, std::string table_name) {
-                        std::set<std::size_t> base_rows = {};
+                        row_selector base_rows(desc.rows_amount);
 
                         // Choose the best row to relativize. Different expressions in a single lookup might accept
                         // up to 3 different rows for relativization. We take the intersection for all expressions in
                         // the constraint.
                         for(TYPE c_part : C) {
                             auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(c_part);
+
                             if (has_vars) { // NB: not having variables seems to be ok for a part of a lookup expression
                                 if (max_row - min_row > 2) {
-                                    BOOST_LOG_TRIVIAL(warning) << "Expression " << c_part << " in lookup constraint spans over 3 rows!\n";
+                                    BOOST_LOG_TRIVIAL(warning) << "Expression " << c_part <<
+                                        " in lookup constraint spans over 3 rows!\n";
                                 }
                                 std::size_t row = (min_row + max_row)/2;
-                                std::set<std::size_t> current_base_rows = {row};
+                                row_selector current_base_rows(desc.rows_amount);
+                                current_base_rows.set_row(row};
+
                                 if (max_row - min_row <= 1) {
-                                    current_base_rows.insert(row+1);
+                                    current_base_rows.set_row(row + 1);
                                 }
                                 if (max_row == min_row) {
-                                    current_base_rows.insert(row-1);
+                                    current_base_rows.set_row(row - 1);
                                 }
-                                if (base_rows.empty()) {
-                                    base_rows = current_base_rows;
-                                } else {
-                                    std::set<std::size_t> new_base_rows;
-                                    std::set_intersection(base_rows.begin(), base_rows.end(),
-                                                          current_base_rows.begin(), current_base_rows.end(),
-                                                          std::inserter(new_base_rows, new_base_rows.end()));
-                                    base_rows = new_base_rows;
-                                }
+                                base_rows |= current_base_rows;
                             }
                         }
+
                         if (base_rows.empty()) {
                             BOOST_LOG_TRIVIAL(error) << "Lookup constraint expressions have no variables or have incompatible spans!\n";
                         }
@@ -625,7 +441,7 @@ namespace nil {
                         }
                         BOOST_ASSERT(lookup_tables->find(name) == lookup_tables->end());
                         std::vector<std::size_t> cols;
-                        std::set<std::size_t> rows;
+                        row_selector rows;
 
                         for(std::size_t i = 0; i < W.size(); i++) {
                             cols.push_back(col_map[column_type::witness][W[i]]);
@@ -638,7 +454,7 @@ namespace nil {
                     }
 
                     void optimize_gates() {
-                        // NB: std::map<constraint_id_type, std::pair<constraint_type, std::set<std::size_t>>> constraints;
+                        // NB: std::map<constraint_id_type, std::pair<constraint_type, row_selector>> constraints;
                         // intended to
                         // shift some of the constraints so that we have less selectors
                         /*
@@ -652,11 +468,11 @@ namespace nil {
                         */
                     }
 
-                    std::vector<std::pair<std::vector<TYPE>, std::set<std::size_t>>> get_constraints() {
+                    std::vector<std::pair<std::vector<TYPE>, row_selector>> get_constraints() {
                         // joins constraints with identic selectors into a single gate
 
                         // drop the constraint_id from the stored id->(constraint,row_list) map:
-                        std::vector<std::pair<std::vector<TYPE>, std::set<std::size_t>>> res;
+                        std::vector<std::pair<std::vector<TYPE>, row_selector>> res;
                         for(const auto& [id, data] : *constraints) {
                             res.push_back({{data.first},data.second});
                         }
@@ -682,11 +498,11 @@ namespace nil {
                         return *lookup_tables;
                     }
 
-                    std::vector<std::pair<std::vector<lookup_constraint_type>, std::set<std::size_t>>> get_lookup_constraints() {
+                    std::vector<std::pair<std::vector<lookup_constraint_type>, row_selector>> get_lookup_constraints() {
                         // std::map<std::pair<std::string,constraint_id_type>, // <table_name,expressions_id>
-                        //          std::pair<std::vector<constraint_type>,std::set<std::size_t>>> // expressions, rows
+                        //          std::pair<std::vector<constraint_type>,row_selector>> // expressions, rows
 
-                        std::vector<std::pair<std::vector<lookup_constraint_type>, std::set<std::size_t>>> res;
+                        std::vector<std::pair<std::vector<lookup_constraint_type>, row_selector>> res;
                         for(const auto& [id, data] : *lookup_constraints) {
                             res.push_back({{{id.first,data.first}}, data.second});
                         }
