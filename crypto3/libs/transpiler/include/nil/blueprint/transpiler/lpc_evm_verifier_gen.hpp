@@ -831,8 +831,8 @@ namespace nil {
 
             void print(){
                 if(_use_lookups && _placeholder_info.lookup_poly_amount > 1){
-                    std::cout << "Lookup argument chunking not supported" << std::endl;
-                    exit(1);
+                    std::cout << "Lookup argument chunking not supported in evm contracts" << std::endl;
+                    return;
                 }
                 std::filesystem::create_directory(_folder_name);
                 std::string gate_argument = print_gate_argument();
