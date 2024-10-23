@@ -194,14 +194,14 @@ namespace nil {
                 bool is_allocated(std::size_t col, std::size_t row, column_type t) {
                     if (col >= log[t].size()) {
                         std::stringstream error;
-                        error << "Invalid value col = " << col 
+                        error << "Invalid value col = " << col
                             << " when checking if a " << t << " cell is allocated. We have "
                             << log[t].size() << " columns.";
                         throw std::out_of_range(error.str());
                     }
                     if (row >= log[t][col].size()) {
                         std::stringstream error;
-                        error << "Invalid value row = " << row 
+                        error << "Invalid value row = " << row
                             << " when checking if a " << t << " cell is allocated. Column " << col << " has "
                             << log[t][col].size() << " rows.";
                         throw std::out_of_range(error.str());
@@ -212,14 +212,14 @@ namespace nil {
                 void mark_allocated(std::size_t col, std::size_t row, column_type t) {
                     if (col >= log[t].size()) {
                         std::stringstream error;
-                        error << "Invalid value col = " << col 
+                        error << "Invalid value col = " << col
                             << " when marking a " << t << " cell allocated. We have "
                             << log[t].size() << " columns.";
                         throw std::out_of_range(error.str());
                     }
                     if (row >= log[t][col].size()) {
                         std::stringstream error;
-                        error << "Invalid value row = " << row 
+                        error << "Invalid value row = " << row
                             << " when marking a " << t << " cell allocated. Column " << col << " has "
                             << log[t][col].size() << " rows.";
                         throw std::out_of_range(error.str());
@@ -745,7 +745,7 @@ namespace nil {
                         context res = subcontext(W, new_row_shift, new_max_rows);
                         res.reset_storage();
                         return res;
-                    } 
+                    }
 
 
                 private:
@@ -785,6 +785,12 @@ namespace nil {
 
             template<typename FieldType, GenerationStage stage>
             class generic_component {
+                struct table_params {
+                    std::size_t witnesses;
+                    std::size_t public_inputs;
+                    std::size_t constants;
+                    std::size_t rows;
+                };
                 public:
                     using TYPE = typename std::conditional<static_cast<bool>(stage),
                                  crypto3::zk::snark::plonk_constraint<FieldType>,
@@ -796,6 +802,10 @@ namespace nil {
                     context_type &ct;
 
                 public:
+                    static table_params get_minimal_requirements() {
+                        return {0,0,0,0};
+                    }
+
                     void allocate(TYPE &C, column_type t = column_type::witness) {
                         auto [col, row] = ct.next_free_cell(t);
                         ct.allocate(C, col, row, t);
