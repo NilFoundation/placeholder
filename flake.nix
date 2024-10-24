@@ -174,6 +174,10 @@
             type = "app";
             program = "${self.packages.${system}.zkevm-framework}/bin/assigner";
           };
+          single-threaded = {
+            type = "app";
+            program = "${self.packages.${system}.proof-producer}/bin/proof-producer-single-threaded";
+          };
           multi-threaded = {
             type = "app";
             program = "${self.packages.${system}.proof-producer}/bin/proof-producer-multi-threaded";

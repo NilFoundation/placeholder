@@ -54,7 +54,7 @@
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
-
+#include <nil/blueprint/transpiler/lpc_evm_verifier_gen.hpp>
 
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/file_operations.hpp>
@@ -173,6 +173,48 @@ namespace nil {
                 grind_(grind) {
             }
 
+            bool print_evm_verifier(
+                boost::filesystem::path output_folder
+            ){
+                BOOST_LOG_TRIVIAL(info) << "Print evm verifier";
+                nil::blueprint::lpc_evm_verifier_printer<PlaceholderParams> evm_verifier_printer(
+                    *constraint_system_,
+                    public_preprocessed_data_->common_data,
+                    output_folder.string()
+                );
+                evm_verifier_printer.print();
+                return true;
+            }
+
+            bool print_public_input_for_evm(
+                boost::filesystem::path output_folder
+            ){
+                BOOST_LOG_TRIVIAL(info) << "Print public input for EVM";
+                std::ofstream pi_stream;
+                pi_stream.open(output_folder.string() + "/public_input.inp");
+                if( !pi_stream.is_open() )  return false;
+
+                // Does not support public input columns.
+                if( table_description_->public_input_columns != 0 ) {
+                    std::cout << "I have real input" << std::endl;
+                    std::size_t max_non_zero = 0;
+                    const auto&public_input = assignment_table_->public_input(0);
+                    std::cout << "Public input size = " << public_input.size() << std::endl;
+                    for (std::size_t i = 0; i < public_input.size(); i++) {
+                        std::cout << "i = " << i << public_input[i] << std::endl;
+                        if (public_input[i] != 0u) {
+                            max_non_zero = i + 1;
+                        }
+                    }
+                    std::cout << "Max non zero = "  << max_non_zero << std::endl;
+                    for (std::size_t i = 0; i < std::min(public_input.size(), max_non_zero); i++) {
+                        pi_stream << public_input[i] << "\n";
+                    }
+                } // else empty file is generated
+                pi_stream.close();
+                return true;
+            }
+
             // The caller must call the preprocessor or load the preprocessed data before calling this function.
             bool generate_to_file(
                     boost::filesystem::path proof_file_,
@@ -233,10 +275,8 @@ namespace nil {
                                           BlueprintField,
                                           PlaceholderParams>::preprocessed_data_type::common_data_type>(
                                       *table_description_
-                )
-                                      .generate_input(*public_inputs_, proof, constraint_system_->public_input_sizes());
+                ).generate_input(*public_inputs_, proof, constraint_system_->public_input_sizes());
                 output_file->close();
-
                 return res;
             }
 

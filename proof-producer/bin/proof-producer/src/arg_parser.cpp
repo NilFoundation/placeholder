@@ -90,6 +90,7 @@ namespace nil {
                 ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (0)")
                 ("expand-factor,x", make_defaulted_option(prover_options.expand_factor), "Expand factor")
                 ("max-quotient-chunks,q", make_defaulted_option(prover_options.max_quotient_chunks), "Maximum quotient polynomial parts amount")
+                ("evm-verifier", make_defaulted_option(prover_options.evm_verifier_path), "Output folder for EVM verifier (evm_verifier)")
                 ("input-challenge-files,u", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_challenge_files)->multitoken(),
                  "Input challenge files. Used with 'generate-aggregated-challenge' stage.")
                 ("challenge-file", po::value<boost::filesystem::path>(&prover_options.challenge_file_path),
