@@ -75,6 +75,9 @@ namespace nil {
             std::size_t table_id
         ){
             std::set<std::vector<typename BlueprintFieldType::value_type>> result;
+            if( table_id > bp.lookup_tables().size() )
+                std::cout << table_id << " >= " << bp.lookup_tables().size() << std::endl;
+            BOOST_ASSERT(table_id <= bp.lookup_tables().size());
             auto &table = bp.lookup_tables()[table_id-1];
 
             crypto3::zk::snark::plonk_column<BlueprintFieldType> selector =
@@ -130,10 +133,15 @@ namespace nil {
                             if (!constraint_result.is_zero()) {
                                 std::cout << "Constraint " << j << " from gate " << i << " on row " << selector_row
                                           << " is not satisfied." << std::endl;
+                                std::cout << std::endl;
+                                std::cout << "Constraint: " << gates[i].constraints[j] << std::endl;
                                 std::cout << "Constraint result: " << constraint_result << std::endl;
                                 std::cout << "Offending gate:" << std::endl;
+
+                                std::size_t k = 0;
                                 for (const auto &constraint : gates[i].constraints) {
-                                    std::cout << constraint << std::endl;
+                                    k ++;
+                                    std::cout << k << ": " << constraint << std::endl;
                                 }
                                 return false;
                             }
@@ -142,6 +150,7 @@ namespace nil {
                 }
             }
 
+            std::cout << "Gates checked. Check lookups" << std::endl;
             for (const auto& i : used_lookup_gates) {
                 crypto3::zk::snark::plonk_column<BlueprintFieldType> selector =
                     assignments.crypto3::zk::snark::
@@ -157,6 +166,7 @@ namespace nil {
                                 input_values.emplace_back(lookup_gates[i].constraints[j].lookup_input[k].evaluate(
                                     selector_row, assignments));
                             }
+
                             const auto table_name =
                                 bp.get_reserved_indices_right().at(lookup_gates[i].constraints[j].table_id);
                             try {
@@ -165,19 +175,27 @@ namespace nil {
                                         used_dynamic_tables[table_name] = load_dynamic_lookup(bp, assignments, lookup_gates[i].constraints[j].table_id);
                                     }
                                     if( used_dynamic_tables[table_name].find(input_values) == used_dynamic_tables[table_name].end() ) {
-                                        for (std::size_t k = 0; k < input_values.size(); k++) {
-                                            std::cout << input_values[k] << " ";
-                                        }
-                                        std::cout << std::endl;
                                         std::cout << "Constraint " << j << " from lookup gate " << i << " from table "
                                                 << table_name << " on row " << selector_row << " is not satisfied."
                                                 << std::endl;
+                                        std::cout << "Input: ";
+                                        for (std::size_t k = 0; k < input_values.size(); k++) {
+                                            std::cout << std::hex << input_values[k] << std::dec << " ";
+                                        }
+                                        std::cout << std::endl;
                                         std::cout << "Offending Lookup Gate: " << std::endl;
                                         for (const auto &constraint : lookup_gates[i].constraints) {
                                             std::cout << "Table id: " << constraint.table_id << std::endl;
                                             for (auto &lookup_input : constraint.lookup_input) {
                                                 std::cout << lookup_input << std::endl;
                                             }
+                                        }
+                                        std::cout << "Possible values: " << std::endl;
+                                        for( auto &value : used_dynamic_tables[table_name]){
+                                            for (std::size_t k = 0; k < value.size(); k++) {
+                                                std::cout << std::hex << value[k] << std::dec << " ";
+                                            }
+                                            std::cout << std::endl;
                                         }
                                         return false;
                                     }
@@ -213,7 +231,7 @@ namespace nil {
                                 if (!found) {
                                     std::cout << "Input values:";
                                     for (std::size_t k = 0; k < input_values.size(); k++) {
-                                        std::cout << input_values[k] << " ";
+                                        std::cout << std::hex <<  input_values[k] << std::dec <<  " ";
                                     }
                                     std::cout << std::endl;
                                     std::cout << "Constraint " << j << " from lookup gate " << i << " from table "
@@ -230,8 +248,10 @@ namespace nil {
                                 }
                             } catch (std::out_of_range &e) {
                                 std::cout << "Lookup table " << table_name << " not found." << std::endl;
-                                std::cout << "Table_id = " << lookup_gates[i].constraints[j].table_id << " table_name " << table_name << std::endl;
+                                std::cout << "Table id = " << lookup_gates[i].constraints[j].table_id << " table_name " << table_name << std::endl;
                                 return false;
+                            } catch (...){
+                                std::cout << "Other exception" << std::endl;
                             }
                         }
                     }

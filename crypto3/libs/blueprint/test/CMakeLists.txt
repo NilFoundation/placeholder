@@ -120,6 +120,11 @@ set(PLONK_TESTS_FILES
     "hashes/plonk/sha256_process"
     "hashes/plonk/sha512_process"
     "hashes/plonk/decomposition"
+    "hashes/plonk/keccak_component"
+    "hashes/plonk/keccak_dynamic"
+    "hashes/plonk/keccak_static"
+    "hashes/plonk/keccak_padding"
+    "hashes/plonk/keccak_round"
     #"hashes/plonk/detail/sha_table_generators_base4"
     #"hashes/plonk/detail/sha_table_generators_base7"
     #"verifiers/kimchi/base_field"
@@ -188,7 +193,6 @@ set(PLONK_TESTS_FILES
     "verifiers/placeholder/verifier"
     "verifiers/placeholder/dfri_verifier"
     "verifiers/placeholder/dfri_input_generator"
-    "zkevm/bytecode"
     )
 
 #set(FIELDS_TESTS_FILES
@@ -204,6 +208,10 @@ set(PLONK_TESTS_FILES
 #    )
 
 set(ZKEVM_TESTS_FILES
+    "zkevm/bytecode"
+    "zkevm/rw"
+    "zkevm/copy"
+    "zkevm/connections"
     "zkevm/state_selector"
     "zkevm/zkevm_word"
     "zkevm/state_transition"
@@ -211,7 +219,22 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/add_sub"
     "zkevm/opcodes/mul"
     "zkevm/opcodes/div"
-    )
+    "zkevm/opcodes/cmp"
+    "zkevm/opcodes/pushx"
+    "zkevm/opcodes/not"
+    "zkevm/opcodes/mod_ops"
+    "zkevm/opcodes/byte_ops"
+    "zkevm/opcodes/bitwise"
+    "zkevm/opcodes/err0"
+    "zkevm/opcodes/err1"
+    "zkevm/opcodes/workload"
+    "zkevm/opcodes/jumps"
+)
+
+set(ZKEVM_BBF_TESTS_FILES
+    "zkevm_bbf/l1_wrapper"
+    "zkevm_bbf/rw"
+)
 
 #set(CURVES_TESTS_FILES
     #"algebra/curves/r1cs/montgomery"
@@ -260,6 +283,7 @@ SET(ALL_TESTS_FILES
     ${PLONK_TESTS_FILES}
     ${ALGEBRA_TESTS_FILES}
     ${ZKEVM_TESTS_FILES}
+    ${ZKEVM_BBF_TESTS_FILES}
     ${HASHES_TESTS_FILES}
     ${ROUTING_TESTS_FILES}
     ${SCHEMES_TESTS_FILES}
