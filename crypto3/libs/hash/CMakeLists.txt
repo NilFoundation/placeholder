@@ -19,7 +19,7 @@ include(CheckSSE)
 include(CheckAVX)
 include(CMTest)
 if(BUILD_CRYPTO3_TESTS)
-    cm_add_test_subdirectory(test)
+    add_subdirectory(test)
 endif()
 
 option(CRYPTO3_HASH_BLAKE2B "Build with Blake2 hash support" TRUE)
