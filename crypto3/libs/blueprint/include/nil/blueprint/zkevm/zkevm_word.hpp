@@ -32,12 +32,12 @@
 namespace nil {
     namespace blueprint {
 
-        constexpr static const
+        inline constexpr const
             boost::multiprecision::number<
                 boost::multiprecision::backends::cpp_int_modular_backend<257>> zkevm_modulus =
                         0x10000000000000000000000000000000000000000000000000000000000000000_cppui_modular257;
 
-        constexpr static const boost::multiprecision::backends::modular_params<
+        inline constexpr const boost::multiprecision::backends::modular_params<
                 boost::multiprecision::backends::cpp_int_modular_backend<257>>
                     zkevm_modular_params = zkevm_modulus.backend();
 

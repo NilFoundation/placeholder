@@ -114,7 +114,8 @@ namespace nil {
                  "Aggregated FRI proof part of the final proof. Used with 'merge-proofs' stage.")
                 ("input-combined-Q-polynomial-files", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_combined_Q_polynomial_files),
                  "Files containing polynomials combined-Q, 1 per prover instance.")
-                ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.");
+                ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.")
+                ("execution-traces", po::value(&prover_options.execution_traces_path), "File with execution traces from synccommittee.");
 
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
@@ -162,14 +163,6 @@ namespace nil {
             try {
                 notify(vm);
             } catch (const po::required_option& e) {
-                std::cerr << e.what() << std::endl;
-                std::cout << cmdline_options << std::endl;
-                throw e;
-            }
-
-            try {
-                check_exclusive_options(vm, {"verification-only", "skip-verification"});
-            } catch (const std::logic_error& e) {
                 std::cerr << e.what() << std::endl;
                 std::cout << cmdline_options << std::endl;
                 throw e;
