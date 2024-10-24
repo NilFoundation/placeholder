@@ -152,7 +152,7 @@ namespace nil {
 
                     template<typename InputRange>
                     typename std::enable_if_t<
-                        !algebra::is_group_element<InputRange>::value &&
+                        !algebra::is_curve_element<InputRange>::value &&
                         !algebra::is_field_element<InputRange>::value>
                     operator()(const InputRange &r) {
                         auto acc_convertible = hash<hash_type>(state);
@@ -169,7 +169,7 @@ namespace nil {
 
                     template<typename element>
                     typename std::enable_if_t<
-                        algebra::is_group_element<element>::value ||
+                        algebra::is_curve_element<element>::value ||
                         algebra::is_field_element<element>::value
                         >
                     operator()(element const& data) {
@@ -293,7 +293,7 @@ namespace nil {
 
                     template<typename InputRange>
                     typename std::enable_if_t<
-                        !algebra::is_group_element<InputRange>::value
+                        !algebra::is_curve_element<InputRange>::value
                         >
                     operator()(const InputRange &r) {
                         sponge.absorb(static_cast<typename hash_type::digest_type>(hash<hash_type>(r)));
@@ -301,7 +301,7 @@ namespace nil {
 
                     template<typename element>
                     typename std::enable_if_t<
-                        algebra::is_group_element<element>::value
+                        algebra::is_curve_element<element>::value
                         >
                     operator()(element const& data) {
                         auto affine = data.to_affine();
