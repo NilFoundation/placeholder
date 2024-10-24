@@ -77,7 +77,9 @@ namespace nil {
                     auto u = hash_to_field<2, expand_message_ro>(msg, dst);
                     group_value_type Q0 = map_to_curve<GroupType>::process(u[0]);
                     group_value_type Q1 = map_to_curve<GroupType>::process(u[1]);
-                    return clear_cofactor(Q0 + Q1);
+                    Q0 += Q1;
+                    clear_cofactor(Q0);
+                    return Q0;
                 }
 
                 // template<typename InputType, typename = typename std::enable_if<std::is_same<
@@ -120,8 +122,8 @@ namespace nil {
                     return result;
                 }
 
-                static inline group_value_type clear_cofactor(const group_value_type &R) {
-                    return R * suite_type::h_eff;
+                static inline void clear_cofactor(group_value_type &R) {
+                    scalar_mul_inplace(R, suite_type::h_eff);
                 }
             };
         }    // namespace hashes

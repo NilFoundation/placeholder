@@ -43,28 +43,18 @@ namespace nil {
             namespace curves {
                 namespace detail {
 
-                    template<typename CurveElementType>
+                    template<typename CurveElementType, unsigned int bits>
                     constexpr void scalar_mul_inplace(
                             CurveElementType &base,
-                            typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
+                            boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<bits>> const& scalar)
                     {
                         if (scalar.is_zero()) {
                             base = CurveElementType::zero();
                             return;
                         }
 
-                        std::cout << "Multiplying by scalar: " << scalar << std::endl;
-
                         const size_t window_size = 3;
-                        auto integral_scalar = static_cast<typename CurveElementType::params_type::scalar_field_type::integral_type>(scalar.data);
-                        std::cout << "Integral scalar: " << integral_scalar << std::endl;
-
-                        auto naf = boost::multiprecision::eval_find_wnaf_a(window_size + 1, integral_scalar.backend());
-                        std::cout << "naf: ";
-                        for(auto x: naf) {
-                            std::cout << x << " ";
-                        }
-                        std::cout << std::endl;
+                        auto naf = boost::multiprecision::eval_find_wnaf_a(window_size + 1, scalar.backend());
                         std::array<CurveElementType, 1ul << window_size > table;
                         CurveElementType dbl = base;
                         dbl.double_inplace();
@@ -96,7 +86,8 @@ namespace nil {
                             CurveElementType& point,
                             typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
                     {
-                        scalar_mul_inplace(point, scalar.data);
+                        using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
+                        scalar_mul_inplace(point, static_cast<scalar_integral_type>(scalar.data));
                         return point;
                     }
 
@@ -105,8 +96,9 @@ namespace nil {
                             CurveElementType const& point,
                             typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
                     {
+                        using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
                         CurveElementType res = point;
-                        scalar_mul_inplace(res, scalar.data);
+                        scalar_mul_inplace(res, static_cast<scalar_integral_type>(scalar.data));
                         return res;
                     }
 
@@ -115,8 +107,9 @@ namespace nil {
                             typename CurveElementType::params_type::scalar_field_type::value_type const& scalar,
                             CurveElementType const& point)
                     {
+                        using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
                         CurveElementType res = point;
-                        scalar_mul_inplace(res, scalar.data);
+                        scalar_mul_inplace(res, static_cast<scalar_integral_type>(scalar.data));
                         return res;
                     }
 
@@ -142,10 +135,10 @@ namespace nil {
 
                     template<typename CurveElementType>
                     std::enable_if_t<is_curve_element<CurveElementType>::value, bool>
-                    subgroup_check(const CurveElementType &point) {
-                        /* Point can be multiplied only by scalar, scalar is modulo prime subgroup */
+                    subgroup_check(CurveElementType point) {
                         auto scalar_modulus = CurveElementType::group_type::curve_type::scalar_field_type::modulus;
-                        return (point * (scalar_modulus - 1) + point).is_zero();
+                        scalar_mul_inplace(point, scalar_modulus);
+                        return point.is_zero();
                     }
 
                 }    // namespace detail
