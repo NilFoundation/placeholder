@@ -31,7 +31,7 @@ namespace nil::crypto3::multiprecision::detail {
     constexpr void subtract(modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
                             const modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &o) {
         if (result.base_data() < o.base_data()) {
-            auto v = result.modular_ops().get_mod();
+            auto v = result.ops().get_mod();
             v -= o.base_data();
             result.base_data() += v;
         } else {
@@ -43,8 +43,8 @@ namespace nil::crypto3::multiprecision::detail {
     // constexpr void eval_powm(modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
     //                          const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
     //                          const T &e) {
-    //     result.set_modular_ops(b.modular_ops());
-    //     result.modular_ops().exp(result.base_data(), b.base_data(), e);
+    //     result.set_modular_ops(b.ops());
+    //     result.ops().exp(result.base_data(), b.base_data(), e);
     // }
 
     // template<unsigned Bits, typename big_integer_t1, typename big_integer_t2,
@@ -55,7 +55,7 @@ namespace nil::crypto3::multiprecision::detail {
     //     using big_integer_t = big_integer<Bits>;
 
     //     big_integer_t exp;
-    //     e.modular_ops().adjust_regular(exp, e.base_data());
+    //     e.ops().adjust_regular(exp, e.base_data());
     //     eval_powm(result, b, exp);
     // }
 
@@ -67,11 +67,11 @@ namespace nil::crypto3::multiprecision::detail {
     //     using big_integer_t_padded_limbs =
     //         typename modular_ops<big_integer_t>::policy_type::big_integer_padded_limbs;
 
-    //     big_integer_t_padded_limbs new_base, res, tmp = input.modular_ops().get_mod();
+    //     big_integer_t_padded_limbs new_base, res, tmp = input.ops().get_mod();
 
-    //     input.modular_ops().adjust_regular(new_base, input.base_data());
+    //     input.ops().adjust_regular(new_base, input.base_data());
     //     eval_inverse_mod(res, new_base, tmp);
-    //     assign_components(result, res, input.modular_ops().get_mod());
+    //     assign_components(result, res, input.ops().get_mod());
     // }
 
     // template<class big_integer_t1, class big_integer_t2>
@@ -85,19 +85,7 @@ namespace nil::crypto3::multiprecision::detail {
     //                              const modular_big_integer_impl<big_integer_t, modular_ops_t> &o)
     //                              {
     //     eval_multiply(result.base_data(), o.base_data());
-    //     eval_redc(result.base_data(), result.modular_ops());
-    // }
-
-    // template<class big_integer_t, typename modular_ops_t>
-    // constexpr void eval_divide(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
-    //                            const modular_big_integer_impl<big_integer_t, modular_ops_t> &o) {
-    //     big_integer_t tmp1, tmp2;
-    //     result.modular_ops().adjust_regular(tmp1, result.base_data());
-    //     result.modular_ops().adjust_regular(tmp2, o.base_data());
-    //     eval_divide(tmp1, tmp2);
-    //     result.base_data() = tmp1;
-    //     result.modular_ops().adjust_modular(result.base_data());
-    //     result.modular_ops().adjust_regular(tmp2, result.base_data());
+    //     eval_redc(result.base_data(), result.ops());
     // }
 
     // template<class big_integer_t, typename modular_ops_t>
@@ -126,7 +114,7 @@ namespace nil::crypto3::multiprecision::detail {
     // inline void find_modular_pow(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
     //                              const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
     //                              const big_integer_t &exp) {
-    //     modular_ops<big_integer_t> mod = b.modular_ops();
+    //     modular_ops<big_integer_t> mod = b.ops();
     //     size_t m_window_bits;
     //     unsigned long cur_exp_index;
     //     size_t exp_bits = eval_msb(exp);
@@ -181,7 +169,7 @@ namespace nil::crypto3::multiprecision::detail {
     //                         const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
     //                         const modular_big_integer_impl<big_integer_t, modular_ops_t> &e) {
     //     big_integer_t exp;
-    //     e.modular_ops().adjust_regular(exp, e.base_data());
+    //     e.ops().adjust_regular(exp, e.base_data());
     //     find_modular_pow(result, b, exp);
     // }
 
