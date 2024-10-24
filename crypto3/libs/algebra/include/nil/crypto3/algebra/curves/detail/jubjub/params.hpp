@@ -41,48 +41,39 @@ namespace nil {
                         using base_field_type = typename jubjub_types::base_field_type;
                         using scalar_field_type = typename jubjub_types::scalar_field_type;
 
-                        // Edwards representation constants a and d
-                        constexpr static const typename jubjub_types::integral_type
-                            a =    ///< twisted Edwards elliptic curve
-                            0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000000_cppui_modular255;    ///< described
-                                                                                                            ///< by
-                                                                                                            ///< equation
-                                                                                                            ///< ax^2 +
-                                                                                                            ///< y^2 = 1
-                                                                                                            ///< +
-                                                                                                            ///< dx^2y^2
-                        constexpr static const typename jubjub_types::integral_type
-                            d =    ///< twisted Edwards elliptic curve
-                            0x2A9318E74BFA2B48F5FD9207E6BD7FD4292D7F6D37579D2601065FD6D6343EB1_cppui_modular254;    ///< described
-                                                                                                            ///< by
-                                                                                                            ///< equation
-                                                                                                            ///< ax^2 +
-                                                                                                            ///< y^2 = 1
-                                                                                                            ///< +
-                                                                                                            ///< dx^2y^2
+                        // Twisted Edwards representation:
+                        // a x^2 + y^2 = 1 + d x^2 y^2
+                        // Constants a (-1) and d (-10240/10241)
+                        constexpr static const typename jubjub_types::base_field_type::value_type
+                            a = base_field_type::modulus - 1;
+                        constexpr static const typename jubjub_types::base_field_type::value_type
+                            d = - base_field_type::value_type(10240) / base_field_type::value_type(10241);
                         static constexpr std::size_t cofactor = 8;
                     };
 
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::twisted_edwards>::a;
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::twisted_edwards>::d;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::twisted_edwards>::a;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::twisted_edwards>::d;
 
                     template<>
                     struct jubjub_params<forms::montgomery> {
                         using base_field_type = typename jubjub_types::base_field_type;
                         using scalar_field_type = typename jubjub_types::scalar_field_type;
 
-                        // Montgomery representation constants A and B
-                        constexpr static const typename jubjub_types::integral_type
-                            A =                ///< Montgomery elliptic curve
-                            0xA002_cppui_modular16;    ///< described by equation b*y^2 = x^3 + a*x^2 + x
-                        constexpr static const typename jubjub_types::integral_type
-                            B =      ///< Montgomery elliptic curve
-                            0x01;    ///< described by equation b*y^2 = x^3 + a*x^2 + x
+                        // Montgomery representation:
+                        // B * y^2 = x^3 + A * x^2 + x
+                        // https://en.wikipedia.org/wiki/Montgomery_curve#Equivalence_with_twisted_Edwards_curves
+                        // constants A and B
+                        // A = 2 (a + d) / (a - d)
+                        // B = 4 / (a - d)
+                        constexpr static const typename jubjub_types::base_field_type::value_type
+                            A = 0xA002_cppui_modular255;
+                        constexpr static const typename jubjub_types::base_field_type::value_type
+                            B = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffff5ffd_cppui_modular255;
                         static constexpr std::size_t cofactor = 8;
                     };
 
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::montgomery>::A;
-                    constexpr typename jubjub_types::integral_type const jubjub_params<forms::montgomery>::B;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::montgomery>::A;
+                    constexpr typename jubjub_types::base_field_type::value_type const jubjub_params<forms::montgomery>::B;
 
                     template<>
                     struct jubjub_g1_params<forms::twisted_edwards> : public jubjub_params<forms::twisted_edwards> {
@@ -115,12 +106,21 @@ namespace nil {
                         template<typename Coordinates>
                         using group_type = jubjub_types::g1_type<forms::montgomery, Coordinates>;
 
-                        // TODO: check correctness of the base point coordinates
+                        /* Generator in Montgomery form
+                         * Birational equivalence with Twisted Edwards form:
+                         * https://en.wikipedia.org/wiki/Montgomery_curve#Equivalence_with_twisted_Edwards_curves
+                         *
+                         * M(u,v) from E(x,y):
+                         *
+                         * (u,v) = ( (1+y)/(1-y), (1+y)/(x*(1-y)) )
+                         *
+                         * These coordinates are acquired from generator defined above.
+                         */
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
                                 0x52a47af6ec47deb77d663b6a45b148d1ccdaa4e2299ecfbd5504c409b3ea62c0_cppui_modular255),
                             typename field_type::value_type(
-                                0x399b020832f6a499ba9d5334ca932dc9faaeea860e9a49a8f8854f55f3b676d4_cppui_modular254)};
+                                0x20bc4f2e8cff38006618840fd0f9b6d6e8ddec99c37916874e2fd6d5c6558938_cppui_modular254)};
                     };
 
                     constexpr std::array<typename jubjub_g1_params<forms::montgomery>::base_field_type::value_type,

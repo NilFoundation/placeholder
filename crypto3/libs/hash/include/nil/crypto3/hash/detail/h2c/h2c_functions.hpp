@@ -335,8 +335,8 @@ namespace nil {
                     : m2c_simple_swu_zeroAB<typename algebra::curves::bls12_381::g2_type<Coordinates, Form>> { };
 
                 template<typename GroupValue>
-                static inline GroupValue clear_cofactor(const GroupValue &R) {
-                    return R * h2c_suite<typename GroupValue::group_type>::h_eff;
+                static inline void clear_cofactor(GroupValue &R) {
+                    scalar_mul_inplace(R, h2c_suite<typename GroupValue::group_type>::h_eff);
                 }
 
                 template<typename Group, UniformityCount _uniformity_count, typename U>
@@ -346,7 +346,9 @@ namespace nil {
 
                     typename Group::value_type Q0 = map_to_curve<Group>::process(u[0]);
                     typename Group::value_type Q1 = map_to_curve<Group>::process(u[1]);
-                    return clear_cofactor(Q0 + Q1);
+                    Q0 += Q1;
+                    clear_cofactor(Q0);
+                    return Q0;
                 }
             }    // namespace detail
         }        // namespace hashes

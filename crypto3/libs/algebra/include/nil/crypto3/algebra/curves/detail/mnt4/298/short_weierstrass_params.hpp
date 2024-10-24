@@ -43,12 +43,11 @@ namespace nil {
                         using base_field_type = typename mnt4_types<298>::base_field_type;
                         using scalar_field_type = typename mnt4_types<298>::scalar_field_type;
 
-                        constexpr static const typename mnt4_types<298>::integral_type a =
-                            typename mnt4_types<298>::integral_type(
-                                0x02);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename mnt4_types<298>::integral_type b =
-                            typename mnt4_types<298>::integral_type(
-                                0x3545A27639415585EA4D523234FC3EDD2A2070A085C7B980F4E9CD21A515D4B0EF528EC0FD5_cppui_modular298);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename mnt4_types<298>::base_field_type::value_type
+                            a = 0x02;
+                        constexpr static const typename mnt4_types<298>::base_field_type::value_type
+                            b = 0x3545A27639415585EA4D523234FC3EDD2A2070A085C7B980F4E9CD21A515D4B0EF528EC0FD5_cppui_modular298;
                     };
 
                     template<>
@@ -118,9 +117,9 @@ namespace nil {
                     };
 
                     constexpr
-                        typename mnt4_types<298>::integral_type const mnt4_params<298, forms::short_weierstrass>::a;
+                        typename mnt4_types<298>::base_field_type::value_type const mnt4_params<298, forms::short_weierstrass>::a;
                     constexpr
-                        typename mnt4_types<298>::integral_type const mnt4_params<298, forms::short_weierstrass>::b;
+                        typename mnt4_types<298>::base_field_type::value_type const mnt4_params<298, forms::short_weierstrass>::b;
 
                     constexpr typename mnt4_g2_params<298, forms::short_weierstrass>::field_type::value_type const
                         mnt4_g2_params<298, forms::short_weierstrass>::a;

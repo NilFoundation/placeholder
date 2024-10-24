@@ -153,11 +153,6 @@ namespace nil {
                             return *this;
                         }
 
-                        element_fp6_3over2 sqrt() const {
-
-                            // compute squared root with Tonelli--Shanks
-                        }
-
                         element_fp6_3over2 mul_Fp_b(const element_fp<FieldParams> &B) {
                             return element_fp6_3over2(data[0], data[1].mul_Fp_0(B), data[2]);
                         }

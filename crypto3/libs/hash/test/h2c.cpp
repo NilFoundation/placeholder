@@ -45,64 +45,6 @@
 using namespace nil::crypto3;
 using namespace nil::crypto3::algebra;
 
-template<typename FieldParams>
-void print_field_element(std::ostream &os, const typename fields::detail::element_fp<FieldParams> &e) {
-    std::cout << e.data << std::endl;
-}
-
-template<typename FieldParams>
-void print_field_element(std::ostream &os, const typename fields::detail::element_fp2<FieldParams> &e) {
-    std::cout << e.data[0].data << ", " << e.data[1].data << std::endl;
-}
-
-template<typename CurveParams, typename Form, typename Coordinates>
-typename std::enable_if<std::is_same<Coordinates, curves::coordinates::projective>::value ||
-                        std::is_same<Coordinates, curves::coordinates::jacobian_with_a4_0>::value>::type
-    print_curve_point(std::ostream &os, const curves::detail::curve_element<CurveParams, Form, Coordinates> &p) {
-    os << "( X: [";
-    print_field_element(os, p.X);
-    os << "], Y: [";
-    print_field_element(os, p.Y);
-    os << "], Z:[";
-    print_field_element(os, p.Z);
-    os << "] )" << std::endl;
-}
-
-namespace boost {
-    namespace test_tools {
-        namespace tt_detail {
-            template<typename FieldParams>
-            struct print_log_value<typename fields::detail::element_fp<FieldParams>> {
-                void operator()(std::ostream &os, typename fields::detail::element_fp<FieldParams> const &e) {
-                    print_field_element(os, e);
-                }
-            };
-
-            template<typename FieldParams>
-            struct print_log_value<typename fields::detail::element_fp2<FieldParams>> {
-                void operator()(std::ostream &os, typename fields::detail::element_fp2<FieldParams> const &e) {
-                    print_field_element(os, e);
-                }
-            };
-
-            template<typename CurveParams, typename Form, typename Coordinates>
-            struct print_log_value<curves::detail::curve_element<CurveParams, Form, Coordinates>> {
-                void operator()(std::ostream &os,
-                                curves::detail::curve_element<CurveParams, Form, Coordinates> const &p) {
-                    print_curve_point(os, p);
-                }
-            };
-
-            template<template<typename, typename> class P, typename K, typename V>
-            struct print_log_value<P<K, V>> {
-                void operator()(std::ostream &, P<K, V> const &) {
-                }
-            };
-
-        }    // namespace tt_detail
-    }        // namespace test_tools
-}    // namespace boost
-
 template<typename Hash>
 typename std::enable_if<hashes::is_h2c<Hash>::value>::type
     check_hash_to_curve(const std::string &msg_str, const typename Hash::digest_type &expected) {

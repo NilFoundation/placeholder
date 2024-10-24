@@ -33,48 +33,21 @@ namespace nil {
 
                 struct forms {
 
-                    /* @brief Curve Doubling-oriented Doche–Icart–Kohel form.
-                     * Description: http://www.hyperelliptic.org/EFD/g1p/auto-2dik.html
-                     */
-                    struct doubling_oriented_doche_icart_kohel { };
-                    /* @brief Curve Tripling-oriented Doche–Icart–Kohel form.
-                     * Description: http://www.hyperelliptic.org/EFD/g1p/auto-3dik.html
-                     */
-                    struct tripling_oriented_doche_icart_kohel { };
-                    /* @brief Curve Edwards form.
-                     * Description: http://www.hyperelliptic.org/EFD/g1p/auto-edwards.html
-                     */
-                    struct edwards { };
-                    /* @brief Curve Hessian form.
-                     * Description: http://www.hyperelliptic.org/EFD/g1p/auto-hessian.html
-                     */
-                    struct hessian { };
-                    /* @brief Curve Jacobi intersections form.
-                     * Description: http://www.hyperelliptic.org/EFD/g1p/auto-jintersect.html
-                     */
-                    struct jacobi_intersections { };
-                    /* @brief Curve Jacobi quartics form.
-                     * Description: http://www.hyperelliptic.org/EFD/g1p/auto-jquartic.html
-                     */
-                    struct jacobi_quatrics { };
                     /* @brief Curve Montgomery form.
                      * Description: http://www.hyperelliptic.org/EFD/g1p/auto-montgom.html
                      */
                     struct montgomery { };
+
                     /* @brief Curve Short Weierstrass form.
                      * Description: http://www.hyperelliptic.org/EFD/g1p/auto-shortw.html
                      */
                     struct short_weierstrass { };
+
                     /* @brief Curve Twisted Edwards form.
                      * Description: http://www.hyperelliptic.org/EFD/g1p/auto-twisted.html
                      */
                     struct twisted_edwards { };
-                    /* @brief Curve Twisted Hessian form.
-                     * Description: http://www.hyperelliptic.org/EFD/g1p/auto-twistedhessian.html
-                     */
-                    struct twisted_hessian { };
                 };
-
             }    // namespace curves
         }        // namespace algebra
     }            // namespace crypto3

@@ -14,6 +14,7 @@
 namespace boost {
     namespace multiprecision {
 
+        /* Vector version */
         template<typename Backend>
         std::vector<long> eval_find_wnaf(const size_t window_size, const Backend& scalar) {
             using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
@@ -22,7 +23,7 @@ namespace boost {
             using default_ops::eval_right_shift;
             using default_ops::eval_subtract;
 
-            const std::size_t length = scalar.size() * std::numeric_limits<ui_type>::digits;    // upper bound
+            const std::size_t length = Backend::internal_limb_count * std::numeric_limits<ui_type>::digits;    // upper bound
             std::vector<long> res(length + 1);
 
             Backend c(scalar);
@@ -58,6 +59,7 @@ namespace boost {
             return eval_find_wnaf(window_size, scalar.backend());
         }
 
+        /* Array version */
         template<typename Backend>
         constexpr auto eval_find_wnaf_a(const size_t window_size, const Backend& scalar) {
             using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;

@@ -43,12 +43,11 @@ namespace nil {
                         using base_field_type = typename alt_bn128_types<254>::base_field_type;
                         using scalar_field_type = typename alt_bn128_types<254>::scalar_field_type;
 
-                        constexpr static const typename alt_bn128_types<254>::integral_type a =
-                            typename alt_bn128_types<254>::integral_type(
-                                0x00);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename alt_bn128_types<254>::integral_type b =
-                            typename alt_bn128_types<254>::integral_type(
-                                0x03);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename alt_bn128_types<254>::base_field_type::value_type
+                            a = 0x00;
+                        constexpr static const typename alt_bn128_types<254>::base_field_type::value_type
+                            b = 0x03;
                     };
 
                     template<>
@@ -104,9 +103,9 @@ namespace nil {
                                 0x90689D0585FF075EC9E99AD690C3395BC4B313370B38EF355ACDADCD122975B_cppui_modular254)};
                     };
 
-                    constexpr typename alt_bn128_types<254>::integral_type const
+                    constexpr typename alt_bn128_types<254>::base_field_type::value_type const
                         alt_bn128_params<254, forms::short_weierstrass>::a;
-                    constexpr typename alt_bn128_types<254>::integral_type const
+                    constexpr typename alt_bn128_types<254>::base_field_type::value_type const
                         alt_bn128_params<254, forms::short_weierstrass>::b;
 
                     constexpr std::array<
