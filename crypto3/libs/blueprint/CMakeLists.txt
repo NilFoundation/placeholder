@@ -20,7 +20,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
 )
 include(CMTest)
 if(BUILD_CRYPTO3_TESTS)
-    cm_add_test_subdirectory(test)
+    add_subdirectory(test)
 endif()
 
 if(BUILD_EXAMPLES)
