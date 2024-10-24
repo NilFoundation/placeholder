@@ -52,7 +52,7 @@ namespace nil::crypto3::multiprecision {
 
             constexpr bool compare_eq(const modular_big_integer_impl& o) const {
                 // TODO(ioxid): ensure modulus comparison is done in compile time when possible
-                return modular_ops().compare_eq(o.modular_ops()) && m_base == o.m_base;
+                return ops().compare_eq(o.ops()) && m_base == o.m_base;
             }
 
             template<class T>
@@ -64,7 +64,7 @@ namespace nil::crypto3::multiprecision {
             // cpp_int conversion
 
             constexpr typename big_integer_t::cpp_int_type to_cpp_int() const {
-                return modular_ops().adjusted_regular(m_base).to_cpp_int();
+                return ops().adjusted_regular(m_base).to_cpp_int();
             }
 
             // String conversion
@@ -72,7 +72,7 @@ namespace nil::crypto3::multiprecision {
             inline std::string str(std::streamsize digits = 0,
                                    std::ios_base::fmtflags f = std::ios_base::fmtflags(0)) const {
                 // TODO(ioxid): add module to output
-                return modular_ops().adjusted_regular(m_base).str(digits, f);
+                return ops().adjusted_regular(m_base).str(digits, f);
             }
 
             // TODO(ioxid): why is it here
@@ -81,7 +81,7 @@ namespace nil::crypto3::multiprecision {
             inline constexpr void negate() {
                 if (m_base != m_zero) {
                     auto initial_m_base = m_base;
-                    m_base = modular_ops().get_mod();
+                    m_base = ops().get_mod();
                     m_base -= initial_m_base;
                 }
             }
@@ -130,10 +130,8 @@ namespace nil::crypto3::multiprecision {
             constexpr auto& base_data() { return m_base; }
             constexpr const auto& base_data() const { return m_base; }
 
-            constexpr auto& modular_ops() { return m_modular_ops_storage.modular_ops(); }
-            constexpr const auto& modular_ops() const {
-                return m_modular_ops_storage.modular_ops();
-            }
+            constexpr auto& ops() { return m_modular_ops_storage.ops(); }
+            constexpr const auto& ops() const { return m_modular_ops_storage.ops(); }
 
           protected:
             modular_ops_storage_t m_modular_ops_storage;
@@ -153,7 +151,7 @@ namespace nil::crypto3::multiprecision {
                              "modulus precision should match used big_integer_t");
 
             result.set_modular_ops(b);
-            result.modular_ops().adjust_modular(result.base_data(), a);
+            result.ops().adjust_modular(result.base_data(), a);
         }
     }  // namespace detail
 
@@ -172,7 +170,7 @@ namespace nil::crypto3::multiprecision {
 
         template<unsigned Bits2>
         constexpr explicit modular_big_integer_ct(const big_integer<Bits2>& b) : base_type({}) {
-            this->modular_ops().adjust_modular(this->m_base, b);
+            this->ops().adjust_modular(this->m_base, b);
         }
 
         // A method for converting a signed integer to a modular adaptor. We are not supposed to
@@ -184,21 +182,21 @@ namespace nil::crypto3::multiprecision {
             if (b >= 0) {
                 this->m_base = static_cast<std::make_unsigned_t<SI>>(b);
             } else {
-                this->m_base = this->modular_ops().get_mod();
+                this->m_base = this->ops().get_mod();
                 // TODO(ioxid): should work not just with limb_type
                 this->m_base -= static_cast<detail::limb_type>(-b);
             }
 
             // This method must be called only for compile time modular params.
             // modular_ops_storage.set_modular_ops(m);
-            this->modular_ops().adjust_modular(this->m_base);
+            this->ops().adjust_modular(this->m_base);
         }
 
         template<typename UI, typename std::enable_if_t<
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
         constexpr modular_big_integer_ct(UI b) : base_type({}) {
             this->m_base = b;
-            this->modular_ops().adjust_modular(this->m_base);
+            this->ops().adjust_modular(this->m_base);
         }
     };
 
@@ -218,26 +216,26 @@ namespace nil::crypto3::multiprecision {
             if (b >= 0) {
                 this->m_base = b;
             } else {
-                this->m_base = this->modular_ops().get_mod();
+                this->m_base = this->ops().get_mod();
                 // TODO(ioxid): should work not just with limb_type
                 this->m_base -= static_cast<detail::limb_type>(-b);
             }
 
-            this->modular_ops().adjust_modular(this->m_base);
+            this->ops().adjust_modular(this->m_base);
         }
 
         template<typename UI, typename std::enable_if_t<
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
         constexpr modular_big_integer_rt(UI b, const big_integer_t& m) : base_type(m) {
             this->m_base = b;
-            this->modular_ops().adjust_modular(this->m_base);
+            this->ops().adjust_modular(this->m_base);
         }
 
         // TODO(ioxid): move adjust modular to impl constructor
         template<unsigned Bits2>
         constexpr modular_big_integer_rt(const big_integer<Bits2>& b, const big_integer_t& m)
             : base_type(m) {
-            this->modular_ops().adjust_modular(this->m_base, b);
+            this->ops().adjust_modular(this->m_base, b);
         }
     };
 }  // namespace nil::crypto3::multiprecision
