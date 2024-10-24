@@ -59,6 +59,7 @@
 
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/assignment_table_writer.hpp>
+#include <nil/proof-generator/circuit_writer.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
 namespace nil {
@@ -501,6 +502,25 @@ namespace nil {
                         *marshalled_value
                     )
                 );
+
+                return true;
+            }
+
+            bool save_circuit_to_file(boost::filesystem::path circuit_file) {
+                BOOST_LOG_TRIVIAL(info) << "Writing circuit to " << circuit_file;
+                if (!constraint_system_) {
+                    BOOST_LOG_TRIVIAL(error) << "No circuit is currently loaded into the Prover";
+                    return false;
+                }
+
+                std::ofstream out(circuit_file.string(), std::ios::binary | std::ios::out);
+                if (!out.is_open()) {
+                    BOOST_LOG_TRIVIAL(error) << "failed to open file " << circuit_file;
+                    return false;
+                }
+
+                circuit_writer<Endianness, BlueprintField> writer(out);
+                writer.write_binary_circuit(*constraint_system_, constraint_system_->public_input_sizes());            
                 return true;
             }
 
