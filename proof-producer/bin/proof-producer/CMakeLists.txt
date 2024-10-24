@@ -12,6 +12,9 @@
 include(CMDeploy)
 include(CMSetupVersion)
 
+find_package(Protobuf REQUIRED)
+find_package(absl REQUIRED)
+
 if (CPACK_PACKAGE_VERSION)
     add_compile_definitions(PROOF_GENERATOR_VERSION=${CPACK_PACKAGE_VERSION})
 endif()
@@ -38,6 +41,7 @@ function(setup_proof_generator_target)
     add_executable(${ARG_TARGET_NAME}
         src/arg_parser.cpp
         src/main.cpp
+        ${PROTO_SRC}
     )
 
     add_library(${ARG_TARGET_NAME}-lib INTERFACE)
@@ -58,10 +62,12 @@ function(setup_proof_generator_target)
     target_include_directories(${ARG_TARGET_NAME}-lib INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        ${PROTOBUF_INCLUDE_DIR}
     )
 
     target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${INTERFACE_LIBS})
-    target_link_libraries(${ARG_TARGET_NAME} PRIVATE ${ARG_TARGET_NAME}-lib Boost::program_options)
+    # absl is required for protobuf
+    target_link_libraries(${ARG_TARGET_NAME} PRIVATE ${ARG_TARGET_NAME}-lib Boost::program_options absl::log_internal_check_op crypto3::blueprint ${PROTOBUF_LIBRARY})
 
     target_include_directories(${ARG_TARGET_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -80,6 +86,30 @@ function(setup_proof_generator_target)
     endif ()
 
 endfunction()
+
+file(GLOB PROTO_FILES "proto/*.proto")
+
+foreach(PROTO_FILE ${PROTO_FILES})
+    get_filename_component(PROTO_NAME_WE ${PROTO_FILE} NAME_WE)
+    get_filename_component(PROTO_DIR ${PROTO_FILE} DIRECTORY)
+
+    set(OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include/nil/proof-generator")
+    set(PROTO_HDR "${OUTPUT_DIR}/${PROTO_NAME_WE}.pb.h")
+    set(PROTO_SRC "${OUTPUT_DIR}/${PROTO_NAME_WE}.pb.cc")
+
+    add_custom_command(
+        OUTPUT ${PROTO_HDR} ${PROTO_SRC}
+        COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+        ARGS --cpp_out=${OUTPUT_DIR} --proto_path ${PROTO_DIR} ${PROTO_FILE}
+        DEPENDS ${PROTO_FILE}
+        COMMENT "Generating ${PROTO_SRC} and ${PROTO_HDR} from ${PROTO_FILE}"
+        VERBATIM
+
+    )
+
+    list(APPEND GENERATED_SOURCES ${PROTO_SRC})
+    list(APPEND GENERATED_HEADERS ${PROTO_HDR})
+endforeach()
 
 set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
 setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)

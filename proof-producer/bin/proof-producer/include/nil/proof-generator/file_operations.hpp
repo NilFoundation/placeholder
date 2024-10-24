@@ -29,6 +29,11 @@
 namespace nil {
     namespace proof_generator {
         inline bool is_valid_path(const std::string& path) {
+            if (path.empty()) {
+                BOOST_LOG_TRIVIAL(error) << "Provided file path is empty.";
+                return false;
+            }
+
             if (path.length() >= PATH_MAX) {
                 BOOST_LOG_TRIVIAL(error) << path << ": file path is too long. Maximum allowed length is " << PATH_MAX
                                          << " characters.";

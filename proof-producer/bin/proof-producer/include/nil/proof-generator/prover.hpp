@@ -55,9 +55,10 @@
 
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
 
-
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/file_operations.hpp>
+
+#include <nil/proof-generator/traces_reader.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -102,18 +103,20 @@ namespace nil {
             }
 
             enum class ProverStage {
-                ALL = 0,
-                PREPROCESS = 1,
-                PROVE = 2,
-                VERIFY = 3,
-                GENERATE_AGGREGATED_CHALLENGE = 4,
-                GENERATE_PARTIAL_PROOF = 5,
-                COMPUTE_COMBINED_Q = 6,
-                GENERATE_AGGREGATED_FRI_PROOF = 7,
-                GENERATE_CONSISTENCY_CHECKS_PROOF = 8,
-                MERGE_PROOFS = 9
+                ALL,
+                PREPROCESS,
+                PROVE,
+                VERIFY,
+                GENERATE_AGGREGATED_CHALLENGE,
+                GENERATE_PARTIAL_PROOF,
+                COMPUTE_COMBINED_Q,
+                GENERATE_AGGREGATED_FRI_PROOF,
+                GENERATE_CONSISTENCY_CHECKS_PROOF,
+                MERGE_PROOFS,
+                READ_TRACES
             };
 
+            // TODO: make it another macro in parser for two-way conversion
             ProverStage prover_stage_from_string(const std::string& stage) {
                 static std::unordered_map<std::string, ProverStage> stage_map = {
                     {"all", ProverStage::ALL},
@@ -125,7 +128,8 @@ namespace nil {
                     {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q},
                     {"merge-proofs", ProverStage::MERGE_PROOFS},
                     {"aggregated-FRI", ProverStage::GENERATE_AGGREGATED_FRI_PROOF},
-                    {"consistency-checks", ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF}
+                    {"consistency-checks", ProverStage::GENERATE_CONSISTENCY_CHECKS_PROOF},
+                    {"read-traces", ProverStage::READ_TRACES}
                 };
                 auto it = stage_map.find(stage);
                 if (it == stage_map.end()) {
@@ -459,6 +463,18 @@ namespace nil {
                 }
 
                 lpc_scheme_.emplace(commitment_scheme.value());
+                return true;
+            }
+
+            bool read_execution_traces_from_file(boost::filesystem::path execution_traces_file_path) {
+                BOOST_LOG_TRIVIAL(info) << "Read execution traces from " << execution_traces_file_path;
+
+                auto traces = deserialize_traces_from_file(execution_traces_file_path);
+                if (!traces) {
+                    return false;
+                }
+                execution_traces_.emplace(*traces);
+
                 return true;
             }
 
@@ -972,6 +988,7 @@ namespace nil {
             std::optional<TableDescription> table_description_;
             std::optional<ConstraintSystem> constraint_system_;
             std::optional<AssignmentTable> assignment_table_;
+            std::optional<ExecutionTraces> execution_traces_;
             std::optional<LpcScheme> lpc_scheme_;
         };
 
