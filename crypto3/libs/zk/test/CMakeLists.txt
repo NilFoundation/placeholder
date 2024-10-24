@@ -62,10 +62,6 @@ set(TESTS_NAMES
 
 #    "routing_algorithms/test_routing_algorithms"
 
-#    "relations/numeric/qap"
-#    "relations/numeric/sap"
-#    "relations/numeric/ssp"
-
 #    "systems/plonk/pickles/pickles"
 #    "systems/plonk/pickles/kimchi"
 #    "systems/plonk/pickles/oracles"
