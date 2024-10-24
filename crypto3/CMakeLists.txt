@@ -18,8 +18,8 @@ cm_setup_version(VERSION 0.3.0 PREFIX ${CMAKE_WORKSPACE_NAME})
 
 option(BUILD_SHARED_LIBS "Build shared library" FALSE) # TODO: it makes no sense for header-only lib, remove
 option(Boost_USE_STATIC_LIBS "Use static libraries for Boost" OFF)
-option(CMAKE_ENABLE_TESTS "Enable tests" FALSE) # used by CMTest module
-option(BUILD_BENCH_TESTS "Build performance benchmark tests" FALSE)
+option(BUILD_CRYPTO3_TESTS "Enable tests" FALSE) # used by CMTest module
+option(BUILD_CRYPTO3_BENCH_TESTS "Build performance benchmark tests" FALSE)
 option(BUILD_DOCS "Build with configuring Doxygen documentation compiler" FALSE)
 
 # The file compile_commands.json is generated in build directory, so LSP could
@@ -80,7 +80,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_common INTERFACE
     crypto3::random
 )
 
-if(BUILD_BENCH_TESTS)
+if(BUILD_CRYPTO3_BENCH_TESTS)
     add_subdirectory(benchmarks)
 endif()
 

@@ -17,14 +17,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run checks
+      - name: Run checks for crypto3
+        run: |
+          nix build -L .?#checks.x86_64-linux.crypto3-clang
+        env:
+          NIX_CONFIG: |
+            cores = 4
+
+      - name: Run all checks
+        # This includes cached crypto3 check from previous step. We don't limit cores in this part
         run: |
           nix build -L .?#checks.x86_64-linux.all-clang
           mkdir results
           cp result/test-logs/*_test.xml results/
-        env:
-          NIX_CONFIG: |
-            cores = 4
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
