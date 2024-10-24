@@ -36,6 +36,7 @@ namespace nil {
 
         struct ProverOptions {
             std::string stage = "all";
+            std::string circuit_name = "bytecode";
             boost::filesystem::path proof_file_path = "proof.bin";
             boost::filesystem::path json_file_path = "proof.json";
             boost::filesystem::path preprocessed_common_data_path = "preprocessed_common_data.dat";
