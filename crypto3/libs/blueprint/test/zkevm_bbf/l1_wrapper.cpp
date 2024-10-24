@@ -65,6 +65,23 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_l1_wrapper_test) {
 
     integral_type base16 = integral_type(1) << 16;
 
+    std::size_t max_keccak_blocks = 10;
+    std::size_t max_bytecode = 3000;
+    std::size_t max_mpt = 0;
+    std::size_t max_rw = 500;
+    std::size_t max_copy_size = 3000;
+    std::size_t max_zkevm_rows = 100;
+
+    std::string rw_path = "../crypto3/libs/blueprint/test/zkevm/data/minimal_math/trace0.json";
+    std::ifstream ss;
+    ss.open(rw_path);
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_json(ss, pt);
+    ss.close();
+
+    nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input(pt, max_rw);;
+    nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
+
     nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
     nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type zkevm_constraint_input;
     zkevm_assignment_input.b = 18 * 18;
@@ -73,17 +90,10 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_l1_wrapper_test) {
     nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type keccak_constraint_input;
     keccak_assignment_input.private_input = 12345;
 
-    std::size_t max_keccak_blocks = 10;
-    std::size_t max_bytecode = 3000;
-    std::size_t max_mpt = 100;
-    std::size_t max_rw = 3000;
-    std::size_t max_copy_size = 3000;
-    std::size_t max_zkevm_rows = 100;
-
     test_l1_wrapper<field_type, nil::blueprint::bbf::zkevm>(
         {}, zkevm_assignment_input, zkevm_constraint_input, max_zkevm_rows, max_bytecode, max_rw
     );  // Max_rows, max_bytecode, max_rw
-    test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, 0, 1, max_rw, max_mpt);                 // Max_rw, Max_mpt
+    test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt);                 // Max_rw, Max_mpt
     test_l1_wrapper<field_type, nil::blueprint::bbf::bytecode>({}, 0, 1, max_bytecode, max_mpt);     // Max_bytecode, max_bytecode
     test_l1_wrapper<field_type, nil::blueprint::bbf::copy>({}, 0, 1);                                // Max_copy, Max_rw, Max_keccak
     test_l1_wrapper<field_type, nil::blueprint::bbf::keccak>(
