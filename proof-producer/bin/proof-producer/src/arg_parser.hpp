@@ -61,6 +61,7 @@ namespace nil {
             boost::log::trivial::severity_level log_level = boost::log::trivial::severity_level::info;
             CurvesVariant elliptic_curve_type = type_identity<nil::crypto3::algebra::curves::pallas>{};
             HashesVariant hash_type = type_identity<nil::crypto3::hashes::keccak_1600<256>>{};
+            boost::filesystem::path execution_traces_path;
 
             std::size_t lambda = 9;
             std::size_t grind = 0;

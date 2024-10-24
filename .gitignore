@@ -637,3 +637,7 @@ callgrind.*
 
 .ycm_extra_config.py
 .color_coded
+
+# Ignore generated protobufs
+*.pb.h
+*.pb.cc

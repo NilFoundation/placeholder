@@ -55,9 +55,10 @@
 
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
 
-
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/file_operations.hpp>
+
+#include <nil/proof-generator/traces_reader.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -459,6 +460,18 @@ namespace nil {
                 }
 
                 lpc_scheme_.emplace(commitment_scheme.value());
+                return true;
+            }
+
+            bool read_execution_traces_from_file(boost::filesystem::path execution_traces_file_path) {
+                BOOST_LOG_TRIVIAL(info) << "Read execution traces from " << execution_traces_file_path;
+
+                auto traces = deserialize_traces_from_file(execution_traces_file_path);
+                if (!traces) {
+                    return false;
+                }
+                execution_traces_.emplace(*traces);
+
                 return true;
             }
 
@@ -972,6 +985,7 @@ namespace nil {
             std::optional<TableDescription> table_description_;
             std::optional<ConstraintSystem> constraint_system_;
             std::optional<AssignmentTable> assignment_table_;
+            std::optional<ExecutionTraces> execution_traces_;
             std::optional<LpcScheme> lpc_scheme_;
         };
 

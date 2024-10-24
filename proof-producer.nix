@@ -6,6 +6,7 @@
   boost,
   gdb,
   lldb,
+  protobuf,
   cmake_modules,
   enableDebugging,
   enableDebug ? false,
@@ -19,14 +20,14 @@ in stdenv.mkDerivation {
   src = lib.sourceByRegex ./. ["^proof-producer(/.*)?$" "^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
   hardeningDisable = [ "fortify" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++
+  nativeBuildInputs = [ cmake ninja pkg-config protobuf ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules ];
+  buildInputs = [ cmake_modules ];
 
   cmakeFlags =
     [
