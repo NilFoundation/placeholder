@@ -22,7 +22,6 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#include "nil/crypto3/algebra/fields/bls12/base_field.hpp"
 #define BOOST_TEST_MODULE type_traits_test
 
 #include <boost/test/unit_test.hpp>

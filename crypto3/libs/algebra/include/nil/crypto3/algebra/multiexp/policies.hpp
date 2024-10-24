@@ -220,7 +220,9 @@ namespace nil {
                         typedef typename std::iterator_traits<InputBaseIterator>::value_type base_value_type;
                         typedef typename std::iterator_traits<InputFieldIterator>::value_type field_value_type;
 
-                        typedef typename field_value_type::integral_type non_fixed_precision_number_type;
+                        //typedef typename field_value_type::integral_type non_fixed_precision_number_type;
+                        //using non_fixed_precision_number_type = field_value_type;
+                        using non_fixed_precision_number_type = typename field_value_type::integral_type;
 
                         if (vec_start == vec_end) {
                             return base_value_type::zero();

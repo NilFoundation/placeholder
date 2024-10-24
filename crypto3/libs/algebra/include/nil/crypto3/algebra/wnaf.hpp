@@ -70,7 +70,7 @@ namespace nil {
             template<typename CurveGroupValueType, typename Backend,
                      boost::multiprecision::expression_template_option ExpressionTemplates>
             std::enable_if_t<
-                is_curve<typename CurveGroupValueType::group_type>::value,
+                is_curve_element<CurveGroupValueType>::value,
                 CurveGroupValueType>
             opt_window_wnaf_exp(const CurveGroupValueType &base,
                 const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar,
