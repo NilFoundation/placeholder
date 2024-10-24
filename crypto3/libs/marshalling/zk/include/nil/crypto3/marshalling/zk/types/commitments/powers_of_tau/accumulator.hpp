@@ -49,7 +49,6 @@
 #include <nil/crypto3/marshalling/algebra/types/fast_curve_element.hpp>
 #include <nil/crypto3/marshalling/zk/types/accumulation_vector.hpp>
 #include <nil/crypto3/marshalling/zk/types/sparse_vector.hpp>
-#include <nil/crypto3/marshalling/zk/types/r1cs_gg_ppzksnark/r1cs.hpp>
 
 namespace nil {
     namespace crypto3 {
