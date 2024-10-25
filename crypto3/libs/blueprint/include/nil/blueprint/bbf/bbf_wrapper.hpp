@@ -223,7 +223,7 @@ namespace nil {
 
                 std::size_t max_rows = 8;
                 context_type ct = context_type(assignment.get_description(), max_rows, start_row_index); // max_rows = 8
-                TYPE const_test = 5; // TODO: this is a workaround!!! we need a normal way to assign constants to constraint type!
+                TYPE const_test = 5;
                 ct.allocate(const_test,0,0,bbf::column_type::constant);
 
                 Is_Zero c1 = Is_Zero(ct, instance_input.x);
