@@ -75,7 +75,7 @@ void test_l1_wrapper(
     AssignmentType assignment(desc);
     nil::blueprint::circuit<ArithmetizationType> bp;
 
-    std::size_t start_row = 1;
+    std::size_t start_row = 0;
 
     std::vector<std::size_t> witnesses;
     for( std::size_t i = 0; i < desc.witness_columns; i++) witnesses.push_back(i);
@@ -102,6 +102,7 @@ void test_l1_wrapper(
         component_instance, assignment, assignment_input, start_row, component_static_info_args...
     );
 
+    nil::crypto3::zk::snark::basic_padding(assignment);
     BOOST_ASSERT(is_satisfied(bp, assignment) == true);
     std::cout << std::endl;
 }
