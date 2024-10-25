@@ -198,7 +198,10 @@ namespace nil {
                 using var = typename component_type::var;
                 using nil::blueprint::bbf::row_selector;
 
-                context_type ct = context_type(assignment.get_description(), component.max_rows, start_row_index); 
+                std::size_t max_rows = 8;
+                context_type ct = context_type(assignment.get_description(), max_rows, start_row_index); // max_rows = 8
+                TYPE const_test = 5;
+                ct.allocate(const_test,0,0,bbf::column_type::constant);
 
                 std::vector<std::size_t> table_lookup_area = {0,1,2,3,4,5};
                 std::vector<std::size_t> circuit_area;
