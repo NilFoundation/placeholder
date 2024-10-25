@@ -131,6 +131,44 @@ namespace nil {
                 }
             };
 
+            // A visitor for checking that in an expression all variables are absolute or all variables are relative
+            template<typename VariableType>
+            class expression_relativity_check_visitor : public boost::static_visitor<bool> {
+            public:
+                expression_relativity_check_visitor(bool relativity_) : relativity(relativity_) {}
+
+                static bool is_absolute(const crypto3::math::expression<VariableType>& expr) {
+                    expression_relativity_check_visitor v = expression_relativity_check_visitor(false);
+                    return boost::apply_visitor(v, expr.get_expr());
+                }
+                static bool is_relative(const crypto3::math::expression<VariableType>& expr) {
+                    expression_relativity_check_visitor v = expression_relativity_check_visitor(true);
+                    return boost::apply_visitor(v, expr.get_expr());
+                }
+
+                bool operator()(const crypto3::math::term<VariableType>& term) {
+                    bool res = true;
+
+                    for(std::size_t i = 0; i < term.get_vars().size(); i++) {
+                        res = res && (term.get_vars()[i].relative == relativity);
+                    }
+                    return res;
+                }
+
+                bool operator()(const crypto3::math::pow_operation<VariableType>& pow) {
+                    return boost::apply_visitor(*this, pow.get_expr().get_expr());
+                }
+
+                bool operator()(const crypto3::math::binary_arithmetic_operation<VariableType>& op) {
+                    bool A_res = boost::apply_visitor(*this, op.get_expr_left().get_expr());
+                    bool B_res = boost::apply_visitor(*this, op.get_expr_right().get_expr());
+
+                    return A_res && B_res;
+                }
+            private:
+                bool relativity;
+            };
+
             // Converts the given expression to become relative to the given row shift using rotations.
             template<typename VariableType>
             class expression_relativize_visitor : public boost::static_visitor<crypto3::math::expression<VariableType>> {
@@ -194,14 +232,14 @@ namespace nil {
                 bool is_allocated(std::size_t col, std::size_t row, column_type t) {
                     if (col >= log[t].size()) {
                         std::stringstream error;
-                        error << "Invalid value col = " << col 
+                        error << "Invalid value col = " << col
                             << " when checking if a " << t << " cell is allocated. We have "
                             << log[t].size() << " columns.";
                         throw std::out_of_range(error.str());
                     }
                     if (row >= log[t][col].size()) {
                         std::stringstream error;
-                        error << "Invalid value row = " << row 
+                        error << "Invalid value row = " << row
                             << " when checking if a " << t << " cell is allocated. Column " << col << " has "
                             << log[t][col].size() << " rows.";
                         throw std::out_of_range(error.str());
@@ -212,14 +250,14 @@ namespace nil {
                 void mark_allocated(std::size_t col, std::size_t row, column_type t) {
                     if (col >= log[t].size()) {
                         std::stringstream error;
-                        error << "Invalid value col = " << col 
+                        error << "Invalid value col = " << col
                             << " when marking a " << t << " cell allocated. We have "
                             << log[t].size() << " columns.";
                         throw std::out_of_range(error.str());
                     }
                     if (row >= log[t][col].size()) {
                         std::stringstream error;
-                        error << "Invalid value row = " << row 
+                        error << "Invalid value row = " << row
                             << " when marking a " << t << " cell allocated. Column " << col << " has "
                             << log[t][col].size() << " rows.";
                         throw std::out_of_range(error.str());
@@ -412,11 +450,12 @@ namespace nil {
                             BOOST_LOG_TRIVIAL(warning) << "Assignment violates copy constraint (" << A << " != " << B << ")";
                         }
                     }
-                    void constrain(TYPE C) {
+                    void constrain(TYPE C, std::string constraint_name) {
                         if (C != 0) {
                             // NB: This might be an error, but we don't stop execution,
                             // because we want to be able to run tests-to-fail.
-                            BOOST_LOG_TRIVIAL(warning) << "Assignment violates polynomial constraint (" << C << " != 0)";
+                            BOOST_LOG_TRIVIAL(warning) << "Assignment violates polynomial constraint "
+                                                       << constraint_name << " (" << C << " != 0)";
                         }
                     }
                     void lookup(std::vector<TYPE> &C, std::string table_name) {
@@ -425,7 +464,8 @@ namespace nil {
                     void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
                         // most probably do nothing
                     }
-
+/*
+                    // TODO: should not be accessible at ASSIGNMENT stage at all?
                     void optimize_gates() {
                         throw std::logic_error("optimize_gates() called at assignment stage.");
                     }
@@ -443,7 +483,7 @@ namespace nil {
                     std::vector<std::pair<std::vector<lookup_constraint_type>, std::set<std::size_t>>> get_lookup_constraints() {
                         throw std::logic_error("get_lookup_constraints() called at assignment stage.");
                     }
-
+*/
                     context subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
                         context res = *this;
                         std::vector<std::size_t> new_W = {};
@@ -536,7 +576,7 @@ namespace nil {
                                       false, // false = use absolute cell address
                                       static_cast<typename var::column_type>(t));
                         if ((C != TYPE()) && (t == column_type::witness)) { // TODO: TYPE() - is this ok? NB: we only constrain witnesses!
-                            constrain(res - C);
+                            constrain(res - C,""); // TODO: maybe add a name for this constraint?
                         }
 
                         C = res;
@@ -559,7 +599,23 @@ namespace nil {
                         }
                     }
 
-                    void constrain(TYPE C) {
+                    bool is_absolute(TYPE C) {
+                        return expression_relativity_check_visitor<var>::is_absolute(C);
+                    }
+                    bool is_relative(TYPE C) {
+                        return expression_relativity_check_visitor<var>::is_relative(C);
+                    }
+                    TYPE relativize(TYPE C, int32_t shift) {
+                        return expression_relativize_visitor<var>::relativize(C, shift);
+                    }
+
+                    void constrain(TYPE C, std::string constraint_name) {
+                        if (!is_absolute(C)) {
+                            std::stringstream ss;
+                            ss << "Constraint " << C << " has relative variables, cannot constrain.";
+                            throw std::logic_error(ss.str());
+                        }
+
                         auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(C);
                         if (!has_vars) {
                             BOOST_LOG_TRIVIAL(error) << "Constraint " << C << " has no variables!\n";
@@ -570,7 +626,17 @@ namespace nil {
                         }
                         std::size_t row = (min_row + max_row)/2;
 
-                        TYPE C_rel = expression_relativize_visitor<var>::relativize(C, -row);
+                        TYPE C_rel = relativize(C, -row);
+
+                        add_constraint(C_rel, row);
+                    }
+
+                    void relative_constrain(TYPE C_rel, std::size_t row) { // accesible only at GenerationStage::CONSTRAINTS !
+                        if (!is_relative(C_rel)) {
+                            std::stringstream ss;
+                            ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
+                            throw std::logic_error(ss.str());
+                        }
                         add_constraint(C_rel, row);
                     }
 
@@ -745,7 +811,7 @@ namespace nil {
                         context res = subcontext(W, new_row_shift, new_max_rows);
                         res.reset_storage();
                         return res;
-                    } 
+                    }
 
 
                 private:
@@ -809,8 +875,8 @@ namespace nil {
                         ct.copy_constrain(A,B);
                     }
 
-                    void constrain(TYPE C) {
-                        ct.constrain(C);
+                    void constrain(TYPE C, std::string constraint_name = "") {
+                        ct.constrain(C, constraint_name);
                     }
 
                     void lookup(std::vector<TYPE> C, std::string table_name) {
