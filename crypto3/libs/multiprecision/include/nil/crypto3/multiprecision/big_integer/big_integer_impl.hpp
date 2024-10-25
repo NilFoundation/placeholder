@@ -124,11 +124,9 @@ namespace nil::crypto3::multiprecision {
         // Assignment from other types
 
         // TODO(ioxid): forbid signed, implement comparison with signed instead
-        template<typename T>
-        inline constexpr
-            typename std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/,
-                                      big_integer&>
-            operator=(T val) noexcept {
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
+        inline constexpr big_integer& operator=(T val) noexcept {
             if (val < 0) {
                 std::cerr << "big_integer: assignment from negative integer" << std::endl;
                 std::terminate();

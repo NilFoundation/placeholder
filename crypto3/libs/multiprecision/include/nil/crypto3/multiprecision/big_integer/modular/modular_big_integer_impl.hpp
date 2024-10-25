@@ -20,10 +20,10 @@
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
+#include "nil/crypto3/multiprecision/big_integer/modular/modular_ops_storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
-        // fixed precision modular big integer which supports compile-time execution
         template<typename big_integer_t_, typename modular_ops_storage_t>
         class modular_big_integer_impl {
           public:
@@ -31,7 +31,7 @@ namespace nil::crypto3::multiprecision {
             constexpr static auto Bits = big_integer_t::Bits;
             using limb_type = typename big_integer_t::limb_type;
             using double_limb_type = typename big_integer_t::double_limb_type;
-            using modular_ops_t = modular_ops<big_integer_t>;
+            using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
 
             using unsigned_types = typename big_integer_t::unsigned_types;
             using signed_types = typename big_integer_t::signed_types;
@@ -44,8 +44,11 @@ namespace nil::crypto3::multiprecision {
             // Constructors
 
           protected:
-            inline constexpr modular_big_integer_impl(modular_ops_storage_t&& modular_ops_storage)
-                : m_modular_ops_storage(std::move(modular_ops_storage)) {}
+            inline constexpr modular_big_integer_impl(const big_integer_t x,
+                                                      modular_ops_storage_t&& modular_ops_storage)
+                : m_modular_ops_storage(std::move(modular_ops_storage)) {
+                ops().adjust_modular(m_base, x);
+            }
 
           public:
             // Comparison
@@ -55,16 +58,20 @@ namespace nil::crypto3::multiprecision {
                 return ops().compare_eq(o.ops()) && m_base == o.m_base;
             }
 
-            template<class T>
-            constexpr int compare_eq(const T& val) const {
-                // TODO(ioxid): should compare adjusted?
-                return m_base == val;
-            }
+            // template<class T>
+            // constexpr bool compare_eq(const T& val) const {
+            //     // TODO(ioxid): should compare adjusted?
+            //     return m_base == val;
+            // }
 
             // cpp_int conversion
 
             constexpr typename big_integer_t::cpp_int_type to_cpp_int() const {
-                return ops().adjusted_regular(m_base).to_cpp_int();
+                return remove_modulus().to_cpp_int();
+            }
+
+            constexpr big_integer_t remove_modulus() const {
+                return ops().adjusted_regular(m_base);
             }
 
             // String conversion
@@ -72,7 +79,7 @@ namespace nil::crypto3::multiprecision {
             inline std::string str(std::streamsize digits = 0,
                                    std::ios_base::fmtflags f = std::ios_base::fmtflags(0)) const {
                 // TODO(ioxid): add module to output
-                return ops().adjusted_regular(m_base).str(digits, f);
+                return remove_modulus().str(digits, f);
             }
 
             // TODO(ioxid): why is it here
@@ -155,69 +162,68 @@ namespace nil::crypto3::multiprecision {
         }
     }  // namespace detail
 
-    template<const auto& modulus>
-    struct modular_big_integer_ct
+    template<const auto& modulus, template<typename> typename modular_ops_template>
+    struct modular_big_integer_ct_impl
         : public detail::modular_big_integer_impl<
               std::decay_t<decltype(modulus)>,
-              detail::modular_ops_storage_ct<std::decay_t<decltype(modulus)>, modulus>> {
+              detail::modular_ops_storage_ct<modulus, modular_ops_template>> {
         using base_type = detail::modular_big_integer_impl<
             std::decay_t<decltype(modulus)>,
-            detail::modular_ops_storage_ct<std::decay_t<decltype(modulus)>, modulus>>;
+            detail::modular_ops_storage_ct<modulus, modular_ops_template>>;
 
         using typename base_type::big_integer_t;
 
-        constexpr modular_big_integer_ct() : base_type({}) {}
+        constexpr modular_big_integer_ct_impl() : base_type({}, {}) {}
 
         template<unsigned Bits2>
-        constexpr explicit modular_big_integer_ct(const big_integer<Bits2>& b) : base_type({}) {
+        constexpr explicit modular_big_integer_ct_impl(const big_integer<Bits2>& b)
+            : base_type(b, {}) {
             this->ops().adjust_modular(this->m_base, b);
         }
 
         // A method for converting a signed integer to a modular adaptor. We are not supposed to
-        // have this, but in the code we already have conversion for an 'int' into modular type. In
-        // the future we must remove.
+        // have this, but in the code we already have conversion for an 'int' into modular type.
+        // In the future we must remove.
         template<typename SI,
                  typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-        constexpr modular_big_integer_ct(SI b) : base_type({}) {
+        constexpr modular_big_integer_ct_impl(SI b) : base_type(0u, {}) {
             if (b >= 0) {
                 this->m_base = static_cast<std::make_unsigned_t<SI>>(b);
             } else {
                 this->m_base = this->ops().get_mod();
-                // TODO(ioxid): should work not just with limb_type
+                // TODO(ioxid): should work not just with limb_type, and this does not really
+                // work (m_base may underflow)
                 this->m_base -= static_cast<detail::limb_type>(-b);
             }
 
-            // This method must be called only for compile time modular params.
-            // modular_ops_storage.set_modular_ops(m);
             this->ops().adjust_modular(this->m_base);
         }
 
         template<typename UI, typename std::enable_if_t<
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
-        constexpr modular_big_integer_ct(UI b) : base_type({}) {
-            this->m_base = b;
-            this->ops().adjust_modular(this->m_base);
-        }
+        constexpr modular_big_integer_ct_impl(UI b) : base_type(b, {}) {}
     };
 
-    template<unsigned Bits>
-    struct modular_big_integer_rt
+    template<unsigned Bits, template<typename> typename modular_ops_template>
+    struct modular_big_integer_rt_impl
         : public detail::modular_big_integer_impl<
-              big_integer<Bits>, detail::modular_ops_storage_rt<big_integer<Bits>>> {
-        using base_type =
-            detail::modular_big_integer_impl<big_integer<Bits>,
-                                             detail::modular_ops_storage_rt<big_integer<Bits>>>;
+              big_integer<Bits>,
+              detail::modular_ops_storage_rt<big_integer<Bits>, modular_ops_template>> {
+        using base_type = detail::modular_big_integer_impl<
+            big_integer<Bits>,
+            detail::modular_ops_storage_rt<big_integer<Bits>, modular_ops_template>>;
 
         using typename base_type::big_integer_t;
 
-          template<typename SI,
+        template<typename SI,
                  std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-        constexpr modular_big_integer_rt(SI b, const big_integer_t& m): base_type(m) {
+        constexpr modular_big_integer_rt_impl(SI b, const big_integer_t& m) : base_type(0u, m) {
             if (b >= 0) {
                 this->m_base = b;
             } else {
                 this->m_base = this->ops().get_mod();
-                // TODO(ioxid): should work not just with limb_type
+                // TODO(ioxid): should work not just with limb_type, and this does not really
+                // work (m_base may underflow)
                 this->m_base -= static_cast<detail::limb_type>(-b);
             }
 
@@ -226,16 +232,25 @@ namespace nil::crypto3::multiprecision {
 
         template<typename UI, typename std::enable_if_t<
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
-        constexpr modular_big_integer_rt(UI b, const big_integer_t& m) : base_type(m) {
-            this->m_base = b;
-            this->ops().adjust_modular(this->m_base);
-        }
+        constexpr modular_big_integer_rt_impl(UI b, const big_integer_t& m) : base_type(b, m) {}
 
-        // TODO(ioxid): move adjust modular to impl constructor
         template<unsigned Bits2>
-        constexpr modular_big_integer_rt(const big_integer<Bits2>& b, const big_integer_t& m)
-            : base_type(m) {
-            this->ops().adjust_modular(this->m_base, b);
-        }
+        constexpr modular_big_integer_rt_impl(const big_integer<Bits2>& b, const big_integer_t& m)
+            : base_type(b, m) {}
     };
+
+    template<const auto& modulus>
+    using montgomery_modular_big_integer =
+        modular_big_integer_ct_impl<modulus, detail::montgomery_modular_ops>;
+    template<unsigned Bits>
+    using montgomery_modular_big_integer_rt =
+        modular_big_integer_rt_impl<Bits, detail::montgomery_modular_ops>;
+    template<const auto& modulus>
+    using modular_big_integer = modular_big_integer_ct_impl<modulus, detail::barrett_modular_ops>;
+    template<unsigned Bits>
+    using modular_big_integer_rt = modular_big_integer_rt_impl<Bits, detail::barrett_modular_ops>;
+    template<const auto& modulus>
+    using auto_modular_big_integer =
+        std::conditional_t<detail::check_montgomery_constraints(modulus),
+                           montgomery_modular_big_integer<modulus>, modular_big_integer<modulus>>;
 }  // namespace nil::crypto3::multiprecision
