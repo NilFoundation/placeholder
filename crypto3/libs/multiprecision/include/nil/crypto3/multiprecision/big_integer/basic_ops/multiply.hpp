@@ -29,11 +29,12 @@ namespace nil::crypto3::multiprecision::detail {
         result.from_cpp_int(result_cpp_int);
     }
 
+    // TODO(ioxid): lossy
     template<unsigned Bits1, unsigned Bits2>
     inline constexpr void multiply(big_integer<Bits1> &result,
                                    const big_integer<Bits2> &a) noexcept {
         auto result_cpp_int = result.to_cpp_int();
-        result_cpp_int *= a.to_cpp_int();
+        result_cpp_int = static_cast<decltype(result_cpp_int)>(result_cpp_int * a.to_cpp_int());
         result.from_cpp_int(result_cpp_int);
     }
 }  // namespace nil::crypto3::multiprecision::detail

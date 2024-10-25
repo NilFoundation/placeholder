@@ -45,12 +45,12 @@ void value_comparisons_tests(const big_integer<Bits1>& a, const big_integer<Bits
     cpp_int_number1 a_cppint = a.to_cpp_int();
     cpp_int_number2 b_cppint = b.to_cpp_int();
 
-    BOOST_ASSERT_MSG((a > b) == (a_cppint > b_cppint), "g error");
-    BOOST_ASSERT_MSG((a >= b) == (a_cppint >= b_cppint), "ge error");
-    BOOST_ASSERT_MSG((a == b) == (a_cppint == b_cppint), "e error");
-    BOOST_ASSERT_MSG((a < b) == (a_cppint < b_cppint), "l error");
-    BOOST_ASSERT_MSG((a <= b) == (a_cppint <= b_cppint), "le error");
-    BOOST_ASSERT_MSG((a != b) == (a_cppint != b_cppint), "ne error");
+    BOOST_CHECK_EQUAL(a > b, a_cppint > b_cppint);
+    BOOST_CHECK_EQUAL(a >= b, a_cppint >= b_cppint);
+    BOOST_CHECK_EQUAL(a == b, a_cppint == b_cppint);
+    BOOST_CHECK_EQUAL(a < b, a_cppint < b_cppint);
+    BOOST_CHECK_EQUAL(a <= b, a_cppint <= b_cppint);
+    BOOST_CHECK_EQUAL(a != b, a_cppint != b_cppint);
 }
 
 template<unsigned Bits1, unsigned Bits2>

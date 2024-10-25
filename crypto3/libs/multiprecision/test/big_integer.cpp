@@ -14,7 +14,9 @@
 
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(60)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(32)
+CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(33)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(36)
+CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(37)
 BOOST_MP_DEFINE_SIZED_CPP_INT_LITERAL(60)
 
 using namespace nil::crypto3::multiprecision::literals;
@@ -100,8 +102,8 @@ BOOST_AUTO_TEST_CASE(simple) {
     BOOST_CHECK_EQUAL(0x2_big_integer60 + 0x3_big_integer60, 0x5_big_integer60);
 }
 
-BOOST_AUTO_TEST_CASE(wraps) {
-    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer32 + 0x2_big_integer32, 0x1_big_integer32);
+BOOST_AUTO_TEST_CASE(does_not_wrap) {
+    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer32 + 0x2_big_integer32, 0x100000001_big_integer33);
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
@@ -117,11 +119,11 @@ BOOST_AUTO_TEST_CASE(simple) {
 }
 
 BOOST_AUTO_TEST_CASE(wraps) {
-    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer32 * 0x2_big_integer32, 0xFFFFFFFE_big_integer32);
+    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer32 * 0x2_big_integer32, 0x1fffffffe_big_integer33);
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
-    BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_integer36 * 0x2_big_integer36, 0x5FFFFFFFE_big_integer36);
+    BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_integer36 * 0x2_big_integer36, 0x15FFFFFFFE_big_integer37);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

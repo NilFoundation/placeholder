@@ -276,6 +276,7 @@ namespace nil::crypto3::multiprecision::detail {
             if (!check_montgomery_constraints(m)) {
                 throw std::invalid_argument("module not usable with montgomery");
             }
+
             m_montgomery_p_dash = this->monty_inverse(this->m_mod.limbs()[0]);
 
             big_integer_doubled_padded_limbs r;

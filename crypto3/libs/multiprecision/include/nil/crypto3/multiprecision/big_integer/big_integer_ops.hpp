@@ -46,15 +46,14 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<detail::is_integral_v<T1> && detail::is_integral_v<T2> &&           \
                                   (detail::is_big_integer_v<T1> || detail::is_big_integer_v<T2>), \
                               int> = 0,                                                           \
-             typename result_t =                                                                  \
+             typename largest_t =                                                                 \
                  big_integer<std::max(detail::get_bits<T1>(), detail::get_bits<T2>())>>
 
-#define CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                                     \
-    template<                                                                                   \
-        typename big_integer_t, typename T,                                                     \
-        std::enable_if_t<detail::is_big_integer_v<big_integer_t> && detail::is_integral_v<T> && \
-                             detail::get_bits<T>() <= big_integer_t::Bits,                      \
-                         int> = 0>
+    // TODO(ioxid): somehow error on overflow
+#define CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                                        \
+    template<typename big_integer_t, typename T,                                                   \
+             std::enable_if_t<detail::is_big_integer_v<big_integer_t> && detail::is_integral_v<T>, \
+                              int> = 0>
 
 #define CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE \
     template<typename big_integer_t,          \
@@ -62,10 +61,12 @@ namespace nil::crypto3::multiprecision {
 
     // Comparison
 
-#define CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(op)                                             \
-    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE                                                 \
-    inline constexpr bool operator op(const T1& a, const T2& b) noexcept {                   \
-        return compare<std::max(detail::get_bits<T1>(), detail::get_bits<T2>())>(a, b) op 0; \
+#define CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(op)                           \
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE                               \
+    inline constexpr bool operator op(const T1& a, const T2& b) noexcept { \
+        largest_t ap = a;                                                  \
+        largest_t bp = b;                                                  \
+        return ap.compare(bp) op 0;                                        \
     }
 
     CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(<)
@@ -82,9 +83,9 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
-        result_t tmp{a};
-        detail::add(tmp, b);
-        return tmp;
+        big_integer<largest_t::Bits + 1> result = a;
+        detail::add<largest_t::Bits + 1>(result, b);
+        return result;
     }
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator+=(big_integer_t& a, const T& b) noexcept {
@@ -107,9 +108,9 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
-        result_t tmp;
-        detail::subtract(tmp, a, b);
-        return tmp;
+        largest_t result;
+        detail::subtract(result, a, b);
+        return result;
     }
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator-=(big_integer_t& a, const T& b) {
@@ -129,14 +130,14 @@ namespace nil::crypto3::multiprecision {
     }
 
     CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
-    inline constexpr big_integer_t operator-(const big_integer_t& a) noexcept {
+    inline constexpr big_integer_t operator-(const big_integer_t& /* unused */) noexcept {
         // TODO(ioxid): implement?
         static_assert(detail::always_false<big_integer_t>, "can't negate unsigned type");
     }
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
-        result_t result{a};
+        big_integer<detail::get_bits<T1>() + detail::get_bits<T2>()> result = a;
         detail::multiply(result, b);
         return result;
     }
@@ -148,7 +149,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
-        result_t result =  a;
+        largest_t result = a;
         detail::divide(result, b);
         return result;
     }
@@ -160,7 +161,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator%(const T1& a, const T2& b) noexcept {
-        result_t result = a;
+        largest_t result = a;
         detail::modulus(result, b);
         return result;
     }
@@ -172,7 +173,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator&(const T1& a, const T2& b) noexcept {
-        result_t result{a};
+        largest_t result = a;
         detail::bitwise_and(result, b);
         return result;
     }
@@ -184,7 +185,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator|(const T1& a, const T2& b) noexcept {
-        result_t result{a};
+        largest_t result = a;
         detail::bitwise_or(result, b);
         return result;
     }
@@ -196,7 +197,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator^(const T1& a, const T2& b) noexcept {
-        result_t result{a};
+        largest_t result = a;
         detail::bitwise_xor(result, b);
         return result;
     }
@@ -215,7 +216,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator<<(const big_integer_t& a, unsigned shift) noexcept {
-        big_integer_t result{a};
+        big_integer_t result = a;
         detail::left_shift(result, shift);
         return result;
     }
@@ -228,7 +229,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator>>(const big_integer_t& a, unsigned shift) noexcept {
-        big_integer_t result{a};
+        big_integer_t result = a;
         detail::right_shift(result, shift);
         return result;
     }
