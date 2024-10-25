@@ -21,7 +21,7 @@ using namespace nil::crypto3::multiprecision::literals;
 using namespace boost::multiprecision::literals;
 
 constexpr auto mod = 0x123456789ABCDEF_big_integer64;
-using modular_big_int = modular_big_integer_ct<mod>;
+using modular_big_int = montgomery_modular_big_integer<mod>;
 
 BOOST_AUTO_TEST_SUITE(smoke)
 
@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(construct_constexpr) {
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_trivial_montgomery) {
     static constexpr auto mod = 0x3_big_integer64;
-    modular_big_integer_ct<mod> a = modular_big_integer_ct<mod>(0x5_big_integer64);
+    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x5_big_integer64);
     BOOST_CHECK_EQUAL(a.str(), "2");
 }
 
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(construct_modular_rt_trivial_montgomery) {
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small_montgomery) {
     static constexpr auto mod = 0x79_big_integer64;
-    modular_big_integer_ct<mod> a = modular_big_integer_ct<mod>(0x1234_big_integer64);
+    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer64);
     BOOST_CHECK_EQUAL(a.str(), "62");
 }
 
@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(construct_modular_rt_small_montgomery) {
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small) {
     static constexpr auto mod = 0x78_big_integer64;
-    modular_big_integer_ct<mod> a = modular_big_integer_ct<mod>(0x1234_big_integer64);
+    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer64);
     BOOST_CHECK_EQUAL(a.str(), "100");
 }
 
