@@ -43,6 +43,15 @@
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 
+std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
+    std::vector<std::uint8_t> bytes;
+    for (std::size_t i = 2; i < hex_string.size(); i += 2) {
+        std::string byte_string = hex_string.substr(i, 2);
+        bytes.push_back(std::stoi(byte_string, nullptr, 16));
+    }
+    return bytes;
+}
+
 template <
     typename BlueprintFieldType,
     template<typename, nil::blueprint::bbf::GenerationStage> typename BBFType,

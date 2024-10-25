@@ -166,7 +166,6 @@ namespace nil {
                                 input_values.emplace_back(lookup_gates[i].constraints[j].lookup_input[k].evaluate(
                                     selector_row, assignments));
                             }
-
                             const auto table_name =
                                 bp.get_reserved_indices_right().at(lookup_gates[i].constraints[j].table_id);
                             try {
@@ -183,9 +182,9 @@ namespace nil {
                                             std::cout << std::hex << input_values[k] << std::dec << " ";
                                         }
                                         std::cout << std::endl;
-                                        std::cout << "Offending Lookup Gate: " << std::endl;
+                                        std::cout << "Offending Dynamic Lookup Gate: " << std::endl;
                                         for (const auto &constraint : lookup_gates[i].constraints) {
-                                            std::cout << "Table id: " << constraint.table_id << std::endl;
+                                            std::cout << "Table id: " << constraint.table_id << " table name = " << table_name << std::endl;
                                             for (auto &lookup_input : constraint.lookup_input) {
                                                 std::cout << lookup_input << std::endl;
                                             }
@@ -239,9 +238,9 @@ namespace nil {
                                               << std::endl;
                                     std::cout << "Offending Lookup Gate: " << std::endl;
                                     for (const auto &constraint : lookup_gates[i].constraints) {
-                                        std::cout << "Table id: " << constraint.table_id << std::endl;
+                                        std::cout << "Table id: " << constraint.table_id << " table name = " << table_name << std::endl;
                                         for (auto &lookup_input : constraint.lookup_input) {
-                                            std::cout << lookup_input << std::endl;
+                                            std::cout << std::hex << lookup_input << std::dec << std::endl;
                                         }
                                     }
                                     return false;

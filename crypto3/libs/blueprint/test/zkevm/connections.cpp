@@ -236,7 +236,7 @@ void test_zkevm(std::string path){
         65536
     );
 
-    zkevm_machine_type machine = get_empty_machine(bytecode, zkevm_keccak_hash(bytecode0));
+    zkevm_machine_type machine = get_empty_machine(bytecode0, zkevm_keccak_hash(bytecode0));
 
     boost::property_tree::ptree ptrace = trace.get_child("result.structLogs");
     std::cout << "PT = " << ptrace.size() << std::endl;
@@ -289,7 +289,7 @@ void test_zkevm(std::string path){
 BOOST_AUTO_TEST_SUITE(zkevm_connections_test_suite)
 
 BOOST_AUTO_TEST_CASE(zkevm_minimal_math_test) {
-    test_zkevm<fields::pallas_base_field>("../libs/blueprint/test/zkevm/data/minimal_math");
+    test_zkevm<fields::pallas_base_field>("../crypto3/libs/blueprint/test/zkevm/data/minimal_math");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -22,6 +22,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {
