@@ -30,6 +30,9 @@ jobs:
           nix build -L .?#checks.x86_64-linux.all-gcc
           mkdir results
           cp result/test-logs/*_test.xml results/
+        env:
+          NIX_CONFIG: |
+            cores = 16
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
