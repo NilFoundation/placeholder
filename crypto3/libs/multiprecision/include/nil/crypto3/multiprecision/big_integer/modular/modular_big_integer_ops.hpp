@@ -67,7 +67,7 @@ namespace nil::crypto3::multiprecision {
                              (detail::is_modular_big_integer_v<T1> ||                              \
                               detail::is_modular_big_integer_v<T2>),                               \
                          int> = 0,                                                                 \
-        typename result_t = T1>
+        typename largest_t = T1>
 
 #define CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                      \
     template<typename modular_big_integer_t, typename T,                                 \
@@ -85,7 +85,7 @@ namespace nil::crypto3::multiprecision {
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
         BOOST_ASSERT(a.ops().compare_eq(b.ops()));
-        result_t result{a};
+        largest_t result = a;
         a.ops().add(result.base_data(), b.base_data());
         return result;
     }
@@ -113,9 +113,9 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
-        result_t tmp{a};
-        detail::subtract(tmp, b);
-        return tmp;
+        largest_t result = a;
+        detail::subtract(result, b);
+        return result;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator-=(modular_big_integer_t& a, const T& b) {
@@ -138,15 +138,15 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr modular_big_integer_t operator-(const modular_big_integer_t& a) noexcept {
-        modular_big_integer_t tmp{a};
-        tmp.negate();
-        return tmp;
+        modular_big_integer_t result = a;
+        result.negate();
+        return result;
     }
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
         BOOST_ASSERT(a.ops().compare_eq(b.ops()));
-        result_t result{a};
+        largest_t result = a;
         a.ops().mul(result.base_data(), b.base_data());
         return result;
     }
@@ -159,7 +159,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
-        result_t result;
+        largest_t result;
         eval_divide(result, a, b);
         return result;
     }

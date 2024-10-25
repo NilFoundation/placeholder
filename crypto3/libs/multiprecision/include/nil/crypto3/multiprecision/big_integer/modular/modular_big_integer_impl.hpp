@@ -36,11 +36,6 @@ namespace nil::crypto3::multiprecision {
             using unsigned_types = typename big_integer_t::unsigned_types;
             using signed_types = typename big_integer_t::signed_types;
 
-          private:
-            using policy_type = typename modular_ops_t::policy_type;
-            using big_integer_padded_limbs = typename policy_type::big_integer_padded_limbs;
-            using big_integer_doubled_limbs = typename policy_type::big_integer_doubled_limbs;
-
             // Constructors
 
           protected:
@@ -149,6 +144,7 @@ namespace nil::crypto3::multiprecision {
             ;
         };
 
+        // TODO(ioxid): remove
         template<unsigned Bits, typename big_integer_t1, typename big_integer_t2,
                  typename modular_ops_storage_t>
         constexpr void assign_components(

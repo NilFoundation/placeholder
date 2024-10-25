@@ -76,12 +76,6 @@ namespace nil::crypto3::multiprecision {
             p[internal_limb_count - 1] &= upper_limb_mask;
         }
 
-        inline constexpr void do_swap(big_integer& other) noexcept {
-            for (unsigned i = 0; i < internal_limb_count; ++i) {
-                boost::multiprecision::std_constexpr::swap(m_data[i], other.m_data[i]);
-            }
-        }
-
         // Constructor
 
         inline constexpr big_integer() noexcept {}
@@ -103,7 +97,6 @@ namespace nil::crypto3::multiprecision {
 
         // Copy construction
 
-        inline constexpr big_integer(const big_integer& other) noexcept { do_assign(other); }
         template<unsigned Bits2>
         inline constexpr big_integer(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
@@ -111,10 +104,6 @@ namespace nil::crypto3::multiprecision {
 
         // Copy assignment
 
-        inline constexpr auto& operator=(const big_integer& other) noexcept {
-            do_assign(other);
-            return *this;
-        }
         template<unsigned Bits2>
         inline constexpr big_integer& operator=(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
@@ -142,9 +131,6 @@ namespace nil::crypto3::multiprecision {
             this->from_cpp_int(value);
             return *this;
         }
-        inline constexpr void swap(big_integer& other) noexcept { this->do_swap(other); }
-
-        ~big_integer() = default;
 
         inline std::string str(std::streamsize digits = 0,
                                std::ios_base::fmtflags f = std::ios_base::fmtflags(0)) const {
@@ -192,6 +178,19 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        // Comparisions
+
+        inline constexpr int compare(const big_integer& b) const noexcept {
+            auto pa = limbs();
+            auto pb = b.limbs();
+            for (int i = size() - 1; i >= 0; --i) {
+                if (pa[i] != pb[i]) {
+                    return pa[i] > pb[i] ? 1 : -1;
+                }
+            }
+            return 0;
+        }
+
       private:
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
@@ -230,18 +229,4 @@ namespace nil::crypto3::multiprecision {
         // If this value is true, reduction by modulus must happen next.
         bool m_carry = false;
     };
-
-    // Comparisions
-
-    template<unsigned Bits>
-    inline constexpr int compare(const big_integer<Bits>& a, const big_integer<Bits>& b) noexcept {
-        auto pa = a.limbs();
-        auto pb = b.limbs();
-        for (int i = a.size() - 1; i >= 0; --i) {
-            if (pa[i] != pb[i]) {
-                return pa[i] > pb[i] ? 1 : -1;
-            }
-        }
-        return 0;
-    }
 }  // namespace nil::crypto3::multiprecision
