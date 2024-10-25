@@ -31,7 +31,6 @@ in stdenv.mkDerivation {
 
   cmakeFlags =
     [
-      (if runTests then "-DBUILD_TESTS=TRUE" else "-DBUILD_TESTS=False")
       (if runTests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
