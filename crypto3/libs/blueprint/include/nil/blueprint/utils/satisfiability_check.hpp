@@ -119,14 +119,14 @@ namespace nil {
 
             std::cout << "Satisfiability check. Check" << std::endl;
             for (const auto& i : used_gates) {
-                std::cout << "Check gate " << i << std::endl;
+                //std::cout << "Check gate " << i << std::endl;
                 crypto3::zk::snark::plonk_column<BlueprintFieldType> selector =
                     assignments.crypto3::zk::snark::
                         template plonk_assignment_table<BlueprintFieldType>::selector(
                             gates[i].selector_index);
-                for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
-                    std::cout << gates[i].constraints[j] << std::endl;
-                }
+                //for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
+                //    std::cout << gates[i].constraints[j] << std::endl;
+                //}
 
                 for (const auto& selector_row : selector_rows) {
                     // std::cout << "selector row " << selector_row << ": ";

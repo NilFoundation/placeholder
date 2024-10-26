@@ -80,7 +80,7 @@ namespace nil {
                     } else {
                         std::cout << "RW circuit" << std::endl;
                     }
-                    for( std::size_t i = 0; i < max_rw_size-1; i++ ){
+                    for( std::size_t i = 0; i < max_rw_size; i++ ){
                         allocate(op[i], 0, i);
                         allocate(id[i], 1, i);
                         allocate(address[i], 2, i);

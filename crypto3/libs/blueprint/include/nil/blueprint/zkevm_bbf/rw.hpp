@@ -54,7 +54,7 @@ namespace nil {
                 static constexpr std::size_t chunks_amount = 30;
 
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(std::size_t max_rw_size, std::size_t max_mpt_size){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(rw_table_type::get_witness_amount() + 50, 0, 2, 4);
+                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(rw_table_type::get_witness_amount() + 50, 0, 2, 6);
                     desc.usable_rows_amount = max_rw_size + max_mpt_size;
                     return desc;
                 }
@@ -180,7 +180,7 @@ namespace nil {
                     } else {
                         std::cout << "Build circuit" << std::endl;
                     }
-                    for( std::size_t i = 0; i < max_rw_size - 1; i++){
+                    for( std::size_t i = 0; i < max_rw_size; i++){
                         if( i % 50 == 0)  std::cout << "Circuit for " << i << " rows is constructed"  << std::endl;
                         std::size_t cur_column = rw_table_type::get_witness_amount();
                         TYPE op_bit_composition;
