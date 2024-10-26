@@ -529,6 +529,8 @@ namespace nil {
                 using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
+                using basic_context<FieldType>::row_shift;
+
                 public:
                     using TYPE = constraint_type;
                     using basic_context<FieldType>::get_col;
@@ -608,6 +610,13 @@ namespace nil {
                     TYPE relativize(TYPE C, int32_t shift) {
                         return expression_relativize_visitor<var>::relativize(C, shift);
                     }
+                    std::vector<TYPE> relativize(std::vector<TYPE> C, int32_t shift) {
+                        std::vector<TYPE> res;
+                        for(TYPE c_part : C) {
+                            res.push_back(expression_relativize_visitor<var>::relativize(c_part,shift));
+                        }
+                        return res;
+                    }
 
                     void constrain(TYPE C, std::string constraint_name) {
                         if (!is_absolute(C)) {
@@ -631,13 +640,14 @@ namespace nil {
                         add_constraint(C_rel, row);
                     }
 
-                    void relative_constrain(TYPE C_rel, std::size_t row) { // accesible only at GenerationStage::CONSTRAINTS !
+                    // accesible only at GenerationStage::CONSTRAINTS !
+                    void relative_constrain(TYPE C_rel, std::size_t row) {
                         if (!is_relative(C_rel)) {
                             std::stringstream ss;
                             ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                             throw std::logic_error(ss.str());
                         }
-                        add_constraint(C_rel, row);
+                        add_constraint(C_rel, get_row(row));
                     }
 
                     void lookup(std::vector<TYPE> &C, std::string table_name) {
@@ -683,6 +693,18 @@ namespace nil {
                             res.push_back(c_part_rel);
                         }
                         add_lookup_constraint(table_name, res, row);
+                    }
+
+                    // accesible only at GenerationStage::CONSTRAINTS !
+                    void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t row) {
+                        for(const TYPE c_part : C) {
+                            if (!is_relative(c_part)) {
+                                std::stringstream ss;
+                                ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
+                                throw std::logic_error(ss.str());
+                            }
+                        }
+                        add_lookup_constraint(table_name, C, row);
                     }
 
                     void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
@@ -800,6 +822,7 @@ namespace nil {
                         lookup_constraints = std::make_shared<lookup_constraints_container_type>();
                         lookup_tables = std::make_shared<dynamic_lookup_table_container_type>();
                         constants_storage = std::make_shared<assignment_type>(0, 0, desc.constant_columns, 0);
+                        is_fresh = false;
                     }
 
                     auto get_constants() {
@@ -810,6 +833,7 @@ namespace nil {
                     context fresh_subcontext(const std::vector<std::size_t>& W, std::size_t new_row_shift, std::size_t new_max_rows) {
                         context res = subcontext(W, new_row_shift, new_max_rows);
                         res.reset_storage();
+                        is_fresh = true;
                         return res;
                     }
 
@@ -817,20 +841,22 @@ namespace nil {
                 private:
 
                     void add_constraint(TYPE &C_rel, std::size_t row) {
+                        std::size_t stored_row = row - (is_fresh ? row_shift : 0);
                         constraint_id_type C_id = constraint_id_type(C_rel);
                         if (constraints->find(C_id) != constraints->end()) {
-                            constraints->at(C_id).second.insert(row);
+                            constraints->at(C_id).second.insert(stored_row);
                         } else {
-                            constraints->insert({C_id, {C_rel, {row}}});
+                            constraints->insert({C_id, {C_rel, {stored_row}}});
                         }
                     }
 
                     void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t row) {
+                        std::size_t stored_row = row - (is_fresh ? row_shift : 0);
                         constraint_id_type C_id = constraint_id_type(C_rel);
                         if (lookup_constraints->find({table_name,C_id}) != lookup_constraints->end()) {
-                            lookup_constraints->at({table_name,C_id}).second.insert(row);
+                            lookup_constraints->at({table_name,C_id}).second.insert(stored_row);
                         } else {
-                            lookup_constraints->insert({{table_name,C_id}, {C_rel, {row}}});
+                            lookup_constraints->insert({{table_name,C_id}, {C_rel, {stored_row}}});
                         }
                     }
 
@@ -847,6 +873,8 @@ namespace nil {
                     std::shared_ptr<dynamic_lookup_table_container_type> lookup_tables;
                     // constants
                     std::shared_ptr<assignment_type> constants_storage;
+                    // are we in a fresh context or not
+                    bool is_fresh;
             };
 
             template<typename FieldType, GenerationStage stage>
