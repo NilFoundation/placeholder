@@ -51,43 +51,6 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            // A visitor for checking that in an expression all variables are absolute or all variables are relative
-            template<typename VariableType>
-            class expression_relativity_check_visitor : public boost::static_visitor<bool> {
-            public:
-                expression_relativity_check_visitor(bool relativity_) : relativity(relativity_) {}
-
-                static bool is_absolute(const crypto3::math::expression<VariableType>& expr) {
-                    expression_relativity_check_visitor v = expression_relativity_check_visitor(false);
-                    return boost::apply_visitor(v, expr.get_expr());
-                }
-                static bool is_relative(const crypto3::math::expression<VariableType>& expr) {
-                    expression_relativity_check_visitor v = expression_relativity_check_visitor(true);
-                    return boost::apply_visitor(v, expr.get_expr());
-                }
-
-                bool operator()(const crypto3::math::term<VariableType>& term) {
-                    bool res = true;
-
-                    for(std::size_t i = 0; i < term.get_vars().size(); i++) {
-                        res = res && (term.get_vars()[i].relative == relativity);
-                    }
-                    return res;
-                }
-
-                bool operator()(const crypto3::math::pow_operation<VariableType>& pow) {
-                    return boost::apply_visitor(*this, pow.get_expr().get_expr());
-                }
-
-                bool operator()(const crypto3::math::binary_arithmetic_operation<VariableType>& op) {
-                    bool A_res = boost::apply_visitor(*this, op.get_expr_left().get_expr());
-                    bool B_res = boost::apply_visitor(*this, op.get_expr_right().get_expr());
-
-                    return A_res && B_res;
-                }
-            private:
-                bool relativity;
-            };
 
             template<typename FieldType>
             class basic_context {
