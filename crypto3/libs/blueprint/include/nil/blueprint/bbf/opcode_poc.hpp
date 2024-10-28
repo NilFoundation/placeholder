@@ -84,7 +84,8 @@ namespace nil {
                     std::vector<std::uint8_t> block_list;
                     std::vector<std::array<TYPE, 5>> block_selector(max_rows);
                     std::vector<std::array<TYPE, 5>> block_row_selector(max_rows);
-                    std::array<std::vector<std::pair<std::vector<TYPE>, std::set<std::size_t>>>, 5> block_constraints;
+                    std::array<std::unordered_map<row_selector<>, std::vector<TYPE>>, 5> block_constraints;
+
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "Opcode POC assignment" << std::endl;
                         block_list = input;
@@ -133,13 +134,13 @@ namespace nil {
                             for( std::size_t block_row = 0; block_row < block_type + 1; block_row ++){
                                 if constexpr (stage == GenerationStage::CONSTRAINTS) {
                                     TYPE pair_selector = block_selector[i][block_type] * block_row_selector[i][block_row];
-//                                    std::cout << "Pair_selector = " << pair_selector << std::endl;
+                                    //std::cout << "Pair_selector = " << pair_selector << std::endl;
                                     TYPE pair_selector_relative = context_object.relativize(pair_selector, -i);
-//                                    std::cout << "Pair_selector_relative = " << pair_selector_relative << std::endl;
+                                    //std::cout << "Pair_selector_relative = " << pair_selector_relative << std::endl;
                                     for( auto & constr_list: block_constraints[block_type] ){
-                                        if( constr_list.second.count(block_row) == 0 ) continue;
-                                        for( auto &constr: constr_list.first ){
-//                                            std::cout << pair_selector_relative * constr << std::endl;
+                                        if( !constr_list.first.is_set(block_row) ) continue;
+                                        for( auto &constr: constr_list.second ){
+                                            //std::cout << pair_selector_relative * constr << std::endl;
                                             context_object.relative_constrain(pair_selector_relative * constr, i);
                                         }
                                     }

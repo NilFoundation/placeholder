@@ -65,7 +65,8 @@ void test_zkevm_rw(
     typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
 
     std::cout << "rw_trace size = " <<  rw_trace.get_rw_ops().size() << std::endl;
-    test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_trace, null_input, max_rw_size, 0); // Max_rw, Max_mpt
+    bool result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_trace, null_input, max_rw_size, 0);
+    BOOST_ASSERT(result); // Max_rw, Max_mpt
 }
 
 

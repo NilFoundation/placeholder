@@ -38,8 +38,6 @@
 #include <nil/blueprint/zkevm/util/chunks16.hpp>
 #include <nil/blueprint/zkevm/util/lexicographic.hpp>
 
-#include <ni/blueprint/zkevm_bbf/rw_table.hpp>
-
 namespace nil {
     namespace blueprint {
         namespace components {

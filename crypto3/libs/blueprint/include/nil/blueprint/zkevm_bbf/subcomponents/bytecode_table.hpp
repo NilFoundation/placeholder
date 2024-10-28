@@ -94,7 +94,7 @@ namespace nil {
                                     is_opcode[cur] = 0;
                                     push_size--;
                                 }
-                                std::cout << cur << ". " << std::hex << std::size_t(byte) << " " << is_opcode[cur] << " " << push_size << std::dec << std::endl;
+                                //std::cout << cur << ". " << std::hex << std::size_t(byte) << " " << is_opcode[cur] << " " << push_size << std::dec << std::endl;
                             }
                         }
                     }

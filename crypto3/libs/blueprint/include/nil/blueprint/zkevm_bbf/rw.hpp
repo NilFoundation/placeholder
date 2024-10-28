@@ -177,11 +177,9 @@ namespace nil {
                             diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
                             inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
                         }
-                    } else {
-                        std::cout << "Build circuit" << std::endl;
                     }
                     for( std::size_t i = 0; i < max_rw_size; i++){
-                        if( i % 50 == 0)  std::cout << "Circuit for " << i << " rows is constructed"  << std::endl;
+                        if( i % 20 == 0)  std::cout << "."; std::cout.flush();
                         std::size_t cur_column = rw_table_type::get_witness_amount();
                         TYPE op_bit_composition;
                         for( std::size_t j = 0; j < op_bits_amount; j++){
@@ -499,7 +497,8 @@ namespace nil {
                         constrain(padding_selector * value_lo[i]);
                         constrain(padding_selector * value_before_hi[i]);
                         constrain(padding_selector * value_before_lo[i]);
-                   }
+                    }
+                    std::cout << std::endl;
                 }
             };
         }

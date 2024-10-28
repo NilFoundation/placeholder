@@ -21,6 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 
@@ -53,7 +54,7 @@ namespace nil {
                     bool make_links = true
                 ){
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(15, 1, 10, 10);
-                    desc.usable_rows_amount = max_bytecode_size_ + max_keccak_blocks_ + 1;
+                    desc.usable_rows_amount = max_bytecode_size_ + max_keccak_blocks_;
                     return desc;
                 }
 
@@ -72,12 +73,10 @@ namespace nil {
                     std::vector<std::size_t> bytecode_lookup_area = {0,1,2,3,4,5};
                     std::vector<std::size_t> keccak_lookup_area = {0,1,2,3};
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode_size);
-                    context_type keccak_ct = context_object.subcontext(keccak_lookup_area,max_bytecode_size + 1, max_bytecode_size + 1 + max_keccak_blocks);
+                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, max_bytecode_size, max_bytecode_size + max_keccak_blocks);
 
                     Bytecode_Table bc_t = Bytecode_Table(bytecode_ct, input.bytecodes, max_bytecode_size);
-                    std::cout << "I am inside bytecode: Bytecode table subcomponent done" << std::endl;
                     Keccak_Table(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
-                    std::cout << "I am inside bytecode: Keccak table subcomponent done" << std::endl;
 
                     const std::vector<TYPE> &tag = bc_t.tag;
                     const std::vector<TYPE> &index = bc_t.index;
@@ -142,34 +141,32 @@ namespace nil {
                         constrain((tag[i] - 1) * is_opcode[i]); // 8. is_opcode on HEADER are zeroes
                         constrain((tag[i] - 1) * (value_rlc[i] - length_left[i])); // 14. value_rlc for HEADERS == 0;
 
-                        if (i < max_bytecode_size - 1) {
-                            constrain((tag[i] - 1) * index[i+1]); // 2. INDEX for first contract byte is zero
-                            constrain(tag[i] * tag[i+1] * (index[i+1] - index[i] - 1)); // 3. INDEX is incremented for all bytes
-                            constrain(tag[i+1] * (length_left[i] - length_left[i+1] - 1)); // 5. In contract bytes each row decrement length_left
-                            constrain(tag[i] * (tag[i+1] - 1) * length_left[i]); // 6. Length_left is zero for last byte in the contract
-                            constrain((tag[i] - 1) * tag[i+1] * (is_opcode[i+1] - 1)); // 9. Fist is_opcode on BYTE after HEADER is 1
-                            constrain(tag[i+1] * (is_opcode[i+1] - 1) * (push_size[i] - push_size[i+1] - 1)); // 10. PUSH_SIZE decreases for non-opcodes
-                            constrain(is_opcode[i+1] * push_size[i]); // 11. before opcode push_size is always zero
-                            constrain(tag[i+1] * (hash_hi[i] - hash_hi[i+1])); //12. for all bytes hash is similar to previous
-                            constrain(tag[i+1] * (hash_lo[i] - hash_lo[i+1])); //13. for all bytes hash is similar to previous
-                        }
                         if (i > 0) {
+                            constrain((tag[i-1] - 1) * index[i]); // 2. INDEX for first contract byte is zero
+                            constrain(tag[i-1] * tag[i] * (index[i] - index[i-1] - 1)); // 3. INDEX is incremented for all bytes
+                            constrain(tag[i] * (length_left[i-1] - length_left[i] - 1)); // 5. In contract bytes each row decrement length_left
+                            constrain(tag[i-1] * (tag[i] - 1) * length_left[i-1]); // 6. Length_left is zero for last byte in the contract
+                            constrain((tag[i-1] - 1) * tag[i] * (is_opcode[i] - 1)); // 9. Fist is_opcode on BYTE after HEADER is 1
+                            constrain(tag[i] * (is_opcode[i] - 1) * (push_size[i-1] - push_size[i] - 1)); // 10. PUSH_SIZE decreases for non-opcodes
+                            constrain(is_opcode[i] * push_size[i-1]); // 11. before opcode push_size is always zero
+                            constrain(tag[i] * (hash_hi[i-1] - hash_hi[i])); //12. for all bytes hash is similar to previous
+                            constrain(tag[i] * (hash_lo[i-1] - hash_lo[i])); //13. for all bytes hash is similar to previous
                             constrain(tag[i] * (value_rlc[i] - value_rlc[i-1] * rlc_challenge[i] - value[i])); // 15. for all bytes RLC is correct
                             constrain(tag[i] * (rlc_challenge[i] - rlc_challenge[i-1])); //16. for each BYTEs rlc_challenge are similar
                         }
-                        if ((i > 0) && (i < max_bytecode_size - 1)) {
-                            constrain((tag[i] - 1) * tag[i-1] * tag[i+1] * (rlc_challenge[i] - rlc_challenge[i-1])); //17. rlc doesn't change during contract
+                        if (i> 0 && i < max_bytecode_size-1) {
+                            constrain(tag[i+1] * (rlc_challenge[i] - rlc_challenge[i-1])); //17. rlc_challenge is similar for different contracts
                         }
                         lookup(tag[i]*value[i],"byte_range_table/full");
                         lookup(std::vector<TYPE>({value[i]*is_opcode[i], push_size[i]*is_opcode[i], is_opcode[i]}),"zkevm_opcodes/full");
 
-                        if (i < max_bytecode_size - 1) {
-                            // lookup(std::vector<TYPE>({
-                            //     tag[i] + 1 - tag[i], // TODO: update math::expression constructor with constant parameter
-                            //     tag[i] * (1 - tag[i+1]) * value_rlc[i],
-                            //     tag[i] * (1 - tag[i+1]) * hash_hi[i] + (1 - tag[i] * (1 - tag[i+1])) * w_hi<FieldType>(zerohash),
-                            //     tag[i] * (1 - tag[i+1]) * hash_lo[i] + (1 - tag[i] * (1 - tag[i+1])) * w_hi<FieldType>(zerohash)
-                            // }), "keccak_table");
+                        if( i > 0 ){
+                            lookup(std::vector<TYPE>({
+                                tag[i] + 1 - tag[i], // TODO: update math::expression constructor with constant parameter
+                                tag[i-1] * (1 - tag[i]) * value_rlc[i-1],
+                                tag[i-1] * (1 - tag[i]) * hash_hi[i-1] + (1 - tag[i-1] * (1 - tag[i])) * w_hi<FieldType>(zerohash),
+                                tag[i-1] * (1 - tag[i]) * hash_lo[i-1] + (1 - tag[i-1] * (1 - tag[i])) * w_hi<FieldType>(zerohash)
+                            }), "keccak_table");
                         }
                     }
                 };

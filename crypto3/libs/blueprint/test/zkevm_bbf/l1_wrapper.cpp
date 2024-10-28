@@ -24,6 +24,7 @@
 
 #define BOOST_TEST_MODULE blueprint_plonk_l1_wrapper_test
 
+#include <boost/assert.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <nil/crypto3/algebra/curves/pallas.hpp>
@@ -52,10 +53,8 @@
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 
-BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
-
-BOOST_AUTO_TEST_CASE(blueprint_plonk_l1_wrapper_test) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
+template<typename field_type>
+void complex_test(){
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 
@@ -87,37 +86,54 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_l1_wrapper_test) {
     ss.close();
 
 
-    nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input(pt, max_rw);;
-    nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
+    typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input(pt, max_rw);;
+    typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
 
-    nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
-    nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type zkevm_constraint_input;
+    typename nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
+    typename nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type zkevm_constraint_input;
     zkevm_assignment_input.b = 18 * 18;
 
-    nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
-    nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type keccak_constraint_input;
+    typename nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
+    typename nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type keccak_constraint_input;
     keccak_assignment_input.private_input = 12345;
 
-    nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
-    nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type bytecode_constraint_input;
+    typename nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
+    typename nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type bytecode_constraint_input;
+    bytecode_assignment_input.rlc_challenge = 7;
     bytecode_assignment_input.bytecodes.new_buffer(bytecode0);
     bytecode_assignment_input.keccak_buffers.new_buffer(bytecode0);
-    std::cout << "bytecode size = " << bytecode0.size() << std::endl;
+    bytecode_assignment_input.keccak_buffers.new_buffer(hex_string_to_bytes("0x1234567890"));
 
     // Max_bytecode, max_bytecode
-    test_l1_wrapper<field_type, nil::blueprint::bbf::bytecode>({7}, bytecode_assignment_input, bytecode_constraint_input, max_bytecode, max_mpt);
+    bool result;
+    result = test_l1_wrapper<field_type, nil::blueprint::bbf::bytecode>({7}, bytecode_assignment_input, bytecode_constraint_input, max_bytecode, max_keccak_blocks);
+    BOOST_ASSERT(result);
     // Max_rows, max_bytecode, max_rw
-    test_l1_wrapper<field_type, nil::blueprint::bbf::zkevm>(
+    result = test_l1_wrapper<field_type, nil::blueprint::bbf::zkevm>(
         {}, zkevm_assignment_input, zkevm_constraint_input, max_zkevm_rows, max_bytecode, max_rw
     );
+    BOOST_ASSERT(result);
+    std::cout << std::endl;
     // Max_rw, Max_mpt
-    test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt);
+    result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt);
+    BOOST_ASSERT(result);
+    std::cout << std::endl;
     // Max_copy, Max_rw, Max_keccak
-    test_l1_wrapper<field_type, nil::blueprint::bbf::copy>({}, 0, 1);
+    result = test_l1_wrapper<field_type, nil::blueprint::bbf::copy>({}, 0, 1);
+    BOOST_ASSERT(result);
+    std::cout << std::endl;
     // Max_keccak
     test_l1_wrapper<field_type, nil::blueprint::bbf::keccak>(
         {}, keccak_assignment_input , keccak_constraint_input
     );
+    BOOST_ASSERT(result);
+}
+
+BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
+
+BOOST_AUTO_TEST_CASE(blueprint_plonk_l1_wrapper_test) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    complex_test<field_type>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

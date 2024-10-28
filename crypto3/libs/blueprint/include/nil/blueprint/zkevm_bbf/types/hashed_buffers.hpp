@@ -30,6 +30,8 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
+#include <nil/blueprint/zkevm/zkevm_word.hpp>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {

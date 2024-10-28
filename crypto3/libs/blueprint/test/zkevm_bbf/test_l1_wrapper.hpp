@@ -57,7 +57,7 @@ template <
     template<typename, nil::blueprint::bbf::GenerationStage> typename BBFType,
     typename... ComponentStaticInfoArgs
 >
-void test_l1_wrapper(
+bool test_l1_wrapper(
     std::vector<typename BlueprintFieldType::value_type> public_input,
     typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type assignment_input,
     typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type constraint_input,
@@ -103,6 +103,5 @@ void test_l1_wrapper(
     );
 
     nil::crypto3::zk::snark::basic_padding(assignment);
-    BOOST_ASSERT(is_satisfied(bp, assignment) == true);
-    std::cout << std::endl;
+    return is_satisfied(bp, assignment) == true;
 }

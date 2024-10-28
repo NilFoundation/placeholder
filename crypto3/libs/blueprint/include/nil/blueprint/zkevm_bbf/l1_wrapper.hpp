@@ -196,6 +196,8 @@ namespace nil {
                 using var = typename component_type::var;
                 using context_type = typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
                 using BBF = BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
+                using nil::blueprint::bbf::row_selector;
+                using TYPE = typename context_type::TYPE;
 
                 context_type ct = context_type(
                     component_type::get_table_description(component_static_info_args...),
@@ -208,8 +210,10 @@ namespace nil {
                 ct.optimize_gates();
 
                 // compatibility layer: constraint list => gates & selectors
-                std::vector<std::pair<std::vector<constraint_type>, std::set<std::size_t>>> constraint_list = ct.get_constraints();
-                for(const auto& [constraints, row_list] : constraint_list) {
+                std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list =
+                    ct.get_constraints();
+
+                for(const auto& [row_list, constraints] : constraint_list) {
                     /*
                     std::cout << "GATE:\n";
                     for(const auto& c : constraints) {
@@ -218,7 +222,7 @@ namespace nil {
                     std::cout << "Rows: ";
                     */
                     std::size_t selector_index = bp.add_gate(constraints);
-                    for(std::size_t row_index : row_list) {
+                    for(const std::size_t& row_index : row_list) {
                         // std::cout << row_index << " ";
                         assignment.enable_selector(selector_index, row_index);
                     }
@@ -232,14 +236,14 @@ namespace nil {
                 }
 
                 // compatibility layer: dynamic lookup tables
-                std::map<std::string,std::pair<std::vector<std::size_t>,std::set<std::size_t>>>
+                std::map<std::string,std::pair<std::vector<std::size_t>,row_selector<>>>
                     dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
 
                 // compatibility layer: lookup constraint list
-                std::vector<std::pair<std::vector<std::pair<std::string,std::vector<constraint_type>>>, std::set<std::size_t>>>
-                lookup_constraints = ct.get_lookup_constraints();
+                std::unordered_map<row_selector<>, std::vector<std::pair<std::string, std::vector<constraint_type>>>>
+                    lookup_constraints = ct.get_lookup_constraints();
                 std::set<std::string> lookup_tables;
-                for(const auto& [lookup_list, row_list] : lookup_constraints) {
+                for(const auto& [row_list, lookup_list] : lookup_constraints) {
                     std::vector<lookup_constraint_type> lookup_gate;
                     for(const auto& single_lookup_constraint : lookup_list) {
                         std::string table_name = single_lookup_constraint.first;
