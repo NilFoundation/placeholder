@@ -23,6 +23,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/log/trivial.hpp>
 
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/meta_utils.hpp>
 
@@ -58,6 +59,7 @@ namespace nil {
             boost::filesystem::path aggregated_challenge_file = "aggregated_challenge.dat";
             boost::filesystem::path consistency_checks_challenges_file = "consistency_check_challenges.dat";
             boost::filesystem::path combined_Q_polynomial_file = "combined_Q.dat";
+            OutputArtifacts output_artifacts;
             std::size_t combined_Q_starting_power;
             std::vector<boost::filesystem::path> input_combined_Q_polynomial_files;
             boost::filesystem::path proof_of_work_output_file = "proof_of_work.dat";

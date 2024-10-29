@@ -1,7 +1,10 @@
-add_library(proof_generatorOutputArtifacts INTERFACE)
+add_library(proof_generatorOutputArtifacts 
+    SHARED
+    src/output_artifacts.cpp
+)
 
 target_include_directories(proof_generatorOutputArtifacts
-    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 find_package(Boost REQUIRED COMPONENTS filesystem log)
@@ -10,9 +13,16 @@ if(ENABLE_TESTS)
 endif()
 
 target_link_libraries(proof_generatorOutputArtifacts
-                      INTERFACE
+                      PUBLIC
                       crypto3::common
                       Boost::log
+)
+
+set_target_properties(proof_generatorOutputArtifacts PROPERTIES
+    LINKER_LANGUAGE CXX
+    EXPORT_NAME proof_generatorOutputArtifacts
+    CXX_STANDARD 23
+    CXX_STANDARD_REQUIRED TRUE
 )
 
 install(TARGETS proof_generatorOutputArtifacts
