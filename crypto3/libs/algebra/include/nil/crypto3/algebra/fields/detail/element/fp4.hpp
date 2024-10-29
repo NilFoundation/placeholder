@@ -139,11 +139,6 @@ namespace nil {
                             return *this;
                         }
 
-                        element_fp4 sqrt() const {
-
-                            // compute squared root with Tonelli--Shanks
-                        }
-
                         constexpr element_fp4 squared() const {
                             return (*this) * (*this);    // maybe can be done more effective
                         }

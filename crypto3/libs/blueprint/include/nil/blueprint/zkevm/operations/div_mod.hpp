@@ -120,22 +120,7 @@ namespace nil {
                     return zkevm_operation<BlueprintFieldType>::var_gen(witness_cols, i, offset);
                 };
 
-                // The central relation is a = br + q, q < b.
-                // For b = 0 we must assure r = 0. For the MOD operation we should
-                // have q = 0 if b = 0, so we use a special q_out value.
-                //
-                // Table layout:                                                Internal row #:
-                // +--------------------------------+--------+--+--------------------+---+
-                // |                a               |   c1   |c2|                    |   | 3
-                // +--------------------------------+--------+--+---+--------+-------+---+
-                // |                b               |               |   t    |       |1/B| 2
-                // +--------------------------------+---------------+--------+-------+---+
-                // |                r               |                 q              |   | 1
-                // +--------------------------------+--------------------------------+---+
-                // |                v               |  q_out (optional, for MOD)     |   | 0
-                // +--------------------------------+--------------------------------+---+
-
-                std::size_t position_1 = 2;
+                constraint_type position_1 = zkevm_circuit.get_opcode_row_constraint(2, this->rows_amount());
 
                 std::vector<var> a_chunks;
                 std::vector<var> b_chunks_1;

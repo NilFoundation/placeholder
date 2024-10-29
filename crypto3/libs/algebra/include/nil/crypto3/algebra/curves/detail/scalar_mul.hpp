@@ -42,43 +42,43 @@ namespace nil {
         namespace algebra {
             namespace curves {
                 namespace detail {
-                    template<typename CurveElementType,
-                             typename Backend,
-                             boost::multiprecision::expression_template_option ExpressionTemplates>
-                    CurveElementType constexpr scalar_mul(const CurveElementType &base,
-                                   const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar) {
+
+                    template<typename CurveElementType, unsigned int bits>
+                    constexpr void scalar_mul_inplace(
+                            CurveElementType &base,
+                            boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<bits>> const& scalar)
+                    {
                         if (scalar.is_zero()) {
-                            return CurveElementType::zero();
+                            base = CurveElementType::zero();
+                            return;
                         }
 
                         const size_t window_size = 3;
                         auto naf = boost::multiprecision::eval_find_wnaf_a(window_size + 1, scalar.backend());
                         std::array<CurveElementType, 1ul << window_size > table;
-                        CurveElementType tmp = base;
                         CurveElementType dbl = base;
                         dbl.double_inplace();
                         for (size_t i = 0; i < 1ul << window_size; ++i) {
-                            table[i] = tmp;
-                            tmp += dbl;
+                            table[i] = base;
+                            base += dbl;
                         }
 
-                        CurveElementType res = CurveElementType::zero();
+                        base = CurveElementType::zero();
                         bool found_nonzero = false;
                         for (long i = naf.size() - 1; i >= 0; --i) {
                             if (found_nonzero) {
-                                res.double_inplace();
+                                base.double_inplace();
                             }
 
                             if (naf[i] != 0) {
                                 found_nonzero = true;
                                 if (naf[i] > 0) {
-                                    res += table[naf[i] / 2];
+                                    base += table[naf[i] / 2];
                                 } else {
-                                    res -= table[(-naf[i]) / 2];
+                                    base -= table[(-naf[i]) / 2];
                                 }
                             }
                         }
-                        return res;
                     }
 
                     template<typename CurveElementType>
@@ -86,122 +86,61 @@ namespace nil {
                             CurveElementType& point,
                             typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
                     {
-                        return point *= static_cast<typename CurveElementType::params_type::scalar_field_type::integral_type>(scalar.data);
-                    }
-
-                    template<typename CurveElementType,
-                             typename Backend,
-                             boost::multiprecision::expression_template_option ExpressionTemplates>
-                    constexpr CurveElementType& operator *= (
-                            CurveElementType& point,
-                            const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar)
-                    {
-                        if (scalar.is_zero()) {
-                            point = CurveElementType::zero();
-                            return point;
-                        }
-
-                        const size_t window_size = 3;
-                        auto naf = boost::multiprecision::eval_find_wnaf_a(window_size + 1, scalar.backend());
-                        std::array<CurveElementType, 1ul << window_size > table;
-                        CurveElementType tmp = point;
-                        CurveElementType dbl = point;
-                        dbl.double_inplace();
-                        for (size_t i = 0; i < 1ul << window_size; ++i) {
-                            table[i] = tmp;
-                            tmp += dbl;
-                        }
-
-                        CurveElementType res = CurveElementType::zero();
-                        bool found_nonzero = false;
-                        for (long i = naf.size() - 1; i >= 0; --i) {
-                            if (found_nonzero) {
-                                res.double_inplace();
-                            }
-
-                            if (naf[i] != 0) {
-                                found_nonzero = true;
-                                if (naf[i] > 0) {
-                                    res += table[naf[i] / 2];
-                                } else {
-                                    res -= table[(-naf[i]) / 2];
-                                }
-                            }
-                        }
-
-                        point = res;
+                        using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
+                        scalar_mul_inplace(point, static_cast<scalar_integral_type>(scalar.data));
                         return point;
                     }
 
-                    template<typename GroupValueType,
-                             typename Backend, typename SafeType,
-                             boost::multiprecision::expression_template_option ExpressionTemplates>
-                    constexpr GroupValueType
-                        operator*(const GroupValueType &left,
-                                  const boost::multiprecision::number<boost::multiprecision::backends::modular_adaptor<Backend, SafeType>, ExpressionTemplates> &right) {
-                        return scalar_mul(left, right);
+                    template<typename CurveElementType>
+                    constexpr CurveElementType operator * (
+                            CurveElementType const& point,
+                            typename CurveElementType::params_type::scalar_field_type::value_type const& scalar)
+                    {
+                        using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
+                        CurveElementType res = point;
+                        scalar_mul_inplace(res, static_cast<scalar_integral_type>(scalar.data));
+                        return res;
                     }
 
-                    template<typename GroupValueType,
-                             typename Backend,
-                             boost::multiprecision::expression_template_option ExpressionTemplates>
-                    typename std::enable_if<
-                        is_curve_group<typename GroupValueType::group_type>::value &&
-                        !is_field<typename GroupValueType::group_type>::value,
-                        GroupValueType>::type
-                    constexpr operator*(const GroupValueType &left,
-                            const boost::multiprecision::number<Backend, ExpressionTemplates> &right) {
-                        return scalar_mul(left, right);
+                    template<typename CurveElementType>
+                    constexpr CurveElementType operator * (
+                            typename CurveElementType::params_type::scalar_field_type::value_type const& scalar,
+                            CurveElementType const& point)
+                    {
+                        using scalar_integral_type = typename CurveElementType::params_type::scalar_field_type::integral_type;
+                        CurveElementType res = point;
+                        scalar_mul_inplace(res, static_cast<scalar_integral_type>(scalar.data));
+                        return res;
                     }
 
-                    template<typename GroupValueType,
-                             typename Backend,
-                             boost::multiprecision::expression_template_option ExpressionTemplates>
-                    typename std::enable_if<
-                        is_curve_group<typename GroupValueType::group_type>::value &&
-                        !is_field<typename GroupValueType::group_type>::value,
-                        GroupValueType>::type
-                    constexpr operator*(const boost::multiprecision::number<Backend, ExpressionTemplates> &left,
-                            const GroupValueType &right) {
-                        return scalar_mul(right, left);
+                    template<typename CurveElementType>
+                    std::enable_if_t<is_curve_element<CurveElementType>::value, CurveElementType>
+                    constexpr operator * (
+                            const CurveElementType &point,
+                            const std::size_t &multiplier)
+                    {
+                        typename CurveElementType::params_type::scalar_field_type::value_type scalar(multiplier);
+                        return point * scalar;
                     }
 
-                    template<typename GroupValueType, typename FieldValueType>
-                    typename std::enable_if<is_curve_group<typename GroupValueType::group_type>::value &&
-                                                !is_field<typename GroupValueType::group_type>::value &&
-                                                is_field<typename FieldValueType::field_type>::value &&
-                                                !is_extended_field<typename FieldValueType::field_type>::value,
-                                            GroupValueType>::type
-                        operator*(const GroupValueType &left, const FieldValueType &right) {
-
-                        // TODO(martun): consider deleting this function, and forcing all the callers to convert to the
-                        // required type before multiplication.
-                        return left * static_cast<typename GroupValueType::params_type::scalar_field_type::integral_type>(
-                            typename FieldValueType::integral_type(right.data));
+                    template<typename CurveElementType>
+                    std::enable_if_t<is_curve_element<CurveElementType>::value, CurveElementType>
+                    constexpr operator * (
+                            const std::size_t &multiplier,
+                            const CurveElementType &point)
+                    {
+                        typename CurveElementType::params_type::scalar_field_type::value_type scalar(multiplier);
+                        return point * scalar;
                     }
 
-                    template<typename GroupValueType, typename FieldValueType>
-                    typename std::enable_if<is_curve_group<typename GroupValueType::group_type>::value &&
-                                                !is_field<typename GroupValueType::group_type>::value &&
-                                                is_field<typename FieldValueType::field_type>::value &&
-                                                !is_extended_field<typename FieldValueType::field_type>::value,
-                                            GroupValueType>::type
-                        operator*(const FieldValueType &left, const GroupValueType &right) {
-
-                        return right * left;
+                    template<typename CurveElementType>
+                    std::enable_if_t<is_curve_element<CurveElementType>::value, bool>
+                    subgroup_check(CurveElementType point) {
+                        auto scalar_modulus = CurveElementType::group_type::curve_type::scalar_field_type::modulus;
+                        scalar_mul_inplace(point, scalar_modulus);
+                        return point.is_zero();
                     }
 
-                    template<typename GroupValueType>
-                    constexpr GroupValueType operator*(const GroupValueType &left, const std::size_t &right) {
-
-                        return scalar_mul(left, typename GroupValueType::field_type::integral_type::value_type(right));
-                    }
-
-                    template<typename GroupValueType>
-                    constexpr GroupValueType operator*(const std::size_t &left, const GroupValueType &right) {
-
-                        return right * left;
-                    }
                 }    // namespace detail
             }        // namespace curves
         }            // namespace algebra

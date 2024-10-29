@@ -394,17 +394,20 @@ namespace nil {
                 value_data = value_data >> 64;
                 assignment.witness(component.W(4), row) = value_data;
 
-                typename BlueprintFieldType::extended_integral_type modulus_p = BlueprintFieldType::modulus;
-                typename BlueprintFieldType::extended_integral_type one = 1;
-                typename BlueprintFieldType::extended_integral_type power = (one << 256);
-                typename BlueprintFieldType::extended_integral_type c = power - modulus_p;
-                typename BlueprintFieldType::extended_integral_type mask = (one << 64) - 1;
-                std::array<typename BlueprintFieldType::extended_integral_type, 4> c_chunks = {
+                using extended_integral_type = boost::multiprecision::number<
+                    boost::multiprecision::backends::cpp_int_modular_backend<2 * BlueprintFieldType::policy_type::modulus_bits>>;
+
+                extended_integral_type modulus_p = BlueprintFieldType::modulus;
+                extended_integral_type one = 1;
+                extended_integral_type power = (one << 256);
+                extended_integral_type c = power - modulus_p;
+                extended_integral_type mask = (one << 64) - 1;
+                std::array<extended_integral_type, 4> c_chunks = {
                     c & mask, (c >> 64) & mask, (c >> 128) & mask, (c >> 192) & mask};
 
-                typename BlueprintFieldType::extended_integral_type b =
-                    typename BlueprintFieldType::extended_integral_type(typename BlueprintFieldType::integral_type(value.data)) + c;
-                std::array<typename BlueprintFieldType::extended_integral_type, 4> b_chunks = {
+                extended_integral_type b =
+                    extended_integral_type(typename BlueprintFieldType::integral_type(value.data)) + c;
+                std::array<extended_integral_type, 4> b_chunks = {
                     b & mask, (b >> 64) & mask, (b >> 128) & mask, (b >> 192) & mask};
                 assignment.witness(component.W(5), row) = b_chunks[0];
                 assignment.witness(component.W(6), row) = b_chunks[1];
@@ -412,7 +415,7 @@ namespace nil {
                 assignment.witness(component.W(8), row) = b_chunks[3];
 
                 // We must be careful here not to have negative values.
-                typename BlueprintFieldType::extended_integral_type W9_part = typename BlueprintFieldType::integral_type(
+                extended_integral_type W9_part = typename BlueprintFieldType::integral_type(
                     assignment.witness(component.W(1), row).data);
                 W9_part += c_chunks[0];
                 if (W9_part > b_chunks[0]) {
@@ -421,7 +424,7 @@ namespace nil {
                     assignment.witness(component.W(9), row) = BlueprintFieldType::modulus - typename BlueprintFieldType::integral_type((b_chunks[0] - W9_part) >> 64);
                 }
 
-                typename BlueprintFieldType::extended_integral_type W10_part = typename BlueprintFieldType::integral_type(
+                extended_integral_type W10_part = typename BlueprintFieldType::integral_type(
                     assignment.witness(component.W(2), row).data);
                 W10_part += typename BlueprintFieldType::integral_type(assignment.witness(component.W(9), row).data);
                 W10_part += c_chunks[1];
@@ -431,7 +434,7 @@ namespace nil {
                     assignment.witness(component.W(10), row) = BlueprintFieldType::modulus - typename BlueprintFieldType::integral_type((b_chunks[1] - W10_part) >> 64);
                 }
 
-                typename BlueprintFieldType::extended_integral_type W11_part = typename BlueprintFieldType::integral_type(
+                extended_integral_type W11_part = typename BlueprintFieldType::integral_type(
                     assignment.witness(component.W(3), row).data);
                 W11_part += typename BlueprintFieldType::integral_type(assignment.witness(component.W(10), row).data);
                 W11_part += c_chunks[2];
@@ -476,13 +479,16 @@ namespace nil {
 
                 using var = typename plonk_to_limbs<BlueprintFieldType>::var;
 
+                using extended_integral_type = boost::multiprecision::number<
+                    boost::multiprecision::backends::cpp_int_modular_backend<2 * BlueprintFieldType::policy_type::modulus_bits>>;
+
                 typename BlueprintFieldType::value_type scalar = 2;
-                typename BlueprintFieldType::extended_integral_type modulus_p = BlueprintFieldType::modulus;
-                typename BlueprintFieldType::extended_integral_type one = 1;
-                typename BlueprintFieldType::extended_integral_type power = (one << 256);
-                typename BlueprintFieldType::extended_integral_type c = power - modulus_p;
-                typename BlueprintFieldType::extended_integral_type mask = (one << 64) - 1;
-                std::array<typename BlueprintFieldType::extended_integral_type, 4> c_chunks = {
+                extended_integral_type modulus_p = BlueprintFieldType::modulus;
+                extended_integral_type one = 1;
+                extended_integral_type power = (one << 256);
+                extended_integral_type c = power - modulus_p;
+                extended_integral_type mask = (one << 64) - 1;
+                std::array<extended_integral_type, 4> c_chunks = {
                     c & mask, (c >> 64) & mask, (c >> 128) & mask, (c >> 192) & mask};
                 auto constraint_1 =
                     var(component.W(1), 0) + var(component.W(2), 0) * scalar.pow(64) +

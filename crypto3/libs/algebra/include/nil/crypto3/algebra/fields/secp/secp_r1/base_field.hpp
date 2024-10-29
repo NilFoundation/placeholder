@@ -52,8 +52,6 @@ namespace nil {
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
-
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
@@ -81,8 +79,6 @@ namespace nil {
 
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
-
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
 
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
@@ -112,8 +108,6 @@ namespace nil {
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
-
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
@@ -141,8 +135,6 @@ namespace nil {
 
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
-
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
 
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
@@ -172,8 +164,6 @@ namespace nil {
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
-
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
@@ -202,8 +192,6 @@ namespace nil {
                     constexpr static const std::size_t modulus_bits = policy_type::modulus_bits;
                     typedef typename policy_type::integral_type integral_type;
 
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
-
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
@@ -224,8 +212,6 @@ namespace nil {
                     constexpr static const std::size_t value_bits = modulus_bits;
                     constexpr static const std::size_t arity = 1;
                 };
-
-                // TODO: define nist_base_field for other base field sizes
 
                 template<std::size_t Version>
                 using secp_r1_fq = secp_r1_base_field<Version>;

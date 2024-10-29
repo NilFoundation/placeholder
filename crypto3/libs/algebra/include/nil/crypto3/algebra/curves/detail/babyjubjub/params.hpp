@@ -42,18 +42,18 @@ namespace nil {
                         using scalar_field_type = typename babyjubjub_types::scalar_field_type;
 
                         // Edwards representation constants a and d
-                        constexpr static const typename babyjubjub_types::integral_type
+                        constexpr static const typename babyjubjub_types::base_field_type::value_type
                             a =                 ///< twisted Edwards elliptic curve
                             0x292FC_cppui_modular18;    ///< described by equation ax^2 + y^2 = 1 + dx^2y^2
-                        constexpr static const typename babyjubjub_types::integral_type
+                        constexpr static const typename babyjubjub_types::base_field_type::value_type
                             d =                 ///< twisted Edwards elliptic curve
                             0x292F8_cppui_modular18;    ///< described by equation ax^2 + y^2 = 1 + dx^2y^2
                     };
 
                     constexpr
-                        typename babyjubjub_types::integral_type const babyjubjub_params<forms::twisted_edwards>::a;
+                        typename babyjubjub_types::base_field_type::value_type const babyjubjub_params<forms::twisted_edwards>::a;
                     constexpr
-                        typename babyjubjub_types::integral_type const babyjubjub_params<forms::twisted_edwards>::d;
+                        typename babyjubjub_types::base_field_type::value_type const babyjubjub_params<forms::twisted_edwards>::d;
 
                     template<>
                     struct babyjubjub_params<forms::montgomery> {
@@ -61,16 +61,16 @@ namespace nil {
                         using scalar_field_type = typename babyjubjub_types::scalar_field_type;
 
                         // Montgomery representation constants A and B
-                        constexpr static const typename babyjubjub_types::integral_type
+                        constexpr static const typename babyjubjub_types::base_field_type::value_type
                             A =                 ///< Montgomery elliptic curve
                             0x292FA_cppui_modular18;    ///< described by equation b*y^2 = x^3 + a*x^2 + x
-                        constexpr static const typename babyjubjub_types::integral_type
+                        constexpr static const typename babyjubjub_types::base_field_type::value_type
                             B =      ///< Montgomery elliptic curve
                             0x01;    ///< described by equation b*y^2 = x^3 + a*x^2 + x
                     };
 
-                    constexpr typename babyjubjub_types::integral_type const babyjubjub_params<forms::montgomery>::A;
-                    constexpr typename babyjubjub_types::integral_type const babyjubjub_params<forms::montgomery>::B;
+                    constexpr typename babyjubjub_types::base_field_type::value_type const babyjubjub_params<forms::montgomery>::A;
+                    constexpr typename babyjubjub_types::base_field_type::value_type const babyjubjub_params<forms::montgomery>::B;
 
                     template<>
                     struct babyjubjub_g1_params<forms::twisted_edwards>

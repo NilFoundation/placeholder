@@ -138,11 +138,6 @@ namespace nil {
                             return *this;
                         }
 
-                        element_fp6_2over3 sqrt() const {
-
-                            // compute squared root with Tonelli--Shanks
-                        }
-
                         constexpr element_fp6_2over3 squared() const {
                             // return (*this) * (*this);    // maybe can be done more effective
 

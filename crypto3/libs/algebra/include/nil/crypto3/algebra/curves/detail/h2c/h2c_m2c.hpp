@@ -45,14 +45,14 @@ namespace nil {
                         typedef typename suite_type::field_value_type field_value_type;
 
                         static inline group_value_type process(const field_value_type &u) {
-                            // TODO: We assume that Z meets the following criteria -- correct for predefined suites,
-                            //  but wrong in general case
+                            // Simple SWU method works only with specific Z - see RFC
                             // https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.6.2
                             // Preconditions:
                             // 1.  Z is non-square in F,
                             // 2.  Z != -1 in F,
                             // 3.  the polynomial g(x) - Z is irreducible over F, and
                             // 4.  g(B / (Z * A)) is square in F.
+                            // Currently it is implemented only for BLS12 curves, Z is fine.
                             static const field_value_type one = field_value_type::one();
 
                             field_value_type tv1 =

@@ -355,11 +355,17 @@ namespace nil {
                         }
                         // All rows selector
                         {
-                            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
+                            auto key = std::make_tuple(
+                                PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 0,
+                                plonk_variable<typename FieldType::value_type>::column_type::selector
+                            );
                             columns_at_y[key] = mask_value - common_data.lagrange_0.evaluate(proof.eval_proof.challenge);
                         }
                         {
-                            auto key = std::make_tuple( PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1, plonk_variable<typename FieldType::value_type>::column_type::selector);
+                            auto key = std::make_tuple(
+                                PLONK_SPECIAL_SELECTOR_ALL_NON_FIRST_USABLE_ROWS_SELECTED, 1,
+                                plonk_variable<typename FieldType::value_type>::column_type::selector
+                            );
                             columns_at_y[key] = shifted_mask_value - common_data.lagrange_0.evaluate(proof.eval_proof.challenge * common_data.basic_domain->get_domain_element(1));
                         }
 
@@ -397,7 +403,8 @@ namespace nil {
                         std::array<typename FieldType::value_type, 1> gate_argument =
                         placeholder_gates_argument<FieldType, ParamsType>::verify_eval(
                             constraint_system.gates(), columns_at_y, proof.eval_proof.challenge,
-                            mask_value, transcript
+                            mask_value,
+                            transcript
                         );
 
                         std::array<typename FieldType::value_type, f_parts> alphas =
