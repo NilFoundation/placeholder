@@ -59,6 +59,7 @@
 
 #include <nil/proof-generator/arithmetization_params.hpp>
 #include <nil/proof-generator/assignment_table_writer.hpp>
+#include <nil/proof-generator/circuit_writer.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
 namespace nil {
@@ -539,6 +540,26 @@ namespace nil {
                         *marshalled_value
                     )
                 );
+
+                return true;
+            }
+
+            bool save_circuit_to_file(boost::filesystem::path circuit_file) {
+                using writer = nil::proof_generator::circuit_writer<Endianness, BlueprintField>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing circuit to " << circuit_file;
+                if (!constraint_system_) {
+                    BOOST_LOG_TRIVIAL(error) << "No circuit is currently loaded";
+                    return false;
+                }
+
+                std::ofstream out(circuit_file.string(), std::ios::binary | std::ios::out);
+                if (!out.is_open()) {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to open file " << circuit_file;
+                    return false;
+                }
+
+                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());            
                 return true;
             }
 
@@ -589,7 +610,7 @@ namespace nil {
                 BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
                 
                 if (!assignment_table_.has_value() || !table_description_.has_value()) {
-                    BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded into the Prover";
+                    BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded";
                     return false;
                 }
 
