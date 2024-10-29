@@ -21,6 +21,7 @@
 #define PROOF_GENERATOR_ASSIGNER_PROOF_HPP
 
 #include <fstream>
+#include <ostream>
 #include <random>
 #include <sstream>
 #include <optional>
@@ -57,6 +58,7 @@
 #include <nil/blueprint/transpiler/lpc_evm_verifier_gen.hpp>
 
 #include <nil/proof-generator/arithmetization_params.hpp>
+#include <nil/proof-generator/assignment_table_writer.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
 namespace nil {
@@ -161,6 +163,8 @@ namespace nil {
             using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
             using AssignmentTable = nil::crypto3::zk::snark::plonk_table<BlueprintField, Column>;
             using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+            using TableMarshalling = nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
 
             Prover(
                 std::size_t lambda,
@@ -548,13 +552,12 @@ namespace nil {
             bool read_assignment_table(const boost::filesystem::path& assignment_table_file_) {
                 BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_;
 
-                using TableValueMarshalling =
-                    nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
                 auto marshalled_table =
-                    detail::decode_marshalling_from_file<TableValueMarshalling>(assignment_table_file_);
+                    detail::decode_marshalling_from_file<TableMarshalling>(assignment_table_file_);
                 if (!marshalled_table) {
                     return false;
                 }
+            
                 auto [table_description, assignment_table] =
                     nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTable>(
                         *marshalled_table
@@ -562,6 +565,7 @@ namespace nil {
                 table_description_.emplace(table_description);
                 assignment_table_.emplace(std::move(assignment_table));
                 public_inputs_.emplace(assignment_table_->public_inputs());
+
                 return true;
             }
 
@@ -576,6 +580,29 @@ namespace nil {
                 table_description_->rows_amount = assignment_table.rows_amount();
                 assignment_table_.emplace(std::move(assignment_table));
                 public_inputs_.emplace(assignment_table_->public_inputs());
+                return true;
+            }
+
+            bool save_binary_assignment_table_to_file(const boost::filesystem::path& output_filename) {
+                using writer = nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
+                
+                if (!assignment_table_.has_value() || !table_description_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded into the Prover";
+                    return false;
+                }
+
+                std::ofstream out(output_filename.string(), std::ios::binary | std::ios::out);
+                if (!out.is_open()) {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to open file " << output_filename;
+                    return false;
+                }
+
+                writer::write_binary_assignment(
+                    out, assignment_table_.value(), table_description_.value()
+                );
+
                 return true;
             }
 
@@ -612,7 +639,7 @@ namespace nil {
                     );
                 table_description_.emplace(table_description);
                 return true;
-            }
+           }
 
             std::optional<typename BlueprintField::value_type> read_challenge(
                     const boost::filesystem::path& input_file) {

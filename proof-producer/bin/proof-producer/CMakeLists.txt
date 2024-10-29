@@ -61,9 +61,14 @@ function(setup_proof_generator_target)
     )
 
     target_link_libraries(${ARG_TARGET_NAME}-lib INTERFACE ${INTERFACE_LIBS})
-    target_link_libraries(${ARG_TARGET_NAME} PRIVATE ${ARG_TARGET_NAME}-lib Boost::program_options)
+    target_link_libraries(${ARG_TARGET_NAME} PRIVATE 
+        ${ARG_TARGET_NAME}-lib 
+        Boost::program_options
+        proof_generatorOutputArtifacts
+    )
 
     target_include_directories(${ARG_TARGET_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
 
