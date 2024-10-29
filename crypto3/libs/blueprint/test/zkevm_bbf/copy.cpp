@@ -22,8 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_rw_test
-#define PROFILING_ENABLED
+#define BOOST_TEST_MODULE blueprint_plonk_copy_test
 
 #include <boost/test/unit_test.hpp>
 
@@ -42,7 +41,7 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/l1_wrapper.hpp>
-#include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/copy.hpp>
 
 #include "./test_l1_wrapper.hpp"
 
@@ -50,9 +49,8 @@ using namespace nil::crypto3;
 using namespace nil::blueprint;
 
 template <typename field_type>
-void test_zkevm_rw(
-    std::string path,
-    std::size_t max_rw_size
+void test_zkevm_copy(
+    std::string path
 ){
     std::cout << "path = " << path << std::endl;
 
@@ -62,39 +60,32 @@ void test_zkevm_rw(
     boost::property_tree::read_json(ss, pt);
     ss.close();
 
-    typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_trace(pt, max_rw_size);
-    typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
+    typename nil::blueprint::bbf::copy<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_trace(pt, max_copy_size);
+    typename nil::blueprint::bbf::copy<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
 
-    std::cout << "rw_trace size = " <<  rw_trace.get_rw_ops().size() << std::endl;
-    bool result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_trace, null_input, max_rw_size, 0);
-    BOOST_ASSERT(result); // Max_rw, Max_mpt
+    std::cout << "copy_trace size = " <<  copy_trace.get_copy_ops().size() << std::endl;
+    bool result = test_l1_wrapper<field_type, nil::blueprint::bbf::copy>({}, copy_trace, null_input, max_copy_size, 0);
+    BOOST_ASSERT(result); // Max_copy, Max_mpt
 }
 
 
-BOOST_AUTO_TEST_SUITE(blueprint_bbf_rw)
+BOOST_AUTO_TEST_SUITE(blueprint_bbf_copy)
     using field_type = typename algebra::curves::pallas::base_field_type;
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
-BOOST_AUTO_TEST_CASE(minimal_math_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/trace0.json", 500);
-}
-
 BOOST_AUTO_TEST_CASE(small_storage_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage/trace0.json", 500);
+    test_zkevm_copy<field_type>("../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage.json", 500);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mstore8/trace0.json", 5000);
+    test_zkevm_copy<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mstore8.json", 5000);
 }
 
 BOOST_AUTO_TEST_CASE(meminit_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mem_init/trace0.json", 10000);
+    test_zkevm_copy<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mem_init.json", 10000);
 }
 
 BOOST_AUTO_TEST_CASE(calldatacopy_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/trace0.json", 10000);
-}
-BOOST_AUTO_TEST_CASE(calldatacopy_contract_large){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/trace0.json", 100000);
+    test_zkevm_copy<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy.json", 10000);
 }
 BOOST_AUTO_TEST_SUITE_END()

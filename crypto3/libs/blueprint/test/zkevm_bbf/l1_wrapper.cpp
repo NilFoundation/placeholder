@@ -54,7 +54,7 @@ using namespace nil::crypto3;
 using namespace nil::blueprint;
 
 template<typename field_type>
-void complex_test(){
+void complex_test(std::string path){
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 
@@ -68,10 +68,8 @@ void complex_test(){
     std::size_t max_bytecode = 3000;
     std::size_t max_mpt = 0;
     std::size_t max_rw = 500;
-    std::size_t max_copy_size = 3000;
+    std::size_t max_copy = 500;
     std::size_t max_zkevm_rows = 100;
-
-    std::string path = "../crypto3/libs/blueprint/test/zkevm/data/minimal_math/";
 
     std::ifstream ss;
     ss.open(path + "trace0.json");
@@ -103,9 +101,18 @@ void complex_test(){
     bytecode_assignment_input.bytecodes.new_buffer(bytecode0);
     bytecode_assignment_input.keccak_buffers.new_buffer(bytecode0);
     bytecode_assignment_input.keccak_buffers.new_buffer(hex_string_to_bytes("0x1234567890"));
-
-    // Max_bytecode, max_bytecode
     bool result;
+
+    // // Max_copy, Max_rw, Max_keccak, Max_bytecode
+    // result = test_l1_wrapper<field_type, nil::blueprint::bbf::copy>({7}, max_copy, max_rw, max_keccak_blocks, max_bytecode);
+    // BOOST_ASSERT(result);
+    // std::cout << std::endl;
+    // Max_keccak
+    result = test_l1_wrapper<field_type, nil::blueprint::bbf::keccak>(
+        {}, keccak_assignment_input , keccak_constraint_input
+    );
+    BOOST_ASSERT(result);
+    // Max_bytecode, max_bytecode
     result = test_l1_wrapper<field_type, nil::blueprint::bbf::bytecode>({7}, bytecode_assignment_input, bytecode_constraint_input, max_bytecode, max_keccak_blocks);
     BOOST_ASSERT(result);
     // Max_rows, max_bytecode, max_rw
@@ -118,22 +125,13 @@ void complex_test(){
     result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt);
     BOOST_ASSERT(result);
     std::cout << std::endl;
-    // Max_copy, Max_rw, Max_keccak
-    result = test_l1_wrapper<field_type, nil::blueprint::bbf::copy>({}, 0, 1);
-    BOOST_ASSERT(result);
-    std::cout << std::endl;
-    // Max_keccak
-    test_l1_wrapper<field_type, nil::blueprint::bbf::keccak>(
-        {}, keccak_assignment_input , keccak_constraint_input
-    );
-    BOOST_ASSERT(result);
 }
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_l1_wrapper_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    complex_test<field_type>();
+    complex_test<field_type>("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

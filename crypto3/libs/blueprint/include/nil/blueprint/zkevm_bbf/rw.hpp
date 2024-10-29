@@ -23,7 +23,14 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/bench/scoped_profiler.hpp>
 
+#include <nil/blueprint/blueprint/plonk/assignment.hpp>
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
+#include <nil/blueprint/component.hpp>
+
+#include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 
 namespace nil {
@@ -75,6 +82,7 @@ namespace nil {
                 }
 
                 rw(context_type &context_object, const input_type &input, std::size_t max_rw_size, std::size_t max_mpt_size) :generic_component<FieldType,stage>(context_object) {
+                    PROFILE_SCOPE("Rw circuit constructor, total time");
                     std::vector<std::size_t> rw_table_area;
                     for( std::size_t i = 0; i < rw_table_type::get_witness_amount(); i++ ) rw_table_area.push_back(i);
 
@@ -181,26 +189,15 @@ namespace nil {
                     for( std::size_t i = 0; i < max_rw_size; i++){
                         if( i % 20 == 0)  std::cout << "."; std::cout.flush();
                         std::size_t cur_column = rw_table_type::get_witness_amount();
-                        TYPE op_bit_composition;
                         for( std::size_t j = 0; j < op_bits_amount; j++){
                             allocate(op_bits[i][j], ++cur_column, i);
-                            if(j == 0) {
-                                op_bit_composition = op_bits[i][j];
-                            } else {
-                                op_bit_composition *= 2;
-                                op_bit_composition += op_bits[i][j];
-                            }
-                            constrain(op_bits[i][j] * (op_bits[i][j] - 1));
                         };
-                        constrain(op_bit_composition - op[i]);
 
                         for( std::size_t k = 0; k < chunks_amount; k++){
                             allocate(chunks[i][k], ++cur_column, i);
-                            lookup(chunks[i][k], "chunk_16_bits/full");
                         }
                         for( std::size_t j = 0; j < diff_index_bits_amount; j++){
                             allocate(diff_index_bits[i][j], ++cur_column, i);
-                            constrain(diff_index_bits[i][j] * (diff_index_bits[i][j] - 1));
                         }
                         allocate(value_before_hi[i], ++cur_column, i);
                         allocate(value_before_lo[i], ++cur_column, i);
@@ -212,155 +209,182 @@ namespace nil {
                         allocate(state_root_lo[i], ++cur_column, i);
                         allocate(state_root_before_hi[i], ++cur_column, i);
                         allocate(state_root_before_lo[i], ++cur_column, i);
+                    }
+                    std::cout << std::endl;
+                    if constexpr (stage == GenerationStage::CONSTRAINTS) {
+                        std::vector<TYPE> every_row_constraints;
+                        std::vector<TYPE> non_first_row_constraints;
+                        std::vector<TYPE> chunked_16_lookups;
+                        for( std::size_t j = 0; j < diff_index_bits_amount; j++){
+                            every_row_constraints.push_back(context_object.relativize(diff_index_bits[1][j] * (diff_index_bits[1][j] - 1), -1));
+                        }
+                        for( std::size_t k = 0; k < chunks_amount; k++){
+                            chunked_16_lookups.push_back(context_object.relativize(chunks[1][k], -1));
+                        }
+                        TYPE op_bit_composition;
+                        for( std::size_t j = 0; j < op_bits_amount; j++){
+                            every_row_constraints.push_back(context_object.relativize(op_bits[1][j] * (op_bits[1][j] - 1), -1));
+                            if(j == 0) {
+                                op_bit_composition = op_bits[1][j];
+                            } else {
+                                op_bit_composition *= 2;
+                                op_bit_composition += op_bits[1][j];
+                            }
+                        }
+                        every_row_constraints.push_back(context_object.relativize(op_bit_composition - op[1], -1));
 
                         TYPE id_composition;
                         std::size_t cur_chunk = 0;
-                        id_composition = chunks[i][cur_chunk++]; id_composition *= (1<<16);
-                        id_composition += chunks[i][cur_chunk++];
-                        constrain(id[i] - id_composition);
+                        id_composition = chunks[1][cur_chunk++]; id_composition *= (1<<16);
+                        id_composition += chunks[1][cur_chunk++];
+                        every_row_constraints.push_back(context_object.relativize(id[1] - id_composition, -1));
 
                         TYPE addr_composition;
-                        addr_composition = chunks[i][cur_chunk++]; addr_composition *= (1<<16); //1
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //2
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //3
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //4
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //5
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //6
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //7
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //8
-                        addr_composition += chunks[i][cur_chunk++]; addr_composition *= (1<<16); //9
-                        addr_composition += chunks[i][cur_chunk++];
-                        constrain(address[i] - addr_composition);
+                        addr_composition = chunks[1][cur_chunk++]; addr_composition *= (1<<16); //1
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //2
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //3
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //4
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //5
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //6
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //7
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //8
+                        addr_composition += chunks[1][cur_chunk++]; addr_composition *= (1<<16); //9
+                        addr_composition += chunks[1][cur_chunk++];
+                        every_row_constraints.push_back(context_object.relativize(address[1] - addr_composition, -1));
 
                         TYPE storage_key_hi_comp;
-                        storage_key_hi_comp = chunks[i][cur_chunk++]; storage_key_hi_comp *= (1<<16); //1
-                        storage_key_hi_comp += chunks[i][cur_chunk++]; storage_key_hi_comp *= (1<<16); //2
-                        storage_key_hi_comp += chunks[i][cur_chunk++]; storage_key_hi_comp *= (1<<16); //3
-                        storage_key_hi_comp += chunks[i][cur_chunk++]; storage_key_hi_comp *= (1<<16); //4
-                        storage_key_hi_comp += chunks[i][cur_chunk++]; storage_key_hi_comp *= (1<<16); //5
-                        storage_key_hi_comp += chunks[i][cur_chunk++]; storage_key_hi_comp *= (1<<16); //6
-                        storage_key_hi_comp += chunks[i][cur_chunk++]; storage_key_hi_comp *= (1<<16); //7
-                        storage_key_hi_comp += chunks[i][cur_chunk++];
-                        constrain(storage_key_hi[i] - storage_key_hi_comp);
+                        storage_key_hi_comp = chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //1
+                        storage_key_hi_comp += chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //2
+                        storage_key_hi_comp += chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //3
+                        storage_key_hi_comp += chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //4
+                        storage_key_hi_comp += chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //5
+                        storage_key_hi_comp += chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //6
+                        storage_key_hi_comp += chunks[1][cur_chunk++]; storage_key_hi_comp *= (1<<16); //7
+                        storage_key_hi_comp += chunks[1][cur_chunk++];
+                        every_row_constraints.push_back(context_object.relativize(storage_key_hi[1] - storage_key_hi_comp, -1));
 
                         TYPE storage_key_lo_comp;
-                        storage_key_lo_comp = chunks[i][cur_chunk++]; storage_key_lo_comp *= (1<<16); //1
-                        storage_key_lo_comp += chunks[i][cur_chunk++]; storage_key_lo_comp *= (1<<16); //2
-                        storage_key_lo_comp += chunks[i][cur_chunk++]; storage_key_lo_comp *= (1<<16); //3
-                        storage_key_lo_comp += chunks[i][cur_chunk++]; storage_key_lo_comp *= (1<<16); //4
-                        storage_key_lo_comp += chunks[i][cur_chunk++]; storage_key_lo_comp *= (1<<16); //5
-                        storage_key_lo_comp += chunks[i][cur_chunk++]; storage_key_lo_comp *= (1<<16); //6
-                        storage_key_lo_comp += chunks[i][cur_chunk++]; storage_key_lo_comp *= (1<<16); //7
-                        storage_key_lo_comp += chunks[i][cur_chunk++];
-                        constrain(storage_key_lo[i] - storage_key_lo_comp);
+                        storage_key_lo_comp = chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //1
+                        storage_key_lo_comp += chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //2
+                        storage_key_lo_comp += chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //3
+                        storage_key_lo_comp += chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //4
+                        storage_key_lo_comp += chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //5
+                        storage_key_lo_comp += chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //6
+                        storage_key_lo_comp += chunks[1][cur_chunk++]; storage_key_lo_comp *= (1<<16); //7
+                        storage_key_lo_comp += chunks[1][cur_chunk++];
+                        every_row_constraints.push_back(context_object.relativize(storage_key_lo[1] - storage_key_lo_comp, -1));
 
                         TYPE rw_id_composition;
-                        rw_id_composition = chunks[i][cur_chunk++]; rw_id_composition *= (1<<16);
-                        rw_id_composition += chunks[i][cur_chunk++];
-                        constrain(rw_id[i] - rw_id_composition);
+                        rw_id_composition = chunks[1][cur_chunk++]; rw_id_composition *= (1<<16);
+                        rw_id_composition += chunks[1][cur_chunk++];
+                        every_row_constraints.push_back(context_object.relativize(rw_id[1] - rw_id_composition, -1));
 
-                        sorted_prev = sorted;
-                        sorted = {op[i]};
+                        sorted_prev = {op[0]};
+                        sorted = {op[1]};
                         for( std::size_t j = 0; j < chunks_amount; j++ ){
-                            sorted.push_back(chunks[i][j]);
-                            if( j == 12 ) sorted.push_back(field_type[i]);
-                        }
-
-                        if( i != 0 ){
-                            for( std::size_t diff_ind = 0; diff_ind < sorted.size(); diff_ind++ ){
-                                TYPE diff_ind_selector = bit_tag_selector<diff_index_bits_amount>(diff_index_bits[i], diff_ind);
-                                for(std::size_t less_diff_ind = 0; less_diff_ind < diff_ind; less_diff_ind++){
-                                    constrain(diff_ind_selector * (sorted[less_diff_ind]-sorted_prev[less_diff_ind]));
-                                }
-                                constrain(diff_ind_selector * (sorted[diff_ind] - sorted_prev[diff_ind] - diff[i]));
+                            sorted_prev.push_back(chunks[0][j]);
+                            sorted.push_back(chunks[1][j]);
+                            if( j == 12 ) {
+                                sorted_prev.push_back(field_type[0]);
+                                sorted.push_back(field_type[1]);
                             }
                         }
 
-                        TYPE start_selector = bit_tag_selector(op_bits[i], START_OP);
-                        TYPE stack_selector = bit_tag_selector(op_bits[i], STACK_OP);
-                        TYPE memory_selector = bit_tag_selector(op_bits[i], MEMORY_OP);
-                        TYPE storage_selector = bit_tag_selector(op_bits[i], STORAGE_OP);
-                        TYPE transient_storage_selector = bit_tag_selector(op_bits[i], TRANSIENT_STORAGE_OP);
-                        TYPE call_context_selector = bit_tag_selector(op_bits[i], CALL_CONTEXT_OP);
-                        TYPE account_selector = bit_tag_selector(op_bits[i], ACCOUNT_OP);
-                        TYPE tx_refund_selector = bit_tag_selector(op_bits[i], TX_REFUND_OP);
-                        TYPE tx_access_list_account_selector = bit_tag_selector(op_bits[i], TX_ACCESS_LIST_ACCOUNT_OP);
-                        TYPE tx_access_list_account_storage_selector = bit_tag_selector(op_bits[i], TX_ACCESS_LIST_ACCOUNT_STORAGE_OP);
-                        TYPE tx_log_selector = bit_tag_selector(op_bits[i], TX_LOG_OP);
-                        TYPE tx_receipt_selector = bit_tag_selector(op_bits[i], TX_RECEIPT_OP);
-                        TYPE padding_selector = bit_tag_selector(op_bits[i], START_OP);
+    //                    if( i != 0 ){
+                            for( std::size_t diff_ind = 0; diff_ind < sorted.size(); diff_ind++ ){
+                                TYPE diff_ind_selector = bit_tag_selector<diff_index_bits_amount>(diff_index_bits[1], diff_ind);
+                                for(std::size_t less_diff_ind = 0; less_diff_ind < diff_ind; less_diff_ind++){
+                                    non_first_row_constraints.push_back(context_object.relativize(diff_ind_selector * (sorted[less_diff_ind]-sorted_prev[less_diff_ind]),-1));
+                                }
+                                non_first_row_constraints.push_back(context_object.relativize(diff_ind_selector * (sorted[diff_ind] - sorted_prev[diff_ind] - diff[1]), -1));
+                            }
+    //                   }
 
-                        constrain(is_write[i] * (is_write[i]-1));
-                        constrain(is_first[i] * (is_first[i]-1));
-                        constrain((diff[i] * inv_diff[i] - 1) * diff[i] );
-                        constrain((diff[i] * inv_diff[i] - 1) * inv_diff[i] );
-                        constrain(is_first[i] * (is_first[i] - 1));
-                        constrain(is_last[i] * (is_last[i] - 1));
+                        TYPE start_selector = bit_tag_selector(op_bits[1], START_OP);
+                        TYPE stack_selector = bit_tag_selector(op_bits[1], STACK_OP);
+                        TYPE memory_selector = bit_tag_selector(op_bits[1], MEMORY_OP);
+                        TYPE storage_selector = bit_tag_selector(op_bits[1], STORAGE_OP);
+                        TYPE transient_storage_selector = bit_tag_selector(op_bits[1], TRANSIENT_STORAGE_OP);
+                        TYPE call_context_selector = bit_tag_selector(op_bits[1], CALL_CONTEXT_OP);
+                        TYPE account_selector = bit_tag_selector(op_bits[1], ACCOUNT_OP);
+                        TYPE tx_refund_selector = bit_tag_selector(op_bits[1], TX_REFUND_OP);
+                        TYPE tx_access_list_account_selector = bit_tag_selector(op_bits[1], TX_ACCESS_LIST_ACCOUNT_OP);
+                        TYPE tx_access_list_account_storage_selector = bit_tag_selector(op_bits[1], TX_ACCESS_LIST_ACCOUNT_STORAGE_OP);
+                        TYPE tx_log_selector = bit_tag_selector(op_bits[1], TX_LOG_OP);
+                        TYPE tx_receipt_selector = bit_tag_selector(op_bits[1], TX_RECEIPT_OP);
+                        TYPE padding_selector = bit_tag_selector(op_bits[1], START_OP);
 
-                        constrain((op[i] - START_OP) * (op[i] - PADDING_OP) * (is_first[i] - 1) * (diff_index_bits[i][0] - 1));
-                        constrain((op[i] - START_OP) * (op[i] - PADDING_OP) * (is_first[i] - 1) * (diff_index_bits[i][1] - 1));
-                        constrain((op[i] - START_OP) * (op[i] - PADDING_OP) * (is_first[i] - 1) * (diff_index_bits[i][2] - 1));
-                        constrain((op[i] - START_OP) * (op[i] - PADDING_OP) * (is_first[i] - 1) * (diff_index_bits[i][3] - 1));
-                        if( i != 0 ){
-                            constrain((op[i-1] - START_OP) * (op[i-1] - PADDING_OP)
-                                * is_last[i-1] * diff_index_bits[i][0]
-                                * diff_index_bits[i][1] * diff_index_bits[i][2]
-                                * diff_index_bits[i][3]);
-                            constrain((op[i] - START_OP) * (op[i] - PADDING_OP) * (is_first[i] - 1) * (value_before_hi[i] - value_before_hi[i-1]));
-                            constrain((op[i] - START_OP) * (op[i] - PADDING_OP) * (is_first[i] - 1) * (value_before_lo[i] - value_before_lo[i-1]));
-                        }
+                        every_row_constraints.push_back(context_object.relativize(is_write[1] * (is_write[1]-1), -1));
+                        every_row_constraints.push_back(context_object.relativize(is_first[1] * (is_first[1]-1), -1));
+                        every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * diff[1], -1));
+                        every_row_constraints.push_back(context_object.relativize((diff[1] * inv_diff[1] - 1) * inv_diff[1], -1));
+                        every_row_constraints.push_back(context_object.relativize(is_first[1] * (is_first[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize(is_last[1] * (is_last[1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][0] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][1] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][2] - 1), -1));
+                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][3] - 1), -1));
+    //                    if( i != 0 ){
+                            non_first_row_constraints.push_back(context_object.relativize((op[0] - START_OP) * (op[0] - PADDING_OP)
+                                * is_last[0] * diff_index_bits[1][0]
+                                * diff_index_bits[1][1] * diff_index_bits[1][2]
+                                * diff_index_bits[1][3], -1));
+                            every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (value_before_hi[1] - value_before_hi[0]), -1));
+                            every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (value_before_lo[1] - value_before_lo[0]), -1));
+    //                    }
 
                         // Specific constraints for START
-                        constrain(start_selector);
-                        constrain(start_selector * storage_key_hi[i]);
-                        constrain(start_selector * storage_key_lo[i]);
-                        constrain(start_selector * id[i]);
-                        constrain(start_selector * address[i]);
-                        constrain(start_selector * field_type[i]);
-                        constrain(start_selector * rw_id[i]);
-                        constrain(start_selector * value_before_hi[i]);
-                        constrain(start_selector * value_before_lo[i]);
-                        constrain(start_selector * state_root_hi[i]);
-                        constrain(start_selector * state_root_lo[i]);
-                        constrain(start_selector * state_root_before_hi[i]);
-                        constrain(start_selector * state_root_before_lo[i]);
+                        std::map<std::size_t, std::vector<TYPE>> special_constraints;
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * storage_key_hi[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * storage_key_lo[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * id[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * address[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * field_type[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * rw_id[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * value_before_hi[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * value_before_lo[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * state_root_hi[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * state_root_lo[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * state_root_before_hi[1], -1));
+                        special_constraints[START_OP].push_back(context_object.relativize(start_selector * state_root_before_lo[1], -1));
 
                         // Specific constraints for STACK
-                        constrain(stack_selector * field_type[i]);
-                        constrain(stack_selector * is_first[i] * (1 - is_write[i]));  // 4. First stack operation is obviously write
-                        if(i!=0) {
-                            constrain(stack_selector * (address[i] - address[i-1]) * (is_write[i] - 1));                  // 5. First operation is always write
-                            constrain(stack_selector * (address[i] - address[i-1]) * (address[i] - address[i-1] - 1)); // 6. Stack pointer always grows and only by one
-                            constrain(stack_selector * (1 - is_first[i]) * (state_root_hi[i] - state_root_before_hi[i-1]));
-                            constrain(stack_selector * (1 - is_first[i]) * (state_root_lo[i] - state_root_before_lo[i-1]));
-                        }
-                        constrain(stack_selector * storage_key_hi[i]);
-                        constrain(stack_selector * storage_key_lo[i]);
-                        constrain(stack_selector * value_before_hi[i]);
-                        constrain(stack_selector * value_before_lo[i]);
-                        lookup(stack_selector * address[i], "chunk_16_bits/full");
-                        lookup(1023 - stack_selector * address[i], "chunk_16_bits/full");
+                        special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * field_type[1], -1));
+                        special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * is_first[1] * (1 - is_write[1]), -1));  // 4. First stack operation is obviously write
+                        //if(i!=0) {
+                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (is_write[1] - 1), -1));                  // 5. First operation is always write
+                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (address[1] - address[0] - 1), -1)); // 6. Stack pointer always grows and only by one
+                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[0]), -1));
+                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[0]), -1));
+                        //}
+                        special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * storage_key_hi[1], -1));
+                        special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * storage_key_lo[1], -1));
+                        special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * value_before_hi[1], -1));
+                        special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * value_before_lo[1], -1));
+                        chunked_16_lookups.push_back(context_object.relativize(stack_selector * address[1], -1));
+                        chunked_16_lookups.push_back(context_object.relativize(1023 - stack_selector * address[1], -1));
 
                         // Specific constraints for MEMORY
                         // address is 32 bit
-                        if( i != 0 )  constrain(memory_selector * (is_first[i] - 1) * (is_write[i] - 1) * (value_lo[i] - value_lo[i-1]));       // 4. for read operations value is equal to previous value
-                        constrain(memory_selector * value_hi[i]);
-                        constrain(memory_selector * is_first[i] * (is_write[i] - 1) * value_lo[i]);
-                        constrain(memory_selector * field_type[i]);
-                        constrain(memory_selector * storage_key_hi[i]);
-                        constrain(memory_selector * storage_key_lo[i]);
-                        constrain(memory_selector * value_before_hi[i]);
-                        constrain(memory_selector * value_before_lo[i]);
-                        constrain(memory_selector * (1 - is_first[i]) * (state_root_hi[i] - state_root_before_hi[i]));
-                        constrain(memory_selector * (1 - is_first[i]) * (state_root_lo[i] - state_root_before_lo[i]));
-                        lookup(memory_selector * value_lo[i], "chunk_16_bits/full");
-                        lookup(255 - memory_selector * value_lo[i], "chunk_16_bits/full");
+                        //if( i != 0 )
+                            non_first_row_constraints.push_back(context_object.relativize(memory_selector * (is_first[1] - 1) * (is_write[1] - 1) * (value_lo[1] - value_lo[0]), -1));       // 4. for read operations value is equal to previous value
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * value_hi[1], -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * is_first[1] * (is_write[1] - 1) * value_lo[1], -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * field_type[1], -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * storage_key_hi[1], -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * storage_key_lo[1], -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * value_before_hi[1], -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * value_before_lo[1], -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[1]), -1));
+                        special_constraints[MEMORY_OP].push_back(context_object.relativize(memory_selector * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[1]), -1));
+                        chunked_16_lookups.push_back(context_object.relativize(memory_selector * value_lo[1], -1));
+                        chunked_16_lookups.push_back(context_object.relativize(255 - memory_selector * value_lo[1], -1));
 
 
                         // Specific constraints for STORAGE
                         // lookup to MPT circuit
                         // field is 0
-                        constrain(storage_selector * field_type[i]);
+                        special_constraints[STORAGE_OP].push_back(context_object.relativize(storage_selector * field_type[1], -1));
                         //lookup_constrain({"MPT table", {
                         //    storage_selector * addr,
                         //    storage_selector * field,
@@ -376,28 +400,28 @@ namespace nil {
 
                         // Specific constraints for TRANSIENT_STORAGE
                         // field is 0
-                        constrain(transient_storage_selector * field_type[i]);
+                        special_constraints[TRANSIENT_STORAGE_OP].push_back(context_object.relativize(transient_storage_selector * field_type[1], -1));
 
                         // Specific constraints for CALL_CONTEXT
                         // address, storage_key, initial_value, value_prev are 0
                         // state_root = state_root_prev
                         // range_check for field_flag
-                        constrain(call_context_selector * address[i]);
-                        constrain(call_context_selector * storage_key_hi[i]);
-                        constrain(call_context_selector * storage_key_lo[i]);
-                        constrain(call_context_selector * (1 - is_first[i]) * (state_root_hi[i] - state_root_before_hi[i]));
-                        constrain(call_context_selector * (1 - is_first[i]) * (state_root_lo[i] - state_root_before_lo[i]));
-                        constrain(call_context_selector * value_before_hi[i]);
-                        constrain(call_context_selector * value_before_lo[i]);
+                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * address[1], -1));
+                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * storage_key_hi[1], -1));
+                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * storage_key_lo[1], -1));
+                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[1]), -1));
+                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[1]), -1));
+                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * value_before_hi[1], -1));
+                        special_constraints[CALL_CONTEXT_OP].push_back(context_object.relativize(call_context_selector * value_before_lo[1], -1));
 
                         // Specific constraints for ACCOUNT_OP
                         // id, storage_key 0
                         // field_tag -- Range
                         // MPT lookup for last access
                         // value and value_prev consistency
-                        constrain(account_selector * id[i]);
-                        constrain(account_selector * storage_key_hi[i]);
-                        constrain(account_selector * storage_key_lo[i]);
+                        special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector * id[1], -1));
+                        special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector * storage_key_hi[1], -1));
+                        special_constraints[ACCOUNT_OP].push_back(context_object.relativize(account_selector * storage_key_lo[1], -1));
                         //lookup_constrain({"MPT table", {
                         //    storage_selector * is_last * addr,
                         //    storage_selector * is_last * field,
@@ -418,14 +442,14 @@ namespace nil {
                         // state_root eqauls state_root_prev
                         // initial_value is 0
                         // if first access is Read then value = 0
-                        constrain(tx_refund_selector * address[i]);
-                        constrain(tx_refund_selector * field_type[i]);
-                        constrain(tx_refund_selector * storage_key_hi[i]);
-                        constrain(tx_refund_selector * storage_key_lo[i]);
-                        constrain(tx_refund_selector * is_first[i] * (1-is_write[i]) * value_hi[i]);
-                        constrain(tx_refund_selector * is_first[i] * (1-is_write[i]) * value_lo[i]);
-                        constrain(tx_refund_selector * (state_root_hi[i] - state_root_before_hi[i]));
-                        constrain(tx_refund_selector * (state_root_lo[i] - state_root_before_lo[i]));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * address[1], -1));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * field_type[1], -1));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * storage_key_hi[1], -1));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * storage_key_lo[1], -1));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * is_first[1] * (1-is_write[1]) * value_hi[1], -1));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * is_first[1] * (1-is_write[1]) * value_lo[1], -1));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
+                        special_constraints[TX_REFUND_OP].push_back(context_object.relativize(tx_refund_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
 
                         // Specific constraints for TX_ACCESS_LIST_ACCOUNT_OP
                         // field_tag and storage_key are 0
@@ -433,29 +457,33 @@ namespace nil {
                         // initial_value is 0
                         // state_root eqauls state_root_prev
                         // value column at previous rotation equals value_prev at current rotation
-                        constrain(tx_access_list_account_selector * field_type[i]);
-                        constrain(tx_access_list_account_selector * storage_key_hi[i]);
-                        constrain(tx_access_list_account_selector * storage_key_lo[i]);
-                        constrain(tx_access_list_account_selector * value_hi[i]);
-                        constrain(tx_access_list_account_selector * value_lo[i] * (1 - value_lo[i]));
-                        constrain(tx_access_list_account_selector * (state_root_hi[i] - state_root_before_hi[i]));
-                        constrain(tx_access_list_account_selector * (state_root_lo[i] - state_root_before_lo[i]));
-                        if(i != 0) constrain(tx_access_list_account_selector * (1 - is_first[i]) * (value_hi[i-1] - value_before_hi[i]));
-                        if(i != 0) constrain(tx_access_list_account_selector * (1 - is_first[i]) * (value_lo[i-1] - value_before_lo[i]));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * field_type[1], -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * storage_key_hi[1], -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * storage_key_lo[1], -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_hi[1], -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_lo[1] * (1 - value_lo[1]), -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
+                        //if(i != 0)
+                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_hi[0] - value_before_hi[1]), -1));
+                        //if(i != 0)
+                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_lo[0] - value_before_lo[1]), -1));
 
-                        // Specific constraints for TX_ACCESS_LIST_ACCOUNT_STORAGE_OP
+                        // Specific constraints for
                         //    field_tag is 0
                         //    value is boolean
                         //    initial_value is 0
                         //    state_root eqauls state_root_prev
                         //    value column at previous rotation equals value_prev at current rotation
-                        constrain(tx_access_list_account_selector * field_type[i]);
-                        constrain(tx_access_list_account_selector * value_hi[i]);
-                        constrain(tx_access_list_account_selector * value_lo[i] * (1 - value_lo[i]));
-                        constrain(tx_access_list_account_selector * (state_root_hi[i] - state_root_before_hi[i]));
-                        constrain(tx_access_list_account_selector * (state_root_lo[i] - state_root_before_lo[i]));
-                        if(i != 0) constrain(tx_access_list_account_selector * (1 - is_first[i]) * (value_hi[i-1] - value_before_hi[i]));
-                        if(i != 0) constrain(tx_access_list_account_selector * (1 - is_first[i]) * (value_lo[i-1] - value_before_lo[i]));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * field_type[1], -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_hi[1], -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * value_lo[1] * (1 - value_lo[1]), -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
+                        special_constraints[TX_ACCESS_LIST_ACCOUNT_STORAGE_OP].push_back(context_object.relativize(tx_access_list_account_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
+                        //if(i != 0)
+                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_hi[0] - value_before_hi[1]), -1));
+                        //if(i != 0)
+                            non_first_row_constraints.push_back(context_object.relativize(tx_access_list_account_selector * (1 - is_first[1]) * (value_lo[0] - value_before_lo[1]), -1));
 
 
                         // Specific constraints for TX_LOG_OP
@@ -464,11 +492,11 @@ namespace nil {
                         //  state_root eqauls state_root_prev
                         //  value_prev equals initial_value
                         //  address 64 bits
-                        constrain(tx_log_selector * (1 - is_write[i]));
-                        constrain(tx_log_selector * (state_root_hi[i] - state_root_before_hi[i]));
-                        constrain(tx_log_selector * (state_root_lo[i] - state_root_before_lo[i]));
-                        constrain(tx_log_selector * value_before_hi[i]);
-                        constrain(tx_log_selector * value_before_lo[i]);
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (1 - is_write[1]), -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_hi[1] - state_root_before_hi[1]), -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * (state_root_lo[1] - state_root_before_lo[1]), -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * value_before_hi[1], -1));
+                        special_constraints[TX_LOG_OP].push_back(context_object.relativize(tx_log_selector * value_before_lo[1], -1));
 
                         // Specific constraints for TX_RECEIPT_OP
                         // address and storage_key are 0
@@ -477,26 +505,58 @@ namespace nil {
                         //  tx_id is 1 if it's the first row and tx_id is in 11 bits range
                         //  state root is the same
                         //  value_prev is 0 and initial_value is 0
-                        constrain(tx_receipt_selector * address[i]);
-                        constrain(tx_receipt_selector * storage_key_hi[i]);
-                        constrain(tx_receipt_selector * storage_key_lo[i]);
+                        special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector * address[1], -1));
+                        special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector * storage_key_hi[1], -1));
+                        special_constraints[TX_RECEIPT_OP].push_back(context_object.relativize(tx_receipt_selector * storage_key_lo[1], -1));
 
                         // Specific constraints for PADDING
-                        constrain(padding_selector * address[i]);
-                        constrain(padding_selector * storage_key_hi[i]);
-                        constrain(padding_selector * storage_key_lo[i]);
-                        constrain(padding_selector * id[i]);
-                        constrain(padding_selector * address[i]);
-                        constrain(padding_selector * field_type[i]);
-                        constrain(padding_selector * rw_id[i]);
-                        constrain(padding_selector * state_root_hi[i]);
-                        constrain(padding_selector * state_root_lo[i]);
-                        constrain(padding_selector * state_root_before_hi[i]);
-                        constrain(padding_selector * state_root_before_lo[i]);
-                        constrain(padding_selector * value_hi[i]);
-                        constrain(padding_selector * value_lo[i]);
-                        constrain(padding_selector * value_before_hi[i]);
-                        constrain(padding_selector * value_before_lo[i]);
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * address[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * storage_key_hi[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * storage_key_lo[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * id[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * address[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * field_type[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * rw_id[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * state_root_hi[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * state_root_lo[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * state_root_before_hi[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * state_root_before_lo[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * value_hi[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * value_lo[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * value_before_hi[1], -1));
+                        special_constraints[PADDING_OP].push_back(context_object.relativize(padding_selector * value_before_lo[1], -1));
+
+                        std::size_t max_constraints = 0;
+                        for(const auto&[k,constr] : special_constraints){
+                            if( constr.size() > max_constraints) max_constraints = constr.size();
+                        }
+                        for( std::size_t i = 0; i < max_constraints; i++ ){
+                            TYPE constraint;
+                            for(const auto&[k,constr] : special_constraints){
+                                if( constr.size() > i ) constraint += constr[i];
+                            }
+                            every_row_constraints.push_back(constraint);
+                        }
+
+                        {
+                            PROFILE_SCOPE("RW circuit constraints row definition")
+                            std::vector<std::size_t> every_row;
+                            std::vector<std::size_t> non_first_row;
+                            for( std::size_t i = 0; i < max_rw_size; i++){
+                                every_row.push_back(i);
+                                if( i!= 0 ) non_first_row.push_back(i);
+                            }
+                            for( auto& constraint: every_row_constraints){
+                                context_object.relative_constrain(constraint, 0, max_rw_size-1);
+                            }
+                            for( auto &constraint:chunked_16_lookups ){
+                                std::vector<TYPE> tmp = {constraint};
+                                context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_rw_size-1);
+                            }
+                            for( auto &constraint: non_first_row_constraints ){
+                                context_object.relative_constrain(constraint, 1, max_rw_size - 1);
+                            }
+                        }
                     }
                     std::cout << std::endl;
                 }

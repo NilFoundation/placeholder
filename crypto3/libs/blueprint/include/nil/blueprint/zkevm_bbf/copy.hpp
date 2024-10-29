@@ -22,6 +22,8 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {
@@ -37,9 +39,14 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
                 using input_type = std::size_t;
             public:
-                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(){
+                static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
+                    std::size_t max_copy,
+                    std::size_t max_rw,
+                    std::size_t max_keccak_blocks,
+                    std::size_t max_bytecode
+                ){
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(20, 1, 3, 5);
-                    desc.usable_rows_amount = 300;
+                    desc.usable_rows_amount = std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode));
                     return desc;
                 }
                 copy(context_type &context_object, const input_type &input) :generic_component<FieldType,stage>(context_object) {

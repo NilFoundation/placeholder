@@ -413,6 +413,24 @@ namespace nil {
                         add_constraint(C_rel, get_row(row));
                     }
 
+                    void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
+                        if (!is_relative(C_rel)) {
+                            std::stringstream ss;
+                            ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
+                            throw std::logic_error(ss.str());
+                        }
+                        add_constraint(C_rel, get_row(start_row),  get_row(end_row));
+                    }
+
+                    void relative_constrain(TYPE C_rel, std::vector<std::size_t> rows) {
+                        if (!is_relative(C_rel)) {
+                            std::stringstream ss;
+                            ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
+                            throw std::logic_error(ss.str());
+                        }
+                        add_constraint(C_rel, rows);
+                    }
+
                     void lookup(std::vector<TYPE> &C, std::string table_name) {
                         std::set<std::size_t> base_rows = {};
 
@@ -468,6 +486,30 @@ namespace nil {
                             }
                         }
                         add_lookup_constraint(table_name, C, row);
+                    }
+
+                    // accesible only at GenerationStage::CONSTRAINTS !
+                    void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
+                        for(const TYPE c_part : C) {
+                            if (!is_relative(c_part)) {
+                                std::stringstream ss;
+                                ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
+                                throw std::logic_error(ss.str());
+                            }
+                        }
+                        add_lookup_constraint(table_name, C, start_row, end_row);
+                    }
+
+                    // accesible only at GenerationStage::CONSTRAINTS !
+                    void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::vector<std::size_t> rows) {
+                        for(const TYPE c_part : C) {
+                            if (!is_relative(c_part)) {
+                                std::stringstream ss;
+                                ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
+                                throw std::logic_error(ss.str());
+                            }
+                        }
+                        add_lookup_constraint(table_name, C, rows);
                     }
 
                     void lookup_table(std::string name, std::vector<std::size_t> W, std::size_t from_row, std::size_t num_rows) {
@@ -602,6 +644,26 @@ namespace nil {
                         constraints->at(C_id).second.set_row(stored_row);
                     }
 
+                    void add_constraint(TYPE &C_rel, std::size_t start_row, std::size_t end_row) {
+                        std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
+                        std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
+                        constraint_id_type C_id = constraint_id_type(C_rel);
+                        if (constraints->find(C_id) == constraints->end()) {
+                            constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount)}});
+                        }
+                        constraints->at(C_id).second.set_interval(stored_start_row, stored_end_row);
+                    }
+
+                    void add_constraint(TYPE &C_rel, std::vector<std::size_t> rows) {
+                        constraint_id_type C_id = constraint_id_type(C_rel);
+                        if (constraints->find(C_id) == constraints->end()) {
+                            constraints->insert({C_id, {C_rel, row_selector<>(desc.rows_amount)}});
+                        }
+                        for( auto row: rows ){
+                            constraints->at(C_id).second.set_row(get_row(row) - (is_fresh ? row_shift : 0));
+                        }
+                    }
+
                     void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t row) {
                         std::size_t stored_row = row - (is_fresh ? row_shift : 0);
                         constraint_id_type C_id = constraint_id_type(C_rel);
@@ -609,6 +671,26 @@ namespace nil {
                             lookup_constraints->insert({{table_name,C_id}, {C_rel, row_selector<>(desc.rows_amount)}});
                         }
                         lookup_constraints->at({table_name,C_id}).second.set_row(stored_row);
+                    }
+
+                    void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t start_row, std::size_t end_row) {
+                        std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
+                        std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
+                        constraint_id_type C_id = constraint_id_type(C_rel);
+                        if (lookup_constraints->find({table_name,C_id}) == lookup_constraints->end()) {
+                            lookup_constraints->insert({{table_name,C_id}, {C_rel, row_selector<>(desc.rows_amount)}});
+                        }
+                        lookup_constraints->at({table_name,C_id}).second.set_interval(stored_start_row, stored_end_row);
+                    }
+
+                    void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::vector<std::size_t> rows) {
+                        constraint_id_type C_id = constraint_id_type(C_rel);
+                        if (lookup_constraints->find({table_name,C_id}) == lookup_constraints->end()) {
+                            lookup_constraints->insert({{table_name,C_id}, {C_rel, row_selector<>(desc.rows_amount)}});
+                        }
+                        for( auto row: rows ){
+                            lookup_constraints->at({table_name,C_id}).second.set_row(row - (is_fresh ? row_shift : 0));
+                        }
                     }
 
                     // Assignment description will be used when resetting the context.

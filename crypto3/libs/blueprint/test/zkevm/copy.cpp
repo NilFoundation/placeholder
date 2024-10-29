@@ -61,11 +61,12 @@ std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     return bytes;
 }
 
-template <typename BlueprintFieldType, std::size_t WitnessColumns>
+template <typename BlueprintFieldType>
 void test_zkevm_copy(
     std::vector<std::string> paths,
     std::size_t max_copy_size
 ){
+    constexpr std::size_t WitnessColumns = 20;
     std::cout << "Copy circuit test with "<< WitnessColumns << " witnesses" << std::endl;
     std::vector<nil::blueprint::components::copy_event> copy_events;
     std::size_t rw_counter = 0;
@@ -122,27 +123,27 @@ constexpr static const std::size_t random_tests_amount = 10;
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
     using field_type = typename crypto3::algebra::curves::vesta::base_field_type;
 BOOST_AUTO_TEST_CASE(small_storage_contract){
-    test_zkevm_copy<field_type, 20>({"../libs/blueprint/test/zkevm/data/small_stack_storage.json"}, 3000);
+    test_zkevm_copy<field_type>({"../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage.json"}, 3000);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8_contract){
-    test_zkevm_copy<field_type, 20>({"../libs/blueprint/test/zkevm/data/mstore8.json"}, 3000);
+    test_zkevm_copy<field_type>({"../crypto3/libs/blueprint/test/zkevm/data/mstore8.json"}, 3000);
 }
 
 BOOST_AUTO_TEST_CASE(meminit_contract){
-    test_zkevm_copy<field_type, 20>({"../libs/blueprint/test/zkevm/data/mem_init.json"}, 3000);
+    test_zkevm_copy<field_type>({"../crypto3/libs/blueprint/test/zkevm/data/mem_init.json"}, 3000);
 }
 
 BOOST_AUTO_TEST_CASE(calldatacopy_contract){
-    test_zkevm_copy<field_type, 20>({"../libs/blueprint/test/zkevm/data/calldatacopy.json"}, 3000);
+    test_zkevm_copy<field_type>({"../crypto3/libs/blueprint/test/zkevm/data/calldatacopy.json"}, 3000);
 }
 
 BOOST_AUTO_TEST_CASE(multiple_contracts_test){
-    test_zkevm_copy<field_type, 20>({
-        "../libs/blueprint/test/zkevm/data/small_stack_storage.json",
-        "../libs/blueprint/test/zkevm/data/mstore8.json",
-        "../libs/blueprint/test/zkevm/data/mem_init.json",
-        "../libs/blueprint/test/zkevm/data/calldatacopy.json"
+    test_zkevm_copy<field_type>({
+        "../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage.json",
+        "../crypto3/libs/blueprint/test/zkevm/data/mstore8.json",
+        "../crypto3/libs/blueprint/test/zkevm/data/mem_init.json",
+        "../crypto3/libs/blueprint/test/zkevm/data/calldatacopy.json"
     }, 3000);
 }
 
@@ -151,13 +152,13 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_pallas_test_suite)
     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
 BOOST_AUTO_TEST_CASE(small_storage_contract){
-    test_zkevm_copy<field_type, 20>({"../libs/blueprint/test/zkevm/data/small_stack_storage.json"}, 3000);
+    test_zkevm_copy<field_type>({"../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage.json"}, 3000);
 }
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_bls_test_suite)
     using field_type = typename crypto3::algebra::fields::bls12_fr<381>;
 BOOST_AUTO_TEST_CASE(small_storage_contract){
-    test_zkevm_copy<field_type, 20>({"../libs/blueprint/test/zkevm/data/small_stack_storage.json"}, 3000);
+    test_zkevm_copy<field_type>({"../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage.json"}, 3000);
 }
 BOOST_AUTO_TEST_SUITE_END()

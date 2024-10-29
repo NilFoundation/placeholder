@@ -43,6 +43,7 @@ namespace nil {
             constexpr uint8_t TX_LOG_COPY = 3;
             constexpr uint8_t KECCAK_COPY = 4;
             constexpr uint8_t PADDING_COPY = 5;
+//            constexpr uint8_t RETURN_DATA_COPY = 6;
 
             struct copy_event{
                 // {hash_hi, hash_lo} for keccak,
