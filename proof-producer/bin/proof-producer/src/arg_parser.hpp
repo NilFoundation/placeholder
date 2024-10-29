@@ -47,7 +47,7 @@ namespace nil {
             boost::filesystem::path assignment_description_file_path;
             boost::filesystem::path challenge_file_path;
             boost::filesystem::path theta_power_file_path;
-            boost::filesystem::path evm_verifier_path = "evm_verifier";
+            boost::filesystem::path evm_verifier_path;
             std::vector<boost::filesystem::path> input_challenge_files;
             std::vector<boost::filesystem::path> partial_proof_files;
             std::vector<boost::filesystem::path> initial_proof_files;
