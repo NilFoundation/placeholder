@@ -147,9 +147,9 @@
           default = all-gcc;
         };
         apps = {
-          single-threaded = {
+          assigner = {
             type = "app";
-            program = "${self.packages.${system}.proof-producer}/bin/proof-producer-single-threaded";
+            program = "${self.packages.${system}.zkevm-framework}/bin/assigner";
           };
           multi-threaded = {
             type = "app";
