@@ -176,6 +176,7 @@ namespace nil {
             bool print_evm_verifier(
                 boost::filesystem::path output_folder
             ){
+                if( output_folder == "" ) return true;
                 BOOST_LOG_TRIVIAL(info) << "Print evm verifier";
                 nil::blueprint::lpc_evm_verifier_printer<PlaceholderParams> evm_verifier_printer(
                     *constraint_system_,
@@ -189,6 +190,7 @@ namespace nil {
             bool print_public_input_for_evm(
                 boost::filesystem::path output_folder
             ){
+                if( output_folder == "" ) return true;
                 BOOST_LOG_TRIVIAL(info) << "Print public input for EVM";
                 std::ofstream pi_stream;
                 pi_stream.open(output_folder.string() + "/public_input.inp");
@@ -196,17 +198,13 @@ namespace nil {
 
                 // Does not support public input columns.
                 if( table_description_->public_input_columns != 0 ) {
-                    std::cout << "I have real input" << std::endl;
                     std::size_t max_non_zero = 0;
                     const auto&public_input = assignment_table_->public_input(0);
-                    std::cout << "Public input size = " << public_input.size() << std::endl;
                     for (std::size_t i = 0; i < public_input.size(); i++) {
-                        std::cout << "i = " << i << public_input[i] << std::endl;
                         if (public_input[i] != 0u) {
                             max_non_zero = i + 1;
                         }
                     }
-                    std::cout << "Max non zero = "  << max_non_zero << std::endl;
                     for (std::size_t i = 0; i < std::min(public_input.size(), max_non_zero); i++) {
                         pi_stream << public_input[i] << "\n";
                     }
