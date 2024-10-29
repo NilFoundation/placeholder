@@ -176,7 +176,7 @@ namespace nil {
             bool print_evm_verifier(
                 boost::filesystem::path output_folder
             ){
-                if( output_folder == "" ) return true;
+                if( output_folder.empty() ) return true;
                 BOOST_LOG_TRIVIAL(info) << "Print evm verifier";
                 nil::blueprint::lpc_evm_verifier_printer<PlaceholderParams> evm_verifier_printer(
                     *constraint_system_,
@@ -190,7 +190,7 @@ namespace nil {
             bool print_public_input_for_evm(
                 boost::filesystem::path output_folder
             ){
-                if( output_folder == "" ) return true;
+                if( output_folder.empty() ) return true;
                 BOOST_LOG_TRIVIAL(info) << "Print public input for EVM";
                 std::ofstream pi_stream;
                 pi_stream.open(output_folder.string() + "/public_input.inp");
