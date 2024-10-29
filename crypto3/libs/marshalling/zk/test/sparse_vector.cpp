@@ -41,7 +41,6 @@
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
-#include <nil/crypto3/algebra/curves/detail/marshalling.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
 
 #include <nil/crypto3/container/sparse_vector.hpp>
@@ -53,17 +52,6 @@ void print_byteblob(TIter iter_begin, TIter iter_end) {
     for (TIter it = iter_begin; it != iter_end; it++) {
         std::cout << std::hex << int(*it) << std::endl;
     }
-}
-
-template<typename FpCurveGroupElement>
-void print_fp_curve_group_element(FpCurveGroupElement e) {
-    std::cout << e.X.data << " " << e.Y.data << " " << e.Z.data << std::endl;
-}
-
-template<typename Fp2CurveGroupElement>
-void print_fp2_curve_group_element(Fp2CurveGroupElement e) {
-    std::cout << "(" << e.X.data[0].data << " " << e.X.data[1].data << ") (" << e.Y.data[0].data << " "
-              << e.Y.data[1].data << ") (" << e.Z.data[0].data << " " << e.Z.data[1].data << ")" << std::endl;
 }
 
 template<typename Endianness, typename GroupType>

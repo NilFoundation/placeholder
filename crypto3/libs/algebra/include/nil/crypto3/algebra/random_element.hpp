@@ -107,8 +107,10 @@ namespace nil {
                 using distribution_type = boost::random::uniform_int_distribution<typename field_type::integral_type>;
                 using generator_type = GeneratorType;
 
-                return random_element<typename curve_type::scalar_field_type, distribution_type, generator_type>(rng) *
-                       CurveGroupType::value_type::one();
+                typename curve_type::scalar_field_type::value_type scalar =
+                    random_element<typename curve_type::scalar_field_type, distribution_type, generator_type>(rng);
+
+                return CurveGroupType::value_type::one() * scalar;
             }
 
         }    // namespace algebra

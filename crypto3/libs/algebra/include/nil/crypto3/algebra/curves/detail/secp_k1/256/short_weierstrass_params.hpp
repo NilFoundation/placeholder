@@ -42,12 +42,11 @@ namespace nil {
                         using base_field_type = typename secp_k1_types<160>::base_field_type;
                         using scalar_field_type = typename secp_k1_types<160>::scalar_field_type;
 
-                        constexpr static const typename secp_k1_types<160>::integral_type a =
-                            typename secp_k1_types<160>::integral_type(
-                                0x00);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename secp_k1_types<160>::integral_type b =
-                            typename secp_k1_types<160>::integral_type(
-                                0x07);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename secp_k1_types<160>::base_field_type::value_type
+                            a = 0x00;
+                        constexpr static const typename secp_k1_types<160>::base_field_type::value_type
+                            b = 0x07;
                     };
 
                     template<>
@@ -72,9 +71,9 @@ namespace nil {
                             typename field_type::value_type(0x938cf935318fdced6bc28286531733c3f03c4fee_cppui_modular160)};
                     };
 
-                    constexpr typename secp_k1_types<160>::integral_type const
+                    constexpr typename secp_k1_types<160>::base_field_type::value_type const
                         secp_k1_params<160, forms::short_weierstrass>::a;
-                    constexpr typename secp_k1_types<160>::integral_type const
+                    constexpr typename secp_k1_types<160>::base_field_type::value_type const
                         secp_k1_params<160, forms::short_weierstrass>::b;
 
                     constexpr std::array<
@@ -90,12 +89,11 @@ namespace nil {
                         using base_field_type = typename secp_k1_types<192>::base_field_type;
                         using scalar_field_type = typename secp_k1_types<192>::scalar_field_type;
 
-                        constexpr static const typename secp_k1_types<192>::integral_type a =
-                            typename secp_k1_types<192>::integral_type(
-                                0x00);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename secp_k1_types<192>::integral_type b =
-                            typename secp_k1_types<192>::integral_type(
-                                0x3);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename secp_k1_types<192>::base_field_type::value_type
+                            a = 0x00;
+                        constexpr static const typename secp_k1_types<192>::base_field_type::value_type
+                            b = 0x3;
                     };
 
                     template<>
@@ -124,9 +122,9 @@ namespace nil {
                                 0x9b2f2f6d9c5628a7844163d015be86344082aa88d95e2f9d_cppui_modular192)};
                     };
 
-                    constexpr typename secp_k1_types<192>::integral_type const
+                    constexpr typename secp_k1_types<192>::base_field_type::value_type const
                         secp_k1_params<192, forms::short_weierstrass>::a;
-                    constexpr typename secp_k1_types<192>::integral_type const
+                    constexpr typename secp_k1_types<192>::base_field_type::value_type const
                         secp_k1_params<192, forms::short_weierstrass>::b;
 
                     constexpr std::array<
@@ -142,12 +140,11 @@ namespace nil {
                         using base_field_type = typename secp_k1_types<224>::base_field_type;
                         using scalar_field_type = typename secp_k1_types<224>::scalar_field_type;
 
-                        constexpr static const typename secp_k1_types<224>::integral_type a =
-                            typename secp_k1_types<224>::integral_type(
-                                0x00);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename secp_k1_types<224>::integral_type b =
-                            typename secp_k1_types<224>::integral_type(
-                                0x5);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename secp_k1_types<224>::base_field_type::value_type
+                            a = 0x00;
+                        constexpr static const typename secp_k1_types<224>::base_field_type::value_type
+                            b = 0x5;
                     };
 
                     template<>
@@ -174,9 +171,9 @@ namespace nil {
                                 0x7e089fed7fba344282cafbd6f7e319f7c0b0bd59e2ca4bdb556d61a5_cppui_modular224)};
                     };
 
-                    constexpr typename secp_k1_types<224>::integral_type const
+                    constexpr typename secp_k1_types<224>::base_field_type::value_type const
                         secp_k1_params<224, forms::short_weierstrass>::a;
-                    constexpr typename secp_k1_types<224>::integral_type const
+                    constexpr typename secp_k1_types<224>::base_field_type::value_type const
                         secp_k1_params<224, forms::short_weierstrass>::b;
 
                     constexpr std::array<
@@ -192,12 +189,11 @@ namespace nil {
                         using base_field_type = typename secp_k1_types<256>::base_field_type;
                         using scalar_field_type = typename secp_k1_types<256>::scalar_field_type;
 
-                        constexpr static const typename secp_k1_types<256>::integral_type a =
-                            typename secp_k1_types<256>::integral_type(
-                                0x00);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename secp_k1_types<256>::integral_type b =
-                            typename secp_k1_types<256>::integral_type(
-                                0x07);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename secp_k1_types<256>::base_field_type::value_type
+                            a = 0x00;
+                        constexpr static const typename secp_k1_types<256>::base_field_type::value_type
+                            b = 0x07;
                     };
 
                     template<>
@@ -224,9 +220,9 @@ namespace nil {
                                 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8_cppui_modular256)};
                     };
 
-                    constexpr typename secp_k1_types<256>::integral_type const
+                    constexpr typename secp_k1_types<256>::base_field_type::value_type const
                         secp_k1_params<256, forms::short_weierstrass>::a;
-                    constexpr typename secp_k1_types<256>::integral_type const
+                    constexpr typename secp_k1_types<256>::base_field_type::value_type const
                         secp_k1_params<256, forms::short_weierstrass>::b;
 
                     constexpr std::array<

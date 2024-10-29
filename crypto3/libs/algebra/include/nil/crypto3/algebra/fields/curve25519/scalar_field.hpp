@@ -51,9 +51,10 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
                     constexpr static const std::size_t value_bits = modulus_bits;
                     constexpr static const std::size_t arity = 1;
-                    
+
                     typedef typename policy_type::integral_type integral_type;
-                    typedef typename policy_type::extended_integral_type extended_integral_type;
+                    using extended_integral_type = boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>;
 #ifdef __ZKLLVM__
                     typedef __zkllvm_field_curve25519_scalar value_type;
 #else

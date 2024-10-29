@@ -29,6 +29,7 @@
 #include <cstddef>
 
 #include <nil/crypto3/detail/static_pow.hpp>
+#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -37,11 +38,15 @@ namespace nil {
                 /// See definition of \p c in https://zips.z.cash/protocol/protocol.pdf#concretepedersenhash
                 template<typename Field>
                 constexpr std::size_t chunks_per_base_point(std::size_t chunk_bits) {
-                    typename Field::extended_integral_type two(2);
+
+                    using extended_integral_type = boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<2 * Field::policy_type::modulus_bits>>;
+
+                    extended_integral_type two(2);
                     std::size_t c = 1;
                     std::size_t prev_c = 0;
                     /// (Fr - 1) / 2
-                    typename Field::extended_integral_type upper_bound = (Field::modulus - 1) / 2;
+                    extended_integral_type upper_bound = (Field::modulus - 1) / 2;
                     // TODO: first multiplier should be verified
                     /// (chunk_bits + 1) * ((2^(c * (chunk_bits + 1)) - 1) / (2^(chunk_bits + 1) - 1))
                     auto get_test_value = [&](auto i) {

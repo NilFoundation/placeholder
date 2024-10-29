@@ -43,12 +43,11 @@ namespace nil {
                         using base_field_type = typename bls12_types<377>::base_field_type;
                         using scalar_field_type = typename bls12_types<377>::scalar_field_type;
 
-                        constexpr static const typename bls12_types<377>::integral_type a =
-                            typename bls12_types<377>::integral_type(
-                                0x00);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
-                        constexpr static const typename bls12_types<377>::integral_type b =
-                            typename bls12_types<377>::integral_type(
-                                0x01);    ///< coefficient of short Weierstrass curve $y^2=x^3+a*x+b$
+                        ///< coefficients of short Weierstrass curve $y^2=x^3+a*x+b$
+                        constexpr static const typename bls12_types<377>::base_field_type::value_type
+                            a = 0x00;
+                        constexpr static const typename bls12_types<377>::base_field_type::value_type
+                            b = 0x01;
                     };
 
                     template<>
@@ -109,9 +108,9 @@ namespace nil {
                     };
 
                     constexpr
-                        typename bls12_types<377>::integral_type const bls12_params<377, forms::short_weierstrass>::a;
+                        typename bls12_types<377>::base_field_type::value_type const bls12_params<377, forms::short_weierstrass>::a;
                     constexpr
-                        typename bls12_types<377>::integral_type const bls12_params<377, forms::short_weierstrass>::b;
+                        typename bls12_types<377>::base_field_type::value_type const bls12_params<377, forms::short_weierstrass>::b;
 
                     constexpr std::array<
                         typename bls12_g1_params<377, forms::short_weierstrass>::field_type::value_type,

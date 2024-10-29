@@ -330,6 +330,7 @@ namespace nil {
                                 ++j;
                             }
                         }
+
                         typename FieldType::value_type mask_value = FieldType::value_type::one() -
                             proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2, 0) -
                             proof.eval_proof.eval_proof.z.get(FIXED_VALUES_BATCH, common_data.permuted_columns.size() * 2 + 1, 0);
