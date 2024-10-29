@@ -155,6 +155,13 @@ namespace nil {
                 LOOKUP_GATE_ADDER_MACRO(lookup_selector_map, _lookup_gates);
             }
 
+            // This version knows the selector_index in advance, and re-uses the given selector.
+            virtual void add_lookup_gate(
+                const std::vector<lookup_constraint_type> &args, std::size_t selector_index) {
+                auto gate_id = lookup_gate_id_type(args);
+                lookup_selector_map[gate_id] = selector_index;
+                this->_lookup_gates.emplace_back(selector_index, args);
+            }
 
             // Sometimes we want to connect new constraints to existing selector
             // Use only with deep understanding

@@ -245,6 +245,9 @@ namespace nil {
                 std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list = 
                     ct.get_constraints();
 
+                // We will store selectors to re-use for lookup gates.
+                std::unordered_map<row_selector<>, std::size_t> selector_to_index_map;
+
                 for(const auto& [row_list, constraints] : constraint_list) {
                     /*
                     std::cout << "GATE:\n";
@@ -254,6 +257,8 @@ namespace nil {
                     std::cout << "Rows: ";
                     */
                     std::size_t selector_index = bp.add_gate(constraints);
+                    selector_to_index_map[row_list] = selector_index;
+
                     for(const std::size_t& row_index : row_list) {
                         // std::cout << row_index << " ";
                         assignment.enable_selector(selector_index, row_index);
@@ -290,25 +295,50 @@ namespace nil {
                         std::size_t table_index = bp.get_reserved_indices().at(table_name);
                         lookup_gate.push_back({table_index,single_lookup_constraint.second});
                     }
-                    std::size_t selector_index = bp.add_lookup_gate(lookup_gate);
-                    for(std::size_t row_index : row_list) {
-                        assignment.enable_selector(selector_index, row_index);
+
+                    auto iter = selector_to_index_map.find(row_list);
+                    if (iter == selector_to_index_map.end()) {
+                        // We have a new selector.
+                        std::size_t selector_index = bp.add_lookup_gate(lookup_gate);
+                        selector_to_index_map[row_list] = selector_index;
+                        for(std::size_t row_index : row_list) {
+                            assignment.enable_selector(selector_index, row_index);
+                        }
+                    }
+                    else {
+                        // Re-use an existing selector.
+                        std::size_t selector_index = iter->second;
+                        bp.add_lookup_gate(lookup_gate, selector_index);
                     }
                 }
 
                 // compatibility layer: dynamic lookup tables - continued
                 for(const auto& [name, area] : dynamic_lookup_tables) {
                     bp.register_dynamic_table(name);
-                    std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
-                    for(std::size_t row_index : area.second) {
-                        assignment.enable_selector(selector_index,row_index);
+
+                    const auto& row_list = area.second;
+                    auto iter = selector_to_index_map.find(row_list);
+                    std::size_t selector_index;
+                    if (iter == selector_to_index_map.end()) {
+                        // Create a new selector.
+                        selector_index = bp.get_dynamic_lookup_table_selector();
+                        selector_to_index_map[row_list] = selector_index;
+                        for(std::size_t row_index : row_list) {
+                            assignment.enable_selector(selector_index,row_index);
+                        }
+                    } else {
+                        // Re-use existing selector.
+                        selector_index = iter->second;
                     }
+
                     crypto3::zk::snark::plonk_lookup_table<BlueprintFieldType> table_specs;
                     table_specs.tag_index = selector_index;
                     table_specs.columns_number = area.first.size();
                     std::vector<var> dynamic_lookup_cols;
                     for(const auto& c : area.first) {
-                        dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness)); // TODO: does this make sense?!
+                        // TODO: does this make sense?!
+                        dynamic_lookup_cols.push_back(
+                            var(c, 0, false, var::column_type::witness));
                     }
                     table_specs.lookup_options = {dynamic_lookup_cols};
                     bp.define_dynamic_table(name,table_specs);
