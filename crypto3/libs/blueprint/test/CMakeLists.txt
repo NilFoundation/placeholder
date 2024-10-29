@@ -189,6 +189,7 @@ set(PLONK_TESTS_FILES
     "verifiers/placeholder/dfri_verifier"
     "verifiers/placeholder/dfri_input_generator"
     "zkevm/bytecode"
+    "bbf/exp_wrapper"
     )
 
 #set(FIELDS_TESTS_FILES

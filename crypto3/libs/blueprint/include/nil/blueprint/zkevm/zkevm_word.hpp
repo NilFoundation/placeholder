@@ -54,6 +54,22 @@ namespace nil {
             return zkevm_word_type::backend_type(value.backend());
         }
 
+        template <typename BlueprintFieldType>
+        typename BlueprintFieldType::value_type w_hi(const zkevm_word_type &val){
+            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
+            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_cppui_modular257;
+            return (integral_type(val) & mask) >> 128;
+        }
+
+        template <typename BlueprintFieldType>
+        typename BlueprintFieldType::value_type w_lo(const zkevm_word_type &val){
+            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
+            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257;
+            return integral_type(val) & mask;
+        }
+
         template<typename BlueprintFieldType>
         std::vector<typename BlueprintFieldType::value_type> zkevm_word_to_field_element(const zkevm_word_type &word) {
             using value_type = typename BlueprintFieldType::value_type;
