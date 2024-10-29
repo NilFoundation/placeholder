@@ -17,6 +17,7 @@
 #include <arg_parser.hpp>
 
 #include <nil/proof-generator/arithmetization_params.hpp>
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
 #include <fstream>
 #include <iomanip>
@@ -119,6 +120,8 @@ namespace nil {
                  "Files containing polynomials combined-Q, 1 per prover instance.")
                 ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.");
 
+            register_output_artifacts_cli_args(prover_options.output_artifacts, config);
+        
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
             cmdline_options.add(generic).add(config);

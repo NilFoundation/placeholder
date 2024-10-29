@@ -46,6 +46,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result =
                         prover.read_circuit(prover_options.circuit_file_path) &&
                         prover.read_assignment_table(prover_options.assignment_table_file_path) &&
+                        prover.print_debug_assignment_table(prover_options.output_artifacts) &&
                         prover.print_public_input_for_evm(prover_options.evm_verifier_path) &&
                         prover.preprocess_public_data() &&
                         prover.preprocess_private_data() &&
@@ -66,6 +67,9 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     if (!prover_options.assignment_table_file_path.empty() && prover_result) {
                         prover_result = prover.save_binary_assignment_table_to_file(prover_options.assignment_table_file_path);
                     }
+                    if (prover_result) {
+                        prover_result = prover.print_debug_assignment_table(prover_options.output_artifacts);
+                    }
                     break;
                 case nil::proof_generator::detail::ProverStage::ASSIGNMENT:
                     prover_result = prover.setup_prover() && prover.fill_assignment_table(prover_options.trace_file_path);
@@ -77,6 +81,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result =
                         prover.read_circuit(prover_options.circuit_file_path) &&
                         prover.read_assignment_table(prover_options.assignment_table_file_path) &&
+                        prover.print_debug_assignment_table(prover_options.output_artifacts) &&
                         prover.save_assignment_description(prover_options.assignment_description_file_path) &&
                         prover.preprocess_public_data() &&
                         prover.save_preprocessed_common_data_to_file(prover_options.preprocessed_common_data_path) &&
@@ -89,6 +94,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result =
                         prover.read_circuit(prover_options.circuit_file_path) &&
                         prover.read_assignment_table(prover_options.assignment_table_file_path) &&
+                        prover.print_debug_assignment_table(prover_options.output_artifacts) &&
                         prover.print_public_input_for_evm(prover_options.evm_verifier_path) &&
                         prover.read_public_preprocessed_data_from_file(prover_options.preprocessed_public_data_path) &&
                         prover.read_commitment_scheme_from_file(prover_options.commitment_scheme_state_path) &&
@@ -104,6 +110,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     prover_result =
                         prover.read_circuit(prover_options.circuit_file_path) &&
                         prover.read_assignment_table(prover_options.assignment_table_file_path) &&
+                        prover.print_debug_assignment_table(prover_options.output_artifacts) &&
                         prover.read_public_preprocessed_data_from_file(prover_options.preprocessed_public_data_path) &&
                         prover.read_preprocessed_common_data_from_file(prover_options.preprocessed_common_data_path) &&
                         prover.read_commitment_scheme_from_file(prover_options.commitment_scheme_state_path) &&

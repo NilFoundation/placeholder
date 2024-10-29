@@ -21,6 +21,7 @@
 #define PROOF_GENERATOR_ASSIGNER_PROOF_HPP
 
 #include <fstream>
+#include <functional>
 #include <ostream>
 #include <random>
 #include <sstream>
@@ -60,8 +61,9 @@
 #include <nil/proof-generator/preset/preset.hpp>
 #include <nil/proof-generator/assigner/assigner.hpp>
 #include <nil/proof-generator/arithmetization_params.hpp>
-#include <nil/proof-generator/assignment_table_writer.hpp>
-#include <nil/proof-generator/circuit_writer.hpp>
+#include <nil/proof-generator/output_artifacts/assignment_table_writer.hpp>
+#include <nil/proof-generator/output_artifacts/circuit_writer.hpp>
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
@@ -634,6 +636,52 @@ namespace nil {
                 );
 
                 return true;
+            }
+
+            bool print_debug_assignment_table(const OutputArtifacts& opts) {
+                if (opts.empty()) {
+                    BOOST_LOG_TRIVIAL(trace) << "No output artifacts are set";
+                    return true;
+                }
+
+                if (!assignment_table_.has_value() || !table_description_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded";
+                    return false;
+                }
+
+                BOOST_LOG_TRIVIAL(debug) << "Rows to print: " << opts.rows.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Witness columns to print: "
+                                         << opts.witness_columns.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Public input columns to print: "
+                                         << opts.public_input_columns.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Constant columns to print: "
+                                         << opts.constant_columns.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Selector columns to print: "
+                                         << opts.selector_columns.to_string();
+
+
+                const auto write = [&](std::ostream& out) -> bool {
+                    return nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
+                        out, 
+                        assignment_table_.value(), 
+                        table_description_.value(),
+                        opts
+                    );
+                };
+
+                if (opts.to_stdout()) {
+                    BOOST_LOG_TRIVIAL(info) << "Writing text assignment table to stdout";
+                    return write(std::cout);
+                }
+
+                BOOST_LOG_TRIVIAL(info) << "Writing text assignment table to " << opts.output_filename;
+                std::ofstream out(opts.output_filename, std::ios::binary | std::ios::out);
+                if (!out.is_open()) {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to open file " << opts.output_filename;
+                    return false;
+                }
+
+                return write(out);
             }
 
             bool save_assignment_description(const boost::filesystem::path& assignment_description_file) {

@@ -8,6 +8,7 @@
   lldb,
   cmake_modules,
   enableDebugging,
+  gtest,
   enableDebug ? false,
   runTests ? false,
   }:
@@ -26,7 +27,7 @@ in stdenv.mkDerivation {
   # enableDebugging will keep debug symbols in boost
   propagatedBuildInputs = [ (if enableDebug then (enableDebugging boost) else boost) ];
 
-  buildInputs = [cmake_modules ];
+  buildInputs = [cmake_modules gtest];
 
   cmakeFlags =
     [

@@ -24,7 +24,10 @@
 
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/export.hpp>
 #include <nil/marshalling/types/integral.hpp>
+
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
 
 namespace nil {
@@ -146,6 +149,69 @@ namespace nil {
                         write_vector_value(out, padded_rows_amount, table.selector(i));
                     }
                 }
+
+
+                static bool write_text_assignment(
+                    std::ostream& out,
+                    const AssignmentTable& table,
+                    const AssignmentTableDescription& desc,
+                    const OutputArtifacts& artifacts) {
+
+                    const auto extract_concrete_range = [&artifacts] (std::string_view log_prefix, const Ranges& r, size_t max_value) -> std::optional<Ranges::ConcreteRanges> {
+                        if (artifacts.write_full) {
+                            return Ranges::ConcreteRanges{
+                                {0, max_value-1}
+                            };
+                        }
+                        
+                        Ranges::ConcreteRanges ret{};
+                        if (r.empty()) {
+                            return ret;
+                        }
+
+                        auto maybe_concrete_range = r.concrete_ranges(max_value - 1); // max_value is non-inclusive
+                        if (!maybe_concrete_range.has_value()) {
+                            BOOST_LOG_TRIVIAL(error) << log_prefix << maybe_concrete_range.error();
+                            return std::nullopt;
+                        }
+                        return maybe_concrete_range.value();
+                    };
+
+                    auto witnesses = extract_concrete_range("Witnesses: ", artifacts.witness_columns, table.witnesses_amount());
+                    if (!witnesses.has_value()) {
+                        return false;
+                    }
+
+                    auto public_inputs = extract_concrete_range("Public inputs: ", artifacts.public_input_columns, table.public_inputs_amount());
+                    if (!public_inputs.has_value()) {
+                        return false;
+                    }
+
+                    auto constants = extract_concrete_range("Constants: ", artifacts.constant_columns, table.constants_amount());
+                    if (!constants.has_value()) {
+                        return false;
+                    }
+
+                    auto selectors = extract_concrete_range("Selectors: ", artifacts.selector_columns, table.selectors_amount());
+                    if (!selectors.has_value()) {
+                        return false;
+                    }
+
+                    auto rows = extract_concrete_range("Rows: ", artifacts.rows, desc.usable_rows_amount);
+                    if (!rows.has_value()) {
+                        return false;
+                    }
+
+                    nil::crypto3::zk::snark::export_table(table, desc, out, 
+                              witnesses.value(), 
+                              public_inputs.value(), 
+                              constants.value(),
+                              selectors.value(), 
+                              rows.value(), 
+                              true
+                    );
+                    return true; 
+            }
         };
 
     } // namespace proof_generator

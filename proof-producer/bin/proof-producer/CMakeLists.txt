@@ -68,7 +68,7 @@ function(setup_proof_generator_target)
     set_target_properties(${ARG_TARGET_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
         EXPORT_NAME ${ARG_TARGET_NAME}
-        CXX_STANDARD 17
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED TRUE)
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

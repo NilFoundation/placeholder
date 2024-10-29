@@ -77,3 +77,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/preset")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/assigner")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/bin/proof-producer")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/libs/output_artifacts")
+
+if (ENABLE_TESTS)
+    add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/tests")
+endif()
