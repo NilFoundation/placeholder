@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-
+ 
 project(placeholder)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
