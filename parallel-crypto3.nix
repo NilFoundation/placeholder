@@ -30,7 +30,7 @@ in stdenv.mkDerivation {
 
   cmakeFlags =
     [
-      (if runTests then "-DBUILD_TESTS=TRUE" else "")
+      (if runTests then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       "-DPARALLEL_CRYPTO3_ENABLE=TRUE"
     ];
