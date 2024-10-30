@@ -41,9 +41,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       Boost::container)
 
 include(CMTest)
-if(BUILD_CRYPTO3_TESTS)
-    add_subdirectory(test)
-endif()
+add_tests(test)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(example)
