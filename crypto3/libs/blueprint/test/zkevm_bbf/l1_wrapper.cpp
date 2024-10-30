@@ -39,6 +39,11 @@
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
 
+#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/l1_wrapper.hpp>
