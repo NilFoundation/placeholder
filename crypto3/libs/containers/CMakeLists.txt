@@ -54,9 +54,7 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 
         ${Boost_INCLUDE_DIRS})
 
-if(BUILD_CRYPTO3_TESTS)
-    add_subdirectory(test)
-endif()
+add_tests(test)
 
 if (BUILD_EXAMPLES)
     add_subdirectory(example)

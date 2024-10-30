@@ -45,6 +45,12 @@ endif()
 
 find_package(Boost REQUIRED COMPONENTS container random filesystem log log_setup program_options thread system unit_test_framework timer)
 
+function(add_tests)
+    if (${BUILD_CRYPTO3_TESTS})
+        add_subdirectory(test)
+    endif ()
+endfunction(add_tests)
+
 add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/")
 add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/marshalling/")
 

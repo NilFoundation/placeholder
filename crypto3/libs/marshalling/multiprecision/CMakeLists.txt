@@ -33,9 +33,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       crypto3::multiprecision
                       ${CMAKE_WORKSPACE_NAME}::marshalling-core)
 
-if(BUILD_CRYPTO3_TESTS)
-    add_subdirectory(test)
-endif()
+add_tests(test)
 
 if((CMAKE_COMPILER_IS_GNUCC) OR ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang"))
     set(extra_flags_list -Wall -Wextra -Wcast-align -Wcast-qual
