@@ -54,9 +54,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
 )
 
 include(CMTest)
-if(BUILD_PARALLEL_CRYPTO3_TESTS)
-    add_subdirectory(test)
-endif()
+add_tests(test)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
