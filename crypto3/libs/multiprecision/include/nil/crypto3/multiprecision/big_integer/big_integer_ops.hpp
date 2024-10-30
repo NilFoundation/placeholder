@@ -132,13 +132,15 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
-        big_integer<detail::get_bits<T1>() + detail::get_bits<T2>()> result = a;
-        decltype(result)::multiply(result, b);
+        big_integer<detail::get_bits<T1>() + detail::get_bits<T2>()> result;
+        decltype(result)::multiply(result, a, b);
         return result;
     }
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator*=(big_integer_t& a, const T& b) noexcept {
-        big_integer_t::multiply(a, b);
+        big_integer<detail::get_bits<big_integer_t>() + detail::get_bits<T>()> result;
+        decltype(result)::multiply(result, a, static_cast<big_integer_t>(b));
+        a = result;
         return a;
     }
 

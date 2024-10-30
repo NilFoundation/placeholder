@@ -10,6 +10,7 @@
 #include <functional>
 #include <ios>
 #include <iostream>
+#include <limits>
 #include <ranges>
 #include <string>
 #include <tuple>
@@ -100,7 +101,8 @@ namespace nil::crypto3::multiprecision {
         }
 
         // TODO(ioxid): forbid signed, implement comparison with signed instead
-        template<class T, std::enable_if_t<std::is_integral_v<T> /*&& std::is_v<T>*/, int> = 0>
+        template<class T,
+                 std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
         inline constexpr big_integer(T val) noexcept {
             if (val < 0) {
                 std::cerr << "big_integer: assignment from negative integer" << std::endl;
@@ -127,7 +129,8 @@ namespace nil::crypto3::multiprecision {
         // Assignment from other types
 
         // TODO(ioxid): forbid signed, implement comparison with signed instead
-        template<typename T, std::enable_if_t<std::is_integral_v<T> /*&& std::is_v<T>*/, int> = 0>
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
         inline constexpr big_integer& operator=(T val) noexcept {
             if (val < 0) {
                 std::cerr << "big_integer: assignment from negative integer" << std::endl;
@@ -902,18 +905,45 @@ namespace nil::crypto3::multiprecision {
 
         // Caller is responsible for the result to fit in Bits1 Bits, we will NOT throw!!!
 
-        static inline constexpr void multiply(big_integer& result, const limb_type& b) noexcept {
-            auto result_cpp_int = result.to_cpp_int();
-            result_cpp_int *= b;
-            result.from_cpp_int(result_cpp_int);
-        }
+        template<unsigned Bits2, unsigned Bits3>
+        static inline constexpr void multiply(big_integer& result, const big_integer<Bits2>& a,
+                                              const big_integer<Bits3>& b) noexcept {
+            std::size_t as = a.size();
+            std::size_t bs = b.size();
+            const_limb_pointer pa = a.limbs();
+            const_limb_pointer pb = b.limbs();
+            limb_pointer pr = result.limbs();
+            for (std::size_t i = 0; i < result.size(); ++i) {
+                pr[i] = 0;
+            }
 
-        template<unsigned Bits2>
-        static inline constexpr void multiply(big_integer& result,
-                                              const big_integer<Bits2>& a) noexcept {
-            auto result_cpp_int = result.to_cpp_int();
-            result_cpp_int = static_cast<decltype(result_cpp_int)>(result_cpp_int * a.to_cpp_int());
-            result.from_cpp_int(result_cpp_int);
+            double_limb_type carry = 0;
+            for (std::size_t i = 0; i < as; ++i) {
+                BOOST_MP_ASSERT(result.size() > i);
+                std::size_t inner_limit = (std::min)(result.size() - i, bs);
+                std::size_t j = 0;
+                for (; j < inner_limit; ++j) {
+                    BOOST_MP_ASSERT(i + j < result.size());
+                    carry +=
+                        static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
+                    BOOST_MP_ASSERT(
+                        !std::numeric_limits<double_limb_type>::is_specialized ||
+                        ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
+                    carry += pr[i + j];
+                    pr[i + j] = static_cast<limb_type>(carry);
+                    carry >>= limb_bits;
+                    BOOST_MP_ASSERT(carry <= max_limb_value);
+                }
+                if (carry) {
+                    // TODO(ioxid): throw?
+                    // resize_for_carry(result, i + j + 1);  // May throw if checking is enabled
+                    if (i + j < result.size()) {
+                        pr[i + j] = static_cast<limb_type>(carry);
+                    }
+                }
+                carry = 0;
+            }
+            result.normalize();
         }
 
       private:
