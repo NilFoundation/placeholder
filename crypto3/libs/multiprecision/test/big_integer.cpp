@@ -28,9 +28,9 @@ BOOST_AUTO_TEST_CASE(construct_constexpr) {
     constexpr nil::crypto3::multiprecision::big_integer<60> a = 0x123_big_integer60;
 }
 
-BOOST_AUTO_TEST_CASE(to_string_trivial) { BOOST_CHECK_EQUAL((0x1_big_integer60).str(), "1"); }
+BOOST_AUTO_TEST_CASE(to_string_trivial) { BOOST_CHECK_EQUAL((0x1_big_integer60).str(), "0x1"); }
 
-BOOST_AUTO_TEST_CASE(to_string_small) { BOOST_CHECK_EQUAL((0x20_big_integer60).str(), "32"); }
+BOOST_AUTO_TEST_CASE(to_string_small) { BOOST_CHECK_EQUAL((0x20_big_integer60).str(), "0x20"); }
 
 BOOST_AUTO_TEST_CASE(ops) {
     nil::crypto3::multiprecision::big_integer<60> a = 2u, b;
@@ -124,6 +124,30 @@ BOOST_AUTO_TEST_CASE(wraps) {
 
 BOOST_AUTO_TEST_CASE(multilimb) {
     BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_integer36 * 0x2_big_integer36, 0x15FFFFFFFE_big_integer37);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(division)
+
+BOOST_AUTO_TEST_CASE(simple) {
+    BOOST_CHECK_EQUAL(0x7_big_integer60 / 0x2_big_integer60, 0x3_big_integer60);
+}
+
+BOOST_AUTO_TEST_CASE(multilimb) {
+    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer36 / 0x2_big_integer36, 0x7fffffff_big_integer36);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(modulus)
+
+BOOST_AUTO_TEST_CASE(simple) {
+    BOOST_CHECK_EQUAL(0x7_big_integer60 % 0x4_big_integer60, 0x3_big_integer60);
+}
+
+BOOST_AUTO_TEST_CASE(multilimb) {
+    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer36 % 0x7_big_integer36, 0x3_big_integer36);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

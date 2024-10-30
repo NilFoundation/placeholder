@@ -103,7 +103,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
-        largest_t result;
+        T1 result;
         T1::subtract(result, a, b);
         return result;
     }
@@ -146,25 +146,31 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
-        largest_t result = a;
-        largest_t::divide(result, b);
+        largest_t result;
+        largest_t modulus;
+        largest_t::divide(&result, a, b, modulus);
         return result;
     }
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator/=(big_integer_t& a, const T& b) noexcept {
-        big_integer_t::divide(a, b);
+        big_integer_t result;
+        big_integer_t modulus;
+        big_integer_t::divide(&result, a, b, modulus);
+        a = result;
         return a;
     }
 
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator%(const T1& a, const T2& b) noexcept {
-        largest_t result = a;
-        largest_t::modulus(result, b);
-        return result;
+        largest_t modulus;
+        largest_t::divide(nullptr, a, b, modulus);
+        return modulus;
     }
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator%=(big_integer_t& a, const T& b) {
-        big_integer_t::modulus(a, b);
+        big_integer_t modulus;
+        big_integer_t::divide(nullptr, a, b, modulus);
+        a = modulus;
         return a;
     }
 

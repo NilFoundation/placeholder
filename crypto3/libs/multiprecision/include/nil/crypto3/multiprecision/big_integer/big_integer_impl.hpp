@@ -4,7 +4,10 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
+#include <charconv>
 #include <climits>
+#include <cstddef>
 #include <cstring>
 #include <exception>
 #include <functional>
@@ -12,7 +15,9 @@
 #include <iostream>
 #include <limits>
 #include <ranges>
+#include <stdexcept>
 #include <string>
+#include <system_error>
 #include <tuple>
 #include <type_traits>
 
@@ -31,9 +36,6 @@
 // boost::multiprecision::detail::addcarry_limb
 // boost::multiprecision::detail::subborrow_limb
 // cpp_int.str
-// cpp_int.%
-// cpp_int./
-// cpp_int.*
 
 namespace nil::crypto3::multiprecision {
     template<unsigned Bits_>
@@ -140,19 +142,26 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        inline constexpr auto& operator=(const char* s) {
-            // TODO(ioxid): rewrite without cpp_int
-            cpp_int_type value;
-            value = s;
-            this->from_cpp_int(value);
-            return *this;
-        }
-
-        inline std::string str(std::streamsize digits = 0,
-                               std::ios_base::fmtflags f = std::ios_base::fmtflags(0)) const {
-            // TODO(ioxid): rewrite without cpp_int
-            cpp_int_type value = to_cpp_int();
-            return value.str(digits, f);
+        inline std::string str() const {
+            std::string result;
+            result.reserve(order() * limb_bits / 4 + 2);
+            result += "0x";
+            bool found_first = false;
+            for (int i = internal_limb_count - 1; i >= 0; --i) {
+                std::size_t len = (std::bit_width(limbs()[i]) + 3) / 4;
+                if (found_first) {
+                    len = sizeof(limb_type) * 2;
+                }
+                found_first = found_first || len > 0;
+                if (len > 0) {
+                    std::size_t start_offset = result.size();
+                    result.resize(result.size() + len);
+                    BOOST_ASSERT(std::to_chars(result.data() + start_offset,
+                                               result.data() + result.size(), limbs()[i], 16)
+                                     .ec == std::errc{});
+                }
+            }
+            return result;
         }
 
         // cpp_int conversion
@@ -871,28 +880,263 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        // Modulus/divide
-
-        // These should be called only for creation of Montgomery and Barett
-        // params, no during "normal" execution, so we do NOT care about the execution speed,
-        // and will just redirect calls to normal boost::cpp_int.
-
-        // Just a call to the upper function, similar to operator*=.
-        // Caller is responsible for the result to fit in Bits1 Bits, we will NOT throw!
-        template<unsigned Bits2>
-        static inline constexpr void modulus(big_integer& result,
-                                             const big_integer<Bits2>& a) noexcept {
-            auto result_cpp_int = result.to_cpp_int();
-            result_cpp_int %= a.to_cpp_int();
-            result.from_cpp_int(result_cpp_int);
+        inline constexpr std::size_t order() const noexcept {
+            for (int i = internal_limb_count - 1; i >= 0; --i) {
+                if (limbs()[i] != 0) {
+                    return i;
+                }
+            }
+            return 0;
         }
 
-        template<unsigned Bits2>
-        static inline constexpr void divide(big_integer& result,
-                                            const big_integer<Bits2>& a) noexcept {
-            auto result_cpp_int = result.to_cpp_int();
-            result_cpp_int /= a.to_cpp_int();
-            result.from_cpp_int(result_cpp_int);
+        // Modulus/divide
+
+        // This should be called only for creation of Montgomery and Barett
+        // params, no during "normal" execution, so we do NOT care about the execution speed.
+
+        template<unsigned Bits2, unsigned Bits3>
+        static inline constexpr void divide(big_integer* result, const big_integer<Bits2>& x,
+                                            const big_integer<Bits3>& y, big_integer& r) {
+            // TODO(ioxid): fix
+
+            if (result) {
+                result->from_cpp_int(x.to_cpp_int() / y.to_cpp_int());
+            }
+            r.from_cpp_int(x.to_cpp_int() % y.to_cpp_int());
+            return;
+
+            /*
+            Very simple, fairly braindead long division.
+            Start by setting the remainder equal to x, and the
+            result equal to 0.  Then in each loop we calculate our
+            "best guess" for how many times y divides into r,
+            add our guess to the result, and subtract guess*y
+            from the remainder r.  One wrinkle is that the remainder
+            may go negative, in which case we subtract the current guess
+            from the result rather than adding.  The value of the guess
+            is determined by dividing the most-significant-limb of the
+            current remainder by the most-significant-limb of y.
+
+            Note that there are more efficient algorithms than this
+            available, in particular see Knuth Vol 2.  However for small
+            numbers of limbs this generally outperforms the alternatives
+            and avoids the normalisation step which would require extra storage.
+            */
+
+            if (is_zero(y)) {
+                throw std::overflow_error("integer division by zero");
+            }
+
+            const_limb_pointer px = x.limbs();
+            const_limb_pointer py = y.limbs();
+
+            if (is_zero(x)) {
+                // x is zero, so is the result:
+                r = x;
+                if (result) {
+                    *result = x;
+                }
+                return;
+            }
+
+            r = x;
+            std::size_t r_order = r.order();
+            std::size_t y_order = y.order();
+            if (result) {
+                *result = static_cast<limb_type>(0u);
+            }
+            //
+            // Check if the remainder is already less than the divisor, if so
+            // we already have the result.  Note we try and avoid a full compare
+            // if we can:
+            //
+            if (r_order <= y_order) {
+                if ((r_order < y_order) || (r < y)) {
+                    return;
+                }
+            }
+
+            big_integer t;
+            bool r_neg = false;
+
+            //
+            // See if we can short-circuit long division, and use basic arithmetic instead:
+            //
+            if (r_order == 0) {
+                if (result) {
+                    *result = px[0] / py[0];
+                }
+                r = px[0] % py[0];
+                return;
+            }
+            if (r_order == 1) {
+                double_limb_type a = (static_cast<double_limb_type>(px[1]) << limb_bits) | px[0];
+                double_limb_type b =
+                    y_order ? (static_cast<double_limb_type>(py[1]) << limb_bits) | py[0] : py[0];
+                if (result) {
+                    *result = a / b;
+                }
+                r = a % b;
+                return;
+            }
+            //
+            // prepare result:
+            //
+            // if (result) result->resize(1 + r_order - y_order, 1 + r_order - y_order);
+            if (result) {
+                *result = 0;
+            }
+            const_limb_pointer prem = r.limbs();
+            // This is initialised just to keep the compiler from emitting useless warnings later
+            // on:
+            limb_pointer pr = limb_pointer();
+            if (result) {
+                pr = result->limbs();
+                for (std::size_t i = 1; i < 1 + r_order - y_order; ++i) {
+                    pr[i] = 0;
+                }
+            }
+            bool first_pass = true;
+
+            do {
+                //
+                // Calculate our best guess for how many times y divides into r:
+                //
+                limb_type guess = 1;
+                if ((prem[r_order] <= py[y_order]) && (r_order > 0)) {
+                    double_limb_type a =
+                        (static_cast<double_limb_type>(prem[r_order]) << limb_bits) |
+                        prem[r_order - 1];
+                    double_limb_type b = py[y_order];
+                    double_limb_type v = a / b;
+                    if (v <= max_limb_value) {
+                        guess = static_cast<limb_type>(v);
+                        --r_order;
+                    }
+                } else if (r_order == 0) {
+                    guess = prem[0] / py[y_order];
+                } else {
+                    double_limb_type a =
+                        (static_cast<double_limb_type>(prem[r_order]) << limb_bits) |
+                        prem[r_order - 1];
+                    double_limb_type b =
+                        (y_order > 0) ? (static_cast<double_limb_type>(py[y_order]) << limb_bits) |
+                                            py[y_order - 1]
+                                      : (static_cast<double_limb_type>(py[y_order]) << limb_bits);
+                    BOOST_MP_ASSERT(b);
+                    double_limb_type v = a / b;
+                    guess = static_cast<limb_type>(v);
+                }
+                BOOST_MP_ASSERT(guess);  // If the guess ever gets to zero we go on forever....
+                //
+                // Update result:
+                //
+                std::size_t shift = r_order - y_order;
+                if (result) {
+                    if (r_neg) {
+                        if (pr[shift] > guess) {
+                            pr[shift] -= guess;
+                        } else {
+                            // t.resize(shift + 1, shift + 1);
+                            t.limbs()[shift] = guess;
+                            for (std::size_t i = 0; i < shift; ++i) {
+                                t.limbs()[i] = 0;
+                            }
+                            *result -= t;
+                        }
+                    } else if (max_limb_value - pr[shift] > guess) {
+                        pr[shift] += guess;
+                    } else {
+                        // t.resize(shift + 1, shift + 1);
+                        t.limbs()[shift] = guess;
+                        for (std::size_t i = 0; i < shift; ++i) {
+                            t.limbs()[i] = 0;
+                        }
+                        *result += t;
+                    }
+                }
+                //
+                // Calculate guess * y, we use a fused mutiply-shift O(N) for this
+                // rather than a full O(N^2) multiply:
+                //
+                double_limb_type carry = 0;
+                // t.resize(y.size() + shift + 1, y.size() + shift);
+                // bool truncated_t = (t.size() != y.size() + shift + 1);
+                const bool truncated_t = false;
+                limb_pointer pt = t.limbs();
+                for (std::size_t i = 0; i < shift; ++i) {
+                    pt[i] = 0;
+                }
+                for (std::size_t i = 0; i < y.order() + 1; ++i) {
+                    carry +=
+                        static_cast<double_limb_type>(py[i]) * static_cast<double_limb_type>(guess);
+                    pt[i + shift] = static_cast<limb_type>(carry);
+                    carry >>= limb_bits;
+                }
+                if (carry && !truncated_t) {
+                    pt[t.order()] = static_cast<limb_type>(carry);
+                } else if (!truncated_t) {
+                    // t.resize(t.size() - 1, t.size() - 1);
+                }
+                //
+                // Update r in a way that won't actually produce a negative result
+                // in case the argument types are unsigned:
+                //
+                if (truncated_t && carry) {
+                    // We need to calculate 2^n + t - r
+                    // where n is the number of bits in this type.
+                    // Simplest way is to get 2^n - r by complementing
+                    // r, then add t to it.  Note that we can't call eval_complement
+                    // in case this is a signed checked type:
+                    for (std::size_t i = 0; i <= r_order; ++i) {
+                        r.limbs()[i] = ~prem[i];
+                    }
+                    r.normalize();
+                    ++r;
+                    r += t;
+                    r_neg = !r_neg;
+                } else if (r > t) {
+                    r -= t;
+                } else {
+                    std::swap(r, t);
+                    r -= t;
+                    prem = r.limbs();
+                    r_neg = !r_neg;
+                }
+                //
+                // First time through we need to strip any leading zero, otherwise
+                // the termination condition goes belly-up:
+                //
+                if (result && first_pass) {
+                    first_pass = false;
+                    // while (pr[result->size() - 1] == 0)
+                    //     result->resize(result->size() - 1, result->size() - 1);
+                }
+                //
+                // Update r_order:
+                //
+                r_order = r.order();
+                if (r_order < y_order) {
+                    break;
+                }
+            }
+            // Termination condition is really just a check that r > y, but with a common
+            // short-circuit case handled first:
+            while ((r_order > y_order) || (r >= y));
+
+            //
+            // We now just have to normalise the result:
+            //
+            if (r_neg && !is_zero(r)) {
+                // We have one too many in the result:
+                if (result) {
+                    --*result;
+                }
+                r = y - r;
+            }
+
+            BOOST_MP_ASSERT(r <
+                            y);  // remainder must be less than the divisor or our code has failed
         }
 
         // Multiplication
@@ -903,7 +1147,7 @@ namespace nil::crypto3::multiprecision {
         // NOT care about the execution speed, and will just redirect calls to normal
         // boost::cpp_int.
 
-        // Caller is responsible for the result to fit in Bits1 Bits, we will NOT throw!!!
+        // Caller is responsible for the result to fit in Bits bits, we will NOT throw!!!
 
         template<unsigned Bits2, unsigned Bits3>
         static inline constexpr void multiply(big_integer& result, const big_integer<Bits2>& a,
