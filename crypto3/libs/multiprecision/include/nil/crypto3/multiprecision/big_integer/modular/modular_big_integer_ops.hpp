@@ -14,7 +14,6 @@
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_ops_impl.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -56,6 +55,19 @@ namespace nil::crypto3::multiprecision {
         template<typename T, std::enable_if_t<detail::is_modular_big_integer_v<T>, int> = 0>
         constexpr std::size_t get_bits() {
             return T::Bits;
+        }
+
+        template<unsigned Bits, typename modular_ops_t>
+        constexpr void subtract(
+            modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& result,
+            const modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& o) {
+            if (result.base_data() < o.base_data()) {
+                auto v = result.ops().get_mod();
+                v -= o.base_data();
+                result.base_data() += v;
+            } else {
+                result.base_data() -= o.base_data();
+            }
         }
     }  // namespace detail
 

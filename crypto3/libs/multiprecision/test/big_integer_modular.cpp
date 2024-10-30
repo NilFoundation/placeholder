@@ -32,42 +32,42 @@ BOOST_AUTO_TEST_CASE(construct_constexpr) {
 BOOST_AUTO_TEST_CASE(construct_modular_ct_trivial_montgomery) {
     static constexpr auto mod = 0x3_big_integer64;
     auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x5_big_integer64);
-    BOOST_CHECK_EQUAL(a.str(), "2");
+    BOOST_CHECK_EQUAL(a.str(), "0x2");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_trivial_montgomery) {
     modular_big_integer_rt<64> a{0x5_big_integer64, 0x3_big_integer64};
-    BOOST_CHECK_EQUAL(a.str(), "2");
+    BOOST_CHECK_EQUAL(a.str(), "0x2");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small_montgomery) {
     static constexpr auto mod = 0x79_big_integer64;
     auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer64);
-    BOOST_CHECK_EQUAL(a.str(), "62");
+    BOOST_CHECK_EQUAL(a.str(), "0x3e");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small_montgomery) {
     modular_big_integer_rt<64> a{0x1234_big_integer64, 0x79_big_integer64};
-    BOOST_CHECK_EQUAL(a.str(), "62");
+    BOOST_CHECK_EQUAL(a.str(), "0x3e");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small) {
     static constexpr auto mod = 0x78_big_integer64;
     auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer64);
-    BOOST_CHECK_EQUAL(a.str(), "100");
+    BOOST_CHECK_EQUAL(a.str(), "0x64");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small) {
     modular_big_integer_rt<64> a{0x1234_big_integer64, 0x78_big_integer64};
-    BOOST_CHECK_EQUAL(a.str(), "100");
+    BOOST_CHECK_EQUAL(a.str(), "0x64");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_trivial) {
-    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x1_big_integer64)).str(), "1");
+    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x1_big_integer64)).str(), "0x1");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_small) {
-    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x20_big_integer64)).str(), "32");
+    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x20_big_integer64)).str(), "0x20");
 }
 
 BOOST_AUTO_TEST_CASE(ops) {

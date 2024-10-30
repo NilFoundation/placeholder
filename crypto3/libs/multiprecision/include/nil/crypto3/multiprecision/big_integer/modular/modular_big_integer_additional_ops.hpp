@@ -27,18 +27,6 @@
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
-    template<unsigned Bits, typename modular_ops_t>
-    constexpr void subtract(modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
-                            const modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &o) {
-        if (result.base_data() < o.base_data()) {
-            auto v = result.ops().get_mod();
-            v -= o.base_data();
-            result.base_data() += v;
-        } else {
-            result.base_data() -= o.base_data();
-        }
-    }
-
     // template<unsigned Bits, typename big_integer_t, typename T, typename modular_ops_t>
     // constexpr void eval_powm(modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
     //                          const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,

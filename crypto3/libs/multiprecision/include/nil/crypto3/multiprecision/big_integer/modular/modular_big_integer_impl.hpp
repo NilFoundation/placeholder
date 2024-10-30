@@ -71,10 +71,9 @@ namespace nil::crypto3::multiprecision {
 
             // String conversion
 
-            inline std::string str(std::streamsize digits = 0,
-                                   std::ios_base::fmtflags f = std::ios_base::fmtflags(0)) const {
+            inline std::string str() const {
                 // TODO(ioxid): add module to output
-                return remove_modulus().str(digits, f);
+                return remove_modulus().str();
             }
 
             // TODO(ioxid): why is it here
