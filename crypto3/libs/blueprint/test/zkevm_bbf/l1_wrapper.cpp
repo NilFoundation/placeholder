@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_minimal_math_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/");
+    auto [bytecodes, pts] = load_hardhat_input("minimal_math/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_minimal_math_test) {
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_modular_operations_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/modular_operations/");
+    auto [bytecodes, pts] = load_hardhat_input("modular_operations/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_modular_operations_test) {
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_keccak_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/keccak/");
+    auto [bytecodes, pts] = load_hardhat_input("keccak/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 10;
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_keccak_test) {
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_mstore8_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/mstore8/");
+    auto [bytecodes, pts] = load_hardhat_input("mstore8/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;
@@ -219,22 +219,22 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_mstore8_test) {
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_meminit_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/meminit/");
+    auto [bytecodes, pts] = load_hardhat_input("mem_init/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;
     max_sizes.max_bytecode = 3000;
     max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 5000;
+    max_sizes.max_rw = 10000;
     max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
+    max_sizes.max_zkevm_rows = 10000;
 
     complex_test<field_type>(bytecodes, pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_calldatacopy_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/");
+    auto [bytecodes, pts] = load_hardhat_input("calldatacopy/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;

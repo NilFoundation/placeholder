@@ -114,7 +114,7 @@ namespace nil {
 
                 struct input_type {
                     var rlc_challenge;
-                    std::vector<std::tuple<
+                    std::vector<std::pair<
                         std::vector<std::uint8_t>,
                         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>
                     >> input;

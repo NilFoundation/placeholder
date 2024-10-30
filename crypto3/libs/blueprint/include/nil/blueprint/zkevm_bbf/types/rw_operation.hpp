@@ -108,9 +108,10 @@ namespace nil {
                 std::size_t rw_id,
                 bool is_write,
                 zkevm_word_type value,
-                zkevm_word_type value_prev
+                zkevm_word_type value_prev,
+                zkevm_word_type address = zkevm_word_type(0)
             ){
-                return rw_operation({rw_operation_type::storage, id, 0, 0, storage_key, rw_id, is_write, value, value_prev});
+                return rw_operation({rw_operation_type::storage, id, address, 0, storage_key, rw_id, is_write, value, value_prev});
             }
 
             rw_operation padding_operation(){

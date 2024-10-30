@@ -183,7 +183,7 @@ namespace nil {
             typename plonk_l1_wrapper<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>::result_type generate_circuit(
                 const plonk_l1_wrapper<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>  &component,
                 circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>  &bp,
-                assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>  &assignment,
+                nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignment,
                 const typename BBFType<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type  &instance_input,
                 const std::size_t start_row_index,
                 ComponentStaticInfoArgs... component_static_info_args

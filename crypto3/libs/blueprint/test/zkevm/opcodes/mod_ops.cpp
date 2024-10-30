@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(zkevm_mod_ops_test) {
     using zkevm_machine_type = zkevm_machine_interface;
     assignment_type assignment(0, 0, 0, 0);
     circuit_type circuit;
-    zkevm_circuit<field_type> zkevm_circuit(assignment, circuit, 199, 65536);
+    zkevm_circuit<field_type> zkevm_circuit_instance(assignment, circuit, 199, 65536);
     nil::crypto3::zk::snark::pack_lookup_tables_horizontal(
         circuit.get_reserved_indices(),
         circuit.get_reserved_tables(),
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(zkevm_mod_ops_test) {
 
     opcode_tester.push_opcode(zkevm_opcode::RETURN);
 
-    zkevm_table<field_type> zkevm_table(zkevm_circuit, assignment);
+    zkevm_table<field_type> zkevm_table(zkevm_circuit_instance, assignment);
     zkevm_machine_type machine = get_empty_machine(opcode_tester.get_bytecode(), zkevm_keccak_hash(opcode_tester.get_bytecode()));
     while(true) {
         machine.apply_opcode(opcode_tester.get_opcode_by_pc(machine.pc_next()).first, opcode_tester.get_opcode_by_pc(machine.pc_next()).second);

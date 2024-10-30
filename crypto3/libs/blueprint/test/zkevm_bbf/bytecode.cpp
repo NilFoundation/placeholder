@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(mstore8_contract){
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa"));
     keccak_input.new_buffer(hex_string_to_bytes("0x00ed"));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa12312384710283470321894798234702918470189347"));
-    test_zkevm_bytecode<field_type>(input, keccak_input, 1000, 30);
+    test_zkevm_bytecode<field_type>(input, keccak_input, 5000, 30);
 }
 BOOST_AUTO_TEST_CASE(not_hashed_test){
     nil::blueprint::bbf::zkevm_keccak_buffers input;
