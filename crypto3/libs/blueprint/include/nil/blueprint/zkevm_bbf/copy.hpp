@@ -22,10 +22,11 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#pragma once
+
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
 
 namespace nil {
     namespace blueprint {
