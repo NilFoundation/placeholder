@@ -211,6 +211,8 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/add_sub"
     "zkevm/opcodes/mul"
     "zkevm/opcodes/div"
+    "zkevm/mpt/mpt_nonce_changed"
+    "zkevm/mpt/toy_example"
     )
 
 #set(CURVES_TESTS_FILES
