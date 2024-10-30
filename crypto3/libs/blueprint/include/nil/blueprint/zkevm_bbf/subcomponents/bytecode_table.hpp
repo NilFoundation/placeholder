@@ -22,6 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#pragma once
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 
 namespace nil {

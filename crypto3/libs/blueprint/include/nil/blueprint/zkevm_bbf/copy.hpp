@@ -22,6 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#pragma once
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
 
 namespace nil {
