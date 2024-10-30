@@ -105,12 +105,23 @@ namespace nil {
                     update_hash();
                 }
 
-                // Every number type will be accepted here,
-                // if it can be converted to 'assignment_type'.
-                // This will include integral types and number<cpp_int_backend<...>>
-                template<class NumberType>
-                expression(const NumberType &coeff)
+                // Constructor for integral types.
+                template<class NumericType>
+                expression(const NumericType& coeff,
+                        typename std::enable_if<std::is_integral<NumericType>::value, NumericType>::type* = nullptr)
                   : expr(term<VariableType>((assignment_type)coeff)) {
+                    update_hash();
+                }
+
+                // Constructor for number<cpp_int_backend<...>>.
+                template<class BackendType>
+                expression(const boost::multiprecision::number<BackendType>& coeff)
+                  : expr(term<VariableType>((assignment_type)coeff)) {
+                    update_hash();
+                }
+
+                expression(const assignment_type &coeff)
+                  : expr(term<VariableType>(coeff)) {
                     update_hash();
                 }
 

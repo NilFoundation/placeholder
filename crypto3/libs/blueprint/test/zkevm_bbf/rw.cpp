@@ -74,26 +74,26 @@ BOOST_AUTO_TEST_SUITE(blueprint_bbf_rw)
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 BOOST_AUTO_TEST_CASE(minimal_math_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/", 500);
+    test_zkevm_rw<field_type>("minimal_math/", 500);
 }
 
 BOOST_AUTO_TEST_CASE(small_storage_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage/", 500);
+    test_zkevm_rw<field_type>("small_stack_storage/", 500);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mstore8/", 5000);
+    test_zkevm_rw<field_type>("mstore8/", 5000);
 }
 
 BOOST_AUTO_TEST_CASE(meminit_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mem_init/", 10000);
+    test_zkevm_rw<field_type>("mem_init/", 10000);
 }
 
 BOOST_AUTO_TEST_CASE(calldatacopy_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/", 10000);
+    test_zkevm_rw<field_type>("calldatacopy/", 10000);
 }
 // // Just for performance estimation
 // BOOST_AUTO_TEST_CASE(calldatacopy_contract_large){
-//     test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/", 100000);
+//     test_zkevm_rw<field_type>("calldatacopy/", 100000);
 // }
 BOOST_AUTO_TEST_SUITE_END()

@@ -289,7 +289,7 @@ void test_zkevm(std::string path){
 BOOST_AUTO_TEST_SUITE(zkevm_connections_test_suite)
 
 BOOST_AUTO_TEST_CASE(zkevm_minimal_math_test) {
-    test_zkevm<fields::pallas_base_field>("../crypto3/libs/blueprint/test/zkevm/data/minimal_math");
+    test_zkevm<fields::pallas_base_field>(std::string(TEST_DATA_DIR) + "minimal_math");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

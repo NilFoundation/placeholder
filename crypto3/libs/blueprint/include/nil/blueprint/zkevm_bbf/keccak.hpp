@@ -21,6 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+#pragma once
 
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
 

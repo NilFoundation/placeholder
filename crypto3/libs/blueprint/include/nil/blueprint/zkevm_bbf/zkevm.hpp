@@ -39,6 +39,8 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
@@ -58,8 +60,8 @@ namespace nil {
                 using private_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::size_t, std::nullptr_t>::type;
                 struct input_type{
                     TYPE rlc_challenge;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, nullptr_t>::type bytecodes;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, nullptr_t>::type keccak_buffers;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type bytecodes;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type keccak_buffers;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<rw_operation>, std::nullptr_t>::type rw_operations;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type copy_events;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<zkevm_state>, std::nullptr_t>::type zkevm_states;
@@ -170,7 +172,8 @@ namespace nil {
                             zkevm_opcode current_opcode = opcode_from_number(current_state.opcode);
 
                             if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
-                                std::cout << "Opcode not found" << current_opcode << std::endl;
+                                std::cout << "Opcode not found " << current_opcode << " skip it" << std::endl;
+                                continue;
                             }
                             std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
                             std::size_t current_opcode_rows_amount = std::ceil(float(current_opcode_bare_rows_amount)/2) * 2;

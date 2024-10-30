@@ -96,7 +96,7 @@ namespace nil {
                 std::size_t chunk_amount = 16;
 
                 // TODO: replace with memory access
-                for (std::size_t i = 0; i < chunk_amount; \i++) {
+                for (std::size_t i = 0; i < chunk_amount; i++) {
                     assignment.witness(witness_cols[i], curr_row) = chunks[i];
                 }
                 assignment.witness(witness_cols[chunk_amount], curr_row) = (a == 0u);

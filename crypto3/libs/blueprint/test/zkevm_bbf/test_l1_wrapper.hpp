@@ -42,6 +42,12 @@
 #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
 
+#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/rw.hpp>
+#include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/keccak.hpp>
+
 #include "../test_plonk_component.hpp"
 
 using namespace nil::crypto3;
@@ -72,12 +78,12 @@ std::pair<std::vector<std::vector<std::uint8_t>>, std::vector<boost::property_tr
     std::vector<boost::property_tree::ptree> pts;
 
     std::ifstream ss;
-    ss.open(path + "trace0.json");
+    ss.open(std::string(TEST_DATA_DIR) + path + "trace0.json");
     boost::property_tree::ptree pt;
     boost::property_tree::read_json(ss, pt);
     ss.close();
 
-    ss.open(path + "/contract0.json");
+    ss.open(std::string(TEST_DATA_DIR) + path + "contract0.json");
     boost::property_tree::ptree bytecode_json;
     boost::property_tree::read_json(ss, bytecode_json);
     std::vector<uint8_t> bytecode0 = hex_string_to_bytes(std::string(bytecode_json.get_child("bytecode").data().c_str()));

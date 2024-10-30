@@ -21,6 +21,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+
+#pragma once
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
@@ -41,8 +43,8 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
                 struct input_type{
                     TYPE rlc_challenge;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, nullptr_t>::type bytecodes;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, nullptr_t>::type keccak_buffers;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type bytecodes;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type keccak_buffers;
                 };
 
                 std::size_t max_bytecode_size;

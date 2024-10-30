@@ -114,7 +114,7 @@ namespace nil {
 
                 std::vector<std::pair<std::size_t, constraint_type>> constraints;
 
-                constexpr const std::size_t chunk_amount = 16;
+                /*constexpr const std::size_t chunk_amount = 16;
                 const std::vector<std::size_t> &witness_cols = zkevm_circuit.get_opcode_cols();
                 auto var_gen = [&witness_cols](std::size_t i, int32_t offset = 0) {
                     return zkevm_operation<BlueprintFieldType>::var_gen(witness_cols, i, offset);
@@ -269,7 +269,7 @@ namespace nil {
                     for (std::size_t i = 0; i < chunk_amount; i++) {
                         constraints.push_back({position_2, (b_nonzero*(q_chunks_2[i] - q_out_chunks[i]) + (1-b_nonzero)*q_out_chunks[i])});
                     }
-                }
+                }*/
 
                 return {{gate_class::MIDDLE_OP, {constraints, {}}}};
             }

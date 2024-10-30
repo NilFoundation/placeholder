@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_SUITE(blueprint_bbf_copy)
 BOOST_AUTO_TEST_CASE(small_storage_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
     std::cout << "../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage/" << std::endl;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage/");
+    auto [bytecodes, pts] = load_hardhat_input("small_stack_storage/");
 
     l1_size_restrictions max_sizes;
 
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(small_storage_contract){
 BOOST_AUTO_TEST_CASE(mstore8_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
     std::cout << "../crypto3/libs/blueprint/test/zkevm/data/mstore8/" << std::endl;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/mstore8/");
+    auto [bytecodes, pts] = load_hardhat_input("mstore8/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(mstore8_contract){
 BOOST_AUTO_TEST_CASE(meminit_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
     std::cout << "../crypto3/libs/blueprint/test/zkevm/data/meminit/" << std::endl;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/mem_init/");
+    auto [bytecodes, pts] = load_hardhat_input("mem_init/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(meminit_contract){
 BOOST_AUTO_TEST_CASE(calldatacopy_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
     std::cout << "../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/" << std::endl;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/");
+    auto [bytecodes, pts] = load_hardhat_input("calldatacopy/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(calldatacopy_contract){
 BOOST_AUTO_TEST_CASE(keccak_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
     std::cout << "../crypto3/libs/blueprint/test/zkevm/data/keccak/" << std::endl;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/keccak/");
+    auto [bytecodes, pts] = load_hardhat_input("keccak/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;

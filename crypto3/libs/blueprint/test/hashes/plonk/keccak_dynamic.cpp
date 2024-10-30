@@ -56,7 +56,7 @@
 
 template <typename BlueprintFieldType, std::size_t max_blocks = 10>
 void test_keccaks(
-    std::vector<std::tuple<
+    std::vector<std::pair<
         std::vector<uint8_t>,
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>
     >> input,

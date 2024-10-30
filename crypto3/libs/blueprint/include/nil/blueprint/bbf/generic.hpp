@@ -36,10 +36,9 @@
 
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 //#include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/gate_id.hpp>
@@ -54,7 +53,7 @@ namespace nil {
 
             template<typename FieldType>
             class basic_context {
-                using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 public:
@@ -177,8 +176,7 @@ namespace nil {
             class context<FieldType, GenerationStage::ASSIGNMENT> : public basic_context<FieldType> { // assignment-specific definition
             public:
                 using TYPE = typename FieldType::value_type;
-
-                using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_input_constraints_type = std::vector<TYPE>;
@@ -292,7 +290,7 @@ namespace nil {
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
 
-                using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 using basic_context<FieldType>::row_shift;
