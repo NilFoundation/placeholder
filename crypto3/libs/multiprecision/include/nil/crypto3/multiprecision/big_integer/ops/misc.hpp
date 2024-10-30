@@ -21,8 +21,17 @@
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
+// TODO(ioxid): refactor
+//
+// Remove all boost parts, that is:
+// boost::multiprecision::backends::numeric_limits_workaround
+// boost::multiprecision::detail::is_integral
+// boost::multiprecision::detail::is_signed
+// boost::multiprecision::detail::find_lsb
+// boost::multiprecision::detail::find_msb
+
 namespace nil::crypto3::multiprecision {
-    // TODO refactor
+    // TODO(ioxid) refactor
     template<class R, unsigned Bits>
     inline constexpr
         typename std::enable_if<boost::multiprecision::detail::is_integral<R>::value, void>::type

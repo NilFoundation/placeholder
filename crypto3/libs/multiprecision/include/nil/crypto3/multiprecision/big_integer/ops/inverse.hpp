@@ -86,7 +86,7 @@ namespace nil::crypto3::multiprecision {
         }
     }
 
-    // Overload the upper code for modular backends. We do not have negative numbers,
+    // Overload the code above for modular backends. We do not have negative numbers,
     // so we will convert to cpp_int_backend to perform the operation and back.
     template<unsigned Bits>
     constexpr void eval_inverse_extended_euclidean_algorithm(big_integer<Bits>& result,
@@ -154,17 +154,17 @@ namespace nil::crypto3::multiprecision {
         zero = ui_type(0u);
         one = ui_type(1u);
         // Caller should assure these preconditions:
-        //                BOOST_ASSERT(eval_gt(n, 0) >= 0);
-        //                BOOST_ASSERT(mod >= 0);
-        //                BOOST_ASSERT(n < mod);
-        //                BOOST_ASSERT(mod >= 3 && mod % 2 != 0);
+        BOOST_ASSERT(eval_gt(n, 0) >= 0);
+        BOOST_ASSERT(mod >= 0);
+        BOOST_ASSERT(n < mod);
+        BOOST_ASSERT(mod >= 3 && mod % 2 != 0);
 
         /*
         This uses a modular inversion algorithm designed by Niels Möller
         and implemented in Nettle. The same algorithm was later also
         adapted to GMP in mpn_sec_invert.
 
-       There is also a description of the algorithm in Appendix 5 of "Fast
+        There is also a description of the algorithm in Appendix 5 of "Fast
         Software Polynomial Multiplication on ARM Processors using the NEON Engine"
         by Danilo Câmara, Conrado P. L. Gouvêa, Julio López, and Ricardo
         Dahab in LNCS 8182
