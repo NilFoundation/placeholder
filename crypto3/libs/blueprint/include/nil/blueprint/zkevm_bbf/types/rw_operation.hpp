@@ -30,6 +30,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm/util/ptree.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -37,9 +38,29 @@ namespace nil {
             enum class rw_operation_type {
                 start, stack, memory,storage, transient_storage, call_context,
                 account, tx_refund_op, tx_access_list_account,
-                tx_access_list_account_storage, tx_log, tx_receipt, padding
+                tx_access_list_account_storage, tx_log, tx_receipt,
+                padding
             };
             static constexpr std::size_t rw_operation_types_amount = 13;
+
+            std::size_t rw_op_to_num(rw_operation_type rw_op){
+                if( rw_op == rw_operation_type::start ) return 0;
+                if( rw_op == rw_operation_type::stack ) return 1;
+                if( rw_op == rw_operation_type::memory ) return 2;
+                if( rw_op == rw_operation_type::storage ) return 3;
+                if( rw_op == rw_operation_type::transient_storage ) return 4;
+                if( rw_op == rw_operation_type::call_context ) return 5;
+                if( rw_op == rw_operation_type::account ) return 6;
+                if( rw_op == rw_operation_type::tx_refund_op ) return 7;
+                if( rw_op == rw_operation_type::tx_access_list_account ) return 8;
+                if( rw_op == rw_operation_type::tx_access_list_account_storage ) return 9;
+                if( rw_op == rw_operation_type::tx_log ) return 10;
+                if( rw_op == rw_operation_type::tx_receipt ) return 11;
+                if( rw_op == rw_operation_type::padding ) return 12;
+                BOOST_ASSERT(false);
+                return 12;
+
+            }
 
             struct rw_operation{
                 rw_operation_type op;           // operation type
@@ -49,11 +70,50 @@ namespace nil {
                 zkevm_word_type   storage_key;
                 std::size_t       rw_counter;
                 bool              is_write;
-                zkevm_word_type   initial_value; // for stack, memory ,it’s zero, Storage item value before transaction for storage operation
                 zkevm_word_type   value;
-                zkevm_word_type   initial_root;  // used only for storage.
+                zkevm_word_type   initial_value; // for stack, memory ,it’s zero, Storage item value before transaction for storage operation
                 zkevm_word_type   root;          // used only for storage. Last operation.
+                zkevm_word_type   initial_root;  // used only for storage.
+                bool operator< (const rw_operation &other) const {
+                    if( op != other.op ) return op < other.op;
+                    if( call_id != other.call_id ) return call_id < other.call_id;
+                    if( address != other.address ) return address < other.address;
+                    if( field != other.field ) return field < other.field;
+                    if( storage_key != other.storage_key ) return storage_key < other.storage_key;
+                    if( rw_counter != other.rw_counter) return rw_counter < other.rw_counter;
+                    return false;
+                }
             };
+
+            rw_operation start_rw_operation(){
+                return rw_operation({rw_operation_type::start, 0, 0, 0, 0, 0, 0, 0});
+            }
+
+            rw_operation stack_rw_operation(std::size_t id, uint16_t address, std::size_t rw_id, bool is_write, zkevm_word_type value){
+                BOOST_ASSERT(id < ( 1 << 28)); // Maximum calls amount(?)
+                BOOST_ASSERT(address < 1024);
+                return rw_operation({rw_operation_type::stack, id, address, 0, 0, rw_id, is_write, value, 0});
+            }
+
+            rw_operation memory_rw_operation(std::size_t id, zkevm_word_type address, std::size_t rw_id, bool is_write, zkevm_word_type value){
+                BOOST_ASSERT(id < ( 1 << 28)); // Maximum calls amount(?)
+                return rw_operation({rw_operation_type::memory, id, address, 0, 0, rw_id, is_write, value, 0});
+            }
+
+            rw_operation storage_rw_operation(
+                std::size_t id,
+                zkevm_word_type storage_key,
+                std::size_t rw_id,
+                bool is_write,
+                zkevm_word_type value,
+                zkevm_word_type value_prev
+            ){
+                return rw_operation({rw_operation_type::storage, id, 0, 0, storage_key, rw_id, is_write, value, value_prev});
+            }
+
+            rw_operation padding_operation(){
+                return rw_operation({rw_operation_type::padding, 0, 0, 0, 0, 0, 0, 0});
+            }
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil

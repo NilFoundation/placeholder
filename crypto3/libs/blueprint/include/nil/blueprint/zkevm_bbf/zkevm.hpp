@@ -34,6 +34,11 @@
 //#include <nil/blueprint/manifest.hpp>
 
 #include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
+
 
 namespace nil {
     namespace blueprint {
@@ -49,28 +54,47 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
                 using private_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::size_t, std::nullptr_t>::type;
                 struct input_type{
-                    private_input_type b;
+                    TYPE rlc_challenge;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, nullptr_t>::type bytecodes;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, nullptr_t>::type keccak_buffers;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<rw_operation>, std::nullptr_t>::type rw_operations;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type copy_events;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<zkevm_state>, std::nullptr_t>::type zkevm_states;
                 };
             public:
+                using BytecodeTable = bytecode_table<FieldType, stage>;
+                using RWTable = rw_table<FieldType, stage>;
+                using KeccakTable = keccak_table<FieldType, stage>;
+                using CopyTable = copy_table<FieldType, stage>;
+
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
-                    std::size_t _max_zkevm_rows,
-                    std::size_t _max_bytecode_size,
-                    std::size_t _max_rw_size
+                    std::size_t max_zkevm_rows,
+                    std::size_t max_copy,
+                    std::size_t max_rw,
+                    std::size_t max_keccak_blocks,
+                    std::size_t max_bytecode
                 ){
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(15,1, 6,8);
-                    desc.usable_rows_amount = std::max(std::max(_max_zkevm_rows, _max_bytecode_size), _max_rw_size);
+                    std::size_t witness_amount = 20;
+                    witness_amount += BytecodeTable::get_witness_amount();
+                    witness_amount += RWTable::get_witness_amount();
+                    witness_amount += KeccakTable::get_witness_amount();
+                    witness_amount += CopyTable::get_witness_amount();
+                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 5);
+                    desc.usable_rows_amount = std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode));
                     return desc;
                 }
 
                 zkevm(
                     context_type &context_object,
                     const input_type &input,
-                    std::size_t _max_zkevm_rows,
-                    std::size_t _max_bytecode_size,
-                    std::size_t _max_rw_size
+                    std::size_t max_zkevm_rows,
+                    std::size_t max_copy,
+                    std::size_t max_rw,
+                    std::size_t max_keccak_blocks,
+                    std::size_t max_bytecode
                 ) :generic_component<FieldType,stage>(context_object) {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "ZKEVM assign " << input.b << std::endl;
+                        std::cout << "ZKEVM assign size=" << input.zkevm_states.size() << std::endl;
                     } else
                         std::cout << "ZKEVM circuit" << std::endl;
                 }

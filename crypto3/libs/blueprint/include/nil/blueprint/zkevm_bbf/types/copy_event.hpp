@@ -35,7 +35,7 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             enum class copy_operand_type {
-                padding, memory, bytecode, calldata, log, keccak, return_data
+                padding, memory, bytecode, calldata, log, keccak, returndata
             };
             static constexpr std::size_t copy_operand_types_amount = 7;
 

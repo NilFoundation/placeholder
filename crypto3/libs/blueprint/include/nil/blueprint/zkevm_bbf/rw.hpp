@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Elena Tatuzova <d.tabalin@nil.foundation>
+// Copyright (c) 2024 Elena Tatuzova <e.tatuzova@nil.foundation>
 //
 // MIT License
 //
@@ -82,6 +82,20 @@ namespace nil {
                 }
 
                 rw(context_type &context_object, const input_type &input, std::size_t max_rw_size, std::size_t max_mpt_size) :generic_component<FieldType,stage>(context_object) {
+                    std::size_t START_OP = rw_op_to_num(rw_operation_type::start);
+                    std::size_t STACK_OP = rw_op_to_num(rw_operation_type::stack);
+                    std::size_t MEMORY_OP = rw_op_to_num(rw_operation_type::memory);
+                    std::size_t STORAGE_OP = rw_op_to_num(rw_operation_type::storage);
+                    std::size_t TRANSIENT_STORAGE_OP = rw_op_to_num(rw_operation_type::transient_storage);
+                    std::size_t CALL_CONTEXT_OP = rw_op_to_num(rw_operation_type::call_context);
+                    std::size_t ACCOUNT_OP = rw_op_to_num(rw_operation_type::account);
+                    std::size_t TX_REFUND_OP = rw_op_to_num(rw_operation_type::tx_refund_op);
+                    std::size_t TX_ACCESS_LIST_ACCOUNT_OP = rw_op_to_num(rw_operation_type::tx_access_list_account);
+                    std::size_t TX_ACCESS_LIST_ACCOUNT_STORAGE_OP = rw_op_to_num(rw_operation_type::tx_access_list_account_storage);
+                    std::size_t TX_LOG_OP = rw_op_to_num(rw_operation_type::tx_log);
+                    std::size_t TX_RECEIPT_OP = rw_op_to_num(rw_operation_type::tx_receipt);
+                    std::size_t PADDING_OP = rw_op_to_num(rw_operation_type::padding);
+
                     PROFILE_SCOPE("Rw circuit constructor, total time");
                     std::vector<std::size_t> rw_table_area;
                     for( std::size_t i = 0; i < rw_table_type::get_witness_amount(); i++ ) rw_table_area.push_back(i);
@@ -117,7 +131,7 @@ namespace nil {
                     std::vector<TYPE> sorted_prev;
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        auto rw_trace = input.get_rw_ops();
+                        auto rw_trace = input;
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
                             integral_type mask = (1 << op_bits_amount);
                             for( std::size_t j = 0; j < op_bits_amount; j++){
@@ -127,9 +141,9 @@ namespace nil {
                             std::size_t cur_chunk = 0;
                             // id
                             mask = 0xffff0000;
-                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].id)) >> 16;
+                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].call_id)) >> 16;
                             mask = 0xffff;
-                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].id));
+                            chunks[i][cur_chunk++] = (mask & integral_type(rw_trace[i].call_id));
 
                             // address
                             mask = 0xffff;
@@ -150,9 +164,9 @@ namespace nil {
                             // rw_id
                             mask = 0xffff;
                             mask <<= 16;
-                            chunks[i][cur_chunk++] = (mask & rw_trace[i].rw_id) >> 16;
+                            chunks[i][cur_chunk++] = (mask & rw_trace[i].rw_counter) >> 16;
                             mask >>= 16;
-                            chunks[i][cur_chunk++] = (mask & rw_trace[i].rw_id);
+                            chunks[i][cur_chunk++] = (mask & rw_trace[i].rw_counter);
 
                             sorted_prev = sorted;
                             sorted = {op[i]};
@@ -171,8 +185,8 @@ namespace nil {
                                 if(i != 0) is_last[i-1] = 1;
                             }
                             if( diff_ind > 30 ){
-                                value_before_hi[i] = w_hi<FieldType>(rw_trace[i].value_prev);
-                                value_before_lo[i] = w_lo<FieldType>(rw_trace[i].value_prev);
+                                value_before_hi[i] = w_hi<FieldType>(rw_trace[i].initial_value);
+                                value_before_lo[i] = w_lo<FieldType>(rw_trace[i].initial_value);
                             } else {
                                 value_before_hi[i] = value_before_hi[i-1];
                                 value_before_lo[i] = value_before_lo[i-1];

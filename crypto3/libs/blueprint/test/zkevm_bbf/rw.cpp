@@ -44,6 +44,8 @@
 #include <nil/blueprint/zkevm_bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 
+#include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
+
 #include "./test_l1_wrapper.hpp"
 
 using namespace nil::crypto3;
@@ -54,18 +56,14 @@ void test_zkevm_rw(
     std::string path,
     std::size_t max_rw_size
 ){
-    std::cout << "path = " << path << std::endl;
+    auto [bytecodes, traces] = load_hardhat_input(path);
 
-    std::ifstream ss;
-    ss.open(path);
-    boost::property_tree::ptree pt;
-    boost::property_tree::read_json(ss, pt);
-    ss.close();
+    nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
 
-    typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_trace(pt, max_rw_size);
+    typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_trace = circuit_inputs.rw_operations();
     typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
 
-    std::cout << "rw_trace size = " <<  rw_trace.get_rw_ops().size() << std::endl;
+    std::cout << "rw_trace size = " <<  rw_trace.size() << std::endl;
     bool result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_trace, null_input, max_rw_size, 0);
     BOOST_ASSERT(result); // Max_rw, Max_mpt
 }
@@ -76,25 +74,26 @@ BOOST_AUTO_TEST_SUITE(blueprint_bbf_rw)
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 BOOST_AUTO_TEST_CASE(minimal_math_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/trace0.json", 500);
+    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/", 500);
 }
 
 BOOST_AUTO_TEST_CASE(small_storage_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage/trace0.json", 500);
+    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/small_stack_storage/", 500);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mstore8/trace0.json", 5000);
+    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mstore8/", 5000);
 }
 
 BOOST_AUTO_TEST_CASE(meminit_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mem_init/trace0.json", 10000);
+    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/mem_init/", 10000);
 }
 
 BOOST_AUTO_TEST_CASE(calldatacopy_contract){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/trace0.json", 10000);
+    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/", 10000);
 }
-BOOST_AUTO_TEST_CASE(calldatacopy_contract_large){
-    test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/trace0.json", 100000);
-}
+// // Just for performance estimation
+// BOOST_AUTO_TEST_CASE(calldatacopy_contract_large){
+//     test_zkevm_rw<field_type>("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/", 100000);
+// }
 BOOST_AUTO_TEST_SUITE_END()

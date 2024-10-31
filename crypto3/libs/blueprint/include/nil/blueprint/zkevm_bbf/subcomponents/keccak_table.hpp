@@ -57,6 +57,10 @@ namespace nil {
                 std::vector<TYPE> hash_lo = std::vector<TYPE>(max_blocks);
                 std::vector<TYPE> RLC = std::vector<TYPE>(max_blocks);
 
+                static std::size_t get_witness_amount(){
+                    return 4;
+                }
+
                 keccak_table(context_type &context_object,
                     input_type input,
                     std::size_t max_blocks_

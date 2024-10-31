@@ -37,7 +37,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, nil::blueprint::rw_trace<FieldType>, std::nullptr_t>::type;
+                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type;
                 using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
             public:
                 // For connection with upper-level circuits
@@ -52,7 +52,10 @@ namespace nil {
                 std::vector<TYPE> rw_counter;
                 std::vector<TYPE> rw_inc_left;
 
-                static std::size_t get_witness_amount(){ return 10; }
+                static std::size_t get_witness_amount(){
+                    return 10;
+                }
+
                 copy_table(context_type &context_object, const input_type &input, std::size_t max_copy_size, bool register_dynamic_lookup)
                     :generic_component<FieldType,stage>(context_object),
                     is_first(max_copy_size), id_hi(max_copy_size), id_lo(max_copy_size),
@@ -61,7 +64,7 @@ namespace nil {
                     is_write(max_copy_size), rw_counter(max_copy_size), rw_inc_left(max_copy_size)
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "Copy table assignment" << std::endl;
+                        std::cout << "Copy table assignment " << std::endl;
                     } else {
                         std::cout << "Copy table circuit" << std::endl;
                     }

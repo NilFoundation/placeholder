@@ -67,7 +67,14 @@ namespace nil {
                     else
                         return storage_slice[key];
                 }
-            private:
+                zkevm_state(
+                    const std::vector<zkevm_word_type>        &stack,
+                    const std::map<std::size_t, std::uint8_t> &memory,
+                    const std::map<zkevm_word_type, zkevm_word_type> &storage
+                ): stack_slice(stack), memory_slice(memory), storage_slice(storage){}
+
+                zkevm_state(){}
+            public:
                 std::vector<zkevm_word_type>                stack_slice; // BEFORE opcode
                 std::map<std::size_t, std::uint8_t>         memory_slice; // BEFORE opcode
                 std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode

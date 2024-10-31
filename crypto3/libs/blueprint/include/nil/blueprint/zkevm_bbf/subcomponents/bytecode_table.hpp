@@ -21,6 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+#pragma once
 
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 
@@ -51,6 +52,10 @@ namespace nil {
                 std::vector<TYPE> is_opcode = std::vector<TYPE>(max_bytecode_size);
                 std::vector<TYPE> hash_hi = std::vector<TYPE>(max_bytecode_size);
                 std::vector<TYPE> hash_lo = std::vector<TYPE>(max_bytecode_size);
+
+                static std::size_t get_witness_amount(){
+                    return 6;
+                }
 
                 bytecode_table(context_type &context_object,
                                     const input_type &input,

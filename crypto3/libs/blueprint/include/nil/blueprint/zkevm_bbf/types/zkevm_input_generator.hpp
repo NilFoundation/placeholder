@@ -25,14 +25,17 @@
 #pragma once
 #include <nil/crypto3/hash/type_traits.hpp>
 #include <nil/crypto3/hash/algorithm/hash.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
-#include <nil/blueprint/zkevm_bbf/hashed_buffers.hpp>
-#include <nil/blueprint/zkevm_bbf/rw_operation.hpp>
-#include <nil/blueprint/zkevm_bbf/copy_event.hpp>
-#include <nil/blueprint/zkevm_bbf/zkevm_state.hpp>
+#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+
+#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -43,18 +46,20 @@ namespace nil {
                 virtual zkevm_keccak_buffers bytecodes() = 0;
                 virtual std::vector<rw_operation> rw_operations() = 0;
                 virtual std::vector<copy_event> copy_events() = 0;
-                virtual std::vector<zkevm_state> zkemv_states() = 0;
+                virtual std::vector<zkevm_state> zkevm_states() = 0;
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations() = 0;
             };
 
-            class zkevm_hardhat_input_generator:zkevm_abstract_input_generator{
+            class zkevm_small_test_input_generator:zkevm_abstract_input_generator{
             public:
                 zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
                 std::vector<rw_operation> rw_operations() override {return _rw_operations;}
                 std::vector<copy_event> copy_events() override { return _copy_events;}
-                std::vector<zkevm_state> zkemv_states() override{ return _zkevm_states};
-                std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return exponentiations;}
+                std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
+                std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
+
+                zkevm_small_test_input_generator(){}
             private:
                 zkevm_keccak_buffers                                     _keccaks;
                 zkevm_keccak_buffers                                     _bytecodes;
@@ -62,7 +67,7 @@ namespace nil {
                 std::vector<copy_event>                                  _copy_events;
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
-            }
+            };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil

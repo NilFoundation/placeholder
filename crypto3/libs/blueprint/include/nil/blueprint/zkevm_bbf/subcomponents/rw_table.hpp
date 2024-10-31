@@ -23,7 +23,7 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include<nil/blueprint/zkevm/memory.hpp>
+#include<nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -38,7 +38,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, nil::blueprint::rw_trace<FieldType>, std::nullptr_t>::type;
+                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<rw_operation>, std::nullptr_t>::type;
                 using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
             public:
                 // For connection with upper-level circuits
@@ -54,6 +54,7 @@ namespace nil {
                 std::vector<TYPE> value_lo;
 
                 static std::size_t get_witness_amount(){ return 10; }
+
                 rw_table(context_type &context_object, const input_type &input, std::size_t max_rw_size, bool register_dynamic_lookup)
                     :generic_component<FieldType,stage>(context_object),
                     op(max_rw_size), id(max_rw_size), address(max_rw_size),
@@ -62,23 +63,21 @@ namespace nil {
                     rw_id(max_rw_size), value_hi(max_rw_size), value_lo(max_rw_size)
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        auto rw_trace = input.get_rw_ops();
+                        auto rw_trace = input;
                         //std::cout << "RW assign size = " << rw_trace.size() << std::endl;
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
                             //if( rw_trace[i].op != nil::blueprint::PADDING_OP ) std::cout << "\t" << i << "." << rw_trace[i] << std::endl;
-                            op[i] = rw_trace[i].op;
-                            id[i] = rw_trace[i].id;
+                            op[i] = rw_op_to_num(rw_trace[i].op);
+                            id[i] = rw_trace[i].call_id;
                             address[i] = integral_type(rw_trace[i].address);
                             storage_key_hi[i] = w_hi<FieldType>(rw_trace[i].storage_key);
                             storage_key_lo[i] = w_lo<FieldType>(rw_trace[i].storage_key);
                             field_type[i] = 0; // TODO: fix it for different state updates
-                            rw_id[i] = rw_trace[i].rw_id;
+                            rw_id[i] = rw_trace[i].rw_counter;
                             is_write[i] = rw_trace[i].is_write;
                             value_hi[i] = w_hi<FieldType>(rw_trace[i].value);
                             value_lo[i] = w_lo<FieldType>(rw_trace[i].value);
                         }
-                    } else {
-                        std::cout << "RW circuit" << std::endl;
                     }
                     for( std::size_t i = 0; i < max_rw_size; i++ ){
                         allocate(op[i], 0, i);
