@@ -579,27 +579,6 @@ namespace nil {
                 return true;
             }
 
-            bool save_assignment_table_to_file(boost::filesystem::path assignment_table_file_path) {
-                using namespace nil::crypto3::marshalling::types;
-
-                if (assignment_table_file_path.empty()) {
-                    BOOST_LOG_TRIVIAL(error) << "Output assignment table file is not defined";
-                    return false;
-                }
-                if (!assignment_table_.has_value()) {
-                    BOOST_LOG_TRIVIAL(error) << "Assignment table is not initialized";
-                    return false;
-                }
-                BOOST_LOG_TRIVIAL(info) << "Writing assignment_table to " <<
-                    assignment_table_file_path;
-
-                bool res = true;
-                if (res) {
-                    BOOST_LOG_TRIVIAL(info) << "Assignment table written.";
-                }
-                return res;
-            }
-
             bool read_assignment_table(const boost::filesystem::path& assignment_table_file_path) {
                 BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_path;
 
