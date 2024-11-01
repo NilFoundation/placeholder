@@ -14,7 +14,7 @@ namespace nil {
         template<typename BlueprintFieldType>
         std::optional<std::string> fill_bytecode_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
                                                              const boost::filesystem::path& trace_file_path) {
-            BOOST_LOG_TRIVIAL(debug) << "fill add table from " << trace_file_path << "\n";
+            BOOST_LOG_TRIVIAL(debug) << "fill bytecode table from " << trace_file_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 

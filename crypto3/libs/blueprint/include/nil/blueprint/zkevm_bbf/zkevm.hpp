@@ -39,6 +39,8 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
 //#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
