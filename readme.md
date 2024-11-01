@@ -7,9 +7,9 @@ Placeholder repository is a collection of various nil-projects. Check out subfol
 Supported by [=nil; Foundation](https://nil.foundation)
  
 ## Contents
-1. [Dependencies](#installation)
-2. [Build](#community)
-3. [Licence](#community)
+1. [Dependencies](#Dependencies)
+2. [Build](#Build)
+3. [Licence](#Licence)
 
 ### Dependencies
 
