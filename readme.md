@@ -16,7 +16,7 @@ Supported by [=nil; Foundation](https://nil.foundation)
 Install nix using the following command:
 
 ```
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
 ### Build
