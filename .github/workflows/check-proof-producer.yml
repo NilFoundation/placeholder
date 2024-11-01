@@ -141,6 +141,11 @@ jobs:
           echo "artifact-dir=$(realpath ${{ github.workspace }}/../artifacts)" >> $GITHUB_OUTPUT
           echo "artifact-dir=$(realpath ${{ github.workspace }}/../artifacts)"
 
+      - name: Cleanup artifacts after previous runs
+        working-directory: ${{ steps.strings.outputs.artifact-dir }}
+        run: |
+          rm -rf *
+
       - name: Download circuits and assignments artifact
         uses: dawidd6/action-download-artifact@v3
         with:
@@ -153,12 +158,14 @@ jobs:
 
       - name: Extract circuits and assignments artifact
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
-        run: |
-          unzip -o ${{ env.CAA_ARTIFACT_NAME }}.zip
+        run: unzip -o ${{ env.CAA_ARTIFACT_NAME }}.zip
 
       - name: List artifacts
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
-        run: find . -printf '%t %p\n'
+        run: |
+          echo "all artifacts:"
+          find . -printf '%t %p\n'
+          echo "all artifacts end"
 
       - name: Make proofs for pairs
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
