@@ -929,7 +929,7 @@ namespace nil {
                             }
                             zkevm_state state; // TODO:optimize
                             state.tx_hash = 0;  // TODO: change it
-                            state.opcode = opcode_from_str(opcode);
+                            state.opcode = opcode_number_from_str(opcode);
                             state.call_id = call_id;
                             state.gas = atoi(it->second.get_child("gas").data().c_str());
                             state.pc = atoi(it->second.get_child("pc").data().c_str());

@@ -53,13 +53,15 @@ namespace nil {
                 using KeccakTable = keccak_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
 
+                static constexpr std::size_t copy_advice_amount = 9;
+
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
                     std::size_t max_bytecode
                 ){
-                    std::size_t witness_amount = 20;
+                    std::size_t witness_amount = copy_advice_amount;
                     witness_amount += BytecodeTable::get_witness_amount();
                     witness_amount += RWTable::get_witness_amount();
                     witness_amount += KeccakTable::get_witness_amount();
@@ -75,6 +77,35 @@ namespace nil {
                     std::size_t max_keccak_blocks,
                     std::size_t max_bytecode
                 ) :generic_component<FieldType,stage>(context_object) {
+                    std::size_t current_column = copy_advice_amount;
+
+                    std::vector<std::size_t> bytecode_lookup_area;
+                    for( std::size_t i = 0; i < BytecodeTable::get_witness_amount(); i++){
+                        bytecode_lookup_area.push_back(current_column++);
+                    }
+                    std::vector<std::size_t> keccak_lookup_area;
+                    for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
+                        keccak_lookup_area.push_back(current_column++);
+                    }
+                    std::vector<std::size_t> rw_lookup_area;
+                    for( std::size_t i = 0; i < RWTable::get_witness_amount(); i++){
+                        rw_lookup_area.push_back(current_column++);
+                    }
+                    std::vector<std::size_t> copy_lookup_area;
+                    for( std::size_t i = 0; i < CopyTable::get_witness_amount(); i++){
+                        copy_lookup_area.push_back(current_column++);
+                    }
+
+                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
+                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
+                    context_type rw_ct = context_object.subcontext(rw_lookup_area,0,max_rw);
+                    context_type copy_ct = context_object.subcontext( copy_lookup_area, 0, max_copy);
+
+                    BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
+                    KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
+                    RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
+                    CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, false);
+
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "Copy assign " << input.copy_events.size() << std::endl;
                     } else

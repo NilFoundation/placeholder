@@ -76,7 +76,7 @@ void complex_test(const std::vector<std::vector<std::uint8_t>> &bytecodes, const
     std::size_t max_mpt = 0;
     std::size_t max_rw = 500;
     std::size_t max_copy = 500;
-    std::size_t max_zkevm_rows = 100;
+    std::size_t max_zkevm_rows = 500;
 
     typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
     typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;

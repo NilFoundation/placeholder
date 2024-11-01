@@ -141,11 +141,16 @@ namespace nil {
                                 gates[i].constraints[j].evaluate(selector_row, assignments);
 
                             if (!constraint_result.is_zero()) {
+                                std::cout<< "Offended constraint result" << std::endl;
+                                // for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
+                                //     std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
+                                // }
+                                std::cout << std::endl;
                                 std::cout << "Constraint " << j << " from gate " << i << " on row " << selector_row
                                           << " is not satisfied." << std::endl;
                                 std::cout << std::endl;
-                                std::cout << "Constraint: " << gates[i].constraints[j] << std::endl;
                                 std::cout << "Constraint result: " << constraint_result << std::endl;
+                                std::cout << "Constraint: " << gates[i].constraints[j] << std::endl;
                                 std::cout << "Offending gate:" << std::endl;
 
                                 std::size_t k = 0;

@@ -64,9 +64,9 @@ namespace nil {
                     is_write(max_copy_size), rw_counter(max_copy_size), rw_inc_left(max_copy_size)
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::cout << "Copy table assignment " << std::endl;
+//                        std::cout << "Copy table assignment " << std::endl;
                     } else {
-                        std::cout << "Copy table circuit" << std::endl;
+//                        std::cout << "Copy table circuit" << std::endl;
                     }
                     for( std::size_t i = 0; i < max_copy_size; i++ ){
                         allocate(is_first[i], 0, i);

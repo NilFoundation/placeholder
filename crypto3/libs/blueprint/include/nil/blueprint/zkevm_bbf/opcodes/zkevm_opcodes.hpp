@@ -31,6 +31,38 @@
 #include <boost/assert.hpp>
 #include <boost/bimap.hpp>
 
+#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/pushx.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/memory.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/add_sub.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/div_mod.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/addmod.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/mulmod.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/bitwise.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/byte.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/cmp.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/calldatasize.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/calldataload.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/callvalue.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/iszero.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/mul.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/not.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/padding.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/jump.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/jumpi.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/dupx.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/sdiv_smod.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/return.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/err0.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/err1.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/signextend.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/storage.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/shl.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/shr.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/sar.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/swapx.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/pop.hpp>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {
@@ -352,6 +384,165 @@ namespace nil {
                 return 0x102;
             }
 
+            zkevm_opcode opcode_from_number(std::size_t number){
+                if( number == 0x00) return zkevm_opcode::STOP;
+                if( number == 0x01 ) return zkevm_opcode::ADD;
+                if( number == 0x02 ) return zkevm_opcode::MUL;
+                if( number ==  0x03) return zkevm_opcode::SUB;
+                if( number ==  0x04) return zkevm_opcode::DIV;
+                if( number ==  0x05) return zkevm_opcode::SDIV;
+                if( number ==  0x06) return zkevm_opcode::MOD;
+                if( number ==  0x07) return zkevm_opcode::SMOD;
+                if( number ==  0x08) return zkevm_opcode::ADDMOD;
+                if( number ==  0x09) return zkevm_opcode::MULMOD;
+                if( number ==  0x0a) return zkevm_opcode::EXP;
+                if( number ==  0x0b) return zkevm_opcode::SIGNEXTEND;
+                if( number ==  0x10) return zkevm_opcode::LT;
+                if( number ==  0x11) return zkevm_opcode::GT;
+                if( number ==  0x12) return zkevm_opcode::SLT;
+                if( number ==  0x13) return zkevm_opcode::SGT;
+                if( number ==  0x14) return zkevm_opcode::EQ;
+                if( number ==  0x15) return zkevm_opcode::ISZERO;
+                if( number ==  0x16) return zkevm_opcode::AND;
+                if( number ==  0x17) return zkevm_opcode::OR;
+                if( number ==  0x18) return zkevm_opcode::XOR;
+                if( number ==  0x19) return zkevm_opcode::NOT;
+                if( number ==  0x1a) return zkevm_opcode::BYTE;
+                if( number ==  0x1b) return zkevm_opcode::SHL;
+                if( number ==  0x1c) return zkevm_opcode::SHR;
+                if( number ==  0x1d) return zkevm_opcode::SAR;
+                if( number ==  0x20) return zkevm_opcode::KECCAK256;
+                if( number ==  0x30) return zkevm_opcode::ADDRESS;
+                if( number ==  0x31) return zkevm_opcode::BALANCE;
+                if( number ==  0x32) return zkevm_opcode::ORIGIN;
+                if( number ==  0x33) return zkevm_opcode::CALLER;
+                if( number ==  0x34) return zkevm_opcode::CALLVALUE;
+                if( number ==  0x35) return zkevm_opcode::CALLDATALOAD;
+                if( number ==  0x36) return zkevm_opcode::CALLDATASIZE;
+                if( number ==  0x37) return zkevm_opcode::CALLDATACOPY;
+                if( number ==  0x38) return zkevm_opcode::CODESIZE;
+                if( number ==  0x39) return zkevm_opcode::CODECOPY;
+                if( number ==  0x3a) return zkevm_opcode::GASPRICE;
+                if( number ==  0x3b) return zkevm_opcode::EXTCODESIZE;
+                if( number ==  0x3c) return zkevm_opcode::EXTCODECOPY;
+                if( number ==  0x3d) return zkevm_opcode::RETURNDATASIZE;
+                if( number ==  0x3e) return zkevm_opcode::RETURNDATACOPY;
+                if( number ==  0x3f) return zkevm_opcode::EXTCODEHASH;
+                if( number ==  0x40) return zkevm_opcode::BLOCKHASH;
+                if( number ==  0x41) return zkevm_opcode::COINBASE;
+                if( number ==  0x42) return zkevm_opcode::TIMESTAMP;
+                if( number ==  0x43) return zkevm_opcode::NUMBER;
+                if( number ==  0x44) return zkevm_opcode::PREVRANDAO;
+                if( number ==  0x45) return zkevm_opcode::GASLIMIT;
+                if( number ==  0x46) return zkevm_opcode::CHAINID;
+                if( number ==  0x47) return zkevm_opcode::SELFBALANCE;
+                if( number ==  0x48) return zkevm_opcode::BASEFEE;
+                if( number ==  0x49) return zkevm_opcode::BLOBHASH;
+                if( number ==  0x4a) return zkevm_opcode::BLOBBASEFEE;
+                if( number ==  0x50) return zkevm_opcode::POP;
+                if( number ==  0x51) return zkevm_opcode::MLOAD;
+                if( number ==  0x52) return zkevm_opcode::MSTORE;
+                if( number ==  0x53) return zkevm_opcode::MSTORE8;
+                if( number ==  0x54) return zkevm_opcode::SLOAD;
+                if( number ==  0x55) return zkevm_opcode::SSTORE;
+                if( number ==  0x56) return zkevm_opcode::JUMP;
+                if( number ==  0x57) return zkevm_opcode::JUMPI;
+                if( number ==  0x58) return zkevm_opcode::PC;
+                if( number ==  0x59) return zkevm_opcode::MSIZE;
+                if( number ==  0x5a) return zkevm_opcode::GAS;
+                if( number ==  0x5b) return zkevm_opcode::JUMPDEST;
+                if( number ==  0x5c) return zkevm_opcode::TLOAD;
+                if( number ==  0x5d) return zkevm_opcode::TSTORE;
+                if( number ==  0x5e) return zkevm_opcode::MCOPY;
+                if( number ==  0x5f) return zkevm_opcode::PUSH0;
+                if( number ==  0x60) return zkevm_opcode::PUSH1;
+                if( number ==  0x61) return zkevm_opcode::PUSH2;
+                if( number ==  0x62) return zkevm_opcode::PUSH3;
+                if( number ==  0x63) return zkevm_opcode::PUSH4;
+                if( number ==  0x64) return zkevm_opcode::PUSH5;
+                if( number ==  0x65) return zkevm_opcode::PUSH6;
+                if( number ==  0x66) return zkevm_opcode::PUSH7;
+                if( number ==  0x67) return zkevm_opcode::PUSH8;
+                if( number ==  0x68) return zkevm_opcode::PUSH9;
+                if( number ==  0x69) return zkevm_opcode::PUSH10;
+                if( number ==  0x6a) return zkevm_opcode::PUSH11;
+                if( number ==  0x6b) return zkevm_opcode::PUSH12;
+                if( number ==  0x6c) return zkevm_opcode::PUSH13;
+                if( number ==  0x6d) return zkevm_opcode::PUSH14;
+                if( number ==  0x6e) return zkevm_opcode::PUSH15;
+                if( number ==  0x6f) return zkevm_opcode::PUSH16;
+                if( number ==  0x70) return zkevm_opcode::PUSH17;
+                if( number ==  0x71) return zkevm_opcode::PUSH18;
+                if( number ==  0x72) return zkevm_opcode::PUSH19;
+                if( number ==  0x73) return zkevm_opcode::PUSH20;
+                if( number ==  0x74) return zkevm_opcode::PUSH21;
+                if( number ==  0x75) return zkevm_opcode::PUSH22;
+                if( number ==  0x76) return zkevm_opcode::PUSH23;
+                if( number ==  0x77) return zkevm_opcode::PUSH24;
+                if( number ==  0x78) return zkevm_opcode::PUSH25;
+                if( number ==  0x79) return zkevm_opcode::PUSH26;
+                if( number ==  0x7a) return zkevm_opcode::PUSH27;
+                if( number ==  0x7b) return zkevm_opcode::PUSH28;
+                if( number ==  0x7c) return zkevm_opcode::PUSH29;
+                if( number ==  0x7d) return zkevm_opcode::PUSH30;
+                if( number ==  0x7e) return zkevm_opcode::PUSH31;
+                if( number ==  0x7f) return zkevm_opcode::PUSH32;
+                if( number ==  0x80) return zkevm_opcode::DUP1;
+                if( number ==  0x81) return zkevm_opcode::DUP2;
+                if( number ==  0x82) return zkevm_opcode::DUP3;
+                if( number ==  0x83) return zkevm_opcode::DUP4;
+                if( number ==  0x84) return zkevm_opcode::DUP5;
+                if( number ==  0x85) return zkevm_opcode::DUP6;
+                if( number ==  0x86) return zkevm_opcode::DUP7;
+                if( number ==  0x87) return zkevm_opcode::DUP8;
+                if( number ==  0x88) return zkevm_opcode::DUP9;
+                if( number ==  0x89) return zkevm_opcode::DUP10;
+                if( number ==  0x8a) return zkevm_opcode::DUP11;
+                if( number ==  0x8b) return zkevm_opcode::DUP12;
+                if( number ==  0x8c) return zkevm_opcode::DUP13;
+                if( number ==  0x8d) return zkevm_opcode::DUP14;
+                if( number ==  0x8e) return zkevm_opcode::DUP15;
+                if( number ==  0x8f) return zkevm_opcode::DUP16;
+                if( number ==  0x90) return zkevm_opcode::SWAP1;
+                if( number ==  0x91) return zkevm_opcode::SWAP2;
+                if( number ==  0x92) return zkevm_opcode::SWAP3;
+                if( number ==  0x93) return zkevm_opcode::SWAP4;
+                if( number ==  0x94) return zkevm_opcode::SWAP5;
+                if( number ==  0x95) return zkevm_opcode::SWAP6;
+                if( number ==  0x96) return zkevm_opcode::SWAP7;
+                if( number ==  0x97) return zkevm_opcode::SWAP8;
+                if( number ==  0x98) return zkevm_opcode::SWAP9;
+                if( number ==  0x99) return zkevm_opcode::SWAP10;
+                if( number ==  0x9a) return zkevm_opcode::SWAP11;
+                if( number ==  0x9b) return zkevm_opcode::SWAP12;
+                if( number ==  0x9c) return zkevm_opcode::SWAP13;
+                if( number ==  0x9d) return zkevm_opcode::SWAP14;
+                if( number ==  0x9e) return zkevm_opcode::SWAP15;
+                if( number ==  0x9f) return zkevm_opcode::SWAP16;
+                if( number ==  0xa0) return zkevm_opcode::LOG0;
+                if( number ==  0xa1) return zkevm_opcode::LOG1;
+                if( number ==  0xa2) return zkevm_opcode::LOG2;
+                if( number ==  0xa3) return zkevm_opcode::LOG3;
+                if( number ==  0xa4) return zkevm_opcode::LOG4;
+                if( number ==  0xf0) return zkevm_opcode::CREATE;
+                if( number ==  0xf1) return zkevm_opcode::CALL;
+                if( number ==  0xf2) return zkevm_opcode::CALLCODE;
+                if( number ==  0xf3) return zkevm_opcode::RETURN;
+                if( number ==  0xf4) return zkevm_opcode::DELEGATECALL;
+                if( number ==  0xf5) return zkevm_opcode::CREATE2;
+                if( number ==  0xfa) return zkevm_opcode::STATICCALL;
+                if( number ==  0xfd) return zkevm_opcode::REVERT;
+                if( number ==  0xfe) return zkevm_opcode::INVALID;
+                if( number ==  0xff) return zkevm_opcode::SELFDESTRUCT;
+                // these are not real opcodes, they are for exception processing
+                if( number == 0x100 ) return zkevm_opcode::err0; // not enough static gas or incorrect stack size
+                if( number == 0x101 ) return zkevm_opcode::err1; // not enough static gas or incorrect stack size
+                if( number == 0x102 ) return zkevm_opcode::padding; // empty opcode for the fixed circuit size
+                std::cout << "Unknown opcode " << std::hex << number << std::dec << std::endl;
+                BOOST_ASSERT(false);
+                return zkevm_opcode::padding;
+            }
+
             zkevm_opcode  opcode_from_str(const std::string &str){
                 // these are not real opcodes, they are for exception processing
                 #define ENUM_DEF(name) if(str == #name) return zkevm_opcode::name;
@@ -370,13 +561,154 @@ namespace nil {
                 return "unknown";
             }
 
+            std::size_t opcode_to_number(const zkevm_opcode &opcode ){
+                return opcode_number_from_str(opcode_to_string(opcode));
+            }
+
             std::ostream& operator<<(std::ostream& os, const zkevm_opcode& opcode) {
-                #define ENUM_DEF(name) case zkevm_opcode::name: os << #name; break;
+                #define ENUM_DEF(name) case zkevm_opcode::name: os << "zkevm_opcode::" << #name; break;
                 switch (opcode) {
                     ZKEVM_OPCODE_ENUM(ENUM_DEF)
                 }
                 #undef ENUM_DEF
                 return os;
+            }
+
+            std::vector<zkevm_opcode> get_implemented_opcodes_list(){
+                std::vector<zkevm_opcode> result;
+                #define ENUM_DEF(name) result.push_back(zkevm_opcode::name);
+                    ZKEVM_OPCODE_ENUM(ENUM_DEF)
+                #undef ENUM_DEF
+                return result;
+            }
+
+            template <typename BlueprintFieldType>
+            std::map<zkevm_opcode, std::shared_ptr<opcode_abstract<BlueprintFieldType>>> get_opcode_implementations(){
+                std::map<zkevm_opcode, std::shared_ptr<opcode_abstract<BlueprintFieldType>>> opcodes;
+                // add all the implemented opcodes here
+                // // STOP
+                opcodes[zkevm_opcode::ADD] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(true);
+                opcodes[zkevm_opcode::MUL] = std::make_shared<zkevm_mul_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::SUB] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(false);
+                opcodes[zkevm_opcode::DIV] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(true);
+                opcodes[zkevm_opcode::SDIV] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(true);
+                opcodes[zkevm_opcode::MOD] = std::make_shared<zkevm_div_mod_operation<BlueprintFieldType>>(false);
+                opcodes[zkevm_opcode::SMOD] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(false);
+                opcodes[zkevm_opcode::ADDMOD] = std::make_shared<zkevm_addmod_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::MULMOD] = std::make_shared<zkevm_mulmod_operation<BlueprintFieldType>>();
+                // // EXP
+                opcodes[zkevm_opcode::SIGNEXTEND] = std::make_shared<zkevm_signextend_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::LT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_LT);
+                opcodes[zkevm_opcode::GT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_GT);
+                opcodes[zkevm_opcode::SLT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_SLT);
+                opcodes[zkevm_opcode::SGT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_SGT);
+                opcodes[zkevm_opcode::EQ] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_EQ);
+                opcodes[zkevm_opcode::ISZERO] = std::make_shared<zkevm_iszero_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::AND] = std::make_shared<zkevm_bitwise_operation<BlueprintFieldType>>(bitwise_type::B_AND);
+                opcodes[zkevm_opcode::OR] = std::make_shared<zkevm_bitwise_operation<BlueprintFieldType>>(bitwise_type::B_OR);
+                opcodes[zkevm_opcode::XOR] = std::make_shared<zkevm_bitwise_operation<BlueprintFieldType>>(bitwise_type::B_XOR);
+                opcodes[zkevm_opcode::NOT] = std::make_shared<zkevm_not_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::BYTE] = std::make_shared<zkevm_byte_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::SHL] = std::make_shared<zkevm_shl_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::SHR] = std::make_shared<zkevm_shr_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::SAR] = std::make_shared<zkevm_sar_operation<BlueprintFieldType>>();
+
+                // // Memory operations
+                opcodes[zkevm_opcode::MSTORE] = std::make_shared<zkevm_mstore_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::MSTORE8] = std::make_shared<zkevm_mstore8_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::MLOAD] = std::make_shared<zkevm_mload_operation<BlueprintFieldType>>();
+
+                // // Storage operations
+                opcodes[zkevm_opcode::SLOAD] = std::make_shared<zkevm_sload_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::SSTORE] = std::make_shared<zkevm_sstore_operation<BlueprintFieldType>>();
+
+                // // CALL operaitions
+                opcodes[zkevm_opcode::CALLVALUE] = std::make_shared<zkevm_callvalue_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::CALLDATASIZE] = std::make_shared<zkevm_calldatasize_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::CALLDATALOAD] = std::make_shared<zkevm_calldataload_operation<BlueprintFieldType>>();
+
+                // // PC operations
+                opcodes[zkevm_opcode::JUMPI] = std::make_shared<zkevm_jumpi_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::JUMP] = std::make_shared<zkevm_jump_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::JUMPDEST] = std::make_shared<zkevm_jumpdest_operation<BlueprintFieldType>>();
+
+                opcodes[zkevm_opcode::PUSH0] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(0);
+                opcodes[zkevm_opcode::PUSH1] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(1);
+                opcodes[zkevm_opcode::PUSH2] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(2);
+                opcodes[zkevm_opcode::PUSH3] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(3);
+                opcodes[zkevm_opcode::PUSH4] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(4);
+                opcodes[zkevm_opcode::PUSH5] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(5);
+                opcodes[zkevm_opcode::PUSH6] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(6);
+                opcodes[zkevm_opcode::PUSH7] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(7);
+                opcodes[zkevm_opcode::PUSH8] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(8);
+                opcodes[zkevm_opcode::PUSH9] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(9);
+                opcodes[zkevm_opcode::PUSH10] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(10);
+                opcodes[zkevm_opcode::PUSH11] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(11);
+                opcodes[zkevm_opcode::PUSH12] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(12);
+                opcodes[zkevm_opcode::PUSH13] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(13);
+                opcodes[zkevm_opcode::PUSH14] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(14);
+                opcodes[zkevm_opcode::PUSH15] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(15);
+                opcodes[zkevm_opcode::PUSH16] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(16);
+                opcodes[zkevm_opcode::PUSH17] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(17);
+                opcodes[zkevm_opcode::PUSH18] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(18);
+                opcodes[zkevm_opcode::PUSH19] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(19);
+                opcodes[zkevm_opcode::PUSH20] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(20);
+                opcodes[zkevm_opcode::PUSH21] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(21);
+                opcodes[zkevm_opcode::PUSH22] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(22);
+                opcodes[zkevm_opcode::PUSH23] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(23);
+                opcodes[zkevm_opcode::PUSH24] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(24);
+                opcodes[zkevm_opcode::PUSH25] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(25);
+                opcodes[zkevm_opcode::PUSH26] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(26);
+                opcodes[zkevm_opcode::PUSH27] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(27);
+                opcodes[zkevm_opcode::PUSH28] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(28);
+                opcodes[zkevm_opcode::PUSH29] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(29);
+                opcodes[zkevm_opcode::PUSH30] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(30);
+                opcodes[zkevm_opcode::PUSH31] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(31);
+                opcodes[zkevm_opcode::PUSH32] = std::make_shared<zkevm_pushx_operation<BlueprintFieldType>>(32);
+
+                opcodes[zkevm_opcode::POP] = std::make_shared<zkevm_pop_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::RETURN] = std::make_shared<zkevm_return_operation<BlueprintFieldType>>();
+
+                // // DUP
+                opcodes[zkevm_opcode::DUP1] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(1);
+                opcodes[zkevm_opcode::DUP2] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(2);
+                opcodes[zkevm_opcode::DUP3] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(3);
+                opcodes[zkevm_opcode::DUP4] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(4);
+                opcodes[zkevm_opcode::DUP5] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(5);
+                opcodes[zkevm_opcode::DUP6] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(6);
+                opcodes[zkevm_opcode::DUP7] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(7);
+                opcodes[zkevm_opcode::DUP8] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(8);
+                opcodes[zkevm_opcode::DUP9] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(9);
+                opcodes[zkevm_opcode::DUP10] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(10);
+                opcodes[zkevm_opcode::DUP11] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(11);
+                opcodes[zkevm_opcode::DUP12] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(12);
+                opcodes[zkevm_opcode::DUP13] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(13);
+                opcodes[zkevm_opcode::DUP14] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(14);
+                opcodes[zkevm_opcode::DUP15] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(15);
+                opcodes[zkevm_opcode::DUP16] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(16);
+
+                // // SWAP
+                opcodes[zkevm_opcode::SWAP1] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(1);
+                opcodes[zkevm_opcode::SWAP2] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(2);
+                opcodes[zkevm_opcode::SWAP3] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(3);
+                opcodes[zkevm_opcode::SWAP4] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(4);
+                opcodes[zkevm_opcode::SWAP5] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(5);
+                opcodes[zkevm_opcode::SWAP6] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(6);
+                opcodes[zkevm_opcode::SWAP7] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(7);
+                opcodes[zkevm_opcode::SWAP8] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(8);
+                opcodes[zkevm_opcode::SWAP9] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(9);
+                opcodes[zkevm_opcode::SWAP10] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(10);
+                opcodes[zkevm_opcode::SWAP11] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(11);
+                opcodes[zkevm_opcode::SWAP13] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(13);
+                opcodes[zkevm_opcode::SWAP14] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(14);
+                opcodes[zkevm_opcode::SWAP15] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(15);
+                opcodes[zkevm_opcode::SWAP16] = std::make_shared<zkevm_swapx_operation<BlueprintFieldType>>(16);
+
+                // // fake opcodes for errors and padding
+                opcodes[zkevm_opcode::err0] = std::make_shared<zkevm_err0_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::err1] = std::make_shared<zkevm_err1_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::padding] = std::make_shared<zkevm_padding_operation<BlueprintFieldType>>();
+                return opcodes;
             }
         } // namespace bbf
     }   // namespace blueprint

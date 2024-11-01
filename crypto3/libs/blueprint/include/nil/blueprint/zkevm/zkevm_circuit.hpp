@@ -749,8 +749,7 @@ namespace nil {
                     middle_constraints.push_back(constraint * c.second);
                 }
 
-                middle_lookup_constraints.push_back(
-                    {
+                middle_lookup_constraints.push_back({
                         bytecode_table_index,
                         {
                             bytecode_lookup_dynamic_selector,
@@ -760,8 +759,7 @@ namespace nil {
                             bytecode_lookup_dynamic_selector * state.bytecode_hash_hi(),
                             bytecode_lookup_dynamic_selector * state.bytecode_hash_lo()
                         }
-                    }
-                );
+                });
 
                 middle_selector = circuit.add_gate(middle_constraints);
                 circuit.add_lookup_gate(middle_selector, middle_lookup_constraints);

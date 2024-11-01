@@ -57,7 +57,7 @@ namespace nil {
 
         struct rw_operation{
             std::uint8_t op;             // described above
-            std::size_t id;              // call_id for stack, memory, tx_id for
+            std::size_t id;              // call_id for stack, memory
             zkevm_word_type address;     // 10 bit for stack, 160 bit for
             std::uint8_t field;          // Not used for stack, memory, storage
             zkevm_word_type storage_key; // 256-bit, not used for stack, memory
@@ -65,6 +65,8 @@ namespace nil {
             bool is_write;               // 1 if it's write operation
             zkevm_word_type value;       // It's full 256 words for storage and stack, but it's only byte for memory.
             zkevm_word_type value_prev;
+            // zkevm_word_type root_before
+            // zkevm_word_type root_after
 
             bool operator< (const rw_operation &other) const {
                 if( op != other.op ) return op < other.op;

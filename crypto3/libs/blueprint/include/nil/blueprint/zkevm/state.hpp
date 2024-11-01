@@ -75,7 +75,7 @@ namespace nil {
             state_var real_opcode;          // real_opcode is real opcode that will be looked up in bytecode table
             state_var bytecode_hash_hi;     // will be looked up in bytecode table
             state_var bytecode_hash_lo;     // will be lookup up in bytecode table
-            state_var tx_status;             // error indicator may be set by error opcodes and for usual opcodes too
+            state_var tx_status;            // error indicator may be set by error opcodes and for usual opcodes too
 
             state_var row_counter;          // Decreasing row counter
             state_var step_start;           // 1 in first line of new opcode, 0 otherwise
