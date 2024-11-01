@@ -130,8 +130,8 @@ namespace nil {
 
                 template<typename SparseVector, typename Endianness>
                 SparseVector make_sparse_vector(
-                    const sparse_vector<nil::marshalling::field_type<Endianness>, SparseVector> &filled_sparse_vector) {
-
+                    const sparse_vector<nil::marshalling::field_type<Endianness>, SparseVector> &filled_sparse_vector)
+                {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
 
                     using integral_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;

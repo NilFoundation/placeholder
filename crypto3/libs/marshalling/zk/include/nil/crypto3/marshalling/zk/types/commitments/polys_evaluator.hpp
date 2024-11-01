@@ -92,7 +92,7 @@ namespace nil {
 
                     using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
                     using polynomial_vector_marshalling_type = polynomial_vector<TTypeBase, polynomial_type>;
-                    
+
                     using field_element_vector_type = field_element_vector<value_type, nil::marshalling::field_type<Endianness>>;
                     using array_of_field_element_vector_type = standard_array_list<TTypeBase, field_element_vector_type>;
 
@@ -146,8 +146,8 @@ namespace nil {
 
                 template <typename Endianness, typename PolysEvaluator>
                 PolysEvaluator make_polys_evaluator(
-                    const polys_evaluator<nil::marshalling::field_type<Endianness>, PolysEvaluator>& filled_polys_evaluator
-                ) {
+                    const polys_evaluator<nil::marshalling::field_type<Endianness>, PolysEvaluator>& filled_polys_evaluator)
+                {
                     using nil::marshalling::types::make_size_t;
                     using nil::marshalling::types::make_std_map;
                     using nil::marshalling::types::standard_array_list;
@@ -159,7 +159,7 @@ namespace nil {
 
                     using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
                     using polynomial_vector_marshalling_type = polynomial_vector<TTypeBase, polynomial_type>;
-                    
+
                     using field_element_vector_type = field_element_vector<value_type, nil::marshalling::field_type<Endianness>>;
                     using array_of_field_element_vector_type = standard_array_list<TTypeBase, field_element_vector_type>;
 
