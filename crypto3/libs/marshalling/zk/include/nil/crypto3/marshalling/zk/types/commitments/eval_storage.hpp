@@ -65,23 +65,20 @@ namespace nil {
                         // batch_info.
                         // We'll check is it good for current EVM instance
                         // All z-s are placed into plain array
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename EvalStorage::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename EvalStorage::field_type::value_type>
                         >,
 
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            nil::marshalling::types::integral<TTypeBase, uint8_t>
                         >,
 
                         // evaluation_points_num.
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            nil::marshalling::types::integral<TTypeBase, uint8_t>
                         >
                     >
                 >;
@@ -93,10 +90,9 @@ namespace nil {
 
                     nil::crypto3::marshalling::types::batch_info_type batch_info;
 
-                    nil::marshalling::types::array_list<
+                    nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        nil::marshalling::types::integral<TTypeBase, uint8_t>
                     > filled_batch_info;
                     auto batches = z.get_batches();
                     for( std::size_t i = 0; i < batches.size(); i++ ){
@@ -105,10 +101,9 @@ namespace nil {
                         filled_batch_info.value().push_back(nil::marshalling::types::integral<TTypeBase, uint8_t>(z.get_batch_size(batches[i])));
                     }
 
-                    nil::marshalling::types::array_list<
+                    nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, uint8_t>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        nil::marshalling::types::integral<TTypeBase, uint8_t>
                     > filled_eval_points_num;
                     for( std::size_t i = 0; i < batches.size(); i++ ){
                         for( std::size_t j = 0; j < z.get_batch_size(batches[i]); j++ ){
@@ -126,10 +121,9 @@ namespace nil {
                             }
                         }
                     }
-                    nil::marshalling::types::array_list<
+                    nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        field_element<TTypeBase, typename EvalStorage::field_type::value_type>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        field_element<TTypeBase, typename EvalStorage::field_type::value_type>
                     > filled_z = fill_field_element_vector<typename EvalStorage::field_type::value_type, Endianness>(z_val);
 
                     return eval_storage<TTypeBase, EvalStorage>(

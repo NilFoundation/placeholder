@@ -53,11 +53,8 @@ namespace nil {
                             // assignment_type coeff
                             field_element<TTypeBase, typename NonLinearTerm::assignment_type>,
                             // std::vector<VariableType> vars
-                            nil::marshalling::types::array_list<
-                                TTypeBase, typename variable<TTypeBase, typename NonLinearTerm::variable_type>::type,
-                                nil::marshalling::option::sequence_size_field_prefix<
-                                    nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                                >
+                            nil::marshalling::types::standard_array_list<
+                                TTypeBase, typename variable<TTypeBase, typename NonLinearTerm::variable_type>::type>
                             >
                         >;
                 };
@@ -68,14 +65,12 @@ namespace nil {
 
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
                     using result_type = typename term<TTypeBase, NonLinearTerm>::type;
-                    using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
                     using field_element_marhsalling_type =
                         field_element<TTypeBase, typename NonLinearTerm::assignment_type>;
                     using variable_marshalling_type =
                         typename variable<TTypeBase, typename NonLinearTerm::variable_type>::type;
-                    using variable_vector_marshalling_type = nil::marshalling::types::array_list<
-                        TTypeBase, variable_marshalling_type,
-                        nil::marshalling::option::sequence_size_field_prefix<size_t_marshalling_type>>;
+                    using variable_vector_marshalling_type = nil::marshalling::types::standard_array_list<
+                        TTypeBase, variable_marshalling_type>;
 
                     variable_vector_marshalling_type filled_vars;
                     for (const auto &var : t.get_vars()) {

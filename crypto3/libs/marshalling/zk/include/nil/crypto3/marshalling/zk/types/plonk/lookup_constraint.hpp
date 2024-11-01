@@ -73,10 +73,9 @@ namespace nil {
 
                 // *********************** Vector of lookup constraints for a lookup gate **************************** //
                 template<typename TTypeBase, typename Constraint>
-                using plonk_lookup_constraints = nil::marshalling::types::array_list<
+                using plonk_lookup_constraints = nil::marshalling::types::standard_array_list<
                     TTypeBase,
-                    plonk_lookup_constraint<TTypeBase, Constraint>,
-                    nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                    plonk_lookup_constraint<TTypeBase, Constraint>
                 >;
 
                 template<typename Endianness, typename Constraint>

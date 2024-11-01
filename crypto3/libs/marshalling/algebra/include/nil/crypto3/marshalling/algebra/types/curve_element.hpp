@@ -2,6 +2,7 @@
 // Copyright (c) 2017-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2021 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -355,12 +356,13 @@ namespace nil {
                     return field;
                 }
 
+                template<typename CurveGroupType, typename TTypeBase>
+                using curve_element_vector = nil::marshalling::types::standard_array_list<
+                    TTypeBase,
+                    curve_element<TTypeBase, CurveGroupType>>;
+
                 template<typename CurveGroupType, typename Endianness>
-                nil::marshalling::types::array_list<
-                    nil::marshalling::field_type<Endianness>,
-                    curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                curve_element_vector<CurveGroupType, nil::marshalling::field_type<Endianness>>
                     fill_curve_element_vector(
                         const std::vector<typename CurveGroupType::value_type> &curve_elem_vector) {
 
@@ -368,14 +370,7 @@ namespace nil {
 
                     using curve_element_type = curve_element<TTypeBase, CurveGroupType>;
 
-                    using curve_element_vector_type = nil::marshalling::types::array_list<
-                        TTypeBase,
-                        curve_element_type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>;
-
-                    curve_element_vector_type result;
-
+                    curve_element_vector<CurveGroupType, TTypeBase> result;
                     std::vector<curve_element_type> &val = result.value();
                     for (std::size_t i = 0; i < curve_elem_vector.size(); i++) {
                         val.push_back(curve_element_type(curve_elem_vector[i]));
@@ -385,11 +380,7 @@ namespace nil {
 
                 template<typename CurveGroupType, typename Endianness>
                 std::vector<typename CurveGroupType::value_type> make_curve_element_vector(
-                    const nil::marshalling::types::array_list<
-                        nil::marshalling::field_type<Endianness>,
-                        curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                    const curve_element_vector<CurveGroupType, nil::marshalling::field_type<Endianness>>
                         &curve_elem_vector) {
 
                     std::vector<typename CurveGroupType::value_type> result;

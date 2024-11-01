@@ -2,6 +2,7 @@
 // Copyright (c) 2017-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2021 Ilias Khairullin <ilias@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -686,13 +687,11 @@ namespace nil {
                 //     return field;
                 // }
 
-                
+
                 template<typename FieldValueType, typename TTypeBase>
-                using field_element_vector = nil::marshalling::types::array_list<
+                using field_element_vector = nil::marshalling::types::standard_array_list<
                     TTypeBase,
-                    field_element<TTypeBase, FieldValueType>,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    field_element<TTypeBase, FieldValueType>>;
 
                 template<typename FieldValueType, typename Endianness>
                 field_element_vector<FieldValueType, nil::marshalling::field_type<Endianness>>
@@ -700,13 +699,8 @@ namespace nil {
 
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
                     using field_element_type = field_element<TTypeBase, FieldValueType>;
-                    using field_element_vector_type = nil::marshalling::types::array_list<
-                        TTypeBase,
-                        field_element_type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
 
-                    field_element_vector_type result;
+                    field_element_vector<FieldValueType, TTypeBase> result;
                     for (std::size_t i = 0; i < field_elem_vector.size(); i++) {
                         result.value().push_back(field_element_type(field_elem_vector[i]));
                     }

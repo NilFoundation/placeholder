@@ -91,25 +91,19 @@ namespace nil {
                             TTypeBase,
                             std::tuple<
                                 // std::vector<math::term<VariableType>> terms
-                                nil::marshalling::types::array_list<
+                                nil::marshalling::types::standard_array_list<
                                     TTypeBase,
-                                    typename term<TTypeBase, typename ExpressionType::term_type>::type,
-                                    nil::marshalling::option::sequence_size_field_prefix<
-                                        nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                                    typename term<TTypeBase, typename ExpressionType::term_type>::type
                                 >,
                                 // std::vector<flat_pow_operation> pow_operations
-                                nil::marshalling::types::array_list<
+                                nil::marshalling::types::standard_array_list<
                                     TTypeBase,
-                                    typename flat_pow_operation<TTypeBase>::type,
-                                    nil::marshalling::option::sequence_size_field_prefix<
-                                        nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                                    typename flat_pow_operation<TTypeBase>::type
                                 >,
                                 // std::vector<flat_binary_arithmetic_operation> binary_operations
-                                nil::marshalling::types::array_list<
+                                nil::marshalling::types::standard_array_list<
                                     TTypeBase,
-                                    typename flat_binary_arithmetic_operation<TTypeBase>::type,
-                                    nil::marshalling::option::sequence_size_field_prefix<
-                                        nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                                    typename flat_binary_arithmetic_operation<TTypeBase>::type
                                 >,
                                 // flat_node_type root_type;
                                 nil::marshalling::types::integral<TTypeBase, std::uint8_t>,
@@ -152,37 +146,26 @@ namespace nil {
                     const auto& flat_expr = flattener.get_result();
 
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
-                    using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
                     // Fill the terms.
-                    using term_marshalling_type =
-                        typename term<TTypeBase, typename ExpressionType::term_type>::type;
-                    using term_vector_marshalling_type = nil::marshalling::types::array_list<
-                        TTypeBase, term_marshalling_type,
-                        nil::marshalling::option::sequence_size_field_prefix<size_t_marshalling_type>>;
-                    term_vector_marshalling_type filled_terms;
+                    nil::marshalling::types::standard_array_list<TTypeBase,
+                        typename term<TTypeBase, typename ExpressionType::term_type>::type> filled_terms;
                     for (const auto &term : flat_expr.terms) {
                         filled_terms.value().push_back(
                             fill_term<Endianness, typename ExpressionType::term_type>(term));
                     }
 
                     // Fill the power operations.
-                    using pow_operation_type = typename flat_pow_operation<TTypeBase>::type;
-                    using pow_vector_marshalling_type = nil::marshalling::types::array_list<
-                        TTypeBase, pow_operation_type, nil::marshalling::option::sequence_size_field_prefix<
-                                        size_t_marshalling_type>>;
-                    pow_vector_marshalling_type filled_powers;
+                    nil::marshalling::types::standard_array_list<TTypeBase,
+                        typename flat_pow_operation<TTypeBase>::type> filled_powers;
                     for (const auto &power : flat_expr.pow_operations) {
                         filled_powers.value().push_back(fill_power_operation<Endianness>(power));
                     }
 
                     // Fill the binary operations.
-                    using binary_operation_type = typename flat_binary_arithmetic_operation<TTypeBase>::type;
-                    using binary_operation_vector_marshalling_type = nil::marshalling::types::array_list<
-                        TTypeBase, binary_operation_type,
-                        nil::marshalling::option::sequence_size_field_prefix<size_t_marshalling_type>>;
-                    binary_operation_vector_marshalling_type filled_binary_opeations;
+                    nil::marshalling::types::standard_array_list<TTypeBase,
+                        typename flat_binary_arithmetic_operation<TTypeBase>::type> filled_binary_operations;
                     for (const auto &bin_op : flat_expr.binary_operations) {
-                        filled_binary_opeations.value().push_back(
+                        filled_binary_operations.value().push_back(
                             fill_binary_operation<Endianness>(bin_op));
                     }
 
@@ -190,7 +173,7 @@ namespace nil {
                         std::make_tuple(
                             filled_terms,
                             filled_powers,
-                            filled_binary_opeations,
+                            filled_binary_operations,
                             nil::marshalling::types::integral<TTypeBase, std::uint8_t>((std::uint8_t)flat_expr.root_type),
                             nil::marshalling::types::integral<TTypeBase, std::uint32_t>(flat_expr.root_index)));
 

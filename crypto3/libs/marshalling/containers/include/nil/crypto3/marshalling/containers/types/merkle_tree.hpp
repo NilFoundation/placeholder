@@ -49,11 +49,9 @@ namespace nil {
         namespace marshalling {
             namespace types {
                 template<typename TTypeBase, typename MerkleTree>
-                using merkle_tree = nil::marshalling::types::array_list<
+                using merkle_tree = nil::marshalling::types::standard_array_list<
                     TTypeBase,
-                    typename merkle_node_value<TTypeBase, MerkleTree>::type,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    typename merkle_node_value<TTypeBase, MerkleTree>::type>;
 
                 template<typename MerkleTree, typename Endianness>
                 merkle_tree<nil::marshalling::field_type<Endianness>, MerkleTree>

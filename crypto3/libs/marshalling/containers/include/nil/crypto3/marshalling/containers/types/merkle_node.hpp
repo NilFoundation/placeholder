@@ -59,11 +59,8 @@ namespace nil {
                     typename std::enable_if<std::is_same<
                         std::uint8_t,
                         typename std::iterator_traits<typename ValueType::iterator>::value_type>::value>::type> {
-                    using type = nil::marshalling::types::array_list<
-                        TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, std::uint8_t>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::uint64_t>>>;
+                    using type = nil::marshalling::types::standard_array_list<
+                        TTypeBase, nil::marshalling::types::integral<TTypeBase, uint8_t>>;
                 };
 
                 // For Poseidon, Merkle node will contain a Group Element, not a vector of bytes.
