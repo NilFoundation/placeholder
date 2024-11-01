@@ -82,9 +82,9 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename NonLinearTerm>
-                    NonLinearTerm
-                    make_term(const typename term<nil::marshalling::field_type<Endianness>,
-                                                                        NonLinearTerm>::type &filled_term) {
+                NonLinearTerm make_term(
+                    const typename term<nil::marshalling::field_type<Endianness>, NonLinearTerm>::type &filled_term)
+                {
                     std::vector<typename NonLinearTerm::variable_type> vars;
                     auto coeff = std::get<0>(filled_term.value()).value();
                     vars.reserve(std::get<1>(filled_term.value()).value().size());

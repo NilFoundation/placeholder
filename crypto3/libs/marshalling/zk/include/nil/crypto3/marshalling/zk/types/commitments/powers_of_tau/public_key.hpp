@@ -84,8 +84,8 @@ namespace nil {
 
                 template<typename PublicKey, typename Endianness>
                 PublicKey make_powers_of_tau_public_key(
-                    const powers_of_tau_public_key<nil::marshalling::field_type<Endianness>, PublicKey>
-                        &filled_public_key) {
+                    const powers_of_tau_public_key<nil::marshalling::field_type<Endianness>, PublicKey> &filled_public_key)
+                {
 
                     return PublicKey(
                         std::move(

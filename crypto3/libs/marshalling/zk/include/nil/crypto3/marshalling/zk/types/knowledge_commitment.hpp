@@ -83,11 +83,12 @@ namespace nil {
 
                 template<typename KnowledgeCommitment, typename Endianness>
                 typename KnowledgeCommitment::value_type
-                    make_knowledge_commitment(const knowledge_commitment<nil::marshalling::field_type<Endianness>,
-                                                                         KnowledgeCommitment> &filled_kc) {
-
-                    return typename KnowledgeCommitment::value_type(std::move(std::get<0>(filled_kc.value()).value()),
-                                                                    std::move(std::get<1>(filled_kc.value()).value()));
+                make_knowledge_commitment(
+                    const knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment> &filled_kc)
+                {
+                    return typename KnowledgeCommitment::value_type(
+                        std::move(std::get<0>(filled_kc.value()).value()),
+                        std::move(std::get<1>(filled_kc.value()).value()));
                 }
 
                 template<typename KnowledgeCommitment, typename Endianness>
@@ -119,16 +120,17 @@ namespace nil {
                     const nil::marshalling::types::standard_array_list<
                         nil::marshalling::field_type<Endianness>,
                         knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>>
-                        &filled_kc_vector) {
-
-                    std::vector<typename KnowledgeCommitment::value_type> result;
+                        &filled_kc_vector)
+                {
                     const std::vector<
                         knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>> &values =
                         filled_kc_vector.value();
                     std::size_t size = values.size();
+                    std::vector<typename KnowledgeCommitment::value_type> result;
+                    result.reserve(size);
 
                     for (std::size_t i = 0; i < size; i++) {
-                        result.push_back(make_knowledge_commitment<KnowledgeCommitment, Endianness>(values[i]));
+                        result.emplace_back(make_knowledge_commitment<KnowledgeCommitment, Endianness>(values[i]));
                     }
                     return result;
                 }

@@ -70,8 +70,7 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename PolynomialType>
-                PolynomialType
-                make_polynomial(
+                PolynomialType make_polynomial(
                     const typename polynomial<
                         nil::marshalling::field_type<Endianness>,
                         PolynomialType,
@@ -121,12 +120,12 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename PolynomialDFSType>
-                PolynomialDFSType
-                make_polynomial(const typename polynomial<
+                PolynomialDFSType make_polynomial(const typename polynomial<
                         nil::marshalling::field_type<Endianness>,
                         PolynomialDFSType,
                         std::enable_if_t<nil::crypto3::math::is_polynomial_dfs<PolynomialDFSType>::value
-                        >>::type &filled_polynomial) {
+                        >>::type &filled_polynomial)
+                {
                     auto val = nil::crypto3::marshalling::types::make_field_element_vector<
                         typename PolynomialDFSType::value_type,
                         Endianness>(std::get<1>(filled_polynomial.value()));
@@ -155,7 +154,8 @@ namespace nil {
 
                 template<typename Endianness, typename PolynomialType>
                 std::vector<PolynomialType> make_polynomial_vector(
-                        const polynomial_vector<nil::marshalling::field_type<Endianness>, PolynomialType> &filled_polynomial_vector) {
+                        const polynomial_vector<nil::marshalling::field_type<Endianness>, PolynomialType> &filled_polynomial_vector)
+                {
                     std::vector<PolynomialType> result;
                     result.reserve(filled_polynomial_vector.value().size());
                     for (std::size_t i = 0; i < filled_polynomial_vector.value().size(); i++) {

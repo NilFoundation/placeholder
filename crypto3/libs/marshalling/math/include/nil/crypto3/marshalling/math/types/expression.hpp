@@ -180,8 +180,9 @@ namespace nil {
                 }
 
                 template<typename Endianness>
-                math::flat_pow_operation
-                    make_power_operation(const typename flat_pow_operation<nil::marshalling::field_type<Endianness>>::type& filled_power_op) {
+                math::flat_pow_operation make_power_operation(
+                    const typename flat_pow_operation<nil::marshalling::field_type<Endianness>>::type& filled_power_op)
+                {
                     math::flat_pow_operation power_op;
                     power_op.power = std::get<0>(filled_power_op.value()).value();
                     power_op.type = static_cast<math::flat_node_type>(std::get<1>(filled_power_op.value()).value());
@@ -190,8 +191,9 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename ArithmeticOperatorType>
-                math::flat_binary_arithmetic_operation<ArithmeticOperatorType>
-                    make_binary_operation(const typename flat_binary_arithmetic_operation<nil::marshalling::field_type<Endianness>>::type& filled_power_op) {
+                math::flat_binary_arithmetic_operation<ArithmeticOperatorType> make_binary_operation(
+                    const typename flat_binary_arithmetic_operation<nil::marshalling::field_type<Endianness>>::type& filled_power_op)
+                {
                     math::flat_binary_arithmetic_operation<ArithmeticOperatorType> bin_op;
                     bin_op.op = static_cast<ArithmeticOperatorType>(std::get<0>(filled_power_op.value()).value());
                     bin_op.left_type = static_cast<math::flat_node_type>(std::get<1>(filled_power_op.value()).value());
@@ -203,9 +205,8 @@ namespace nil {
 
                 template<typename ExpressionType, typename Endianness>
                 ExpressionType make_expression(
-                    const typename expression<nil::marshalling::field_type<Endianness>,
-                                                          ExpressionType>::type &filled_expr) {
-
+                    const typename expression<nil::marshalling::field_type<Endianness>, ExpressionType>::type &filled_expr)
+                {
                     using ArithmeticOperatorType = typename ExpressionType::binary_arithmetic_operation_type::ArithmeticOperatorType;
                     math::flat_expression<ExpressionType> flat_expr;
 

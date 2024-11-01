@@ -438,9 +438,11 @@ namespace nil {
 
             template<typename TFieldBase, typename TElement, typename TMarshalledElement> 
             std::vector<TElement> make_standard_array_list(
-                    const standard_array_list<TFieldBase, TMarshalledElement>& filled_array,
-                    std::function<TElement(const TMarshalledElement&)> element_de_marshalling) {
+                const standard_array_list<TFieldBase, TMarshalledElement>& filled_array,
+                std::function<TElement(const TMarshalledElement&)> element_de_marshalling)
+            {
                 std::vector<TElement> result;
+                result.reserve(filled_array.value().size());
                 for (const auto& v: filled_array.value()) {
                     result.push_back(element_de_marshalling(v));
                 }
@@ -470,8 +472,11 @@ namespace nil {
                     const standard_array_list<TFieldBase, TMarshalledKey>& filled_keys,
                     const standard_array_list<TFieldBase, TMarshalledValue>& filled_values,
                     std::function<TKey(const TMarshalledKey&)> key_de_marshalling,
-                    std::function<TValue(const TMarshalledValue&)> value_de_marshalling) {
-                assert(filled_keys.value().size() == filled_values.value().size());
+                    std::function<TValue(const TMarshalledValue&)> value_de_marshalling)
+            {
+                if (filled_keys.value().size() != filled_values.value().size()) {
+                    throw std::invalid_argument("Number of values and keys do not match");;
+                }
 
                 std::map<TKey, TValue> result;
                 for (std::size_t i = 0; i < filled_keys.value().size(); ++i) {

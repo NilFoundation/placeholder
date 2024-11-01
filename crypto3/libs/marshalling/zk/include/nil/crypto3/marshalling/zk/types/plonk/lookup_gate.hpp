@@ -77,8 +77,8 @@ namespace nil {
 
                 template<typename Endianness, typename PlonkGate>
                 PlonkGate make_plonk_lookup_gate(
-                    const plonk_lookup_gate<nil::marshalling::field_type<Endianness>, PlonkGate> &filled_gate) {
-
+                    const plonk_lookup_gate<nil::marshalling::field_type<Endianness>, PlonkGate> &filled_gate)
+                {
                     std::size_t selector_index = std::get<0>(filled_gate.value()).value();
                     std::vector<typename PlonkGate::constraint_type> constraints;
 
@@ -113,8 +113,10 @@ namespace nil {
 
                 template<typename Endianness, typename PlonkGate>
                 std::vector<PlonkGate> make_plonk_lookup_gates(
-                    const plonk_lookup_gates<nil::marshalling::field_type<Endianness>, PlonkGate> &filled_gates) {
+                    const plonk_lookup_gates<nil::marshalling::field_type<Endianness>, PlonkGate> &filled_gates)
+                {
                     std::vector<PlonkGate> gates;
+                    gates.reserve(filled_gates.value().size());
                     for (std::size_t i = 0; i < filled_gates.value().size(); i++) {
                         gates.emplace_back(make_plonk_lookup_gate<Endianness, PlonkGate>(filled_gates.value().at(i)));
                     }

@@ -146,12 +146,27 @@ namespace nil {
                     >::type const& filled_commitment_preprocessed_data
                 ) {
                     typename LPCScheme::preprocessed_data_type result;
-                    for(std::size_t i = 0; i < std::get<0>(filled_commitment_preprocessed_data.value()).value().size(); i++){
-                        std::size_t k = std::get<0>(filled_commitment_preprocessed_data.value()).value()[i].value();
-                        std::size_t size = std::get<1>(filled_commitment_preprocessed_data.value()).value()[i].value();
+                    auto const& vector_map    = std::get<0>(filled_commitment_preprocessed_data.value()).value();
+                    auto const& vector_sizes  = std::get<1>(filled_commitment_preprocessed_data.value()).value();
+                    auto const& vector_values = std::get<2>(filled_commitment_preprocessed_data.value()).value();
+                    if (vector_map.size() != vector_sizes.size()) {
+                        throw std::invalid_argument("Map size does not equal vector sizes");
+                    }
+                    std::size_t total_size = 0;
+                    for(auto const& size: vector_sizes) {
+                        total_size += size.value();
+                    }
+                    if (vector_values.size() != total_size) {
+                        throw std::invalid_argument("Map size does not equal vector sizes");
+                    }
+
+                    for (std::size_t i = 0; i < vector_map.size(); i++) {
+                        std::size_t k = vector_map[i].value();
+                        std::size_t size = vector_sizes[i].value();
                         std::vector<typename LPCScheme::field_type::value_type> v;
-                        for(std::size_t j = 0; j < size; j++){
-                            v.push_back(std::get<2>(filled_commitment_preprocessed_data.value()).value()[i*size + j].value());
+                        v.reserve(size);
+                        for (std::size_t j = 0; j < size; j++){
+                            v.emplace_back(vector_values[i*size + j].value());
                         }
                         result[k] = v;
                     }
@@ -406,8 +421,8 @@ namespace nil {
                 template <typename Endianness, typename LPCScheme>
                 typename LPCScheme::fri_proof_type
                 make_initial_fri_proof(
-                    const initial_fri_proof_type<nil::marshalling::field_type<Endianness>, LPCScheme> &filled_proof
-                ) {
+                    const initial_fri_proof_type<nil::marshalling::field_type<Endianness>, LPCScheme> &filled_proof)
+                {
                     typename LPCScheme::fri_proof_type proof;
 
                     proof.fri_round_proof = make_round_proofs_batch<
@@ -454,8 +469,8 @@ namespace nil {
                 template<typename Endianness, typename LPCScheme>
                 typename LPCScheme::lpc_proof_type
                 make_initial_eval_proof(
-                    const inital_eval_proof<nil::marshalling::field_type<Endianness>, LPCScheme> &filled_proof
-                ) {
+                    const inital_eval_proof<nil::marshalling::field_type<Endianness>, LPCScheme> &filled_proof)
+                {
                     typename LPCScheme::lpc_proof_type proof;
 
                     proof.z = make_eval_storage<Endianness, typename LPCScheme::eval_storage_type>(

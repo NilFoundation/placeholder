@@ -96,9 +96,8 @@ namespace nil {
 
                 template<typename Endianness, typename Proof>
                 typename Proof::partial_proof_type make_placeholder_partial_evaluation_proof(
-                    const placeholder_partial_evaluation_proof<
-                        nil::marshalling::field_type<Endianness>, Proof> &filled_proof
-                ) {
+                    const placeholder_partial_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                {
                     typename Proof::partial_proof_type partial_proof;
 
                     // batch size integers
@@ -151,8 +150,8 @@ namespace nil {
 
                 template<typename Endianness, typename Proof>
                 typename Proof::evaluation_proof make_placeholder_evaluation_proof(
-                    const placeholder_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof) {
-
+                    const placeholder_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                {
                     typename Proof::evaluation_proof proof;
 
                     // typename FieldType::value_type challenge
@@ -207,7 +206,9 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename Proof>
-                Proof make_placeholder_proof( const placeholder_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof) {
+                Proof make_placeholder_proof(
+                    const placeholder_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                {
                     Proof proof;
 
                     // evaluation_proof eval_proof
@@ -215,12 +216,18 @@ namespace nil {
                         make_placeholder_evaluation_proof<Endianness, Proof>(std::get<1>(filled_proof.value()));
 
                     auto batch_info = proof.eval_proof.eval_proof.z.get_batch_info();
+                    auto const& commitments = std::get<0>(filled_proof.value()).value();
 
                     std::size_t cur = 0;
-                    for( const auto &it:batch_info ){
-                        if( it.first == Proof::FIXED_VALUES_BATCH ) continue;
+                    for (const auto &it: batch_info ) {
+                        if (it.first == Proof::FIXED_VALUES_BATCH) continue;
+
+                        if (cur >= commitments.size()) {
+                            throw std::invalid_argument("Not enough values for commitments");
+                        }
+
                         proof.commitments[it.first] = make_commitment<Endianness, typename Proof::commitment_scheme_type>(
-                            std::get<0>(filled_proof.value()).value()[cur++]
+                            commitments[cur++]
                         );
                     }
 
@@ -267,12 +274,13 @@ namespace nil {
 
                 template<typename Endianness, typename AggregatedProof, typename Proof>
                 AggregatedProof make_placeholder_aggregated_proof(
-                    const placeholder_aggregated_proof_type<nil::marshalling::field_type<Endianness>, Proof> &filled_proof) {
+                    const placeholder_aggregated_proof_type<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                {
                     AggregatedProof proof;
 
                     // std::vector<placeholder_partial_proof<FieldType, ParamsType>> partial_proofs;
                     auto filled_partial_proofs = std::get<0>(filled_proof.value()).value();
-                    for( const auto &it:filled_partial_proofs){
+                    for (const auto &it: filled_partial_proofs) {
                         proof.partial_proofs.push_back(
                             make_placeholder_partial_evaluation_proof<Endianness, Proof>(it)
                         );

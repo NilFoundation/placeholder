@@ -169,11 +169,16 @@ namespace nil {
                         std::is_same<std::uint8_t,
                                      typename std::iterator_traits<typename ValueType::iterator>::value_type>::value,
                         bool>::type = true>
-                ValueType
-                    make_merkle_node_value(const typename merkle_node_value<nil::marshalling::field_type<Endianness>,
-                                                                            ValueType>::type &filled_node_value) {
+                ValueType make_merkle_node_value(
+                    const typename merkle_node_value<nil::marshalling::field_type<Endianness>, ValueType>::type &filled_node_value)
+                {
                     ValueType node_value;
-                    BOOST_ASSERT(node_value.size() == filled_node_value.value().size());
+                    if (node_value.size() != filled_node_value.value().size()) {
+                        throw std::invalid_argument(
+                                std::string("Invalid number of elements for merkle tree nodes. Expected: ") +
+                                std::to_string(node_value.size()) + " got: " +
+                                std::to_string(filled_node_value.value().size()));
+                    }
                     for (std::size_t i = 0; i < filled_node_value.value().size(); ++i) {
                         node_value.at(i) = filled_node_value.value().at(i).value();
                     }
@@ -187,7 +192,8 @@ namespace nil {
                         GroupElementType
                     >::value, bool>::type = true>
                 GroupElementType make_merkle_node_value(const typename merkle_node_value<
-                    nil::marshalling::field_type<Endianness>, GroupElementType>::type &filled_node_value) {
+                    nil::marshalling::field_type<Endianness>, GroupElementType>::type &filled_node_value)
+                {
                     return filled_node_value.value();
                 }
 
@@ -198,11 +204,12 @@ namespace nil {
                                           nil::crypto3::containers::merkle_proof<typename MerkleProof::hash_type,
                                                                                  MerkleProof::arity>>::value,
                              bool>::type = true>
-                typename MerkleProof::value_type
-                    make_merkle_node_value(const typename merkle_node_value<nil::marshalling::field_type<Endianness>,
-                                                                            MerkleProof>::type &filled_node_value) {
+                typename MerkleProof::value_type make_merkle_node_value(
+                        const typename merkle_node_value<nil::marshalling::field_type<Endianness>, MerkleProof>::type &filled_node_value)
+                {
                     return make_merkle_node_value<typename MerkleProof::value_type, Endianness>(filled_node_value);
                 }
+
                 template<typename MerkleTree,
                          typename Endianness,
                          typename std::enable_if<
@@ -211,9 +218,9 @@ namespace nil {
                                 nil::crypto3::containers::merkle_tree<typename MerkleTree::hash_type,
                                                                       MerkleTree::arity>>::value,
                              bool>::type = true>
-                typename MerkleTree::value_type
-                    make_merkle_node_value(const typename merkle_node_value<nil::marshalling::field_type<Endianness>,
-                                                                            MerkleTree>::type &filled_node_value) {
+                typename MerkleTree::value_type make_merkle_node_value(
+                    const typename merkle_node_value<nil::marshalling::field_type<Endianness>, MerkleTree>::type &filled_node_value)
+                {
                     return make_merkle_node_value<typename MerkleTree::value_type, Endianness>(filled_node_value);
                 }
 

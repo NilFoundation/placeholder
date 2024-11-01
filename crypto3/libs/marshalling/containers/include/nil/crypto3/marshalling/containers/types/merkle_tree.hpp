@@ -68,8 +68,9 @@ namespace nil {
                 }
 
                 template<typename MerkleTree, typename Endianness>
-                MerkleTree make_merkle_tree(const merkle_tree<
-                        nil::marshalling::field_type<Endianness>, MerkleTree> &filled_merkle_tree) {
+                MerkleTree make_merkle_tree(
+                    const merkle_tree<nil::marshalling::field_type<Endianness>, MerkleTree> &filled_merkle_tree)
+                {
                     typename MerkleTree::container_type hashes;
                     for (std::size_t i = 0; i < filled_merkle_tree.value().size(); ++i) {
                         hashes.push_back(

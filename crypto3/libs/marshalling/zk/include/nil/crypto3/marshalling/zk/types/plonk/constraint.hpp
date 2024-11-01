@@ -55,8 +55,8 @@ namespace nil {
 
                 template<typename Endianness, typename PlonkConstraint>
                 PlonkConstraint make_plonk_constraint(
-                    const plonk_constraint<nil::marshalling::field_type<Endianness>, PlonkConstraint> &filled_constr
-                ) {
+                    const plonk_constraint<nil::marshalling::field_type<Endianness>, PlonkConstraint> &filled_constr)
+                {
                     return make_expression<typename PlonkConstraint::base_type, Endianness>(filled_constr);
                 }
 
@@ -82,7 +82,8 @@ namespace nil {
 
                 template<typename Endianness, typename Constraint>
                 std::vector<Constraint>
-                make_plonk_constraints(const plonk_constraints<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraints){
+                make_plonk_constraints(const plonk_constraints<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraints)
+                {
                     std::vector<Constraint> constraints;
                     for (std::size_t i = 0; i < filled_constraints.value().size(); i++) {
                         constraints.emplace_back(make_plonk_constraint<Endianness, Constraint>(filled_constraints.value().at(i)));

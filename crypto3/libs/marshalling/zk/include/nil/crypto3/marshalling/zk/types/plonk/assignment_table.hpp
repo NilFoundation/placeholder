@@ -161,7 +161,8 @@ namespace nil {
                 }
 
                 template<typename FieldValueType, typename Endianness>
-                std::vector<std::vector<FieldValueType>> make_field_element_columns_vector(
+                std::vector<std::vector<FieldValueType>>
+                make_field_element_columns_vector(
                     const nil::marshalling::types::standard_array_list<
                         nil::marshalling::field_type<Endianness>,
                         field_element<nil::marshalling::field_type<Endianness>, FieldValueType>>
@@ -169,9 +170,16 @@ namespace nil {
                     const std::size_t columns_amount,
                     const std::size_t rows_amount) {
 
+                    if (field_elem_vector.value().size() != columns_amount * rows_amount) {
+                        throw std::invalid_argument(
+                                "Size of vector does not match the expected data size. Expected: " +
+                                std::to_string(columns_amount * rows_amount) + " got " +
+                                std::to_string(field_elem_vector.value().size()));
+                    }
+
                     std::vector<std::vector<FieldValueType>> result(
                         columns_amount, std::vector<FieldValueType>(rows_amount));
-                    BOOST_ASSERT(field_elem_vector.value().size() == columns_amount * rows_amount);
+
                     std::size_t cur = 0;
                     for (std::size_t i = 0; i < columns_amount; i++) {
                         for (std::size_t j = 0; j < rows_amount; j++, cur++) {
@@ -234,7 +242,7 @@ namespace nil {
                         std::get<5>(filled_assignments.value()).value()
                     );
 
-                    if ( desc.usable_rows_amount >= desc.rows_amount )
+                    if (desc.usable_rows_amount >= desc.rows_amount)
                         throw std::invalid_argument(
                             "Rows amount should be greater than usable rows amount. Rows amount = " +
                             std::to_string(desc.rows_amount) +
@@ -246,18 +254,21 @@ namespace nil {
                             desc.witness_columns,
                             desc.rows_amount
                         );
+
                     std::vector<std::vector<value_type>> public_inputs =
                         make_field_element_columns_vector<value_type, Endianness>(
                             std::get<7>(filled_assignments.value()),
                             desc.public_input_columns,
                             desc.rows_amount
                         );
+
                     std::vector<std::vector<value_type>> constants =
                         make_field_element_columns_vector<value_type, Endianness>(
                             std::get<8>(filled_assignments.value()),
                             desc.constant_columns,
                             desc.rows_amount
                         );
+
                     std::vector<std::vector<value_type>> selectors =
                         make_field_element_columns_vector<value_type, Endianness>(
                             std::get<9>(filled_assignments.value()),
@@ -265,14 +276,15 @@ namespace nil {
                             desc.rows_amount
                         );
 
+
                     using private_table = typename PlonkTable::private_table_type;
                     using public_table = typename PlonkTable::public_table_type;
 
                     return std::make_pair(desc, PlonkTable(
                         std::make_shared<private_table>(std::move(witnesses)),
                         std::make_shared<public_table>(
-                            std::move(public_inputs), 
-                            std::move(constants), 
+                            std::move(public_inputs),
+                            std::move(constants),
                             std::move(selectors)
                         )
                     ));

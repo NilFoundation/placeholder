@@ -89,9 +89,11 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename PreprocessedPublicDataType>
-                PreprocessedPublicDataType make_placeholder_preprocessed_public_data(const
-                    placeholder_preprocessed_public_data<nil::marshalling::field_type<Endianness>, PreprocessedPublicDataType> &filled_preprocessed_public_data
-                ) {
+                PreprocessedPublicDataType make_placeholder_preprocessed_public_data(
+                    const placeholder_preprocessed_public_data<
+                        nil::marshalling::field_type<Endianness>,
+                        PreprocessedPublicDataType> &filled_preprocessed_public_data)
+                {
                     using TTypeBase = typename nil::marshalling::field_type<Endianness>;
                     using PolynomialDFSType = typename PreprocessedPublicDataType::polynomial_dfs_type;
 

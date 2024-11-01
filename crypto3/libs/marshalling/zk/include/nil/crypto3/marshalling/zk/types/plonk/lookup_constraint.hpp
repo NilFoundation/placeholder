@@ -64,7 +64,9 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename Constraint>
-                Constraint make_plonk_lookup_constraint(const plonk_lookup_constraint<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraint){
+                Constraint make_plonk_lookup_constraint(
+                    const plonk_lookup_constraint<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraint)
+                {
                     return Constraint({
                         std::get<0>(filled_constraint.value()).value(),
                         make_plonk_constraints<Endianness, typename Constraint::constraint_type>(std::get<1>(filled_constraint.value()))
@@ -92,9 +94,11 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename Constraint>
-                std::vector<Constraint>
-                make_plonk_lookup_constraints(const plonk_lookup_constraints<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraints){
+                std::vector<Constraint> make_plonk_lookup_constraints(
+                    const plonk_lookup_constraints<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraints)
+                {
                     std::vector<Constraint> constraints;
+                    constraints.reserve(filled_constraints.value().size());
                     for (std::size_t i = 0; i < filled_constraints.value().size(); i++) {
                         constraints.emplace_back(make_plonk_lookup_constraint<Endianness, Constraint>(filled_constraints.value().at(i)));
                     }
