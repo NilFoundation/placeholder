@@ -60,17 +60,14 @@ namespace nil {
                     typename... TOptions>
                 using sparse_vector = nil::marshalling::types::bundle<
                     TTypeBase,
-                    std::tuple<nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
-                               nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   curve_element<TTypeBase, typename SparseVector::group_type>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
-                               nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    std::tuple<
+                        nil::marshalling::types::standard_size_t_array_list<TTypeBase>,
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            curve_element<TTypeBase, typename SparseVector::group_type>>,
+                        nil::marshalling::types::integral<TTypeBase, std::size_t>
+                    >
+                >;
 
                 template<typename TTypeBase,
                          typename KCSparseVector,
@@ -81,17 +78,14 @@ namespace nil {
                          typename... TOptions>
                 using knowledge_commitment_sparse_vector = nil::marshalling::types::bundle<
                     TTypeBase,
-                    std::tuple<nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
-                               nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   knowledge_commitment<TTypeBase, typename KCSparseVector::group_type>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
-                               nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    std::tuple<
+                        nil::marshalling::types::standard_size_t_array_list<TTypeBase>,
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            knowledge_commitment<TTypeBase, typename KCSparseVector::group_type>>,
+                        nil::marshalling::types::integral<TTypeBase, std::size_t>
+                    >
+                >;
 
                 template<typename TTypeBase,
                          typename KCSparseVector,
@@ -102,17 +96,14 @@ namespace nil {
                          typename... TOptions>
                 using fast_knowledge_commitment_sparse_vector = nil::marshalling::types::bundle<
                     TTypeBase,
-                    std::tuple<nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
-                               nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   fast_knowledge_commitment<TTypeBase, typename KCSparseVector::group_type>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
-                               nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    std::tuple<
+                        nil::marshalling::types::standard_size_t_array_list<TTypeBase>,
+                        nil::marshalling::types::standard_array_list<
+                            TTypeBase,
+                            fast_knowledge_commitment<TTypeBase, typename KCSparseVector::group_type>>,
+                        nil::marshalling::types::integral<TTypeBase, std::size_t>
+                    >
+                >;
 
                 template<typename SparseVector, typename Endianness>
                 sparse_vector<nil::marshalling::field_type<Endianness>, SparseVector>
@@ -121,10 +112,7 @@ namespace nil {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
 
                     using integral_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
-                    using integral_vector_type = nil::marshalling::types::array_list<
-                        TTypeBase,
-                        integral_type,
-                        nil::marshalling::option::sequence_size_field_prefix<integral_type>>;
+                    using integral_vector_type = nil::marshalling::types::standard_size_t_array_list<TTypeBase>;
 
                     integral_vector_type filled_indices;
 
@@ -173,10 +161,7 @@ namespace nil {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
 
                     using integral_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
-                    using integral_vector_type = nil::marshalling::types::array_list<
-                        TTypeBase,
-                        integral_type,
-                        nil::marshalling::option::sequence_size_field_prefix<integral_type>>;
+                    using integral_vector_type = nil::marshalling::types::standard_size_t_array_list<TTypeBase>;
 
                     integral_vector_type filled_indices;
 
@@ -228,11 +213,8 @@ namespace nil {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
 
                     using integral_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
-                    using integral_vector_type = nil::marshalling::types::array_list<
-                        TTypeBase,
-                        integral_type,
-                        nil::marshalling::option::sequence_size_field_prefix<integral_type>>;
-
+                    using integral_vector_type = nil::marshalling::types::standard_size_t_array_list<TTypeBase>;
+                    
                     integral_vector_type filled_indices;
 
                     std::vector<integral_type> &filled_indices_val = filled_indices.value();

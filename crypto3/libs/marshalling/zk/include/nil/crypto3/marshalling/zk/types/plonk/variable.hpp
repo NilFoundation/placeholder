@@ -91,10 +91,9 @@ namespace nil {
 
                 //****************** vector of plonk_variable *************************/
                 template<typename TTypeBase, typename VariableType>
-                using variables = nil::marshalling::types::array_list<
+                using variables = nil::marshalling::types::standard_array_list<
                     TTypeBase, 
-                    typename variable<TTypeBase, VariableType>::type,
-                    nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                    typename variable<TTypeBase, VariableType>::type
                 >;
 
                 template<typename Endianness, typename Variable>

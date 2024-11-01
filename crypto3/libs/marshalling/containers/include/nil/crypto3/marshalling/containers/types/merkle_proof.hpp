@@ -63,23 +63,18 @@ namespace nil {
 
                 template<typename TTypeBase, typename MerkleProof, typename = void>
                 struct merkle_proof_layer {
-                    using type = nil::marshalling::types::array_list<
+                    using type = nil::marshalling::types::standard_array_list<
                         TTypeBase,
                         // path_element_t
-                        typename merkle_proof_path_element<TTypeBase, MerkleProof>::type,
-                        // layer
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::uint64_t>>>;
+                        typename merkle_proof_path_element<TTypeBase, MerkleProof>::type>;
                 };
 
                 template<typename TTypeBase, typename MerkleProof, typename = void>
                 struct merkle_proof_path {
-                    using type = nil::marshalling::types::array_list<
+                    using type = nil::marshalling::types::standard_array_list<
                         TTypeBase,
                         // layer path
-                        typename merkle_proof_layer<TTypeBase, MerkleProof>::type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::uint64_t>>>;
+                        typename merkle_proof_layer<TTypeBase, MerkleProof>::type>;
                 };
 
                 template<typename TTypeBase,

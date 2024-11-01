@@ -83,9 +83,9 @@ void test_round_trip_fixed_size_container_fixed_precision_big_endian(
     using unit_type = OutputType;
     using integral_type = types::integral<nil::marshalling::field_type<nil::marshalling::option::big_endian>, T>;
 
-    using container_type =
-        nil::marshalling::types::array_list<nil::marshalling::field_type<nil::marshalling::option::little_endian>,
-                                            integral_type, nil::marshalling::option::fixed_size_storage<TSize>>;
+    using container_type = nil::marshalling::types::standard_array_list<
+        nil::marshalling::field_type<nil::marshalling::option::little_endian>,
+        integral_type>;
 
     std::size_t unitblob_size =
         integral_type::bit_length() / units_bits + ((integral_type::bit_length() % units_bits) ? 1 : 0);
@@ -125,9 +125,9 @@ void test_round_trip_fixed_size_container_fixed_precision_little_endian(
     using unit_type = OutputType;
     using integral_type = types::integral<nil::marshalling::field_type<nil::marshalling::option::little_endian>, T>;
 
-    using container_type =
-        nil::marshalling::types::array_list<nil::marshalling::field_type<nil::marshalling::option::little_endian>,
-                                            integral_type, nil::marshalling::option::fixed_size_storage<TSize>>;
+    using container_type = nil::marshalling::types::standard_array_list<
+        nil::marshalling::field_type<nil::marshalling::option::little_endian>,
+        integral_type>;
 
     std::size_t unitblob_size =
         integral_type::bit_length() / units_bits + ((integral_type::bit_length() % units_bits) ? 1 : 0);

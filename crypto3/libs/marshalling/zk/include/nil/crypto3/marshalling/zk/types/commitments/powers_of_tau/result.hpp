@@ -72,35 +72,25 @@ namespace nil {
                         // beta_g2
                         fast_curve_element<TTypeBase, typename Result::curve_type::template g2_type<>>,
                         // coeffs_g1
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
+                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>>,
                         // coeffs_g2
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            fast_curve_element<TTypeBase, typename Result::curve_type::template g2_type<>>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
+                            fast_curve_element<TTypeBase, typename Result::curve_type::template g2_type<>>>,
                         // alpha_coeffs_g1
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
+                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>>,
                         // beta_coeffs_g1
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>>,
+                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>>,
                         // h
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>>
+                            fast_curve_element<TTypeBase, typename Result::curve_type::template g1_type<>>>
                     >>;
 
                 template<typename Result, typename Endianness>
