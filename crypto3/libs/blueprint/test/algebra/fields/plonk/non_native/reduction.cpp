@@ -90,19 +90,15 @@ void test_reduction(std::vector<typename BlueprintFieldType::value_type> public_
         component_instance, desc, public_input, result_check, instance_input);
 }
 
-using extended_integral_type = boost::multiprecision::number<
-    boost::multiprecision::backends::cpp_int_modular_backend<513> >;
-
-constexpr static const extended_integral_type ed25519_scalar_modulus =
-    0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular512;
-constexpr static const extended_integral_type one = 1;
-constexpr static const extended_integral_type max512 = (one << 512) - 1;
+constexpr static const crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type ed25519_scalar_modulus = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular512;
+constexpr static const crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type one = 1;
+constexpr static const crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type max512 = (one<<512)-1;
 
 template<typename FieldType>
-std::vector<typename FieldType::value_type> vector_from_extended_integral(extended_integral_type input) {
+std::vector<typename FieldType::value_type> vector_from_extended_integral(typename crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type input) {
     std::vector<typename FieldType::value_type> pub_inp;
     for (std::size_t i = 0; i < 8; i++) {
-        extended_integral_type mask = 0xffffffffffffffff_cppui_modular512;
+        typename crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type mask = 0xffffffffffffffff_cppui_modular512;
         typename FieldType::value_type current = typename FieldType::value_type((input >> (64*i)) & mask);
         pub_inp.push_back(current);
     }
@@ -110,7 +106,7 @@ std::vector<typename FieldType::value_type> vector_from_extended_integral(extend
 }
 
 template<typename FieldType>
-void test_reduction_input_expended_integral_calculate_expected(extended_integral_type input) {
+void test_reduction_input_expended_integral_calculate_expected(typename crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type input) {
     assert(input <= max512);
     test_reduction<FieldType>(vector_from_extended_integral<FieldType>(input), typename FieldType::value_type(input % ed25519_scalar_modulus));
 }
@@ -132,7 +128,7 @@ BOOST_AUTO_TEST_CASE(blueprint_variable_base_decomposition_edward25519) {
     test_reduction_input_expended_integral_calculate_expected<BlueprintFieldType>(ed25519_scalar_modulus - 1);
     test_reduction_input_expended_integral_calculate_expected<BlueprintFieldType>(ed25519_scalar_modulus << 256);
     test_reduction_input_expended_integral_calculate_expected<BlueprintFieldType>(
-        max512 - extended_integral_type(
+        max512 - crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type(
             0x399411b7c309a3dceec73d217f5be65d00e1ba768859347a40611e3449c0f00_cppui_modular512));
 }
 

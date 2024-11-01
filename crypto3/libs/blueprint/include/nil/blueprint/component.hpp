@@ -29,6 +29,7 @@
 #include <string>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/constraint_satisfaction_problems/r1cs.hpp>
 #include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/assert.hpp>
 
@@ -122,6 +123,19 @@ namespace nil {
                 }
             };
 
+            template<typename BlueprintFieldType>
+            class r1cs_component:
+                public component<crypto3::zk::snark::r1cs_constraint_system<BlueprintFieldType>> {
+            protected:
+                typedef crypto3::zk::snark::r1cs_constraint_system<BlueprintFieldType>
+                    ArithmetizationType;
+
+                blueprint<ArithmetizationType> &bp;
+
+            public:
+                r1cs_component(blueprint<ArithmetizationType> &bp) : bp(bp) {
+                }
+            };
         }    // namespace components
     }        // namespace blueprint
 }    // namespace nil

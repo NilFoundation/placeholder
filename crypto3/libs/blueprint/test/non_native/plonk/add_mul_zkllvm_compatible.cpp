@@ -88,9 +88,7 @@ void test_mul(typename CurveType::base_field_type::value_type b_val,
     typename component_type::input_type instance_input = {
         {input_var_Xa, input_var_Xb}, b};
 
-    typename Ed25519Type::scalar_field_type::value_type b_val_scalar { foreign_integral_type(b_val.data) };
-    typename Ed25519Type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type P =
-        T * b_val_scalar;
+    typename Ed25519Type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type P = T * b_val;
 
     foreign_integral_type Tx = foreign_integral_type(T.X.data);
     foreign_integral_type Ty = foreign_integral_type(T.Y.data);
@@ -161,7 +159,6 @@ void test_mul_per_bit(){
     using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
     using AssignmentType = blueprint::assignment<ArithmetizationType>;
     using hash_type = crypto3::hashes::keccak_1600<256>;
-    using foreign_integral_type = typename ed25519_type::base_field_type::integral_type;
     constexpr std::size_t Lambda = 1;
 
     using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
@@ -197,8 +194,7 @@ void test_mul_per_bit(){
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type R = crypto3::algebra::random_element<ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>>();
     typename BlueprintFieldType::value_type b_val = 1;
 
-    typename ed25519_type::scalar_field_type::value_type b_val_scalar { foreign_integral_type(b_val.data) };
-    ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type bool_res = T * b_val_scalar;
+    ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type bool_res = T * b_val;
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type doub_res = R + R;
     ed25519_type::template g1_type<crypto3::algebra::curves::coordinates::affine>::value_type P = bool_res + doub_res;
 

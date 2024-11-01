@@ -84,7 +84,6 @@ namespace nil {
                         res = R;
                     };
             };
-
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil

@@ -163,26 +163,6 @@ namespace nil {
 
             template<typename BlueprintFieldType>
             typename plonk_native_addition<BlueprintFieldType>::result_type
-                generate_assignments_(
-                    const plonk_native_addition<BlueprintFieldType> &component,
-                    nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>
-                        &assignment,
-                    const typename plonk_native_addition<BlueprintFieldType>::input_type
-                        instance_input,
-                    const std::uint32_t start_row_index) {
-
-                const std::size_t j = start_row_index;
-
-                assignment.witness(component.W(0), j) = var_value(assignment, instance_input.x);
-                assignment.witness(component.W(1), j) = var_value(assignment, instance_input.y);
-                assignment.witness(component.W(2), j) =
-                    var_value(assignment, instance_input.x) + var_value(assignment, instance_input.y);
-                return typename plonk_native_addition<BlueprintFieldType>::result_type(
-                    component, start_row_index);
-            }
-
-            template<typename BlueprintFieldType>
-            typename plonk_native_addition<BlueprintFieldType>::result_type
                 generate_empty_assignments(
                     const plonk_native_addition<BlueprintFieldType> &component,
                     assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>
@@ -214,44 +194,10 @@ namespace nil {
             }
 
             template<typename BlueprintFieldType>
-            std::size_t generate_gates_(
-                const plonk_native_addition<BlueprintFieldType> &component,
-                circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-                nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignment,
-                const typename plonk_native_addition<BlueprintFieldType>::input_type
-                    &instance_input) {
-
-                using var = typename plonk_native_addition<BlueprintFieldType>::var;
-
-                auto constraint_1 = var(component.W(0), 0) + var(component.W(1), 0) - var(component.W(2), 0);
-
-                return bp.add_gate(constraint_1);
-            }
-
-            template<typename BlueprintFieldType>
             void generate_copy_constraints(
                 const plonk_native_addition<BlueprintFieldType> &component,
                 circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
                 assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>
-                    &assignment,
-                const typename plonk_native_addition<BlueprintFieldType>::input_type
-                    &instance_input,
-                const std::size_t start_row_index) {
-
-                using var = typename plonk_native_addition<BlueprintFieldType>::var;
-
-                const std::size_t j = start_row_index;
-                var component_x = var(component.W(0), static_cast<int>(j), false);
-                var component_y = var(component.W(1), static_cast<int>(j), false);
-                bp.add_copy_constraint({instance_input.x, component_x});
-                bp.add_copy_constraint({component_y, instance_input.y});
-            }
-
-            template<typename BlueprintFieldType>
-            void generate_copy_constraints_(
-                const plonk_native_addition<BlueprintFieldType> &component,
-                circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-                nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>
                     &assignment,
                 const typename plonk_native_addition<BlueprintFieldType>::input_type
                     &instance_input,
@@ -280,25 +226,6 @@ namespace nil {
                 assignment.enable_selector(selector_index, start_row_index);
 
                 generate_copy_constraints(component, bp, assignment, instance_input, start_row_index);
-
-                return typename plonk_native_addition<BlueprintFieldType>::result_type(
-                    component, start_row_index);
-            }
-
-            template<typename BlueprintFieldType>
-            typename plonk_native_addition<BlueprintFieldType>::result_type generate_circuit_(
-                const plonk_native_addition<BlueprintFieldType> &component,
-                circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-                nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignment,
-                const typename plonk_native_addition<BlueprintFieldType>::input_type
-                    &instance_input,
-                const std::size_t start_row_index) {
-
-                std::size_t selector_index = generate_gates_(component, bp, assignment, instance_input);
-
-                assignment.enable_selector(selector_index, start_row_index);
-
-                generate_copy_constraints_(component, bp, assignment, instance_input, start_row_index);
 
                 return typename plonk_native_addition<BlueprintFieldType>::result_type(
                     component, start_row_index);
