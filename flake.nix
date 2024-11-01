@@ -50,6 +50,12 @@
             runTests = false;
             enableDebug = true;
           });
+          crypto3-clang-debug-tests = (pkgs.callPackage ./crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = true;
+            enableDebug = true;
+          });
+
 
           parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3.nix {
             runTests = false;

@@ -88,11 +88,9 @@ namespace nil {
                 }
 
                 template<typename KnowledgeCommitment, typename Endianness>
-                nil::marshalling::types::array_list<
+                nil::marshalling::types::standard_array_list<
                     nil::marshalling::field_type<Endianness>,
-                    fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                    fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>>
                     fill_fast_knowledge_commitment_vector(
                         const std::vector<typename KnowledgeCommitment::value_type> &kc_vector) {
 
@@ -100,11 +98,9 @@ namespace nil {
 
                     using kc_element_type = fast_knowledge_commitment<TTypeBase, KnowledgeCommitment>;
 
-                    using kc_element_vector_type = nil::marshalling::types::array_list<
+                    using kc_element_vector_type = nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        kc_element_type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>;
+                        kc_element_type>;
 
                     kc_element_vector_type result;
 
@@ -117,11 +113,9 @@ namespace nil {
 
                 template<typename KnowledgeCommitment, typename Endianness>
                 std::vector<typename KnowledgeCommitment::value_type> make_fast_knowledge_commitment_vector(
-                    const nil::marshalling::types::array_list<
+                    const nil::marshalling::types::standard_array_list<
                         nil::marshalling::field_type<Endianness>,
-                        fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                        fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>>
                         &filled_kc_vector) {
 
                     std::vector<typename KnowledgeCommitment::value_type> result;

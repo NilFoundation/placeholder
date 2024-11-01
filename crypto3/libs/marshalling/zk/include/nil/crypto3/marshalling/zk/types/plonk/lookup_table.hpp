@@ -47,10 +47,9 @@ namespace nil {
                         nil::marshalling::types::integral<TTypeBase, std::size_t>, // tag_index
                         nil::marshalling::types::integral<TTypeBase, std::size_t>, // columns_number
 
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            typename variable<TTypeBase, typename LookupTable::variable_type>::type,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            typename variable<TTypeBase, typename LookupTable::variable_type>::type
                         >
                     >
                 >;
@@ -61,10 +60,9 @@ namespace nil {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
                     using variable_type = typename LookupTable::variable_type;
 
-                    nil::marshalling::types::array_list<
+                    nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        typename variable<TTypeBase, typename LookupTable::variable_type>::type,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        typename variable<TTypeBase, typename LookupTable::variable_type>::type
                     > filled_options;
 
                     for( std::size_t i = 0; i < table.lookup_options.size(); i++ ){
@@ -112,19 +110,16 @@ namespace nil {
 
                 template<typename TTypeBase, typename PlonkTable>
                 using plonk_lookup_tables =
-                    nil::marshalling::types::array_list<
-                        TTypeBase, plonk_lookup_table<TTypeBase, PlonkTable>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                    nil::marshalling::types::standard_array_list<
+                        TTypeBase, plonk_lookup_table<TTypeBase, PlonkTable>
                     >;
 
                 template<typename Endianness, typename PlonkTable, typename InputRange>
                 plonk_lookup_tables<nil::marshalling::field_type<Endianness>, PlonkTable>
                     fill_plonk_lookup_tables(const InputRange &tables) {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
-                    using result_type = nil::marshalling::types::array_list<
-                        TTypeBase, plonk_lookup_table<TTypeBase, PlonkTable>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    using result_type = nil::marshalling::types::standard_array_list<
+                        TTypeBase, plonk_lookup_table<TTypeBase, PlonkTable>>;
 
                     result_type filled_tables;
                     for (const auto &table : tables) {

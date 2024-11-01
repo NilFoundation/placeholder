@@ -50,11 +50,7 @@ namespace nil {
             namespace types {
                 template<typename TTypeBase>
                 using public_input_sizes_type =
-                nil::marshalling::types::array_list<
-                    TTypeBase,
-                    nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                    nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                >;
+                nil::marshalling::types::standard_size_t_array_list<TTypeBase>;
 
                 template<typename TTypeBase, typename PlonkConstraintSystem>
                 using plonk_constraint_system = nil::marshalling::types::bundle<

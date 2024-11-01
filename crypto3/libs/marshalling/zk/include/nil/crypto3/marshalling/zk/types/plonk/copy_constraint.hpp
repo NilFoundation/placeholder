@@ -54,10 +54,9 @@ namespace nil {
 
                 // *********************** Plonk copy constraints **************************** //
                 template<typename TTypeBase, typename FieldType>
-                using plonk_copy_constraints = nil::marshalling::types::array_list<
+                using plonk_copy_constraints = nil::marshalling::types::standard_array_list<
                     TTypeBase,
-                    plonk_copy_constraint<TTypeBase, FieldType>,
-                    nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                    plonk_copy_constraint<TTypeBase, FieldType>
                 >;
 
                 template<typename Endianness, typename FieldType>

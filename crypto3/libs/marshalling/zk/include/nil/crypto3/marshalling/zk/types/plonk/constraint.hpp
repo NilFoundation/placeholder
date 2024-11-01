@@ -62,10 +62,9 @@ namespace nil {
 
                 /*********************** Vector of plonk constraints as an input to gate ****************************/
                 template<typename TTypeBase, typename Constraint>
-                using plonk_constraints = nil::marshalling::types::array_list<
+                using plonk_constraints = nil::marshalling::types::standard_array_list<
                     TTypeBase,
-                    plonk_constraint<TTypeBase, Constraint>,
-                    nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                    plonk_constraint<TTypeBase, Constraint>
                 >;
 
                 template<typename Endianness, typename Constraint>
