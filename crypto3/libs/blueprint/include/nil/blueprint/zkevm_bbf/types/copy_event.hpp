@@ -40,6 +40,8 @@ namespace nil {
             static constexpr std::size_t copy_operand_types_amount = 7;
 
             struct copy_event{
+                using zkevm_word_type = nil::blueprint::zkevm_word_type;
+
                 zkevm_word_type   source_id;
                 copy_operand_type source_type;
                 zkevm_word_type   src_address;

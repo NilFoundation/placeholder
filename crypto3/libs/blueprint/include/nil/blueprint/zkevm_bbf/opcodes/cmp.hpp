@@ -33,18 +33,26 @@
 namespace nil {
     namespace blueprint {
         namespace bbf{
-            template<typename BlueprintFieldType>
+            template<typename FieldType>
             class opcode_abstract;
 
             enum cmp_type { C_LT, C_EQ, C_GT, C_SLT, C_SGT };
 
-            template<typename BlueprintFieldType>
-            class zkevm_cmp_operation : public opcode_abstract<BlueprintFieldType> {
+            template<typename FieldType>
+            class zkevm_cmp_operation : public opcode_abstract<FieldType> {
             public:
                 zkevm_cmp_operation(cmp_type _cmp_operation) : cmp_operation(_cmp_operation) {}
                 virtual std::size_t rows_amount() override {
                     return 2;
                 }
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                ) {}
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                ) {}
             private:
                 cmp_type cmp_operation;
             };

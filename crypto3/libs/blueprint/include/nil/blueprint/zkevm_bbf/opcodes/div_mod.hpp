@@ -34,16 +34,25 @@
 namespace nil {
     namespace blueprint {
         namespace bbf{
-            template<typename BlueprintFieldType>
+            template<typename FieldType>
             class opcode_abstract;
 
-            template<typename BlueprintFieldType>
-            class zkevm_div_mod_operation : public opcode_abstract<BlueprintFieldType> {
+            template<typename FieldType>
+            class zkevm_div_mod_operation : public opcode_abstract<FieldType> {
             public:
                 zkevm_div_mod_operation(bool _is_div) : is_div(_is_div) {}
                 virtual std::size_t rows_amount() override {
                     return 4;
                 }
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                ) {}
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                ) {}
+            protected:
                 bool is_div;
             };
         } // namespace bbf

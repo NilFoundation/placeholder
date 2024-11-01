@@ -49,23 +49,23 @@ namespace nil {
                 bool            tx_finish;       // convinent, but optional11.
                 std::size_t     error_opcode;    // real opcode if error
 
-                zkevm_word_type stack_top(std::size_t depth = 0){
+                zkevm_word_type stack_top(std::size_t depth = 0) const{
                     BOOST_ASSERT(depth < stack_slice.size());
                     return stack_slice[stack_slice.size() - 1 - depth];
                 }
 
-                zkevm_word_type memory(std::size_t addr){
+                zkevm_word_type memory(std::size_t addr) const{
                     if( memory_slice.find(addr) == memory_slice.end() )
                         return 0;
                     else
-                        return memory_slice[addr];
+                        return memory_slice.at(addr);
                 }
 
-                zkevm_word_type storage(zkevm_word_type key){
+                zkevm_word_type storage(zkevm_word_type key) const{
                     if( storage_slice.find(key) == storage_slice.end() )
                         return 0;
                     else
-                        return storage_slice[key];
+                        return storage_slice.at(key);
                 }
                 zkevm_state(
                     const std::vector<zkevm_word_type>        &stack,

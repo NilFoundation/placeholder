@@ -23,8 +23,6 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
-#include<nil/blueprint/zkevm/memory.hpp>
-
 namespace nil {
     namespace blueprint {
         namespace bbf {

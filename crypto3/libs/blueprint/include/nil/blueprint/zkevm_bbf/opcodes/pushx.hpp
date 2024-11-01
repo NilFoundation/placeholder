@@ -33,17 +33,29 @@
 namespace nil {
     namespace blueprint {
         namespace bbf{
-            template<typename BlueprintFieldType>
+            template<typename FieldType>
             class opcode_abstract;
 
-            template<typename BlueprintFieldType>
-            class zkevm_pushx_operation : public opcode_abstract<BlueprintFieldType> {
+            template<typename FieldType>
+            class zkevm_pushx_operation : public opcode_abstract<FieldType> {
             public:
-                zkevm_pushx_operation(std::size_t x){
+                zkevm_pushx_operation(std::size_t _x):x(_x){
                 }
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                ) {
+                    std::cout << "Assign PUSH"<<x << std::endl;
+                }
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                ) {}
                 virtual std::size_t rows_amount() override {
                     return 2;
                 }
+            protected:
+                std::size_t x;
             };
         } // namespace bbf
     }   // namespace blueprint

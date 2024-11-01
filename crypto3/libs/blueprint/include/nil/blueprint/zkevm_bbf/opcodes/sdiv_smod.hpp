@@ -33,13 +33,21 @@
 namespace nil {
     namespace blueprint {
         namespace bbf{
-            template<typename BlueprintFieldType>
+            template<typename FieldType>
             class opcode_abstract;
 
-            template<typename BlueprintFieldType>
-            class zkevm_sdiv_smod_operation : public opcode_abstract<BlueprintFieldType> {
+            template<typename FieldType>
+            class zkevm_sdiv_smod_operation : public opcode_abstract<FieldType> {
             public:
                 zkevm_sdiv_smod_operation(bool _is_div) : is_div(_is_div) {}
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                ) {}
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                ) {}
                 virtual std::size_t rows_amount() override {
                     return 6 + !is_div; // SMOD has an extra row
                 }

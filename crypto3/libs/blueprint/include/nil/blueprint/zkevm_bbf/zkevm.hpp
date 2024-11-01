@@ -129,26 +129,44 @@ namespace nil {
                     std::vector<std::vector<TYPE>> opcode_row_selectors(max_zkevm_rows, std::vector<TYPE>(opcode_row_selectors_amount));
 
                     std::vector<std::size_t> opcode_area;
+                    std::cout << "Opcode_area: ";
                     for( std::size_t i = 0; i < opcode_columns_amount; i++){
+                        std::cout << current_column << " ";
                         opcode_area.push_back(current_column++);
                     }
+                    std::cout << std::endl;
 
                     std::vector<std::size_t> bytecode_lookup_area;
+                    std::cout << "Bytecode_area: ";
                     for( std::size_t i = 0; i < BytecodeTable::get_witness_amount(); i++){
+                        std::cout << current_column << " ";
                         bytecode_lookup_area.push_back(current_column++);
                     }
+                    std::cout << std::endl;
+
                     std::vector<std::size_t> keccak_lookup_area;
+                    std::cout << "Keccak_area: ";
                     for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
+                        std::cout << current_column << " ";
                         keccak_lookup_area.push_back(current_column++);
                     }
+                    std::cout << std::endl;
+
                     std::vector<std::size_t> rw_lookup_area;
+                    std::cout << "RW_area: ";
                     for( std::size_t i = 0; i < RWTable::get_witness_amount(); i++){
+                        std::cout << current_column << " ";
                         rw_lookup_area.push_back(current_column++);
                     }
+                    std::cout << std::endl;
+
                     std::vector<std::size_t> copy_lookup_area;
+                    std::cout << "Copy_area: ";
                     for( std::size_t i = 0; i < CopyTable::get_witness_amount(); i++){
+                        std::cout << current_column << " ";
                         copy_lookup_area.push_back(current_column++);
                     }
+                    std::cout << std::endl;
 
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
                     context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
@@ -168,12 +186,23 @@ namespace nil {
                         for( std::size_t i = 0; i <input.zkevm_states.size(); i++ ){
                             const auto &current_state = input.zkevm_states[i];
                             zkevm_opcode current_opcode = opcode_from_number(current_state.opcode);
+
                             if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
                                 std::cout << "Opcode not found" << current_opcode << std::endl;
                             }
-                            std::size_t current_opcode_rows_amount = std::ceil(float(opcode_impls[current_opcode]->rows_amount())/2) * 2;
+                            std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
+                            std::size_t current_opcode_rows_amount = std::ceil(float(current_opcode_bare_rows_amount)/2) * 2;
+                            std::cout << "Fresh subcontext:"
+                                << current_row + current_opcode_bare_rows_amount%2 << "..."
+                                << current_row + current_opcode_bare_rows_amount%2 + current_opcode_bare_rows_amount - 1
+                                << std::endl;
+                            context_type op_ct = context_object.fresh_subcontext(
+                                opcode_area,
+                                current_row + current_opcode_bare_rows_amount%2,
+                                current_row + current_opcode_bare_rows_amount%2 + current_opcode_bare_rows_amount - 1
+                            );
                             std::size_t opcode_id = (std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin());
-                            std::cout << "\t" << current_opcode
+                            std::cout << current_opcode
                                 << " with id = " << opcode_id
                                 << " will be assigned as " << std::hex << current_state.opcode << std::dec
                                 << " on row " << current_row
@@ -202,10 +231,12 @@ namespace nil {
                                 };
                                 opcode_selectors[current_row].resize(opcode_selectors_amount);
                                 if( current_row % 2 ==  (opcode_id % 4 ) / 2) opcode_selectors[current_row][opcode_id/4] = 1;
-                                opcode_row_selectors[current_row].resize(opcode_selectors_amount);
+                                opcode_row_selectors[current_row].resize(opcode_row_selectors_amount);
                                 opcode_row_selectors[current_row][row_counter/2] = 1;
                                 current_row++;
                             }
+
+                            opcode_impls[current_opcode]->fill_context(op_ct, current_state);
                         }
 
                         while(current_row < max_zkevm_rows ){
@@ -258,12 +289,15 @@ namespace nil {
                         allocate(all_states[i].opcode_parity, cur_column++, i);
                         allocate(all_states[i].is_even, cur_column++, i);// Do we really need it?
 
-                        for( std::size_t j = 0; j < opcode_selectors[i].size(); j++){
+                        BOOST_ASSERT(cur_column == state::get_items_amout());
+
+                        for( std::size_t j = 0; j < opcode_selectors_amount; j++){
                             allocate(opcode_selectors[i][j], cur_column++, i);
                         }
-                        for( std::size_t j = 0; j < opcode_row_selectors[i].size();j++){
+                        for( std::size_t j = 0; j < opcode_row_selectors_amount;j++){
                             allocate(opcode_row_selectors[i][j], cur_column++, i);
                         }
+                        //std::cout << "Cur_column = " << cur_column << std::endl;
                     }
                     constrain(all_states[0].is_even - 1);
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
@@ -274,8 +308,8 @@ namespace nil {
                         context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_zkevm_rows-1);
                         for(std::size_t i = 0; i < range_checked_opcode_columns_amount; i++){
                             TYPE range_checked_column;
-                            allocate(range_checked_column, opcode_area[i], 1);
-                            tmp = {context_object.relativize(range_checked_column, -1)};
+                            allocate(range_checked_column, opcode_area[i], 0);
+                            tmp = {context_object.relativize(range_checked_column, 0)};
                             context_object.relative_lookup(tmp, "chunk_16_bits/full", 0, max_zkevm_rows-1);
                         }
 

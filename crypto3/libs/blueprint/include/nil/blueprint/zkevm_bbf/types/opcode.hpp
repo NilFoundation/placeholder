@@ -29,15 +29,28 @@
 #include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
 #include <nil/blueprint/bbf/generic.hpp>
 
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
 
 namespace nil {
     namespace blueprint {
         namespace bbf {
+            template<GenerationStage stage>
+            using opcode_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_state, std::nullptr_t>::type;
+
             template<typename FieldType>
             class opcode_abstract{
             public:
                 virtual std::size_t rows_amount()=0;
+
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                ) = 0;
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                ) = 0;
             protected:
                 std::size_t gas = 0;
                 std::size_t stack_input = 0;

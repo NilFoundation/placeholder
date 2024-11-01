@@ -33,18 +33,26 @@
 namespace nil {
     namespace blueprint {
         namespace bbf{
-            template<typename BlueprintFieldType>
+            template<typename FieldType>
             class opcode_abstract;
 
             enum bitwise_type { B_AND, B_OR, B_XOR };
 
-            template<typename BlueprintFieldType>
-            class zkevm_bitwise_operation : public opcode_abstract<BlueprintFieldType> {
+            template<typename FieldType>
+            class zkevm_bitwise_operation : public opcode_abstract<FieldType> {
             public:
                 zkevm_bitwise_operation(bitwise_type _bit_operation) { }
                 virtual std::size_t rows_amount() override {
                     return 3;
                 }
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                ) {}
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                ) {}
             };
         } // namespace bbf
     }   // namespace blueprint
