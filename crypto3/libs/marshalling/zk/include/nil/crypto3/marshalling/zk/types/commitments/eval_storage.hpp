@@ -133,13 +133,16 @@ namespace nil {
 
                 template<typename Endianness, typename EvalStorage>
                 EvalStorage make_eval_storage(
-                    const eval_storage<nil::marshalling::field_type<Endianness>, EvalStorage> &filled_storage
-                ){
+                    const eval_storage<nil::marshalling::field_type<Endianness>, EvalStorage> &filled_storage)
+                {
                     EvalStorage z;
                     typename nil::crypto3::marshalling::types::batch_info_type batch_info;
                     std::vector<std::uint8_t> eval_points_num;
 
                     auto filled_batch_info = std::get<1>(filled_storage.value()).value();
+                    if (filled_batch_info.size() % 2 != 0) {
+                        throw std::invalid_argument("Wrong length of batch info");
+                    }
                     for( std::size_t i = 0; i < filled_batch_info.size(); i+=2 ){
                         batch_info[filled_batch_info[i].value()] = filled_batch_info[i+1].value();
                         z.set_batch_size(filled_batch_info[i].value(), filled_batch_info[i+1].value());
@@ -147,8 +150,11 @@ namespace nil {
 
                     auto filled_eval_points_num = std::get<2>(filled_storage.value()).value();
                     std::size_t cur = 0;
-                    for( const auto &it:batch_info){
-                        for( std::size_t i = 0; i < it.second; i++ ){
+                    for (const auto &it: batch_info){
+                        for (std::size_t i = 0; i < it.second; i++ ) {
+                            if (cur >= filled_eval_points_num.size()) {
+                                throw std::invalid_argument("Not enough eval points");
+                            }
                             z.set_poly_points_number(it.first, i, filled_eval_points_num[cur].value());
                             cur++;
                         }
@@ -156,9 +162,12 @@ namespace nil {
 
                     auto filled_z = std::get<0>(filled_storage.value()).value();
                     cur = 0;
-                    for( const auto &it:batch_info){
-                        for( std::size_t i = 0; i < it.second; i++ ){
-                            for( std::size_t j = 0; j < z.get_poly_points_number(it.first, i); j++ ){
+                    for (const auto &it: batch_info) {
+                        for (std::size_t i = 0; i < it.second; i++ ) {
+                            for (std::size_t j = 0; j < z.get_poly_points_number(it.first, i); j++ ) {
+                                if (cur >= filled_z.size()) {
+                                    throw std::invalid_argument("Not enough values for Z");
+                                }
                                 z.set(it.first, i, j, filled_z[cur].value());
                                 cur++;
                             }

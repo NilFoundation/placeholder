@@ -72,10 +72,13 @@ namespace nil {
 
                 template<typename Endianness, typename PlonkPublicTable>
                 std::shared_ptr<PlonkPublicTable> make_plonk_public_table(
-                        const plonk_public_polynomial_table<nil::marshalling::field_type<Endianness>, PlonkPublicTable> &filled_public_table) {
+                    const plonk_public_polynomial_table<
+                        nil::marshalling::field_type<Endianness>,
+                        PlonkPublicTable> &filled_public_table)
+                {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
                     using PolynomialType = typename PlonkPublicTable::column_type;
- 
+
                     return std::make_shared<PlonkPublicTable>(
                         make_polynomial_vector<Endianness, PolynomialType>(std::get<0>(filled_public_table.value())),
                         make_polynomial_vector<Endianness, PolynomialType>(std::get<1>(filled_public_table.value())),

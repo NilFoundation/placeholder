@@ -427,15 +427,16 @@ namespace nil {
                     nil::marshalling::types::standard_array_list<
                         nil::marshalling::field_type<Endianness>,
                         integral<nil::marshalling::field_type<Endianness>, IntegralContainer>>
-                        integral_vector) {
-
-                    std::vector<IntegralContainer> result;
-                    std::vector<integral<nil::marshalling::field_type<Endianness>, IntegralContainer>> &values =
+                        const& integral_vector)
+                {
+                    std::vector<integral<nil::marshalling::field_type<Endianness>, IntegralContainer>> const& values =
                         integral_vector.value();
                     std::size_t size = values.size();
+                    std::vector<IntegralContainer> result;
+                    result.reserve(size);
 
                     for (std::size_t i = 0; i < size; i++) {
-                        result.push_back(values[i].value());
+                        result.emplace_back(values[i].value());
                     }
                     return result;
                 }
