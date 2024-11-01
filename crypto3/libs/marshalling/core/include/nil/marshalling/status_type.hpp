@@ -95,6 +95,7 @@ namespace nil {
                         case status_type::not_supported:
                             return "the operation is not supported";
                         case status_type::error_status_amount:
+                        default:
                             return "unreachable";
                     }
                     return "unreachable";

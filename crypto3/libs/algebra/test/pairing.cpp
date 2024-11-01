@@ -98,7 +98,6 @@ enum GT_enum : std::size_t {
 enum g1_precomp_enum : std::size_t { prec_A1, prec_A2 };
 enum g2_precomp_enum : std::size_t { prec_B1, prec_B2 };
 
-// TODO: add affine_pair_reduceding test
 template<typename CurveType, typename Fr_value_type, typename G1_value_type, typename G2_value_type,
          typename GT_value_type, typename g1_precomp_value_type, typename g2_precomp_value_type>
 void check_pairing_operations(std::vector<Fr_value_type> const& Fr_elements,
@@ -130,11 +129,11 @@ void check_pairing_operations(std::vector<Fr_value_type> const& Fr_elements,
     std::cout << " * Basic fields and groups tests finished." << std::endl << std::endl;
 
     std::cout << " * Pairing with infinity tests started..." << std::endl;
-    BOOST_CHECK_EQUAL(final_exponentiation<CurveType>(pair<CurveType>(G1_value_type::zero(), G2_elements[B1])), GT_value_type::one());
+    BOOST_CHECK_EQUAL(*final_exponentiation<CurveType>(pair<CurveType>(G1_value_type::zero(), G2_elements[B1])), GT_value_type::one());
     std::cout << " * Pairing with infinity tests finished." << std::endl << std::endl;
 
     std::cout << " * Reduced pairing with infinity tests started..." << std::endl;
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(G1_value_type::zero(), G2_elements[B1]), GT_value_type::one());
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(G1_value_type::zero(), G2_elements[B1]), GT_value_type::one());
     std::cout << " * Reduced pairing with infinity tests finished." << std::endl << std::endl;
 
 
@@ -147,39 +146,35 @@ void check_pairing_operations(std::vector<Fr_value_type> const& Fr_elements,
     BOOST_CHECK_EQUAL(pair<CurveType>(G1_elements[A2], G2_elements[B2]), GT_elements[pairing_A2_B2]);
     std::cout << " * Precomputing and pairing tests finished." << std::endl << std::endl;
 
-    // TODO: activate after pair_reduceding->cyclotomic_exp fixed. Bugs in final_exponentiation_last_chunk
     std::cout << " * Reduced pairing tests started..." << std::endl;
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]), GT_elements[pair_reduceding_A1_B1]);
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]),
-                      pair_reduced<CurveType>(G1_elements[VKx], G2_elements[VKy]) *
-                          pair_reduced<CurveType>(G1_elements[C1], G2_elements[VKz]));
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]), GT_elements[pair_reduceding_A2_B2]);
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]),
-                      pair_reduced<CurveType>(G1_elements[VKx], G2_elements[VKy]) *
-                          pair_reduced<CurveType>(G1_elements[C2], G2_elements[VKz]));
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]) *
-                          pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]),
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]), GT_elements[pair_reduceding_A1_B1]);
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]),
+                      *pair_reduced<CurveType>(G1_elements[VKx], G2_elements[VKy]) *
+                          *pair_reduced<CurveType>(G1_elements[C1], G2_elements[VKz]));
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]), GT_elements[pair_reduceding_A2_B2]);
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]),
+                      *pair_reduced<CurveType>(G1_elements[VKx], G2_elements[VKy]) *
+                          *pair_reduced<CurveType>(G1_elements[C2], G2_elements[VKz]));
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]) *
+                          *pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]),
                       GT_elements[pair_reduceding_A1_B1_mul_pair_reduceding_A2_B2]);
     std::cout << " * Reduced pairing tests finished." << std::endl << std::endl;
 
-    // TODO: activate when scalar multiplication done
     std::cout << " * Reduced pairing tests with scalar multiplication started..." << std::endl;
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]) *
-                          pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]),
-                      pair_reduced<CurveType>(Fr_value_type(2u) * G1_elements[VKx], G2_elements[VKy]) *
-                          pair_reduced<CurveType>(G1_elements[C1] + G1_elements[C2], G2_elements[VKz]));
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]) *
+                          *pair_reduced<CurveType>(G1_elements[A2], G2_elements[B2]),
+                      *pair_reduced<CurveType>(Fr_value_type(2u) * G1_elements[VKx], G2_elements[VKy]) *
+                          *pair_reduced<CurveType>(G1_elements[C1] + G1_elements[C2], G2_elements[VKz]));
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
                       GT_elements[pair_reduceding_VKx_poly_A1_B1]);
-    BOOST_CHECK_EQUAL(pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
-                      pair_reduced<CurveType>(G1_elements[A1], Fr_elements[VKx_poly] * G2_elements[B1]));
+    BOOST_CHECK_EQUAL(*pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
+                      *pair_reduced<CurveType>(G1_elements[A1], Fr_elements[VKx_poly] * G2_elements[B1]));
     std::cout << " * Reduced pairing tests with scalar multiplication finished." << std::endl << std::endl;
 
-    // TODO: activate when pow will be override with field element
     std::cout << " * Reduced pairing tests with pow started..." << std::endl;
     BOOST_CHECK_EQUAL(
-        pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
-        // TODO: fix pow to accept field element as exponent
-        pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1]).pow(Fr_elements[VKx_poly].data));
+        *pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
+        pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1])->pow(Fr_elements[VKx_poly].data));
     std::cout << " * Reduced pairing tests with pow finished." << std::endl << std::endl;
 
     std::cout << " * Miller loop tests started..." << std::endl;
@@ -627,7 +622,6 @@ void pairing_operation_test(const TestSet &test_set) {
 
 BOOST_AUTO_TEST_SUITE(pairing_manual_tests)
 
-// TODO: fix pair_reduceding
 BOOST_DATA_TEST_CASE(pairing_operation_test_bls12_381, string_data("pairing_operation_test_bls12_381"), data_set) {
     using curve_type = typename curves::bls12<381>;
 

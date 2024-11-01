@@ -44,8 +44,6 @@
 #include <nil/crypto3/algebra/algorithms/pair.hpp>
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>
 #include <nil/crypto3/algebra/multiexp/policies.hpp>
-#include <nil/crypto3/algebra/curves/detail/marshalling.hpp>
-#include <nil/crypto3/algebra/marshalling.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/hash/block_to_field_elements_wrapper.hpp>
 
@@ -212,13 +210,16 @@ namespace nil {
                     auto B_2 = algebra::precompute_g2<typename CommitmentSchemeType::curve_type>(
                             CommitmentSchemeType::curve_type::template g2_type<>::value_type::one());
 
-                    typename CommitmentSchemeType::gt_value_type gt3 = algebra::double_miller_loop<typename CommitmentSchemeType::curve_type>(
-                            A_1, A_2,
-                            B_1, B_2);
-                    typename CommitmentSchemeType::gt_value_type gt_4 = algebra::final_exponentiation<typename CommitmentSchemeType::curve_type>(
-                            gt3);
+                    typename CommitmentSchemeType::gt_value_type gt3 =
+                        algebra::double_miller_loop<typename CommitmentSchemeType::curve_type>( A_1, A_2, B_1, B_2);
+                    std::optional<typename CommitmentSchemeType::gt_value_type> gt_4 =
+                        algebra::final_exponentiation<typename CommitmentSchemeType::curve_type>(gt3);
 
-                    return gt_4 == CommitmentSchemeType::gt_value_type::one();
+                    if (!gt_4) {
+                        return false;
+                    }
+
+                    return *gt_4 == CommitmentSchemeType::gt_value_type::one();
                 }
             } // namespace algorithms
 
@@ -251,7 +252,6 @@ namespace nil {
                     using batch_of_polynomials_type = std::vector<polynomial_type>;
                     using evals_type = std::vector<std::vector<scalar_value_type>>;
                     using transcript_type = transcript::fiat_shamir_heuristic_sequential<TranscriptHashType>;
-                    using serializer = typename nil::marshalling::curve_element_serializer<curve_type>;
                     using multi_commitment_type = std::vector<single_commitment_type>;
 
                     using commitment_type = std::vector<std::uint8_t>; // Used in placeholder because it's easy to push it into transcript
@@ -618,18 +618,23 @@ namespace nil {
                         if (public_key.commits.size() == 1) {
                             assert(right == CommitmentSchemeType::verification_key_type::one());
                         }
-                        left_side_pairing =
-                                left_side_pairing *
-                                algebra::pair_reduced<typename CommitmentSchemeType::curve_type>(left, right);
+
+                        auto left_right = algebra::pair_reduced<typename CommitmentSchemeType::curve_type>(left, right);
+                        if (!left_right) {
+                            return false;
+                        }
+                        left_side_pairing = left_side_pairing * (*left_right);
                         factor = factor * gamma;
                     }
 
-                    auto right = commit_g2<CommitmentSchemeType>(params, create_polynom_by_zeros<CommitmentSchemeType>(
-                            public_key.T));
-                    auto right_side_pairing = algebra::pair_reduced<typename CommitmentSchemeType::curve_type>(proof,
-                                                                                                               right);
+                    auto right = commit_g2<CommitmentSchemeType>(params, create_polynom_by_zeros<CommitmentSchemeType>( public_key.T));
+                    auto right_side_pairing = algebra::pair_reduced<typename CommitmentSchemeType::curve_type>(proof, right);
 
-                    return left_side_pairing == right_side_pairing;
+                    if (!right_side_pairing) {
+                        return false;
+                    }
+
+                    return left_side_pairing == *right_side_pairing;
                 }
             } // namespace algorithms
 
@@ -838,18 +843,19 @@ namespace nil {
                                 typename curve_type::template g1_type<>::value_type
                                         i_th_commitment = nil::marshalling::pack(byteblob, status);
                                 THROW_IF_ERROR_STATUS(status, "kzg::verify_eval");
-                                auto U_commit = nil::crypto3::zk::algorithms::commit_one<CommitmentSchemeType>(_params,
-                                                                                                               this->get_U(
-                                                                                                                       k,
-                                                                                                                       i));
+                                auto U_commit = nil::crypto3::zk::algorithms::commit_one<CommitmentSchemeType>
+                                    (_params, this->get_U(k, i));
 
                                 auto diffpoly = set_difference_polynom(_merged_points, this->_points.at(k)[i]);
                                 auto diffpoly_commitment = commit_g2(diffpoly);
 
-                                auto left_side_pairing = nil::crypto3::algebra::pair_reduced<curve_type>(
-                                        factor * (i_th_commitment - U_commit), diffpoly_commitment);
+                                auto left_side_pairing = nil::crypto3::algebra::pair_reduced<curve_type>
+                                    (factor * (i_th_commitment - U_commit), diffpoly_commitment);
+                                if (!left_side_pairing) {
+                                    return false;
+                                }
 
-                                left_side_accum = left_side_accum * left_side_pairing;
+                                left_side_accum = left_side_accum * (*left_side_pairing);
                                 factor *= gamma;
                             }
                         }
@@ -859,7 +865,11 @@ namespace nil {
                                 commit_g2(this->get_V(this->_merged_points))
                         );
 
-                        return left_side_accum == right_side_pairing;
+                        if (!right_side_pairing) {
+                            return false;
+                        }
+
+                        return left_side_accum == *right_side_pairing;
                     }
 
                     const params_type &get_commitment_params() const {

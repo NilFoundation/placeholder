@@ -17,6 +17,7 @@
 #include <arg_parser.hpp>
 
 #include <nil/proof-generator/arithmetization_params.hpp>
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 
 #include <fstream>
 #include <iomanip>
@@ -80,7 +81,9 @@ namespace nil {
                 ("preprocessed-data", make_defaulted_option(prover_options.preprocessed_public_data_path), "Preprocessed public data file")
                 ("commitment-state-file", make_defaulted_option(prover_options.commitment_scheme_state_path), "Commitment state data file")
                 ("updated-commitment-state-file", make_defaulted_option(prover_options.updated_commitment_scheme_state_path), "Updated commitment state data file")
+                ("trace", po::value(&prover_options.trace_file_path), "EVM trace input file")
                 ("circuit", po::value(&prover_options.circuit_file_path), "Circuit input file")
+                ("circuit-name", po::value(&prover_options.circuit_name), "Target circuit name")
                 ("assignment-table,t", po::value(&prover_options.assignment_table_file_path), "Assignment table input file")
                 ("assignment-description-file", po::value(&prover_options.assignment_description_file_path), "Assignment description file")
                 ("log-level,l", make_defaulted_option(prover_options.log_level), "Log level (trace, debug, info, warning, error, fatal)")
@@ -90,6 +93,7 @@ namespace nil {
                 ("grind-param", make_defaulted_option(prover_options.grind), "Grind param (0)")
                 ("expand-factor,x", make_defaulted_option(prover_options.expand_factor), "Expand factor")
                 ("max-quotient-chunks,q", make_defaulted_option(prover_options.max_quotient_chunks), "Maximum quotient polynomial parts amount")
+                ("evm-verifier", make_defaulted_option(prover_options.evm_verifier_path), "Output folder for EVM verifier")
                 ("input-challenge-files,u", po::value<std::vector<boost::filesystem::path>>(&prover_options.input_challenge_files)->multitoken(),
                  "Input challenge files. Used with 'generate-aggregated-challenge' stage.")
                 ("challenge-file", po::value<boost::filesystem::path>(&prover_options.challenge_file_path),
@@ -116,6 +120,8 @@ namespace nil {
                  "Files containing polynomials combined-Q, 1 per prover instance.")
                 ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.");
 
+            register_output_artifacts_cli_args(prover_options.output_artifacts, config);
+        
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
             cmdline_options.add(generic).add(config);

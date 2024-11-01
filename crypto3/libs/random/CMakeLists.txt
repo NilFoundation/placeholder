@@ -43,7 +43,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(CMTest)
-cm_add_test_subdirectory(test)
+add_tests(test)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(example)

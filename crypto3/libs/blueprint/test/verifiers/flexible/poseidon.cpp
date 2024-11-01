@@ -86,9 +86,10 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
     zk::snark::plonk_table_description<BlueprintFieldType> desc(
         WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns);
 
-    crypto3::test_component<component_type, BlueprintFieldType, hash_type, Lambda>(
+    nil::crypto3::test_component_extended<component_type, BlueprintFieldType, hash_type, Lambda>(
         component_instance, desc, public_input, result_check, instance_input,
-        blueprint::connectedness_check_type::type::STRONG
+        true, nil::blueprint::connectedness_check_type::type::STRONG, "flexible_poseidon", true,
+        2046
     );
 }
 

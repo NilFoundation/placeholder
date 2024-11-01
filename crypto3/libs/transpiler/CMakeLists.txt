@@ -30,7 +30,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
         ${Boost_LIBRARIES})
 
 include(CMTest)
-cm_add_test_subdirectory(test)
+add_tests(test)
 
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)

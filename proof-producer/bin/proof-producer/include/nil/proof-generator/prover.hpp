@@ -21,6 +21,8 @@
 #define PROOF_GENERATOR_ASSIGNER_PROOF_HPP
 
 #include <fstream>
+#include <functional>
+#include <ostream>
 #include <random>
 #include <sstream>
 #include <optional>
@@ -54,11 +56,17 @@
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 
 #include <nil/blueprint/transpiler/recursive_verifier_generator.hpp>
+#include <nil/blueprint/transpiler/lpc_evm_verifier_gen.hpp>
 
-
+#include <nil/proof-generator/preset/preset.hpp>
+#include <nil/proof-generator/assigner/assigner.hpp>
 #include <nil/proof-generator/arithmetization_params.hpp>
+#include <nil/proof-generator/output_artifacts/assignment_table_writer.hpp>
+#include <nil/proof-generator/output_artifacts/circuit_writer.hpp>
+#include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
+#include <nil/blueprint/blueprint/plonk/assignment.hpp>
 namespace nil {
     namespace proof_generator {
         namespace detail {
@@ -103,20 +111,24 @@ namespace nil {
 
             enum class ProverStage {
                 ALL = 0,
-                PREPROCESS = 1,
-                PROVE = 2,
-                VERIFY = 3,
-                GENERATE_AGGREGATED_CHALLENGE = 4,
-                GENERATE_PARTIAL_PROOF = 5,
-                COMPUTE_COMBINED_Q = 6,
-                GENERATE_AGGREGATED_FRI_PROOF = 7,
-                GENERATE_CONSISTENCY_CHECKS_PROOF = 8,
-                MERGE_PROOFS = 9
+                PRESET = 1,
+                ASSIGNMENT = 2,
+                PREPROCESS = 3,
+                PROVE = 4,
+                VERIFY = 5,
+                GENERATE_AGGREGATED_CHALLENGE = 6,
+                GENERATE_PARTIAL_PROOF = 7,
+                COMPUTE_COMBINED_Q = 8,
+                GENERATE_AGGREGATED_FRI_PROOF = 9,
+                GENERATE_CONSISTENCY_CHECKS_PROOF = 10,
+                MERGE_PROOFS = 11
             };
 
             ProverStage prover_stage_from_string(const std::string& stage) {
                 static std::unordered_map<std::string, ProverStage> stage_map = {
                     {"all", ProverStage::ALL},
+                    {"preset", ProverStage::PRESET},
+                    {"fill-assignment", ProverStage::ASSIGNMENT},
                     {"preprocess", ProverStage::PREPROCESS},
                     {"prove", ProverStage::PROVE},
                     {"verify", ProverStage::VERIFY},
@@ -159,18 +171,62 @@ namespace nil {
             using FriType = typename Lpc::fri_type;
             using FriParams = typename FriType::params_type;
             using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
-            using AssignmentTable = nil::crypto3::zk::snark::plonk_table<BlueprintField, Column>;
+            using AssignmentTable = nil::crypto3::zk::snark::plonk_assignment_table<BlueprintField>;
             using TTypeBase = nil::marshalling::field_type<Endianness>;
+
+            using TableMarshalling = nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
 
             Prover(
                 std::size_t lambda,
                 std::size_t expand_factor,
                 std::size_t max_q_chunks,
-                std::size_t grind
+                std::size_t grind,
+                std::string circuit_name
             ) : expand_factor_(expand_factor),
                 max_quotient_chunks_(max_q_chunks),
                 lambda_(lambda),
-                grind_(grind) {
+                grind_(grind),
+                circuit_name_(circuit_name){
+            }
+
+            bool print_evm_verifier(
+                boost::filesystem::path output_folder
+            ){
+                if( output_folder.empty() ) return true;
+                BOOST_LOG_TRIVIAL(info) << "Print evm verifier";
+                nil::blueprint::lpc_evm_verifier_printer<PlaceholderParams> evm_verifier_printer(
+                    *constraint_system_,
+                    public_preprocessed_data_->common_data,
+                    output_folder.string()
+                );
+                evm_verifier_printer.print();
+                return true;
+            }
+
+            bool print_public_input_for_evm(
+                boost::filesystem::path output_folder
+            ){
+                if( output_folder.empty() ) return true;
+                BOOST_LOG_TRIVIAL(info) << "Print public input for EVM";
+                std::ofstream pi_stream;
+                pi_stream.open(output_folder.string() + "/public_input.inp");
+                if( !pi_stream.is_open() )  return false;
+
+                // Does not support public input columns.
+                if( table_description_->public_input_columns != 0 ) {
+                    std::size_t max_non_zero = 0;
+                    const auto&public_input = assignment_table_->public_input(0);
+                    for (std::size_t i = 0; i < public_input.size(); i++) {
+                        if (public_input[i] != 0u) {
+                            max_non_zero = i + 1;
+                        }
+                    }
+                    for (std::size_t i = 0; i < std::min(public_input.size(), max_non_zero); i++) {
+                        pi_stream << public_input[i] << "\n";
+                    }
+                } // else empty file is generated
+                pi_stream.close();
+                return true;
             }
 
             // The caller must call the preprocessor or load the preprocessed data before calling this function.
@@ -233,10 +289,8 @@ namespace nil {
                                           BlueprintField,
                                           PlaceholderParams>::preprocessed_data_type::common_data_type>(
                                       *table_description_
-                )
-                                      .generate_input(*public_inputs_, proof, constraint_system_->public_input_sizes());
+                ).generate_input(*public_inputs_, proof, constraint_system_->public_input_sizes());
                 output_file->close();
-
                 return res;
             }
 
@@ -497,6 +551,26 @@ namespace nil {
                         *marshalled_value
                     )
                 );
+
+                return true;
+            }
+
+            bool save_circuit_to_file(boost::filesystem::path circuit_file) {
+                using writer = nil::proof_generator::circuit_writer<Endianness, BlueprintField>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing circuit to " << circuit_file;
+                if (!constraint_system_) {
+                    BOOST_LOG_TRIVIAL(error) << "No circuit is currently loaded";
+                    return false;
+                }
+
+                std::ofstream out(circuit_file.string(), std::ios::binary | std::ios::out);
+                if (!out.is_open()) {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to open file " << circuit_file;
+                    return false;
+                }
+
+                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());            
                 return true;
             }
 
@@ -507,16 +581,15 @@ namespace nil {
                 return true;
             }
 
-            bool read_assignment_table(const boost::filesystem::path& assignment_table_file_) {
-                BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_;
+            bool read_assignment_table(const boost::filesystem::path& assignment_table_file_path) {
+                BOOST_LOG_TRIVIAL(info) << "Read assignment table from " << assignment_table_file_path;
 
-                using TableValueMarshalling =
-                    nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
                 auto marshalled_table =
-                    detail::decode_marshalling_from_file<TableValueMarshalling>(assignment_table_file_);
+                    detail::decode_marshalling_from_file<TableMarshalling>(assignment_table_file_path);
                 if (!marshalled_table) {
                     return false;
                 }
+            
                 auto [table_description, assignment_table] =
                     nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTable>(
                         *marshalled_table
@@ -524,6 +597,7 @@ namespace nil {
                 table_description_.emplace(table_description);
                 assignment_table_.emplace(std::move(assignment_table));
                 public_inputs_.emplace(assignment_table_->public_inputs());
+
                 return true;
             }
 
@@ -539,6 +613,75 @@ namespace nil {
                 assignment_table_.emplace(std::move(assignment_table));
                 public_inputs_.emplace(assignment_table_->public_inputs());
                 return true;
+            }
+
+            bool save_binary_assignment_table_to_file(const boost::filesystem::path& output_filename) {
+                using writer = nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>;
+
+                BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
+                
+                if (!assignment_table_.has_value() || !table_description_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded";
+                    return false;
+                }
+
+                std::ofstream out(output_filename.string(), std::ios::binary | std::ios::out);
+                if (!out.is_open()) {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to open file " << output_filename;
+                    return false;
+                }
+
+                writer::write_binary_assignment(
+                    out, assignment_table_.value(), table_description_.value()
+                );
+
+                return true;
+            }
+
+            bool print_debug_assignment_table(const OutputArtifacts& opts) {
+                if (opts.empty()) {
+                    BOOST_LOG_TRIVIAL(trace) << "No output artifacts are set";
+                    return true;
+                }
+
+                if (!assignment_table_.has_value() || !table_description_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded";
+                    return false;
+                }
+
+                BOOST_LOG_TRIVIAL(debug) << "Rows to print: " << opts.rows.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Witness columns to print: "
+                                         << opts.witness_columns.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Public input columns to print: "
+                                         << opts.public_input_columns.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Constant columns to print: "
+                                         << opts.constant_columns.to_string();
+                BOOST_LOG_TRIVIAL(debug) << "Selector columns to print: "
+                                         << opts.selector_columns.to_string();
+
+
+                const auto write = [&](std::ostream& out) -> bool {
+                    return nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
+                        out, 
+                        assignment_table_.value(), 
+                        table_description_.value(),
+                        opts
+                    );
+                };
+
+                if (opts.to_stdout()) {
+                    BOOST_LOG_TRIVIAL(info) << "Writing text assignment table to stdout";
+                    return write(std::cout);
+                }
+
+                BOOST_LOG_TRIVIAL(info) << "Writing text assignment table to " << opts.output_filename;
+                std::ofstream out(opts.output_filename, std::ios::binary | std::ios::out);
+                if (!out.is_open()) {
+                    BOOST_LOG_TRIVIAL(error) << "Failed to open file " << opts.output_filename;
+                    return false;
+                }
+
+                return write(out);
             }
 
             bool save_assignment_description(const boost::filesystem::path& assignment_description_file) {
@@ -574,7 +717,7 @@ namespace nil {
                     );
                 table_description_.emplace(table_description);
                 return true;
-            }
+           }
 
             std::optional<typename BlueprintField::value_type> read_challenge(
                     const boost::filesystem::path& input_file) {
@@ -955,11 +1098,39 @@ namespace nil {
                 return save_lpc_consistency_proof_to_file(proof, output_proof_file);
             }
 
+            bool setup_prover() {
+                const auto err = CircuitFactory<BlueprintField>::initialize_circuit(circuit_name_, constraint_system_, assignment_table_, table_description_);
+                if (err) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't initialize circuit " << circuit_name_ << ": " << err.value();
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool fill_assignment_table(const boost::filesystem::path& trace_file_path) {
+                if (!constraint_system_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "Circuit is not initialized";
+                    return false;
+                }
+                if (!assignment_table_.has_value()) {
+                    BOOST_LOG_TRIVIAL(error) << "Assignment table is not initialized";
+                    return false;
+                }
+                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_file_path);
+                if (err) {
+                    BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table rom trace " << trace_file_path << ": " << err.value();
+                    return false;
+                }
+                return true;
+            }
+
         private:
             const std::size_t expand_factor_;
             const std::size_t max_quotient_chunks_;
             const std::size_t lambda_;
             const std::size_t grind_;
+            const std::string circuit_name_;
 
             std::optional<PublicPreprocessedData> public_preprocessed_data_;
 

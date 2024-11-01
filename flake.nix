@@ -63,24 +63,6 @@
             runTests = false;
           });
 
-          zkevm-framework = (pkgs.callPackage ./zkevm-framework.nix {
-            runTests = false;
-            enableDebug = false;
-          });
-          zkevm-framework-tests = (pkgs.callPackage ./zkevm-framework.nix {
-            runTests = true;
-            enableDebug = false;
-          });
-          zkevm-framework-debug-tests = (pkgs.callPackage ./zkevm-framework.nix {
-            enableDebug = true;
-            runTests = true;
-          });
-          zkevm-framework-clang-debug = (pkgs.callPackage ./zkevm-framework.nix {
-            stdenv = pkgs.llvmPackages_19.stdenv;
-            enableDebug = true;
-            runTests = false;
-          });
-
           proof-producer = (pkgs.callPackage ./proof-producer.nix {
             runTests = false;
             enableDebug = false;
@@ -108,7 +90,7 @@
           # fetched from the cache.
           all = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3 zkevm-framework proof-producer];
+            paths = [ crypto3 proof-producer];
           };
           default = all;
         };
@@ -140,11 +122,6 @@
             enableDebug = false;
           });
 
-          zkevm-framework-gcc = (pkgs.callPackage ./zkevm-framework.nix {
-            runTests = true;
-            enableDebug = false;
-          });
-
           proof-producer-gcc = (pkgs.callPackage ./proof-producer.nix {
             runTests = true;
             enableDebug = false;
@@ -165,14 +142,14 @@
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-gcc parallel-crypto3-gcc zkevm-framework-gcc proof-producer-gcc ];
+            paths = [ crypto3-gcc parallel-crypto3-gcc proof-producer-gcc ];
           };
           default = all-gcc;
         };
         apps = {
-          assigner = {
+          single-threaded = {
             type = "app";
-            program = "${self.packages.${system}.zkevm-framework}/bin/assigner";
+            program = "${self.packages.${system}.proof-producer}/bin/proof-producer-single-threaded";
           };
           multi-threaded = {
             type = "app";

@@ -1074,12 +1074,6 @@ namespace nil {
                 // |   a | 2*a | 36   |    |
                 // |   a | 2*a | 39   |    |
                 // -------------------------
-                constexpr static const std::size_t witness_columns_8= 1;
-                constexpr static const std::size_t public_columns_8 = 1;
-                constexpr static const std::size_t constant_columns_8 = 2;
-                constexpr static const std::size_t selector_columns_8 = 0;
-                constexpr static const std::size_t usable_rows_8 = 14;
-
                 template<typename FieldType>
                 circuit_description<FieldType, placeholder_circuit_params<FieldType>> circuit_test_8(
                         typename nil::crypto3::random::algebraic_engine<FieldType> alg_rnd = nil::crypto3::random::algebraic_engine<FieldType>(),

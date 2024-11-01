@@ -54,7 +54,7 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 
         ${Boost_INCLUDE_DIRS})
 
-cm_add_test_subdirectory(test)
+add_tests(test)
 
 if (BUILD_EXAMPLES)
     add_subdirectory(example)

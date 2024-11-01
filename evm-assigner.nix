@@ -37,7 +37,6 @@ in stdenv.mkDerivation rec {
 
   cmakeFlags =
   [
-      (if runTests then "-DBUILD_TESTS=TRUE" else "")
       (if runTests then "-DBUILD_ASSIGNER_TESTS=TRUE" else "")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       "-DZKEVM_FRAMEWORK_ENABLE=TRUE"

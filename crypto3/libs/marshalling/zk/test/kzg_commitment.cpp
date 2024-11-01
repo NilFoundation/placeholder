@@ -30,18 +30,12 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <iostream>
-#include <iomanip>
-#include <regex>
-
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
 #include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
 #include <boost/multiprecision/number.hpp>
-
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/pairing/mnt4.hpp>
@@ -55,10 +49,9 @@
 #include <nil/crypto3/algebra/pairing/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
-/*
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
+#include <nil/crypto3/algebra/pairing/alt_bn128.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/alt_bn128.hpp>
-*/
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/lagrange_interpolation.hpp>
@@ -82,13 +75,10 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
 
+#include <nil/crypto3/marshalling/algebra/processing/alt_bn128.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/bls12.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/mnt4.hpp>
 #include <nil/crypto3/marshalling/algebra/processing/mnt6.hpp>
-
-
-#include "detail/circuits.hpp"
-
 
 
 template<
@@ -142,7 +132,7 @@ struct placeholder_class_test_initializer {
         transcript_type transcript_verification;
         bool result = kzg.verify_eval(_proof, commitments, transcript_verification);
 
-        std::cout << "test completed for [" << typeid(curve_type).name() << "]" <<std::endl;
+        std::cout << "test completed for [" << typeid(curve_type).name() << "] :" << result << std::endl;
 
         return result;
     }
@@ -150,6 +140,9 @@ struct placeholder_class_test_initializer {
 
 BOOST_AUTO_TEST_SUITE(placeholder_class)
     using TestFixtures = boost::mpl::list<
+        placeholder_class_test_initializer< algebra::curves::alt_bn128_254, hashes::keccak_1600<256> >,
+        // TODO: Check why it fails on BLS12-377
+        // placeholder_class_test_initializer< algebra::curves::bls12_377, hashes::keccak_1600<256> >,
         placeholder_class_test_initializer< algebra::curves::bls12_381, hashes::keccak_1600<256> >,
         placeholder_class_test_initializer< algebra::curves::mnt4_298, hashes::keccak_1600<256> >,
         placeholder_class_test_initializer< algebra::curves::mnt6_298, hashes::keccak_1600<256> >
@@ -161,52 +154,3 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(placeholder_class_test, F, TestFixtures) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-/*
-template<
-    typename curve_type,
-    typename transcript_hash_type
-    >
-struct batched_kzg_test_initializer {
-    bool run_test() {
-        typedef typename curve_type::scalar_field_type::value_type scalar_value_type;
-
-        using kzg_type = zk::commitments::batched_kzg<curve_type, transcript_hash_type>;
-        typedef typename kzg_type::transcript_type transcript_type;
-        using endianness = nil::marshalling::option::big_endian;
-
-        scalar_value_type alpha = 7;
-        typename kzg_type::params_type params(8, 8, alpha);
-
-        typename kzg_type::polynomial_type poly;
-
-        poly.template from_coefficients<std::vector<scalar_value_type>>({{ 1,  2,  3,  4,  5,  6,  7,  8}});
-
-        auto commitment = zk::algorithms::commit_one<kzg_type>(params, poly);
-
-        auto filled_commitment = marshalling::types::fill_commitment<endianness, kzg_type>(commitment);
-        auto _commitment = marshalling::types::make_commitment<endianness, kzg_type>(filled_commitment);
-
-        bool result = commitment == _commitment;
-        BOOST_CHECK( result );
-
-        std::cout << "test completed for [" << typeid(curve_type).name() << "]" <<std::endl;
-
-        return result;
-    }
-};
-
-BOOST_AUTO_TEST_SUITE(batched_kzg_marshalling)
-    using TestFixtures = boost::mpl::list<
-        batched_kzg_test_initializer< algebra::curves::bls12_381, hashes::keccak_1600<256> >,
-        batched_kzg_test_initializer< algebra::curves::mnt4_298, hashes::keccak_1600<256> >,
-        batched_kzg_test_initializer< algebra::curves::mnt6_298, hashes::keccak_1600<256> >
-        >;
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(batched_kzg_test, F, TestFixtures) {
-    F fixture;
-    BOOST_CHECK(fixture.run_test());
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-*/

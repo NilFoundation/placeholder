@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 project(parallel-crypto3)
 
+option(BUILD_PARALLEL_CRYPTO3_TESTS "Enable tests" FALSE)
+
 find_package(CM REQUIRED)
 include(CMConfig)
 
@@ -18,6 +20,12 @@ include(CMSetupVersion)
 
 # TODO: beutify entire cmake tree of parallel crypto3 modules the same way we did in origin crypto3
 find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread random unit_test_framework container)
+
+function(add_tests)
+    if (${BUILD_PARALLEL_CRYPTO3_TESTS})
+        add_subdirectory(test)
+    endif ()
+endfunction(add_tests)
 
 add_subdirectory(libs/parallelization-utils)
 add_subdirectory(libs/parallel-containers)

@@ -43,8 +43,6 @@ namespace nil {
                     constexpr static const std::size_t modulus_bits = field_type::modulus_bits;
                     typedef typename field_type::integral_type integral_type;
 
-                    typedef typename field_type::extended_integral_type extended_integral_type;
-
                     constexpr static const integral_type modulus = field_type::modulus;
                     constexpr static const integral_type group_order_minus_one_half = field_type::group_order_minus_one_half;
 

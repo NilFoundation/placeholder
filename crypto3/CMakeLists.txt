@@ -18,8 +18,9 @@ cm_setup_version(VERSION 0.3.0 PREFIX ${CMAKE_WORKSPACE_NAME})
 
 option(BUILD_SHARED_LIBS "Build shared library" FALSE) # TODO: it makes no sense for header-only lib, remove
 option(Boost_USE_STATIC_LIBS "Use static libraries for Boost" OFF)
-option(CMAKE_ENABLE_TESTS "Enable tests" FALSE) # used by CMTest module
-option(BUILD_BENCH_TESTS "Build performance benchmark tests" FALSE)
+option(BUILD_TESTS "Enable tests" TRUE) # used by CMTest module; If set to false, tests are removed from crypto3::all target. User still can build individual ones.
+option(BUILD_CRYPTO3_TESTS "Enable tests" FALSE)
+option(BUILD_CRYPTO3_BENCH_TESTS "Build performance benchmark tests" FALSE)
 option(BUILD_DOCS "Build with configuring Doxygen documentation compiler" FALSE)
 
 # The file compile_commands.json is generated in build directory, so LSP could
@@ -30,6 +31,12 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
   set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES 
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  add_compile_options (-fdiagnostics-color=always)
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  add_compile_options (-fcolor-diagnostics)
+endif ()
 
 set(BUILD_WITH_TARGET_ARCHITECTURE "" CACHE STRING "Target build architecture") # TODO: check if we can do cross-compilation
 set(DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_LIST_DIR}/docs" CACHE STRING "Specify doxygen output directory")
@@ -43,6 +50,12 @@ else()
 endif()
 
 find_package(Boost REQUIRED COMPONENTS container random filesystem log log_setup program_options thread system unit_test_framework timer)
+
+function(add_tests)
+    if (${BUILD_CRYPTO3_TESTS})
+        add_subdirectory(test)
+    endif ()
+endfunction(add_tests)
 
 add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/")
 add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/marshalling/")
@@ -80,7 +93,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_common INTERFACE
     crypto3::random
 )
 
-if(BUILD_BENCH_TESTS)
+if(BUILD_CRYPTO3_BENCH_TESTS)
     add_subdirectory(benchmarks)
 endif()
 

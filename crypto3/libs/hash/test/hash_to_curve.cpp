@@ -56,18 +56,6 @@ using namespace nil::crypto3::algebra::curves::detail;
 using namespace nil::crypto3::algebra::curves;
 using namespace nil::crypto3::hashes;
 
-namespace boost {
-    namespace test_tools {
-        namespace tt_detail {
-            template<template<typename, typename> class P, typename K, typename V>
-            struct print_log_value<P<K, V>> {
-                void operator()(std::ostream &, P<K, V> const &) {
-                }
-            };
-        }    // namespace tt_detail
-    }        // namespace test_tools
-}    // namespace boost
-
 template<typename Expander,
          typename DstType,
          typename MsgType,

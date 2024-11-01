@@ -64,18 +64,6 @@ void print_byteblob(std::ostream &os, TIter iter_begin, TIter iter_end) {
     os << std::dec << std::endl;
 }
 
-template<typename FieldParams>
-void print_field_element(std::ostream &os,
-                         const typename nil::crypto3::algebra::fields::detail::element_fp<FieldParams> &e) {
-    os << e.data << std::endl;
-}
-
-template<typename FieldParams>
-void print_field_element(std::ostream &os,
-                         const typename nil::crypto3::algebra::fields::detail::element_fp2<FieldParams> &e) {
-    os << "[" << e.data[0].data << "," << e.data[1].data << "]" << std::endl;
-}
-
 template<typename PlonkVariable>
 PlonkVariable generate_random_plonk_variable() {
     std::random_device r;

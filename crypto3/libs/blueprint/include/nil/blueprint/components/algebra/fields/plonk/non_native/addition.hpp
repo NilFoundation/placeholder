@@ -201,7 +201,7 @@ namespace nil {
                     std::array<typename BlueprintFieldType::value_type, 4> q;
                     std::array<typename BlueprintFieldType::value_type, 4> p;
                     typename BlueprintFieldType::integral_type mask = (pasta_base << 66) - 1;
-                    typename BlueprintFieldType::extended_integral_type extended_mask = mask;
+                    typename ed25519_field_type::extended_integral_type extended_mask = mask;
                     r[0] = integral_eddsa_r & mask;
                     q[0] = integral_eddsa_q & extended_mask;
                     p[0] = minus_eddsa_p & extended_mask;
@@ -291,7 +291,7 @@ namespace nil {
                 std::array<typename BlueprintFieldType::value_type, 4> q;
                 std::array<typename BlueprintFieldType::value_type, 4> p;
                 typename BlueprintFieldType::integral_type mask = (pasta_base << 66) - 1;
-                typename BlueprintFieldType::extended_integral_type extended_mask = (pasta_base << 66) - 1;
+                typename ed25519_field_type::extended_integral_type extended_mask = (pasta_base << 66) - 1;
                 r[0] = integral_eddsa_r & mask;
                 q[0] = integral_eddsa_q & extended_mask;
                 p[0] = minus_eddsa_p & extended_mask;
@@ -399,7 +399,7 @@ namespace nil {
                 typename ed25519_field_type::extended_integral_type pow = extended_base << 257;
                 typename ed25519_field_type::extended_integral_type minus_eddsa_p = pow - eddsa_p;
                 std::array<typename BlueprintFieldType::value_type, 4> p;
-                typename BlueprintFieldType::extended_integral_type mask = (base << 66) - 1;
+                typename ed25519_field_type::extended_integral_type mask = (base << 66) - 1;
                 p[0] = minus_eddsa_p & mask;
 
                 auto t = var(component.W(0), 0) + var(component.W(1), 0) + p[0] * var(component.W(2), 0);

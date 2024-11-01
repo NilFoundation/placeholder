@@ -58,7 +58,6 @@
 #include <nil/crypto3/algebra/fields/curve25519/base_field.hpp>
 #include <nil/crypto3/algebra/fields/curve25519/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
-#include <nil/crypto3/algebra/fields/maxprime.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
@@ -385,11 +384,6 @@ BOOST_DATA_TEST_CASE(field_operation_test_bls12_381_fq12,
     using policy_type = fields::fp12_2over3over2<fields::bls12_fq<381>>;
 
     field_operation_test<policy_type>(data_set);
-}
-
-BOOST_AUTO_TEST_CASE(field_operation_test_maxprime){
-    using maxprime_field_type = fields::maxprime<64>;
-    typename maxprime_field_type::value_type zero = maxprime_field_type::value_type::zero();
 }
 
 BOOST_DATA_TEST_CASE(field_operation_test_mnt4_fq, string_data("field_operation_test_mnt4_fq"), data_set) {

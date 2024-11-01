@@ -18,7 +18,7 @@ include(PlatformConfiguration)
 include(CheckSSE)
 include(CheckAVX)
 include(CMTest)
-cm_add_test_subdirectory(test)
+add_tests(test)
 
 option(CRYPTO3_HASH_BLAKE2B "Build with Blake2 hash support" TRUE)
 option(CRYPTO3_HASH_CHECKSUM_ADLER "Build with Adler checksum support" TRUE)
