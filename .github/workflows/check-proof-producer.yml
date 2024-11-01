@@ -142,9 +142,9 @@ jobs:
           echo "artifact-dir=$(realpath ${{ github.workspace }}/../artifacts)"
 
       - name: Cleanup artifacts after previous runs
-        working-directory: ${{ steps.strings.outputs.artifact-dir }}
+        continue-on-error: true
         run: |
-          rm -rf *
+          rm -rf -i -v ${{ steps.strings.outputs.artifact-dir }}
 
       - name: Download circuits and assignments artifact
         uses: dawidd6/action-download-artifact@v3
