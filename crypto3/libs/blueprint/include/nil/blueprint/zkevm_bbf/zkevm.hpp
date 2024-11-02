@@ -413,6 +413,25 @@ namespace nil {
                         mc.push_back(opcode_constraint - all_states[1].opcode);
                         mc.push_back(row_counter_constraint - all_states[1].row_counter);
 
+                        if( stage == GenerationStage::CONSTRAINTS) {
+                            for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes.size(); opcode_num++ ){
+                                zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
+                                std::cout << "Build constraints for " << current_opcode << std::endl;
+                                if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
+                                    std::cout << "Implementation for "<< current_opcode << " is not defined" << std::endl;
+                                    continue;
+                                }
+                                std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
+                                opcode_input_type<GenerationStage::CONSTRAINTS> current_state_obj;
+                                context_type fresh_ct = context_object.fresh_subcontext(
+                                    opcode_area,
+                                    1,
+                                    1+current_opcode_bare_rows_amount
+                                );
+                                opcode_impls[current_opcode]->fill_context(fresh_ct, current_state_obj);
+                            }
+                        }
+
                         for( auto &constr: erc ){
                             context_object.relative_constrain(context_object.relativize(constr, -1), 0, max_zkevm_rows-1);
                         }

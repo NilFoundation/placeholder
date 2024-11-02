@@ -54,7 +54,7 @@ namespace nil {
                     TYPE chunks_sum;
                     TYPE chunks_sum_inv;
                     TYPE result;
-                    if( stage == GenerationStage::ASSIGNMENT ){
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         std::cout << "\tISZERO bbf object assigns its area" << std::endl;
                         zkevm_word_type A = current_state.stack_top();
                         a_chunks = zkevm_word_to_field_element<FieldType>(A);
@@ -75,6 +75,7 @@ namespace nil {
                     constrain(chunks_sum_expr - chunks_sum);
                     constrain(result + chunks_sum * chunks_sum_inv - 1);
                     constrain(result * (result - 1));
+                    std::cout << "Result = " << result << std::endl;
                 }
             };
 
@@ -91,7 +92,10 @@ namespace nil {
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
-                ) {}
+                ) {
+                    std::cout << "\tBuild ISZERO constraints" << std::endl;
+                    zkevm_iszero_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
+                }
                 virtual std::size_t rows_amount() override {
                     return 1;
                 }
