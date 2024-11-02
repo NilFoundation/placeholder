@@ -50,7 +50,7 @@ namespace nil {
                 zkevm_iszero_bbf(context_type &context_object, const opcode_input_type<stage> &current_state):
                     generic_component<FieldType,stage>(context_object)
                 {
-                    std::vector<TYPE> a_chunks;
+                    std::vector<TYPE> a_chunks(16);
                     TYPE chunks_sum;
                     TYPE chunks_sum_inv;
                     TYPE result;
@@ -75,7 +75,7 @@ namespace nil {
                     constrain(chunks_sum_expr - chunks_sum);
                     constrain(result + chunks_sum * chunks_sum_inv - 1);
                     constrain(result * (result - 1));
-                    std::cout << "Result = " << result << std::endl;
+                    std::cout << "\tResult = " << result << std::endl;
                 }
             };
 
