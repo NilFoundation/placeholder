@@ -47,7 +47,7 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
 
-                zkevm_iszero_bbf(context_type &context_object, const opcode_input_type<stage> &current_state):
+                zkevm_iszero_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object)
                 {
                     std::vector<TYPE> a_chunks(16);
@@ -75,6 +75,40 @@ namespace nil {
                     constrain(chunks_sum_expr - chunks_sum);
                     constrain(result + chunks_sum * chunks_sum_inv - 1);
                     constrain(result * (result - 1));
+                    if constexpr( stage == GenerationStage::CONSTRAINTS ){
+                        constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
+                        constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
+                        constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
+                        constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
+                        auto A_128 = chunks16_to_chunks128<TYPE>(a_chunks);
+                        std::vector<TYPE> tmp({
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(0),
+                            TYPE(0),// is_write
+                            A_128.first,
+                            A_128.second
+                        });
+                        lookup(tmp, "zkevm_rw");
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(0) + 1,
+                            TYPE(1),// is_write
+                            0,
+                            result
+                        };
+                        lookup(tmp, "zkevm_rw");
+                    }
                     std::cout << "\tResult = " << result << std::endl;
                 }
             };
@@ -84,14 +118,14 @@ namespace nil {
             public:
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
-                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) {
                     std::cout << "\tAssign ISZERO input = " << current_state.stack_top() << std::endl;
                     zkevm_iszero_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) {
                     std::cout << "\tBuild ISZERO constraints" << std::endl;
                     zkevm_iszero_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);

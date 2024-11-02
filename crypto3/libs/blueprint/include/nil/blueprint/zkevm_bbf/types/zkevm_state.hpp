@@ -79,6 +79,122 @@ namespace nil {
                 std::map<std::size_t, std::uint8_t>         memory_slice; // BEFORE opcode
                 std::map<zkevm_word_type, zkevm_word_type>  storage_slice; // BEFORE opcode
             };
+
+            template <typename FieldType, GenerationStage stage>
+            struct state_vars{
+                using TYPE = typename generic_component<FieldType, stage>::TYPE;
+
+                TYPE call_id;
+                TYPE bytecode_hash_hi;
+                TYPE bytecode_hash_lo;
+                TYPE pc;
+                TYPE opcode;
+                TYPE gas_hi;
+                TYPE gas_lo;
+                TYPE stack_size;
+                TYPE memory_size;
+                TYPE rw_counter;
+
+                TYPE row_counter;
+                TYPE step_start;
+                TYPE row_counter_inv;
+                TYPE opcode_parity;
+                TYPE is_even;// Do we really need it?
+
+                static std::size_t get_items_amout(){ return 15; }
+            };
+
+            template <typename FieldType>
+            class zkevm_state_vars{
+            public:
+                using TYPE = typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::TYPE;
+
+                zkevm_state_vars(const std::vector<state_vars<FieldType, GenerationStage::CONSTRAINTS>> &_states, std::size_t size){
+                    state.assign(_states.begin()+1, _states.begin() + size + 2);
+                }
+                TYPE tx_hash(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].tx_hash;
+                }   // full transaction hash. Now it is not used. But it’ll be used some day
+                TYPE call_id(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].call_id;
+                }   // call_id — number of current transaction in block
+                TYPE pc(std::size_t row) const{
+                    std::cout << "\tstate.size = " << state.size() << std::endl;
+                    //BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].pc;
+                }
+                TYPE gas(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].gas_hi * 0x10000 + state[row].gas_lo;
+                }
+                TYPE rw_counter(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].rw_counter;
+                }
+                TYPE bytecode_hash_hi(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].bytecode_hash_hi;
+                }
+                TYPE bytecode_hash_lo(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].bytecode_hash_lo;
+                }
+                TYPE opcode(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].opcode;
+                }
+                TYPE additional_input(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].additional_input;
+                } // data for pushX opcode
+                TYPE stack_size(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].stack_size;
+                }       // BEFORE opcode
+                TYPE memory_size(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].memory_size;
+                }      // BEFORE opcode
+                TYPE tx_finish(std::size_t row) const{
+                    BOOST_ASSERT(row < state.size() - 1);
+                    return state[row].tx_finish;
+                }       // convinent, but optional11.
+
+                TYPE tx_hash_next() const{
+                    return state[state.size()-1].tx_hash;
+                } // full transaction hash. Now it is not used. But it’ll be used some day
+                TYPE call_id_next() const{
+                    return state[state.size()-1].call_id;
+                } // call_id — number of current transaction in block
+                TYPE pc_next() const{
+                    return state[state.size()-1].pc;
+                }
+                TYPE gas_next() const{
+                    return state[state.size()-1].gas_hi * 0x10000 + state[state.size()-1].gas_lo;;
+                }
+                TYPE rw_counter_next() const{
+                    return state[state.size()-1].rw_counter;
+                }
+                TYPE bytecode_hash_hi_next() const{
+                    return state[state.size()-1].bytecode_hash_hi;
+                }
+                TYPE bytecode_hash_lo_next() const{
+                    return state[state.size()-1].bytecode_hash_lo;
+                }
+                TYPE opcode_next() const{
+                    return state[state.size()-1].opcode;
+                }
+                TYPE stack_size_next() const{
+                    return state[state.size()-1].stack_size;
+                }       // BEFORE opcode
+                TYPE memory_size_next() const{
+                    return state[state.size()-1].memory_size;
+                }      // BEFORE opcode
+            protected:
+                std::vector<state_vars<FieldType, GenerationStage::CONSTRAINTS>> state;
+            };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil

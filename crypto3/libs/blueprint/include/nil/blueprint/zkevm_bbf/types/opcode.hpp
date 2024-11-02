@@ -35,8 +35,8 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            template<GenerationStage stage>
-            using opcode_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_state, std::nullptr_t>::type;
+            template<typename FieldType, GenerationStage stage>
+            using opcode_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_state, zkevm_state_vars<FieldType>>::type;
 
             template<typename FieldType>
             class opcode_abstract{
@@ -45,11 +45,11 @@ namespace nil {
 
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
-                    const opcode_input_type<GenerationStage::ASSIGNMENT> &current_state
+                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) = 0;
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<GenerationStage::CONSTRAINTS> &current_state
+                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) = 0;
             protected:
                 std::size_t gas = 0;

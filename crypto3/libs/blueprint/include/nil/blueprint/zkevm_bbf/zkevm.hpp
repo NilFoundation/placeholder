@@ -53,6 +53,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
             public:
+                using state = state_vars<FieldType, stage>;
                 using typename generic_component<FieldType,stage>::TYPE;
                 using private_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::size_t, std::nullptr_t>::type;
                 struct input_type{
@@ -88,27 +89,6 @@ namespace nil {
                     desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode)));
                     return desc;
                 }
-
-                struct state{
-                    TYPE call_id;
-                    TYPE bytecode_hash_hi;
-                    TYPE bytecode_hash_lo;
-                    TYPE pc;
-                    TYPE opcode;
-                    TYPE gas_hi;
-                    TYPE gas_lo;
-                    TYPE stack_size;
-                    TYPE memory_size;
-                    TYPE rw_counter;
-
-                    TYPE row_counter;
-                    TYPE step_start;
-                    TYPE row_counter_inv;
-                    TYPE opcode_parity;
-                    TYPE is_even;// Do we really need it?
-
-                    static std::size_t get_items_amout(){ return 15; }
-                };
 
                 zkevm(
                     context_type &context_object,
@@ -208,6 +188,8 @@ namespace nil {
                                 << " will be assigned as " << std::hex << current_state.opcode << std::dec
                                 << " on row " << current_row
                                 << " rows_amount = " << current_opcode_rows_amount
+                                << " stack_size = " << current_state.stack_size
+                                << " rw_counter = 0x" << std::hex<< current_state.rw_counter << std::dec
                                 << std::endl;
 
                             for( std::size_t j = 0; j < current_opcode_rows_amount; j++ ){
@@ -417,6 +399,7 @@ namespace nil {
 
                         if( stage == GenerationStage::CONSTRAINTS) {
                             std::map<std::pair<zkevm_opcode, std::size_t>, std::vector<TYPE>> opcode_constraints_aggregator;
+                            std::map<std::tuple<zkevm_opcode, std::size_t, std::string>, std::vector<std::vector<TYPE>>> opcode_lookup_constraints_aggregator;
                             std::size_t max_opcode_row_constraints = 0;
                             //std::map<std::pair<zkevm_opcode, row, std::string>, std::vector<lookup_constraint>> opcode_constraints_aggregator;
                             for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes.size(); opcode_num++ ){
@@ -427,13 +410,14 @@ namespace nil {
                                     continue;
                                 }
                                 std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
-                                opcode_input_type<GenerationStage::CONSTRAINTS> current_state_obj;
                                 context_type fresh_ct = context_object.fresh_subcontext(
                                     opcode_area,
                                     1,
                                     1 + current_opcode_bare_rows_amount
                                 );
-                                opcode_impls[current_opcode]->fill_context(fresh_ct, current_state_obj);
+                                zkevm_state_vars<FieldType> opcode_state_vars(all_states, current_opcode_bare_rows_amount);
+
+                                opcode_impls[current_opcode]->fill_context(fresh_ct, opcode_state_vars);
                                 auto opcode_constraints = fresh_ct.get_constraints();
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
@@ -448,19 +432,54 @@ namespace nil {
                                         std::cout << std::endl;
                                     }
                                 }
+                                auto opcode_lookup_constraints = fresh_ct.get_lookup_constraints();
+                                for( const auto &constr_list: opcode_lookup_constraints){
+                                    for( const auto &local_row: constr_list.first){
+                                        for( auto lookup_constraint: constr_list.second){
+                                            std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - 1;
+                                            opcode_lookup_constraints_aggregator[{current_opcode, real_row, lookup_constraint.first}].push_back(lookup_constraint.second);
+                                            std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
+                                            for( auto constraint:lookup_constraint.second ){
+                                                std::cout << "\t\t" << constraint << std::endl;
+                                            }
+                                            std::cout << std::endl;
+                                        }
+                                    }
+                                }
                             }
                             std::cout << "Accumulate constraints " << max_opcode_row_constraints << std::endl;
                             for( std::size_t i = 0; i < max_opcode_row_constraints; i++ ){
                                 TYPE acc_constraint;
-                                std::cout << "\tConstraint " << i << std::endl;
+                                // std::cout << "\tConstraint " << i << std::endl;
                                 for( auto &[pair, constraints]: opcode_constraints_aggregator ){
                                     if( constraints.size() <= i) continue;
                                     acc_constraint += context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i];
-                                    std::cout << "\t\t" << pair.first  << " " << pair.second << std::endl;
+                                    // std::cout << "\t\t" << pair.first  << " " << pair.second << std::endl;
                                     //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1));
                                 }
                                 relative_mc.push_back(acc_constraint);
                                 //std::cout << "\t" << acc_constraint << std::endl;
+                            }
+                            std::cout << "Accumulate lookup constraints " << std::endl;
+                            std::map<std::string, std::vector<std::vector<TYPE>>> acc_lookup_constraints;
+                            for( auto &[key, exprs]:opcode_lookup_constraints_aggregator){
+                                auto &[local_opcode, local_row, table_name] = key;
+                                std::cout << "\t" << local_opcode << ", " << local_row << ", " << table_name << std::endl;
+                                if( acc_lookup_constraints.find(table_name) == acc_lookup_constraints.end()) acc_lookup_constraints[table_name] = {};
+                                if( acc_lookup_constraints[table_name].size() < exprs.size() ) acc_lookup_constraints[table_name].resize(exprs.size());
+                                for( std::size_t i = 0; i < exprs.size(); i++ ) {
+                                    acc_lookup_constraints[table_name][i].resize(exprs[i].size());
+                                    for( std::size_t j = 0; j < exprs[i].size(); j++ ){
+                                        acc_lookup_constraints[table_name][i][j] += context_object.relativize(
+                                            zkevm_opcode_row_selectors[{local_opcode, local_row}], -1
+                                        ) * exprs[i][j];
+                                    }
+                                }
+                            }
+                            for( auto&[table_name, constraint_list]:acc_lookup_constraints ){
+                                for(auto &exprs: constraint_list){
+                                    context_object.relative_lookup(exprs, table_name, 1, max_zkevm_rows - 1);
+                                }
                             }
                         }
 

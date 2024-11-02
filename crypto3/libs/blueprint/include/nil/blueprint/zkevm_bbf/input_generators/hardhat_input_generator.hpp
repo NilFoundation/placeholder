@@ -75,6 +75,25 @@ namespace nil {
                             }
                             using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
+                            zkevm_state state; // TODO:optimize
+                            state.tx_hash = 0;  // TODO: change it
+                            state.opcode = opcode_number_from_str(opcode);
+                            state.call_id = call_id;
+                            state.gas = atoi(it->second.get_child("gas").data().c_str());
+                            state.pc = atoi(it->second.get_child("pc").data().c_str());
+                            state.rw_counter = rw_counter;
+                            state.bytecode_hash = _bytecodes.get_data()[0].second; // TODO: fix it if possible
+                            state.additional_input = opcode.substr(0,4) == "PUSH"? stack_next[stack_next.size() - 1]: 0;
+                            state.tx_finish = (std::distance(it, ptrace.end()) != 1);
+                            state.stack_size = stack.size();
+                            state.memory_size = memory.size();
+                            state.stack_slice = stack;
+                            // TODO:memory_slice
+                            // TODO:storage_slice
+                            for( std::size_t i = 0; i < memory.size(); i++){
+                                state.memory_slice[i] = memory[i];
+                            }
+                            _zkevm_states.push_back(state);
                             // Opcode is not presented in RW lookup table. We just take it from json
                             // // std::cout << opcode << std::endl;
                             if(opcode == "STOP") {
@@ -927,22 +946,6 @@ namespace nil {
                                 // std::cout << "Unknown opcode " << std::hex << opcode << std::dec << std::endl;
                                 BOOST_ASSERT(false);
                             }
-                            zkevm_state state; // TODO:optimize
-                            state.tx_hash = 0;  // TODO: change it
-                            state.opcode = opcode_number_from_str(opcode);
-                            state.call_id = call_id;
-                            state.gas = atoi(it->second.get_child("gas").data().c_str());
-                            state.pc = atoi(it->second.get_child("pc").data().c_str());
-                            state.rw_counter = rw_counter;
-                            state.bytecode_hash = _bytecodes.get_data()[0].second; // TODO: fix it if possible
-                            state.additional_input = opcode.substr(0,4) == "PUSH"? stack_next[stack_next.size() - 1]: 0;
-                            state.tx_finish = (std::distance(it, ptrace.end()) != 1);
-                            state.stack_slice = stack;
-                            // TODO:memory_slice
-                            // TODO:storage_slice
-                            _zkevm_states.push_back(state);
-                            std::size_t memory_map;
-
                             stack = stack_next;
                             memory = memory_next;
                             storage = storage_next;

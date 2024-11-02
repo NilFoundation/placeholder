@@ -21,44 +21,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-
 #pragma once
 
-#include <numeric>
-#include <algorithm>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+#include <nil/crypto3/bench/scoped_profiler.hpp>
 
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
-#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/blueprint/plonk/assignment.hpp>
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
+#include <nil/blueprint/component.hpp>
+
+#include <nil/blueprint/bbf/generic.hpp>
+#include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 
 namespace nil {
     namespace blueprint {
-        namespace bbf{
-            template<typename FieldType>
-            class opcode_abstract;
-
-            template<typename FieldType>
-            class zkevm_swapx_operation : public opcode_abstract<FieldType> {
-            public:
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) {
-                    std::cout << "Assign SWAP"<<x << std::endl;
+        namespace bbf {
+            template <typename TYPE>
+            std::pair<TYPE, TYPE>chunks16_to_chunks128(const std::vector<TYPE> &chunks){
+                TYPE result_hi, result_lo;
+                for(std::size_t i = 0; i < 8; i++){
+                    result_hi *= 0x10000;
+                    result_hi += chunks[i];
+                    result_lo *= 0x10000;
+                    result_lo += chunks[i+8];
                 }
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) {}
-
-                virtual std::size_t rows_amount() override {
-                    return 2;
-                }
-                zkevm_swapx_operation(std::size_t _x):x(_x){
-
-                }
-            protected:
-                std::size_t x;
-            };
-        } // namespace bbf
-    }   // namespace blueprint
-}   // namespace nil
+                return {result_hi, result_lo};
+            }
+        }
+    }
+}
