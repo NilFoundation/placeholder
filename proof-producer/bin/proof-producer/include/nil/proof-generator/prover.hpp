@@ -234,7 +234,7 @@ namespace nil {
                     boost::filesystem::path proof_file_,
                     boost::filesystem::path json_file_,
                     bool skip_verification) {
-                if (!nil::proof_generator::can_write_to_file(proof_file_.string())) {
+                if (!can_write_to_file(proof_file_.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't write to file " << proof_file_;
                     return false;
                 }
@@ -266,7 +266,7 @@ namespace nil {
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     proof_file_,
                     filled_placeholder_proof,
                     true
@@ -299,7 +299,7 @@ namespace nil {
                     boost::filesystem::path proof_file_,
                     std::optional<boost::filesystem::path> challenge_file_,
                     std::optional<boost::filesystem::path> theta_power_file) {
-                if (!nil::proof_generator::can_write_to_file(proof_file_.string())) {
+                if (!can_write_to_file(proof_file_.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't write to file " << proof_file_;
                     return false;
                 }
@@ -324,7 +324,7 @@ namespace nil {
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     proof_file_,
                     filled_placeholder_proof,
                     true
@@ -404,7 +404,7 @@ namespace nil {
                     nil::crypto3::marshalling::types::fill_placeholder_common_data<Endianness, CommonData>(
                         public_preprocessed_data_->common_data
                     );
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     preprocessed_common_data_file,
                     marshalled_common_data
                 );
@@ -444,7 +444,7 @@ namespace nil {
                     fill_placeholder_preprocessed_public_data<Endianness, PreprocessedPublicDataType>(
                         *public_preprocessed_data_
                     );
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     preprocessed_data_file,
                     marshalled_preprocessed_public_data
                 );
@@ -482,7 +482,7 @@ namespace nil {
 
                 auto marshalled_lpc_state = fill_commitment_scheme<Endianness, LpcScheme>(
                     *lpc_scheme_);
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     commitment_scheme_state_file,
                     marshalled_lpc_state
                 );
@@ -556,7 +556,7 @@ namespace nil {
             }
 
             bool save_circuit_to_file(boost::filesystem::path circuit_file) {
-                using writer = nil::proof_generator::circuit_writer<Endianness, BlueprintField>;
+                using writer = circuit_writer<Endianness, BlueprintField>;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing circuit to " << circuit_file;
                 if (!constraint_system_) {
@@ -616,7 +616,7 @@ namespace nil {
             }
 
             bool save_binary_assignment_table_to_file(const boost::filesystem::path& output_filename) {
-                using writer = nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>;
+                using writer = assignment_table_writer<Endianness, BlueprintField>;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
                 
@@ -661,7 +661,7 @@ namespace nil {
 
 
                 const auto write = [&](std::ostream& out) -> bool {
-                    return nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
+                    return assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
                         out, 
                         assignment_table_.value(), 
                         table_description_.value(),
@@ -691,7 +691,7 @@ namespace nil {
                     nil::crypto3::marshalling::types::fill_assignment_table_description<Endianness, BlueprintField>(
                         *table_description_
                     );
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     assignment_description_file,
                     marshalled_assignment_description
                 );
@@ -724,7 +724,7 @@ namespace nil {
                 using challenge_marshalling_type = nil::crypto3::marshalling::types::field_element<
                     TTypeBase, typename BlueprintField::value_type>;
 
-                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                if (!can_read_from_file(input_file.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
                     return std::nullopt;
                 }
@@ -844,7 +844,7 @@ namespace nil {
                 using polynomial_marshalling_type = typename nil::crypto3::marshalling::types::polynomial<
                     TTypeBase, PolynomialType>::type;
 
-                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                if (!can_read_from_file(input_file.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
                     return std::nullopt;
                 }
@@ -1006,7 +1006,7 @@ namespace nil {
                 using challenge_vector_marshalling_type = nil::crypto3::marshalling::types::field_element_vector<
                     typename BlueprintField::value_type, TTypeBase>;
 
-                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                if (!can_read_from_file(input_file.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
                     return std::nullopt;
                 }
