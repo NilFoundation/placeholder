@@ -1,8 +1,9 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_BYTECODE_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_BYTECODE_HPP_
 
+#include <optional>
 #include <boost/log/trivial.hpp>
-
+#include <boost/filesystem.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
@@ -24,11 +25,16 @@ namespace nil {
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, max_rows);
 
-            //TODO read from trace
-            std::vector<std::uint8_t> raw_bytecode = {0x60, 0x04, 0x60, 0x08, 0x02}; // 4*8
             typename ComponentType::input_type input;
-            input.bytecodes.new_buffer(raw_bytecode);
-            input.keccak_buffers.new_buffer(raw_bytecode);
+            const auto contract_bytecodes = deserialize_bytecodes_from_file(trace_file_path);
+            if (!contract_bytecodes) {
+                return "can't read bytecode trace from file";
+            }
+            for (const auto& bytecode_it : contract_bytecodes.value()) {
+                const auto raw_bytecode = string_to_bytes(bytecode_it.second);
+                input.bytecodes.new_buffer(raw_bytecode);
+                input.keccak_buffers.new_buffer(raw_bytecode);
+            }
 
             ComponentType instance(context_object, input, max_bytecode_size, max_keccak_blocks);
             return {};

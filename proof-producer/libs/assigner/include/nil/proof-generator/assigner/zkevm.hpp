@@ -1,8 +1,9 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_ZKEVM_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_BYTECODE_HPP_
 
+#include <optional>
 #include <boost/log/trivial.hpp>
-
+#include <boost/filesystem.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
@@ -27,34 +28,39 @@ namespace nil {
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, max_rows);
 
-            //TODO read from trace
-            std::vector<std::uint8_t> raw_bytecode = {0x60, 0x04, 0x60, 0x08, 0x02}; // 4*8
             typename ComponentType::input_type input;
+
             // bytecode
-            input.bytecodes.new_buffer(raw_bytecode);
-            input.keccak_buffers.new_buffer(raw_bytecode);
+            const auto contract_bytecodes = deserialize_bytecodes_from_file(trace_file_path);
+            if (!contract_bytecodes) {
+                return "can't read bytecode from file";
+            }
+            for (const auto& bytecode_it : contract_bytecodes.value()) {
+                const auto raw_bytecode = string_to_bytes(bytecode_it.second);
+                input.bytecodes.new_buffer(raw_bytecode);
+                input.keccak_buffers.new_buffer(raw_bytecode);
+            }
+
             // rw
-            size_t call_id = 0;
-            size_t rw_id = 0;
-            std::vector<uint8_t> bytes_0 = {0x04};
-            std::vector<uint8_t> bytes_1 = {0x08};
-            std::vector<std::size_t> stack_size = {0, 1, 2, 1, 0};
-            nil::blueprint::zkevm_word_type value_0 = nil::blueprint::zkevm_word_from_bytes(bytes_0);
-            nil::blueprint::zkevm_word_type value_1 = nil::blueprint::zkevm_word_from_bytes(bytes_1);
-            input.rw_operations.push_back(nil::blueprint::bbf::stack_rw_operation(call_id, stack_size[rw_id], rw_id++, true, value_0));
-            input.rw_operations.push_back(nil::blueprint::bbf::stack_rw_operation(call_id, stack_size[rw_id], rw_id++, true, value_1));
-            input.rw_operations.push_back(nil::blueprint::bbf::stack_rw_operation(call_id, stack_size[rw_id], rw_id++, false, value_1));
-            input.rw_operations.push_back(nil::blueprint::bbf::stack_rw_operation(call_id, stack_size[rw_id], rw_id++, false, value_0));
-            input.rw_operations.push_back(nil::blueprint::bbf::stack_rw_operation(call_id, stack_size[rw_id], rw_id++, true, value_0 * value_1));
+            const auto rw_operations = deserialize_rw_traces_from_file(trace_file_path);
+            if (!rw_operations) {
+                return "can't read rw from file";
+            }
+            for (const auto& stack_op : rw_operations->stack_ops) {
+                input.rw_operations.push_back(stack_op);
+            }
+            for (const auto& memory_op : rw_operations->memory_ops) {
+                input.rw_operations.push_back(memory_op);
+            }
+            for (const auto& storage_op : rw_operations->storage_ops) {
+                input.rw_operations.push_back(storage_op);
+            }
+
             // no copy events
             // states
             std::vector<nil::blueprint::zkevm_word_type> stack;
             std::map<std::size_t, std::uint8_t> memory;
             std::map<nil::blueprint::zkevm_word_type, nil::blueprint::zkevm_word_type> storage;
-            input.zkevm_states.push_back(nil::blueprint::bbf::zkevm_state(stack, memory, storage));
-            stack.insert(stack.begin(), value_0);
-            input.zkevm_states.push_back(nil::blueprint::bbf::zkevm_state(stack, memory, storage));
-            stack.insert(stack.begin(), value_1);
             input.zkevm_states.push_back(nil::blueprint::bbf::zkevm_state(stack, memory, storage));
 
             ComponentType instance(context_object, input, max_zkevm_rows, max_copy, max_rw, max_keccak_blocks, max_bytecode);

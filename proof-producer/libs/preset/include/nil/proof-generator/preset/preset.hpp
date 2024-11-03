@@ -7,6 +7,7 @@
 #include <istream>
 
 #include "nil/proof-generator/preset/bytecode.hpp"
+#include "nil/proof-generator/preset/rw.hpp"
 #include "nil/proof-generator/preset/zkevm.hpp"
 
 #include <optional>
@@ -46,6 +47,7 @@ namespace nil {
                     std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& circuit,
                     std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> CircuitFactory<BlueprintFieldType>::circuit_selector = {
                 {"bytecode", initialize_bytecode_circuit<BlueprintFieldType>},
+                {"rw", initialize_rw_circuit<BlueprintFieldType>},
                 {"zkevm", initialize_zkevm_circuit<BlueprintFieldType>}
         };
     } // proof_generator

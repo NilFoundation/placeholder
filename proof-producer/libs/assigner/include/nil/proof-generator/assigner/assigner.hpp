@@ -2,6 +2,7 @@
 #define PROOF_GENERATOR_LIBS_ASSIGNER_ASSIGNER_HPP_
 
 #include <nil/proof-generator/assigner/bytecode.hpp>
+#include <nil/proof-generator/assigner/rw.hpp>
 #include <nil/proof-generator/assigner/zkevm.hpp>
 
 namespace nil {
@@ -12,6 +13,7 @@ namespace nil {
                     nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
                     const boost::filesystem::path& trace_file_path)>> circuit_selector = {
                 {"bytecode", fill_bytecode_assignment_table<BlueprintFieldType>},
+                {"rw", fill_rw_assignment_table<BlueprintFieldType>},
                 {"zkevm", fill_zkevm_assignment_table<BlueprintFieldType>}
         };
 
