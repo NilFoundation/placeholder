@@ -35,17 +35,18 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            zkevm_word_type
+            nil::blueprint::zkevm_word_type
             zkevm_keccak_hash(const std::vector<uint8_t> &buffer){
                 nil::crypto3::hashes::keccak_1600<256>::digest_type d = nil::crypto3::hash<nil::crypto3::hashes::keccak_1600<256>>(buffer);
                 nil::crypto3::algebra::fields::field<256>::integral_type n(d);
-                zkevm_word_type hash_value;
+                nil::blueprint::zkevm_word_type hash_value;
 
                 return hash_value;
             }
 
             class zkevm_keccak_buffers {
             public:
+                using zkevm_word_type = nil::blueprint::zkevm_word_type;
                 using data_item = std::pair<std::vector<std::uint8_t>, zkevm_word_type>;
                 using data_type = std::vector<data_item>;
 

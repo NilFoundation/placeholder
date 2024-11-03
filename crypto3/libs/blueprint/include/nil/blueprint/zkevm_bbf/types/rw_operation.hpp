@@ -63,6 +63,8 @@ namespace nil {
             }
 
             struct rw_operation{
+                using zkevm_word_type = nil::blueprint::zkevm_word_type;
+
                 rw_operation_type op;           // operation type
                 std::size_t       call_id;      // transaction number inside block
                 zkevm_word_type   address;      // account_address (160 bits)

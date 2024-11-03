@@ -36,6 +36,76 @@ namespace nil {
             template<typename FieldType>
             class opcode_abstract;
 
+            template<typename FieldType, GenerationStage stage>
+            class zkevm_pushx_bbf : generic_component<FieldType, stage> {
+                using typename generic_component<FieldType, stage>::context_type;
+                using generic_component<FieldType, stage>::allocate;
+                using generic_component<FieldType, stage>::copy_constrain;
+                using generic_component<FieldType, stage>::constrain;
+                using generic_component<FieldType, stage>::lookup;
+                using generic_component<FieldType, stage>::lookup_table;
+            public:
+                using typename generic_component<FieldType,stage>::TYPE;
+
+                zkevm_pushx_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, std::size_t x):
+                    generic_component<FieldType,stage>(context_object)
+                {
+                    std::vector<TYPE> A_bytes(32);
+                    std::vector<TYPE> A_bytes_255(32);
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        std::cout << "\tinput=" << std::hex << current_state.additional_input << std::dec << std::endl;
+                        auto bytes = nil::blueprint::w_to_8(current_state.additional_input);
+                        for( std::size_t i = 0; i < 32; i++ ){
+                            A_bytes[i] = bytes[i];
+                            A_bytes_255[i] = 255 - A_bytes[i];
+                        }
+                    }
+                    for( std::size_t i = 0; i < 32; i++){
+                        allocate(A_bytes[i], i, 0);
+                        allocate(A_bytes_255[i], i, 1);
+                    }
+                    for( std::size_t i = 0; i < 32; i++){
+                        constrain(A_bytes[i] + A_bytes_255[i] - 255);
+                    }
+                    if constexpr( stage == GenerationStage::CONSTRAINTS ){
+                        constrain(current_state.pc_next() - current_state.pc(1) - x - 1);                   // PC transition
+                        constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
+                        constrain(current_state.stack_size_next() - current_state.stack_size(1) - 1);       // stack_size transition
+                        constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 1);   // rw_counter transition
+                        auto A_128 = chunks8_to_chunks128<TYPE>(A_bytes);
+                        std::vector<TYPE> tmp({
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(1),
+                            current_state.stack_size(1),
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(1),
+                            TYPE(1),// is_write
+                            A_128.first,
+                            A_128.second
+                        });
+                        lookup(tmp, "zkevm_rw");
+                        for( std::size_t i = 0; i < 32 - x; i++){
+                            constrain(A_bytes[i]);
+                        }
+                        for( std::size_t j = 32-x; j < 32; j++){
+                            tmp = {
+                                TYPE(1),
+                                current_state.pc(0) + j - (32 - x) + 1,
+                                A_bytes[j],
+                                TYPE(0),
+                                current_state.bytecode_hash_hi(0),
+                                current_state.bytecode_hash_lo(0)
+                            };
+                            lookup(tmp, "zkevm_bytecode");
+                        }
+                    }
+                }
+            };
+
+
             template<typename FieldType>
             class zkevm_pushx_operation : public opcode_abstract<FieldType> {
             public:
@@ -46,11 +116,15 @@ namespace nil {
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) {
                     std::cout << "Assign PUSH"<<x << std::endl;
+                    zkevm_pushx_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, x);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) {}
+                ) {
+                    std::cout << "Constrain PUSH"<<x << std::endl;
+                    zkevm_pushx_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, x);
+                }
                 virtual std::size_t rows_amount() override {
                     return 2;
                 }

@@ -180,7 +180,7 @@ namespace nil {
                             context_type op_ct = context_object.fresh_subcontext(
                                 opcode_area,
                                 current_row + current_opcode_bare_rows_amount%2,
-                                current_row + current_opcode_bare_rows_amount%2 + current_opcode_bare_rows_amount - 1
+                                current_row + current_opcode_bare_rows_amount
                             );
                             std::size_t opcode_id = (std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin());
                             std::cout << current_opcode
@@ -189,6 +189,7 @@ namespace nil {
                                 << " on row " << current_row
                                 << " rows_amount = " << current_opcode_rows_amount
                                 << " stack_size = " << current_state.stack_size
+                                << " memory_size = " << current_state.memory_size
                                 << " rw_counter = 0x" << std::hex<< current_state.rw_counter << std::dec
                                 << std::endl;
 
@@ -255,21 +256,21 @@ namespace nil {
                     std::vector<TYPE> sample_opcode_row;
                     for( std::size_t i = 0; i < all_states.size(); i++ ){
                         std::size_t cur_column = 0;
-                        allocate(all_states[i].call_id, cur_column++, i);
-                        allocate(all_states[i].bytecode_hash_hi, cur_column++, i);
-                        allocate(all_states[i].bytecode_hash_lo, cur_column++, i);
-                        allocate(all_states[i].pc, cur_column++, i);
-                        allocate(all_states[i].opcode, cur_column++, i);
-                        allocate(all_states[i].gas_hi, cur_column++, i);
-                        allocate(all_states[i].gas_lo, cur_column++, i);
-                        allocate(all_states[i].stack_size, cur_column++, i);
-                        allocate(all_states[i].memory_size, cur_column++, i);
-                        allocate(all_states[i].rw_counter, cur_column++, i);
+                        allocate(all_states[i].call_id, cur_column++, i);           //0
+                        allocate(all_states[i].bytecode_hash_hi, cur_column++, i);  //1
+                        allocate(all_states[i].bytecode_hash_lo, cur_column++, i);  //2
+                        allocate(all_states[i].pc, cur_column++, i);                //3
+                        allocate(all_states[i].opcode, cur_column++, i);            //4
+                        allocate(all_states[i].gas_hi, cur_column++, i);            //5
+                        allocate(all_states[i].gas_lo, cur_column++, i);            //6
+                        allocate(all_states[i].stack_size, cur_column++, i);        //7
+                        allocate(all_states[i].memory_size, cur_column++, i);       //8
+                        allocate(all_states[i].rw_counter, cur_column++, i);        //9
 
-                        allocate(all_states[i].row_counter,cur_column++,i);
-                        allocate(all_states[i].step_start, cur_column++, i);
-                        allocate(all_states[i].row_counter_inv, cur_column++, i);
-                        allocate(all_states[i].opcode_parity, cur_column++, i);
+                        allocate(all_states[i].row_counter,cur_column++,i);         //10
+                        allocate(all_states[i].step_start, cur_column++, i);        //11
+                        allocate(all_states[i].row_counter_inv, cur_column++, i);   //12
+                        allocate(all_states[i].opcode_parity, cur_column++, i);     //13
                         allocate(all_states[i].is_even, cur_column++, i);// Do we really need it?
 
                         BOOST_ASSERT(cur_column == state::get_items_amout());
@@ -422,7 +423,7 @@ namespace nil {
                                 for( const auto &constr_list: opcode_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto constraint: constr_list.second){
-                                            std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - 1;
+                                            std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - current_opcode_bare_rows_amount % 2;
                                             opcode_constraints_aggregator[{current_opcode, real_row}].push_back(constraint);
                                             if(opcode_constraints_aggregator[{current_opcode, real_row}].size() > max_opcode_row_constraints){
                                                 max_opcode_row_constraints = opcode_constraints_aggregator[{current_opcode, real_row}].size();
@@ -436,7 +437,7 @@ namespace nil {
                                 for( const auto &constr_list: opcode_lookup_constraints){
                                     for( const auto &local_row: constr_list.first){
                                         for( auto lookup_constraint: constr_list.second){
-                                            std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - 1;
+                                            std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - current_opcode_bare_rows_amount % 2;
                                             opcode_lookup_constraints_aggregator[{current_opcode, real_row, lookup_constraint.first}].push_back(lookup_constraint.second);
                                             std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
                                             for( auto constraint:lookup_constraint.second ){
@@ -454,12 +455,13 @@ namespace nil {
                                 for( auto &[pair, constraints]: opcode_constraints_aggregator ){
                                     if( constraints.size() <= i) continue;
                                     acc_constraint += context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i];
-                                    // std::cout << "\t\t" << pair.first  << " " << pair.second << std::endl;
-                                    //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1));
+                                    std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
+                                    //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
                                 }
                                 relative_mc.push_back(acc_constraint);
                                 //std::cout << "\t" << acc_constraint << std::endl;
                             }
+                            //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[{zkevm_opcode::PUSH1, 1}], -1));
                             std::cout << "Accumulate lookup constraints " << std::endl;
                             std::map<std::string, std::vector<std::vector<TYPE>>> acc_lookup_constraints;
                             for( auto &[key, exprs]:opcode_lookup_constraints_aggregator){

@@ -65,6 +65,8 @@ namespace nil {
                         std::vector<zkevm_word_type> stack_next;
                         std::map<zkevm_word_type, zkevm_word_type> storage = key_value_storage_from_ptree(ptrace.begin()->second.get_child("storage"));
                         std::map<zkevm_word_type, zkevm_word_type> storage_next;
+
+                        std::size_t memory_size_before = 0;
                         for( auto it = ptrace.begin(); it!=ptrace.end(); it++){
                             std::string opcode = it->second.get_child("op").data();
                             //std::cout << "\t" << opcode << std::endl;
@@ -86,7 +88,7 @@ namespace nil {
                             state.additional_input = opcode.substr(0,4) == "PUSH"? stack_next[stack_next.size() - 1]: 0;
                             state.tx_finish = (std::distance(it, ptrace.end()) != 1);
                             state.stack_size = stack.size();
-                            state.memory_size = memory.size();
+                            state.memory_size = memory_size_before;
                             state.stack_slice = stack;
                             // TODO:memory_slice
                             // TODO:storage_slice
@@ -946,6 +948,7 @@ namespace nil {
                                 // std::cout << "Unknown opcode " << std::hex << opcode << std::dec << std::endl;
                                 BOOST_ASSERT(false);
                             }
+                            memory_size_before = memory.size();
                             stack = stack_next;
                             memory = memory_next;
                             storage = storage_next;

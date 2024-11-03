@@ -47,6 +47,17 @@ namespace nil {
                 }
                 return {result_hi, result_lo};
             }
+            template <typename TYPE>
+            std::pair<TYPE, TYPE>chunks8_to_chunks128(const std::vector<TYPE> &chunks){
+                TYPE result_hi, result_lo;
+                for(std::size_t i = 0; i < 16; i++){
+                    result_hi *= 0x100;
+                    result_hi += chunks[i];
+                    result_lo *= 0x100;
+                    result_lo += chunks[i+16];
+                }
+                return {result_hi, result_lo};
+            }
         }
     }
 }
