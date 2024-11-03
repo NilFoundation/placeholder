@@ -252,52 +252,52 @@ void mpt_nonce_changed_case_1_tests() {
 
         // AccountLeaf4
         // keccak_code_hash_hi and keccak_code_hash_lo are used in the construction of the MPT
-        std::cout << "account_leaf_4: " << std::endl;
-        std::cout << "---------------" << std::endl;  
+        // std::cout << "account_leaf_4: " << std::endl;
+        // std::cout << "---------------" << std::endl;  
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> keccak_code_hash = {keccak_code_hash_hi, keccak_code_hash_lo};
-        std::cout << "keccak_code_hash_hi = " << keccak_code_hash_hi << std::endl;
-        std::cout << "keccak_code_hash_lo = " << keccak_code_hash_lo << std::endl;
+        // std::cout << "keccak_code_hash_hi = " << keccak_code_hash_hi << std::endl;
+        // std::cout << "keccak_code_hash_lo = " << keccak_code_hash_lo << std::endl;
 
         // AccountLeaf3
-        std::cout << "account_leaf_3: " << std::endl;
-        std::cout << "---------------" << std::endl;  
+        // std::cout << "account_leaf_3: " << std::endl;
+        // std::cout << "---------------" << std::endl;  
         typename policy::digest_type old_h0 = hash<hash_t>({keccak_code_hash_hi, keccak_code_hash_lo});
         typename policy::digest_type new_h0 = hash<hash_t>({keccak_code_hash_hi, keccak_code_hash_lo});
-        std::cout << "old_h0 = Poseidon(keccak_code_hash_hi, keccak_code_hash_lo) = " << old_h0 << std::endl;
-        std::cout << "new_h0 = Poseidon(keccak_code_hash_hi, keccak_code_hash_lo) = " << new_h0 << std::endl;
+        // std::cout << "old_h0 = Poseidon(keccak_code_hash_hi, keccak_code_hash_lo) = " << old_h0 << std::endl;
+        // std::cout << "new_h0 = Poseidon(keccak_code_hash_hi, keccak_code_hash_lo) = " << new_h0 << std::endl;
         BOOST_ASSERT_MSG(old_h0 == new_h0, "!!!old_h0 not equal to new_h0!!!");
 
         // AccountLeaf2
-        std::cout << "account_leaf_2: " << std::endl;
-        std::cout << "---------------" << std::endl;  
+        // std::cout << "account_leaf_2: " << std::endl;
+        // std::cout << "---------------" << std::endl;  
         typename policy::digest_type old_h1 = hash<hash_t>({old_nonce*(integral_type(1) << 64) + code_size, balance});
         typename policy::digest_type new_h1 = hash<hash_t>({new_nonce*(integral_type(1) << 64) + code_size, balance});
         typename policy::digest_type s1 = hash<hash_t>({storage_root, old_h0});
-        std::cout << "old_h1 = Poseidon(old_nonce||code_size, balance) = " << old_h1 << std::endl;
-        std::cout << "new_h1 = Poseidon(new_nonce||code_size, balance) = " << new_h1 << std::endl;
-        std::cout << "s1 = Poseidon(storage_root, old_h0) = " << s1 << std::endl;
+        // std::cout << "old_h1 = Poseidon(old_nonce||code_size, balance) = " << old_h1 << std::endl;
+        // std::cout << "new_h1 = Poseidon(new_nonce||code_size, balance) = " << new_h1 << std::endl;
+        // std::cout << "s1 = Poseidon(storage_root, old_h0) = " << s1 << std::endl;
 
         // AccountLeaf1
-        std::cout << "account_leaf_1: " << std::endl;
-        std::cout << "---------------" << std::endl;  
+        // std::cout << "account_leaf_1: " << std::endl;
+        // std::cout << "---------------" << std::endl;  
         typename policy::digest_type old_h2 = hash<hash_t>({s1, old_h1});
         typename policy::digest_type new_h2 = hash<hash_t>({s1, new_h1});
-        std::cout << "old_h2 = Poseidon(s1, old_h1) = " << old_h2 << std::endl;
-        std::cout << "new_h2 = Poseidon(s1, new_h1) = " << new_h2 << std::endl;
+        // std::cout << "old_h2 = Poseidon(s1, old_h1) = " << old_h2 << std::endl;
+        // std::cout << "new_h2 = Poseidon(s1, new_h1) = " << new_h2 << std::endl;
 
         // AccountLeaf0
-        std::cout << "account_leaf_0: " << std::endl;
-        std::cout << "---------------" << std::endl;  
+        // std::cout << "account_leaf_0: " << std::endl;
+        // std::cout << "---------------" << std::endl;  
         typename policy::digest_type old_h3 = hash<hash_t>({old_h2, poseidon_code_hash});
         typename policy::digest_type new_h3 = hash<hash_t>({new_h2, poseidon_code_hash});
         typename policy::digest_type s3 = hash<hash_t>({value_type(1), account_key});
-        std::cout << "old_h3 = Poseidon(old_h2, poseidon_code_hash) = " << old_h3 << std::endl;
-        std::cout << "new_h3 = Poseidon(new_h2, poseidon_code_hash) = " << new_h3 << std::endl;
-        std::cout << "s3 = Poseidon(1, acount_key) = " << s3 << std::endl;
+        // std::cout << "old_h3 = Poseidon(old_h2, poseidon_code_hash) = " << old_h3 << std::endl;
+        // std::cout << "new_h3 = Poseidon(new_h2, poseidon_code_hash) = " << new_h3 << std::endl;
+        // std::cout << "s3 = Poseidon(1, acount_key) = " << s3 << std::endl;
 
         // AccountTrie
-        std::cout << "account_trie: " << std::endl;
-        std::cout << "-------------" << std::endl;  
+        // std::cout << "account_trie: " << std::endl;
+        // std::cout << "-------------" << std::endl;  
         value_type old_h[account_trie_length], new_h[account_trie_length], s[account_trie_length]; 
         value_type old_child, new_child, sibling, old_hash, new_hash;   
         old_child = old_h3; new_child = new_h3; sibling = s3;
@@ -306,13 +306,13 @@ void mpt_nonce_changed_case_1_tests() {
             typename policy::digest_type new_hash = hash<hash_t>({sibling, new_child});
             old_h[i] = old_hash; new_h[i] = new_hash; s[i] = generate_random();
             old_child = old_hash; new_child = new_hash; sibling = s[i];
-            std::cout << "old_h[" << i << "] = " << old_h[i] << std::endl;
-            std::cout << "new_h[" << i << "] = " << new_h[i] << std::endl;
-            std::cout << "s[" << i << "] = " << s[i] << std::endl;
-            std::cout << "-------" << std::endl;
+            // std::cout << "old_h[" << i << "] = " << old_h[i] << std::endl;
+            // std::cout << "new_h[" << i << "] = " << new_h[i] << std::endl;
+            // std::cout << "s[" << i << "] = " << s[i] << std::endl;
+            // std::cout << "-------" << std::endl;
         } 
 
-        std::cout << "old_h[account_trie_length] = " << old_h[account_trie_length - 1] << std::endl;
+        // std::cout << "old_h[account_trie_length] = " << old_h[account_trie_length - 1] << std::endl;
 
         std::ostringstream string_s, string_old_h, string_new_h;
         string_s << s[account_trie_length - 1];
@@ -322,14 +322,14 @@ void mpt_nonce_changed_case_1_tests() {
         std::string old_root_input = string_s.str() + string_old_h.str();
         std::string new_root_input = string_s.str() + string_new_h.str();
 
-        std::cout << "old_root_input = " << old_root_input << std::endl;
-        std::cout << "new_root_input = " << new_root_input << std::endl;
+        // std::cout << "old_root_input = " << old_root_input << std::endl;
+        // std::cout << "new_root_input = " << new_root_input << std::endl;
 
         std::string old_state_root = hash<hashes::keccak_1600<256>>(old_root_input);
         std::string new_state_root = hash<hashes::keccak_1600<256>>(new_root_input);
 
-        std::cout << "old_state_root = " << old_state_root << std::endl;
-        std::cout << "new_state_root = " << new_state_root << std::endl;
+        // std::cout << "old_state_root = " << old_state_root << std::endl;
+        // std::cout << "new_state_root = " << new_state_root << std::endl;
 
         // split old_root into two chunks of size 128-bits
         // old_root = (old_root_hi, old_root_lo)
@@ -343,8 +343,8 @@ void mpt_nonce_changed_case_1_tests() {
         for( std::size_t j = 0; j < old_root_str_lo.size(); j++ ){
             old_root_lo *=16; old_root_lo += old_root_str_lo[j] >= '0' && old_root_str_lo[j] <= '9'? old_root_str_lo[j] - '0' : old_root_str_lo[j] - 'a' + 10;
         }
-        std::cout << "old_root_hi = " << old_root_hi << std::endl;
-        std::cout << "old_root_lo = " << old_root_lo << std::endl;
+        // std::cout << "old_root_hi = " << old_root_hi << std::endl;
+        // std::cout << "old_root_lo = " << old_root_lo << std::endl;
 
         // split new_root into two chunks of size 128-bits
         // new_root = (new_root_hi, new_root_lo)
@@ -358,17 +358,25 @@ void mpt_nonce_changed_case_1_tests() {
         for( std::size_t j = 0; j < new_root_str_lo.size(); j++ ){
             new_root_lo *=16; new_root_lo += new_root_str_lo[j] >= '0' && new_root_str_lo[j] <= '9'? new_root_str_lo[j] - '0' : new_root_str_lo[j] - 'a' + 10;
         }
-        std::cout << "new_root_hi = " << new_root_hi << std::endl;
-        std::cout << "new_root_lo = " << new_root_lo << std::endl;
+        // std::cout << "new_root_hi = " << new_root_hi << std::endl;
+        // std::cout << "new_root_lo = " << new_root_lo << std::endl;
 
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> old_root = {old_root_hi, old_root_lo};    
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> new_root = {new_root_hi, new_root_lo};
 
+        std::cout << "mpt_table = [ eth_address = " << eth_address << "," << std::endl;
+        std::cout << "              storage_key = " << 0 << "," << std::endl;
+        std::cout << "              mpt_proof_type = " << mpt_proof_type << "," << std::endl;
+        std::cout << "              new_root = ( 0x" << new_root_str_hi << ", 0x" << new_root_str_lo << " ), " << std::endl;
+        std::cout << "              old_root = ( 0x" << old_root_str_hi << ", 0x" << old_root_str_lo << " ), " << std::endl;
+        std::cout << "              new_nonce = " << new_nonce << "," << std::endl;
+        std::cout << "              old_nonce = " << old_nonce << " ]" << std::endl;
+
         // constructing the trace 
         // trace = [eth_address, account_key, old_root, new_root, old_leaf, new_leaf, old_account_path, new_account_path, old_account_update, new_account_update, storage_root
         //          old_state_path, new_state_path, old_state_update, new_state_update, state_key]
-        std::cout << "\nConstruct the trace which represents the MPT update" << std::endl;  
-        std::cout << "---------------------------------------------------" << std::endl;  
+        // std::cout << "\nConstruct the trace which represents the MPT update" << std::endl;  
+        // std::cout << "---------------------------------------------------" << std::endl;  
         // each leaf is of the form [leaf_value, sibling_value, node_type] 
         // leaf node type: node_type = 4
         std::vector<typename BlueprintFieldType::value_type> old_leaf = {old_h3, s3, 4};
@@ -389,8 +397,8 @@ void mpt_nonce_changed_case_1_tests() {
         size_t new_path_length = new_account_path.size();
         BOOST_ASSERT_MSG(old_account_path.size() == new_account_path.size(), "!!!old_path/new_path DO NOT have the same length!!!");
 
-        std::cout << "old_path_length = " << old_path_length << std::endl;
-        std::cout << "new_path_length = " << new_path_length << std::endl;
+        // std::cout << "old_path_length = " << old_path_length << std::endl;
+        // std::cout << "new_path_length = " << new_path_length << std::endl;
 
         for (int i = 0; i < account_trie_length; i++) {
             BOOST_ASSERT_MSG(old_account_path[i][1] == new_account_path[i][1], "!!!Sibling nodes are not equal in old_path/new_path!!!");
@@ -425,17 +433,17 @@ void mpt_nonce_changed_case_1_tests() {
         size_t old_state_path_length = old_state_path.size();
         size_t new_state_path_length = new_state_path.size();
 
-        std::cout << "old_state_path_length = " << old_state_path_length << std::endl;
-        std::cout << "new_state_path_length = " << new_state_path_length << std::endl;
-        std::cout << "empty old_state_path test = " << old_state_path.empty() << std::endl;
-        std::cout << "empty new_state_path test = " << new_state_path.empty() << std::endl;
+        // std::cout << "old_state_path_length = " << old_state_path_length << std::endl;
+        // std::cout << "new_state_path_length = " << new_state_path_length << std::endl;
+        // std::cout << "empty old_state_path test = " << old_state_path.empty() << std::endl;
+        // std::cout << "empty new_state_path test = " << new_state_path.empty() << std::endl;
 
         // construct the proof
         // proof = [claim, address_hash_traces, leafs, old_account_hash_traces, new_account_hash_traces, old_account, new_account, storage, account_key
         //          storage_hash_traces, old_storage_key_value_hash_traces, new_storage_key_value_hash_traces]
         // where claim = (old_root, new_root, nonce, claim_kind) s.t. nonce = (old_nonce, new_nonce) and claim_kind = (eth_account, mpt_proof_type)
-        std::cout << "\nConstruct the proof which will be used to create the assignment table" << std::endl;  
-        std::cout << "---------------------------------------------------------------------" << std::endl;  
+        // std::cout << "\nConstruct the proof which will be used to create the assignment table" << std::endl;  
+        // std::cout << "---------------------------------------------------------------------" << std::endl;  
 
         // claim 
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> nonce = {old_account_update[0], new_account_update[0]};
@@ -568,28 +576,28 @@ void mpt_nonce_changed_case_1_tests() {
         }
         public_input.push_back(storage);
         public_input.push_back(key);
-        if (storage_hash_traces.empty() == 1){
-            public_input.push_back(0);
-            public_input.push_back(0);
-            public_input.push_back(0);
-        }
-        else{
-            for (std::size_t i = 0; i < storage_hash_traces.size(); i++) {
-                for (std::size_t j = 0; j < storage_hash_traces[i].size(); j++) {
-                    public_input.push_back(storage_hash_traces[i][j]);
-                }
-            } 
-            for (std::size_t i = 0; i < old_storage_key_value_hash_traces.size(); i++) {
-                for (std::size_t j = 0; j < old_storage_key_value_hash_traces[i].size(); j++) {
-                    public_input.push_back(old_storage_key_value_hash_traces[i][j]);
-                }
-            }        
-            for (std::size_t i = 0; i < new_storage_key_value_hash_traces.size(); i++) {
-                for (std::size_t j = 0; j < new_storage_key_value_hash_traces[i].size(); j++) {
-                    public_input.push_back(new_storage_key_value_hash_traces[i][j]);
-                }
-            }     
-        }
+        // if (storage_hash_traces.empty() == 1){
+        //     public_input.push_back(0);
+        //     public_input.push_back(0);
+        //     public_input.push_back(0);
+        // }
+        // else{
+        //     for (std::size_t i = 0; i < storage_hash_traces.size(); i++) {
+        //         for (std::size_t j = 0; j < storage_hash_traces[i].size(); j++) {
+        //             public_input.push_back(storage_hash_traces[i][j]);
+        //         }
+        //     } 
+        //     for (std::size_t i = 0; i < old_storage_key_value_hash_traces.size(); i++) {
+        //         for (std::size_t j = 0; j < old_storage_key_value_hash_traces[i].size(); j++) {
+        //             public_input.push_back(old_storage_key_value_hash_traces[i][j]);
+        //         }
+        //     }        
+        //     for (std::size_t i = 0; i < new_storage_key_value_hash_traces.size(); i++) {
+        //         for (std::size_t j = 0; j < new_storage_key_value_hash_traces[i].size(); j++) {
+        //             public_input.push_back(new_storage_key_value_hash_traces[i][j]);
+        //         }
+        //     }     
+        // }
 
         // Verifying correctness of public_input construction
         BOOST_ASSERT(public_input[0] == eth_address); BOOST_ASSERT(public_input[1] == mpt_proof_type);
@@ -673,7 +681,7 @@ void mpt_nonce_changed_case_1_tests() {
         BOOST_ASSERT(public_input[index + 1] == storage_root);
         BOOST_ASSERT(public_input[index + 2] == account_key);
         index += 2;
-        index += 3;
+        // index += 3;
         BOOST_ASSERT(public_input.size() == index + 1);
 
         std::cout << "#public_input = " << public_input.size() << std::endl;
@@ -683,7 +691,7 @@ void mpt_nonce_changed_case_1_tests() {
     }
 }
 
-constexpr static const std::size_t random_tests_amount = 10;
+constexpr static const std::size_t random_tests_amount = 20;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 

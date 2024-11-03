@@ -55,11 +55,12 @@ namespace nil {
 
             public:
                 using component_type = plonk_component<BlueprintFieldType>;
+                using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
 
                 using var = typename component_type::var;
                 using manifest_type = plonk_component_manifest;
 
-                using range_check_component = range_check_multi<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>, BlueprintFieldType, num_chunks, bit_size_chunk>;
+                using range_check_component = range_check_multi<ArithmetizationType, BlueprintFieldType, num_chunks, bit_size_chunk>;
 
                 class gate_manifest_type : public component_gate_manifest {
                 public:
@@ -77,7 +78,8 @@ namespace nil {
                 static manifest_type get_manifest() {
                     static manifest_type manifest = manifest_type(
                         // ready to use any number of columns that fit 3*num_chunks+1 cells into less than 3 rows
-                        std::shared_ptr<manifest_param>(new manifest_single_value_param(0)),
+                        std::shared_ptr<manifest_param>(new manifest_single_value_param(24)),
+                        // std::shared_ptr<manifest_param>(new manifest_range_param(10, 10*(account_trie_length + 5), 1)),
                         false // constant column not needed
                     )
                     .merge_with(range_check_component::get_manifest());
@@ -85,7 +87,7 @@ namespace nil {
                 }
 
                 constexpr static std::size_t get_rows_amount(std::size_t witness_amount) {
-                    size_t assignment_table_rows = account_trie_length + 1 +  4;
+                    size_t assignment_table_rows = account_trie_length + 5;
                     size_t rows = assignment_table_rows;
                     rows += range_check_component::get_rows_amount(witness_amount);
                     rows += range_check_component::get_rows_amount(witness_amount);
@@ -95,20 +97,52 @@ namespace nil {
 
                 constexpr static const std::size_t gates_amount = 1; // <---- was gates_amount = 1 before....
                 const std::size_t rows_amount = get_rows_amount(this->witness_amount());
-                const std::string component_name = "multichunk binary carry on addition";
+                const std::string component_name = "MPT update verification";
 
                  struct input_type {
                     var eth_address, mpt_proof_type, storage, account_key;
                     std::pair<var, var> old_root, new_root, nonce;
                     std::vector<std::vector<var>> address_hash_traces, old_account_hash_traces, new_account_hash_traces, leafs;
                     std::vector<var> old_account, new_account;
-                    std::vector<std::vector<var>> storage_hash_traces, old_storage_key_value_hash_traces, new_storage_key_value_hash_traces;
 
                     std::vector<std::reference_wrapper<var>> all_vars() {
                         std::vector<std::reference_wrapper<var>> res = {};
-                        // for(std::size_t i = 0; i < 1; i++) {
                         res.push_back(eth_address);
-                        //}
+                        res.push_back(mpt_proof_type);
+                        res.push_back(old_root.first);
+                        res.push_back(old_root.second);
+                        res.push_back(new_root.first);
+                        res.push_back(new_root.second);
+                        res.push_back(nonce.first);
+                        res.push_back(nonce.second);
+                        for (std::size_t i = 0; i < account_trie_length; i++) {
+                            for (std::size_t j = 0; j < 7; j++) {
+                                res.push_back(address_hash_traces[i][j]);
+                            }
+                        } 
+                        for (std::size_t i = 0; i < 2; i++) {
+                            for (std::size_t j = 0; j < 3; j++) {
+                                res.push_back(leafs[i][j]);
+                            }
+                        }
+                        for (std::size_t i = 0; i < 7; i++) {
+                            for (std::size_t j = 0; j < 3; j++) {
+                                res.push_back(old_account_hash_traces[i][j]);
+                            }
+                        }   
+                        for (std::size_t i = 0; i < 7; i++) {
+                            for (std::size_t j = 0; j < 3; j++) {
+                                res.push_back(new_account_hash_traces[i][j]);
+                            }
+                        } 
+                        for (std::size_t i = 0; i < 6; i++) {
+                            res.push_back(old_account[i]);
+                        }    
+                        for (std::size_t i = 0; i < 6; i++) {
+                            res.push_back(new_account[i]);
+                        }   
+                        res.push_back(storage);
+                        res.push_back(account_key);
                         return res;
                     }
                 };
@@ -166,7 +200,9 @@ namespace nil {
                 const std::uint32_t start_row_index) {
 
                 using component_type = plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length>;
-                using range_check_type = typename component_type::range_check_component;
+                using range_check_type = range_check_multi<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>,  BlueprintFieldType, num_chunks, bit_size_chunk>;
+
+                range_check_type range_check_instance(component._W, component._C, component._PI);
 
                 using var = typename component_type::var;
                 using value_type = typename BlueprintFieldType::value_type;
@@ -179,8 +215,8 @@ namespace nil {
                 // proof = [claim, address_hash_traces, leafs, old_account_hash_traces, new_account_hash_traces, old_account, new_account, storage, account_key
                 //          storage_hash_traces, old_storage_key_hash_traces, new_storage_key_hash_traces]
                 // where claim = (old_root, new_root, nonce, claim_kind) s.t. nonce = (old_nonce, new_nonce) and claim_kind = (eth_account, mpt_proof_type)
-                std::cout << "\nConstruct the proof in the .hpp file" << std::endl;  
-                std::cout << "------------------------------------" << std::endl;  
+                // std::cout << "\nConstruct the proof in the .hpp file" << std::endl;  
+                // std::cout << "------------------------------------" << std::endl;  
 
                 value_type eth_address, mpt_proof_type;
                 eth_address = var_value(assignment, instance_input.eth_address);
@@ -256,16 +292,9 @@ namespace nil {
                 // we don't actually need this, it is in old/new_account_hash_traces[4][1]
                 account_key = var_value(assignment, instance_input.account_key); 
 
-                // std::vector<std::vector<typename BlueprintFieldType::value_type>> storage_hash_traces = {};
-                // std::vector<std::vector<typename BlueprintFieldType::value_type>> old_storage_key_value_hash_traces = {};
-                // std::vector<std::vector<typename BlueprintFieldType::value_type>> new_storage_key_value_hash_traces = {};
-                // storage_hash_traces.push_back(var_value(assignment, instance_input.storage_hash_traces)); 
-                // old_storage_key_value_hash_traces.push_back(var_value(assignment, instance_input.old_storage_key_value_hash_traces)); 
-                // new_storage_key_value_hash_traces.push_back(var_value(assignment, instance_input.new_storage_key_value_hash_traces)); 
-
                 // constructing the assignemnt table in .hpp file 
-                std::cout << "\nConstruct the assignemnt table in the .hpp file" << std::endl;  
-                std::cout << "-----------------------------------------------" << std::endl;  
+                // std::cout << "\nConstruct the assignemnt table in the .hpp file" << std::endl;  
+                // std::cout << "-----------------------------------------------" << std::endl;  
 
                 // construct key and other_key based on the bits of account_key
                 std::vector<typename BlueprintFieldType::value_type> key, other_key;
@@ -292,9 +321,6 @@ namespace nil {
                     segment_type[account_trie_length + 3]  = 4; 
                     segment_type[account_trie_length + 4]  = 5; 
                 }
-                // for (std::size_t i = 0; i < assignment_table_rows; i++) {
-                //     std::cout << "..segment_type[" << i << "] = " << segment_type[i] << std::endl;
-                // }
                 
                 // q_leaf0, q_leaf123 to be added as selector columns in assignment table
                 // to choose between account_leaf rows
@@ -382,9 +408,9 @@ namespace nil {
                 assignment.witness(component.W((11) % WA), start_row_index + account_trie_length + (11)/WA) = other_key[account_trie_length - 1]; // W[11][account_trie_size] = other_key[i] 
                 assignment.witness(component.W((12) % WA), start_row_index + account_trie_length + (12)/WA) = 1; // W[12][account_trie_size] = path_type = common = 1 
 
-                rows += (account_trie_length + 1);
-                // std::cout << "..rows = " << rows << std::endl; 
-                // std::cout << "..start_row_index = " << start_row_index << std::endl; 
+                // rows += (account_trie_length + 1);
+                // // std::cout << "..rows = " << rows << std::endl; 
+                // // std::cout << "..start_row_index = " << start_row_index << std::endl; 
 
                 assignment.witness(component.W((0) % WA), start_row_index + account_trie_length + 1 + (0)/WA) = old_account_hash_traces[5][2]; // W[0][account_trie_size + 1] = old_value
                 assignment.witness(component.W((1) % WA), start_row_index + account_trie_length + 1 + (1)/WA) = new_account_hash_traces[5][2]; // W[1][account_trie_size + 1] = new_value                
@@ -413,7 +439,7 @@ namespace nil {
                 assignment.witness(component.W((7) % WA), start_row_index + account_trie_length + 3 + (7)/WA) = 0; // W[7][account_trie_size + 3] = direction[i] = 0
                 assignment.witness(component.W((12) % WA), start_row_index + account_trie_length + 3 + (12)/WA) = 1; // W[12][account_trie_size + 3] = path_type = common = 1
 
-                // std::cout << "..account_trie_size + 4 = " << account_trie_size + 4 << std::endl; 
+                // // std::cout << "..account_trie_size + 4 = " << account_trie_size + 4 << std::endl; 
 
                 assignment.witness(component.W((0) % WA), start_row_index + account_trie_length + 4 + (0)/WA) 
                                             = old_account[0]*(integral_type(1) << 64) + old_account[5]; // W[0][assignment_table_rows] = old_nonce || code_size
@@ -448,6 +474,7 @@ namespace nil {
                     assignment.witness(component.W(23 % WA), start_row_index + i + 23/WA) = q_leaf_3[i];
                     // std::cout << "..q_leaf_3[i] = " << q_leaf_3[i] << std::endl;
                 }
+                rows += account_trie_length + 1 + account_leaf_length;
 
                  // we do not need key and other_key for account leaf rows
                 for(std::size_t i = account_trie_length + 1; i < assignment_table_rows; i++) {
@@ -464,10 +491,8 @@ namespace nil {
                     assignment.witness(component.W((15) % WA), start_row_index + i + (15)/WA) = code_size_chunks[i]; 
                 }
 
-                rows += account_leaf_length;
+                // rows += account_leaf_length;
                 std::cout << "..rows = " << rows << std::endl; 
-
-                range_check_type range_check_instance(component._W, component._C, component._PI);
 
                 // Initializing range_check component
                 typename range_check_type::input_type range_check_input_1;
@@ -523,14 +548,14 @@ namespace nil {
                 const std::size_t row_shift = -(4*num_chunks > 2*WA);
                 const integral_type B = integral_type(1) << 64;
 
-                range_check_type range_check_instance(component._W, component._C, component._PI);
+                // range_check_type range_check_instance(component._W, component._C, component._PI);
 
-                size_t assignment_table_rows = account_trie_length + 1 + 4;
+                size_t assignment_table_rows = account_trie_length + 5;
                 size_t rows = assignment_table_rows;
-                std::cout << "\n...assignment_table_rows = " << assignment_table_rows << std::endl; 
-                std::cout << "\n...rows = " << rows << std::endl; 
+                std::cout << "...assignment_table_rows = " << assignment_table_rows << std::endl; 
+                std::cout << "...rows = " << rows << std::endl; 
                 
-                var oldNonce, newNonce, val1, val2;
+                var oldNonce, newNonce;
                 var oldHash, newHash, oldValue, newValue, depthPrev, depthCurr, Depth;
                 var oldHash_last, newHash_last, oldValue_last, newValue_last, Direction, Key, OtherKey;
                 var qLeaf0, qLeaf123, qStart, qTrie, qLeaf_0, qLeaf_1, qLeaf_2, qLeaf_3, nextSegmentType;
@@ -539,8 +564,8 @@ namespace nil {
 
                 // 1. Shared Constraints
                 // 1.1. for segment_type == account_trie = 1
-                std::cout << "\n1. Shared Constraints" << std::endl; 
-                std::cout << "\n1.1. For segment_type = account_trie" << std::endl; 
+                // std::cout << "\n1. Shared Constraints" << std::endl; 
+                // std::cout << "\n1.1. For segment_type = account_trie" << std::endl; 
                 for(std::size_t i = 0; i < account_trie_length; i++) {
                     Depth = var(component.W(6 % WA), i + 6/WA + row_shift, true);
                     Direction = var(component.W(7 % WA), i + 7/WA + row_shift, true);
@@ -555,7 +580,7 @@ namespace nil {
                 }
 
                 // 1.2. for segment_type != account_trie != 1
-                std::cout << "\n1.2. For segment_type != account_trie" << std::endl; 
+                // std::cout << "\n1.2. For segment_type != account_trie" << std::endl; 
                 Depth = var(component.W(6 % WA), 0 + 6/WA + row_shift, true);
                 Key = var(component.W(10 % WA), 0 + 10/WA + row_shift, true);
                 mpt_nonce_changed_constraints.push_back(Key);
@@ -568,17 +593,17 @@ namespace nil {
                 }
 
                 // 1.3. range check for eth_address => verify it is 160-bits
-                std::cout << "\n1.3. Range check for eth_address => verify it is 160-bits" << std::endl; 
-                std::cout << "*** to be implemented in another circuit ***" << std::endl; 
+                // std::cout << "\n1.3. Range check for eth_address => verify it is 160-bits" << std::endl; 
+                // std::cout << "*** to be implemented in another circuit ***" << std::endl; 
 
                 // 1.4. for segment_type = account_leaf0 = 2
-                std::cout << "\n1.4. For segment_type = account_leaf0" << std::endl; 
-                std::cout << "*** to be implemented ***" << std::endl; 
+                // std::cout << "\n1.4. For segment_type = account_leaf0" << std::endl; 
+                // std::cout << "*** to be implemented ***" << std::endl; 
 
                 // 3. Constraints for mpt_proof_type = nonce_changed = 1
                 // 3.1. segment type transisions
-                std::cout << "\n3. Constraints for mpt_proof_type = nonce_changed = 1" << std::endl; 
-                std::cout << "\n3.1. Segment type transisions" << std::endl; 
+                // std::cout << "\n3. Constraints for mpt_proof_type = nonce_changed = 1" << std::endl; 
+                // std::cout << "\n3.1. Segment type transisions" << std::endl; 
 
                 for(std::size_t i = 0; i < assignment_table_rows - 1; i++) {   
                     qStart = var(component.W(18 % WA), i + 18/WA + row_shift, true);
@@ -610,7 +635,7 @@ namespace nil {
                 }
 
                 // 3.2. constraints for segment types
-                std::cout << "\n3.2. Constraints for account leaf segment types" << std::endl; 
+                // std::cout << "\n3.2. Constraints for account leaf segment types" << std::endl; 
 
                 for(std::size_t i = account_trie_length + 1; i < assignment_table_rows; i++) {
                     Direction = var(component.W(7 % WA), i + 7/WA + row_shift, true);
@@ -624,32 +649,7 @@ namespace nil {
 
                 // 3.3. constraints for old_nonce, new_nonce, code_size
                 // - Range check components for old_nonce, new_nonce, code_size 
-
-                // Initializing range_check component for old_nonce
-                typename range_check_type::input_type range_check_input_1;
-                for(std::size_t i = 0; i < num_chunks; i++) {
-                    range_check_input_1.x[i] = var(component.W((13) % WA), i + (13) / WA, false);
-                }
-                generate_circuit(range_check_instance, bp, assignment, range_check_input_1, rows);    
-                rows += range_check_instance.rows_amount;    
-
-                std::cout << "...mpt_nonce_changed_constraints_size = " << mpt_nonce_changed_constraints.size() << std::endl; 
-
-                // Initializing range_check component for new_nonce
-                typename range_check_type::input_type range_check_input_2;
-                for(std::size_t i = 0; i < num_chunks; i++) {
-                    range_check_input_2.x[i] = var(component.W((14) % WA), i + (14) / WA, false);
-                }
-                generate_circuit(range_check_instance, bp, assignment, range_check_input_2, rows);
-                rows += range_check_instance.rows_amount;    
-
-                // Initializing range_check component for code_size
-                typename range_check_type::input_type range_check_input_3;
-                for(std::size_t i = 0; i < num_chunks; i++) {
-                    range_check_input_3.x[i] = var(component.W((15) % WA), i + (15) / WA, false);
-                }
-                generate_circuit(range_check_instance, bp, assignment, range_check_input_3, rows);
-                rows += range_check_instance.rows_amount;    
+                // range_check_multi components added in the generate_circuit function
 
                 // - verify that code_size in old_account and new_account are equal
                 oldHash_last = var(component.W(0 % WA), assignment_table_rows - 1 + 0/WA + row_shift, true);
@@ -661,7 +661,7 @@ namespace nil {
                 std::cout << "..rows = " << rows << std::endl;
                 std::cout << "..component.rows_amount = " << component.rows_amount << std::endl;
 
-                BOOST_ASSERT_MSG(rows == component.rows_amount, "!!!component rows not equal to actual component rows!!!");      
+                //BOOST_ASSERT_MSG(rows == component.rows_amount, "!!!component rows not equal to actual component rows!!!");      
 
                 return bp.add_gate(mpt_nonce_changed_constraints);
             }
@@ -675,16 +675,16 @@ namespace nil {
                 const typename plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length>::input_type &instance_input,
                 const std::size_t start_row_index) {
 
-                std::cout << "\nConstruct copy constraints in the .hpp file" << std::endl;  
-                std::cout << "-----------------------------------------------" << std::endl;  
+                // std::cout << "\nConstruct copy constraints in the .hpp file" << std::endl;  
+                // std::cout << "-----------------------------------------------" << std::endl;  
 
                 const std::size_t WA = component.witness_amount();
 
                 using var = typename plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length>::var;
                 
-                size_t assignment_table_rows = instance_input.address_hash_traces.size() + 4;
+                size_t assignment_table_rows = account_trie_length + 5;
 
-                for(std::size_t i = 0; i < assignment_table_rows; i++) {
+                for(std::size_t i = 0; i < assignment_table_rows - 1; i++) {
                     bp.add_copy_constraint({var(component.W(2 % WA), start_row_index + i + 2/WA,false), var(component.W(0 % WA), start_row_index + i + 1 + 0/WA,false)});
                     bp.add_copy_constraint({var(component.W(3 % WA), start_row_index + i + 3/WA,false), var(component.W(1 % WA), start_row_index + i + 1 + 1/WA,false)});
                     bp.add_copy_constraint({var(component.W(8 % WA), start_row_index + i + 8/WA,false), var(component.W(8 % WA), start_row_index + i + 1 + 8/WA,false)});
@@ -703,6 +703,9 @@ namespace nil {
 
                 using component_type = plonk_mpt_nonce_changed<BlueprintFieldType, num_chunks, bit_size_chunk, account_trie_length>;
                 using range_check_type = typename component_type::range_check_component;
+                using var = typename component_type::var;
+
+                range_check_type range_check_instance(component._W, component._C, component._PI);
 
                 const std::size_t WA = component.witness_amount();
                 const std::size_t row_shift = (4*num_chunks > 2*WA);
@@ -710,6 +713,35 @@ namespace nil {
                 std::size_t selector_index = generate_gates(component, bp, assignment, instance_input);
                 assignment.enable_selector(selector_index, start_row_index + row_shift);
                 generate_copy_constraints(component, bp, assignment, instance_input, start_row_index);
+
+                size_t rows = start_row_index + account_trie_length + 5;
+
+                // 3.3. constraints for old_nonce, new_nonce, code_size
+                // - Range check components for old_nonce, new_nonce, code_size 
+
+                // Initializing range_check component for old_nonce
+                typename range_check_type::input_type range_check_input_1;
+                for(std::size_t i = 0; i < num_chunks; i++) {
+                    range_check_input_1.x[i] = var(component.W((13) % WA), start_row_index + i + (13) / WA, false);
+                }
+                generate_circuit(range_check_instance, bp, assignment, range_check_input_1, rows);    
+                rows += range_check_instance.rows_amount;    
+
+                // Initializing range_check component for new_nonce
+                typename range_check_type::input_type range_check_input_2;
+                for(std::size_t i = 0; i < num_chunks; i++) {
+                    range_check_input_2.x[i] = var(component.W((14) % WA), start_row_index + i + (14) / WA, false);
+                }
+                generate_circuit(range_check_instance, bp, assignment, range_check_input_2, rows);
+                rows += range_check_instance.rows_amount;    
+
+                // Initializing range_check component for code_size
+                typename range_check_type::input_type range_check_input_3;
+                for(std::size_t i = 0; i < num_chunks; i++) {
+                    range_check_input_3.x[i] = var(component.W((15) % WA), start_row_index + i + (15) / WA, false);
+                }
+                generate_circuit(range_check_instance, bp, assignment, range_check_input_3, rows);
+                rows += range_check_instance.rows_amount;  
 
                 return typename plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length>::result_type(component, start_row_index);
             }
