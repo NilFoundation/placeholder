@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cctype>
 #include <charconv>
 #include <climits>
 #include <cstddef>
@@ -160,6 +161,9 @@ namespace nil::crypto3::multiprecision {
                                                result.data() + result.size(), limbs()[i], 16)
                                      .ec == std::errc{});
                 }
+            }
+            for (std::size_t i = 2; i < result.size(); ++i) {
+                result[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(result[i])));
             }
             return result;
         }
