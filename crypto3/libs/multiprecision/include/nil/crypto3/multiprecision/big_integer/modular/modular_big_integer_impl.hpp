@@ -13,7 +13,6 @@
 
 // IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
 
-#include <ios>
 #include <string>
 #include <tuple>
 #include <type_traits>
