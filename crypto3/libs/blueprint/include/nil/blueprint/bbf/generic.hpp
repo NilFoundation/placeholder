@@ -325,7 +325,7 @@ namespace nil {
 
                     void allocate(TYPE &C, size_t col, size_t row, column_type t) {
                         if (is_allocated(col, row, t)) {
-                            BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
+                            //BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
                         }
                         if (t == column_type::constant) {
                             auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(C);

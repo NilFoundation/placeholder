@@ -49,7 +49,7 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
 
                 zkevm_iszero_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
-                    generic_component<FieldType,stage>(context_object)
+                    generic_component<FieldType,stage>(context_object, false)
                 {
                     std::vector<TYPE> a_chunks(16);
                     TYPE chunks_sum;

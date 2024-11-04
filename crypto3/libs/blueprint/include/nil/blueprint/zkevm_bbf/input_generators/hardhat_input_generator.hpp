@@ -456,8 +456,6 @@ namespace nil {
 
                             } else if(opcode == "POP") {
                                 // 0x50
-                                _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
-
                             } else if(opcode == "MLOAD") {
                                 // 0x51
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, false, stack[stack.size()-1]));

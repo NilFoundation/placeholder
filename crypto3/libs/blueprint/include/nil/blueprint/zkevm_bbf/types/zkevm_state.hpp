@@ -121,7 +121,6 @@ namespace nil {
                     return state[row].call_id;
                 }   // call_id — number of current transaction in block
                 TYPE pc(std::size_t row) const{
-                    std::cout << "\tstate.size = " << state.size() << std::endl;
                     //BOOST_ASSERT(row < state.size() - 1);
                     return state[row].pc;
                 }

@@ -48,12 +48,11 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
 
                 zkevm_pushx_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, std::size_t x):
-                    generic_component<FieldType,stage>(context_object)
+                    generic_component<FieldType,stage>(context_object, false)
                 {
                     std::vector<TYPE> A_bytes(32);
                     std::vector<TYPE> A_bytes_255(32);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        // std::cout << "\tinput=" << std::hex << current_state.additional_input << std::dec << std::endl;
                         auto bytes = nil::blueprint::w_to_8(current_state.additional_input);
                         for( std::size_t i = 0; i < 32; i++ ){
                             A_bytes[i] = bytes[i];
@@ -115,14 +114,12 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) {
-                    // std::cout << "Assign PUSH"<<x << std::endl;
                     zkevm_pushx_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, x);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) {
-                    // std::cout << "Constrain PUSH"<<x << std::endl;
                     zkevm_pushx_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, x);
                 }
                 virtual std::size_t rows_amount() override {

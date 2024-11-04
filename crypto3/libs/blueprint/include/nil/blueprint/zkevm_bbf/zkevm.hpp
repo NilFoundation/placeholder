@@ -424,6 +424,7 @@ namespace nil {
                                     continue;
                                 }
                                 std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
+                                //std::cout << "\tcurrent_opcode_bare_rows_amount = " << current_opcode_bare_rows_amount << std::endl;
                                 context_type fresh_ct = context_object.fresh_subcontext(
                                     opcode_area,
                                     1,
