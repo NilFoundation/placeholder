@@ -173,10 +173,10 @@ namespace nil {
                             }
                             std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
                             std::size_t current_opcode_rows_amount = std::ceil(float(current_opcode_bare_rows_amount)/2) * 2;
-                            std::cout << "Fresh subcontext:"
-                                << current_row + current_opcode_bare_rows_amount%2 << "..."
-                                << current_row + current_opcode_bare_rows_amount%2 + current_opcode_bare_rows_amount - 1
-                                << std::endl;
+                            // std::cout << "Fresh subcontext:"
+                            //     << current_row + current_opcode_bare_rows_amount%2 << "..."
+                            //     << current_row + current_opcode_bare_rows_amount%2 + current_opcode_bare_rows_amount - 1
+                            //     << std::endl;
                             context_type op_ct = context_object.fresh_subcontext(
                                 opcode_area,
                                 current_row + current_opcode_bare_rows_amount%2,
@@ -339,11 +339,20 @@ namespace nil {
                         std::map<std::pair<zkevm_opcode, std::size_t>, TYPE> zkevm_opcode_row_selectors;
                         TYPE opcode_selector_check_constraint;
                         TYPE opcode_row_selector_check_constraint;
+                        TYPE opcode_length_check_constraint;
                         TYPE opcode_constraint;
                         TYPE row_counter_constraint;
                         TYPE evm_opcode_constraint;
                         for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes_amount; opcode_num++){
                             zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
+                            if( opcode_impls.find(current_opcode) == opcode_impls.end() ) {
+                                std::cout << "Opcode " << current_opcode <<" implementation not found" << std::endl;
+                            }
+                            std::size_t current_opcode_bare_rows_amount =
+                                opcode_impls.find(current_opcode) == opcode_impls.end()?
+                                0:
+                                opcode_impls[current_opcode]->rows_amount();
+                            std::size_t current_opcode_rows_amount = std::ceil(float(current_opcode_bare_rows_amount)/2) * 2;
                             TYPE o4 = opcode_selectors[1][opcode_num/4];
                             TYPE parity = opcode_num%2 ? all_states[1].opcode_parity: 1 - all_states[1].opcode_parity;
                             TYPE is_even = all_states[1].is_even;
@@ -367,6 +376,10 @@ namespace nil {
                             }
                             opcode_selector_check_constraint += zkevm_opcode_selectors[current_opcode];
                             opcode_constraint += zkevm_opcode_selectors[current_opcode] * opcode_to_number(current_opcode);
+                            if( current_opcode_rows_amount != 0)
+                                opcode_length_check_constraint += zkevm_opcode_selectors[current_opcode] * (current_opcode_rows_amount - 1);
+                            else
+                                opcode_length_check_constraint += zkevm_opcode_selectors[current_opcode];
                             if( opcode_to_number(current_opcode) < 0x100 ) evm_opcode_constraint += zkevm_opcode_selectors[current_opcode];
                             for(std::size_t i = 0; i < max_opcode_height; i++){
                                 TYPE row_sel = opcode_row_selectors[1][i/2];
@@ -393,6 +406,7 @@ namespace nil {
                                 row_counter_constraint += zkevm_opcode_row_selectors[std::make_pair(current_opcode, i)] * i;
                             }
                         }
+                        mc.push_back(all_states[1].step_start*(opcode_length_check_constraint - all_states[1].row_counter));
                         mc.push_back(opcode_selector_check_constraint - 1);
                         mc.push_back(opcode_row_selector_check_constraint - 1);
                         mc.push_back(opcode_constraint - all_states[1].opcode);
@@ -402,7 +416,6 @@ namespace nil {
                             std::map<std::pair<zkevm_opcode, std::size_t>, std::vector<TYPE>> opcode_constraints_aggregator;
                             std::map<std::tuple<zkevm_opcode, std::size_t, std::string>, std::vector<std::vector<TYPE>>> opcode_lookup_constraints_aggregator;
                             std::size_t max_opcode_row_constraints = 0;
-                            //std::map<std::pair<zkevm_opcode, row, std::string>, std::vector<lookup_constraint>> opcode_constraints_aggregator;
                             for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes.size(); opcode_num++ ){
                                 zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
                                 std::cout << "Build constraints for " << current_opcode << std::endl;
@@ -428,9 +441,9 @@ namespace nil {
                                             if(opcode_constraints_aggregator[{current_opcode, real_row}].size() > max_opcode_row_constraints){
                                                 max_opcode_row_constraints = opcode_constraints_aggregator[{current_opcode, real_row}].size();
                                             }
-                                            std::cout << "\t" << local_row << "=>" << real_row << ": " << constraint << std::endl;
+                                            //std::cout << "\t" << local_row << "=>" << real_row << ": " << constraint << std::endl;
                                         }
-                                        std::cout << std::endl;
+                                        //std::cout << std::endl;
                                     }
                                 }
                                 auto opcode_lookup_constraints = fresh_ct.get_lookup_constraints();
@@ -439,11 +452,11 @@ namespace nil {
                                         for( auto lookup_constraint: constr_list.second){
                                             std::size_t real_row = std::ceil(float(current_opcode_bare_rows_amount) / 2) * 2 - local_row - current_opcode_bare_rows_amount % 2;
                                             opcode_lookup_constraints_aggregator[{current_opcode, real_row, lookup_constraint.first}].push_back(lookup_constraint.second);
-                                            std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
+                                            //std::cout << "\t" << local_row << "=>" << real_row  << ": " << lookup_constraint.first << std::endl;
                                             for( auto constraint:lookup_constraint.second ){
-                                                std::cout << "\t\t" << constraint << std::endl;
+                                                //std::cout << "\t\t" << constraint << std::endl;
                                             }
-                                            std::cout << std::endl;
+                                            //std::cout << std::endl;
                                         }
                                     }
                                 }
@@ -455,7 +468,7 @@ namespace nil {
                                 for( auto &[pair, constraints]: opcode_constraints_aggregator ){
                                     if( constraints.size() <= i) continue;
                                     acc_constraint += context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i];
-                                    std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
+                                    //std::cout << "\topcode " << pair.first << " row " << pair.second << " constraint " << context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i] << std::endl;
                                     //relative_mc.push_back(context_object.relativize(zkevm_opcode_row_selectors[pair], -1) * constraints[i]);
                                 }
                                 relative_mc.push_back(acc_constraint);
@@ -466,7 +479,7 @@ namespace nil {
                             std::map<std::string, std::vector<std::vector<TYPE>>> acc_lookup_constraints;
                             for( auto &[key, exprs]:opcode_lookup_constraints_aggregator){
                                 auto &[local_opcode, local_row, table_name] = key;
-                                std::cout << "\t" << local_opcode << ", " << local_row << ", " << table_name << std::endl;
+                                //std::cout << "\t" << local_opcode << ", " << local_row << ", " << table_name << std::endl;
                                 if( acc_lookup_constraints.find(table_name) == acc_lookup_constraints.end()) acc_lookup_constraints[table_name] = {};
                                 if( acc_lookup_constraints[table_name].size() < exprs.size() ) acc_lookup_constraints[table_name].resize(exprs.size());
                                 for( std::size_t i = 0; i < exprs.size(); i++ ) {

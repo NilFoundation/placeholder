@@ -56,7 +56,7 @@ namespace nil {
                     TYPE chunks_sum_inv;
                     TYPE result;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        std::cout << "\tISZERO bbf object assigns its area" << std::endl;
+                        // std::cout << "\tISZERO bbf object assigns its area" << std::endl;
                         zkevm_word_type A = current_state.stack_top();
                         a_chunks = zkevm_word_to_field_element<FieldType>(A);
                         for( std::size_t i = 0; i < a_chunks.size(); i++ ){
@@ -110,7 +110,7 @@ namespace nil {
                         };
                         lookup(tmp, "zkevm_rw");
                     }
-                    std::cout << "\tResult = " << result << std::endl;
+                    // std::cout << "\tResult = " << result << std::endl;
                 }
             };
 
@@ -121,14 +121,14 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) {
-                    std::cout << "\tAssign ISZERO input = " << current_state.stack_top() << std::endl;
+                    // std::cout << "\tAssign ISZERO input = " << current_state.stack_top() << std::endl;
                     zkevm_iszero_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) {
-                    std::cout << "\tBuild ISZERO constraints" << std::endl;
+                    // std::cout << "\tBuild ISZERO constraints" << std::endl;
                     zkevm_iszero_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
