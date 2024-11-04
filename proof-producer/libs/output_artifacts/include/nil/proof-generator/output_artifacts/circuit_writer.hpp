@@ -20,8 +20,6 @@
 #include <ostream>
 #include <vector>
 
-#include <boost/assert.hpp>
-
 #include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
@@ -70,7 +68,8 @@ namespace nil {
 
                         std::vector<std::uint8_t> cv(filled_val.length(), 0x00);
                         auto iter = cv.begin();
-                        BOOST_ASSERT(filled_val.write(iter, cv.size()) == nil::marshalling::status_type::success);
+                        auto const status = filled_val.write(iter, cv.size());
+                        assert(status == nil::marshalling::status_type::success);
                         out.write(reinterpret_cast<char*>(cv.data()), cv.size());
                     }
         };        
