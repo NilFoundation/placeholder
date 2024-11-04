@@ -40,6 +40,10 @@ in stdenv.mkDerivation {
 
   doCheck = runTests;
 
+  checkPhase = ''
+    cd proof-producer && ctest --verbose --output-on-failure -R && cd ..
+  '';
+
   shellHook = ''
     PS1="\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "
     echo "Welcome to Proof-producer development environment!"
