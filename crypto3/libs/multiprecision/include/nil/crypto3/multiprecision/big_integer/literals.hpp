@@ -38,26 +38,26 @@ namespace nil::crypto3::multiprecision::literals {
                 if (!is_valid_hex_digit(c)) {
                     throw std::invalid_argument("non hex character in literal");
                 }
-                int digit = parse_hex_digit(c);
                 result <<= 4;
                 if (bits != 0) {
                     bits += 4;
                 }
-                result += parse_hex_digit(c);
-                if (digit != 0) {
+                int digit = parse_hex_digit(c);
+                result += digit;
+                if (bits == 0 && digit != 0) {
                     if (digit >= 8) {
-                        bits = 4;
+                        bits += 4;
                     } else if (digit >= 4) {
-                        bits = 3;
+                        bits += 3;
                     } else if (digit >= 2) {
-                        bits = 2;
+                        bits += 2;
                     } else {
-                        bits = 1;
+                        bits += 1;
                     }
                 }
             }
             if (bits > Bits) {
-                throw "not enough bits to store literal";
+                throw std::invalid_argument("not enough bits to store literal");
             }
             return result;
         }

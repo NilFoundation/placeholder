@@ -43,12 +43,12 @@ BOOST_AUTO_TEST_CASE(construct_modular_rt_trivial_montgomery) {
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small_montgomery) {
     static constexpr auto mod = 0x79_big_integer64;
     auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer64);
-    BOOST_CHECK_EQUAL(a.str(), "0x3e");
+    BOOST_CHECK_EQUAL(a.str(), "0x3E");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small_montgomery) {
     modular_big_integer_rt<64> a{0x1234_big_integer64, 0x79_big_integer64};
-    BOOST_CHECK_EQUAL(a.str(), "0x3e");
+    BOOST_CHECK_EQUAL(a.str(), "0x3E");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small) {
