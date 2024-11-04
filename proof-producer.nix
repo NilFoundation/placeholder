@@ -33,6 +33,7 @@ in stdenv.mkDerivation {
     [
       "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
+      (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
       "-G Ninja"
     ];
