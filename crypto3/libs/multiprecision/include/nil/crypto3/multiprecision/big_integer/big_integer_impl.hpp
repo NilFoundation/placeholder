@@ -12,7 +12,6 @@
 #include <cstring>
 #include <exception>
 #include <functional>
-#include <ios>
 #include <iostream>
 #include <limits>
 #include <ranges>
@@ -157,9 +156,10 @@ namespace nil::crypto3::multiprecision {
                 if (len > 0) {
                     std::size_t start_offset = result.size();
                     result.resize(result.size() + len);
-                    BOOST_ASSERT(std::to_chars(result.data() + start_offset,
-                                               result.data() + result.size(), limbs()[i], 16)
-                                     .ec == std::errc{});
+                    auto ec = std::to_chars(result.data() + start_offset,
+                                            result.data() + result.size(), limbs()[i], 16)
+                                  .ec;
+                    BOOST_ASSERT(ec == std::errc{});
                 }
             }
             for (std::size_t i = 2; i < result.size(); ++i) {
