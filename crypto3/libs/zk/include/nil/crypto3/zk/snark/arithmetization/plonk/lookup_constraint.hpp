@@ -28,6 +28,7 @@
 #ifndef CRYPTO3_ZK_PLONK_LOOKUP_CONSTRAINT_HPP
 #define CRYPTO3_ZK_PLONK_LOOKUP_CONSTRAINT_HPP
 
+#include <nil/crypto3/detail/type_traits.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint.hpp>
 
@@ -35,6 +36,61 @@ namespace nil {
     namespace crypto3 {
         namespace zk {
             namespace snark {
+
+                template<typename FieldType>
+                class lookup_input_constraints : public std::vector<crypto3::zk::snark::plonk_constraint<FieldType>> {
+                public:
+                    using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
+                    using base_type = std::vector<constraint_type>;
+                    using expression_type = typename constraint_type::base_type; 
+
+                    // Using the base class's constructors
+                    using std::vector<constraint_type>::vector; // Inherit constructors
+
+                    // Constructor to initialize from std::vector
+                    lookup_input_constraints(const base_type& other)
+                        : base_type(other) {}
+
+                    // Multiply each element with an expression.
+                    lookup_input_constraints& operator*=(const expression_type& other) {
+                        for (auto& element : *this) {
+                            element *= other;
+                        }
+                        return *this;
+                    }
+
+                    lookup_input_constraints operator*(const expression_type& other) {
+                        lookup_input_constraints result = *this;
+                        result *= other;
+                        return result;
+                    }
+
+                    // Allow multiplication with any container of the same type.
+                    template <typename Container>
+                    lookup_input_constraints& operator*=(const typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && std::is_same<typename Container::value_type, expression_type>::value,
+                            Container>& other) {
+                        if (this->size() < other.size())
+                            this->resize(other.size());
+
+                        auto it1 = this->begin();
+                        auto it2 = other.begin();
+                        for (; it2 != other.end(); ++it1, ++it2) {
+                            *it1 *= *it2;
+                        }
+                        return *this;
+                    }
+
+                    template <typename Container>
+                    lookup_input_constraints& operator*(const typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && std::is_same<typename Container::value_type, expression_type>::value,
+                            Container>& other) {
+                        lookup_input_constraints result = *this;
+                        result *= other;
+                        return result;
+                    }
+                };
+
 
                 template<typename FieldType, typename VariableType = plonk_variable<typename FieldType::value_type>>
                 class plonk_lookup_constraint {
@@ -45,9 +101,9 @@ namespace nil {
                     using constraint_type = plonk_constraint<FieldType>;
 
                     std::size_t table_id;
-                    std::vector<constraint_type> lookup_input;
+                    lookup_input_constraints<FieldType> lookup_input;
 
-                    bool operator== (const plonk_lookup_constraint &other) const {
+                    bool operator==(const plonk_lookup_constraint &other) const {
                         return table_id == other.table_id && lookup_input == other.lookup_input;
                     }
                 };
