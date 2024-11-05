@@ -55,17 +55,16 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto address = w_to_16(current_state.stack_top())[15];
                         for( std::size_t i = 0; i < 32; i++){
-                            //bytes[i] = TYPE(current_state.memory(addr + i));
+                            bytes[i] = TYPE(w_to_8(current_state.memory(addr + i))[31]);
                         }
                         addr = address;
                     }
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                     // PC transition
+                        constrain(current_state.pc_next() - current_state.pc(0) - 1);                     // PC transition
                         // constrain(current_state.gas(0) - current_state.gas_next() - 1);                 // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next());         // stack_size transition
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 32);    // rw_counter transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 34);    // rw_counter transition
                         // std::vector<TYPE> tmp;
                         // tmp = {
                         //     TYPE(rw_op_to_num(rw_operation_type::stack)),
