@@ -146,28 +146,28 @@ TEST_F(AssignmentTableWriterTest, WriteFullTextAssignment)
     for (auto row = 0; row < desc_.usable_rows_amount; row++) {
 
         for (auto col = 0; col < table_.witnesses_amount(); col++) {
-            auto expected = row < table_.witness_column_size(row) ? table_.witness(col)[row] : 0;
+            auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.public_inputs_amount(); col++) {
-            auto expected = row < table_.public_input_column_size(row) ? table_.public_input(col)[row] : 0;
+            auto expected = table_.public_input(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.constants_amount(); col++) {
-            auto expected = row < table_.constant_column_size(row) ? table_.constant(col)[row] : 0;
+            auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.selectors_amount(); col++) {
-            auto expected = row < table_.selector_column_size(row) ? table_.selector(col)[row] : 0;
+            auto expected = table_.selector(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
@@ -190,7 +190,7 @@ TEST_F(AssignmentTableWriterTest, WritePartialColumns)
     read_and_check_text_header(mem_stream);
     for (auto row = 0; row < desc_.usable_rows_amount; row++) {
         for (auto col = 0; col <= WitnessColumnsToDump; col++) {
-            auto expected = row < table_.witness_column_size(row) ? table_.witness(col)[row] : 0;
+            auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
@@ -230,14 +230,14 @@ TEST_F(AssignmentTableWriterTest, TextWrite_Smoke)
     read_and_check_text_header(mem_stream);
     for (auto row: {0,10}){
         for (auto col = 0; col <= 2; col++) {
-            auto expected = row < table_.witness_column_size(row) ? table_.witness(col)[row] : 0;
+            auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream); // witnesses
 
         for (auto col = 0; col < table_.public_inputs_amount(); col++) {
-            auto expected = row < table_.public_input_column_size(row) ? table_.public_input(col)[row] : 0;
+            auto expected = table_.public_input(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
@@ -245,12 +245,12 @@ TEST_F(AssignmentTableWriterTest, TextWrite_Smoke)
 
 
         for (auto col = 1; col <= 3; col++) {
-            auto expected = row < table_.constant_column_size(row) ? table_.constant(col)[row] : 0;
+            auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         for (auto col = 5; col <= 7; col++) {
-            auto expected = row < table_.constant_column_size(row) ? table_.constant(col)[row] : 0;
+            auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
             ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
