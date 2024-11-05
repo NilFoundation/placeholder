@@ -93,6 +93,7 @@ set(COMMON_TEST_FILES
     "bbf/bbf_wrapper"
     "bbf/opcode_poc"
     "bbf/gate_optimizer"
+    "bbf/poseidon"
     )
 
 set(NON_NATIVE_TESTS_FILES
