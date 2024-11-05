@@ -16,14 +16,14 @@ concurrency:
 
 jobs:
   test-linux-gcc:
-    name: Linux Crypto3 Testing with gcc
+    name: Linux placeholder testing with gcc
     uses: ./.github/workflows/gcc-linux-nix-check.yml
     if: |
       always() && !cancelled()
     secrets: inherit
 
   test-linux-clang:
-    name: Linux Crypto3 Testing with clang
+    name: Linux placeholder testing with clang
     uses: ./.github/workflows/clang-linux-nix-check.yml
     if: |
       always() && !cancelled()
