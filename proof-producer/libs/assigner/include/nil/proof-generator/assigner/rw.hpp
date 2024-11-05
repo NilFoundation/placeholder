@@ -2,6 +2,7 @@
 #define PROOF_GENERATOR_LIBS_ASSIGNER_RW_HPP_
 
 #include <optional>
+#include <chrono>
 #include <boost/log/trivial.hpp>
 #include <boost/filesystem.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
@@ -40,7 +41,10 @@ namespace nil {
                 input.push_back(storage_op);
             }
 
+            auto start = std::chrono::high_resolution_clock::now();
             ComponentType instance(context_object, input, max_rw_size, max_mpt_size);
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
+            std::cout << "FILL ASSIGNMENT TABLE: " << duration.count() << "\n";
             return {};
         }
     } // proof_generator

@@ -101,7 +101,7 @@ namespace nil {
                     static_cast<uint64_t>(pb_sop.rw_idx()),
                     !pb_sop.is_read(),
                     proto_uint256_to_zkevm_word(pb_sop.value()),
-                    proto_uint256_to_zkevm_word(pb_sop.value()))// TODO prev value
+                    proto_uint256_to_zkevm_word(pb_sop.value()))//TODO set initial_value
                 );
             }
 
