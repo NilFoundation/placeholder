@@ -10,7 +10,7 @@ Crypto3 cryptography suite's purpose is:
 
 Libraries are designed to be state of the art, highly performant and providing a one-stop solution for 
 all cryptographic operations. They are supported on all operating systems (*nix, windows, macOS) 
-and architectures(x86/ARM).
+and architectures (x86/ARM).
 
 
 See [contribution](contributing.md) guidelines if you wish to contribute to the project.
@@ -25,13 +25,13 @@ Detailed list of modules with tutorials is available at [Modules page](modules.h
 ```
 root
 ├── cmake: cmake sub-module with helper functions/macros to build crypto3 library umbrella-repository
-├── docs: documentation , tutorials and guides
+├── docs: documentation, tutorials and guides
 ├── libs: all directories added as submodules which are independent projects.
 │   ├── algebra: algebraic operations and structures being used for elliptic-curve cryptography
 │   ├── block: block ciphers
 │   ├── blueprint: components and circuits for zk schemes
 │   ├── codec: encoding/decoding algorithms
-│   ├── containers:containers and generic commitment schemes for accumulating data, includes Merkle Tree
+│   ├── containers: containers and generic commitment schemes for accumulating data, includes Merkle Tree
 │   ├── hash: hashing algorithms
 │   ├── kdf: key derivation functions 
 │   ├── mac: message authentication codes
@@ -69,7 +69,7 @@ project as a submodule and would not need to resolve dependencies. See [crypto3-
 
 ### Selective
 Developer can select to include a one or more modules to reduce the sources of resulting project and dependencies tree height. This however
-does require the developer to manually resolve all required dependencies and stay upto date regarding
+does require the developer to manually resolve all required dependencies and stay up to date regarding
 compatibilities across modules.
 
 
