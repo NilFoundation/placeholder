@@ -144,8 +144,11 @@ jobs:
       - name: Cleanup artifacts after previous runs
         continue-on-error: true
         run: |
-          ls -l -a
-          rm -rf -i -v ${{ steps.strings.outputs.artifact-dir }}
+          echo "before:"
+          ls -l -a ${{ steps.strings.outputs.artifact-dir }}
+          rm -rf -v ${{ steps.strings.outputs.artifact-dir }}
+          echo "after:"
+          ls -l -a ${{ steps.strings.outputs.artifact-dir }}
 
       - name: Download circuits and assignments artifact
         uses: dawidd6/action-download-artifact@v6
@@ -159,7 +162,9 @@ jobs:
 
       - name: Extract circuits and assignments artifact
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
-        run: unzip -o ${{ env.CAA_ARTIFACT_NAME }}.zip
+        run: |
+          ls -l -a
+          unzip -o ${{ env.CAA_ARTIFACT_NAME }}.zip
 
       - name: List artifacts
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
