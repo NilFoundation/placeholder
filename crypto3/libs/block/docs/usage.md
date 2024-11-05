@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     std::string key = "\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c";
 
 
-    std::string out = encrypt<block::aes<128>>(input.begn(), input.end(), key);
+    std::string out = encrypt<block::aes<128>>(input.begin(), input.end(), key);
 
     assert(out == "3ad77bb40d7a3660a89ecaf32466ef97f5d3d58503b9699de785895a96fdbaaf"
                     "43b1cd7f598ece23881b00e3ed0306887b0c785e27e8ad3f8223207104725dd4");
