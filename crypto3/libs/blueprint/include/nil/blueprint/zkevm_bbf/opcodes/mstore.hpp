@@ -53,6 +53,7 @@ namespace nil {
                     TYPE addr;
                     std::vector<TYPE> value(32);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        std::cout << current_state.stack_top(1) << std::endl;
                         addr = w_to_16(current_state.stack_top())[15];
                         auto bytes = w_to_8(current_state.stack_top(1));
                         for( std::size_t i = 0; i < 32; i++){
@@ -68,8 +69,8 @@ namespace nil {
                         //constrain(current_state.gas(0) - current_state.gas_next() - 1);               // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
                         //constrain(current_state.memory_size(0) - current_state.memory_size_next());   // memory_size transition
-                        //constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 32);  // rw_counter transition
-                        auto V_128 = chunks16_to_chunks128<TYPE>(value);
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 34);  // rw_counter transition
+                        auto V_128 = chunks8_to_chunks128<TYPE>(value);
 
                         std::vector<TYPE> tmp;
                         tmp = {
@@ -85,35 +86,35 @@ namespace nil {
                             addr                                                   // addr is smaller than maximum contract size
                         };
                         lookup(tmp, "zkevm_rw");
-                        // tmp = {
-                        //     TYPE(rw_op_to_num(rw_operation_type::stack)),
-                        //     current_state.call_id(0),
-                        //     current_state.stack_size(0) - 2,
-                        //     TYPE(0),                                               // storage_key_hi
-                        //     TYPE(0),                                               // storage_key_lo
-                        //     TYPE(0),                                               // field
-                        //     current_state.rw_counter(0) + 1,
-                        //     TYPE(0),                                               // is_write
-                        //     V_128.first,                                           // hi bytes are 0
-                        //     V_128.second                                           // addr is smaller than maximum contract size
-                        // };
-                        // lookup(tmp, "zkevm_rw");
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 2,
+                            TYPE(0),                                               // storage_key_hi
+                            TYPE(0),                                               // storage_key_lo
+                            TYPE(0),                                               // field
+                            current_state.rw_counter(0) + 1,
+                            TYPE(0),                                               // is_write
+                            V_128.first,                                           // hi bytes are 0
+                            V_128.second                                           // addr is smaller than maximum contract size
+                        };
+                        lookup(tmp, "zkevm_rw");
 
-                        // for( std::size_t i = 0; i < 32; i++){
-                        //     tmp = {
-                        //         TYPE(rw_op_to_num(rw_operation_type::memory)),
-                        //         current_state.call_id(0),
-                        //         addr + i,
-                        //         TYPE(0),                                               // storage_key_hi
-                        //         TYPE(0),                                               // storage_key_lo
-                        //         TYPE(0),                                               // field
-                        //         current_state.rw_counter(0) + 2 + i,
-                        //         TYPE(1),                                               // is_write
-                        //         TYPE(0),                                               // hi bytes are 0
-                        //         value[i]                                               // addr is smaller than maximum contract size
-                        //     };
-                        //     lookup(tmp, "zkevm_rw");
-                        // }
+                        for( std::size_t i = 0; i < 32; i++){
+                            tmp = {
+                                TYPE(rw_op_to_num(rw_operation_type::memory)),
+                                current_state.call_id(0),
+                                addr + i,
+                                TYPE(0),                                               // storage_key_hi
+                                TYPE(0),                                               // storage_key_lo
+                                TYPE(0),                                               // field
+                                current_state.rw_counter(0) + 2 + i,
+                                TYPE(1),                                               // is_write
+                                TYPE(0),                                               // hi bytes are 0
+                                value[i]                                               // addr is smaller than maximum contract size
+                            };
+                            lookup(tmp, "zkevm_rw");
+                        }
                     } else {
                         //std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
