@@ -83,6 +83,7 @@ set(COMMON_TEST_FILES
     #"mock/mocked_components"
     "component_batch"
     "bbf/bbf_wrapper"
+    "bbf/poseidon"
     )
 
 set(NON_NATIVE_TESTS_FILES

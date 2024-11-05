@@ -95,13 +95,13 @@ namespace nil {
                                     // We use minus in the next line, as is done in Mina implementation.
                                     // Original implementation uses + instead, but it doesn't matter,
                                     // since X and Y are random elements.
-                                    new_mds_matrix[i][j] = (x[i] - y[i]).inversed();
+                                    new_mds_matrix[i][j] = (x[i] - y[j]).inversed();
                                 }
                                 if (!secure_MDS_found)
                                     break;
                             }
                             // Determinant of the matrix must not be 0.
-                            if (new_mds_matrix.det() == 0)
+                            if (det(new_mds_matrix) == 0)
                                 secure_MDS_found = false;
 
                             // TODO(martun): check that mds has NO eignevalues. 
