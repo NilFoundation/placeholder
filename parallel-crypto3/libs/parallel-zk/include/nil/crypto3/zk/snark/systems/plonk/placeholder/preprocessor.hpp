@@ -33,6 +33,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <vector>
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
@@ -476,9 +477,13 @@ namespace nil {
                         const std::vector<std::size_t> &global_indices, // ordered global indices
                         const typename FieldType::value_type &omega,
                         const typename FieldType::value_type &delta,
-                        cycle_representation &permutation,
+                        const plonk_constraint_system<FieldType>& constraint_system,
+                        const plonk_table_description<FieldType>& table_description,
                         std::shared_ptr<math::evaluation_domain<FieldType>> domain
                     ) {
+                        // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
+                        cycle_representation permutation(constraint_system, table_description);
+
                         std::vector<polynomial_dfs_type> S_perm(global_indices.size());
                         for (std::size_t i = 0; i < global_indices.size(); i++) {
                             S_perm[i] = polynomial_dfs_type(
@@ -555,9 +560,6 @@ namespace nil {
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
                             math::make_evaluation_domain<FieldType>(N_rows);
 
-                        // TODO: add std::vector<std::size_t> columns_with_copy_constraints;
-                        cycle_representation permutation(constraint_system, table_description);
-
                         auto permuted_columns = constraint_system.permuted_columns();
                         std::vector<std::size_t> global_indices;
                         for( auto it = permuted_columns.begin(); it != permuted_columns.end(); it++ ){
@@ -570,7 +572,7 @@ namespace nil {
 
                         std::vector<polynomial_dfs_type> sigma_perm_polys =
                             permutation_polynomials(global_indices, basic_domain->get_domain_element(1),
-                                                    delta, permutation, basic_domain);
+                                                    delta, constraint_system, table_description, basic_domain);
 
                         polynomial_dfs_type lagrange_0 = lagrange_polynomial(basic_domain, 0);
 
