@@ -94,6 +94,7 @@ set(COMMON_TEST_FILES
     "bbf/opcode_poc"
     "bbf/row_seletor_test"
     "bbf/gate_optimizer"
+    "bbf/poseidon"
     )
 
 set(NON_NATIVE_TESTS_FILES
