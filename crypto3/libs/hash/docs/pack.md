@@ -162,7 +162,7 @@ struct1 [label="0x12 | 0x34 | 0x56 | 0x78 | 0x90 | 0xab | 0xcd | 0xef"];
 } @enddot
 
 Here it is easy to see that the data from `input` was just concatenated into the `output` data with no additional
-tranformations. Now, notice that the first and the second example described in this section implicitly rely on the
+transformations. Now, notice that the first and the second example described in this section implicitly rely on the
 above-described convention. In the first example the input data is concatenated in reverse byte order, and in the second
 example the byte order is reversed after the input data concatenation.
 
