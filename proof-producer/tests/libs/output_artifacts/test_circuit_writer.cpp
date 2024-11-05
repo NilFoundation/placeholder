@@ -21,7 +21,7 @@ using BlueprintField = typename nil::crypto3::algebra::curves::pallas::base_fiel
 using Writer = nil::proof_generator::circuit_writer<Endianness, BlueprintField>;
 using Circuit = Writer::Circuit;
 
-class CiruitWriterTest: public ::testing::Test {
+class CircuitWriterTest: public ::testing::Test {
     protected:
         void SetUp() override {
 
@@ -55,7 +55,7 @@ class CiruitWriterTest: public ::testing::Test {
 };
 
 
-TEST_F(CiruitWriterTest, WriteBinaryCircuit) 
+TEST_F(CircuitWriterTest, WriteBinaryCircuit)
 {
     std::stringstream out;
     Writer::write_binary_circuit(out, circuit_, circuit_.public_input_sizes());
