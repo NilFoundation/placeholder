@@ -92,6 +92,7 @@ set(COMMON_TEST_FILES
     "component_batch"
     "bbf/bbf_wrapper"
     "bbf/gate_optimizer"
+    "bbf/poseidon"
     )
 
 set(NON_NATIVE_TESTS_FILES
