@@ -34,7 +34,9 @@
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pushx.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/memory.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/mload.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/mstore.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/mstore8.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/add_sub.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/div_mod.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/addmod.hpp>

@@ -54,6 +54,7 @@ namespace nil {
                     std::vector<TYPE> B_chunks(16);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         // std::cout << "\tinput=" << std::hex << current_state.additional_input << std::dec << std::endl;
+                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto A = current_state.stack_top();
                         auto A16 = nil::blueprint::w_to_16(A);
                         auto B = current_state.stack_top(x);

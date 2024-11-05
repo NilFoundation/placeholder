@@ -56,7 +56,7 @@ namespace nil {
                     TYPE chunks_sum_inv;
                     TYPE result;
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        // std::cout << "\tISZERO bbf object assigns its area" << std::endl;
+                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                         zkevm_word_type A = current_state.stack_top();
                         a_chunks = zkevm_word_to_field_element<FieldType>(A);
                         for( std::size_t i = 0; i < a_chunks.size(); i++ ){
