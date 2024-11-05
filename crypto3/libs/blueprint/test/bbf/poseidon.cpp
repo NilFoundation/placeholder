@@ -2,7 +2,6 @@
 // Copyright (c) 2021-2022 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2021-2022 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2022 Alisa Cherniaeva <a.cherniaeva@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -32,9 +31,6 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-
-#include <nil/blueprint/bbf/circuit_builder.hpp>
-
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
@@ -46,26 +42,45 @@
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
-using namespace nil::blueprint;
 
 template<typename BlueprintFieldType>
 void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_input,
                    std::vector<typename BlueprintFieldType::value_type> expected_res) {
-
     using FieldType = BlueprintFieldType;
+    using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<FieldType>;
+    using AssignmentType = blueprint::assignment<ArithmetizationType>;
+    using stage = nil::blueprint::bbf::GenerationStage;
+    using hash_type = nil::crypto3::hashes::keccak_1600<256>;
+    using component_type =
+        blueprint::bbf::components::flexible_poseidon<FieldType, stage::ASSIGNMENT>;
+    using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
+    constexpr std::size_t Lambda = 5;
 
-    typename bbf::components::flexible_poseidon<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.state = public_input;
+    using value_type = typename BlueprintFieldType::value_type;
+    using context_type =
+        typename nil::blueprint::bbf::generic_component<FieldType, stage::ASSIGNMENT>::context_type;
 
-    auto B = bbf::circuit_builder<FieldType,bbf::components::flexible_poseidon>();
-    auto [at, A, desc] = B.assign(raw_input);
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+    using Flexible_Poseidon =
+        typename nil::blueprint::bbf::components::flexible_poseidon<BlueprintFieldType,
+                                                                    stage::ASSIGNMENT>;
+    using TYPE =
+        typename nil::blueprint::bbf::generic_component<FieldType, stage::ASSIGNMENT>::TYPE;
 
-    for (std::uint32_t i = 0; i < public_input.size(); i++) {
+    constexpr std::size_t WitnessColumns = 10;
+    auto desc = component_type::get_table_description(WitnessColumns);
+    AssignmentType assignment_instance(desc);
+    context_type ct = context_type(assignment_instance, desc.usable_rows_amount, 0);
+    std::array<TYPE, 3> input = {public_input[0].data, public_input[1].data, public_input[2].data};
+
+    Flexible_Poseidon c1 = Flexible_Poseidon(ct, input);
+
+    for (std::uint32_t i = 0; i < input.size(); i++) {
+#ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
         std::cout << "input[" << i << "]   : " << public_input[i].data << "\n";
         std::cout << "expected[" << i << "]: " << expected_res[i].data << "\n";
-        std::cout << "real[" << i << "]    : " << A.res[i] << "\n";
-        assert(expected_res[i] == A.res[i]);
+        std::cout << "real[" << i << "]    : " << c1.res[i] << "\n";
+#endif
+        assert(expected_res[i] == c1.res[i]);
     }
 }
 
@@ -99,7 +114,7 @@ void test_poseidon_specfic_data() {
     test_poseidon<FieldType>(input, calculate_expected_poseidon<FieldType, PolicyType>(input));
 
     typename FieldType::value_type threeFFF =
-        0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256;
+        0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular256;
     input = {threeFFF, threeFFF, threeFFF};
     test_poseidon<FieldType>(input, calculate_expected_poseidon<FieldType, PolicyType>(input));
 }
