@@ -144,10 +144,11 @@ jobs:
       - name: Cleanup artifacts after previous runs
         continue-on-error: true
         run: |
+          ls -l -a
           rm -rf -i -v ${{ steps.strings.outputs.artifact-dir }}
 
       - name: Download circuits and assignments artifact
-        uses: dawidd6/action-download-artifact@v3
+        uses: dawidd6/action-download-artifact@v6
         with:
           repo: NilFoundation/zkLLVM
           name: ${{ env.CAA_ARTIFACT_NAME }}
@@ -163,7 +164,7 @@ jobs:
       - name: List artifacts
         working-directory: ${{ steps.strings.outputs.artifact-dir }}
         run: |
-          echo "all artifacts:"
+          echo "all artifacts after unzip:"
           find . -printf '%t %p\n'
           echo "all artifacts end"
 
