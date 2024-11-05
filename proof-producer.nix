@@ -41,7 +41,11 @@ in stdenv.mkDerivation {
   doCheck = runTests;
 
   checkPhase = ''
+    # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
+    export BOOST_TEST_LOGGER=JUNIT:HRF
     cd proof-producer && ctest --verbose --output-on-failure -R && cd ..
+    mkdir -p ${placeholder "out"}/test-logs
+    find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
   '';
 
   shellHook = ''
