@@ -23,7 +23,7 @@ namespace nil {
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            std::size_t max_rw_size = 1000;
+            std::size_t max_rw_size = 15000;
             std::size_t max_mpt_size = 30;
 
             const auto desc = ComponentType::get_table_description(max_rw_size, max_mpt_size);

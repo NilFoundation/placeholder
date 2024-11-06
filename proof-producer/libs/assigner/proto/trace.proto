@@ -39,9 +39,11 @@ message StorageOp {
     // HEX of hash, bytes would be more space-efficient, but less readable
     string key = 2;
     Uint256 value = 3;  // Single byte value
-    uint64 pc = 4;
-    uint64 msg_id = 5;  // Number of message within a block
-    uint64 rw_idx = 6;  // shared between all ops counter
+    Uint256 initial_value = 4;  // Value before storage operation
+    uint64 pc = 5;
+    uint64 msg_id = 6;  // Number of message within a block
+    uint64 rw_idx = 7;  // shared between all ops counter
+    Address address = 8; // Contract address
 }
 
 // SlotChangeTrace represents a trace of storage slot change. Only initial and final value for each message

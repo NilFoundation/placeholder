@@ -20,11 +20,11 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::zkevm<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            std::size_t max_zkevm_rows = 500;
+            std::size_t max_zkevm_rows = 10000;
             std::size_t max_copy = 500;
-            std::size_t max_rw = 500;
-            std::size_t max_keccak_blocks = 30;
-            std::size_t max_bytecode = 1000;
+            std::size_t max_rw = 15000;
+            std::size_t max_keccak_blocks = 100;
+            std::size_t max_bytecode = 10000;
             std::size_t max_rows = 500000;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, max_rows);

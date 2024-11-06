@@ -25,8 +25,8 @@ namespace nil {
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            std::size_t max_bytecode_size = 1000;
-            std::size_t max_keccak_blocks = 30;
+            std::size_t max_bytecode_size = 10000;
+            std::size_t max_keccak_blocks = 100;
             const auto desc = ComponentType::get_table_description(max_bytecode_size, max_keccak_blocks);
             bytecode_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
             BOOST_LOG_TRIVIAL(debug) << "bytecode table:\n"

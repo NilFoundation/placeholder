@@ -20,8 +20,8 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            std::size_t max_bytecode_size = 1000;
-            std::size_t max_keccak_blocks = 30;
+            std::size_t max_bytecode_size = 10000;
+            std::size_t max_keccak_blocks = 100;
             std::size_t max_rows = 500000;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, max_rows);
@@ -31,6 +31,7 @@ namespace nil {
             if (!contract_bytecodes) {
                 return "can't read bytecode trace from file";
             }
+
             for (const auto& bytecode_it : contract_bytecodes.value()) {
                 const auto raw_bytecode = string_to_bytes(bytecode_it.second);
                 input.bytecodes.new_buffer(raw_bytecode);

@@ -65,12 +65,12 @@ namespace nil {
             boost::filesystem::path proof_of_work_output_file = "proof_of_work.dat";
             boost::log::trivial::severity_level log_level = boost::log::trivial::severity_level::info;
             CurvesVariant elliptic_curve_type = type_identity<nil::crypto3::algebra::curves::pallas>{};
-            HashesVariant hash_type = type_identity<nil::crypto3::hashes::keccak_1600<256>>{};
+            HashesVariant hash_type = type_identity</*nil::crypto3::hashes::keccak_1600<256>*/nil::crypto3::hashes::sha2<256>>{};
 
             std::size_t lambda = 9;
             std::size_t grind = 0;
-            std::size_t expand_factor = 2;
-            std::size_t max_quotient_chunks = 0;
+            std::size_t expand_factor = 0;//2;
+            std::size_t max_quotient_chunks = 20;//0;
         };
 
         std::optional<ProverOptions> parse_args(int argc, char* argv[]);

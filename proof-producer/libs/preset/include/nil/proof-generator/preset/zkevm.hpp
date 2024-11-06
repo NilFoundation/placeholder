@@ -25,11 +25,11 @@ namespace nil {
             using ComponentType = nil::blueprint::bbf::zkevm<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            std::size_t max_zkevm_rows = 500;
+            std::size_t max_zkevm_rows = 10000;
             std::size_t max_copy = 500;
-            std::size_t max_rw = 500;
-            std::size_t max_keccak_blocks = 30;
-            std::size_t max_bytecode = 1000;
+            std::size_t max_rw = 15000;
+            std::size_t max_keccak_blocks = 100;
+            std::size_t max_bytecode = 10000;
             const auto desc = ComponentType::get_table_description(max_zkevm_rows, max_copy, max_rw, max_keccak_blocks, max_bytecode);
             zkevm_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
             BOOST_LOG_TRIVIAL(debug) << "zkevm table:\n"

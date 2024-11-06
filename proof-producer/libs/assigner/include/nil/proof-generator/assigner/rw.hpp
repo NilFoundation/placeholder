@@ -20,7 +20,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            std::size_t max_rw_size = 1000;
+            std::size_t max_rw_size = 15000;
             std::size_t max_mpt_size = 30;
             std::size_t max_rows = 500000;
 
@@ -40,6 +40,10 @@ namespace nil {
             for (const auto& storage_op : rw_operations->storage_ops) {
                 input.push_back(storage_op);
             }
+            BOOST_LOG_TRIVIAL(debug) << "number RW operations " << input.size() << ":\n"
+             << "stack   " << rw_operations->stack_ops.size() << "\n"
+             << "memory  " << rw_operations->memory_ops.size() << "\n"
+             << "storage " << rw_operations->storage_ops.size() << "\n";
 
             auto start = std::chrono::high_resolution_clock::now();
             ComponentType instance(context_object, input, max_rw_size, max_mpt_size);

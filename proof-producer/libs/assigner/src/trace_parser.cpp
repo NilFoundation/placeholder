@@ -95,14 +95,17 @@ namespace nil {
             // Convert storage operations
             rw_traces.storage_ops.reserve(pb_traces->storage_ops_size());
             for (const auto& pb_sop : pb_traces->storage_ops()) {
-                rw_traces.storage_ops.push_back(blueprint::bbf::storage_rw_operation(
+                const auto& op = blueprint::bbf::storage_rw_operation(
                     static_cast<uint64_t>(pb_sop.msg_id()),
                     blueprint::zkevm_word_from_string(static_cast<std::string>(pb_sop.key())),
                     static_cast<uint64_t>(pb_sop.rw_idx()),
                     !pb_sop.is_read(),
                     proto_uint256_to_zkevm_word(pb_sop.value()),
-                    proto_uint256_to_zkevm_word(pb_sop.value()))//TODO set initial_value
+                    proto_uint256_to_zkevm_word(pb_sop.initial_value()),
+                    blueprint::zkevm_word_from_string(pb_sop.address().address_bytes())
                 );
+                //TODO root and initial_root?
+                rw_traces.storage_ops.push_back(std::move(op));
             }
 
             return rw_traces;
