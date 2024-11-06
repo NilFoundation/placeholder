@@ -110,5 +110,44 @@ namespace nil {
 
             return rw_traces;
         }
+
+        [[nodiscard]] std::optional<std::vector<blueprint::bbf::zkevm_state>> deserialize_zkevm_state_traces_from_file(const boost::filesystem::path& filename) {
+            const auto pb_traces = read_pb_traces_from_file(filename);
+            if (!pb_traces) {
+                return std::nullopt;
+            }
+
+            std::vector<blueprint::bbf::zkevm_state> zkevm_states;
+            zkevm_states.reserve(pb_traces->zkevm_states_size());
+            for (const auto& pb_state : pb_traces->zkevm_states()) {
+                std::vector<blueprint::zkevm_word_type> stack;
+                stack.reserve(pb_state.stack_slice_size());
+                for (const auto& pb_stack_val : pb_state.stack_slice()) {
+                    stack.push_back(proto_uint256_to_zkevm_word(pb_stack_val));
+                }
+                std::map<std::size_t, std::uint8_t> memory;
+                for (const auto& pb_memory_val : pb_state.memory_slice()) {
+                    memory.emplace(pb_memory_val.first, pb_memory_val.second);
+                }
+                std::map<blueprint::zkevm_word_type, blueprint::zkevm_word_type> storage;
+                for (const auto& pb_storage_entry : pb_state.storage_slice()) {
+                    storage.emplace(proto_uint256_to_zkevm_word(pb_storage_entry.key()), proto_uint256_to_zkevm_word(pb_storage_entry.value()));
+                }
+                zkevm_states.emplace_back(stack, memory, storage);
+                zkevm_states.back().call_id = static_cast<uint64_t>(pb_state.call_id());
+                zkevm_states.back().pc = static_cast<uint64_t>(pb_state.pc());
+                zkevm_states.back().gas = static_cast<uint64_t>(pb_state.gas());
+                zkevm_states.back().rw_counter = static_cast<uint64_t>(pb_state.rw_idx());
+                zkevm_states.back().bytecode_hash = blueprint::zkevm_word_from_string(static_cast<std::string>(pb_state.bytecode_hash()));
+                zkevm_states.back().opcode = static_cast<uint64_t>(pb_state.opcode());
+                zkevm_states.back().additional_input = proto_uint256_to_zkevm_word(pb_state.additional_input()),
+                zkevm_states.back().stack_size = static_cast<uint64_t>(pb_state.stack_size());
+                zkevm_states.back().memory_size = static_cast<uint64_t>(pb_state.memory_size());
+                zkevm_states.back().tx_finish = static_cast<bool>(pb_state.tx_finish());
+                zkevm_states.back().error_opcode = static_cast<uint64_t>(pb_state.error_opcode());
+            }
+
+            return zkevm_states;
+        }
     } // proof_generator
 } // nil

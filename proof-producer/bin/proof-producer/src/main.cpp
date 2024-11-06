@@ -121,6 +121,20 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                             prover_options.theta_power_file_path) &&
                         prover.save_commitment_state_to_file(prover_options.updated_commitment_scheme_state_path);
                     break;
+                case nil::proof_generator::detail::ProverStage::FAST_GENERATE_PARTIAL_PROOF:
+                    // Preset, fill assignment table, preprocess
+                    prover_result =
+                        prover.setup_prover() &&
+                        prover.fill_assignment_table(prover_options.trace_file_path) &&
+                        prover.preprocess_public_data() &&
+                        prover.save_preprocessed_common_data_to_file(prover_options.preprocessed_common_data_path) &&
+                        prover.preprocess_private_data() &&
+                        prover.generate_partial_proof_to_file(
+                            prover_options.proof_file_path,
+                            prover_options.challenge_file_path,
+                            prover_options.theta_power_file_path) &&
+                        prover.save_commitment_state_to_file(prover_options.updated_commitment_scheme_state_path);
+                    break;
                 case nil::proof_generator::detail::ProverStage::VERIFY:
                     prover_result =
                         prover.read_circuit(prover_options.circuit_file_path) &&

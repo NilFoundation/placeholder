@@ -119,10 +119,11 @@ namespace nil {
                 VERIFY = 5,
                 GENERATE_AGGREGATED_CHALLENGE = 6,
                 GENERATE_PARTIAL_PROOF = 7,
-                COMPUTE_COMBINED_Q = 8,
-                GENERATE_AGGREGATED_FRI_PROOF = 9,
-                GENERATE_CONSISTENCY_CHECKS_PROOF = 10,
-                MERGE_PROOFS = 11
+                FAST_GENERATE_PARTIAL_PROOF = 8,
+                COMPUTE_COMBINED_Q = 9,
+                GENERATE_AGGREGATED_FRI_PROOF = 10,
+                GENERATE_CONSISTENCY_CHECKS_PROOF = 11,
+                MERGE_PROOFS = 12
             };
 
             ProverStage prover_stage_from_string(const std::string& stage) {
@@ -135,6 +136,7 @@ namespace nil {
                     {"verify", ProverStage::VERIFY},
                     {"generate-aggregated-challenge", ProverStage::GENERATE_AGGREGATED_CHALLENGE},
                     {"generate-partial-proof", ProverStage::GENERATE_PARTIAL_PROOF},
+                    {"fast-generate-partial-proof", ProverStage::FAST_GENERATE_PARTIAL_PROOF},
                     {"compute-combined-Q", ProverStage::COMPUTE_COMBINED_Q},
                     {"merge-proofs", ProverStage::MERGE_PROOFS},
                     {"aggregated-FRI", ProverStage::GENERATE_AGGREGATED_FRI_PROOF},

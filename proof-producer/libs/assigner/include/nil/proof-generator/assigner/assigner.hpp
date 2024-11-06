@@ -29,28 +29,24 @@ namespace nil {
                 padded_rows_amount = 8;
             }
 
-            assignment_table.resize_witnesses(padded_rows_amount);
             for (std::uint32_t i = 0; i < assignment_table.witnesses_amount(); i++) {
                 for (std::uint32_t j = assignment_table.witness_column_size(i); j < padded_rows_amount; j++) {
                     assignment_table.witness(i, j) = 0;
                 }
             }
 
-            assignment_table.resize_public_inputs(padded_rows_amount);
             for (std::uint32_t i = 0; i < assignment_table.public_inputs_amount(); i++) {
                 for (std::uint32_t j = assignment_table.public_input_column_size(i); j < padded_rows_amount; j++) {
                     assignment_table.public_input(i, j) = 0;
                 }
             }
 
-            assignment_table.resize_constants(padded_rows_amount);
             for (std::uint32_t i = 0; i < assignment_table.constants_amount(); i++) {
                 for (std::uint32_t j = assignment_table.constant_column_size(i); j < padded_rows_amount; j++) {
                     assignment_table.constant(i, j) = 0;
                 }
             }
 
-            assignment_table.resize_selectors(padded_rows_amount);
             for (std::uint32_t i = 0; i < assignment_table.selectors_amount(); i++) {
                 for (std::uint32_t j = assignment_table.selector_column_size(i); j < padded_rows_amount; j++) {
                     assignment_table.selector(i, j) = 0;

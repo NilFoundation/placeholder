@@ -59,10 +59,11 @@ namespace nil {
 
             // no copy events
             // states
-            std::vector<nil::blueprint::zkevm_word_type> stack;
-            std::map<std::size_t, std::uint8_t> memory;
-            std::map<nil::blueprint::zkevm_word_type, nil::blueprint::zkevm_word_type> storage;
-            input.zkevm_states.push_back(nil::blueprint::bbf::zkevm_state(stack, memory, storage));
+            const auto zkevm_states = deserialize_zkevm_state_traces_from_file(trace_file_path);
+            if (!zkevm_states) {
+                return "can't read zkevm states from file";
+            }
+            input.zkevm_states = zkevm_states.value();
 
             auto start = std::chrono::high_resolution_clock::now();
             ComponentType instance(context_object, input, max_zkevm_rows, max_copy, max_rw, max_keccak_blocks, max_bytecode);
