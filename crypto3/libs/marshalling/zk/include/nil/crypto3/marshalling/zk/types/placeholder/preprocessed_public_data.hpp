@@ -78,7 +78,7 @@ namespace nil {
 
                     return result_type(std::make_tuple(
                         fill_plonk_public_table<Endianness, typename PreprocessedPublicDataType::plonk_public_polynomial_dfs_table_type>(
-                            preprocessed_public_data.public_polynomial_table),
+                            *preprocessed_public_data.public_polynomial_table),
                         fill_polynomial_vector<Endianness, PolynomialDFSType>(preprocessed_public_data.permutation_polynomials),
                         fill_polynomial_vector<Endianness, PolynomialDFSType>(preprocessed_public_data.identity_polynomials),
                         fill_polynomial<Endianness, PolynomialDFSType>(preprocessed_public_data.q_last),

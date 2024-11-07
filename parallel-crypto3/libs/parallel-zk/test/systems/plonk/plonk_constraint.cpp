@@ -79,9 +79,11 @@ BOOST_AUTO_TEST_CASE(plonk_constraint_basic_test) {
     std::cout << witness_columns[1][0].data << std::endl;
     std::cout << witness_columns[2][0].data << std::endl;
 
-    zk::snark::plonk_private_assignment_table<FieldType> private_assignment(witness_columns);
+    auto private_assignment = std::make_shared<zk::snark::plonk_private_assignment_table<FieldType>>(witness_columns);
 
-    zk::snark::plonk_assignment_table<FieldType> assignment(private_assignment);
+    zk::snark::plonk_assignment_table<FieldType> assignment(private_assignment,
+        std::make_shared<zk::snark::plonk_public_assignment_table<FieldType>>()
+    );
 
     BOOST_CHECK((witness_columns[0][0] + witness_columns[1][0] - witness_columns[2][0]) ==
                 constraint.evaluate(0, assignment));
