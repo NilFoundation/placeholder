@@ -47,8 +47,10 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
+
 
 namespace nil {
     namespace crypto3 {
@@ -134,8 +136,7 @@ namespace nil {
                                 &constraint_system,
                             const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type
                                 &preprocessed_data,
-                            const plonk_polynomial_dfs_table<FieldType>
-                                &plonk_columns,
+                            const plonk_polynomial_dfs_table<FieldType>& plonk_columns,
                             commitment_scheme_type &commitment_scheme,
                             transcript_type &transcript)
                         : constraint_system(constraint_system)
@@ -655,7 +656,7 @@ namespace nil {
 
                     const plonk_constraint_system<FieldType> &constraint_system;
                     const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type& preprocessed_data;
-                    const plonk_polynomial_dfs_table<FieldType> &plonk_columns;
+                    const plonk_polynomial_dfs_table<FieldType>& plonk_columns;
                     commitment_scheme_type& commitment_scheme;
                     transcript_type& transcript;
                     std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain;

@@ -294,14 +294,14 @@ gen_test_proof(
     typename nil::crypto3::zk::snark::placeholder_public_preprocessor<
         field_type, src_placeholder_params>::preprocessed_data_type public_preprocessed_data =
     nil::crypto3::zk::snark::placeholder_public_preprocessor<field_type, src_placeholder_params>::process(
-        constraint_system, assignment_table.move_public_table(), table_description, lpc_scheme
+        constraint_system, assignment_table.public_table(), table_description, lpc_scheme
     );
 
     std::cout <<"Preprocess private data" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<
         field_type, src_placeholder_params>::preprocessed_data_type private_preprocessed_data =
         nil::crypto3::zk::snark::placeholder_private_preprocessor<field_type, src_placeholder_params>::process(
-            constraint_system, assignment_table.move_private_table(), table_description
+            constraint_system, assignment_table.private_table(), table_description
         );
 
     std::cout <<"Generate proof" << std::endl;

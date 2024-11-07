@@ -150,7 +150,7 @@ namespace nil {
                         const placeholder_proof<FieldType, ParamsType> &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type commitment_scheme,
+                        commitment_scheme_type& commitment_scheme,
                         const std::vector<std::vector<typename FieldType::value_type>> &public_input
                     ){
                         // TODO: process rotations for public input.
@@ -191,7 +191,7 @@ namespace nil {
                         const placeholder_proof<FieldType, ParamsType> &proof,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        commitment_scheme_type commitment_scheme
+                        commitment_scheme_type& commitment_scheme
                     ) {
 
                         // We cannot add eval points unless everything is committed, so when verifying assume it's committed.

@@ -98,7 +98,7 @@ namespace nil {
                         typename private_preprocessor_type::preprocessed_data_type preprocessed_private_data,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        const commitment_scheme_type& commitment_scheme,
+                        commitment_scheme_type commitment_scheme,
                         bool skip_commitment_scheme_eval_proofs = false
                     ) {
                         auto prover = placeholder_prover<FieldType, ParamsType>(
@@ -109,22 +109,22 @@ namespace nil {
 
                     placeholder_prover(
                         const typename public_preprocessor_type::preprocessed_data_type &preprocessed_public_data,
-                        typename private_preprocessor_type::preprocessed_data_type preprocessed_private_data,
+                        const typename private_preprocessor_type::preprocessed_data_type &preprocessed_private_data,
                         const plonk_table_description<FieldType> &table_description,
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        const commitment_scheme_type &commitment_scheme,
+                        commitment_scheme_type commitment_scheme,
                         bool skip_commitment_scheme_eval_proofs = false
                     )
                             : preprocessed_public_data(preprocessed_public_data)
                             , table_description(table_description)
                             , constraint_system(constraint_system)
-                            , _polynomial_table(new plonk_polynomial_dfs_table<FieldType>(
-                                std::move(preprocessed_private_data.private_polynomial_table),
-                                preprocessed_public_data.public_polynomial_table))
-
+                            , _polynomial_table(std::make_unique<plonk_polynomial_dfs_table<FieldType>>(
+                                preprocessed_private_data.private_polynomial_table,
+                                preprocessed_public_data.public_polynomial_table
+                            ))
                             , transcript(std::vector<std::uint8_t>({}))
                             , _is_lookup_enabled(constraint_system.lookup_gates().size() > 0)
-                            , _commitment_scheme(commitment_scheme)
+                            , _commitment_scheme(std::move(commitment_scheme))
                             , _skip_commitment_scheme_eval_proofs(skip_commitment_scheme_eval_proofs)
                     {
                         // Initialize transcript.
@@ -194,12 +194,12 @@ namespace nil {
                             transcript
                         )[0];
 
+                        _polynomial_table.reset(); // We don't need it anymore, release memory
+
                         /////TEST
 #ifdef ZK_PLACEHOLDER_DEBUG_ENABLED
                         placeholder_debug_output();
 #endif
-                        // _polynomial_table not needed, clean its memory
-                        _polynomial_table.reset(nullptr);
 
                         // 7. Aggregate quotient polynomial
                         {
@@ -228,6 +228,10 @@ namespace nil {
 
                     commitment_scheme_type& get_commitment_scheme() {
                         return _commitment_scheme;
+                    }
+
+                    commitment_scheme_type move_commitment_scheme() {
+                        return std::move(_commitment_scheme);
                     }
 
                 private:
@@ -325,7 +329,7 @@ namespace nil {
                                 _commitment_scheme,
                                 transcript
                             );
-;
+
                             lookup_argument_result = lookup_argument_prover.prove_eval();
                             _proof.commitments[LOOKUP_BATCH] = lookup_argument_result.lookup_commitment;
                         }
@@ -421,7 +425,7 @@ namespace nil {
                         _commitment_scheme.append_eval_point(FIXED_VALUES_BATCH, start_index - 1, _proof.eval_proof.challenge * _omega);
 
                         for (std::size_t ind = 0;
-                            ind < constant_columns + preprocessed_public_data.public_polynomial_table.selectors().size();
+                            ind < constant_columns + preprocessed_public_data.public_polynomial_table->selectors().size();
                             ind++, i++
                         ) {
                             const std::set<int>& fixed_values_rotation =

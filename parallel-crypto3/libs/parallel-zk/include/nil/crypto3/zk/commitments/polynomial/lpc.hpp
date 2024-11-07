@@ -111,7 +111,8 @@ namespace nil {
                         , _fixed_polys_values(fixed_polys_values)
                     {
                     }
-
+ 
+      
                     lpc_commitment_scheme(const typename fri_type::params_type &fri_params)
                         : _fri_params(fri_params), _etha(0u) {
                     }

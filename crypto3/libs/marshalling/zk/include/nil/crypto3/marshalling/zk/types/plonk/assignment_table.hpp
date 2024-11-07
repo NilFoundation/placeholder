@@ -25,6 +25,7 @@
 #ifndef CRYPTO3_MARSHALLING_ZK_PLONK_ASSIGNMENT_TABLE_HPP
 #define CRYPTO3_MARSHALLING_ZK_PLONK_ASSIGNMENT_TABLE_HPP
 
+#include <memory>
 #include <type_traits>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
@@ -278,9 +279,16 @@ namespace nil {
                             desc.rows_amount
                         );
 
+                    using private_table = typename PlonkTable::private_table_type;
+                    using public_table = typename PlonkTable::public_table_type;
+
                     return std::make_pair(desc, PlonkTable(
-                        typename PlonkTable::private_table_type(witnesses),
-                        typename PlonkTable::public_table_type(public_inputs, constants, selectors)
+                        std::make_shared<private_table>(std::move(witnesses)),
+                        std::make_shared<public_table>(
+                            std::move(public_inputs), 
+                            std::move(constants), 
+                            std::move(selectors)
+                        )
                     ));
                 }
 

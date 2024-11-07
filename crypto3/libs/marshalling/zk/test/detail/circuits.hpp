@@ -177,8 +177,8 @@ namespace nil {
                         public_input_assignment[i] = table[witness_columns + i];
                     }
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
 
                     test_circuit.table_rows = zk_padding<FieldType, plonk_column<FieldType>>(test_circuit.table, alg_rnd);
@@ -316,8 +316,8 @@ namespace nil {
                         public_input_assignment[i] = table[witness_columns + i];
                     }
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
                     test_circuit.table_rows = zk_padding<FieldType, plonk_column<FieldType>>(test_circuit.table, alg_rnd);
 
@@ -414,8 +414,8 @@ namespace nil {
                         constant_assignment[i] = table[witness_columns + i];
                     }
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
                     test_circuit.table_rows = zk_padding(test_circuit.table, alg_rnd);
 
@@ -521,8 +521,8 @@ namespace nil {
                         constant_assignment[i] = table[witness_columns + i];
                     }
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
 
 
@@ -618,8 +618,8 @@ namespace nil {
                     selectors_assignment[0][1] = 1u;
 
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
                     test_circuit.table_rows = zk_padding<FieldType, plonk_column<FieldType>>(test_circuit.table, alg_rnd);
 
@@ -714,8 +714,8 @@ namespace nil {
 
 
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
                     test_circuit.table_rows = zk_padding<FieldType, plonk_column<FieldType>>(test_circuit.table, alg_rnd);
 
@@ -820,8 +820,8 @@ namespace nil {
                         constant_assignment[i] = table[witness_columns + selector_columns + i];
                     }
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
                     test_circuit.table_rows = zk_padding(test_circuit.table, alg_rnd);
 
@@ -972,8 +972,8 @@ namespace nil {
                     std::vector<plonk_column<FieldType>> public_input_assignment(public_columns);
 
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment, constant_assignment, selectors_assignment));
                     test_circuit.table_rows = zk_padding(test_circuit.table, alg_rnd);
 
@@ -1128,8 +1128,8 @@ namespace nil {
                     }
 
                     test_circuit.table = plonk_assignment_table<FieldType>(
-                        plonk_private_assignment_table<FieldType>(private_assignment),
-                        plonk_public_assignment_table<FieldType>(
+                        std::make_shared<plonk_private_assignment_table<FieldType>>(private_assignment),
+                        std::make_shared<plonk_public_assignment_table<FieldType>>(
                             public_input_assignment,
                             constant_assignment,
                             selector_assignment

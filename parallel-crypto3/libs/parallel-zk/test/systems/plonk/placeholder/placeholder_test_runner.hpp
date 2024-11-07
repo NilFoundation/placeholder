@@ -94,11 +94,11 @@ struct placeholder_test_runner {
 
         typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
                 lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_public_table(), desc, lpc_scheme, max_quotient_poly_chunks);
+                constraint_system, assignments.public_table(), desc, lpc_scheme, max_quotient_poly_chunks);
 
         typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
                 lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_private_table(), desc);
+                constraint_system, assignments.private_table(), desc);
 
         auto lpc_proof = placeholder_prover<field_type, lpc_placeholder_params_type>::process(
                 lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, constraint_system,

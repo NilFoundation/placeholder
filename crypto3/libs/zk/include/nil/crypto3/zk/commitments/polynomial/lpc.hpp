@@ -110,6 +110,7 @@ namespace nil {
                     {
                     }
 
+
                     lpc_commitment_scheme(const typename fri_type::params_type &fri_params)
                         : _fri_params(fri_params), _etha(0u) {
                     }

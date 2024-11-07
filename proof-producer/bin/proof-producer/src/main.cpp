@@ -87,6 +87,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                         prover.save_preprocessed_common_data_to_file(prover_options.preprocessed_common_data_path) &&
                         prover.save_public_preprocessed_data_to_file(prover_options.preprocessed_public_data_path) &&
                         prover.save_commitment_state_to_file(prover_options.commitment_scheme_state_path)&&
+                        prover.save_assignment_description(prover_options.assignment_description_file_path) &&
                         prover.print_evm_verifier(prover_options.evm_verifier_path);
                     break;
                 case nil::proof_generator::detail::ProverStage::PROVE:
