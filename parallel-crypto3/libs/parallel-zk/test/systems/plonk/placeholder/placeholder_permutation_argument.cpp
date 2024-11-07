@@ -130,12 +130,12 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
 
         typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
                 lpc_preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_public_table(), desc, lpc_scheme
+                constraint_system, assignments.public_table(), desc, lpc_scheme
         );
 
         typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
                 lpc_preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_private_table(), desc
+                constraint_system, assignments.private_table(), desc
         );
 
         auto polynomial_table =
@@ -237,12 +237,12 @@ BOOST_AUTO_TEST_SUITE(permutation_argument)
 
         typename placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
                 preprocessed_public_data = placeholder_public_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_public_table(), desc, lpc_scheme
+                constraint_system, assignments.public_table(), desc, lpc_scheme
         );
 
         typename placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::preprocessed_data_type
                 preprocessed_private_data = placeholder_private_preprocessor<field_type, lpc_placeholder_params_type>::process(
-                constraint_system, assignments.move_private_table(), desc
+                constraint_system, assignments.private_table(), desc
         );
 
         auto polynomial_table =
