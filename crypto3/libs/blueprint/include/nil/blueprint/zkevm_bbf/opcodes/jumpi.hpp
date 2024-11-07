@@ -98,7 +98,7 @@ namespace nil {
                             TYPE(0),                                                                    // storage_key_hi
                             TYPE(0),                                                                    // storage_key_lo
                             TYPE(0),                                                                    // field
-                            current_state.rw_counter(0)+1,
+                            current_state.rw_counter(0),
                             TYPE(0),                                                                    // is_write
                             TYPE(0),                                                                    // hi bytes are 0
                             addr                                                                        // addr is smaller than maximum contract size
@@ -111,7 +111,7 @@ namespace nil {
                             TYPE(0),                                                                    // storage_key_hi
                             TYPE(0),                                                                    // storage_key_lo
                             TYPE(0),                                                                    // field
-                            current_state.rw_counter(0),
+                            current_state.rw_counter(0)+1,
                             TYPE(0),                                                                    // is_write
                             C_128.first,                                                                // hi bytes are 0
                             C_128.second                                                                // addr is smaller than maximum contract size

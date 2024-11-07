@@ -191,6 +191,7 @@ namespace nil {
                                 << " stack_size = " << current_state.stack_size
                                 << " memory_size = " << current_state.memory_size
                                 << " rw_counter = 0x" << std::hex<< current_state.rw_counter << std::dec
+                                << " gas = " << current_state.gas
                                 << std::endl;
 
                             for( std::size_t j = 0; j < current_opcode_rows_amount; j++ ){

@@ -42,27 +42,57 @@ namespace nil {
                 std::vector<TYPE> is_first;
                 std::vector<TYPE> id_hi;
                 std::vector<TYPE> id_lo;
+                std::vector<TYPE> cp_type;
                 std::vector<TYPE> addr;
-                std::vector<TYPE> src_addr_end;
-                std::vector<TYPE> byte_left;
-                std::vector<TYPE> rlc_acc;
+                std::vector<TYPE> length;
                 std::vector<TYPE> is_write;
                 std::vector<TYPE> rw_counter;
-                std::vector<TYPE> rw_inc_left;
 
                 static std::size_t get_witness_amount(){
-                    return 10;
+                    return 8;
                 }
 
                 copy_table(context_type &context_object, const input_type &input, std::size_t max_copy_size, bool register_dynamic_lookup)
                     :generic_component<FieldType,stage>(context_object),
-                    is_first(max_copy_size), id_hi(max_copy_size), id_lo(max_copy_size),
-                    addr(max_copy_size), src_addr_end(max_copy_size),
-                    byte_left(max_copy_size), rlc_acc(max_copy_size),
-                    is_write(max_copy_size), rw_counter(max_copy_size), rw_inc_left(max_copy_size)
+                    is_first(max_copy_size),
+                    id_hi(max_copy_size), id_lo(max_copy_size), cp_type(max_copy_size), addr(max_copy_size),
+                    length(max_copy_size), is_write(max_copy_size), rw_counter(max_copy_size)
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-//                        std::cout << "Copy table assignment " << std::endl;
+                        std::cout << "Copy table assignment " << input.size() << std::endl;
+                        std::size_t current_row = 1;
+                        for( auto &cp: input ){
+                            std::cout
+                                << "\tCopy event " << copy_op_to_num(cp.source_type)
+                                << " => " << copy_op_to_num(cp.destination_type)
+                                << " bytes size" << cp.bytes.size()
+                                << std::endl;
+                            std::size_t src_rw_counter = cp.initial_rw_counter;
+                            std::size_t dst_rw_counter = cp.initial_rw_counter + cp.length;// Fake rw for some copy events
+                            for( std::size_t i = 0; i < cp.bytes.size(); i++ ){
+                                if( i== 0) {
+                                    is_first[current_row] = 1;
+                                    is_first[current_row + 1] = 1;
+                                }
+                                length[current_row] = cp.length - i;
+                                length[current_row+1] = cp.length - i;
+                                rw_counter[current_row] = src_rw_counter;
+                                rw_counter[current_row + 1] = dst_rw_counter;
+                                cp_type[current_row] = copy_op_to_num(cp.source_type);
+                                cp_type[current_row+1] = copy_op_to_num(cp.destination_type);
+                                addr[current_row] = cp.src_address + i;
+                                addr[current_row+1] = cp.dst_address + i;
+                                id_hi[current_row] = w_hi<FieldType>(cp.source_id);
+                                id_lo[current_row] = w_lo<FieldType>(cp.source_id);
+                                id_hi[current_row+1] = w_hi<FieldType>(cp.destination_id);
+                                id_lo[current_row+1] = w_lo<FieldType>(cp.destination_id);
+                                is_write[current_row] = 0;
+                                is_write[current_row+1] = 1;
+                                src_rw_counter++;
+                                dst_rw_counter++;
+                                current_row += 2;
+                            }
+                        }
                     } else {
 //                        std::cout << "Copy table circuit" << std::endl;
                     }
@@ -70,16 +100,14 @@ namespace nil {
                         allocate(is_first[i], 0, i);
                         allocate(id_hi[i], 1, i);
                         allocate(id_lo[i], 2, i);
-                        allocate(addr[i], 3, i);
-                        allocate(src_addr_end[i], 4, i);
-                        allocate(byte_left[i], 5, i);
-                        allocate(rlc_acc[i], 6, i);
-                        allocate(is_write[i], 7, i);
-                        allocate(rw_counter[i], 8, i);
-                        allocate(rw_inc_left[i], 9, i);
+                        allocate(cp_type[i], 3, i);
+                        allocate(addr[i], 4, i);
+                        allocate(length[i], 5, i);
+                        allocate(is_write[i], 6, i);
+                        allocate(rw_counter[i], 7, i);
                     }
                     if( register_dynamic_lookup )
-                        lookup_table("zkevm_copy",std::vector<std::size_t>({0,1,2,3,4,5,6,7,8,9}),0,max_copy_size);
+                        lookup_table("zkevm_copy",std::vector<std::size_t>({0,1,2,3,4,5,6,7}),0,max_copy_size);
                 }
             };
          }

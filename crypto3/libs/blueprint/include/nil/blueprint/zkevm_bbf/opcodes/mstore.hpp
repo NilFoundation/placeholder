@@ -51,24 +51,93 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     TYPE addr;
+                    TYPE addr_mod;
+                    TYPE addr_mod31;
+                    TYPE addr_words;
+                    TYPE memory_mod;
+                    TYPE memory_mod31;
+                    TYPE memory_words;
+                    TYPE is_memory_size_changed;
+                    TYPE new_memory_size;
+                    // TYPE addr_quad_mod;
+                    // TYPE addr_quad_mod512;
+                    // TYPE addr_quad_r;
+                    // TYPE memory_quad_mod;
+                    // TYPE memory_quad_mod512;
+                    // TYPE memory_quad_r;
                     std::vector<TYPE> value(32);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        std::cout << current_state.stack_top(1) << std::endl;
-                        addr = w_to_16(current_state.stack_top())[15];
+                        std::cout << "\tASSIGNMENT implemented" << std::endl;
+                        auto address = w_to_16(current_state.stack_top())[15];
+                        addr = address;
                         auto bytes = w_to_8(current_state.stack_top(1));
                         for( std::size_t i = 0; i < 32; i++){
                             value[i] = bytes[i];
                         }
+                        // addr + 31 -- maximum address
+                        // memory_size -- previous memory_size
+                        // if ( memory_size < addr + 31 ) then
+                        //    new_memory_size = std::ceil(float(addr + 31) / 32) * 32
+                        // else
+                        //    new_memory_size = memory_size
+                        // So, we have | addr | std::ceil(addr + 31) % 32 | (addr + 31) / 32 |
+                        std::size_t last_address = address + 31;
+                        addr_mod = last_address % 32;
+                        addr_mod31 = 31 - addr_mod;
+                        addr_words = last_address % 32 == 0? last_address/32 : last_address / 32 + 1;
+                        memory_mod = current_state.memory_size %32;
+                        memory_mod31 = 31 - memory_mod;
+                        memory_words = current_state.memory_size %32 == 0? current_state.memory_size/32 : current_state.memory_size / 32 + 1;
+                        // addr_quad_mod = ((std::size_t(addr_words) * std::size_t(addr_words)) % 512);
+                        // addr_quad_r = ((std::size_t(addr_words) * std::size_t(addr_words)) / 512);
+                        // addr_quad_mod512 = 512 - addr_quad_mod;
+                        // memory_quad_mod = ((std::size_t(memory_words) * std::size_t(memory_words)) % 512);
+                        // memory_quad_r = ((std::size_t(memory_words) * std::size_t(memory_words)) / 512);
+                        // memory_quad_mod512 = 512 - memory_quad_mod;
+
+                        std::cout << "\tMemory words = " << memory_words
+                            <<  " memory size = " << current_state.memory_size
+                            << " memory mod = " << memory_mod
+                            << " address = " << address
+                            << " last_address = " << last_address
+                            << " addr_mod = " << addr_mod
+                            << " addr_words = " << addr_words
+                            << std::endl;
+                        is_memory_size_changed = (addr_words > memory_words);
+                        if( is_memory_size_changed != 0 ) {
+                            std::cout << "\tMEMORY SIZE CHANGED "  << addr_words << " > " << memory_words << std::endl;
+                        } else {
+                            std::cout << "\tMEMORY SIZE NOT CHANGED " << addr_words << " <= " << memory_words << std::endl;
+                        }
                     }
                     for( std::size_t i = 0; i < 32; i++){
-                        allocate(value[i], i, 0);
+                        allocate(value[i], i+16, 0); // Values are range-checked by RW circuit, so use non-range-checked columns
                     }
-                    allocate(addr, 32, 0);
+
+                    allocate(addr, 0, 0);
+                    allocate(addr_mod, 1, 0);
+                    allocate(addr_mod31 , 2, 0);
+                    allocate(addr_words, 3, 0);
+                    allocate(memory_mod, 4, 0);
+                    allocate(memory_mod31, 5, 0);
+                    allocate(memory_words, 6, 0);
+                    allocate(is_memory_size_changed, 7, 0);
+
+                    constrain( addr_mod + addr_mod31 - 31);
+                    constrain( memory_mod + memory_mod31 - 31);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
+                        constrain((addr + 31 - 32 * addr_words)*(32 * addr_words - 32 + addr_mod - addr - 31));
+                        constrain( addr_mod * (32 * addr_words - 32 + addr_mod - addr - 31));
+                        constrain((current_state.memory_size(0) - 32 * memory_words)*(32 * memory_words - 32 - current_state.memory_size(0) + memory_mod));
+                        constrain( memory_mod * (32 * memory_words - 32 - current_state.memory_size(0) + memory_mod));
+                        new_memory_size = is_memory_size_changed * addr_words * 32 + (1 - is_memory_size_changed) * current_state.memory_size(0);
+                        TYPE old_memory_gas_cost =  3 * memory_words;   // TODO: check and test with large memory consumption
+                        TYPE new_memory_gas_cost =  3 * addr_words;     // TODO: check and test with large memory consumption
+
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        //constrain(current_state.gas(0) - current_state.gas_next() - 1);               // GAS transition
+                        constrain(current_state.gas(0) - current_state.gas_next() - 3 - is_memory_size_changed * (new_memory_gas_cost - old_memory_gas_cost));               // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
-                        //constrain(current_state.memory_size(0) - current_state.memory_size_next());   // memory_size transition
+                        constrain(new_memory_size - current_state.memory_size_next());                  // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 34);  // rw_counter transition
                         auto V_128 = chunks8_to_chunks128<TYPE>(value);
 

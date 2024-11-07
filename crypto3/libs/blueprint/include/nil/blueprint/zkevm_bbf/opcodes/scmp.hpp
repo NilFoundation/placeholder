@@ -36,10 +36,10 @@ namespace nil {
             template<typename FieldType>
             class opcode_abstract;
 
-            enum cmp_type { C_LT, C_GT };
+            enum scmp_type { C_SLT, C_SGT };
 
             template<typename FieldType, GenerationStage stage>
-            class zkevm_cmp_bbf : generic_component<FieldType, stage> {
+            class zkevm_scmp_bbf : generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
                 using generic_component<FieldType, stage>::allocate;
                 using generic_component<FieldType, stage>::copy_constrain;
@@ -49,7 +49,7 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
 
-                zkevm_cmp_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, cmp_type cmp_operation):
+                zkevm_scmp_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, scmp_type scmp_operation):
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     std::vector<TYPE> A(16);
@@ -60,27 +60,49 @@ namespace nil {
                     TYPE eq;
                     TYPE lt;
                     TYPE gt;
+                    TYPE is_negative_A;
+                    TYPE is_negative_B;
+                    TYPE sign_proof_A;
+                    TYPE sign_proof_B;
                     TYPE result;
+
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
                         bool eq = true;
-                        bool result = false;
-                        bool lt = false;
-                        bool gt = false;
                         for( std::size_t i = 0; i < 16; i++ ){
                             A[i] = a[i];
                             B[i] = b[i];
+                        }
+                        is_negative_A = is_negative(current_state.stack_top());
+                        is_negative_B = is_negative(current_state.stack_top(1));
+                        sign_proof_A = is_negative(current_state.stack_top()) ? a[0] - 0x8000: 0x7fff - a[0];
+                        sign_proof_B = is_negative(current_state.stack_top()) ? a[0] - 0x8000: 0x7fff - b[0];
+                        if( scmp_operation == scmp_type::C_SLT ){
+                            result = is_negative_A * (1 - is_negative_B);
+                        } else {
+                            result = is_negative_B * (1 - is_negative_A);
                         }
                         for( std::size_t i = 0; i < 16; i++ ){
                             if( a[i] != b[i] ) {
                                 if( eq ) S[i] = 1;
                                 eq = false;
-                                result = cmp_operation == cmp_type::C_LT ? a[i] < b[i]: a[i] > b[i];
+                                // is_negative_A && !is_negative_B => A < B;
+                                // !is_negative_A && is_negative_B => A > B;
+                                // is_negative_A && is_negative_B && lt => A < B;
+                                //                                && gt => A > B;
+                                // !is_negative_A && !is_negative_B && lt => A > B;
+                                //                                  && gt => A < B;
+                                //result = scmp_operation == scmp_type::C_SLT ? a[i] < b[i]: a[i] > b[i];
                                 diff = a[i] < b[i]? b[i] - a[i]: a[i] - b[i];
                                 diff_inv = diff.inversed();
                                 lt = a[i] < b[i];
                                 gt = a[i] > b[i];
+                                if( scmp_operation == scmp_type::C_SLT ){
+                                    result = result + (is_negative_A * is_negative_B * gt - (1 - is_negative_A) * (1 - is_negative_B) * lt);
+                                } else {
+                                    result = result + (is_negative_A * is_negative_B * lt - (1 - is_negative_A) * (1 - is_negative_B) * gt);
+                                }
                             }
                             break;
                         }
@@ -96,6 +118,15 @@ namespace nil {
                     allocate(lt, 17, 1);
                     allocate(gt, 18, 1);
                     allocate(result, 19, 1);
+                    allocate(is_negative_A, 20, 1);
+                    allocate(is_negative_B, 21, 1);
+                    allocate(sign_proof_A, 22, 1);
+                    allocate(sign_proof_B, 23, 1);
+
+                    constrain(is_negative_A * (1 - is_negative_A));
+                    constrain(is_negative_B * (1 - is_negative_B));
+                    constrain(is_negative_A * (A[0] - sign_proof_A - 0x8000) + (1 - is_negative_A) * (0x7fff - A[0] - sign_proof_A));
+                    constrain(is_negative_B * (B[0] - sign_proof_A - 0x8000) + (1 - is_negative_B) * (0x7fff - B[0] - sign_proof_A));
 
                     for( std::size_t i = 0; i < 16; i++ ){
                         constrain(S[i] * (S[i] - 1));
@@ -107,10 +138,10 @@ namespace nil {
                     constrain(s_sum * (s_sum - 1));
                     constrain(gt + lt - s_sum);
                     constrain(result * (result - 1));
-                    if( cmp_operation == cmp_type::C_LT ){
-                        constrain(result - lt);
+                    if( scmp_operation == scmp_type::C_SLT ){
+                        constrain(result - is_negative_A * (1 - is_negative_B) - is_negative_A * is_negative_B * gt - (1 - is_negative_A) * (1 - is_negative_B) * lt);
                     } else {
-                        constrain(result - gt);
+                        constrain(result - is_negative_B * (1 - is_negative_A) - is_negative_A * is_negative_B * lt - (1 - is_negative_A) * (1 - is_negative_B) * gt);
                     }
                     std::vector<TYPE> zero_constraints(15);
                     for( std::size_t i = 0; i < 15; i++ ){
@@ -179,11 +210,10 @@ namespace nil {
                     }
                 }
             };
-
             template<typename FieldType>
-            class zkevm_cmp_operation : public opcode_abstract<FieldType> {
+            class zkevm_scmp_operation : public opcode_abstract<FieldType> {
             public:
-                zkevm_cmp_operation(cmp_type _cmp_operation) : cmp_operation(_cmp_operation) {}
+                zkevm_scmp_operation(scmp_type _scmp_operation) : scmp_operation(_scmp_operation) {}
                 virtual std::size_t rows_amount() override {
                     return 2;
                 }
@@ -191,16 +221,16 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
                 ) {
-                    zkevm_cmp_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, cmp_operation);
+                    zkevm_scmp_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, scmp_operation);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
                 ) {
-                    zkevm_cmp_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, cmp_operation);
+                    zkevm_scmp_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, scmp_operation);
                 }
             private:
-                cmp_type cmp_operation;
+                scmp_type scmp_operation;
             };
         } // namespace bbf
     }   // namespace blueprint

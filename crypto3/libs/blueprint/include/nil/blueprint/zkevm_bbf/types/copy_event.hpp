@@ -37,6 +37,18 @@ namespace nil {
             enum class copy_operand_type {
                 padding, memory, bytecode, calldata, log, keccak, returndata
             };
+            std::size_t copy_op_to_num(copy_operand_type copy_op){
+                switch(copy_op){
+                case copy_operand_type::padding:       return 0;
+                case copy_operand_type::memory:        return 1;
+                case copy_operand_type::bytecode:      return 2;
+                case copy_operand_type::log:           return 3;
+                case copy_operand_type::keccak:        return 4;
+                case copy_operand_type::returndata:    return 5;
+                }
+                BOOST_ASSERT(false);
+                return 0;
+            }
             static constexpr std::size_t copy_operand_types_amount = 7;
 
             struct copy_event{
@@ -44,12 +56,12 @@ namespace nil {
 
                 zkevm_word_type   source_id;
                 copy_operand_type source_type;
-                zkevm_word_type   src_address;
+                std::size_t       src_address;
                 zkevm_word_type   destination_id;
                 copy_operand_type destination_type;
-                zkevm_word_type   dst_address;
-                std::size_t length;
-                std::size_t initial_rw_counter;
+                std::size_t       dst_address;
+                std::size_t       length;
+                std::size_t       initial_rw_counter;
                 std::vector<std::uint8_t> bytes;
             };
         } // namespace bbf
