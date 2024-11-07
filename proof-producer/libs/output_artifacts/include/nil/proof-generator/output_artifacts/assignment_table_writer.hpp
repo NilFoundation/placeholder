@@ -58,8 +58,8 @@ namespace nil {
                     auto integer_container = nil::marshalling::types::integral<TTypeBase, std::size_t>(input);
                     std::array<std::uint8_t, integer_container.length()> char_array{};
                     auto write_iter = char_array.begin();
-                    assert(integer_container.write(write_iter, char_array.size()) ==
-                        nil::marshalling::status_type::success);
+                    auto const status = integer_container.write(write_iter, char_array.size());
+                    assert(status == nil::marshalling::status_type::success);
 
                     out.write(reinterpret_cast<char*>(char_array.data()), char_array.size());
                 }
@@ -82,8 +82,8 @@ namespace nil {
                     MarshallingField field_container(input);
                     std::array<std::uint8_t, field_container.length()> char_array{};
                     auto write_iter = char_array.begin();
-                    assert(field_container.write(write_iter, char_array.size()) ==
-                        nil::marshalling::status_type::success);
+                    auto const status = field_container.write(write_iter, char_array.size());
+                    assert(status == nil::marshalling::status_type::success);
 
                     out.write(reinterpret_cast<char*>(char_array.data()), char_array.size());
                 }
