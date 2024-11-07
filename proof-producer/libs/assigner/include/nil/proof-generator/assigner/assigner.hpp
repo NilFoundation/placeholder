@@ -70,6 +70,7 @@ namespace nil {
             desc.usable_rows_amount = assignment_table.rows_amount();
             set_paddnig(assignment_table);
             desc.rows_amount = assignment_table.rows_amount();
+            BOOST_LOG_TRIVIAL(debug) << "total rows amount = " << desc.rows_amount << " for " << circuit_name << "\n";
             return {};
         }
     } // proof_generator

@@ -76,6 +76,9 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     if (!prover_options.assignment_table_file_path.empty() && prover_result) {
                         prover_result = prover.save_binary_assignment_table_to_file(prover_options.assignment_table_file_path);
                     }
+                    if (!prover_options.assignment_description_file_path.empty() && prover_result) {
+                        prover_result = prover.save_assignment_description(prover_options.assignment_description_file_path);
+                    }
                     break;
                 case nil::proof_generator::detail::ProverStage::PREPROCESS:
                     prover_result =
