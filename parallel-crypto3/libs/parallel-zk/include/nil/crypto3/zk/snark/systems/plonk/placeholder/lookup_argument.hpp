@@ -494,7 +494,8 @@ namespace nil {
                                     polynomial_dfs_type v = (typename FieldType::value_type(t_id + 1)) * lookup_tag;
                                     typename FieldType::value_type theta_acc = this->theta;
                                     for (std::size_t i = 0; i < l_table.columns_number; i++) {
-                                        v += theta_acc * lookup_tag * plonk_columns.constant(l_table.lookup_options[o_id][i].index);
+                                        v += theta_acc * lookup_tag * plonk_columns.get_variable_value_without_rotation(
+                                            l_table.lookup_options[o_id][i]);
                                         theta_acc *= this->theta;
                                     }
                                     (*lookup_value_ptr)[lookup_values_used + o_id] = v;
