@@ -70,12 +70,11 @@ namespace nil::crypto3::multiprecision {
 
             // String conversion
 
-            inline std::string str() const {
+            inline constexpr std::string str() const {
                 // TODO(ioxid): add module to output
                 return remove_modulus().str();
             }
 
-            // TODO(ioxid): why is it here
             // Mathemetical operations
 
             inline constexpr void negate() {
@@ -168,6 +167,10 @@ namespace nil::crypto3::multiprecision {
         using typename base_type::big_integer_t;
 
         constexpr modular_big_integer_ct_impl() : base_type({}, {}) {}
+
+        constexpr modular_big_integer_ct_impl(const big_integer_t& b) : base_type(b, {}) {
+            this->ops().adjust_modular(this->m_base, b);
+        }
 
         template<unsigned Bits2>
         constexpr explicit modular_big_integer_ct_impl(const big_integer<Bits2>& b)

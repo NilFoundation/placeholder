@@ -165,7 +165,7 @@ namespace nil::crypto3::multiprecision {
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator*=(modular_big_integer_t& a, const T& b) noexcept {
         BOOST_ASSERT(a.ops().compare_eq(b.ops()));
-        a.ops().add(a.base_data(), b.base_data());
+        a.ops().mul(a.base_data(), b.base_data());
         return a;
     }
 

@@ -1,16 +1,15 @@
 
-#include <cstdint>
 #define BOOST_TEST_MODULE big_integer_test
 
 #include <boost/test/unit_test.hpp>
 
+#include <cstdint>
 #include <utility>
 
 #include <boost/multiprecision/number.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/literals.hpp"
+#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(60)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(32)
@@ -36,6 +35,11 @@ BOOST_AUTO_TEST_CASE(to_string_small) { BOOST_CHECK_EQUAL((0x20_big_integer60).s
 BOOST_AUTO_TEST_CASE(to_string_medium) {
     constexpr auto a = 0x123456789ABCDEF1234321_big_integer85;
     BOOST_CHECK_EQUAL(a.str(), "0x123456789ABCDEF1234321");
+}
+
+BOOST_AUTO_TEST_CASE(to_string_big) {
+    constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_integer224;
+    BOOST_CHECK_EQUAL(a.str(), "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001");
 }
 
 BOOST_AUTO_TEST_CASE(ops) {

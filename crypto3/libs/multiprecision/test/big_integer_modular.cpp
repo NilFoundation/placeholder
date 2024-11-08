@@ -1,13 +1,11 @@
-#define BOOST_TEST_MODULE big_integer_test
+#define BOOST_TEST_MODULE big_integer_modular_test
 
 #include <boost/test/unit_test.hpp>
-
 #include <utility>
-
-#include <boost/random/uniform_int_distribution.hpp>
 
 #include "nil/crypto3/multiprecision/big_integer/literals.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_additional_ops.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
@@ -15,7 +13,6 @@ using namespace nil::crypto3::multiprecision::literals;
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(60)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(32)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(36)
-BOOST_MP_DEFINE_SIZED_CPP_INT_LITERAL(60)
 
 using namespace nil::crypto3::multiprecision::literals;
 using namespace boost::multiprecision::literals;
@@ -135,6 +132,34 @@ BOOST_AUTO_TEST_CASE(multilimb) {
     BOOST_CHECK_EQUAL(static_cast<modular_big_int>(0xAFFFFFFFF_big_integer64) *
                           static_cast<modular_big_int>(0x2_big_integer36),
                       static_cast<modular_big_int>(0x15FFFFFFFE_big_integer64));
+}
+
+BOOST_AUTO_TEST_CASE(big) {
+    static constexpr auto mod =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_integer224;
+    modular_big_integer<mod> a =
+        0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_integer224;
+
+    modular_big_integer<mod> b =
+        0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_integer224;
+
+    BOOST_CHECK_EQUAL((a * b).remove_modulus(),
+                      0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_integer224);
+}
+
+BOOST_AUTO_TEST_CASE(big_assign) {
+    static constexpr auto mod =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_integer224;
+    modular_big_integer<mod> a =
+        0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_integer224;
+
+    modular_big_integer<mod> b =
+        0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_integer224;
+
+    a *= b;
+
+    BOOST_CHECK_EQUAL(a.remove_modulus(),
+                      0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_integer224);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -576,24 +576,17 @@ namespace nil::crypto3::multiprecision::detail {
                  std::enable_if_t<big_integer_t1::Bits >= big_integer_t::Bits, int> = 0>
         constexpr void exp(big_integer_t1 &result, const big_integer_t2 &a,
                            big_integer_t3 exp) const {
-            /// input parameter should be lesser than modulus
+            /// input parameter should be less than modulus
             BOOST_ASSERT(a < this->m_mod);
 
-            big_integer_doubled_limbs tmp(1u);
-            tmp *= m_montgomery_r2;
-            montgomery_reduce(tmp);
-            big_integer_t R_mod_m(tmp);
+            big_integer_t R_mod_m(1u);
+            adjust_modular(R_mod_m);
 
             big_integer_t base(a);
 
             if (exp == 0u) {
                 result = 1u;
-                //
-                // TODO: restructure code
-                // adjust_modular
-                //
-                result *= m_montgomery_r2;
-                montgomery_reduce(result);
+                adjust_modular(result);
                 return;
             }
             if (this->m_mod == 1u) {
@@ -626,12 +619,7 @@ namespace nil::crypto3::multiprecision::detail {
                                       const big_integer<Bits2> &input) const {
             big_integer_doubled_limbs tmp;
             this->barrett_reduce(tmp, input);
-            //
-            // to prevent problems with trivial cpp_int
-            //
-            big_integer_doubled_limbs r2(get_r2());
-
-            tmp *= r2;
+            tmp *= get_r2();
             montgomery_reduce(tmp);
             result = tmp;
         }
