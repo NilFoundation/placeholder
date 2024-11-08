@@ -55,6 +55,7 @@
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
 
 #include "./test_l1_wrapper.hpp"
+#include "./opcode_tester.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
@@ -155,65 +156,55 @@ void complex_test(
 
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
-BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
+BOOST_AUTO_TEST_SUITE(zkevm_opcode_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_minimal_math_test) {
+BOOST_AUTO_TEST_CASE(pushx) {
     using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/");
-    l1_size_restrictions max_sizes;
+    // auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/");
+    // l1_size_restrictions max_sizes;
 
-    max_sizes.max_keccak_blocks = 10;
-    max_sizes.max_bytecode = 3000;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 500;
-    max_sizes.max_copy = 500;
-    max_sizes.max_zkevm_rows = 500;
+    // max_sizes.max_keccak_blocks = 10;
+    // max_sizes.max_bytecode = 3000;
+    // max_sizes.max_mpt = 0;
+    // max_sizes.max_rw = 500;
+    // max_sizes.max_copy = 500;
+    // max_sizes.max_zkevm_rows = 500;
 
-    complex_test<field_type>(bytecodes, pts, max_sizes);
-}
+    // complex_test<field_type>(bytecodes, pts, max_sizes);
+    zkevm_opcode_tester opcode_tester;
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_mstore8_test) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/mstore8/");
-    l1_size_restrictions max_sizes;
-
-    max_sizes.max_keccak_blocks = 50;
-    max_sizes.max_bytecode = 3000;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 5000;
-    max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
-
-    complex_test<field_type>(bytecodes, pts, max_sizes);
-}
-
-BOOST_AUTO_TEST_CASE(blueprint_plonk_meminit_test) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/meminit/");
-    l1_size_restrictions max_sizes;
-
-    max_sizes.max_keccak_blocks = 50;
-    max_sizes.max_bytecode = 3000;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 5000;
-    max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
-
-    complex_test<field_type>(bytecodes, pts, max_sizes);
-}
-
-BOOST_AUTO_TEST_CASE(blueprint_plonk_calldatacopy_test) {
-    using field_type = typename algebra::curves::pallas::base_field_type;
-    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/");
-    l1_size_restrictions max_sizes;
-
-    max_sizes.max_keccak_blocks = 50;
-    max_sizes.max_bytecode = 3000;
-    max_sizes.max_mpt = 0;
-    max_sizes.max_rw = 5000;
-    max_sizes.max_copy = 3000;
-    max_sizes.max_zkevm_rows = 4500;
-
-    complex_test<field_type>(bytecodes, pts, max_sizes);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH0);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1,  hex_string_to_bytes("0x12"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2,  hex_string_to_bytes("0x1234"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH3,  hex_string_to_bytes("0x123456"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH4,  hex_string_to_bytes("0x12345678"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH5,  hex_string_to_bytes("0x1b70726fb8"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH6,  hex_string_to_bytes("0x1b70726fb8d3"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH7,  hex_string_to_bytes("0x1b70726fb8d3a2"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH8,  hex_string_to_bytes("0x1b70726fb8d3a24d"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH9,  hex_string_to_bytes("0x1b70726fb8d3a24da9"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH10, hex_string_to_bytes("0x1b70726fb8d3a24da9ff"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH11, hex_string_to_bytes("0x1b70726fb8d3a24da9ff96"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH12, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH13, hex_string_to_bytes("0x1b70726fb8d3a24da9ff964722"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH14, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH15, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH16, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a1841"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH17, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH18, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH19, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f01"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH20, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f0104"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH21, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH22, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f01042593"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH23, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f0104259385"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH24, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH25, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d7"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH26, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73e"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH27, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH28, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc88"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH29, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH30, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH31, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e0"));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
 }
 BOOST_AUTO_TEST_SUITE_END()

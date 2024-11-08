@@ -225,6 +225,8 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/l1_wrapper"
     "zkevm_bbf/rw"
     "zkevm_bbf/bytecode"
+    "zkevm_bbf/copy"
+    "zkevm_bbf/opcodes/pushx"
 )
 
 

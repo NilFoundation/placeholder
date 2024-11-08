@@ -23,6 +23,8 @@
 //---------------------------------------------------------------------------//
 #pragma once
 
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {
