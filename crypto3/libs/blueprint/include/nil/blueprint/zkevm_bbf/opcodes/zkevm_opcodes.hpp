@@ -68,6 +68,8 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/swapx.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pop.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/eq.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
+
 
 namespace nil {
     namespace blueprint {
@@ -632,6 +634,7 @@ namespace nil {
                 opcodes[zkevm_opcode::CALLVALUE] = std::make_shared<zkevm_callvalue_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::CALLDATASIZE] = std::make_shared<zkevm_calldatasize_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::CALLDATALOAD] = std::make_shared<zkevm_calldataload_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::CALLDATACOPY] = std::make_shared<zkevm_calldatacopy_operation<BlueprintFieldType>>();
 
                 // // PC operations
                 opcodes[zkevm_opcode::JUMPI] = std::make_shared<zkevm_jumpi_operation<BlueprintFieldType>>();

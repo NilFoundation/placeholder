@@ -60,7 +60,11 @@ using namespace nil::crypto3;
 using namespace nil::blueprint;
 
 template<typename field_type>
-void complex_test(const std::vector<std::vector<std::uint8_t>> &bytecodes, const std::vector<boost::property_tree::ptree> &traces){
+void complex_test(
+    const std::vector<std::vector<std::uint8_t>>    &bytecodes,
+    const std::vector<boost::property_tree::ptree>  &traces,
+    const l1_size_restrictions                      &max_sizes
+){
     const auto &pt = traces[0];
     const auto &bytecode0 = bytecodes[0];
 
@@ -71,12 +75,12 @@ void complex_test(const std::vector<std::vector<std::uint8_t>> &bytecodes, const
 
     integral_type base16 = integral_type(1) << 16;
 
-    std::size_t max_keccak_blocks = 10;
-    std::size_t max_bytecode = 3000;
-    std::size_t max_mpt = 0;
-    std::size_t max_rw = 500;
-    std::size_t max_copy = 500;
-    std::size_t max_zkevm_rows = 500;
+    std::size_t max_keccak_blocks = max_sizes.max_keccak_blocks;
+    std::size_t max_bytecode = max_sizes.max_bytecode;
+    std::size_t max_mpt = max_sizes.max_mpt;
+    std::size_t max_rw = max_sizes.max_rw;
+    std::size_t max_copy = max_sizes.max_copy;
+    std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
 
     typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
     typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;
@@ -149,12 +153,38 @@ void complex_test(const std::vector<std::vector<std::uint8_t>> &bytecodes, const
     std::cout << std::endl;
 }
 
+// Remember that in production sizes should be preset.
+// Here they are different for different tests just for fast and easy testing
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_l1_wrapper_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_minimal_math_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/minimal_math/");
-    complex_test<field_type>(bytecodes, pts);
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 500;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 500;
+
+    complex_test<field_type>(bytecodes, pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(blueprint_plonk_mstore8_test) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/mstore8/");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 5000;
+    max_sizes.max_copy = 3000;
+    max_sizes.max_zkevm_rows = 4500;
+
+    complex_test<field_type>(bytecodes, pts, max_sizes);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

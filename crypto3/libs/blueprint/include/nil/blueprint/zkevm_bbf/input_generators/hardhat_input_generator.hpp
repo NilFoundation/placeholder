@@ -95,7 +95,6 @@ namespace nil {
                             for( std::size_t i = 0; i < memory.size(); i++){
                                 state.memory_slice[i] = memory[i];
                             }
-                            _zkevm_states.push_back(state);
                             // Opcode is not presented in RW lookup table. We just take it from json
                             // // std::cout << opcode << std::endl;
                             if(opcode == "STOP") {
@@ -308,7 +307,7 @@ namespace nil {
                                 // TODO: add read operations on calldata after calldata final design
                                 for( std::size_t i = 0; i < length; i++){
                                     _rw_operations.push_back(memory_rw_operation(call_id, dest+i, rw_counter++, true, memory_next[dest+i]));
-                                    cpy.bytes[dest+i] = memory_next[dest+i]; //TODO: change it on calldata
+                                    cpy.bytes.push_back(memory_next[dest+i]); //TODO: change it on calldata
                                 }
                                 _copy_events.push_back(cpy);
                             } else if(opcode == "CODESIZE") {
@@ -490,13 +489,15 @@ namespace nil {
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(storage_rw_operation(
                                     call_id,
-                                    stack[stack.size()-1],
+                                    stack[stack.size()-1], //Storage key
                                     rw_counter++,
                                     false,
                                     storage_next.at(stack[stack.size()-1]),
                                     storage_next.at(stack[stack.size()-1]) //TODO: Here should be previous value
                                 ));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                // TODO: here should be previous value
+                                state.storage_slice[stack[stack.size()-1]] = storage_next.at(stack[stack.size()-1]);
 
                             } else if(opcode == "SSTORE") {
                                 // 0x55
@@ -898,10 +899,13 @@ namespace nil {
                                 cpy.bytes = {};
 
                                 std::cout << "RETURN length = " << length << " memory size = " << memory.size() << " offset = " << offset << std::endl;
+                                std::cout << "\tInitial RW counter = " << std::hex << rw_counter << std::dec << std::endl;
                                 for(std::size_t i = 0; i < length; i++){
+                                    std::cout << std::hex << std::size_t(offset+i < memory.size() ? memory[offset+i]: 0) << std::dec << " ";
                                     _rw_operations.push_back(memory_rw_operation(call_id, offset+i, rw_counter++, false, offset+i < memory.size() ? memory[offset+i]: 0));
                                     cpy.bytes.push_back(offset+i < memory.size() ? memory[offset+i]: 0);
                                 }
+                                std::cout << std::endl;
                                 _copy_events.push_back(cpy);
                             } else if(opcode == "DELEGATECALL") {
                                 // 0xf4
@@ -939,6 +943,7 @@ namespace nil {
                                 // std::cout << "Unknown opcode " << std::hex << opcode << std::dec << std::endl;
                                 BOOST_ASSERT(false);
                             }
+                            _zkevm_states.push_back(state);
                             memory_size_before = memory.size();
                             stack = stack_next;
                             memory = memory_next;

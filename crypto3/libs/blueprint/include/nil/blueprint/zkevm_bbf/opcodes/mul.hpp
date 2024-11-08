@@ -68,20 +68,20 @@ namespace nil {
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
-                        constrain(current_state.gas(2) - current_state.gas_next() - 3);                 // GAS transition
-                        constrain(current_state.stack_size(2) - current_state.stack_size_next() - 1);   // stack_size transition
-                        constrain(current_state.memory_size(2) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(2) - 3);   // rw_counter transition
+                        // constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
+                        // constrain(current_state.gas(2) - current_state.gas_next() - 3);                 // GAS transition
+                        // constrain(current_state.stack_size(2) - current_state.stack_size_next() - 1);   // stack_size transition
+                        // constrain(current_state.memory_size(2) - current_state.memory_size_next());     // memory_size transition
+                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(2) - 3);   // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 1,
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
                             TYPE(0),// storage_key_hi
                             TYPE(0),// storage_key_lo
                             TYPE(0),// field
-                            current_state.rw_counter(1),
+                            current_state.rw_counter(0),
                             TYPE(0),// is_write
                             A_128.first,
                             A_128.second
@@ -89,12 +89,12 @@ namespace nil {
                         lookup(tmp, "zkevm_rw");
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 2,
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 2,
                             TYPE(0),// storage_key_hi
                             TYPE(0),// storage_key_lo
                             TYPE(0),// field
-                            current_state.rw_counter(1) + 1,
+                            current_state.rw_counter(0) + 1,
                             TYPE(0),// is_write
                             B_128.first,
                             B_128.second

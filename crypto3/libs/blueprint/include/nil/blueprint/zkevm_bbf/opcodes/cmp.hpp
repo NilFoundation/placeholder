@@ -57,7 +57,6 @@ namespace nil {
                     std::vector<TYPE> S(16);
                     TYPE diff;
                     TYPE diff_inv;
-                    TYPE eq;
                     TYPE lt;
                     TYPE gt;
                     TYPE result;
@@ -65,26 +64,28 @@ namespace nil {
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
                         bool eq = true;
-                        bool result = false;
-                        bool lt = false;
-                        bool gt = false;
+                        result = false;
+                        lt = false;
+                        gt = false;
                         for( std::size_t i = 0; i < 16; i++ ){
                             A[i] = a[i];
                             B[i] = b[i];
                         }
                         for( std::size_t i = 0; i < 16; i++ ){
                             if( a[i] != b[i] ) {
+                                std::cout << "\tNOT equal" << std::endl;
                                 if( eq ) S[i] = 1;
                                 eq = false;
-                                result = cmp_operation == cmp_type::C_LT ? a[i] < b[i]: a[i] > b[i];
                                 diff = a[i] < b[i]? b[i] - a[i]: a[i] - b[i];
                                 diff_inv = diff.inversed();
                                 lt = a[i] < b[i];
                                 gt = a[i] > b[i];
+                                result = cmp_operation == cmp_type::C_LT ? a[i] < b[i]: a[i] > b[i];
+                                break;
                             }
-                            break;
                         }
-                    }
+                        if( cmp_operation == cmp_type::C_LT ) std::cout << "\t" << current_state.stack_top() << "<" <<  current_state.stack_top(1) << " = " << result << std::endl;
+                        if( cmp_operation == cmp_type::C_GT ) std::cout << "\t" << current_state.stack_top() << ">" <<  current_state.stack_top(1) << " = " << result << std::endl;                    }
                     TYPE s_sum;
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);

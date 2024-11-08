@@ -195,6 +195,7 @@ namespace nil {
                                 << std::endl;
 
                             for( std::size_t j = 0; j < current_opcode_rows_amount; j++ ){
+                                BOOST_ASSERT(current_row < max_zkevm_rows);
                                 std::size_t row_counter = current_opcode_rows_amount - j - 1;
                                 all_states[current_row] = {
                                     current_state.call_id,

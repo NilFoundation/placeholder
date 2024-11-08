@@ -45,6 +45,7 @@ namespace nil {
                 case copy_operand_type::log:           return 3;
                 case copy_operand_type::keccak:        return 4;
                 case copy_operand_type::returndata:    return 5;
+                case copy_operand_type::calldata:      return 6;
                 }
                 BOOST_ASSERT(false);
                 return 0;

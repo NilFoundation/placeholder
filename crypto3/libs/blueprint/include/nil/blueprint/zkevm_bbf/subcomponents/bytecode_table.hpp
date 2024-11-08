@@ -75,6 +75,7 @@ namespace nil {
                             TYPE push_size = 0;
                             const auto &buffer = bytecodes[i].first;
                             for(std::size_t j = 0; j < buffer.size(); j++, cur++){
+                                BOOST_ASSERT(cur < max_bytecode_size);
                                 std::uint8_t byte = buffer[j];
                                 hash_hi[cur] = hash_hi_val;
                                 hash_lo[cur] = hash_lo_val;

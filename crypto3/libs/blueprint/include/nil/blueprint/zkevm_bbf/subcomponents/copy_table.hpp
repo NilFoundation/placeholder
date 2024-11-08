@@ -62,14 +62,17 @@ namespace nil {
                         std::cout << "Copy table assignment " << input.size() << std::endl;
                         std::size_t current_row = 1;
                         for( auto &cp: input ){
-                            std::cout
-                                << "\tCopy event " << copy_op_to_num(cp.source_type)
-                                << " => " << copy_op_to_num(cp.destination_type)
-                                << " bytes size" << cp.bytes.size()
-                                << std::endl;
+                            // std::cout
+                            //     << "\tCopy event " << copy_op_to_num(cp.source_type)
+                            //     << " => " << copy_op_to_num(cp.destination_type)
+                            //     << " bytes size" << cp.bytes.size()
+                            //     << std::endl;
                             std::size_t src_rw_counter = cp.initial_rw_counter;
-                            std::size_t dst_rw_counter = cp.initial_rw_counter + cp.length;// Fake rw for some copy events
+                            std::size_t dst_rw_counter = cp.initial_rw_counter;
+                            if( cp.source_type == copy_operand_type::memory)
+                                dst_rw_counter += cp.length;// Fake rw for some copy events
                             for( std::size_t i = 0; i < cp.bytes.size(); i++ ){
+                                BOOST_ASSERT(current_row < max_copy_size);
                                 if( i== 0) {
                                     is_first[current_row] = 1;
                                     is_first[current_row + 1] = 1;

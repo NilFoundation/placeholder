@@ -43,6 +43,16 @@
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 
+struct l1_size_restrictions{
+    std::size_t max_exponentiations;
+    std::size_t max_keccak_blocks;
+    std::size_t max_bytecode;
+    std::size_t max_mpt;
+    std::size_t max_rw;
+    std::size_t max_copy;
+    std::size_t max_zkevm_rows;
+};
+
 std::vector<std::uint8_t> hex_string_to_bytes(std::string const &hex_string) {
     std::vector<std::uint8_t> bytes;
     for (std::size_t i = 2; i < hex_string.size(); i += 2) {

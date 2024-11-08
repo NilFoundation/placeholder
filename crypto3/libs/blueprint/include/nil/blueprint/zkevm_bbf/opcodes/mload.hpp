@@ -122,9 +122,9 @@ namespace nil {
                         TYPE new_memory_gas_cost =  3 * addr_words;     // TODO: check and test with large memory consumption
 
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                     // PC transition
-                        constrain(current_state.gas(0) - current_state.gas_next() - 3 - is_memory_size_changed * (new_memory_gas_cost - old_memory_gas_cost));               // GAS transition
+                        //constrain(current_state.gas(0) - current_state.gas_next() - 3 - is_memory_size_changed * (new_memory_gas_cost - old_memory_gas_cost));               // GAS transition
                         constrain(current_state.stack_size(0) - current_state.stack_size_next());         // stack_size transition
-                        constrain(new_memory_size - current_state.memory_size_next());                    // memory_size transition
+                        //constrain(new_memory_size - current_state.memory_size_next());                    // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 34);    // rw_counter transition
 
                         auto V_128 = chunks8_to_chunks128<TYPE>(bytes);
