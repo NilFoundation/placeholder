@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2023 Polina Chernyshova <pockvokhbtra@nil.foundation>
-//               2024 Valeh Farzaliyev <estoniaa@nil.foundation>
+// Copyright (c) 2024 Valeh Farzaliyev <estoniaa@nil.foundation>
 //
 // MIT License
 //
@@ -26,33 +26,27 @@
 #define BOOST_TEST_MODULE plonk_keccak_test
 
 #include <array>
+#include <boost/test/unit_test.hpp>
 #include <cstdlib>
 #include <ctime>
-#include <random>
-
-#include <boost/test/unit_test.hpp>
-
-#include <nil/crypto3/algebra/curves/vesta.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
-#include <nil/crypto3/algebra/curves/pallas.hpp>
-#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
-
-#include <nil/crypto3/hash/keccak.hpp>
-
-#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
-
 #include <nil/blueprint/bbf/hashes/keccak/keccak_round_bbf_wrapper.hpp>
+#include <nil/blueprint/blueprint/plonk/assignment.hpp>
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
+#include <nil/crypto3/algebra/curves/pallas.hpp>
+#include <nil/crypto3/algebra/curves/vesta.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
+#include <nil/crypto3/hash/keccak.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
+#include <random>
 
 #include "../../../test_plonk_component.hpp"
 
 const int r[5][5] = {{0, 36, 3, 41, 18},
-                    {1, 44, 10, 45, 2},
-                    {62, 6, 43, 15, 61},
-                    {28, 55, 25, 21, 56},
-                    {27, 20, 39, 8, 14}};
+                     {1, 44, 10, 45, 2},
+                     {62, 6, 43, 15, 61},
+                     {28, 55, 25, 21, 56},
+                     {27, 20, 39, 8, 14}};
 
 template<typename BlueprintFieldType>
 typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::value_type value) {
@@ -70,9 +64,10 @@ typename BlueprintFieldType::value_type to_sparse(typename BlueprintFieldType::v
     return value_type(result_integral);
 }
 template<typename BlueprintFieldType, bool xor_with_mes, bool last_round_call>
-std::array<typename BlueprintFieldType::value_type, 25> sparse_round_function(std::array<typename BlueprintFieldType::value_type, 25> inner_state,
-                                                            std::array<typename BlueprintFieldType::value_type, 17> padded_message_chunk,
-                                                            typename BlueprintFieldType::value_type RC) {
+std::array<typename BlueprintFieldType::value_type, 25> sparse_round_function(
+    std::array<typename BlueprintFieldType::value_type, 25> inner_state,
+    std::array<typename BlueprintFieldType::value_type, 17> padded_message_chunk,
+    typename BlueprintFieldType::value_type RC) {
     using value_type = typename BlueprintFieldType::value_type;
     using integral_type = typename BlueprintFieldType::integral_type;
 
@@ -99,14 +94,18 @@ std::array<typename BlueprintFieldType::value_type, 25> sparse_round_function(st
                     continue;
                 }
                 if (x + 5 * y < 17) {
-                    inner_state_integral[x][y] = inner_state_integral[x][y] ^ padded_message_chunk_integral[x + 5 * y];
+                    inner_state_integral[x][y] =
+                        inner_state_integral[x][y] ^ padded_message_chunk_integral[x + 5 * y];
                 }
             }
         }
         if (last_round_call) {
-            value_type last_round_const = to_sparse<BlueprintFieldType>(value_type(0x8000000000000000));
+            value_type last_round_const =
+                to_sparse<BlueprintFieldType>(value_type(0x8000000000000000));
             integral_type last_round_const_integral = integral_type(last_round_const.data);
-            inner_state_integral[1][3] = inner_state_integral[1][3] ^ padded_message_chunk_integral[16] ^ last_round_const_integral;
+            inner_state_integral[1][3] = inner_state_integral[1][3] ^
+                                         padded_message_chunk_integral[16] ^
+                                         last_round_const_integral;
         }
     }
 
@@ -155,15 +154,12 @@ std::array<typename BlueprintFieldType::value_type, 25> sparse_round_function(st
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 
-template <typename field_type>
-void test_bbf_keccak_round(
-    const std::array<typename field_type::value_type, 25> &inner_state,
-    const std::array<typename field_type::value_type, 17> &message_chunks,
-    typename field_type::value_type RC,
-    bool xor_with_mes,
-    bool last_round_call,
-    const std::array<typename field_type::value_type, 25> &expected_res
-){
+template<typename field_type>
+void test_bbf_keccak_round(const std::array<typename field_type::value_type, 25> &inner_state,
+                           const std::array<typename field_type::value_type, 17> &message_chunks,
+                           typename field_type::value_type RC, bool xor_with_mes,
+                           bool last_round_call,
+                           const std::array<typename field_type::value_type, 25> &expected_res) {
     using ArithmetizationType = zk::snark::plonk_constraint_system<field_type>;
     using AssignmentType = assignment<ArithmetizationType>;
     using hash_type = nil::crypto3::hashes::keccak_1600<256>;
@@ -179,13 +175,14 @@ void test_bbf_keccak_round(
     std::size_t start_row = 0;
 
     std::vector<std::size_t> witnesses;
-    for( std::size_t i = 0; i < desc.witness_columns; i++) witnesses.push_back(i);
+    for (std::size_t i = 0; i < desc.witness_columns; i++) witnesses.push_back(i);
     std::vector<std::size_t> public_inputs = {0};
-    for( std::size_t i = 0; i < desc.public_input_columns; i++) public_inputs.push_back(i);
+    for (std::size_t i = 0; i < desc.public_input_columns; i++) public_inputs.push_back(i);
     std::vector<std::size_t> constants;
-    for( std::size_t i = 0; i < desc.constant_columns; i++) constants.push_back(i);
+    for (std::size_t i = 0; i < desc.constant_columns; i++) constants.push_back(i);
 
-    component_type component_instance(witnesses, public_inputs, constants, xor_with_mes, last_round_call);
+    component_type component_instance(witnesses, public_inputs, constants, xor_with_mes,
+                                      last_round_call);
 
     std::array<var, 25> inner_state_vars;
     std::array<var, 17> padded_message_chunk_vars;
@@ -197,8 +194,8 @@ void test_bbf_keccak_round(
         padded_message_chunk_vars[i] = var(0, i + 25, false, var::column_type::public_input);
     }
     RC_var = var(0, 42, false, var::column_type::public_input);
-    typename component_type::input_type instance_input = {inner_state_vars, padded_message_chunk_vars, RC_var};
-
+    typename component_type::input_type instance_input = {inner_state_vars,
+                                                          padded_message_chunk_vars, RC_var};
 
     std::vector<typename field_type::value_type> public_input;
     for (int i = 0; i < 25; ++i) {
@@ -209,8 +206,9 @@ void test_bbf_keccak_round(
     }
     public_input.push_back(RC);
 
-    auto result_check = [&expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
-        for(std::size_t i = 0; i < 25; i++){
+    auto result_check = [&expected_res](AssignmentType &assignment,
+                                        typename component_type::result_type &real_res) {
+        for (std::size_t i = 0; i < 25; i++) {
             assert(expected_res[i] == real_res.inner_state[i]);
         }
     };
@@ -219,7 +217,6 @@ void test_bbf_keccak_round(
         component_instance, desc, public_input, result_check, instance_input,
         nil::blueprint::connectedness_check_type::type::NONE, xor_with_mes, last_round_call);
 }
-
 
 template<typename BlueprintFieldType, bool xor_with_mes, bool last_round_call>
 void test_keccak_round_bbf_random() {
@@ -246,14 +243,16 @@ void test_keccak_round_bbf_random() {
     auto random_value = integral_type(dis(gen)) & mask;
     RC = to_sparse<BlueprintFieldType>(value_type(random_value));
 
-    auto expected_result = sparse_round_function<BlueprintFieldType, xor_with_mes, last_round_call>(inner_state, padded_message_chunk, RC);
+    auto expected_result = sparse_round_function<BlueprintFieldType, xor_with_mes, last_round_call>(
+        inner_state, padded_message_chunk, RC);
 
-    test_bbf_keccak_round<BlueprintFieldType>(inner_state, padded_message_chunk, RC, xor_with_mes, last_round_call, expected_result);
+    test_bbf_keccak_round<BlueprintFieldType>(inner_state, padded_message_chunk, RC, xor_with_mes,
+                                              last_round_call, expected_result);
 }
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_bbf_random_pallas){
+BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_bbf_random_pallas) {
     using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
     using value_type = typename field_type::value_type;
 
@@ -262,51 +261,48 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_bbf_random_pallas){
     test_keccak_round_bbf_random<field_type, true, true>();
 }
 
-
-BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_bbf_not_random_pallas){
+BOOST_AUTO_TEST_CASE(blueprint_plonk_hashes_keccak_round_bbf_not_random_pallas) {
     using field_type = nil::crypto3::algebra::curves::pallas::base_field_type;
     using value_type = typename field_type::value_type;
 
     // round 0
-    std::array<value_type, 25> state = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    std::array<value_type, 17> message = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    std::array<value_type, 25> state = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<value_type, 17> message = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     value_type rc;
     std::array<value_type, 25> expected_result;
 
-    std::array<value_type, 24> round_constants = {
-        value_type(1), 
-        value_type(0x8082), 
-        value_type(0x800000000000808A),
-        value_type(0x8000000080008000),
-        value_type(0x808B),
-        value_type(0x80000001),
-        value_type(0x8000000080008081),
-        value_type(0x8000000000008009),
-        value_type(0x8A),
-        value_type(0x88),
-        value_type(0x80008009),
-        value_type(0x8000000A),
-        value_type(0x8000808B),
-        value_type(0x800000000000008B),
-        value_type(0x8000000000008089),
-        value_type(0x8000000000008003),
-        value_type(0x8000000000008002),
-        value_type(0x8000000000000080),
-        value_type(0x800A),
-        value_type(0x800000008000000A),
-        value_type(0x8000000080008081),
-        value_type(0x8000000000008080),
-        value_type(80000001),
-        value_type(0x8000000080008008)
-    };
+    std::array<value_type, 24> round_constants = {value_type(1),
+                                                  value_type(0x8082),
+                                                  value_type(0x800000000000808A),
+                                                  value_type(0x8000000080008000),
+                                                  value_type(0x808B),
+                                                  value_type(0x80000001),
+                                                  value_type(0x8000000080008081),
+                                                  value_type(0x8000000000008009),
+                                                  value_type(0x8A),
+                                                  value_type(0x88),
+                                                  value_type(0x80008009),
+                                                  value_type(0x8000000A),
+                                                  value_type(0x8000808B),
+                                                  value_type(0x800000000000008B),
+                                                  value_type(0x8000000000008089),
+                                                  value_type(0x8000000000008003),
+                                                  value_type(0x8000000000008002),
+                                                  value_type(0x8000000000000080),
+                                                  value_type(0x800A),
+                                                  value_type(0x800000008000000A),
+                                                  value_type(0x8000000080008081),
+                                                  value_type(0x8000000000008080),
+                                                  value_type(80000001),
+                                                  value_type(0x8000000080008008)};
 
-    for(std::size_t i = 0; i < 24; i++){
+    for (std::size_t i = 0; i < 24; i++) {
         rc = to_sparse<field_type>((round_constants[i]));
         expected_result = sparse_round_function<field_type, false, false>(state, message, rc);
         test_bbf_keccak_round<field_type>(state, message, rc, false, false, expected_result);
         state = expected_result;
     }
-       
 }
 
 BOOST_AUTO_TEST_SUITE_END()
