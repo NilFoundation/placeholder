@@ -236,16 +236,22 @@ namespace nil::crypto3::multiprecision {
             result += "0x";
             bool found_first = false;
             for (int i = internal_limb_count - 1; i >= 0; --i) {
-                std::size_t len = (std::bit_width(limbs()[i]) + 3) / 4;
+                auto limb = limbs()[i];
+                bool should_pad = found_first;
+                found_first = found_first || limb != 0;
                 if (found_first) {
-                    len = sizeof(limb_type) * 2;
-                }
-                found_first = found_first || len > 0;
-                if (len > 0) {
+                    std::size_t len = limb == 0 ? 1 : (std::bit_width(limb) + 3) / 4;
+                    std::size_t padded_len = len;
+                    if (should_pad) {
+                        padded_len = sizeof(limb_type) * 2;
+                    }
+                    for (std::size_t j = 0; j < padded_len - len; ++j) {
+                        result += '0';
+                    }
                     std::size_t start_offset = result.size();
                     result.resize(result.size() + len);
                     auto ec = std::to_chars(result.data() + start_offset,
-                                            result.data() + result.size(), limbs()[i], 16)
+                                            result.data() + result.size(), limb, 16)
                                   .ec;
                     BOOST_ASSERT(ec == std::errc{});
                 }
