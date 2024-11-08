@@ -131,11 +131,7 @@ set(PLONK_TESTS_FILES
     "hashes/plonk/sha256_process"
     "hashes/plonk/sha512_process"
     "hashes/plonk/decomposition"
-    "hashes/plonk/keccak_component"
-    "hashes/plonk/keccak_dynamic"
-    #"hashes/plonk/keccak_static" fails with memory access violation
-    #"hashes/plonk/keccak_padding" fails with signal: SIGABRT
-    "hashes/plonk/keccak_round"
+    "bbf/hashes/keccak/keccak_round"
     #"hashes/plonk/detail/sha_table_generators_base4"
     #"hashes/plonk/detail/sha_table_generators_base7"
     #"verifiers/kimchi/base_field"
