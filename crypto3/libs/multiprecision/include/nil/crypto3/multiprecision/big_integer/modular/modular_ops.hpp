@@ -201,7 +201,7 @@ namespace nil::crypto3::multiprecision::detail {
             big_integer_doubled_limbs base(a), res(1u);
 
             while (true) {
-                limb_type lsb = exp.limbs()[0] & 1u;
+                bool lsb = bit_test(exp, 0);
                 exp >>= 1u;
                 if (lsb) {
                     res *= base;
@@ -595,7 +595,7 @@ namespace nil::crypto3::multiprecision::detail {
             }
 
             while (true) {
-                limb_type lsb = exp.limbs()[0] & 1u;
+                bool lsb = bit_test(exp, 0);
                 exp >>= 1u;
                 if (lsb) {
                     montgomery_mul(R_mod_m, base);

@@ -10,55 +10,43 @@
 #pragma once
 
 #include <cstddef>
-#include <tuple>
-
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/multiprecision/detail/default_ops.hpp>
-#include <boost/type_traits/is_integral.hpp>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/signed_big_integer.hpp"
 
 namespace nil::crypto3::multiprecision {
-    // TODO(ioxid): rewrite using our signed_big_integer
+    template<typename signed_big_integer_t>
+    constexpr signed_big_integer_t extended_euclidean_algorithm(const signed_big_integer_t& num1,
+                                                                const signed_big_integer_t& num2,
+                                                                signed_big_integer_t& bezout_x,
+                                                                signed_big_integer_t& bezout_y) {
+        signed_big_integer_t x, y, tmp_num1 = num1, tmp_num2 = num2;
+        y = 1u;
+        x = 0u;
 
-    using boost::multiprecision::default_ops::eval_add;
-    using boost::multiprecision::default_ops::eval_bit_set;
-    using boost::multiprecision::default_ops::eval_bit_test;
-    using boost::multiprecision::default_ops::eval_is_zero;
-    using boost::multiprecision::default_ops::eval_modulus;
-    using boost::multiprecision::default_ops::eval_subtract;
-
-    template<typename Backend>
-    constexpr Backend eval_extended_euclidean_algorithm(const Backend& num1, const Backend& num2,
-                                                        Backend& bezout_x, Backend& bezout_y) {
-        Backend x, y, tmp_num1 = num1, tmp_num2 = num2;
-        using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
-        y = ui_type(1u);
-        x = ui_type(0u);
-
-        bezout_x = ui_type(1u);
-        bezout_y = ui_type(0u);
+        bezout_x = 1u;
+        bezout_y = 0u;
 
         // Extended Euclidean Algorithm
-        while (!eval_is_zero(tmp_num2)) {
-            Backend quotient = tmp_num1;
-            Backend remainder = tmp_num1;
-            Backend placeholder;
+        while (!is_zero(tmp_num2)) {
+            signed_big_integer_t quotient = tmp_num1;
+            signed_big_integer_t remainder = tmp_num1;
+            signed_big_integer_t placeholder;
 
-            eval_divide(quotient, tmp_num2);
-            eval_modulus(remainder, tmp_num2);
+            quotient /= tmp_num2;
+            remainder %= tmp_num2;
 
             tmp_num1 = tmp_num2;
             tmp_num2 = remainder;
 
-            Backend temp_x = x, temp_y = y;
-            eval_multiply(placeholder, quotient, x);
-            eval_subtract(placeholder, bezout_x, placeholder);
+            signed_big_integer_t temp_x = x, temp_y = y;
+            placeholder = quotient * x;
+            placeholder = bezout_x - placeholder;
             x = placeholder;
             bezout_x = temp_x;
 
-            eval_multiply(placeholder, quotient, y);
-            eval_subtract(placeholder, bezout_y, placeholder);
+            placeholder = quotient * y;
+            placeholder = bezout_y - placeholder;
             y = placeholder;
             bezout_y = temp_y;
         }
@@ -67,63 +55,61 @@ namespace nil::crypto3::multiprecision {
 
     // a^(-1) mod p
     // http://www-math.ucdenver.edu/~wcherowi/courses/m5410/exeucalg.html
-    template<typename Backend>
-    constexpr void eval_inverse_extended_euclidean_algorithm(Backend& result, const Backend& a,
-                                                             const Backend& m) {
-        using Backend_doubled =
-            typename boost::multiprecision::default_ops::double_precision_type<Backend>::type;
-        using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
+    template<typename signed_big_integer_t>
+    constexpr void inverse_extended_euclidean_algorithm(signed_big_integer_t& result,
+                                                        const signed_big_integer_t& a,
+                                                        const signed_big_integer_t& m) {
+        // TODO(ioxid): check if the number of bits is correct
+        using signed_big_integer_doubled_t = signed_big_integer<signed_big_integer_t::Bits * 2>;
 
-        Backend aa = a, mm = m, x, y, g;
-        Backend zero = ui_type(0u);
-        g = eval_extended_euclidean_algorithm(aa, mm, x, y);
-        if (!eval_eq(g, ui_type(1u))) {
-            result = zero;
+        signed_big_integer_t aa = a, mm = m, x, y, g;
+        g = extended_euclidean_algorithm(aa, mm, x, y);
+        if (g != 1u) {
+            result = 0u;
         } else {
-            eval_modulus(x, m);
-            Backend_doubled tmp(x);
-            eval_add(tmp, m);
-            eval_modulus(tmp, m);
-            result = static_cast<Backend>(tmp);
+            x %= m;
+            signed_big_integer_doubled_t tmp(x);
+            tmp += m;
+            tmp %= m;
+            result = static_cast<signed_big_integer_t>(tmp);
         }
     }
 
-    // Overload the code above for modular backends. We do not have negative numbers,
-    // so we will convert to cpp_int_backend to perform the operation and back.
+    // Overload the above code for unsigned big integers.
     template<unsigned Bits>
-    constexpr void eval_inverse_extended_euclidean_algorithm(big_integer<Bits>& result,
-                                                             const big_integer<Bits>& a,
-                                                             const big_integer<Bits>& m) {
+    constexpr void inverse_extended_euclidean_algorithm(big_integer<Bits>& result,
+                                                        const big_integer<Bits>& a,
+                                                        const big_integer<Bits>& m) {
         // Careful here, we NEED signed magnitude numbers here.
-        using signed_cpp_int_type = boost::multiprecision::backends::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked>;
-        using unsigned_cpp_int_type = boost::multiprecision::backends::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::unsigned_magnitude,
-            boost::multiprecision::unchecked>;
+        using signed_big_integer_t = signed_big_integer<Bits + 1>;
 
-        signed_cpp_int_type a_cpp_int = a.to_cpp_int();
-        signed_cpp_int_type m_cpp_int = m.to_cpp_int();
-        signed_cpp_int_type result_cpp_int;
-        eval_inverse_extended_euclidean_algorithm(result_cpp_int, a_cpp_int, m_cpp_int);
+        signed_big_integer_t a_signed = a;
+        signed_big_integer_t m_signed = m;
+        signed_big_integer_t result_signed;
+        inverse_extended_euclidean_algorithm(result_signed, a_signed, m_signed);
 
-        // The result is always unsigned, so no problem here.
-        unsigned_cpp_int_type result_unsinged_cpp_int;
-        // Interestingly boost allows as to use operator= but not a constructor to convert
-        // from signed value to unsigned.
-        result_unsinged_cpp_int = result_cpp_int;
-        result.from_cpp_int(result_unsinged_cpp_int);
+        result = static_cast<big_integer<Bits>>(result_signed);
     }
 
-    template<typename Backend>
-    constexpr void eval_inverse_mod_pow2(Backend& result, const Backend& a, const size_t& k) {
-        using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
-        Backend tmp, zero, one, two;
+    template<typename big_integer_t>
+    constexpr big_integer_t inverse_extended_euclidean_algorithm(const big_integer_t& n,
+                                                                 const big_integer_t& mod) {
+        big_integer_t result;
+        inverse_extended_euclidean_algorithm(result, n, mod);
+        return result;
+    }
+
+    template<typename signed_big_integer_t>
+    constexpr void inverse_mod_pow2(signed_big_integer_t& result, const signed_big_integer_t& a,
+                                    const size_t& k) {
+        using ui_type = detail::limb_type;
+        signed_big_integer_t tmp, zero, one, two;
         zero = ui_type(0u);
         one = ui_type(1u);
         two = ui_type(2u);
 
-        eval_modulus(tmp, a, two);
-        if (eval_is_zero(tmp) || k == 0) {
+        tmp = a % two;
+        if (is_zero(tmp) || k == 0) {
             result = zero;
             return;
         }
@@ -137,26 +123,27 @@ namespace nil::crypto3::multiprecision {
          * From "A New Algorithm for Inversion mod p^k" by Çetin Kaya Koç
          * https://eprint.iacr.org/2017/411.pdf sections 5 and 7.
          */
-        Backend b = one;
-        Backend r;
+        signed_big_integer_t b = one;
+        signed_big_integer_t r;
         for (size_t i = 0; i < k; ++i) {
-            if (eval_bit_test(b, 0)) {
-                eval_subtract(b, a);
-                eval_bit_set(r, i);
+            if (bit_test(b, 0)) {
+                b -= a;
+                bit_set(r, i);
             }
-            eval_right_shift(b, 1);
+            b >>= 1;
         }
         result = r;
     }
 
-    template<typename Backend>
-    constexpr Backend eval_inverse_mod_odd(const Backend& n, const Backend& mod) {
-        using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
-        Backend zero, one;
+    template<typename signed_big_integer_t>
+    constexpr signed_big_integer_t inverse_mod_odd(const signed_big_integer_t& n,
+                                                   const signed_big_integer_t& mod) {
+        using ui_type = detail::limb_type;
+        signed_big_integer_t zero, one;
         zero = ui_type(0u);
         one = ui_type(1u);
         // Caller should assure these preconditions:
-        BOOST_ASSERT(eval_gt(n, 0) >= 0);
+        BOOST_ASSERT(n > 0);
         BOOST_ASSERT(mod >= 0);
         BOOST_ASSERT(n < mod);
         BOOST_ASSERT(mod >= 3 && mod % 2 != 0);
@@ -174,78 +161,76 @@ namespace nil::crypto3::multiprecision {
 
         */
 
-        Backend a = n;
-        Backend b = mod;
-        Backend u = one;
-        Backend v = zero;
+        signed_big_integer_t a = n;
+        signed_big_integer_t b = mod;
+        signed_big_integer_t u = one;
+        signed_big_integer_t v = zero;
 
-        size_t ell = eval_msb(mod);
+        size_t ell = msb(mod);
         for (size_t i = 0; i < 2 * ell; ++i) {
-            size_t odd = eval_bit_test(a, 0);
-            size_t gteq = boost::multiprecision::default_ops::eval_gt(a, b) ||
-                          boost::multiprecision::default_ops::eval_eq(a, b);
+            size_t odd = bit_test(a, 0);
+            size_t gteq = a >= b;
             if (odd && gteq) {
-                eval_subtract(a, b);
+                a -= b;
             } else if (odd && !gteq) {
-                Backend u_tmp = u;
+                signed_big_integer_t u_tmp = u;
                 u = v;
                 v = u_tmp;
-                Backend tmp = a;
-                eval_subtract(a, b, a);
+                signed_big_integer_t tmp = a;
+                a = b - a;
                 b = tmp;
             }
-            eval_right_shift(a, 1);
-            size_t gteq2 = boost::multiprecision::default_ops::eval_gt(u, v) ||
-                           boost::multiprecision::default_ops::eval_eq(u, v);
+            a >>= 1;
+            size_t gteq2 = u >= v;
             if (odd && gteq2) {
-                eval_subtract(u, v);
+                u -= v;
             } else if (odd && !gteq2) {
-                eval_add(u, mod);
-                eval_subtract(u, v);
+                u += mod;
+                u -= v;
             }
 
-            if (eval_bit_test(u, 0)) {
-                eval_add(u, u, mod);
+            if (bit_test(u, 0)) {
+                u = u + mod;
             }
-            eval_right_shift(u, 1);
+            u >>= 1;
         }
-        if (!boost::multiprecision::default_ops::eval_eq(
-                b, one)) {  // if b != 1 then gcd(n,mod) > 1 and inverse does not exist
+        if (b != one) {  // if b != 1 then gcd(n,mod) > 1 and inverse does not exist
             return zero;
         }
         return v;
     }
 
-    template<typename Backend>
-    constexpr void eval_inverse_mod(Backend& result, const Backend& n, const Backend& mod) {
-        using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
-        Backend zero = ui_type(0u), one = ui_type(1u), tmp;
+    template<typename signed_big_integer_t>
+    constexpr void inverse_mod(signed_big_integer_t& result, const signed_big_integer_t& n,
+                               const signed_big_integer_t& mod) {
+        using ui_type = detail::limb_type;
+        signed_big_integer_t zero = ui_type(0u), one = ui_type(1u), tmp;
 
-        BOOST_ASSERT(eval_gt(mod, ui_type(0u)) && eval_gt(n, ui_type(0u)));
+        BOOST_ASSERT(mod > ui_type(0u) && n > ui_type(0u));
 
-        if (eval_is_zero(n) || (!eval_bit_test(n, 0) && !eval_bit_test(mod, 0))) {
+        if (is_zero(n) || (!bit_test(n, 0) && !bit_test(mod, 0))) {
             result = zero;
             return;
         }
 
-        if (eval_bit_test(mod, 0)) {
+        if (bit_test(mod, 0)) {
             /*
             Fastpath for common case. This leaks if n is greater than mod or
             not, but we don't guarantee const time behavior in that case.
             */
-            eval_modulus(tmp, n, mod);
-            result = eval_inverse_mod_odd(tmp, mod);
+            tmp = n % mod;
+            result = inverse_mod_odd(tmp, mod);
             return;
         }
 
         // If n is even and mod is even we already returned 0
         // If n is even and mod is odd we jumped directly to odd-modulus algo
-        const size_t mod_lz = eval_lsb(mod);
-        const size_t mod_mz = eval_msb(mod);
+        const size_t mod_lz = lsb(mod);
+        const size_t mod_mz = msb(mod);
 
         if (mod_lz == mod_mz) {
             // In this case we are performing an inversion modulo 2^k
-            eval_inverse_mod_pow2(result, n, mod_lz);
+            inverse_mod_pow2(result, n, mod_lz);
             return;
         }
 
@@ -264,22 +249,22 @@ namespace nil::crypto3::multiprecision {
             fall back to the general algorithm below.
             */
 
-            Backend o = mod;
-            eval_right_shift(o, 1);
-            Backend n_redc;
-            eval_modulus(n_redc, n, o);
-            const Backend inv_o = eval_inverse_mod_odd(n_redc, o);
+            signed_big_integer_t o = mod;
+            o >>= 1;
+            signed_big_integer_t n_redc;
+            n_redc = n % o;
+            const signed_big_integer_t inv_o = inverse_mod_odd(n_redc, o);
 
             // No modular inverse in this case:
-            if (eval_is_zero(inv_o)) {
+            if (is_zero(inv_o)) {
                 result = zero;
                 return;
             }
 
-            Backend h = inv_o;
+            signed_big_integer_t h = inv_o;
 
-            if (!eval_bit_test(inv_o, 0)) {
-                eval_add(h, o);
+            if (!bit_test(inv_o, 0)) {
+                h += o;
             }
             result = h;
             return;
@@ -292,64 +277,61 @@ namespace nil::crypto3::multiprecision {
          * using CRT, which is possible because 2^k and o are relatively prime.
          */
 
-        Backend o = mod;
-        eval_right_shift(o, mod_lz);
-        Backend n_redc = n;
-        eval_modulus(n_redc, o);
-        const Backend inv_o = eval_inverse_mod_odd(n_redc, o);
-        Backend inv_2k;
-        eval_inverse_mod_pow2(inv_2k, n, mod_lz);
+        signed_big_integer_t o = mod;
+        o >>= mod_lz;
+        signed_big_integer_t n_redc = n;
+        n_redc %= o;
+        const signed_big_integer_t inv_o = inverse_mod_odd(n_redc, o);
+        signed_big_integer_t inv_2k;
+        inverse_mod_pow2(inv_2k, n, mod_lz);
 
         // No modular inverse in this case:
-        if (eval_is_zero(inv_o) || eval_is_zero(inv_2k)) {
+        if (is_zero(inv_o) || is_zero(inv_2k)) {
             result = zero;
             return;
         }
 
-        Backend m2k = one;
-        eval_left_shift(m2k, mod_lz);
+        signed_big_integer_t m2k = one;
+        left_shift(m2k, mod_lz);
         // Compute the CRT parameter
-        Backend c;
-        eval_inverse_mod_pow2(c, o, mod_lz);
+        signed_big_integer_t c;
+        inverse_mod_pow2(c, o, mod_lz);
 
         // Compute h = c*(inv_2k-inv_o) mod 2^k
-        Backend h;
-        eval_subtract(h, inv_2k, inv_o);
-        eval_multiply(h, c);
-        Backend tmp3 = one;
-        eval_left_shift(tmp3, mod_lz);
-        eval_subtract(tmp3, one);
-        eval_bitwise_and(h, tmp3);
+        signed_big_integer_t h;
+        h = inv_2k - inv_o;
+        h *= c;
+        signed_big_integer_t tmp3 = one;
+        left_shift(tmp3, mod_lz);
+        tmp3 -= one;
+        bitwise_and(h, tmp3);
 
         // Return result inv_o + h * o
-        eval_multiply(h, o);
-        eval_add(h, inv_o);
+        h *= o;
+        h += inv_o;
         result = h;
     }
 
-    // Overload the upper code for modular backends. We do not have negative numbers,
-    // so we will convert to cpp_int_backend to perform the operation and back.
+    // Overload the above code for unsigned big integers.
     template<unsigned Bits>
-    constexpr void eval_inverse_mod(big_integer<Bits>& result, const big_integer<Bits>& n,
-                                    const big_integer<Bits>& mod) {
+    constexpr void inverse_mod(big_integer<Bits>& result, const big_integer<Bits>& n,
+                               const big_integer<Bits>& mod) {
         // Careful here, we NEED signed magnitude numbers here.
-        using signed_cpp_int_type = boost::multiprecision::backends::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked>;
-        using unsigned_cpp_int_type = boost::multiprecision::backends::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::unsigned_magnitude,
-            boost::multiprecision::unchecked>;
+        using signed_big_integer_t = signed_big_integer<Bits + 1>;
 
-        signed_cpp_int_type n_cpp_int = n.to_cpp_int();
-        signed_cpp_int_type mod_cpp_int = mod.to_cpp_int();
-        signed_cpp_int_type result_cpp_int;
-        eval_inverse_mod(result_cpp_int, n_cpp_int, mod_cpp_int);
+        signed_big_integer_t n_signed = n;
+        signed_big_integer_t mod_signed = mod;
+        signed_big_integer_t result_signed;
+        inverse_mod(result_signed, n_signed, mod_signed);
 
-        // The result is always unsigned, so no problem here.
-        unsigned_cpp_int_type result_unsinged_cpp_int;
-        // Interestingly boost allows as to use operator= but not a constructor to convert
-        // from signed value to unsigned.
-        result_unsinged_cpp_int = result_cpp_int;
-        result.from_cpp_int(result_unsinged_cpp_int);
+        result = static_cast<big_integer<Bits>>(result_signed);
+    }
+
+    template<typename big_integer_t>
+    constexpr big_integer_t inverse_mod(const big_integer_t& a, const big_integer_t& p) {
+        big_integer_t res;
+        inverse_mod(res, a, p);
+        return res;
     }
 
     /*
@@ -362,17 +344,11 @@ namespace nil::crypto3::multiprecision {
      * @param k is a non-negative integer, where a < p^k
      * @return x = a^(−1) mod p^k
      */
-    template<typename Backend>
-    constexpr void eval_monty_inverse(Backend& res, const Backend& a, const Backend& p,
-                                      const Backend& k) {
-        using boost::multiprecision::default_ops::eval_abs;
-        using boost::multiprecision::default_ops::eval_eq;
-        using boost::multiprecision::default_ops::eval_gt;
-        using boost::multiprecision::default_ops::eval_modulus;
-        using boost::multiprecision::default_ops::eval_subtract;
-
-        using ui_type = typename std::tuple_element<0, typename Backend::unsigned_types>::type;
-        Backend zero, one, two;
+    template<typename signed_big_integer_t>
+    constexpr void monty_inverse(signed_big_integer_t& res, const signed_big_integer_t& a,
+                                 const signed_big_integer_t& p, const signed_big_integer_t& k) {
+        using ui_type = detail::limb_type;
+        signed_big_integer_t zero, one, two;
         zero = ui_type(0u);
         one = ui_type(1u);
         two = ui_type(2u);
@@ -381,66 +357,64 @@ namespace nil::crypto3::multiprecision {
          * From "A New Algorithm for Inversion mod p^k" by Çetin Kaya Koç
          * https://eprint.iacr.org/2017/411.pdf sections 5 and 7.
          */
-        Backend c, tmp;
+        signed_big_integer_t c, tmp;
 
         // a^(-1) mod p:
-        eval_inverse_mod(c, a, p);
+        inverse_mod(c, a, p);
 
-        Backend bi = one, bt, i = zero, xi, nextp = one;
+        signed_big_integer_t bi = one, bt, i = zero, xi, nextp = one;
         res = zero;
 
-        while (!eval_eq(i, k)) {
+        while (i != k) {
             // xi:
             xi = bi;
-            eval_multiply(xi, c);
-            eval_modulus(xi, p);
+            xi *= c;
+            xi %= p;
 
-            if (eval_get_sign(xi) < 0) {
+            if (get_sign(xi) < 0) {
                 tmp = xi;
-                eval_abs(tmp, tmp);
-                eval_modulus(tmp, p);
+                abs(tmp, tmp);
+                tmp %= p;
                 xi = p;
-                eval_subtract(xi, tmp);
+                xi -= tmp;
             }
 
             // bi:
             tmp = a;
-            eval_multiply(tmp, xi);
-            eval_subtract(bi, tmp);
-            eval_divide(bi, p);
+            tmp *= xi;
+            bi -= tmp;
+            bi /= p;
 
             // res:
             tmp = xi;
-            eval_multiply(tmp, nextp);
-            eval_multiply(nextp, p);
-            eval_add(res, tmp);
-            eval_add(i, one);
+            tmp *= nextp;
+            nextp *= p;
+            res += tmp;
+            i += one;
         }
     }
 
-    // Overload the upper code for modular backends. We do not have negative numbers,
-    // so we will convert to cpp_int_backend to perform the operation and back.
+    // Overload the above code for unsigned big integers.
     template<unsigned Bits>
-    constexpr void eval_monty_inverse(big_integer<Bits>& res, const big_integer<Bits>& a,
-                                      const big_integer<Bits>& p, const big_integer<Bits>& k) {
+    constexpr void monty_inverse(big_integer<Bits>& result, const big_integer<Bits>& a,
+                                 const big_integer<Bits>& p, const big_integer<Bits>& k) {
         // Careful here, we NEED signed magnitude numbers here.
-        using signed_cpp_int_type = boost::multiprecision::backends::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked>;
-        using unsigned_cpp_int_type = boost::multiprecision::backends::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::unsigned_magnitude,
-            boost::multiprecision::unchecked>;
+        using signed_big_integer_t = signed_big_integer<Bits + 1>;
 
-        signed_cpp_int_type a_cpp_int = a.to_cpp_int();
-        signed_cpp_int_type p_cpp_int = p.to_cpp_int();
-        signed_cpp_int_type k_cpp_int = k.to_cpp_int();
-        signed_cpp_int_type result_cpp_int;
-        eval_monty_inverse(result_cpp_int, a_cpp_int, p_cpp_int, k_cpp_int);
+        signed_big_integer_t a_signed = a;
+        signed_big_integer_t p_signed = p;
+        signed_big_integer_t k_signed = k;
+        signed_big_integer_t result_signed;
+        monty_inverse(result_signed, a_signed, p_signed, k_signed);
 
-        // The result is always unsigned, so no problem here.
-        unsigned_cpp_int_type result_unsinged_cpp_int;
-        // Interestingly boost allows as to use operator= but not a constructor to convert
-        // from signed value to unsigned.
-        result_unsinged_cpp_int = result_cpp_int;
-        res.from_cpp_int(result_unsinged_cpp_int);
+        result = static_cast<big_integer<Bits>>(result_signed);
+    }
+
+    template<typename big_integer_t>
+    constexpr big_integer_t monty_inverse(const big_integer_t& a, const big_integer_t& p,
+                                          const big_integer_t& k) {
+        big_integer_t res;
+        monty_inverse(res, a, p, k);
+        return res;
     }
 }  // namespace nil::crypto3::multiprecision

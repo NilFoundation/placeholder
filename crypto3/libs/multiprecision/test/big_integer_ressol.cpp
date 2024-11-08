@@ -8,11 +8,8 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
+#include <stdexcept>
 #define BOOST_TEST_MODULE big_integer_ressol_test
-
-#ifdef _MSC_VER
-#define _SCL_SECURE_NO_WARNINGS
-#endif
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -25,119 +22,101 @@ using namespace nil::crypto3::multiprecision;
 
 BOOST_AUTO_TEST_SUITE(ressol_runtime_tests)
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_4_bit_tests) {
-//     using T = big_integer<4>;
-//     using namespace boost::multiprecision;
-//     BOOST_CHECK_EQUAL(ressol(T(0u), T(11u)), 0u);
-//     BOOST_CHECK_EQUAL(ressol(T(5u), T(11u)), 4u);
+BOOST_AUTO_TEST_CASE(ressol_runtime_4_bit_tests) {
+    using T = big_integer<4>;
+    using namespace boost::multiprecision;
+    BOOST_CHECK_EQUAL(ressol(T(0u), T(11u)), 0u);
+    BOOST_CHECK_EQUAL(ressol(T(5u), T(11u)), 4u);
 
-//     // When there is no square root, we return 0 now, not -1. This will change when proper error
-//     // management is introduced.
-//     BOOST_CHECK_EQUAL(ressol(T(10u), T(11u)), 0u);
-//     BOOST_CHECK_EQUAL(ressol(T(2u), T(11u)), 0u);
-// }
+    BOOST_CHECK_THROW(ressol(T(10u), T(11u)), std::invalid_argument);
+    BOOST_CHECK_THROW(ressol(T(2u), T(11u)), std::invalid_argument);
+}
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_521_bit_tests) {
-//     using T = big_integer<521>;
-//     BOOST_CHECK_EQUAL(
-//         ressol(T(5u),
-//         T("68647976601306097149819007990813932172694353001433054093944634591855431833"
-//                         "9765605212255"
-//                         "9640661454554977296311391480858037121987999716643812574028291115057151")),
-//         T("5128001483797946816458955548662741861156429216952843873274631897232136999791540518339021"
-//           "539968"
-//           "609345897897688700798659762992302941280478805021587896033442584"));
+BOOST_AUTO_TEST_CASE(ressol_runtime_521_bit_tests) {
+    using T = big_integer<521>;
+    BOOST_CHECK_EQUAL(
+        ressol(T(5u), T("68647976601306097149819007990813932172694353001433054093944634591855431833"
+                        "9765605212255"
+                        "9640661454554977296311391480858037121987999716643812574028291115057151")),
+        T("5128001483797946816458955548662741861156429216952843873274631897232136999791540518339021"
+          "539968"
+          "609345897897688700798659762992302941280478805021587896033442584"));
 
-//     // When there is no square root, we return 0 now, not -1. This will change when proper error
-//     // management is introduced.
-//     BOOST_CHECK_EQUAL(
-//         ressol(T(4),
-//         T("686479766013060971498190079908139321726943530014330540939446345918554318339"
-//                        "765605212255"
-//                        "9640661454554977296311391480858037121987999716643812574028291115057149")),
-//         0);
-// }
+    BOOST_CHECK_THROW(
+        ressol(T(4), T("686479766013060971498190079908139321726943530014330540939446345918554318339"
+                       "765605212255"
+                       "9640661454554977296311391480858037121987999716643812574028291115057149")),
+        std::invalid_argument);
+}
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_224_bit_tests) {
     using T = big_integer<224>;
-    std::cerr << T("20749193632488214633180774027217139706413443729200940480695355894185").str()
-              << std::endl;
     BOOST_CHECK_EQUAL(
         ressol(T("20749193632488214633180774027217139706413443729200940480695355894185"),
                T("26959946667150639794667015087019630673557916260026308143510066298881")),
         T("1825097171398375765346899906888660610489759292065918530856859649959"));
 }
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_315_bit_tests) {
-//     using T = big_integer<315>;
-//     BOOST_CHECK_EQUAL(
-//         ressol(
-//             T(1024u),
-//             T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
-//         32u);
-//     BOOST_CHECK_EQUAL(
-//         ressol(
-//             T(16u),
-//             T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
-//         4u);
-//     BOOST_CHECK_EQUAL(
-//         ressol(
-//             T(120846049u),
-//             T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
-//         T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000d50e"));
-//     BOOST_CHECK_EQUAL(
-//         ressol(
-//             T(1025),
-//             T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
-//         T("7195614950510915163755738138441999335431224576038191833055420996031360079131617522512565"
-//           "985187"));
-// }
+BOOST_AUTO_TEST_CASE(ressol_runtime_315_bit_tests) {
+    using T = big_integer<315>;
+    BOOST_CHECK_EQUAL(
+        ressol(
+            T(1024u),
+            T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
+        32u);
+    BOOST_CHECK_EQUAL(
+        ressol(
+            T(16u),
+            T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
+        4u);
+    BOOST_CHECK_EQUAL(
+        ressol(
+            T(120846049u),
+            T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
+        T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000d50e"));
+    BOOST_CHECK_EQUAL(
+        ressol(
+            T(1025),
+            T("0x40000000000000000000000000000000000000000000000000000000000c100000000000000ffff")),
+        T("7195614950510915163755738138441999335431224576038191833055420996031360079131617522512565"
+          "985187"));
+}
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_18_bit_tests) {
-//     using T = big_integer<18>;
+BOOST_AUTO_TEST_CASE(ressol_runtime_18_bit_tests) {
+    using T = big_integer<18>;
 
-//     BOOST_CHECK_EQUAL(ressol(T(1024u), T(174763u)), 174731u);
-// }
+    BOOST_CHECK_EQUAL(ressol(T(1024u), T(174763u)), 174731u);
+}
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_7_bit_tests) {
-//     using T = big_integer<7>;
+BOOST_AUTO_TEST_CASE(ressol_runtime_7_bit_tests) {
+    using T = big_integer<7>;
 
-//     // When there is no square root, we return 0 now, not -1. This will change when proper error
-//     // management is introduced.
-//     BOOST_CHECK_EQUAL(ressol(T(64), T(85)), 0u);
-// }
+    BOOST_CHECK_THROW(ressol(T(64), T(85)), std::invalid_argument);
+}
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_8_bit_tests) {
-//     using T = big_integer<8>;
+BOOST_AUTO_TEST_CASE(ressol_runtime_8_bit_tests) {
+    using T = big_integer<8>;
 
-//     // When there is no square root, we return 0 now, not -1. This will change when proper error
-//     // management is introduced.
-//     BOOST_CHECK_EQUAL(ressol(T(181), T(217)), 0);
-// }
+    BOOST_CHECK_THROW(ressol(T(181), T(217)), std::invalid_argument);
+}
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_16_bit_tests) {
-//     using T = big_integer<16>;
+BOOST_AUTO_TEST_CASE(ressol_runtime_16_bit_tests) {
+    using T = big_integer<16>;
 
-//     // When there is no square root, we return 0 now, not -1. This will change when proper error
-//     // management is introduced.
-//     BOOST_CHECK_EQUAL(ressol(T(4225), T(33153)), 0);
-// }
+    BOOST_CHECK_THROW(ressol(T(4225), T(33153)), std::invalid_argument);
+}
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_15_bit_tests) {
-//     using T = big_integer<15>;
+BOOST_AUTO_TEST_CASE(ressol_runtime_15_bit_tests) {
+    using T = big_integer<15>;
 
-//     // When there is no square root, we return 0 now, not -1. This will change when proper error
-//     // management is introduced.
-//     BOOST_CHECK_EQUAL(ressol(T(2048), T(31417)), 0);
-// }
+    BOOST_CHECK_THROW(ressol(T(2048), T(31417)), std::invalid_argument);
+}
 
-// BOOST_AUTO_TEST_CASE(ressol_runtime_13_bit_tests) {
-//     using T = big_integer<13>;
+BOOST_AUTO_TEST_CASE(ressol_runtime_13_bit_tests) {
+    using T = big_integer<13>;
 
-//     // When there is no square root, we return 0 now, not -1. This will change when proper error
-//     // management is introduced.
-//     BOOST_CHECK_EQUAL(ressol(T(2), T(4369)), 0);
-// }
+    BOOST_CHECK_THROW(ressol(T(2), T(4369)), std::invalid_argument);
+}
 
 BOOST_AUTO_TEST_SUITE_END()  // ressol_runtime_tests
 

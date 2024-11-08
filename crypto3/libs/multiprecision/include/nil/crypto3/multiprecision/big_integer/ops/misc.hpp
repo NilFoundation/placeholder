@@ -31,7 +31,7 @@
 // boost::multiprecision::detail::find_msb
 
 namespace nil::crypto3::multiprecision {
-    // TODO(ioxid) refactor
+    // TODO(ioxid): refactor
     template<class R, unsigned Bits>
     inline constexpr
         typename std::enable_if<boost::multiprecision::detail::is_integral<R>::value, void>::type
@@ -198,6 +198,7 @@ namespace nil::crypto3::multiprecision {
         val.normalize();
     }
 
+    // TODO(ioxid): do we need this?
     // Since we don't have signed_type in big_integer, we need to override this
     // function.
     template<unsigned Bits, class Integer>
