@@ -35,11 +35,14 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+            // ! zkevm_word.hpp has similar function but it is not in the bbf namespace
+            // TODO: Remove one of them
+
             nil::blueprint::zkevm_word_type
             zkevm_keccak_hash(const std::vector<uint8_t> &buffer){
                 nil::crypto3::hashes::keccak_1600<256>::digest_type d = nil::crypto3::hash<nil::crypto3::hashes::keccak_1600<256>>(buffer);
                 nil::crypto3::algebra::fields::field<256>::integral_type n(d);
-                nil::blueprint::zkevm_word_type hash_value;
+                nil::blueprint::zkevm_word_type hash_value(n);
 
                 return hash_value;
             }
@@ -61,7 +64,7 @@ namespace nil {
 
                 std::size_t new_buffer(const std::vector<std::uint8_t> buffer){
                     input.push_back({buffer, zkevm_keccak_hash(buffer)});
-                    return input.size();
+                    return input.size() - 1;
                 }
 
                 void push_byte(std::size_t code_id, std::uint8_t b){

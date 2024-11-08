@@ -63,7 +63,10 @@ namespace nil {
                     }
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - x - 1);                   // PC transition
-                        constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
+                        if( x == 0 )
+                            constrain(current_state.gas(0) - current_state.gas_next() - 2);                 // GAS transition
+                        else
+                            constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
                         constrain(current_state.stack_size_next() - current_state.stack_size(0) - 1);       // stack_size transition
                         constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 1);   // rw_counter transition

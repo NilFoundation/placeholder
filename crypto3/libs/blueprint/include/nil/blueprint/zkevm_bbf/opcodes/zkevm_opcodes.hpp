@@ -69,6 +69,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/pop.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/eq.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/stop.hpp>
 
 
 namespace nil {
@@ -595,6 +596,7 @@ namespace nil {
                 std::map<zkevm_opcode, std::shared_ptr<opcode_abstract<BlueprintFieldType>>> opcodes;
                 // add all the implemented opcodes here
                 // // STOP
+                opcodes[zkevm_opcode::STOP] = std::make_shared<zkevm_stop_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::ADD] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(true);
                 opcodes[zkevm_opcode::MUL] = std::make_shared<zkevm_mul_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::SUB] = std::make_shared<zkevm_add_sub_operation<BlueprintFieldType>>(false);

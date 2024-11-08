@@ -85,6 +85,7 @@ namespace nil {
                     witness_amount += RWTable::get_witness_amount();
                     witness_amount += KeccakTable::get_witness_amount();
                     witness_amount += CopyTable::get_witness_amount();
+                    witness_amount += 10;
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 20);
                     desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode)));
                     return desc;
@@ -192,29 +193,29 @@ namespace nil {
                                 << " memory_size = " << current_state.memory_size
                                 << " rw_counter = 0x" << std::hex<< current_state.rw_counter << std::dec
                                 << " gas = " << current_state.gas
+                                << " bytecode_hash = " << current_state.bytecode_hash
                                 << std::endl;
 
                             for( std::size_t j = 0; j < current_opcode_rows_amount; j++ ){
                                 BOOST_ASSERT(current_row < max_zkevm_rows);
                                 std::size_t row_counter = current_opcode_rows_amount - j - 1;
-                                all_states[current_row] = {
-                                    current_state.call_id,
-                                    w_hi<FieldType>(current_state.bytecode_hash),
-                                    w_lo<FieldType>(current_state.bytecode_hash),
-                                    current_state.pc,
-                                    current_state.opcode,
-                                    (current_state.gas & 0xFFFF0000) >> 16,
-                                    current_state.gas & 0xFFFF,
-                                    current_state.stack_size,
-                                    current_state.memory_size,
-                                    current_state.rw_counter,
+                                all_states[current_row]= {};
+                                all_states[current_row].call_id = current_state.call_id;
+                                all_states[current_row].bytecode_hash_hi = w_hi<FieldType>(current_state.bytecode_hash);
+                                all_states[current_row].bytecode_hash_lo = w_lo<FieldType>(current_state.bytecode_hash);
+                                all_states[current_row].pc = current_state.pc;
+                                all_states[current_row].opcode = opcode_to_number(current_opcode);
+                                all_states[current_row].gas_hi = (current_state.gas & 0xFFFF0000) >> 16;
+                                all_states[current_row].gas_lo = current_state.gas & 0xFFFF;
+                                all_states[current_row].stack_size = current_state.stack_size;
+                                all_states[current_row].memory_size = current_state.memory_size;
+                                all_states[current_row].rw_counter = current_state.rw_counter;
+                                all_states[current_row].row_counter = row_counter;
+                                all_states[current_row].step_start = (j == 0);
+                                all_states[current_row].row_counter_inv = row_counter == 0? 0: val(row_counter).inversed(); //row_counter_inv
+                                all_states[current_row].opcode_parity = opcode_id % 2; // opcode_parity
+                                all_states[current_row].is_even = 1 - current_row % 2; // is_even
 
-                                    row_counter,       //row_counter
-                                    j == 0,  //step_start
-                                    row_counter == 0? 0: val(row_counter).inversed(), //row_counter_inv
-                                    opcode_id % 2, // opcode_parity
-                                    1 - current_row % 2// is_even
-                                };
                                 opcode_selectors[current_row].resize(opcode_selectors_amount);
                                 if( current_row % 2 ==  (opcode_id % 4 ) / 2) opcode_selectors[current_row][opcode_id/4] = 1;
                                 opcode_row_selectors[current_row].resize(opcode_row_selectors_amount);
@@ -519,7 +520,7 @@ namespace nil {
                         tmp[2] = context_object.relativize(evm_opcode_constraint * all_states[1].opcode, -1);
                         tmp[3] = context_object.relativize(evm_opcode_constraint, -1);
                         tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_hi, -1);
-                        tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_lo, -1);
+                        tmp[5] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_lo, -1);
                         context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
                    }
                 }
