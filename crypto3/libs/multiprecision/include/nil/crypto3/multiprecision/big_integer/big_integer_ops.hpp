@@ -163,7 +163,7 @@ namespace nil::crypto3::multiprecision {
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator%(const T1& a, const T2& b) noexcept {
         largest_t modulus;
-        largest_t::divide(nullptr, a, b, modulus);
+        largest_t::divide(nullptr, static_cast<largest_t>(a), static_cast<largest_t>(b), modulus);
         return modulus;
     }
     CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
@@ -247,7 +247,7 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
     std::ostream& operator<<(std::ostream& os, const big_integer_t& value) {
-        os << value.str() << std::endl;
+        os << value.str();
         return os;
     }
 

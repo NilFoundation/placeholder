@@ -35,9 +35,88 @@
 // v need to copy everything else
 // boost::multiprecision::detail::addcarry_limb
 // boost::multiprecision::detail::subborrow_limb
-// cpp_int.str
 
 namespace nil::crypto3::multiprecision {
+    template<unsigned Bits>
+    class big_integer;
+
+    namespace detail {
+        constexpr bool is_valid_hex_digit(char c) {
+            return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
+        }
+
+        constexpr int parse_hex_digit(char c) {
+            if ('0' <= c && c <= '9') {
+                return c - '0';
+            }
+            if ('a' <= c && c <= 'f') {
+                return (c - 'a') + 10;
+            }
+            return (c - 'A') + 10;
+        }
+
+        template<unsigned Bits>
+        constexpr big_integer<Bits> parse_int_hex(const char* str) {
+            if (str[0] != '0' || str[1] != 'x') {
+                throw std::invalid_argument("hex literal should start with 0x");
+            }
+
+            big_integer<Bits> result{0};
+
+            std::size_t bits = 0;
+            for (std::size_t i = 2; str[i] != '\0'; ++i) {
+                char c = str[i];
+                if (!is_valid_hex_digit(c)) {
+                    throw std::invalid_argument("non hex character in literal");
+                }
+                result <<= 4;
+                if (bits != 0) {
+                    bits += 4;
+                }
+                int digit = parse_hex_digit(c);
+                result += digit;
+                if (bits == 0 && digit != 0) {
+                    if (digit >= 8) {
+                        bits += 4;
+                    } else if (digit >= 4) {
+                        bits += 3;
+                    } else if (digit >= 2) {
+                        bits += 2;
+                    } else {
+                        bits += 1;
+                    }
+                }
+            }
+            if (bits > Bits) {
+                throw std::invalid_argument("not enough bits to store literal");
+            }
+            return result;
+        }
+
+        template<unsigned Bits>
+        constexpr big_integer<Bits> parse_int_decimal(const char* str) {
+            big_integer<Bits> result{0};
+
+            for (std::size_t i = 0; str[i] != '\0'; ++i) {
+                char c = str[i];
+                if (c < '0' || c > '9') {
+                    throw std::invalid_argument("non decimal character in literal");
+                }
+                result *= 10;
+                result += c - '0';
+            }
+            return result;
+        }
+
+        template<unsigned Bits>
+        constexpr big_integer<Bits> parse_int(const char* str) {
+            if (str[0] == '0' && str[1] == 'x') {
+                return parse_int_hex<Bits>(str);
+            }
+            return parse_int_decimal<Bits>(str);
+        }
+    }  // namespace detail
+
     template<unsigned Bits_>
     class big_integer {
       public:
@@ -60,10 +139,10 @@ namespace nil::crypto3::multiprecision {
 
         using limb_pointer = detail::limb_pointer;
         using const_limb_pointer = detail::const_limb_pointer;
-        static constexpr unsigned limb_bits = detail::limb_bits;
-        static constexpr unsigned max_limb_value = detail::max_limb_value;
+        static constexpr std::size_t limb_bits = detail::limb_bits;
+        static constexpr limb_type max_limb_value = detail::max_limb_value;
 
-        static constexpr unsigned internal_limb_count =
+        static constexpr std::size_t internal_limb_count =
             (Bits / limb_bits) + (((Bits % limb_bits) != 0u) ? 1u : 0u);
         static constexpr limb_type upper_limb_mask =
             (Bits % limb_bits) ? (limb_type(1) << (Bits % limb_bits)) - 1 : (~limb_type(0u));
@@ -71,7 +150,7 @@ namespace nil::crypto3::multiprecision {
         //
         // Helper functions for getting at our internal data, and manipulating storage:
         //
-        inline constexpr unsigned size() const noexcept {
+        inline constexpr std::size_t size() const noexcept {
             static_assert(internal_limb_count != 0, "No limbs in storage.");
             return internal_limb_count;
         }
@@ -98,9 +177,9 @@ namespace nil::crypto3::multiprecision {
 
         inline constexpr big_integer() noexcept {}
 
-        inline explicit constexpr big_integer(const cpp_int_type& other) {
-            this->from_cpp_int(other);
-        }
+        inline constexpr big_integer(const char* str) { *this = str; }
+
+        inline explicit constexpr big_integer(const cpp_int_type& cppint) { *this = cppint; }
 
         // TODO(ioxid): forbid signed, implement comparison with signed instead
         template<class T,
@@ -113,22 +192,31 @@ namespace nil::crypto3::multiprecision {
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
         }
 
-        // Copy construction
-
         template<unsigned Bits2>
         inline constexpr big_integer(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
         }
 
-        // Copy assignment
+        // Assignment
+
+        inline constexpr big_integer& operator=(const char* str) {
+            *this = detail::parse_int<Bits>(str);
+            return *this;
+        }
+
+        inline constexpr big_integer& operator=(cpp_int_type cppint) {
+            for (limb_type& limb : m_data) {
+                limb = static_cast<limb_type>(cppint & static_cast<limb_type>(-1));
+                cppint >>= limb_bits;
+            }
+            return *this;
+        }
 
         template<unsigned Bits2>
         inline constexpr big_integer& operator=(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
             return *this;
         }
-
-        // Assignment from other types
 
         // TODO(ioxid): forbid signed, implement comparison with signed instead
         template<typename T,
@@ -165,16 +253,10 @@ namespace nil::crypto3::multiprecision {
             for (std::size_t i = 2; i < result.size(); ++i) {
                 result[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(result[i])));
             }
-            return result;
-        }
-
-        // cpp_int conversion
-
-        inline constexpr void from_cpp_int(cpp_int_type cppint) {
-            for (limb_type& limb : m_data) {
-                limb = static_cast<limb_type>(cppint & static_cast<limb_type>(-1));
-                cppint >>= limb_bits;
+            if (result.size() == 2) {
+                result += '0';
             }
+            return result;
         }
 
         // Converting to cpp_int. We need this for multiplication, division and string
@@ -197,7 +279,7 @@ namespace nil::crypto3::multiprecision {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 return static_cast<T>(this->limbs()[0]);
             } else {
-                constexpr std::size_t n = sizeof(T) / sizeof(limb_type);
+                constexpr std::size_t n = std::min(sizeof(T) / sizeof(limb_type), internal_limb_count);
                 T result = 0;
                 for (std::size_t i = 0; i < n; ++i) {
                     result <<= limb_bits;
@@ -904,9 +986,9 @@ namespace nil::crypto3::multiprecision {
             // TODO(ioxid): fix
 
             if (result) {
-                result->from_cpp_int(x.to_cpp_int() / y.to_cpp_int());
+                *result = x.to_cpp_int() / y.to_cpp_int();
             }
-            r.from_cpp_int(x.to_cpp_int() % y.to_cpp_int());
+            r = x.to_cpp_int() % y.to_cpp_int();
             return;
 
             /*

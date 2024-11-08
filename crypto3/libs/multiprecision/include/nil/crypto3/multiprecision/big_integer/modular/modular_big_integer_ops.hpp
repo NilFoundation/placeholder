@@ -33,6 +33,11 @@ namespace nil::crypto3::multiprecision {
         template<typename T>
         constexpr bool is_modular_integral_v =
             std::is_integral_v<T> || detail::is_big_integer_v<T> || is_modular_big_integer_v<T>;
+
+        template<typename T, std::enable_if_t<detail::is_modular_big_integer_v<T>, int> = 0>
+        constexpr std::size_t get_bits() {
+            return T::Bits;
+        }
     }  // namespace detail
 
     // Comparison
@@ -50,26 +55,6 @@ namespace nil::crypto3::multiprecision {
     CRYPTO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL(==)
     CRYPTO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL(!=)
 #undef CRYPTO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL
-
-    namespace detail {
-        template<typename T, std::enable_if_t<detail::is_modular_big_integer_v<T>, int> = 0>
-        constexpr std::size_t get_bits() {
-            return T::Bits;
-        }
-
-        template<unsigned Bits, typename modular_ops_t>
-        constexpr void subtract(
-            modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& result,
-            const modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& o) {
-            if (result.base_data() < o.base_data()) {
-                auto v = result.ops().get_mod();
-                v -= o.base_data();
-                result.base_data() += v;
-            } else {
-                result.base_data() -= o.base_data();
-            }
-        }
-    }  // namespace detail
 
     // TODO(ioxid): choose result type
 #define CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE                                           \
@@ -122,6 +107,21 @@ namespace nil::crypto3::multiprecision {
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator+(const modular_big_integer_t& a) noexcept { return a; }
+
+    namespace detail {
+        template<unsigned Bits, typename modular_ops_t>
+        constexpr void subtract(
+            modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& result,
+            const modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& o) {
+            if (result.base_data() < o.base_data()) {
+                auto v = result.ops().get_mod();
+                v -= o.base_data();
+                result.base_data() += v;
+            } else {
+                result.base_data() -= o.base_data();
+            }
+        }
+    }  // namespace detail
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator-(const T1& a, const T2& b) noexcept {

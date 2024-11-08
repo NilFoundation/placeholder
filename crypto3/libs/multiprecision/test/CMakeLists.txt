@@ -75,6 +75,9 @@ set(BIG_INTEGER_TESTS_NAMES
     "big_integer_comparision"
     "big_integer_modular"
     "big_integer_modular_comprehensive"
+    "big_integer_inverse"
+    "big_integer_jacobi"
+    "big_integer_ressol"
 )
 
 foreach(TEST_NAME ${RUNTIME_TESTS_NAMES})

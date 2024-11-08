@@ -19,7 +19,7 @@
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
 namespace nil::crypto3::multiprecision {
-    // TODO(ioxid): rewrite using out signed_big_integer
+    // TODO(ioxid): rewrite using our signed_big_integer
 
     using boost::multiprecision::default_ops::eval_add;
     using boost::multiprecision::default_ops::eval_bit_set;
