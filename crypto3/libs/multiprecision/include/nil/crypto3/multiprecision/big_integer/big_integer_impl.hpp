@@ -972,6 +972,15 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        inline constexpr std::size_t used_limbs() const noexcept {
+            for (int i = internal_limb_count - 1; i >= 0; --i) {
+                if (limbs()[i] != 0) {
+                    return i + 1;
+                }
+            }
+            return 0;
+        }
+
         inline constexpr std::size_t order() const noexcept {
             for (int i = internal_limb_count - 1; i >= 0; --i) {
                 if (limbs()[i] != 0) {
@@ -984,7 +993,7 @@ namespace nil::crypto3::multiprecision {
         // Modulus/divide
 
         // This should be called only for creation of Montgomery and Barett
-        // params, no during "normal" execution, so we do NOT care about the execution speed.
+        // params, not during "normal" execution, so we do not care about the execution speed.
 
         template<unsigned Bits2, unsigned Bits3>
         static inline constexpr void divide(big_integer* result, const big_integer<Bits2>& x,
@@ -1076,7 +1085,7 @@ namespace nil::crypto3::multiprecision {
             //
             // if (result) result->resize(1 + r_order - y_order, 1 + r_order - y_order);
             if (result) {
-                *result = 0;
+                *result = 0u;
             }
             const_limb_pointer prem = r.limbs();
             // This is initialised just to keep the compiler from emitting useless warnings later
@@ -1115,11 +1124,11 @@ namespace nil::crypto3::multiprecision {
                         (y_order > 0) ? (static_cast<double_limb_type>(py[y_order]) << limb_bits) |
                                             py[y_order - 1]
                                       : (static_cast<double_limb_type>(py[y_order]) << limb_bits);
-                    BOOST_MP_ASSERT(b);
+                    BOOST_ASSERT(b);
                     double_limb_type v = a / b;
                     guess = static_cast<limb_type>(v);
                 }
-                BOOST_MP_ASSERT(guess);  // If the guess ever gets to zero we go on forever....
+                BOOST_ASSERT(guess);  // If the guess ever gets to zero we go on forever....
                 //
                 // Update result:
                 //
@@ -1227,8 +1236,7 @@ namespace nil::crypto3::multiprecision {
                 r = y - r;
             }
 
-            BOOST_MP_ASSERT(r <
-                            y);  // remainder must be less than the divisor or our code has failed
+            BOOST_ASSERT(r < y);  // remainder must be less than the divisor or our code has failed
         }
 
         // Multiplication
@@ -1255,20 +1263,20 @@ namespace nil::crypto3::multiprecision {
 
             double_limb_type carry = 0;
             for (std::size_t i = 0; i < as; ++i) {
-                BOOST_MP_ASSERT(result.size() > i);
+                BOOST_ASSERT(result.size() > i);
                 std::size_t inner_limit = (std::min)(result.size() - i, bs);
                 std::size_t j = 0;
                 for (; j < inner_limit; ++j) {
-                    BOOST_MP_ASSERT(i + j < result.size());
+                    BOOST_ASSERT(i + j < result.size());
                     carry +=
                         static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
-                    BOOST_MP_ASSERT(
+                    BOOST_ASSERT(
                         !std::numeric_limits<double_limb_type>::is_specialized ||
                         ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
                     carry += pr[i + j];
                     pr[i + j] = static_cast<limb_type>(carry);
                     carry >>= limb_bits;
-                    BOOST_MP_ASSERT(carry <= max_limb_value);
+                    BOOST_ASSERT(carry <= max_limb_value);
                 }
                 if (carry) {
                     // TODO(ioxid): throw?

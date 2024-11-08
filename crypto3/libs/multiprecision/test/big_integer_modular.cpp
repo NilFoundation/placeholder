@@ -5,7 +5,6 @@
 
 #include "nil/crypto3/multiprecision/big_integer/literals.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_additional_ops.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;

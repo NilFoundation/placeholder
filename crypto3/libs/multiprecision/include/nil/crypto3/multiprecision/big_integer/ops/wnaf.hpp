@@ -32,7 +32,7 @@ namespace nil::crypto3::multiprecision {
 
         while (is_zero(c)) {
             long u = 0;
-            if ((c.limbs()[0] & 1) == 1) {
+            if (bit_test(c, 0)) {
                 u = c.limbs()[0] % (1u << (window_size + 1));
                 if (u > (1 << window_size)) {
                     u = u - (1 << (window_size + 1));
@@ -71,7 +71,7 @@ namespace nil::crypto3::multiprecision {
 
         while (!is_zero(c)) {
             long u = 0;
-            if ((c.limbs()[0] & 1) == 1) {
+            if (bit_test(c, 0)) {
                 u = c.limbs()[0] % (1u << (window_size + 1));
                 if (u > (1 << window_size)) {
                     u = u - (1 << (window_size + 1));
