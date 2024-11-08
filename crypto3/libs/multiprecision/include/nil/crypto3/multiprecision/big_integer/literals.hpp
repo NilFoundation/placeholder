@@ -5,76 +5,13 @@
 
 #pragma once
 
-#include <cstddef>
-#include <stdexcept>
-
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
-namespace nil::crypto3::multiprecision::literals {
-    namespace detail {
-        constexpr bool is_valid_hex_digit(char c) {
-            return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
-        }
-
-        constexpr int parse_hex_digit(char c) {
-            if ('0' <= c && c <= '9') {
-                return c - '0';
-            }
-            if ('a' <= c && c <= 'f') {
-                return (c - 'a') + 10;
-            }
-            return (c - 'A') + 10;
-        }
-
-        template<unsigned Bits, char c1, char c2, char... STR>
-        constexpr big_integer<Bits> parse_int_hex() {
-            static_assert(c1 == '0', "hex literal should start with 0x");
-            static_assert(c2 == 'x', "hex literal should start with 0x");
-
-            big_integer<Bits> result{0};
-
-            std::size_t bits = 0;
-            for (const char c : {STR...}) {
-                if (!is_valid_hex_digit(c)) {
-                    throw std::invalid_argument("non hex character in literal");
-                }
-                result <<= 4;
-                if (bits != 0) {
-                    bits += 4;
-                }
-                int digit = parse_hex_digit(c);
-                result += digit;
-                if (bits == 0 && digit != 0) {
-                    if (digit >= 8) {
-                        bits += 4;
-                    } else if (digit >= 4) {
-                        bits += 3;
-                    } else if (digit >= 2) {
-                        bits += 2;
-                    } else {
-                        bits += 1;
-                    }
-                }
-            }
-            if (bits > Bits) {
-                throw std::invalid_argument("not enough bits to store literal");
-            }
-            return result;
-        }
-    }  // namespace detail
-
-    template<char... STR>
-    constexpr auto operator"" _big_integer() {
-        return detail::parse_int_hex<(sizeof...(STR) - 2) * 4, STR...>();
-    }
-}  // namespace nil::crypto3::multiprecision::literals
-
-#define CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(Bits)                                               \
-    namespace nil::crypto3::multiprecision::literals {                                            \
-        template<char... STR>                                                                     \
-        constexpr auto operator"" _big_integer##Bits() {                                          \
-            return nil::crypto3::multiprecision::literals::detail::parse_int_hex<Bits, STR...>(); \
-        }                                                                                         \
+#define CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(Bits)                                \
+    namespace nil::crypto3::multiprecision::literals {                             \
+        constexpr auto operator"" _big_integer##Bits(const char *str) {            \
+            return nil::crypto3::multiprecision::detail::parse_int_hex<Bits>(str); \
+        }                                                                          \
     }
 
 // This is a comprehensive list of all bitlengths we use in algebra.

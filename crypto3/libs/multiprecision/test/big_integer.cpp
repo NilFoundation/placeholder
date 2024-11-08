@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(to_cpp_int) {
 
 BOOST_AUTO_TEST_CASE(from_cpp_int) {
     nil::crypto3::multiprecision::big_integer<60> result;
-    result.from_cpp_int(0xFFFFFFFFFFF_cppui60);
+    result = 0xFFFFFFFFFFF_cppui60;
     BOOST_CHECK_EQUAL(result, 0xFFFFFFFFFFF_big_integer60);
 }
 

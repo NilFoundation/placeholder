@@ -45,14 +45,12 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        // Copy construction
-
         template<unsigned Bits2>
         inline constexpr signed_big_integer(const signed_big_integer<Bits2>& other) noexcept {
             do_assign(other);
         }
 
-        // Copy assignment
+        // Assignment
 
         template<unsigned Bits2>
         inline constexpr signed_big_integer& operator=(
@@ -60,8 +58,6 @@ namespace nil::crypto3::multiprecision {
             do_assign(other);
             return *this;
         }
-
-        // Assignment from other types
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
         inline constexpr signed_big_integer& operator=(T val) noexcept {

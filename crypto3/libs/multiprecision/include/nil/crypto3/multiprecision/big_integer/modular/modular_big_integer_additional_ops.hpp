@@ -11,169 +11,137 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <tuple>
-#include <type_traits>
 #include <vector>
 
 #include <boost/predef.h>
+
 #include <boost/cstdint.hpp>
 #include <boost/functional/hash_fwd.hpp>
+
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 
-namespace nil::crypto3::multiprecision::detail {
-    // template<unsigned Bits, typename big_integer_t, typename T, typename modular_ops_t>
-    // constexpr void eval_powm(modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
-    //                          const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
-    //                          const T &e) {
-    //     result.set_modular_ops(b.ops());
-    //     result.ops().exp(result.base_data(), b.base_data(), e);
-    // }
+namespace nil::crypto3::multiprecision {
+    // TODO(ioxid): remove this
+    using namespace detail;
 
-    // template<unsigned Bits, typename big_integer_t1, typename big_integer_t2,
-    //          typename modular_ops_t>
-    // constexpr void eval_powm(modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
-    //                          const modular_big_integer_impl<big_integer_t1, modular_ops_t> &b,
-    //                          const modular_big_integer_impl<big_integer_t2, modular_ops_t> &e) {
-    //     using big_integer_t = big_integer<Bits>;
+    template<typename modular_big_integer_t, typename T>
+    constexpr modular_big_integer_t powm(const modular_big_integer_t &b, const T &e) {
+        // TODO(ioxid): rewrite
+        auto result = b;
+        result.ops().exp(result.base_data(), b.base_data(), e);
+        return result;
+    }
 
-    //     big_integer_t exp;
-    //     e.ops().adjust_regular(exp, e.base_data());
-    //     eval_powm(result, b, exp);
-    // }
+    template<unsigned Bits, typename modular_ops_t>
+    constexpr void inverse_mod(
+        modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
+        const modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &input) {
+        using big_integer_t = big_integer<Bits>;
+        using big_integer_t_padded_limbs = typename modular_policy<Bits>::big_integer_padded_limbs;
 
-    // template<unsigned Bits, typename modular_ops_t>
-    // constexpr void eval_inverse_mod(
-    //     modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &result,
-    //     const modular_big_integer_impl<big_integer<Bits>, modular_ops_t> &input) {
-    //     using big_integer_t = big_integer<Bits>;
-    //     using big_integer_t_padded_limbs =
-    //         typename modular_ops<big_integer_t>::policy_type::big_integer_padded_limbs;
+        big_integer_t_padded_limbs new_base, res, tmp = input.ops().get_mod();
 
-    //     big_integer_t_padded_limbs new_base, res, tmp = input.ops().get_mod();
+        input.ops().adjust_regular(new_base, input.base_data());
+        inverse_mod(res, new_base, tmp);
+        assign_components(result, res, input.ops().get_mod());
+    }
 
-    //     input.ops().adjust_regular(new_base, input.base_data());
-    //     eval_inverse_mod(res, new_base, tmp);
-    //     assign_components(result, res, input.ops().get_mod());
-    // }
+    inline size_t window_bits(size_t exp_bits) {
+        constexpr static size_t wsize_count = 6;
+        constexpr static size_t wsize[wsize_count][2] = {{1434, 7}, {539, 6}, {197, 4},
+                                                         {70, 3},   {17, 2},  {0, 0}};
 
-    // template<class big_integer_t1, class big_integer_t2>
-    // constexpr void eval_redc(big_integer_t1 &result, const modular_ops<big_integer_t2> &mod) {
-    //     mod.reduce(result);
-    //     eval_modulus(result, mod.get_mod());
-    // }
+        size_t window_bits = 1;
 
-    // template<class big_integer_t, typename modular_ops_t>
-    // constexpr void eval_multiply(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
-    //                              const modular_big_integer_impl<big_integer_t, modular_ops_t> &o)
-    //                              {
-    //     eval_multiply(result.base_data(), o.base_data());
-    //     eval_redc(result.base_data(), result.ops());
-    // }
+        size_t j = wsize_count - 1;
+        while (wsize[j][0] > exp_bits) {
+            --j;
+        }
+        window_bits += wsize[j][1];
 
-    // template<class big_integer_t, typename modular_ops_t>
-    // constexpr void eval_sqrt(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
-    //                          const modular_big_integer_impl<big_integer_t, modular_ops_t> &val) {
-    //     eval_sqrt(result.base_data(), val.base_data());
-    // }
+        return window_bits;
+    }
 
-    // inline size_t window_bits(size_t exp_bits) {
-    //     constexpr static size_t wsize_count = 6;
-    //     constexpr static size_t wsize[wsize_count][2] = {{1434, 7}, {539, 6}, {197, 4},
-    //                                                      {70, 3},   {17, 2},  {0, 0}};
+    template<class big_integer_t, typename modular_ops_t>
+    inline void find_modular_pow(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
+                                 const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
+                                 const big_integer_t &exp) {
+        modular_ops_t mod = b.ops();
+        size_t m_window_bits;
+        unsigned long cur_exp_index;
+        size_t exp_bits = msb(exp);
+        m_window_bits = window_bits(exp_bits + 1);
 
-    //     size_t window_bits = 1;
+        std::vector<big_integer_t> m_g(1U << m_window_bits);
+        big_integer_t *p_g = m_g.data();
+        big_integer_t x(1, mod);
+        big_integer_t nibble = exp;
+        big_integer_t mask;
+        bit_set(mask, m_window_bits);
+        decrement(mask);
+        *p_g = x;
+        ++p_g;
+        *p_g = b;
+        ++p_g;
+        for (size_t i = 2; i < (1U << m_window_bits); i++) {
+            multiply(*p_g, m_g[i - 1], b);
+            ++p_g;
+        }
+        size_t exp_nibbles = (exp_bits + 1 + m_window_bits - 1) / m_window_bits;
+        std::vector<size_t> exp_index;
 
-    //     size_t j = wsize_count - 1;
-    //     while (wsize[j][0] > exp_bits) {
-    //         --j;
-    //     }
-    //     window_bits += wsize[j][1];
+        for (size_t i = 0; i < exp_nibbles; ++i) {
+            big_integer_t tmp = nibble;
+            bitwise_and(tmp, mask);
+            convert_to(&cur_exp_index, tmp);
+            right_shift(nibble, m_window_bits);
+            exp_index.push_back(cur_exp_index);
+        }
 
-    //     return window_bits;
-    // }
+        multiply(x, m_g[exp_index[exp_nibbles - 1]]);
+        for (size_t i = exp_nibbles - 1; i > 0; --i) {
+            for (size_t j = 0; j != m_window_bits; ++j) {
+                multiply(x, x);
+            }
 
-    // template<class big_integer_t, typename modular_ops_t>
-    // inline void find_modular_pow(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
-    //                              const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
-    //                              const big_integer_t &exp) {
-    //     modular_ops<big_integer_t> mod = b.ops();
-    //     size_t m_window_bits;
-    //     unsigned long cur_exp_index;
-    //     size_t exp_bits = eval_msb(exp);
-    //     m_window_bits = window_bits(exp_bits + 1);
+            multiply(x, m_g[exp_index[i - 1]]);
+        }
+        result = x;
+    }
 
-    //     std::vector<big_integer_t> m_g(1U << m_window_bits);
-    //     big_integer_t *p_g = m_g.data();
-    //     big_integer_t x(1, mod);
-    //     big_integer_t nibble = exp;
-    //     big_integer_t mask;
-    //     eval_bit_set(mask, m_window_bits);
-    //     eval_decrement(mask);
-    //     *p_g = x;
-    //     ++p_g;
-    //     *p_g = b;
-    //     ++p_g;
-    //     for (size_t i = 2; i < (1U << m_window_bits); i++) {
-    //         eval_multiply(*p_g, m_g[i - 1], b);
-    //         ++p_g;
-    //     }
-    //     size_t exp_nibbles = (exp_bits + 1 + m_window_bits - 1) / m_window_bits;
-    //     std::vector<size_t> exp_index;
+    template<class big_integer_t, typename modular_ops_t, typename T>
+    constexpr void pow(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
+                       const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
+                       const T &e) {
+        find_modular_pow(result, b, e);
+    }
 
-    //     for (size_t i = 0; i < exp_nibbles; ++i) {
-    //         big_integer_t tmp = nibble;
-    //         eval_bitwise_and(tmp, mask);
-    //         eval_convert_to(&cur_exp_index, tmp);
-    //         eval_right_shift(nibble, m_window_bits);
-    //         exp_index.push_back(cur_exp_index);
-    //     }
+    template<class big_integer_t, typename modular_ops_t>
+    constexpr void pow(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
+                       const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
+                       const modular_big_integer_impl<big_integer_t, modular_ops_t> &e) {
+        big_integer_t exp;
+        e.ops().adjust_regular(exp, e.base_data());
+        find_modular_pow(result, b, exp);
+    }
 
-    //     eval_multiply(x, m_g[exp_index[exp_nibbles - 1]]);
-    //     for (size_t i = exp_nibbles - 1; i > 0; --i) {
-    //         for (size_t j = 0; j != m_window_bits; ++j) {
-    //             eval_multiply(x, x);
-    //         }
+    template<typename big_integer_t1, typename big_integer_t2, typename T, typename modular_ops_t>
+    constexpr void powm(modular_big_integer_impl<big_integer_t1, modular_ops_t> &result,
+                        const modular_big_integer_impl<big_integer_t2, modular_ops_t> &b,
+                        const T &e) {
+        pow(result, b, e);
+    }
 
-    //         eval_multiply(x, m_g[exp_index[i - 1]]);
-    //     }
-    //     result = x;
-    // }
-
-    // template<class big_integer_t, typename modular_ops_t, typename T>
-    // constexpr void eval_pow(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
-    //                         const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
-    //                         const T &e) {
-    //     find_modular_pow(result, b, e);
-    // }
-
-    // template<class big_integer_t, typename modular_ops_t>
-    // constexpr void eval_pow(modular_big_integer_impl<big_integer_t, modular_ops_t> &result,
-    //                         const modular_big_integer_impl<big_integer_t, modular_ops_t> &b,
-    //                         const modular_big_integer_impl<big_integer_t, modular_ops_t> &e) {
-    //     big_integer_t exp;
-    //     e.ops().adjust_regular(exp, e.base_data());
-    //     find_modular_pow(result, b, exp);
-    // }
-
-    // template<typename big_integer_t1, typename big_integer_t2, typename T, typename
-    // modular_ops_t> constexpr void eval_powm(modular_big_integer_impl<big_integer_t1,
-    // modular_ops_t> &result,
-    //                          const modular_big_integer_impl<big_integer_t2, modular_ops_t> &b,
-    //                          const T &e) {
-    //     eval_pow(result, b, e);
-    // }
-
-    // template<typename big_integer_t1, typename big_integer_t2, typename big_integer_t3,
-    //          typename modular_ops_t>
-    // constexpr void eval_powm(modular_big_integer_impl<big_integer_t1, modular_ops_t> &result,
-    //                          const modular_big_integer_impl<big_integer_t2, modular_ops_t> &b,
-    //                          const modular_big_integer_impl<big_integer_t3, modular_ops_t> &e) {
-    //     eval_pow(result, b, e);
-    // }
-}  // namespace nil::crypto3::multiprecision::detail
+    template<typename big_integer_t1, typename big_integer_t2, typename big_integer_t3,
+             typename modular_ops_t>
+    constexpr void powm(modular_big_integer_impl<big_integer_t1, modular_ops_t> &result,
+                        const modular_big_integer_impl<big_integer_t2, modular_ops_t> &b,
+                        const modular_big_integer_impl<big_integer_t3, modular_ops_t> &e) {
+        pow(result, b, e);
+    }
+}  // namespace nil::crypto3::multiprecision

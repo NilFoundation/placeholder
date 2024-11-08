@@ -15,8 +15,9 @@
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
 namespace nil::crypto3::multiprecision {
+
     template<unsigned Bits>
-    constexpr int eval_jacobi(const big_integer<Bits> &a, const big_integer<Bits> &n) {
+    constexpr int jacobi(const big_integer<Bits> &a, const big_integer<Bits> &n) noexcept {
         using big_integer_t = big_integer<Bits>;
         // BOOST_THROW_EXCEPTION(std::invalid_argument("jacobi: second argument must be odd
         // and > 1"));
@@ -31,7 +32,7 @@ namespace nil::crypto3::multiprecision {
             big_integer_t yd2 = y;
             yd2 >>= 1;
 
-            if (eval_gt(x, yd2)) {
+            if (x > yd2) {
                 big_integer_t tmp(y);
                 tmp -= x;
                 x = tmp;
@@ -46,7 +47,7 @@ namespace nil::crypto3::multiprecision {
             size_t shifts = lsb(x);
             x >>= shifts;
             if (shifts & 1) {
-                std::size_t y_mod_8 = y % 8;
+                std::size_t y_mod_8 = static_cast<std::size_t>(y % 8);
                 if (y_mod_8 == 3 || y_mod_8 == 5) {
                     J = -J;
                 }
