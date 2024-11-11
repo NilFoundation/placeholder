@@ -195,6 +195,9 @@ namespace nil::crypto3::multiprecision {
         template<unsigned Bits2>
         inline constexpr big_integer(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
+            if constexpr (Bits2 > Bits) {
+                BOOST_ASSERT(*this == other);
+            }
         }
 
         // Assignment
@@ -215,6 +218,9 @@ namespace nil::crypto3::multiprecision {
         template<unsigned Bits2>
         inline constexpr big_integer& operator=(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
+            if constexpr (Bits2 > Bits) {
+                BOOST_ASSERT(*this == other);
+            }
             return *this;
         }
 
