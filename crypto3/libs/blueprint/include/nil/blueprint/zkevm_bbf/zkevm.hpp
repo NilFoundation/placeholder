@@ -423,7 +423,7 @@ namespace nil {
                                 zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
                                 std::cout << "Build constraints for " << current_opcode << std::endl;
                                 if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
-                                    std::cout << "Implementation for "<< current_opcode << " is not defined" << std::endl;
+                                    std::cout << "\tImplementation for "<< current_opcode << " is not defined" << std::endl;
                                     continue;
                                 }
                                 std::size_t current_opcode_bare_rows_amount = opcode_impls[current_opcode]->rows_amount();
@@ -483,7 +483,7 @@ namespace nil {
                             std::map<std::string, std::vector<std::vector<TYPE>>> acc_lookup_constraints;
                             for( auto &[key, exprs]:opcode_lookup_constraints_aggregator){
                                 auto &[local_opcode, local_row, table_name] = key;
-                                std::cout << "\t" << local_opcode << ", " << local_row << ", " << table_name << std::endl;
+                                //std::cout << "\t" << local_opcode << ", " << local_row << ", " << table_name << std::endl;
                                 if( acc_lookup_constraints.find(table_name) == acc_lookup_constraints.end()) acc_lookup_constraints[table_name] = {};
                                 if( acc_lookup_constraints[table_name].size() < exprs.size() ) acc_lookup_constraints[table_name].resize(exprs.size());
                                 for( std::size_t i = 0; i < exprs.size(); i++ ) {

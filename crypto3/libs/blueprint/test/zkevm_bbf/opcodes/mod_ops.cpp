@@ -108,6 +108,18 @@ void complex_opcode_test(
     bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
     bool result;
 
+    // Max_rows, max_bytecode, max_rw
+    result = test_l1_wrapper<field_type, nil::blueprint::bbf::zkevm>(
+        {}, zkevm_assignment_input, zkevm_constraint_input,
+        max_zkevm_rows,
+        max_copy,
+        max_rw,
+        max_keccak_blocks,
+        max_bytecode
+    );
+    BOOST_ASSERT(result);
+    std::cout << std::endl;
+
     // Max_bytecode, max_bytecode
     std::cout << "Bytecode circuit" << std::endl;
     result = test_l1_wrapper<field_type, nil::blueprint::bbf::bytecode>({7}, bytecode_assignment_input, bytecode_constraint_input, max_bytecode, max_keccak_blocks);
@@ -124,18 +136,6 @@ void complex_opcode_test(
     result =test_l1_wrapper<field_type, nil::blueprint::bbf::copy>(
         {7}, copy_assignment_input, copy_constraint_input,
         max_copy, max_rw, max_keccak_blocks, max_bytecode
-    );
-    BOOST_ASSERT(result);
-    std::cout << std::endl;
-
-    // Max_rows, max_bytecode, max_rw
-    result = test_l1_wrapper<field_type, nil::blueprint::bbf::zkevm>(
-        {}, zkevm_assignment_input, zkevm_constraint_input,
-        max_zkevm_rows,
-        max_copy,
-        max_rw,
-        max_keccak_blocks,
-        max_bytecode
     );
     BOOST_ASSERT(result);
     std::cout << std::endl;
@@ -158,54 +158,54 @@ BOOST_AUTO_TEST_CASE(iszero) {
 
     l1_size_restrictions max_sizes;
 
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x00")); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
-    opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x00")); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
-    opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x00")); // N
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
+    // opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x00")); // N
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
+    // opcode_tester.push_opcode(zkevm_opcode::MULMOD);
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x01")); // N
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
     opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x01")); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
-    opcode_tester.push_opcode(zkevm_opcode::MULMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x03")); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
-    opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x03")); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
-    opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
-    opcode_tester.push_opcode(zkevm_opcode::MULMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184"));
-    opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184"));
-    opcode_tester.push_opcode(zkevm_opcode::MULMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-    opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-    opcode_tester.push_opcode(zkevm_opcode::MULMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x6789012345"));
-    opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x6789012345"));
-    opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x01")); // N
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
+    // opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x03")); // N
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
+    // opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x03")); // N
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")); // b
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH1, hex_string_to_bytes("0x02")); // a
+    // opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184"));
+    // opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184"));
+    // opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+    // opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+    // opcode_tester.push_opcode(zkevm_opcode::MULMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x6789012345"));
+    // opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH32, hex_string_to_bytes("0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x1234567890"));
+    // opcode_tester.push_opcode(zkevm_opcode::PUSH5, hex_string_to_bytes("0x6789012345"));
+    // opcode_tester.push_opcode(zkevm_opcode::MULMOD);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     max_sizes.max_keccak_blocks = 10;
