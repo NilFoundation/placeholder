@@ -239,7 +239,9 @@ namespace nil {
                 context_type ct4 = ct.subcontext(ct4_area,0,4);
                 Useless c4 = Useless(ct4);
 
-                ct.optimize_gates();
+                // Don't use 'ct' below this line!!!
+                gates_optimizer optimizer(std::move(ct));
+                optimized_gates<FieldType> gates = optimizer.optimize_gates();
 
                 // compatibility layer: constraint list => gates & selectors
                 std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list = 
@@ -248,7 +250,7 @@ namespace nil {
                 // We will store selectors to re-use for lookup gates.
                 std::unordered_map<row_selector<>, std::size_t> selector_to_index_map;
 
-                for(const auto& [row_list, constraints] : constraint_list) {
+                for (const auto& [row_list, constraints] : constraint_list) {
                     /*
                     std::cout << "GATE:\n";
                     for(const auto& c : constraints) {
@@ -339,6 +341,8 @@ namespace nil {
                         // TODO: does this make sense?!
                         dynamic_lookup_cols.push_back(
                             var(c, 0, false, var::column_type::witness));
+                        if (c > 3)
+                            throw "Problem here!"
                     }
                     table_specs.lookup_options = {dynamic_lookup_cols};
                     bp.define_dynamic_table(name,table_specs);

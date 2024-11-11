@@ -136,6 +136,16 @@ namespace nil {
                     return *this;
                 }*/
 
+                row_selector& operator<<=(size_t bitcount) {
+                    used_rows_ <<= bitcount;
+                    return *this;
+                }
+
+                row_selector& operator>>=(size_t bitcount) {
+                    used_rows_ >>= bitcount;
+                    return *this;
+                }
+
                 template<typename BLOCK2>
                 friend std::size_t hash_value(const row_selector<BLOCK2>& a);
 

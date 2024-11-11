@@ -488,21 +488,6 @@ namespace nil {
                     lookup_tables->insert({name,{cols,rows}});
                 }
 
-                void optimize_gates() {
-                    // NB: std::map<constraint_id_type, std::pair<constraint_type, row_selector<>>> constraints;
-                    // intended to
-                    // shift some of the constraints so that we have less selectors
-                    /*
-                    for(const auto& [id, data] : *constraints) {
-                        std::cout << "Constraint: " << data.first << "\n";
-                        for(std::size_t row : data.second) {
-                            std::cout << row << " ";
-                        }
-                        std::cout << "\n";
-                    }
-                    */
-                }
-
                 std::unordered_map<row_selector<>, std::vector<TYPE>> get_constraints() {
                     // joins constraints with identic selectors into a single gate
 
