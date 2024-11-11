@@ -100,6 +100,11 @@ namespace nil::crypto3::multiprecision {
             return multiplied_by_sign(static_cast<cpp_int_type>(m_abs.to_cpp_int()));
         }
 
+        template<unsigned Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
+        inline constexpr signed_big_integer<Bits2> truncate() const noexcept {
+            return {m_negative, m_abs.template truncate<Bits2>()};
+        }
+
         // cast to integral types
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
