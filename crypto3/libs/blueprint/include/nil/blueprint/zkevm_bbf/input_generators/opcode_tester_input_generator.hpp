@@ -47,7 +47,7 @@ namespace nil {
             public:
                 zkevm_opcode_tester_input_generator(
                     const zkevm_opcode_tester &tester
-                ): rw_counter(1){
+                ): rw_counter(1), transactions_amount(0){
                     // It may be done for multiple transactions;
                     _rw_operations.push_back(start_rw_operation());
                     apply_tester(tester);
