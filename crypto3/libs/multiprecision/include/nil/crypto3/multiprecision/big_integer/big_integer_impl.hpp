@@ -192,6 +192,7 @@ namespace nil::crypto3::multiprecision {
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
         }
 
+        // This should be implicit even for Bits2 < Bits because it's used in boost random
         template<unsigned Bits2>
         inline constexpr big_integer(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
@@ -280,6 +281,13 @@ namespace nil::crypto3::multiprecision {
                 result <<= limb_bits;
                 result |= limb;
             }
+            return result;
+        }
+
+        template<unsigned Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
+        inline constexpr big_integer<Bits2> truncate() const noexcept {
+            big_integer<Bits2> result;
+            result.do_assign(*this);
             return result;
         }
 
@@ -1338,5 +1346,8 @@ namespace nil::crypto3::multiprecision {
         // This is a temporary value which is set when carry has happend during addition.
         // If this value is true, reduction by modulus must happen next.
         bool m_carry = false;
+
+        template<unsigned>
+        friend class big_integer;
     };
 }  // namespace nil::crypto3::multiprecision

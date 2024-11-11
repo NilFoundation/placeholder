@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE(conversion_to_shorter_number) {
     using short_number = nil::crypto3::multiprecision::big_integer<128>;
     constexpr standart_number x =
         0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_integer256;
-    short_number s = x;
+    short_number s = x.truncate<128>();
     // 2nd half of the number must stay.
     BOOST_CHECK_EQUAL(s, 0xfffffffffffffffffffffffefffffc2f_big_integer128);
 }
