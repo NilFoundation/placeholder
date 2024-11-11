@@ -62,9 +62,10 @@ using namespace nil::crypto3::hashes::detail;
 
 template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_size_chunk, std::size_t account_trie_length, std::size_t WitnessColumns>
 void test_mpt_nonce_changed(const std::vector<typename BlueprintFieldType::value_type> &public_input){
+    constexpr std::size_t WitnessesAmount = 3; // May be changed in next version
     constexpr std::size_t PublicInputColumns = 1;
-    constexpr std::size_t ConstantColumns = 2;
-    constexpr std::size_t SelectorColumns = 5;
+    constexpr std::size_t ConstantColumns = 8;
+    constexpr std::size_t SelectorColumns = 8;
 
     zk::snark::plonk_table_description<BlueprintFieldType> desc(WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns);
 
@@ -215,6 +216,12 @@ void mpt_nonce_changed_case_1_tests() {
         value_type storage_root = 0;  
         value_type balance = generate_random();
         uint64_t byte_code = gen();
+
+        hashes::keccak_1600<256>::digest_type d = hash<hashes::keccak_1600<256>>(byte_code);
+        integral_type n(d);
+        std::cout << "d = " << d << std::endl;
+        std::cout << "n_hi = " << (n >> 128) << std::endl;
+        std::cout << "n_lo = " << (n & ((integral_type(1) << 128) - 1)) << std::endl;
 
         // keccak_code_hash = Keccak-256(byte_code)
         std::string Keccak_code_hash = hash<hashes::keccak_1600<256>>(byte_code);
@@ -700,10 +707,10 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_equality_flag_test) {
     using bn_254_field_type = nil::crypto3::algebra::fields::alt_bn128_scalar_field<254>;
 
     std::cout << "*** Case 1: BLS12-381 scalar field\n";
-    mpt_nonce_changed_case_1_tests<bls12_381_field_type, 4, 16, 12, 24, random_tests_amount>();
+    mpt_nonce_changed_case_1_tests<bls12_381_field_type, 4, 16, 12, 30, random_tests_amount>();
 
     std::cout << "*** Case 2: BN-254 scalar field\n";
-    mpt_nonce_changed_case_1_tests<bn_254_field_type, 4, 16, 12, 24, random_tests_amount>();
+    mpt_nonce_changed_case_1_tests<bn_254_field_type, 4, 16, 1, 30, random_tests_amount>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

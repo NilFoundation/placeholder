@@ -33,12 +33,19 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 #include <nil/blueprint/manifest.hpp>
+#include <nil/blueprint/lookup_library.hpp>
 
 #include <nil/blueprint/detail/range_check_multi.hpp>
 
-#include <nil/crypto3/hash/detail/poseidon/poseidon_permutation.hpp>
+#include <nil/blueprint/components/hashes/poseidon/plonk/poseidon_table.hpp>
 #include <nil/crypto3/hash/poseidon.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
+
+#include <nil/blueprint/components/hashes/poseidon/plonk/poseidon.hpp>
+#include <nil/blueprint/components/hashes/poseidon/plonk/poseidon_constants.hpp>
+
+#include <nil/crypto3/hash/type_traits.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
 
 using namespace nil;
 using namespace nil::crypto3::hashes::detail;
@@ -60,7 +67,11 @@ namespace nil {
                 using var = typename component_type::var;
                 using manifest_type = plonk_component_manifest;
 
+                using table_component_type = plonk_poseidon_table<BlueprintFieldType>;
+
                 using range_check_component = range_check_multi<ArithmetizationType, BlueprintFieldType, num_chunks, bit_size_chunk>;
+
+                table_component_type table_component;
 
                 class gate_manifest_type : public component_gate_manifest {
                 public:
@@ -92,7 +103,7 @@ namespace nil {
                     rows += range_check_component::get_rows_amount(witness_amount);
                     rows += range_check_component::get_rows_amount(witness_amount);
                     rows += range_check_component::get_rows_amount(witness_amount);
-                    return (rows);
+                    return (rows + 2*(account_trie_length - 1) + 8);
                 }
 
                 constexpr static const std::size_t gates_amount = 1; // <---- was gates_amount = 1 before....
@@ -164,18 +175,21 @@ namespace nil {
 
                 template<typename WitnessContainerType, typename ConstantContainerType, typename PublicInputContainerType>
                 mpt_nonce_changed(WitnessContainerType witness, ConstantContainerType constant, PublicInputContainerType public_input) :
-                    component_type(witness, constant, public_input, get_manifest()) {};
+                    component_type(witness, constant, public_input, get_manifest()), 
+                    table_component(witness, constant, public_input, account_trie_length) {};
 
                 mpt_nonce_changed(
                     std::initializer_list<typename component_type::witness_container_type::value_type> witnesses,
                     std::initializer_list<typename component_type::constant_container_type::value_type> constants,
                     std::initializer_list<typename component_type::public_input_container_type::value_type> public_inputs) :
-                    component_type(witnesses, constants, public_inputs, get_manifest()) {};
+                    component_type(witnesses, constants, public_inputs, get_manifest()),
+                    table_component(witnesses, constants, public_inputs, account_trie_length) {};
 
                 std::map<std::string, std::size_t> component_lookup_tables(){
                     std::map<std::string, std::size_t> lookup_tables;
 
                     lookup_tables["range_16bit/full"] = 0;
+                    // lookup_tables["poseidon_table"] = 0; // DYNAMIC_TABLE
 
                     return lookup_tables;
                 }
@@ -220,7 +234,7 @@ namespace nil {
 
                 value_type eth_address, mpt_proof_type;
                 eth_address = var_value(assignment, instance_input.eth_address);
-                mpt_proof_type = var_value(assignment, instance_input.mpt_proof_type); // mpt_proof_type = nonce_changed = 1
+                mpt_proof_type = var_value(assignment, instance_input.mpt_proof_type); // mpt_proof_type = nonce_changed = 1  
 
                 // old_root = (old_root_hi, old_root_lo)
                 std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> old_root = {};
@@ -397,16 +411,26 @@ namespace nil {
                 }
 
                 // last row in account_trie
-                assignment.witness(component.W((0) % WA), start_row_index + account_trie_length + (0)/WA) = old_account_hash_traces[6][2]; // W[0][account_trie_size] = old_value
-                assignment.witness(component.W((1) % WA), start_row_index + account_trie_length + (1)/WA) = new_account_hash_traces[6][2]; // W[1][account_trie_size] = new_value               
-                assignment.witness(component.W((2) % WA), start_row_index + account_trie_length + (2)/WA) = old_account_hash_traces[6][1]; // W[2][account_trie_size] = old_child
-                assignment.witness(component.W((3) % WA), start_row_index + account_trie_length + (3)/WA) = new_account_hash_traces[6][1]; // W[3][account_trie_size] = new_child               
-                assignment.witness(component.W((4) % WA), start_row_index + account_trie_length + (4)/WA) = old_account_hash_traces[6][0]; // W[4][account_trie_size] = sibling               
-                assignment.witness(component.W((6) % WA), start_row_index + account_trie_length + (6)/WA) = account_trie_length; // W[6][account_trie_size] = depth = account_trie_size
-                assignment.witness(component.W((7) % WA), start_row_index + account_trie_length + (7)/WA) = address_hash_traces[account_trie_length - 1][0]; // W[7][account_trie_size] = direction[i]
-                assignment.witness(component.W((10) % WA), start_row_index + account_trie_length + (10)/WA) = key[account_trie_length - 1]; // W[10][account_trie_size] = key[i] 
-                assignment.witness(component.W((11) % WA), start_row_index + account_trie_length + (11)/WA) = other_key[account_trie_length - 1]; // W[11][account_trie_size] = other_key[i] 
-                assignment.witness(component.W((12) % WA), start_row_index + account_trie_length + (12)/WA) = 1; // W[12][account_trie_size] = path_type = common = 1 
+                assignment.witness(component.W((0) % WA), start_row_index + account_trie_length + (0)/WA) 
+                                            = old_account_hash_traces[6][2]; // W[0][account_trie_size] = old_value
+                assignment.witness(component.W((1) % WA), start_row_index + account_trie_length + (1)/WA) 
+                                            = new_account_hash_traces[6][2]; // W[1][account_trie_size] = new_value               
+                assignment.witness(component.W((2) % WA), start_row_index + account_trie_length + (2)/WA) 
+                                            = old_account_hash_traces[6][1]; // W[2][account_trie_size] = old_child
+                assignment.witness(component.W((3) % WA), start_row_index + account_trie_length + (3)/WA) 
+                                            = new_account_hash_traces[6][1]; // W[3][account_trie_size] = new_child               
+                assignment.witness(component.W((4) % WA), start_row_index + account_trie_length + (4)/WA) 
+                                            = old_account_hash_traces[6][0]; // W[4][account_trie_size] = sibling               
+                assignment.witness(component.W((6) % WA), start_row_index + account_trie_length + (6)/WA) 
+                                            = account_trie_length; // W[6][account_trie_size] = depth = account_trie_size
+                assignment.witness(component.W((7) % WA), start_row_index + account_trie_length + (7)/WA) 
+                                            = address_hash_traces[account_trie_length - 1][0]; // W[7][account_trie_size] = direction[i]
+                assignment.witness(component.W((10) % WA), start_row_index + account_trie_length + (10)/WA) 
+                                            = key[account_trie_length - 1]; // W[10][account_trie_size] = key[i] 
+                assignment.witness(component.W((11) % WA), start_row_index + account_trie_length + (11)/WA) 
+                                            = other_key[account_trie_length - 1]; // W[11][account_trie_size] = other_key[i] 
+                assignment.witness(component.W((12) % WA), start_row_index + account_trie_length + (12)/WA) 
+                                            = 1; // W[12][account_trie_size] = path_type = common = 1 
 
                 // rows += (account_trie_length + 1);
                 // // std::cout << "..rows = " << rows << std::endl; 
@@ -491,9 +515,6 @@ namespace nil {
                     assignment.witness(component.W((15) % WA), start_row_index + i + (15)/WA) = code_size_chunks[i]; 
                 }
 
-                // rows += account_leaf_length;
-                std::cout << "..rows = " << rows << std::endl; 
-
                 // Initializing range_check component
                 typename range_check_type::input_type range_check_input_1;
                 for(std::size_t i = 0; i < num_chunks; i++) {
@@ -518,10 +539,56 @@ namespace nil {
                 generate_assignments(range_check_instance, assignment, range_check_input_3, rows);
                 rows += range_check_instance.rows_amount;
 
-                std::cout << "...start_row_index = " << start_row_index << std::endl;
-                std::cout << "...assignment.rows_amount() = " << assignment.rows_amount() << std::endl;
-                std::cout << "...rows = " << rows << std::endl;
-                std::cout << "...component.rows_amount = " << component.rows_amount << std::endl;
+                typename component_type::table_component_type::input_type table_input;
+                std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> old_msg, new_msg;
+                value_type old_hash, new_hash; 
+                std::vector<std::pair<std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>, typename BlueprintFieldType::value_type>> poseidon_tab_input;
+                
+                for(std::size_t i = 0; i < account_trie_length - 1; i++) {
+                    old_msg = {address_hash_traces[i + 1][2], address_hash_traces[i + 1][4]};
+                    old_hash = address_hash_traces[i][2];
+                    poseidon_tab_input.push_back({old_msg, old_hash});
+                    new_msg = {address_hash_traces[i + 1][3], address_hash_traces[i + 1][4]};
+                    new_hash = address_hash_traces[i][3];
+                    poseidon_tab_input.push_back({new_msg, new_hash});
+                }
+                old_msg = {old_account_hash_traces[6][1], old_account_hash_traces[6][0]};
+                old_hash = old_account_hash_traces[6][2];
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {new_account_hash_traces[6][1], new_account_hash_traces[6][0]};
+                new_hash = new_account_hash_traces[6][2];
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                old_msg = {old_account_hash_traces[5][0], old_account_hash_traces[5][1]};
+                old_hash = old_account_hash_traces[5][2];
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {new_account_hash_traces[5][0], new_account_hash_traces[5][1]};
+                new_hash = new_account_hash_traces[5][2];
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                old_msg = {old_account_hash_traces[3][0], old_account_hash_traces[3][1]};
+                old_hash = old_account_hash_traces[3][2];
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {new_account_hash_traces[3][0], new_account_hash_traces[3][1]};
+                new_hash = new_account_hash_traces[3][2];
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                old_msg = {old_account_hash_traces[2][0], old_account_hash_traces[2][1]};
+                old_hash = old_account_hash_traces[2][2];
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {new_account_hash_traces[2][0], new_account_hash_traces[2][1]};
+                new_hash = new_account_hash_traces[2][2];
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                table_input.input = poseidon_tab_input;
+                generate_assignments(component.table_component, assignment, table_input, rows);
+                rows += component.table_component.rows_amount;
+
+                // std::cout << "..table_component_rows = " << component.table_component.rows_amount << std::endl;
+                // std::cout << "..start_row_index = " << start_row_index << std::endl;
+                // std::cout << "..assignment.rows_amount() = " << assignment.rows_amount() << std::endl;
+                // std::cout << "..rows = " << rows << std::endl;
+                // std::cout << "..component.rows_amount = " << component.rows_amount << std::endl;
 
                 BOOST_ASSERT_MSG(rows - start_row_index == component.rows_amount, "!!!component rows not equal to actual component rows!!!");     
 
@@ -552,8 +619,6 @@ namespace nil {
 
                 size_t assignment_table_rows = account_trie_length + 5;
                 size_t rows = assignment_table_rows;
-                std::cout << "...assignment_table_rows = " << assignment_table_rows << std::endl; 
-                std::cout << "...rows = " << rows << std::endl; 
                 
                 var oldNonce, newNonce;
                 var oldHash, newHash, oldValue, newValue, depthPrev, depthCurr, Depth;
@@ -658,9 +723,6 @@ namespace nil {
                 newNonce = var(component.W(3 % WA), assignment_table_rows - 1 + 3/WA + row_shift, true);
                 mpt_nonce_changed_constraints.push_back(oldHash_last - oldNonce*B - newHash_last + newNonce*B);
 
-                std::cout << "..rows = " << rows << std::endl;
-                std::cout << "..component.rows_amount = " << component.rows_amount << std::endl;
-
                 //BOOST_ASSERT_MSG(rows == component.rows_amount, "!!!component rows not equal to actual component rows!!!");      
 
                 return bp.add_gate(mpt_nonce_changed_constraints);
@@ -704,7 +766,8 @@ namespace nil {
                 using component_type = plonk_mpt_nonce_changed<BlueprintFieldType, num_chunks, bit_size_chunk, account_trie_length>;
                 using range_check_type = typename component_type::range_check_component;
                 using var = typename component_type::var;
-
+                using value_type = typename BlueprintFieldType::value_type;
+                
                 range_check_type range_check_instance(component._W, component._C, component._PI);
 
                 const std::size_t WA = component.witness_amount();
@@ -742,6 +805,52 @@ namespace nil {
                 }
                 generate_circuit(range_check_instance, bp, assignment, range_check_input_3, rows);
                 rows += range_check_instance.rows_amount;  
+
+                typename component_type::table_component_type::input_type table_input;
+                std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> old_msg, new_msg;
+                value_type old_hash, new_hash;
+                std::vector<std::pair<std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>, typename BlueprintFieldType::value_type>> poseidon_tab_input;
+
+                for(std::size_t i = 0; i < account_trie_length - 1; i++) {
+                    old_msg = {var_value(assignment, instance_input.address_hash_traces[i + 1][2]), var_value(assignment, instance_input.address_hash_traces[i + 1][4])};
+                    old_hash = var_value(assignment, instance_input.address_hash_traces[i][2]);
+                    poseidon_tab_input.push_back({old_msg, old_hash});
+                    new_msg = {var_value(assignment, instance_input.address_hash_traces[i + 1][3]), var_value(assignment, instance_input.address_hash_traces[i + 1][4])};
+                    new_hash = var_value(assignment, instance_input.address_hash_traces[i][3]);
+                    poseidon_tab_input.push_back({new_msg, new_hash});
+                }
+
+                old_msg = {var_value(assignment, instance_input.old_account_hash_traces[6][1]), var_value(assignment, instance_input.old_account_hash_traces[6][0])};
+                old_hash = var_value(assignment, instance_input.old_account_hash_traces[6][2]);
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {var_value(assignment, instance_input.new_account_hash_traces[6][1]), var_value(assignment, instance_input.new_account_hash_traces[6][0])};
+                new_hash = var_value(assignment, instance_input.new_account_hash_traces[6][2]);
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                old_msg = {var_value(assignment, instance_input.old_account_hash_traces[5][0]), var_value(assignment, instance_input.old_account_hash_traces[5][1])};
+                old_hash = var_value(assignment, instance_input.old_account_hash_traces[5][2]);
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {var_value(assignment, instance_input.new_account_hash_traces[5][0]), var_value(assignment, instance_input.new_account_hash_traces[5][1])};
+                new_hash = var_value(assignment, instance_input.new_account_hash_traces[5][2]);
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                old_msg = {var_value(assignment, instance_input.old_account_hash_traces[3][0]), var_value(assignment, instance_input.old_account_hash_traces[3][1])};
+                old_hash = var_value(assignment, instance_input.old_account_hash_traces[3][2]);
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {var_value(assignment, instance_input.new_account_hash_traces[3][0]), var_value(assignment, instance_input.new_account_hash_traces[3][1])};
+                new_hash = var_value(assignment, instance_input.new_account_hash_traces[3][2]);
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                old_msg = {var_value(assignment, instance_input.old_account_hash_traces[2][0]), var_value(assignment, instance_input.old_account_hash_traces[2][1])};
+                old_hash = var_value(assignment, instance_input.old_account_hash_traces[2][2]);
+                poseidon_tab_input.push_back({old_msg, old_hash});
+                new_msg = {var_value(assignment, instance_input.new_account_hash_traces[2][0]), var_value(assignment, instance_input.new_account_hash_traces[2][1])};
+                new_hash = var_value(assignment, instance_input.new_account_hash_traces[2][2]);
+                poseidon_tab_input.push_back({new_msg, new_hash});
+
+                table_input.input = poseidon_tab_input;
+                generate_circuit(component.table_component, bp, assignment, table_input, rows);
+                rows += component.table_component.rows_amount;  
 
                 return typename plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length>::result_type(component, start_row_index);
             }
