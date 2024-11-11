@@ -228,6 +228,7 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/copy"
     "zkevm_bbf/opcodes/pushx"
     "zkevm_bbf/opcodes/iszero"
+    "zkevm_bbf/opcodes/mod_ops"
 )
 
 

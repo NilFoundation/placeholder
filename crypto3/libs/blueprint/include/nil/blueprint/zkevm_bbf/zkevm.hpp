@@ -193,7 +193,7 @@ namespace nil {
                                 << " memory_size = " << current_state.memory_size
                                 << " rw_counter = 0x" << std::hex<< current_state.rw_counter << std::dec
                                 << " gas = " << current_state.gas
-                                << " bytecode_hash = " << current_state.bytecode_hash
+                                // << " bytecode_hash = " << current_state.bytecode_hash
                                 << std::endl;
 
                             for( std::size_t j = 0; j < current_opcode_rows_amount; j++ ){
@@ -483,12 +483,13 @@ namespace nil {
                             std::map<std::string, std::vector<std::vector<TYPE>>> acc_lookup_constraints;
                             for( auto &[key, exprs]:opcode_lookup_constraints_aggregator){
                                 auto &[local_opcode, local_row, table_name] = key;
-                                //std::cout << "\t" << local_opcode << ", " << local_row << ", " << table_name << std::endl;
+                                std::cout << "\t" << local_opcode << ", " << local_row << ", " << table_name << std::endl;
                                 if( acc_lookup_constraints.find(table_name) == acc_lookup_constraints.end()) acc_lookup_constraints[table_name] = {};
                                 if( acc_lookup_constraints[table_name].size() < exprs.size() ) acc_lookup_constraints[table_name].resize(exprs.size());
                                 for( std::size_t i = 0; i < exprs.size(); i++ ) {
                                     acc_lookup_constraints[table_name][i].resize(exprs[i].size());
                                     for( std::size_t j = 0; j < exprs[i].size(); j++ ){
+                                //        std::cout << "\t\t" << exprs[i][j] << std::endl;
                                         acc_lookup_constraints[table_name][i][j] += context_object.relativize(
                                             zkevm_opcode_row_selectors[{local_opcode, local_row}], -1
                                         ) * exprs[i][j];
@@ -496,6 +497,7 @@ namespace nil {
                                 }
                             }
                             for( auto&[table_name, constraint_list]:acc_lookup_constraints ){
+                                std::cout << "\tOpcode lookups amount for " << table_name << " = " << constraint_list.size() << std::endl;
                                 for(auto &exprs: constraint_list){
                                     context_object.relative_lookup(exprs, table_name, 1, max_zkevm_rows - 1);
                                 }

@@ -51,6 +51,7 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     TYPE addr;
+                    TYPE addr1;
                     TYPE addr_mod;
                     TYPE addr_mod31;
                     TYPE addr_words;
@@ -70,6 +71,7 @@ namespace nil {
                         std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto address = w_to_16(current_state.stack_top())[15];
                         addr = address;
+                        addr1 = address;
                         auto bytes = w_to_8(current_state.stack_top(1));
                         for( std::size_t i = 0; i < 32; i++){
                             value[i] = bytes[i];
@@ -110,11 +112,13 @@ namespace nil {
                             std::cout << "\tMEMORY SIZE NOT CHANGED " << addr_words << " <= " << memory_words << std::endl;
                         }
                     }
-                    for( std::size_t i = 0; i < 32; i++){
+                    for( std::size_t i = 0; i < 16; i++){
                         allocate(value[i], i+16, 0); // Values are range-checked by RW circuit, so use non-range-checked columns
+                        allocate(value[i + 16], i+16, 1); // Values are range-checked by RW circuit, so use non-range-checked columns
                     }
 
                     allocate(addr, 0, 0);
+                    allocate(addr1, 0, 1);
                     allocate(addr_mod, 1, 0);
                     allocate(addr_mod31 , 2, 0);
                     allocate(addr_words, 3, 0);
@@ -134,22 +138,22 @@ namespace nil {
                         TYPE old_memory_gas_cost =  3 * memory_words;   // TODO: check and test with large memory consumption
                         TYPE new_memory_gas_cost =  3 * addr_words;     // TODO: check and test with large memory consumption
 
-                        constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                        constrain(current_state.gas(0) - current_state.gas_next() - 3 - is_memory_size_changed * (new_memory_gas_cost - old_memory_gas_cost));               // GAS transition
-                        constrain(current_state.stack_size(0) - current_state.stack_size_next() - 2);   // stack_size transition
+                        constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
+                        constrain(current_state.gas(1) - current_state.gas_next() - 3 - is_memory_size_changed * (new_memory_gas_cost - old_memory_gas_cost));               // GAS transition
+                        constrain(current_state.stack_size(1) - current_state.stack_size_next() - 2);   // stack_size transition
                         constrain(new_memory_size - current_state.memory_size_next());                  // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 34);  // rw_counter transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 34);  // rw_counter transition
                         auto V_128 = chunks8_to_chunks128<TYPE>(value);
 
                         std::vector<TYPE> tmp;
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 1,
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 1,
                             TYPE(0),                                               // storage_key_hi
                             TYPE(0),                                               // storage_key_lo
                             TYPE(0),                                               // field
-                            current_state.rw_counter(0),
+                            current_state.rw_counter(1),
                             TYPE(0),                                               // is_write
                             TYPE(0),                                               // hi bytes are 0
                             addr                                                   // addr is smaller than maximum contract size
@@ -157,12 +161,12 @@ namespace nil {
                         lookup(tmp, "zkevm_rw");
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(0),
-                            current_state.stack_size(0) - 2,
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 2,
                             TYPE(0),                                               // storage_key_hi
                             TYPE(0),                                               // storage_key_lo
                             TYPE(0),                                               // field
-                            current_state.rw_counter(0) + 1,
+                            current_state.rw_counter(1) + 1,
                             TYPE(0),                                               // is_write
                             V_128.first,                                           // hi bytes are 0
                             V_128.second                                           // addr is smaller than maximum contract size
@@ -170,19 +174,35 @@ namespace nil {
                         lookup(tmp, "zkevm_rw");
 
                         for( std::size_t i = 0; i < 32; i++){
-                            tmp = {
-                                TYPE(rw_op_to_num(rw_operation_type::memory)),
-                                current_state.call_id(0),
-                                addr + i,
-                                TYPE(0),                                               // storage_key_hi
-                                TYPE(0),                                               // storage_key_lo
-                                TYPE(0),                                               // field
-                                current_state.rw_counter(0) + 2 + i,
-                                TYPE(1),                                               // is_write
-                                TYPE(0),                                               // hi bytes are 0
-                                value[i]                                               // addr is smaller than maximum contract size
-                            };
-                            lookup(tmp, "zkevm_rw");
+                            if( i < 16){
+                                tmp = {
+                                    TYPE(rw_op_to_num(rw_operation_type::memory)),
+                                    current_state.call_id(0),
+                                    addr + i,
+                                    TYPE(0),                                               // storage_key_hi
+                                    TYPE(0),                                               // storage_key_lo
+                                    TYPE(0),                                               // field
+                                    current_state.rw_counter(0) + 2 + i,
+                                    TYPE(1),                                               // is_write
+                                    TYPE(0),                                               // hi bytes are 0
+                                    value[i]                                               // addr is smaller than maximum contract size
+                                };
+                                lookup(tmp, "zkevm_rw");
+                            } else {
+                                tmp = {
+                                    TYPE(rw_op_to_num(rw_operation_type::memory)),
+                                    current_state.call_id(1),
+                                    addr1 + i,
+                                    TYPE(0),                                               // storage_key_hi
+                                    TYPE(0),                                               // storage_key_lo
+                                    TYPE(0),                                               // field
+                                    current_state.rw_counter(1) + 2 + i,
+                                    TYPE(1),                                               // is_write
+                                    TYPE(0),                                               // hi bytes are 0
+                                    value[i]                                               // addr is smaller than maximum contract size
+                                };
+                                lookup(tmp, "zkevm_rw");
+                            }
                         }
                     } else {
                         //std::cout << "\tASSIGNMENT implemented" << std::endl;
@@ -206,7 +226,7 @@ namespace nil {
                     zkevm_mstore_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
-                    return 1;
+                    return 2;
                 }
             };
         } // namespace bbf
