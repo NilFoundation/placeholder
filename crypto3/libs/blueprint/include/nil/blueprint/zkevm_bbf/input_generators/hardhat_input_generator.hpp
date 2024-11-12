@@ -97,6 +97,7 @@ namespace nil {
                             }
                             // Opcode is not presented in RW lookup table. We just take it from json
                             // // std::cout << opcode << std::endl;
+                            memory_size_before = memory.size();
                             if(opcode == "STOP") {
                                 // 0x00 -- no RW operations
                             } else if(opcode == "ADD") {
@@ -460,7 +461,7 @@ namespace nil {
 
                                 }
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
-
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "MSTORE") {
                                 // 0x52
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -473,6 +474,7 @@ namespace nil {
                                 for( std::size_t i = 0; i < 32; i++){
                                    _rw_operations.push_back(memory_rw_operation(call_id, addr + i, rw_counter++, true, bytes[i]));
                                 }
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "MSTORE8") {
                                 // 0x53
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -944,7 +946,6 @@ namespace nil {
                                 BOOST_ASSERT(false);
                             }
                             _zkevm_states.push_back(state);
-                            memory_size_before = memory.size();
                             stack = stack_next;
                             memory = memory_next;
                             storage = storage_next;

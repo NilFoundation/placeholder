@@ -405,14 +405,12 @@ namespace nil {
                     constrain(B0 - B_128.first); constrain(B1 - B_128.second);
                     constrain(N0 - N_128.first); constrain(N1 - N_128.second);
                     constrain(Res0 - Res_128.first); constrain(Res1 - Res_128.second);
-
-                    std::cout << "\tA_128 = " << A_128.first << " " << A_128.second << std::endl;
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        constrain(current_state.pc_next() - current_state.pc(5) - 1);  // PC transition
-                        constrain(current_state.gas(5) - current_state.gas_next() - 8);  // GAS transition
-                        constrain(current_state.stack_size(5) - current_state.stack_size_next() - 2);  // stack_size transition
-                        constrain(current_state.memory_size(5) - current_state.memory_size_next());  // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(5) - 4);  // rw_counter transition
+                        constrain(current_state.pc_next() - current_state.pc(4) - 1);  // PC transition
+                        constrain(current_state.gas(4) - current_state.gas_next() - 8);  // GAS transition
+                        constrain(current_state.stack_size(4) - current_state.stack_size_next() - 2);  // stack_size transition
+                        constrain(current_state.memory_size(4) - current_state.memory_size_next());  // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(4) - 4);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
@@ -489,7 +487,7 @@ namespace nil {
                     zkevm_addmod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
                         context, current_state);
                 }
-                virtual std::size_t rows_amount() override { return 6; }
+                virtual std::size_t rows_amount() override { return 5; }
             };
         }  // namespace bbf
     }  // namespace blueprint

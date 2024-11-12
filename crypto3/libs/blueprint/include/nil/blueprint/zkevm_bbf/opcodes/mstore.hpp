@@ -141,7 +141,7 @@ namespace nil {
                         constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
                         constrain(current_state.gas(1) - current_state.gas_next() - 3 - is_memory_size_changed * (new_memory_gas_cost - old_memory_gas_cost));               // GAS transition
                         constrain(current_state.stack_size(1) - current_state.stack_size_next() - 2);   // stack_size transition
-                        constrain(new_memory_size - current_state.memory_size_next());                  // memory_size transition
+                        constrain(new_memory_size - current_state.memory_size_next());               // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 34);  // rw_counter transition
                         auto V_128 = chunks8_to_chunks128<TYPE>(value);
 
@@ -205,7 +205,7 @@ namespace nil {
                             }
                         }
                     } else {
-                        //std::cout << "\tASSIGNMENT implemented" << std::endl;
+                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };
