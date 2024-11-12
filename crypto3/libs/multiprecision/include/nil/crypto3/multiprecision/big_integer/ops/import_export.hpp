@@ -15,6 +15,7 @@
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -67,7 +68,7 @@ namespace nil::crypto3::multiprecision {
             // depending on whether this is a checked integer or not:
             //
             // We are not throwing, we will use as many bits from the input as we need to.
-            // BOOST_ASSERT(!((bit_location >= sizeof(limb_type) * CHAR_BIT) && bits));
+            // NIL_CO3_MP_ASSERT(!((bit_location >= sizeof(limb_type) * CHAR_BIT) && bits));
 
             limb_type mask = chunk_bits >= sizeof(limb_type) * CHAR_BIT
                                  ? ~static_cast<limb_type>(0u)
@@ -81,7 +82,7 @@ namespace nil::crypto3::multiprecision {
             bit_location = sizeof(limb_type) * CHAR_BIT - bit_location;
 
             // We are not throwing, we will use as many bits from the input as we need to.
-            // BOOST_ASSERT(!((bit_location < sizeof(bits) * CHAR_BIT) && (bits >>=
+            // NIL_CO3_MP_ASSERT(!((bit_location < sizeof(bits) * CHAR_BIT) && (bits >>=
             // bit_location)));
         }
 
@@ -122,7 +123,7 @@ namespace nil::crypto3::multiprecision {
             size_type bits = limbs * chunk_size;
 
             // We are not throwing, we will use as many bits from the input as we need to.
-            // BOOST_ASSERT(bits <= Bits);
+            // NIL_CO3_MP_ASSERT(bits <= Bits);
 
             difference_type bit_location = msv_first ? bits - chunk_size : 0;
             difference_type bit_location_change =

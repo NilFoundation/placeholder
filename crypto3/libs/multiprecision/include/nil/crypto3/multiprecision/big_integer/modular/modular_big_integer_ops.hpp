@@ -13,6 +13,7 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
 
 namespace nil::crypto3::multiprecision {
@@ -81,14 +82,14 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
-        BOOST_ASSERT(a.ops().compare_eq(b.ops()));
+        NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         largest_t result = a;
         a.ops().add(result.base_data(), b.base_data());
         return result;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator+=(modular_big_integer_t& a, const T& b) noexcept {
-        BOOST_ASSERT(a.ops().compare_eq(b.ops()));
+        NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         a.ops().add(a.base_data(), b.base_data());
         return a;
     }
@@ -157,14 +158,14 @@ namespace nil::crypto3::multiprecision {
 
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
-        BOOST_ASSERT(a.ops().compare_eq(b.ops()));
+        NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         largest_t result = a;
         a.ops().mul(result.base_data(), b.base_data());
         return result;
     }
     CRYPTO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator*=(modular_big_integer_t& a, const T& b) noexcept {
-        BOOST_ASSERT(a.ops().compare_eq(b.ops()));
+        NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         a.ops().mul(a.base_data(), b.base_data());
         return a;
     }

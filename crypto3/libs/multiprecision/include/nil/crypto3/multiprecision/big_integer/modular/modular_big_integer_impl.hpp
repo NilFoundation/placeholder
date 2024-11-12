@@ -18,6 +18,7 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops_storage.hpp"
 
@@ -42,7 +43,7 @@ namespace nil::crypto3::multiprecision {
                                                       modular_ops_storage_t&& modular_ops_storage)
                 : m_modular_ops_storage(std::move(modular_ops_storage)) {
                 // TODO(ioxid): do we need this?
-                // BOOST_ASSERT_MSG(Bits == msb(ops().get_mod()) + 1,
+                // NIL_CO3_MP_ASSERT_MSG(Bits == msb(ops().get_mod()) + 1,
                 //                  "modulus precision should match used big_integer");
                 ops().adjust_modular(m_base, x);
             }
@@ -55,10 +56,12 @@ namespace nil::crypto3::multiprecision {
                 return ops().compare_eq(o.ops()) && m_base == o.m_base;
             }
 
-            // template<class T>
-            // constexpr bool compare_eq(const T& val) const {
-            //     // TODO(ioxid): should compare adjusted?
-            //     return m_base == val;
+            // TODO(ioxid): do we need this? If yes then need to make sure this is not chosen for T
+            // = modular_big_integer
+            //
+            // template<class T> constexpr bool compare_eq(const T& val) const
+            // {
+            //     return remove_modulus() == val;
             // }
 
             // cpp_int conversion
