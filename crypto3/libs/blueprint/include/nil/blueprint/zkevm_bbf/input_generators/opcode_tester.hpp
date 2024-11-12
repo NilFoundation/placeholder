@@ -39,10 +39,48 @@ namespace nil {
                 zkevm_opcode_tester(){}
                 void push_opcode(const zkevm_opcode opcode, const std::vector<std::uint8_t> &additional_input = {}){
                     std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                    std::uint8_t opcode_number = opcode_to_number(opcode);
+                    bool is_push = (opcode_number >= 0x60) && (opcode_number <= 0x7f);
+
                     pc_opcode_map[bytecode.size()] = opcodes.size();
                     opcodes.push_back({opcode, word_from_byte_buffer(additional_input)});
-                    bytecode.push_back(opcode_to_number(opcode));
-                    bytecode.insert(bytecode.end(), additional_input.begin(), additional_input.end() );
+                    bytecode.push_back(opcode_number);
+                    if( is_push) {
+                        std::uint8_t x = opcode_number - 0x5f;
+                        for( std::size_t i = 0; i < x - additional_input.size(); i++){
+                            bytecode.push_back(0);
+                        }
+                        bytecode.insert(bytecode.end(), additional_input.begin(), additional_input.end() );
+                        BOOST_ASSERT(additional_input.size() <= x);
+                    } else {
+                        if( additional_input.size() != 0)
+                            std::cout << "WRONG opcode input " << opcode
+                                << " " << std::hex << std::size_t(opcode_number) << std::dec
+                                << " additional input size = " << additional_input.size()
+                                << std::endl;
+                        BOOST_ASSERT(additional_input.size() == 0);
+                    }
+                }
+
+                void push_opcode(const zkevm_opcode opcode, zkevm_word_type additional_input){
+                    std::cout << "PC opcode map[" << bytecode.size() << "] = " << opcodes.size() << " opcode = " << opcode_to_string(opcode) << std::endl;
+                    std::uint8_t opcode_number = opcode_to_number(opcode);
+                    std::uint8_t x = 0;
+                    bool is_push = (opcode_number >= 0x60) && (opcode_number <= 0x7f);
+                    auto bytes = w_to_8(additional_input);
+
+                    pc_opcode_map[bytecode.size()] = opcodes.size();
+                    opcodes.push_back({opcode, additional_input});
+                    bytecode.push_back(opcode_number);
+                    if( is_push) {
+                        x = opcode_number - 0x5f;
+                    }
+                    for( std::size_t i = 0; i < 32 - x; i++){
+                        BOOST_ASSERT(bytes[i] == 0);
+                    }
+                    for( std::size_t i = 32 - x; i < 32; i++){
+                        bytecode.push_back(bytes[i]);
+                    }
                 }
 
                 const std::vector<std::uint8_t> &get_bytecode() const {

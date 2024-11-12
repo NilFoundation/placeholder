@@ -40,7 +40,7 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
 
-//#include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -86,7 +86,7 @@ namespace nil {
                     witness_amount += KeccakTable::get_witness_amount();
                     witness_amount += CopyTable::get_witness_amount();
                     witness_amount += 10;
-                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 20);
+                    nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 5, 20);
                     desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode)));
                     return desc;
                 }

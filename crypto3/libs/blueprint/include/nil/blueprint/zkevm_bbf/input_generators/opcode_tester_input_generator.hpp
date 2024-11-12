@@ -327,11 +327,51 @@ namespace nil {
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, modulus));
                             zkevm_word_type result = integral_type(modulus) == 0? 0 : (a * b) % modulus;
-                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, modulus));
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
                             gas -= 8;
+                        } else if(opcode == zkevm_opcode::AND) {
+                            // 0x16
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a & b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::OR) {
+                            // 0x17
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a | b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::XOR) {
+                            // 0x18
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a ^ b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
                         } else {
+                            std::cout << "Opcode tester machine doesn't contain " << opcode << " implementation" << std::endl;
                             BOOST_ASSERT(false);
                         }
                     }

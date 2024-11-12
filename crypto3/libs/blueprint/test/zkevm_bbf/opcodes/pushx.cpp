@@ -41,8 +41,6 @@
 #include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester.hpp>
-#include <nil/blueprint/zkevm_bbf/input_generators/opcode_tester_input_generator.hpp>
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
@@ -58,101 +56,9 @@
 using namespace nil::crypto3;
 using namespace nil::blueprint::bbf;
 
-template<typename field_type>
-void complex_test(
-    const zkevm_opcode_tester                       &opcode_tester,
-    const l1_size_restrictions                      &max_sizes
-){
-    nil::blueprint::bbf::zkevm_opcode_tester_input_generator circuit_inputs(opcode_tester);
+BOOST_AUTO_TEST_SUITE(zkevm_pushx_test_suite)
 
-    using integral_type = typename field_type::integral_type;
-    using value_type = typename field_type::value_type;
-
-    integral_type base16 = integral_type(1) << 16;
-
-    std::size_t max_keccak_blocks = max_sizes.max_keccak_blocks;
-    std::size_t max_bytecode = max_sizes.max_bytecode;
-    std::size_t max_mpt = max_sizes.max_mpt;
-    std::size_t max_rw = max_sizes.max_rw;
-    std::size_t max_copy = max_sizes.max_copy;
-    std::size_t max_zkevm_rows = max_sizes.max_zkevm_rows;
-
-    typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type copy_assignment_input;
-    typename nil::blueprint::bbf::copy<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type copy_constraint_input;
-    copy_assignment_input.rlc_challenge = 7;
-    copy_assignment_input.bytecodes = circuit_inputs.bytecodes();
-    copy_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-    copy_assignment_input.rw_operations = circuit_inputs.rw_operations();
-    copy_assignment_input.copy_events = circuit_inputs.copy_events();
-
-    typename nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type zkevm_assignment_input;
-    typename nil::blueprint::bbf::zkevm<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type zkevm_constraint_input;
-    zkevm_assignment_input.rlc_challenge = 7;
-    zkevm_assignment_input.bytecodes = circuit_inputs.bytecodes();
-    zkevm_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-    zkevm_assignment_input.rw_operations = circuit_inputs.rw_operations();
-    zkevm_assignment_input.copy_events = circuit_inputs.copy_events();
-    zkevm_assignment_input.zkevm_states = circuit_inputs.zkevm_states();
-
-    typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_assignment_input = circuit_inputs.rw_operations();
-    typename nil::blueprint::bbf::rw<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type rw_constraint_input;
-
-    typename nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type keccak_assignment_input;
-    typename nil::blueprint::bbf::keccak<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type keccak_constraint_input;
-    keccak_assignment_input.private_input = 12345;
-
-    typename nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type bytecode_assignment_input;
-    typename nil::blueprint::bbf::bytecode<field_type,nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type bytecode_constraint_input;
-    bytecode_assignment_input.rlc_challenge = 7;
-    bytecode_assignment_input.bytecodes = circuit_inputs.bytecodes();
-    bytecode_assignment_input.keccak_buffers = circuit_inputs.keccaks();
-    bool result;
-
-    // Max_bytecode, max_bytecode
-    std::cout << "Bytecode circuit" << std::endl;
-    result = test_l1_wrapper<field_type, nil::blueprint::bbf::bytecode>({7}, bytecode_assignment_input, bytecode_constraint_input, max_bytecode, max_keccak_blocks);
-    BOOST_ASSERT(result);
-    std::cout << std::endl;
-
-    // Max_rw, Max_mpt
-    std::cout << "RW circuit" << std::endl;
-    result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_assignment_input, rw_constraint_input, max_rw, max_mpt);
-    BOOST_ASSERT(result);
-    std::cout << std::endl;
-
-    // Max_copy, Max_rw, Max_keccak, Max_bytecode
-    result =test_l1_wrapper<field_type, nil::blueprint::bbf::copy>(
-        {7}, copy_assignment_input, copy_constraint_input,
-        max_copy, max_rw, max_keccak_blocks, max_bytecode
-    );
-    BOOST_ASSERT(result);
-    std::cout << std::endl;
-
-    // Max_rows, max_bytecode, max_rw
-    result = test_l1_wrapper<field_type, nil::blueprint::bbf::zkevm>(
-        {}, zkevm_assignment_input, zkevm_constraint_input,
-        max_zkevm_rows,
-        max_copy,
-        max_rw,
-        max_keccak_blocks,
-        max_bytecode
-    );
-    BOOST_ASSERT(result);
-    std::cout << std::endl;
-
-    // Max_keccak
-    result = test_l1_wrapper<field_type, nil::blueprint::bbf::keccak>(
-        {}, keccak_assignment_input , keccak_constraint_input
-    );
-    BOOST_ASSERT(result);
-    std::cout << std::endl;
-}
-
-// Remember that in production sizes should be preset.
-// Here they are different for different tests just for fast and easy testing
-BOOST_AUTO_TEST_SUITE(zkevm_opcode_test_suite)
-
-BOOST_AUTO_TEST_CASE(pushx) {
+BOOST_AUTO_TEST_CASE(pushx_strings) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
@@ -200,6 +106,57 @@ BOOST_AUTO_TEST_CASE(pushx) {
     max_sizes.max_copy = 500;
     max_sizes.max_zkevm_rows = 100;
 
-    complex_test<field_type>(opcode_tester, max_sizes);
+    complex_opcode_test<field_type>(opcode_tester, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(pushx) {
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    zkevm_opcode_tester opcode_tester;
+
+    opcode_tester.push_opcode(zkevm_opcode::PUSH0);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH1,  zwordc(0x12_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH2,  zwordc(0x1234_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH3,  zwordc(0x123456_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH4,  zwordc(0x12345678_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH5,  zwordc(0x1b70726fb8_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH6,  zwordc(0x1b70726fb8d3_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH7,  zwordc(0x1b70726fb8d3a2_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH8,  zwordc(0x1b70726fb8d3a24d_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH9,  zwordc(0x1b70726fb8d3a24da9_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH10, zwordc(0x1b70726fb8d3a24da9ff_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH11, zwordc(0x1b70726fb8d3a24da9ff96_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH12, zwordc(0x1b70726fb8d3a24da9ff9647_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH13, zwordc(0x1b70726fb8d3a24da9ff964722_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH14, zwordc(0x1b70726fb8d3a24da9ff9647225a_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH15, zwordc(0x1b70726fb8d3a24da9ff9647225a18_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH16, zwordc(0x1b70726fb8d3a24da9ff9647225a1841_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH17, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH18, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH19, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f01_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH20, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f0104_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH21, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH22, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f01042593_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH23, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f0104259385_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH24, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH25, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d7_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH26, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73e_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH27, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH28, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc88_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH29, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH30, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH31, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e0_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::STOP);
+
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 10;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 500;
+    max_sizes.max_copy = 500;
+    max_sizes.max_zkevm_rows = 100;
+
+    complex_opcode_test<field_type>(opcode_tester, max_sizes);
 }
 BOOST_AUTO_TEST_SUITE_END()
