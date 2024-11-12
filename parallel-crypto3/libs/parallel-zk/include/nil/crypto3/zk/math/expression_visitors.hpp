@@ -152,6 +152,8 @@ namespace nil {
                             return left - right;
                         case ArithmeticOperator::MULT:
                             return left * right;
+                        default:
+                            throw std::invalid_argument("ArithmeticOperator not found");
                     }
                 }
             };
