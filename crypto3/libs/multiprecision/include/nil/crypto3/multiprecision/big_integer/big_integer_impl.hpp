@@ -229,10 +229,7 @@ namespace nil::crypto3::multiprecision {
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
         inline constexpr big_integer& operator=(T val) noexcept {
-            if (val < 0) {
-                std::cerr << "big_integer: assignment from negative integer" << std::endl;
-                std::terminate();
-            }
+            BOOST_ASSERT_MSG(val >= 0, "big_integer: assignment from negative integer");
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
             return *this;
         }
@@ -272,9 +269,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        // Converting to cpp_int. We need this for multiplication, division and string
-        // conversions. Since these operations are rare, there's no reason to implement them for
-        // big_integer, converting to cpp_int does not result to performance penalty.
+        // Converting to cpp_int. Should be used only in tests.
         inline constexpr cpp_int_type to_cpp_int() const {
             cpp_int_type result;
             for (const limb_type limb : m_data | std::views::reverse) {
@@ -379,7 +374,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         //
-        // Core subtraction routine for all non-trivial cpp_int's:
+        // Core subtraction routine:
         // It is the caller's responsibility to make sure that a >= b.
         //
         static inline constexpr void subtract_constexpr(big_integer& result, const big_integer& a,
@@ -414,12 +409,11 @@ namespace nil::crypto3::multiprecision {
 
 #ifdef CO3_MP_HAS_IMMINTRIN_H
         //
-        // This is the key addition routine where all the argument types are non-trivial
-        // cpp_int's:
+        // This is the key addition routine:
         //
         //
         // This optimization is limited to: GCC, LLVM, ICC (Intel), MSVC for x86_64 and i386.
-        // If your architecture and compiler supports ADC intrinsic, please file a bug
+        // If your architecture and compiler supports ADC intrinsic, please file a bug.
         //
         // As of May, 2020 major compilers don't recognize carry chain though adc
         // intrinsics are used to hint compilers to use ADC and still compilers don't
@@ -1258,8 +1252,7 @@ namespace nil::crypto3::multiprecision {
         // These should be called only for creation of Montgomery and Barett
         // params, calculation of inverse element and montgomery_reduce. Since these functions
         // are relatively slow and are not called very often, we will not optimize them. We do
-        // NOT care about the execution speed, and will just redirect calls to normal
-        // boost::cpp_int.
+        // NOT care about the execution speed.
 
         // Caller is responsible for the result to fit in Bits bits, we will NOT throw!!!
 

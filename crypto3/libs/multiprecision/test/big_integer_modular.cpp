@@ -9,9 +9,9 @@
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
 
-CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(60)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(32)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(36)
+CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(60)
 
 using namespace nil::crypto3::multiprecision::literals;
 using namespace boost::multiprecision::literals;
