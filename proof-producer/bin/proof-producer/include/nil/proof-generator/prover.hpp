@@ -329,6 +329,8 @@ namespace nil {
                 Proof proof = prover.process();
                 BOOST_LOG_TRIVIAL(info) << "Proof generated";
 
+                lpc_scheme_.emplace(prover.move_commitment_scheme()); // get back the commitment scheme used in prover
+
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
