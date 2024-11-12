@@ -14,27 +14,63 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <system_error>
-#include <tuple>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
+// TODO(ioxid): remove
+
+#include <boost/multiprecision/cpp_int.hpp>
+namespace nil::crypto3::multiprecision {
+    template<std::size_t Bits>
+    class big_integer;
+
+    namespace detail {
+        template<std::size_t Bits>
+        using unsigned_cpp_int_type1 =
+            boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
+                Bits, Bits, boost::multiprecision::unsigned_magnitude,
+                boost::multiprecision::unchecked>>;
+        template<std::size_t Bits>
+        using signed_cpp_int_type1 =
+            boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
+                Bits, Bits, boost::multiprecision::signed_magnitude,
+                boost::multiprecision::unchecked>>;
+
+        template<std::size_t Bits>
+        inline constexpr unsigned_cpp_int_type1<Bits> to_cpp_int(const big_integer<Bits>& a) {
+            unsigned_cpp_int_type1<Bits> result;
+            for (const auto limb : a.limbs_array() | std::views::reverse) {
+                result <<= detail::limb_bits;
+                result |= limb;
+            }
+            return result;
+        }
+
+        template<std::size_t Bits>
+        inline constexpr big_integer<Bits> to_big_integer(unsigned_cpp_int_type1<Bits> cppint) {
+            big_integer<Bits> result;
+            for (auto& limb : result.limbs_array()) {
+                limb = static_cast<detail::limb_type>(cppint & static_cast<detail::limb_type>(-1));
+                cppint >>= detail::limb_bits;
+            }
+            return result;
+        }
+    }  // namespace detail
+}  // namespace nil::crypto3::multiprecision
+
 // TODO(ioxid): boost is used for
-//
-// boost::multiprecision::std_constexpr::swap
-// boost::multiprecision::std_constexpr::copy
-// ^ these can be fixed by using C++20's constexpr functions from std
-// v need to copy everything else
 // boost::multiprecision::detail::addcarry_limb
 // boost::multiprecision::detail::subborrow_limb
 
 namespace nil::crypto3::multiprecision {
-    template<unsigned Bits>
+    template<std::size_t Bits>
     class big_integer;
 
     namespace detail {
@@ -52,7 +88,7 @@ namespace nil::crypto3::multiprecision {
             return (c - 'A') + 10;
         }
 
-        template<unsigned Bits>
+        template<std::size_t Bits>
         constexpr big_integer<Bits> parse_int_hex(const char* str) {
             if (str[0] != '0' || str[1] != 'x') {
                 throw std::invalid_argument("hex literal should start with 0x");
@@ -90,7 +126,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        template<unsigned Bits>
+        template<std::size_t Bits>
         constexpr big_integer<Bits> parse_int_decimal(const char* str) {
             big_integer<Bits> result{0};
 
@@ -105,7 +141,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        template<unsigned Bits>
+        template<std::size_t Bits>
         constexpr big_integer<Bits> parse_int(const char* str) {
             if (str[0] == '0' && str[1] == 'x') {
                 return parse_int_hex<Bits>(str);
@@ -114,19 +150,16 @@ namespace nil::crypto3::multiprecision {
         }
     }  // namespace detail
 
-    template<unsigned Bits_>
+    template<std::size_t Bits_>
     class big_integer {
       public:
-        constexpr static unsigned Bits = Bits_;
+        constexpr static std::size_t Bits = Bits_;
         using self_type = big_integer;
 
         using limb_type = detail::limb_type;
         using double_limb_type = detail::double_limb_type;
         using signed_limb_type = detail::signed_limb_type;
         using signed_double_limb_type = detail::signed_double_limb_type;
-
-        using unsigned_types = std::tuple<limb_type, double_limb_type>;
-        using signed_types = std::tuple<signed_limb_type, signed_double_limb_type>;
 
         // Storage
 
@@ -186,7 +219,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         // This should be implicit even for Bits2 < Bits because it's used in boost random
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         inline constexpr big_integer(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
@@ -201,7 +234,7 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         inline constexpr big_integer& operator=(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
@@ -254,7 +287,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        template<unsigned Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
+        template<std::size_t Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
         inline constexpr big_integer<Bits2> truncate() const noexcept {
             big_integer<Bits2> result;
             result.do_assign(*this);
@@ -977,16 +1010,16 @@ namespace nil::crypto3::multiprecision {
         // This should be called only for creation of Montgomery and Barett
         // params, not during "normal" execution, so we do not care about the execution speed.
 
-        template<unsigned Bits2, unsigned Bits3>
+        template<std::size_t Bits2, std::size_t Bits3>
         static inline constexpr void divide(big_integer* result, const big_integer<Bits2>& x,
                                             const big_integer<Bits3>& y, big_integer& r) {
             // TODO(ioxid): fix
 
-            // if (result) {
-            //     *result = x.to_cpp_int() / y.to_cpp_int();
-            // }
-            // r = x.to_cpp_int() % y.to_cpp_int();
-            // return;
+            if (result) {
+                *result = detail::to_big_integer(detail::to_cpp_int(x) / detail::to_cpp_int(y));
+            }
+            r = detail::to_big_integer(detail::to_cpp_int(x) % detail::to_cpp_int(y));
+            return;
 
             /*
             Very simple, fairly braindead long division.
@@ -1231,7 +1264,7 @@ namespace nil::crypto3::multiprecision {
 
         // Caller is responsible for the result to fit in Bits bits, we will NOT throw!!!
 
-        template<unsigned Bits2, unsigned Bits3>
+        template<std::size_t Bits2, std::size_t Bits3>
         static inline constexpr void multiply(big_integer& result, const big_integer<Bits2>& a,
                                               const big_integer<Bits3>& b) noexcept {
             std::size_t as = a.size();
@@ -1294,7 +1327,7 @@ namespace nil::crypto3::multiprecision {
             this->normalize();
         }
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         inline constexpr void do_assign(const big_integer<Bits2>& other) noexcept {
             unsigned count = (std::min)(other.size(), this->size());
             for (unsigned i = 0; i < count; ++i) {
@@ -1315,7 +1348,7 @@ namespace nil::crypto3::multiprecision {
         // If this value is true, reduction by modulus must happen next.
         bool m_carry = false;
 
-        template<unsigned>
+        template<std::size_t>
         friend class big_integer;
     };
 }  // namespace nil::crypto3::multiprecision

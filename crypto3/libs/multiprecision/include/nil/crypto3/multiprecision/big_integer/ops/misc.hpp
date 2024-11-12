@@ -21,17 +21,10 @@
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 // TODO(ioxid): refactor
-//
-// Remove all boost parts, that is:
-// boost::multiprecision::backends::numeric_limits_workaround
-// boost::multiprecision::detail::is_integral
-// boost::multiprecision::detail::is_signed
-// boost::multiprecision::detail::find_lsb
-// boost::multiprecision::detail::find_msb
 
 namespace nil::crypto3::multiprecision {
     // TODO(ioxid): refactor
-    // template<class R, unsigned Bits>
+    // template<class R, std::size_t Bits>
     // inline constexpr
     //     typename std::enable_if<boost::multiprecision::detail::is_integral<R>::value, void>::type
     //     convert_to(R *result, const big_integer<Bits> &backend) {
@@ -96,7 +89,7 @@ namespace nil::crypto3::multiprecision {
     //     }
     // }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     NIL_CO3_MP_FORCEINLINE constexpr bool is_zero(const big_integer<Bits> &val) noexcept {
         // std::all_of is not constexpr, so writing manually.
         for (std::size_t i = 0; i < val.size(); ++i) {
@@ -110,7 +103,7 @@ namespace nil::crypto3::multiprecision {
     //
     // Get the location of the least-significant-bit:
     //
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr unsigned lsb(const big_integer<Bits> &a) {
         //
         // Find the index of the least significant limb that is non-zero:
@@ -127,7 +120,7 @@ namespace nil::crypto3::multiprecision {
         return result + index * big_integer<Bits>::limb_bits;
     }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr unsigned msb(const big_integer<Bits> &a) {
         //
         // Find the index of the most significant bit that is non-zero:
@@ -143,7 +136,7 @@ namespace nil::crypto3::multiprecision {
         return std::bit_width(a.limbs()[0]) - 1;
     }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr bool bit_test(const big_integer<Bits> &val, std::size_t index) noexcept {
         using detail::limb_type;
 
@@ -156,7 +149,7 @@ namespace nil::crypto3::multiprecision {
         return static_cast<bool>(val.limbs()[offset] & mask);
     }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr void bit_set(big_integer<Bits> &val, std::size_t index) {
         using detail::limb_type;
 
@@ -169,7 +162,7 @@ namespace nil::crypto3::multiprecision {
         val.limbs()[offset] |= mask;
     }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr void bit_unset(big_integer<Bits> &val, std::size_t index) noexcept {
         using detail::limb_type;
 
@@ -183,7 +176,7 @@ namespace nil::crypto3::multiprecision {
         val.normalize();
     }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr void bit_flip(big_integer<Bits> &val, std::size_t index) {
         using detail::limb_type;
 
@@ -200,7 +193,7 @@ namespace nil::crypto3::multiprecision {
     // TODO(ioxid): do we need this?
     // Since we don't have signed_type in big_integer, we need to override this
     // function.
-    // template<unsigned Bits, class Integer>
+    // template<std::size_t Bits, class Integer>
     // inline constexpr
     //     typename std::enable_if<boost::multiprecision::detail::is_unsigned<Integer>::value,
     //                             Integer>::type
@@ -226,7 +219,7 @@ namespace nil::crypto3::multiprecision {
     //     }
     // }
 
-    // template<unsigned Bits, class Integer>
+    // template<std::size_t Bits, class Integer>
     // NIL_CO3_MP_FORCEINLINE constexpr
     //     typename std::enable_if<boost::multiprecision::detail::is_signed<Integer>::value &&
     //                                 boost::multiprecision::detail::is_integral<Integer>::value,
@@ -235,7 +228,7 @@ namespace nil::crypto3::multiprecision {
     //     return integer_modulus(x, boost::multiprecision::detail::unsigned_abs(val));
     // }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr std::size_t hash_value(const big_integer<Bits> &val) noexcept {
         std::size_t result = 0;
         for (unsigned i = 0; i < val.size(); ++i) {

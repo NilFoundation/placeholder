@@ -14,7 +14,7 @@ namespace nil::crypto3::multiprecision {
         template<typename T>
         constexpr bool is_signed_big_integer_v = false;
 
-        template<unsigned Bits>
+        template<std::size_t Bits>
         constexpr bool is_signed_big_integer_v<signed_big_integer<Bits>> = true;
 
         template<typename T>

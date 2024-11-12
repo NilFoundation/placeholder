@@ -11,15 +11,10 @@
 
 #pragma once
 
+#include <boost/functional/hash_fwd.hpp>
 #include <cmath>
 #include <cstddef>
 #include <vector>
-
-#include <boost/predef.h>
-
-#include <boost/cstdint.hpp>
-#include <boost/functional/hash_fwd.hpp>
-
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
@@ -36,4 +31,6 @@ namespace nil::crypto3::multiprecision {
         result.ops().exp(result.base_data(), b.base_data(), e);
         return result;
     }
+
+    // TODO(ioxid): hash
 }  // namespace nil::crypto3::multiprecision

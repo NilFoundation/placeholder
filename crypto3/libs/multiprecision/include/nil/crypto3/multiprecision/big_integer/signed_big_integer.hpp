@@ -8,18 +8,15 @@
 #include <string>
 #include <type_traits>
 
-// TODO(ioxid): replace with custom code
-#include <boost/multiprecision/cpp_int.hpp>
-
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 
 namespace nil::crypto3::multiprecision {
-    template<unsigned Bits_>
+    template<std::size_t Bits_>
     class signed_big_integer {
       public:
-        constexpr static unsigned Bits = Bits_;
+        constexpr static auto Bits = Bits_;
         using self_type = signed_big_integer<Bits>;
 
         using unsigned_type = big_integer<Bits>;
@@ -28,7 +25,7 @@ namespace nil::crypto3::multiprecision {
 
         inline constexpr signed_big_integer() noexcept {}
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         inline constexpr signed_big_integer(const big_integer<Bits2>& b) noexcept : m_abs(b) {}
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
@@ -43,19 +40,19 @@ namespace nil::crypto3::multiprecision {
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
         inline constexpr signed_big_integer(T val) noexcept : m_abs(val) {}
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         inline constexpr signed_big_integer(const signed_big_integer<Bits2>& other) noexcept
             : m_negative(other.negative()), m_abs(other.abs()) {}
 
         // Assignment
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         inline constexpr signed_big_integer& operator=(const big_integer<Bits2>& b) {
             m_negative = false;
             m_abs = b;
         }
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         inline constexpr signed_big_integer& operator=(
             const signed_big_integer<Bits2>& other) noexcept {
             m_negative = other.negative();
@@ -86,7 +83,7 @@ namespace nil::crypto3::multiprecision {
             return (negative() ? std::string("-") : std::string("")) + m_abs.str();
         }
 
-        template<unsigned Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
+        template<std::size_t Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
         inline constexpr signed_big_integer<Bits2> truncate() const noexcept {
             return {m_negative, m_abs.template truncate<Bits2>()};
         }
@@ -98,7 +95,7 @@ namespace nil::crypto3::multiprecision {
             return multiplied_by_sign(static_cast<T>(abs()));
         }
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         explicit inline constexpr operator big_integer<Bits2>() const {
             NIL_CO3_MP_ASSERT(!this->negative());
             return m_abs;
@@ -123,7 +120,7 @@ namespace nil::crypto3::multiprecision {
 
         // Comparision
 
-        template<unsigned Bits>
+        template<std::size_t Bits>
         inline constexpr int compare(const signed_big_integer<Bits>& other) const noexcept {
             if (negative() && !other.negative()) {
                 return -1;
@@ -202,7 +199,7 @@ namespace nil::crypto3::multiprecision {
 
         // Multiplication
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         static inline constexpr signed_big_integer<Bits + Bits2> multiply(
             const signed_big_integer& a, const signed_big_integer<Bits2>& b) noexcept {
             signed_big_integer<Bits + Bits2> result = a.m_abs * b.m_abs;
@@ -237,7 +234,7 @@ namespace nil::crypto3::multiprecision {
         big_integer<Bits> m_abs;
     };
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     NIL_CO3_MP_FORCEINLINE constexpr bool is_zero(const signed_big_integer<Bits>& val) noexcept {
         return is_zero(val.abs());
     }

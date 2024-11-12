@@ -77,7 +77,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     // Overload the above code for unsigned big integers.
-    template<unsigned Bits>
+    template<std::size_t Bits>
     constexpr void inverse_extended_euclidean_algorithm(big_integer<Bits>& result,
                                                         const big_integer<Bits>& a,
                                                         const big_integer<Bits>& m) {
@@ -314,7 +314,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     // Overload the above code for unsigned big integers.
-    template<unsigned Bits>
+    template<std::size_t Bits>
     constexpr void inverse_mod(big_integer<Bits>& result, const big_integer<Bits>& n,
                                const big_integer<Bits>& mod) {
         // Careful here, we NEED signed magnitude numbers here.
@@ -396,7 +396,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     // Overload the above code for unsigned big integers.
-    template<unsigned Bits>
+    template<std::size_t Bits>
     constexpr void monty_inverse(big_integer<Bits>& result, const big_integer<Bits>& a,
                                  const big_integer<Bits>& p, const big_integer<Bits>& k) {
         // Careful here, we NEED signed magnitude numbers here.
