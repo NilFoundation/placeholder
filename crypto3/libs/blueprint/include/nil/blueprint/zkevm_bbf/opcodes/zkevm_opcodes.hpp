@@ -70,7 +70,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/eq.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/stop.hpp>
-
+#include <nil/blueprint/zkevm_bbf/opcodes/keccak.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -622,7 +622,7 @@ namespace nil {
                 opcodes[zkevm_opcode::SHL] = std::make_shared<zkevm_shl_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::SHR] = std::make_shared<zkevm_shr_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::SAR] = std::make_shared<zkevm_sar_operation<BlueprintFieldType>>();
-
+                opcodes[zkevm_opcode::KECCAK256] = std::make_shared<zkevm_keccak_operation<BlueprintFieldType>>();
                 // // Memory operations
                 opcodes[zkevm_opcode::MSTORE] = std::make_shared<zkevm_mstore_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MSTORE8] = std::make_shared<zkevm_mstore8_operation<BlueprintFieldType>>();

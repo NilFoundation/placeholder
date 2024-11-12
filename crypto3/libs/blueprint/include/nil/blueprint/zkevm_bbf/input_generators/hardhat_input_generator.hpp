@@ -225,7 +225,7 @@ namespace nil {
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
-                            } else if(opcode == "SHA3") {
+                            } else if(opcode == "KECCAK256") {
                                 // 0x20
                                 std::cout << "Add copy event" << std::endl;
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -235,10 +235,10 @@ namespace nil {
                                 auto offset = stack[stack.size()-1];
                                 std::size_t offset_small = w_to_16(offset)[15];
                                 for( std::size_t i = 0; i < length; i++){
-                                    // TODO: get real calldata(!)
                                     _rw_operations.push_back(memory_rw_operation(call_id, offset+i, rw_counter++, false, memory_next[offset_small + i]));
                                 }
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "ADDRESS") {
                                 // 0x30
                                 std::cout << "Test ADDRESS opcode, please!" << std::endl;
@@ -311,6 +311,7 @@ namespace nil {
                                     cpy.bytes.push_back(memory_next[dest+i]); //TODO: change it on calldata
                                 }
                                 _copy_events.push_back(cpy);
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "CODESIZE") {
                                 // 0x38
                                 // std::cout << "Test me, please!" << std::endl;
@@ -485,7 +486,7 @@ namespace nil {
                                 // std::cout << "\t\t Address = 0x" << std::hex << addr << std::dec << " memory size " << memory.size() << std::endl;
                                 auto bytes = w_to_8(stack[stack.size() - 2]);
                                 _rw_operations.push_back(memory_rw_operation(call_id, addr, rw_counter++, true, bytes[31]));
-
+                                memory_size_before = memory_next.size();
                             } else if(opcode == "SLOAD") {
                                 // 0x54
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -942,7 +943,7 @@ namespace nil {
                                 // 0xff
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                             } else {
-                                // std::cout << "Unknown opcode " << std::hex << opcode << std::dec << std::endl;
+                                std::cout << "Unknown opcode " << std::hex << opcode << std::dec << std::endl;
                                 BOOST_ASSERT(false);
                             }
                             _zkevm_states.push_back(state);

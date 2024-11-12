@@ -69,6 +69,8 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
+                        std::cout << "\ta = " << std::hex << current_state.stack_top() << std::dec << std::endl;
+                        std::cout << "\tb = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
                         bool eq = true;
                         for( std::size_t i = 0; i < 16; i++ ){
                             A[i] = a[i];
@@ -94,17 +96,18 @@ namespace nil {
                                 // !is_negative_A && !is_negative_B && lt => A > B;
                                 //                                  && gt => A < B;
                                 //result = scmp_operation == scmp_type::C_SLT ? a[i] < b[i]: a[i] > b[i];
+                                std::cout << "\tNot equal" << std::endl;
                                 diff = a[i] < b[i]? b[i] - a[i]: a[i] - b[i];
                                 diff_inv = diff.inversed();
                                 lt = a[i] < b[i];
                                 gt = a[i] > b[i];
                                 if( scmp_operation == scmp_type::C_SLT ){
-                                    result = result + (is_negative_A * is_negative_B * gt - (1 - is_negative_A) * (1 - is_negative_B) * lt);
+                                    result = result + (is_negative_A * is_negative_B * gt + (1 - is_negative_A) * (1 - is_negative_B) * lt);
                                 } else {
-                                    result = result + (is_negative_A * is_negative_B * lt - (1 - is_negative_A) * (1 - is_negative_B) * gt);
+                                    result = result + (is_negative_A * is_negative_B * lt + (1 - is_negative_A) * (1 - is_negative_B) * gt);
                                 }
+                                break;
                             }
-                            break;
                         }
                     }
                     TYPE s_sum;
@@ -127,6 +130,12 @@ namespace nil {
                     constrain(is_negative_B * (1 - is_negative_B));
                     constrain(is_negative_A * (A[0] - sign_proof_A - 0x8000) + (1 - is_negative_A) * (0x7fff - A[0] - sign_proof_A));
                     constrain(is_negative_B * (B[0] - sign_proof_A - 0x8000) + (1 - is_negative_B) * (0x7fff - B[0] - sign_proof_A));
+
+                    std::cout << "\tresult = " << result << std::endl;
+                    std::cout << "\tlt = " << lt << std::endl;
+                    std::cout << "\tgt = " << gt << std::endl;
+                    std::cout << "\tis_negative_A = " << is_negative_A << std::endl;
+                    std::cout << "\tis_negative_B = " << is_negative_B << std::endl;
 
                     for( std::size_t i = 0; i < 16; i++ ){
                         constrain(S[i] * (S[i] - 1));
@@ -161,6 +170,8 @@ namespace nil {
                     constrain(diff * diff_inv - lt - gt);
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
+                    std::cout << "A = " << std::hex << A_128.first << " " << A_128.second << std::dec << std::endl;
+                    std::cout << "B = " << std::hex << B_128.first << " " << B_128.second << std::dec << std::endl;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
                         constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
@@ -205,6 +216,7 @@ namespace nil {
                             TYPE(1),// is_write
                             TYPE(0),
                             result
+
                         };
                         lookup(tmp, "zkevm_rw");
                     }
