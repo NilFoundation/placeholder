@@ -41,6 +41,9 @@ namespace nil::crypto3::multiprecision {
             inline constexpr modular_big_integer_impl(const big_integer_t x,
                                                       modular_ops_storage_t&& modular_ops_storage)
                 : m_modular_ops_storage(std::move(modular_ops_storage)) {
+                // TODO(ioxid): do we need this?
+                // BOOST_ASSERT_MSG(Bits == msb(ops().get_mod()) + 1,
+                //                  "modulus precision should match used big_integer");
                 ops().adjust_modular(m_base, x);
             }
 
@@ -140,19 +143,6 @@ namespace nil::crypto3::multiprecision {
                 static_cast<typename std::tuple_element<0, unsigned_types>::type>(0u);
             ;
         };
-
-        // TODO(ioxid): remove
-        template<unsigned Bits, typename big_integer_t1, typename big_integer_t2,
-                 typename modular_ops_storage_t>
-        constexpr void assign_components(
-            modular_big_integer_impl<big_integer<Bits>, modular_ops_storage_t>& result,
-            const big_integer_t1& a, const big_integer_t2& b) {
-            BOOST_ASSERT_MSG(Bits == msb(b) + 1,
-                             "modulus precision should match used big_integer_t");
-
-            result.set_modular_ops(b);
-            result.ops().adjust_modular(result.base_data(), a);
-        }
     }  // namespace detail
 
     template<const auto& modulus, template<typename> typename modular_ops_template>

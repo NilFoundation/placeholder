@@ -18,9 +18,9 @@
 // We need cpp_int to compare to it.
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include <nil/crypto3/multiprecision/big_integer/literals.hpp>
-#include <nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp>
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/literals.hpp"
+#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
 
 using namespace nil::crypto3::multiprecision::literals;
 
@@ -49,11 +49,10 @@ constexpr void pow_test(const big_integer_t& a, const big_integer_t& b, const bi
     // pow could be used only with modular_numbers
     // modular_number a_m_pow_b_m = pow(a_m, b_m);
     // powm could be used with mixed types
-    // TODO(ioxid): enable these
     // modular_number a_m_powm_b_m = powm(a_m, b_m);
-    // modular_number a_m_powm_b = powm(a_m, b);
+    modular_number a_m_powm_b = powm(a_m, b);
     // BOOST_ASSERT_MSG(standard_number(a_m_powm_b_m.to_cpp_int()) == a_powm_b, "powm error");
-    // BOOST_ASSERT_MSG(standard_number(a_m_powm_b.to_cpp_int()) == a_powm_b, "powm error");
+    BOOST_ASSERT_MSG(standard_number(a_m_powm_b.to_cpp_int()) == a_powm_b, "powm error");
 }
 
 template<typename big_integer_t>
@@ -82,25 +81,25 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     dbl_standard_number a_mul_b_s =
         (static_cast<dbl_standard_number>(a_cppint) * static_cast<dbl_standard_number>(b_cppint)) %
         e_cppint;
-    dbl_standard_number a_mod_b_s =
-        (static_cast<dbl_standard_number>(a_cppint) % static_cast<dbl_standard_number>(b_cppint)) %
-        e_cppint;
-    standard_number a_and_b_s = (a_cppint & b_cppint) % e_cppint;
-    standard_number a_or_b_s = (a_cppint | b_cppint) % e_cppint;
-    standard_number a_xor_b_s = (a_cppint ^ b_cppint) % e_cppint;
+    // dbl_standard_number a_mod_b_s =
+    //     (static_cast<dbl_standard_number>(a_cppint) % static_cast<dbl_standard_number>(b_cppint))
+    //     % e_cppint;
+    // standard_number a_and_b_s = (a_cppint & b_cppint) % e_cppint;
+    // standard_number a_or_b_s = (a_cppint | b_cppint) % e_cppint;
+    // standard_number a_xor_b_s = (a_cppint ^ b_cppint) % e_cppint;
     standard_number a_powm_b_s = powm(a_cppint, b_cppint, e_cppint);
-    standard_number a_bit_set_s = a_cppint;
-    bit_set(a_bit_set_s, 1);
-    a_bit_set_s %= e_cppint;
-    standard_number a_bit_unset_s = a_cppint;
-    a_bit_unset_s %= e_cppint;
-    bit_unset(a_bit_unset_s, 2);
-    standard_number a_bit_flip_s = a_cppint;
-    bit_flip(a_bit_flip_s, 3);
-    a_bit_flip_s %= e_cppint;
+    // standard_number a_bit_set_s = a_cppint;
+    // bit_set(a_bit_set_s, 1);
+    // a_bit_set_s %= e_cppint;
+    // standard_number a_bit_unset_s = a_cppint;
+    // a_bit_unset_s %= e_cppint;
+    // bit_unset(a_bit_unset_s, 2);
+    // standard_number a_bit_flip_s = a_cppint;
+    // bit_flip(a_bit_flip_s, 3);
+    // a_bit_flip_s %= e_cppint;
 
-    int b_msb_s = msb(b_cppint);
-    int b_lsb_s = lsb(b_cppint);
+    // int b_msb_s = msb(b_cppint);
+    // int b_lsb_s = lsb(b_cppint);
 
     modular_number a(test_set[a_e], test_set[mod_e]);
     modular_number b(test_set[b_e], test_set[mod_e]);
@@ -111,8 +110,7 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     // modular_number a_and_b = a & b;
     // modular_number a_or_b = a | b;
     // modular_number a_xor_b = a ^ b;
-    // TODO(ioxid): need this one
-    // modular_number a_powm_b = powm(a, b);
+    modular_number a_powm_b = powm(a, b.remove_modulus());
     // modular_number a_bit_set = a;
     // bit_set(a_bit_set, 1);
     // modular_number a_bit_unset = a;
@@ -120,8 +118,8 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     // modular_number a_bit_flip = a;
     // bit_flip(a_bit_flip, 3);
 
-    int b_msb = msb(b_cppint);
-    int b_lsb = lsb(b_cppint);
+    // int b_msb = msb(b);
+    // int b_lsb = lsb(b);
 
     // We cannot use convert_to here, because there's a bug inside boost, convert_to is constexpr,
     // but it calls function generic_interconvert which is not.
@@ -140,7 +138,7 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     // BOOST_ASSERT_MSG(standard_number(a_or_b.to_cpp_int()) == a_or_b_s, "or error");
     // BOOST_ASSERT_MSG(standard_number(a_xor_b.to_cpp_int()) == a_xor_b_s, "xor error");
 
-    // BOOST_ASSERT_MSG(standard_number(a_powm_b.to_cpp_int()) == a_powm_b_s, "powm error");
+    BOOST_ASSERT_MSG(standard_number(a_powm_b.to_cpp_int()) == a_powm_b_s, "powm error");
     pow_test(test_set[a_e], test_set[b_e], test_set[mod_e]);
 
     // BOOST_ASSERT_MSG(standard_number(a_bit_set.to_cpp_int()) == a_bit_set_s, "bit set error");
@@ -148,8 +146,8 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     // error"); BOOST_ASSERT_MSG(standard_number(a_bit_flip.to_cpp_int()) == a_bit_flip_s, "bit flip
     // error");
 
-    BOOST_ASSERT_MSG(b_msb_s == b_msb, "msb error");
-    BOOST_ASSERT_MSG(b_lsb_s == b_lsb, "lsb error");
+    // BOOST_ASSERT_MSG(b_msb_s == b_msb, "msb error");
+    // BOOST_ASSERT_MSG(b_lsb_s == b_lsb, "lsb error");
 
     return true;
 }

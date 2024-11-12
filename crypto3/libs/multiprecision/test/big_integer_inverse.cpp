@@ -258,7 +258,7 @@ void test_monty_inverse() {
 BOOST_AUTO_TEST_SUITE(runtime_tests)
 
 BOOST_AUTO_TEST_CASE(inverse_tests) {
-    // TODO(ioxid): enable these
+    // TODO(ioxid): enable these?
     // test_monty_inverse<big_integer<4096>>();
     // test_inverse_mod<big_integer<4096>>();
     // test_inverse_extended_euclidean_algorithm<big_integer<4096>>();
