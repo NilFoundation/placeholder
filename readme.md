@@ -1,7 +1,7 @@
 # =nil; Foundation's Cryptography Suite
 [![Discord](https://img.shields.io/discord/969303013749579846.svg?logo=discord&style=flat-square)](https://discord.gg/KmTAEjbmM3)
 [![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=flat-square&logo=telegram&logoColor=dark)](https://t.me/nilfoundation)
-[![Twitter](https://img.shields.io/twitter/follow/nil_foundation)](https://twitter.com/nil_foundation)
+[![Twitter](https://img.shields.io/twitter/follow/nil_foundation)](https://x.com/nil_foundation)
 
 Placeholder repository is a collection of various nil-projects. Check out subfolders for more.
 Supported by [=nil; Foundation](https://nil.foundation)
