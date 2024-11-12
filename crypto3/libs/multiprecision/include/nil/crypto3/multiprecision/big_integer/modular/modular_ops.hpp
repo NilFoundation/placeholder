@@ -11,16 +11,17 @@
 
 #pragma once
 
+#include <boost/mpl/if.hpp>
 #include <climits>
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
 #include <type_traits>
 
-#include <boost/mpl/if.hpp>
-
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<typename big_integer_t>
@@ -159,7 +160,7 @@ namespace nil::crypto3::multiprecision::detail {
                  // result should fit in the output parameter
                  std::enable_if_t<Bits1 >= Bits2, int> = 0>
         constexpr void add(big_integer<Bits1> &result, const big_integer<Bits2> &y) const {
-            BOOST_ASSERT(result < m_mod && y < m_mod);
+            NIL_CO3_MP_ASSERT(result < m_mod && y < m_mod);
 
             result += y;
             // If we overflow and set the carry, we need to subtract the modulus, which is
@@ -187,7 +188,7 @@ namespace nil::crypto3::multiprecision::detail {
                  /// result should fit in the output parameter
                  std::enable_if_t<big_integer_t1::Bits >= big_integer_t::Bits, int> = 0>
         constexpr void exp(big_integer_t1 &result, big_integer_t2 &a, big_integer_t3 exp) const {
-            BOOST_ASSERT(a < m_mod);
+            NIL_CO3_MP_ASSERT(a < m_mod);
 
             if (exp == 0u) {
                 result = 1u;
@@ -388,8 +389,8 @@ namespace nil::crypto3::multiprecision::detail {
         template<typename big_integer_t1>
         constexpr void montgomery_mul_no_carry_impl(big_integer_t1 &c,
                                                     const big_integer_t1 &b) const {
-            BOOST_ASSERT(c < this->m_mod && b < this->m_mod);
-            BOOST_ASSERT(is_applicable_for_no_carry_montgomery_mul());
+            NIL_CO3_MP_ASSERT(c < this->m_mod && b < this->m_mod);
+            NIL_CO3_MP_ASSERT(is_applicable_for_no_carry_montgomery_mul());
 
             // Obtain number of limbs
             constexpr int N = big_integer_t1::internal_limb_count;
@@ -483,7 +484,7 @@ namespace nil::crypto3::multiprecision::detail {
         template<typename big_integer_t1>
         constexpr void montgomery_mul_CIOS_impl(big_integer_t1 &result,
                                                 const big_integer_t1 &y) const {
-            BOOST_ASSERT(result < this->m_mod && y < this->m_mod);
+            NIL_CO3_MP_ASSERT(result < this->m_mod && y < this->m_mod);
 
             big_integer_t A(limb_type(0u));
             const std::size_t mod_size = this->m_mod.size();
@@ -577,7 +578,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void exp(big_integer_t1 &result, const big_integer_t2 &a,
                            big_integer_t3 exp) const {
             /// input parameter should be less than modulus
-            BOOST_ASSERT(a < this->m_mod);
+            NIL_CO3_MP_ASSERT(a < this->m_mod);
 
             big_integer_t R_mod_m(1u);
             adjust_modular(R_mod_m);

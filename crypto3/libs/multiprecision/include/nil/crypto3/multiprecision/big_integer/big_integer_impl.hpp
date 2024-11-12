@@ -14,17 +14,14 @@
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <system_error>
 #include <tuple>
 #include <type_traits>
 
-// TODO(ioxid): replace with custom code
-#include <boost/multiprecision/cpp_int.hpp>
-
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 // TODO(ioxid): boost is used for
@@ -123,10 +120,6 @@ namespace nil::crypto3::multiprecision {
         constexpr static unsigned Bits = Bits_;
         using self_type = big_integer;
 
-        using cpp_int_type = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::unsigned_magnitude,
-            boost::multiprecision::unchecked>>;
-
         using limb_type = detail::limb_type;
         using double_limb_type = detail::double_limb_type;
         using signed_limb_type = detail::signed_limb_type;
@@ -156,6 +149,8 @@ namespace nil::crypto3::multiprecision {
         }
         inline constexpr limb_pointer limbs() noexcept { return m_data.data(); }
         inline constexpr const_limb_pointer limbs() const noexcept { return m_data.data(); }
+        inline constexpr auto& limbs_array() noexcept { return m_data; }
+        inline constexpr const auto& limbs_array() const noexcept { return m_data; }
         inline constexpr bool sign() const noexcept { return false; }
 
         // Zeros out everything after limb[i], replaces resizing.
@@ -179,8 +174,6 @@ namespace nil::crypto3::multiprecision {
 
         inline constexpr big_integer(const char* str) { *this = str; }
 
-        inline explicit constexpr big_integer(const cpp_int_type& cppint) { *this = cppint; }
-
         // TODO(ioxid): forbid signed, implement comparison with signed instead
         template<class T,
                  std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
@@ -197,7 +190,7 @@ namespace nil::crypto3::multiprecision {
         inline constexpr big_integer(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
-                BOOST_ASSERT(*this == other);
+                NIL_CO3_MP_ASSERT(*this == other);
             }
         }
 
@@ -208,19 +201,11 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        inline constexpr big_integer& operator=(cpp_int_type cppint) {
-            for (limb_type& limb : m_data) {
-                limb = static_cast<limb_type>(cppint & static_cast<limb_type>(-1));
-                cppint >>= limb_bits;
-            }
-            return *this;
-        }
-
         template<unsigned Bits2>
         inline constexpr big_integer& operator=(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
-                BOOST_ASSERT(*this == other);
+                NIL_CO3_MP_ASSERT(*this == other);
             }
             return *this;
         }
@@ -229,7 +214,7 @@ namespace nil::crypto3::multiprecision {
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
         inline constexpr big_integer& operator=(T val) noexcept {
-            BOOST_ASSERT_MSG(val >= 0, "big_integer: assignment from negative integer");
+            NIL_CO3_MP_ASSERT_MSG(val >= 0, "big_integer: assignment from negative integer");
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
             return *this;
         }
@@ -257,7 +242,7 @@ namespace nil::crypto3::multiprecision {
                     auto ec = std::to_chars(result.data() + start_offset,
                                             result.data() + result.size(), limb, 16)
                                   .ec;
-                    BOOST_ASSERT(ec == std::errc{});
+                    NIL_CO3_MP_ASSERT(ec == std::errc{});
                 }
             }
             for (std::size_t i = 2; i < result.size(); ++i) {
@@ -269,16 +254,6 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        // Converting to cpp_int. Should be used only in tests.
-        inline constexpr cpp_int_type to_cpp_int() const {
-            cpp_int_type result;
-            for (const limb_type limb : m_data | std::views::reverse) {
-                result <<= limb_bits;
-                result |= limb;
-            }
-            return result;
-        }
-
         template<unsigned Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
         inline constexpr big_integer<Bits2> truncate() const noexcept {
             big_integer<Bits2> result;
@@ -286,7 +261,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        // cast to integral types
+        // Cast to integral types
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
@@ -325,7 +300,6 @@ namespace nil::crypto3::multiprecision {
 
         static inline constexpr void add_constexpr(big_integer& result, const big_integer& a,
                                                    const big_integer& b) noexcept {
-            using ::boost::multiprecision::std_constexpr::swap;
             //
             // This is the generic, C++ only version of addition.
             // It's also used for all constexpr branches, hence the name.
@@ -379,7 +353,7 @@ namespace nil::crypto3::multiprecision {
         //
         static inline constexpr void subtract_constexpr(big_integer& result, const big_integer& a,
                                                         const big_integer& b) noexcept {
-            BOOST_ASSERT(a >= b);
+            NIL_CO3_MP_ASSERT(a >= b);
 
             //
             // This is the generic, C++ only version of subtraction.
@@ -404,7 +378,7 @@ namespace nil::crypto3::multiprecision {
                 borrow = (borrow >> big_integer::limb_bits) & 1u;
             }
             // if a > b, then borrow must be 0 at the end.
-            BOOST_ASSERT(0 == borrow);
+            NIL_CO3_MP_ASSERT(0 == borrow);
         }
 
 #ifdef CO3_MP_HAS_IMMINTRIN_H
@@ -504,7 +478,7 @@ namespace nil::crypto3::multiprecision {
         // It is the caller's responsibility to make sure that a > b.
         static inline constexpr void subtract(big_integer& result, const big_integer& a,
                                               const big_integer& b) noexcept {
-            BOOST_ASSERT(!eval_lt(a, b));
+            NIL_CO3_MP_ASSERT(!eval_lt(a, b));
 
 #ifndef BOOST_MP_NO_CONSTEXPR_DETECTION
             if (BOOST_MP_IS_CONST_EVALUATED(a.size())) {
@@ -571,7 +545,7 @@ namespace nil::crypto3::multiprecision {
                     borrow =
                         boost::multiprecision::detail::subborrow_limb(borrow, pa[i], pb[i], pr + i);
 
-                BOOST_ASSERT(0 == borrow);
+                NIL_CO3_MP_ASSERT(0 == borrow);
 
             }  // constepxr.
         }
@@ -607,7 +581,7 @@ namespace nil::crypto3::multiprecision {
             }
             // Just copy any remaining digits:
             if (&a != &result) {
-                boost::multiprecision::std_constexpr::copy(pa + i, pa + a.size(), pr + i);
+                std::copy(pa + i, pa + a.size(), pr + i);
             }
             if (Bits % big_integer::limb_bits == 0) {
                 result.set_carry(carry);
@@ -627,7 +601,7 @@ namespace nil::crypto3::multiprecision {
         //
         static inline constexpr void subtract(big_integer& result, const big_integer& a,
                                               const limb_type& b) noexcept {
-            BOOST_ASSERT(a >= b);
+            NIL_CO3_MP_ASSERT(a >= b);
 
             // Subtract one limb.
             // Nothing fancy, just let uintmax_t take the strain:
@@ -638,7 +612,7 @@ namespace nil::crypto3::multiprecision {
             if (*pa >= b) {
                 *pr = *pa - b;
                 if (&result != &a) {
-                    boost::multiprecision::std_constexpr::copy(pa + 1, pa + a.size(), pr + 1);
+                    std::copy(pa + 1, pa + a.size(), pr + 1);
                 }
             } else if (result.size() == 1) {
                 *pr = b - *pa;
@@ -652,7 +626,7 @@ namespace nil::crypto3::multiprecision {
                 pr[i] = pa[i] - 1;
                 if (&result != &a) {
                     ++i;
-                    boost::multiprecision::std_constexpr::copy(pa + i, pa + a.size(), pr + i);
+                    std::copy(pa + i, pa + a.size(), pr + i);
                 }
             }
         }
@@ -764,7 +738,7 @@ namespace nil::crypto3::multiprecision {
         // are normally 64 bit.
         static inline constexpr void left_shift_limb(big_integer& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
-            BOOST_ASSERT(static_cast<limb_type>(s % limb_bits) == 0);
+            NIL_CO3_MP_ASSERT(static_cast<limb_type>(s % limb_bits) == 0);
 
             limb_pointer pr = result.limbs();
 
@@ -797,7 +771,7 @@ namespace nil::crypto3::multiprecision {
                 std::size_t rs = result.size();
                 // This code only works when shift is non-zero, otherwise we invoke undefined
                 // behaviour!
-                BOOST_ASSERT(shift);
+                NIL_CO3_MP_ASSERT(shift);
                 for (; rs - i >= 2 + offset; ++i) {
                     pr[rs - 1 - i] = pr[rs - 1 - i - offset] << shift;
                     pr[rs - 1 - i] |= pr[rs - 2 - i - offset] >> (limb_bits - shift);
@@ -862,7 +836,7 @@ namespace nil::crypto3::multiprecision {
 
         static inline void right_shift_byte(big_integer& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
-            BOOST_ASSERT((s % CHAR_BIT) == 0);
+            NIL_CO3_MP_ASSERT((s % CHAR_BIT) == 0);
             unsigned ors = result.size();
             unsigned rs = ors;
             if (offset >= rs) {
@@ -887,7 +861,7 @@ namespace nil::crypto3::multiprecision {
 
         static inline constexpr void right_shift_limb(big_integer& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
-            BOOST_ASSERT((s % limb_bits) == 0);
+            NIL_CO3_MP_ASSERT((s % limb_bits) == 0);
             unsigned ors = result.size();
             unsigned rs = ors;
             if (offset >= rs) {
@@ -925,7 +899,7 @@ namespace nil::crypto3::multiprecision {
             unsigned i = 0;
 
             // This code only works for non-zero shift, otherwise we invoke undefined behaviour!
-            BOOST_ASSERT(shift);
+            NIL_CO3_MP_ASSERT(shift);
             for (; i + offset + 1 < ors; ++i) {
                 pr[i] = pr[i + offset] >> shift;
                 pr[i] |= pr[i + offset + 1] << (limb_bits - shift);
@@ -1008,11 +982,11 @@ namespace nil::crypto3::multiprecision {
                                             const big_integer<Bits3>& y, big_integer& r) {
             // TODO(ioxid): fix
 
-            if (result) {
-                *result = x.to_cpp_int() / y.to_cpp_int();
-            }
-            r = x.to_cpp_int() % y.to_cpp_int();
-            return;
+            // if (result) {
+            //     *result = x.to_cpp_int() / y.to_cpp_int();
+            // }
+            // r = x.to_cpp_int() % y.to_cpp_int();
+            // return;
 
             /*
             Very simple, fairly braindead long division.
@@ -1132,11 +1106,11 @@ namespace nil::crypto3::multiprecision {
                         (y_order > 0) ? (static_cast<double_limb_type>(py[y_order]) << limb_bits) |
                                             py[y_order - 1]
                                       : (static_cast<double_limb_type>(py[y_order]) << limb_bits);
-                    BOOST_ASSERT(b);
+                    NIL_CO3_MP_ASSERT(b);
                     double_limb_type v = a / b;
                     guess = static_cast<limb_type>(v);
                 }
-                BOOST_ASSERT(guess);  // If the guess ever gets to zero we go on forever....
+                NIL_CO3_MP_ASSERT(guess);  // If the guess ever gets to zero we go on forever....
                 //
                 // Update result:
                 //
@@ -1244,7 +1218,8 @@ namespace nil::crypto3::multiprecision {
                 r = y - r;
             }
 
-            BOOST_ASSERT(r < y);  // remainder must be less than the divisor or our code has failed
+            NIL_CO3_MP_ASSERT(r <
+                              y);  // remainder must be less than the divisor or our code has failed
         }
 
         // Multiplication
@@ -1270,20 +1245,20 @@ namespace nil::crypto3::multiprecision {
 
             double_limb_type carry = 0;
             for (std::size_t i = 0; i < as; ++i) {
-                BOOST_ASSERT(result.size() > i);
+                NIL_CO3_MP_ASSERT(result.size() > i);
                 std::size_t inner_limit = (std::min)(result.size() - i, bs);
                 std::size_t j = 0;
                 for (; j < inner_limit; ++j) {
-                    BOOST_ASSERT(i + j < result.size());
+                    NIL_CO3_MP_ASSERT(i + j < result.size());
                     carry +=
                         static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
-                    BOOST_ASSERT(
+                    NIL_CO3_MP_ASSERT(
                         !std::numeric_limits<double_limb_type>::is_specialized ||
                         ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
                     carry += pr[i + j];
                     pr[i + j] = static_cast<limb_type>(carry);
                     carry >>= limb_bits;
-                    BOOST_ASSERT(carry <= max_limb_value);
+                    NIL_CO3_MP_ASSERT(carry <= max_limb_value);
                 }
                 if (carry) {
                     // TODO(ioxid): throw?

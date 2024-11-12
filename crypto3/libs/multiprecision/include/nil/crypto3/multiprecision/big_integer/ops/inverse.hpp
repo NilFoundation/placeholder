@@ -13,6 +13,7 @@
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/signed_big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename signed_big_integer_t>
@@ -143,10 +144,10 @@ namespace nil::crypto3::multiprecision {
         zero = ui_type(0u);
         one = ui_type(1u);
         // Caller should assure these preconditions:
-        BOOST_ASSERT(n > 0);
-        BOOST_ASSERT(mod >= 0);
-        BOOST_ASSERT(n < mod);
-        BOOST_ASSERT(mod >= 3 && mod % 2 != 0);
+        NIL_CO3_MP_ASSERT(n > 0);
+        NIL_CO3_MP_ASSERT(mod >= 0);
+        NIL_CO3_MP_ASSERT(n < mod);
+        NIL_CO3_MP_ASSERT(mod >= 3 && mod % 2 != 0);
 
         /*
         This uses a modular inversion algorithm designed by Niels Möller
@@ -206,7 +207,7 @@ namespace nil::crypto3::multiprecision {
         using ui_type = detail::limb_type;
         signed_big_integer_t zero = ui_type(0u), one = ui_type(1u), tmp;
 
-        BOOST_ASSERT(mod > ui_type(0u) && n > ui_type(0u));
+        NIL_CO3_MP_ASSERT(mod > ui_type(0u) && n > ui_type(0u));
 
         if (is_zero(n) || (!bit_test(n, 0) && !bit_test(mod, 0))) {
             result = zero;

@@ -21,7 +21,7 @@ namespace nil::crypto3::multiprecision {
         using big_integer_t = big_integer<Bits>;
         // BOOST_THROW_EXCEPTION(std::invalid_argument("jacobi: second argument must be odd
         // and > 1"));
-        BOOST_ASSERT(n % 2 && n > 1);
+        NIL_CO3_MP_ASSERT(n % 2 && n > 1);
 
         big_integer_t x = a, y = n;
         int J = 1;

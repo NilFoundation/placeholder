@@ -1,15 +1,15 @@
 
 #define BOOST_TEST_MODULE big_integer_test
 
-#include <boost/test/unit_test.hpp>
+#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
+#include <boost/multiprecision/number.hpp>
+#include <boost/test/unit_test.hpp>
 #include <cstdint>
 #include <utility>
 
-#include <boost/multiprecision/number.hpp>
-
+#include "nil/crypto3/multiprecision/big_integer/cpp_int_conversions.hpp"
 #include "nil/crypto3/multiprecision/big_integer/literals.hpp"
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(32)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(33)
@@ -98,12 +98,12 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(cpp_int_conversion)
 
 BOOST_AUTO_TEST_CASE(to_cpp_int) {
-    BOOST_CHECK_EQUAL((0xFFFFFFFFFFF_big_integer60).to_cpp_int().str(), "17592186044415");
+    BOOST_CHECK_EQUAL(nil::crypto3::multiprecision::to_cpp_int(0xFFFFFFFFFFF_big_integer60).str(),
+                      "17592186044415");
 }
 
 BOOST_AUTO_TEST_CASE(from_cpp_int) {
-    nil::crypto3::multiprecision::big_integer<60> result;
-    result = 0xFFFFFFFFFFF_cppui60;
+    auto result = nil::crypto3::multiprecision::to_big_integer(0xFFFFFFFFFFF_cppui60);
     BOOST_CHECK_EQUAL(result, 0xFFFFFFFFFFF_big_integer60);
 }
 

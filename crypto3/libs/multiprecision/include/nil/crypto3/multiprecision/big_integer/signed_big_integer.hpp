@@ -12,6 +12,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 
 namespace nil::crypto3::multiprecision {
@@ -23,18 +24,12 @@ namespace nil::crypto3::multiprecision {
 
         using unsigned_type = big_integer<Bits>;
 
-        using cpp_int_type = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
-            Bits, Bits, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked>>;
-
         // Constructor
 
         inline constexpr signed_big_integer() noexcept {}
 
         template<unsigned Bits2>
         inline constexpr signed_big_integer(const big_integer<Bits2>& b) noexcept : m_abs(b) {}
-
-        inline explicit constexpr signed_big_integer(const cpp_int_type& cppint)
-            : m_negative(cppint.sign() < 0), m_abs(abs(cppint)) {}
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         inline constexpr signed_big_integer(T val) noexcept : m_abs(abs(val)) {
@@ -58,11 +53,6 @@ namespace nil::crypto3::multiprecision {
         inline constexpr signed_big_integer& operator=(const big_integer<Bits2>& b) {
             m_negative = false;
             m_abs = b;
-        }
-
-        inline constexpr signed_big_integer& operator=(const cpp_int_type& cppint) {
-            m_negative = cppint.sign() < 0;
-            m_abs = abs(cppint);
         }
 
         template<unsigned Bits2>
@@ -96,10 +86,6 @@ namespace nil::crypto3::multiprecision {
             return (negative() ? std::string("-") : std::string("")) + m_abs.str();
         }
 
-        inline constexpr cpp_int_type to_cpp_int() const {
-            return multiplied_by_sign(static_cast<cpp_int_type>(m_abs.to_cpp_int()));
-        }
-
         template<unsigned Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
         inline constexpr signed_big_integer<Bits2> truncate() const noexcept {
             return {m_negative, m_abs.template truncate<Bits2>()};
@@ -114,7 +100,7 @@ namespace nil::crypto3::multiprecision {
 
         template<unsigned Bits2>
         explicit inline constexpr operator big_integer<Bits2>() const {
-            BOOST_ASSERT(!this->negative());
+            NIL_CO3_MP_ASSERT(!this->negative());
             return m_abs;
         }
 
