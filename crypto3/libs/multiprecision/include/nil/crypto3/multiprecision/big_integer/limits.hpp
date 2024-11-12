@@ -11,13 +11,13 @@
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr big_integer<Bits> get_min() {
         constexpr big_integer<Bits> val = 0u;
         return val;
     }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     inline constexpr nil::crypto3::multiprecision::big_integer<Bits> get_max() {
         constexpr auto val = ~big_integer<Bits>(0u);
         return val;
@@ -35,7 +35,7 @@ namespace nil::crypto3::multiprecision::detail {
 }  // namespace nil::crypto3::multiprecision::detail
 
 namespace std {
-    template<unsigned Bits>
+    template<std::size_t Bits>
     class numeric_limits<nil::crypto3::multiprecision::big_integer<Bits>> {
         using number_type = nil::crypto3::multiprecision::big_integer<Bits>;
 

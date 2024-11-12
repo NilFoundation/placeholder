@@ -26,7 +26,7 @@ namespace nil::crypto3::multiprecision {
             is_modular_big_integer_v<modular_big_integer_ct_impl<modulus, modular_ops_storage_t>> =
                 true;
 
-        template<unsigned Bits, template<typename> typename modular_ops_storage_t>
+        template<std::size_t Bits, template<typename> typename modular_ops_storage_t>
         constexpr bool
             is_modular_big_integer_v<modular_big_integer_rt_impl<Bits, modular_ops_storage_t>> =
                 true;
@@ -110,7 +110,7 @@ namespace nil::crypto3::multiprecision {
     inline constexpr auto operator+(const modular_big_integer_t& a) noexcept { return a; }
 
     namespace detail {
-        template<unsigned Bits, typename modular_ops_t>
+        template<std::size_t Bits, typename modular_ops_t>
         constexpr void subtract(
             modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& result,
             const modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& o) {

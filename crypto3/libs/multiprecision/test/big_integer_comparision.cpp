@@ -8,17 +8,6 @@
 
 #define BOOST_TEST_MODULE big_integer_comparision_test
 
-// Suddenly, BOOST_MP_ASSERT is NOT constexpr, and it is used in constexpr functions throughout the
-// boost, resulting to compilation errors on all compilers in debug mode. We need to switch
-// assertions off inside cpp_int to make this code compile in debug mode. So we use this workaround
-// to turn off file 'boost/multiprecision/detail/assert.hpp' which contains definition of
-// BOOST_MP_ASSERT and BOOST_MP_ASSERT_MSG.
-#ifndef BOOST_MP_DETAIL_ASSERT_HPP
-#define BOOST_MP_DETAIL_ASSERT_HPP
-#define BOOST_MP_ASSERT(expr) ((void)0)
-#define BOOST_MP_ASSERT_MSG(expr, msg) ((void)0)
-#endif
-
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/random_device.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
@@ -38,7 +27,7 @@ using nil::crypto3::multiprecision::to_cpp_int;
 using nil::crypto3::multiprecision::unsigned_cpp_int_type;
 
 // This test case uses normal boost::cpp_int for comparison to our big_integer
-template<unsigned Bits1, unsigned Bits2>
+template<std::size_t Bits1, std::size_t Bits2>
 void value_comparisons_tests(const big_integer<Bits1>& a, const big_integer<Bits2>& b) {
     typedef big_integer<Bits1> Backend1;
     typedef big_integer<Bits2> Backend2;
@@ -57,7 +46,7 @@ void value_comparisons_tests(const big_integer<Bits1>& a, const big_integer<Bits
     BOOST_CHECK_EQUAL(a != b, a_cppint != b_cppint);
 }
 
-template<unsigned Bits1, unsigned Bits2>
+template<std::size_t Bits1, std::size_t Bits2>
 void value_comparisons_tests(const std::size_t N) {
     using standard_number1 = big_integer<Bits1>;
     using standard_number2 = big_integer<Bits2>;

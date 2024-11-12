@@ -9,14 +9,14 @@
 
 #pragma once
 
-#include <boost/assert.hpp>
 #include <cstddef>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision {
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     constexpr int jacobi(const big_integer<Bits> &a, const big_integer<Bits> &n) noexcept {
         using big_integer_t = big_integer<Bits>;
         // BOOST_THROW_EXCEPTION(std::invalid_argument("jacobi: second argument must be odd

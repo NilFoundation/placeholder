@@ -21,7 +21,7 @@
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
-    template<unsigned Bits>
+    template<std::size_t Bits>
     constexpr big_integer<Bits> ressol(const big_integer<Bits> &a, const big_integer<Bits> &p) {
         /*
          * The implementation is split for two different cases:

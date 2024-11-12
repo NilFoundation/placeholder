@@ -13,8 +13,8 @@
 
 // IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
 
+#include <cstddef>
 #include <string>
-#include <tuple>
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
@@ -32,9 +32,6 @@ namespace nil::crypto3::multiprecision {
             using limb_type = typename big_integer_t::limb_type;
             using double_limb_type = typename big_integer_t::double_limb_type;
             using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
-
-            using unsigned_types = typename big_integer_t::unsigned_types;
-            using signed_types = typename big_integer_t::signed_types;
 
             // Constructors
 
@@ -64,12 +61,6 @@ namespace nil::crypto3::multiprecision {
             //     return remove_modulus() == val;
             // }
 
-            // cpp_int conversion
-
-            constexpr typename big_integer_t::cpp_int_type to_cpp_int() const {
-                return remove_modulus().to_cpp_int();
-            }
-
             constexpr big_integer_t remove_modulus() const {
                 return ops().adjusted_regular(m_base);
             }
@@ -84,7 +75,7 @@ namespace nil::crypto3::multiprecision {
             // Mathemetical operations
 
             inline constexpr void negate() {
-                if (m_base != m_zero) {
+                if (!is_zero(m_base)) {
                     auto initial_m_base = m_base;
                     m_base = ops().get_mod();
                     m_base -= initial_m_base;
@@ -95,8 +86,7 @@ namespace nil::crypto3::multiprecision {
             // This function sets default modulus value to zero to make sure it fails if not used
             // with compile-time fixed modulus.
             modular_big_integer_impl& operator=(const char* s) {
-                using ui_type = typename std::tuple_element<0, unsigned_types>::type;
-                ui_type zero = 0u;
+                limb_type zero = 0u;
 
                 if (s && (*s == '(')) {
                     std::string part;
@@ -142,9 +132,6 @@ namespace nil::crypto3::multiprecision {
             modular_ops_storage_t m_modular_ops_storage;
 
             big_integer_t m_base;
-            static constexpr big_integer_t m_zero =
-                static_cast<typename std::tuple_element<0, unsigned_types>::type>(0u);
-            ;
         };
     }  // namespace detail
 
@@ -165,7 +152,7 @@ namespace nil::crypto3::multiprecision {
             this->ops().adjust_modular(this->m_base, b);
         }
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         constexpr explicit modular_big_integer_ct_impl(const big_integer<Bits2>& b)
             : base_type(b, {}) {
             this->ops().adjust_modular(this->m_base, b);
@@ -194,7 +181,7 @@ namespace nil::crypto3::multiprecision {
         constexpr modular_big_integer_ct_impl(UI b) : base_type(b, {}) {}
     };
 
-    template<unsigned Bits, template<typename> typename modular_ops_template>
+    template<std::size_t Bits, template<typename> typename modular_ops_template>
     struct modular_big_integer_rt_impl
         : public detail::modular_big_integer_impl<
               big_integer<Bits>,
@@ -224,7 +211,7 @@ namespace nil::crypto3::multiprecision {
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
         constexpr modular_big_integer_rt_impl(UI b, const big_integer_t& m) : base_type(b, m) {}
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         constexpr modular_big_integer_rt_impl(const big_integer<Bits2>& b, const big_integer_t& m)
             : base_type(b, m) {}
     };
@@ -232,12 +219,12 @@ namespace nil::crypto3::multiprecision {
     template<const auto& modulus>
     using montgomery_modular_big_integer =
         modular_big_integer_ct_impl<modulus, detail::montgomery_modular_ops>;
-    template<unsigned Bits>
+    template<std::size_t Bits>
     using montgomery_modular_big_integer_rt =
         modular_big_integer_rt_impl<Bits, detail::montgomery_modular_ops>;
     template<const auto& modulus>
     using modular_big_integer = modular_big_integer_ct_impl<modulus, detail::barrett_modular_ops>;
-    template<unsigned Bits>
+    template<std::size_t Bits>
     using modular_big_integer_rt = modular_big_integer_rt_impl<Bits, detail::barrett_modular_ops>;
     template<const auto& modulus>
     using auto_modular_big_integer =

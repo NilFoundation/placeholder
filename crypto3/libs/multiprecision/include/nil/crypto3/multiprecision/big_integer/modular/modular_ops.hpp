@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include <boost/mpl/if.hpp>
 #include <climits>
 #include <cstddef>
 #include <limits>
@@ -30,7 +29,7 @@ namespace nil::crypto3::multiprecision::detail {
         return bit_test(m, 0u);
     }
 
-    template<unsigned Bits>
+    template<std::size_t Bits>
     struct modular_policy {
         using big_integer_t = big_integer<Bits>;
 
@@ -55,7 +54,7 @@ namespace nil::crypto3::multiprecision::detail {
     template<typename big_integer_t>
     class barrett_modular_ops {
       public:
-        constexpr static unsigned Bits = big_integer_t::Bits;
+        constexpr static std::size_t Bits = big_integer_t::Bits;
         using policy_type = modular_policy<Bits>;
 
         using big_integer_doubled_1 = typename policy_type::big_integer_doubled_1;
@@ -135,28 +134,30 @@ namespace nil::crypto3::multiprecision::detail {
             //
             big_integer_t2 modulus(m_mod);
 
-            if (msb(input) < 2u * msb(modulus) + 1u) {
-                big_integer_quadruple_1 t1(input);
+            if (!is_zero(input)) {
+                if (msb(input) < 2u * msb(modulus) + 1u) {
+                    big_integer_quadruple_1 t1(input);
 
-                t1 *= m_barrett_mu;
-                std::size_t shift_size = 2u * (1u + msb(modulus));
-                t1 >>= shift_size;
-                t1 *= modulus;
+                    t1 *= m_barrett_mu;
+                    std::size_t shift_size = 2u * (1u + msb(modulus));
+                    t1 >>= shift_size;
+                    t1 *= modulus;
 
-                // We do NOT allow subtracting a larger size number from a smaller one,
-                // we need to cast to big_integer_t2 here.
-                input -= static_cast<big_integer_t2>(t1);
+                    // We do NOT allow subtracting a larger size number from a smaller one,
+                    // we need to cast to big_integer_t2 here.
+                    input -= static_cast<big_integer_t2>(t1);
 
-                if (input >= modulus) {
-                    input -= modulus;
+                    if (input >= modulus) {
+                        input -= modulus;
+                    }
+                } else {
+                    input %= modulus;
                 }
-            } else {
-                input %= modulus;
             }
             result = input;
         }
 
-        template<unsigned Bits1, unsigned Bits2,
+        template<std::size_t Bits1, std::size_t Bits2,
                  // result should fit in the output parameter
                  std::enable_if_t<Bits1 >= Bits2, int> = 0>
         constexpr void add(big_integer<Bits1> &result, const big_integer<Bits2> &y) const {
@@ -223,7 +224,7 @@ namespace nil::crypto3::multiprecision::detail {
             adjust_modular(result, result);
         }
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         constexpr void adjust_modular(big_integer_t &result,
                                       const big_integer<Bits2> &input) const {
             big_integer_doubled_limbs tmp;
@@ -237,7 +238,7 @@ namespace nil::crypto3::multiprecision::detail {
             return result;
         }
 
-        template<unsigned Bits1, unsigned Bits2,
+        template<std::size_t Bits1, std::size_t Bits2,
                  /// input number should fit in result
                  std::enable_if_t<Bits1 >= Bits2, int> = 0>
         constexpr void adjust_regular(big_integer<Bits1> &result,
@@ -259,7 +260,7 @@ namespace nil::crypto3::multiprecision::detail {
     template<typename big_integer_t>
     class montgomery_modular_ops : public barrett_modular_ops<big_integer_t> {
       public:
-        constexpr static unsigned Bits = big_integer_t::Bits;
+        constexpr static std::size_t Bits = big_integer_t::Bits;
         using policy_type = modular_policy<Bits>;
 
         using big_integer_doubled_1 = typename policy_type::big_integer_doubled_1;
@@ -328,7 +329,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr const auto &get_r2() const { return m_montgomery_r2; }
         constexpr auto get_p_dash() const { return m_montgomery_p_dash; }
 
-        template<unsigned Bits1,
+        template<std::size_t Bits1,
                  // result should fit in the output parameter
                  std::enable_if_t<Bits1 >= Bits, int> = 0>
         constexpr void montgomery_reduce(big_integer<Bits1> &result) const {
@@ -615,7 +616,7 @@ namespace nil::crypto3::multiprecision::detail {
             adjust_modular(result, result);
         }
 
-        template<unsigned Bits2>
+        template<std::size_t Bits2>
         constexpr void adjust_modular(big_integer_t &result,
                                       const big_integer<Bits2> &input) const {
             big_integer_doubled_limbs tmp;
@@ -631,7 +632,7 @@ namespace nil::crypto3::multiprecision::detail {
             return result;
         }
 
-        template<unsigned Bits1, unsigned Bits2,
+        template<std::size_t Bits1, std::size_t Bits2,
                  /// input number should fit in result
                  std::enable_if_t<Bits1 >= Bits2, int> = 0>
         constexpr void adjust_regular(big_integer<Bits1> &result,

@@ -19,6 +19,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/cpp_int_conversions.hpp"
 #include "nil/crypto3/multiprecision/big_integer/literals.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
 
@@ -36,14 +37,15 @@ template<typename big_integer_t>
 constexpr void pow_test(const big_integer_t& a, const big_integer_t& b, const big_integer_t& m) {
     typedef nil::crypto3::multiprecision::modular_big_integer_rt<big_integer_t::Bits>
         modular_number;
-    typedef typename big_integer_t::cpp_int_type standard_number;
+    typedef nil::crypto3::multiprecision::unsigned_cpp_int_type<big_integer_t::Bits>
+        standard_number;
 
     modular_number a_m(a, m);
     modular_number b_m(b, m);
 
-    standard_number a_cppint = a.to_cpp_int();
-    standard_number b_cppint = b.to_cpp_int();
-    standard_number m_cppint = m.to_cpp_int();
+    standard_number a_cppint = to_cpp_int(a);
+    standard_number b_cppint = to_cpp_int(b);
+    standard_number m_cppint = to_cpp_int(m);
 
     standard_number a_powm_b = powm(a_cppint, b_cppint, m_cppint);
     // pow could be used only with modular_numbers
@@ -51,13 +53,14 @@ constexpr void pow_test(const big_integer_t& a, const big_integer_t& b, const bi
     // powm could be used with mixed types
     // modular_number a_m_powm_b_m = powm(a_m, b_m);
     modular_number a_m_powm_b = powm(a_m, b);
-    // BOOST_ASSERT_MSG(standard_number(a_m_powm_b_m.to_cpp_int()) == a_powm_b, "powm error");
-    BOOST_ASSERT_MSG(standard_number(a_m_powm_b.to_cpp_int()) == a_powm_b, "powm error");
+    // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_m_powm_b_m)) == a_powm_b, "powm error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_m_powm_b.remove_modulus()) == a_powm_b, "powm error");
 }
 
 template<typename big_integer_t>
 bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
-    typedef typename big_integer_t::cpp_int_type::backend_type CppIntBackend;
+    typedef typename nil::crypto3::multiprecision::unsigned_cpp_int_type<
+        big_integer_t::Bits>::backend_type CppIntBackend;
 
     typedef nil::crypto3::multiprecision::big_integer<big_integer_t::Bits * 2> Backend_doubled;
     typedef typename boost::multiprecision::default_ops::double_precision_type<CppIntBackend>::type
@@ -68,9 +71,9 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     typedef boost::multiprecision::number<CppIntBackend_doubled> dbl_standard_number;
 
     // Convert from cpp_int_modular_backend to cpp_int_backend numbers.
-    standard_number a_cppint = test_set[a_e].to_cpp_int();
-    standard_number b_cppint = test_set[b_e].to_cpp_int();
-    standard_number e_cppint = test_set[mod_e].to_cpp_int();
+    standard_number a_cppint = to_cpp_int(test_set[a_e]);
+    standard_number b_cppint = to_cpp_int(test_set[b_e]);
+    standard_number e_cppint = to_cpp_int(test_set[mod_e]);
 
     dbl_standard_number a_add_b_s =
         (static_cast<dbl_standard_number>(a_cppint) + static_cast<dbl_standard_number>(b_cppint)) %
@@ -123,9 +126,9 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
 
     // We cannot use convert_to here, because there's a bug inside boost, convert_to is constexpr,
     // but it calls function generic_interconvert which is not.
-    BOOST_ASSERT_MSG(standard_number(a_add_b.to_cpp_int()) == a_add_b_s, "addition error");
-    BOOST_ASSERT_MSG(standard_number(a_sub_b.to_cpp_int()) == a_sub_b_s, "subtraction error");
-    BOOST_ASSERT_MSG(standard_number(a_mul_b.to_cpp_int()) == a_mul_b_s, "multiplication error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_add_b.remove_modulus()) == a_add_b_s, "addition error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_sub_b.remove_modulus()) == a_sub_b_s, "subtraction error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_mul_b.remove_modulus()) == a_mul_b_s, "multiplication error");
 
     // BOOST_ASSERT_MSG((a > b) == (a_cppint > b_cppint), "g error");
     // BOOST_ASSERT_MSG((a >= b) == (a_cppint >= b_cppint), "ge error");
@@ -134,16 +137,16 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     // BOOST_ASSERT_MSG((a <= b) == (a_cppint <= b_cppint), "le error");
     BOOST_ASSERT_MSG((a != b) == (a_cppint != b_cppint), "ne error");
 
-    // BOOST_ASSERT_MSG(standard_number(a_and_b.to_cpp_int()) == a_and_b_s, "and error");
-    // BOOST_ASSERT_MSG(standard_number(a_or_b.to_cpp_int()) == a_or_b_s, "or error");
-    // BOOST_ASSERT_MSG(standard_number(a_xor_b.to_cpp_int()) == a_xor_b_s, "xor error");
+    // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_and_b)) == a_and_b_s, "and error");
+    // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_or_b)) == a_or_b_s, "or error");
+    // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_xor_b)) == a_xor_b_s, "xor error");
 
-    BOOST_ASSERT_MSG(standard_number(a_powm_b.to_cpp_int()) == a_powm_b_s, "powm error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_powm_b.remove_modulus()) == a_powm_b_s, "powm error");
     pow_test(test_set[a_e], test_set[b_e], test_set[mod_e]);
 
-    // BOOST_ASSERT_MSG(standard_number(a_bit_set.to_cpp_int()) == a_bit_set_s, "bit set error");
-    // BOOST_ASSERT_MSG(standard_number(a_bit_unset.to_cpp_int()) == a_bit_unset_s, "bit unset
-    // error"); BOOST_ASSERT_MSG(standard_number(a_bit_flip.to_cpp_int()) == a_bit_flip_s, "bit flip
+    // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_bit_set)) == a_bit_set_s, "bit set error");
+    // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_bit_unset)) == a_bit_unset_s, "bit unset
+    // error"); BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_bit_flip)) == a_bit_flip_s, "bit flip
     // error");
 
     // BOOST_ASSERT_MSG(b_msb_s == b_msb, "msb error");
