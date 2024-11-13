@@ -22,6 +22,9 @@ namespace nil::crypto3::multiprecision::detail {
         using big_integer_t = std::decay_t<decltype(Modulus)>;
         using modular_ops_t = modular_ops_template<big_integer_t>;
 
+        static_assert(big_integer_t::Bits == msb(Modulus) + 1,
+                      "modulus bit width should match used precision");
+
         constexpr modular_ops_storage_ct() {}
 
         static constexpr const modular_ops_t &ops() { return m_modular_ops; }

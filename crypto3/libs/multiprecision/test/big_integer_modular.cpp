@@ -9,13 +9,15 @@
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
 
+NIL_CO3_MP_DEFINE_BIG_INTEGER_LITERAL(2)
 NIL_CO3_MP_DEFINE_BIG_INTEGER_LITERAL(32)
 NIL_CO3_MP_DEFINE_BIG_INTEGER_LITERAL(36)
+NIL_CO3_MP_DEFINE_BIG_INTEGER_LITERAL(57)
 NIL_CO3_MP_DEFINE_BIG_INTEGER_LITERAL(60)
 
 using namespace nil::crypto3::multiprecision::literals;
 
-constexpr auto mod = 0x123456789ABCDEF_big_integer64;
+constexpr auto mod = 0x123456789ABCDEF_big_integer57;
 using modular_big_int = montgomery_modular_big_integer<mod>;
 
 BOOST_AUTO_TEST_SUITE(smoke)
@@ -25,45 +27,45 @@ BOOST_AUTO_TEST_CASE(construct_constexpr) {
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_trivial_montgomery) {
-    static constexpr auto mod = 0x3_big_integer64;
-    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x5_big_integer64);
+    static constexpr auto mod = 0x3_big_integer2;
+    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x5_big_integer);
     BOOST_CHECK_EQUAL(a.str(), "0x2 mod 0x3");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_trivial_montgomery) {
-    modular_big_integer_rt<64> a{0x5_big_integer64, 0x3_big_integer64};
+    modular_big_integer_rt<2> a{0x5_big_integer, 0x3_big_integer};
     BOOST_CHECK_EQUAL(a.str(), "0x2 mod 0x3");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small_montgomery) {
-    static constexpr auto mod = 0x79_big_integer64;
-    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer64);
+    static constexpr auto mod = 0x79_big_integer7;
+    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer);
     BOOST_CHECK_EQUAL(a.str(), "0x3E mod 0x79");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small_montgomery) {
-    modular_big_integer_rt<64> a{0x1234_big_integer64, 0x79_big_integer64};
+    modular_big_integer_rt<7> a{0x1234_big_integer, 0x79_big_integer};
     BOOST_CHECK_EQUAL(a.str(), "0x3E mod 0x79");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small) {
-    static constexpr auto mod = 0x78_big_integer64;
-    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer64);
+    static constexpr auto mod = 0x78_big_integer7;
+    auto_modular_big_integer<mod> a = auto_modular_big_integer<mod>(0x1234_big_integer);
     BOOST_CHECK_EQUAL(a.str(), "0x64 mod 0x78");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small) {
-    modular_big_integer_rt<64> a{0x1234_big_integer64, 0x78_big_integer64};
+    modular_big_integer_rt<7> a{0x1234_big_integer, 0x78_big_integer};
     BOOST_CHECK_EQUAL(a.str(), "0x64 mod 0x78");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_trivial) {
-    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x1_big_integer64)).str(),
+    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x1_big_integer)).str(),
                       "0x1 mod 0x123456789ABCDEF");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_small) {
-    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x20_big_integer64)).str(),
+    BOOST_CHECK_EQUAL((static_cast<modular_big_int>(0x20_big_integer)).str(),
                       "0x20 mod 0x123456789ABCDEF");
 }
 

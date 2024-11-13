@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <climits>
 #include <cmath>
 #include <cstring>
@@ -10,6 +11,9 @@
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
+
+// TODO(ioxid): boost is used for
+// boost::hash_combine
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits_>
@@ -378,7 +382,13 @@ namespace nil::crypto3::multiprecision {
         return a;
     }
 
-    // TODO(ioxid): hash
+    template<std::size_t Bits>
+    inline constexpr std::size_t hash_value(const signed_big_integer<Bits>& val) noexcept {
+        std::size_t result = 0;
+        boost::hash_combine(result, hash_value(val.abs()));
+        boost::hash_combine(result, val.negative());
+        return result;
+    }
 
     // IO
 
