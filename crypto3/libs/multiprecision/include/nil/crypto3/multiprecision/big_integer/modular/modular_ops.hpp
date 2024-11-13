@@ -19,7 +19,7 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 

@@ -18,7 +18,7 @@
 #include <string>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops_storage.hpp"
