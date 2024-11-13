@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boost/assert.hpp>
+#include <cassert>
 
-#define NIL_CO3_MP_ASSERT(x) BOOST_ASSERT(x)
-#define NIL_CO3_MP_ASSERT_MSG(x, msg) BOOST_ASSERT_MSG(x, msg)
+#define NIL_CO3_MP_ASSERT(expr) assert(expr)
+#define NIL_CO3_MP_ASSERT_MSG(expr, msg) assert((expr) && (msg))
