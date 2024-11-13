@@ -205,21 +205,16 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL(!=)
 #undef NIL_CO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL
 
-    // TODO(ioxid): choose result type
 #define NIL_CO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_TEMPLATE                                           \
     template<                                                                                      \
         typename T1, typename T2,                                                                  \
-        std::enable_if_t<detail::is_modular_integral_v<T1> && detail::is_modular_integral_v<T2> && \
-                             (detail::is_modular_big_integer_v<T1> ||                              \
-                              detail::is_modular_big_integer_v<T2>),                               \
-                         int> = 0,                                                                 \
+        std::enable_if_t<std::is_same_v<T1, T2> && detail::is_modular_big_integer_v<T1>, int> = 0, \
         typename largest_t = T1>
 
 #define NIL_CO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                      \
     template<typename modular_big_integer_t, typename T,                                 \
              std::enable_if_t<detail::is_modular_big_integer_v<modular_big_integer_t> && \
-                                  detail::is_modular_integral_v<T> &&                    \
-                                  detail::get_bits<T>() <= modular_big_integer_t::Bits,  \
+                                  std::is_same_v<modular_big_integer_t, T>,              \
                               int> = 0>
 
 #define NIL_CO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE \
