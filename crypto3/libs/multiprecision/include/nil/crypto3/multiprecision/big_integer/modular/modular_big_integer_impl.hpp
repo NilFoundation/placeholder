@@ -13,6 +13,7 @@
 
 // IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
 
+#include <climits>
 #include <cstddef>
 #include <ostream>
 #include <string>
@@ -38,12 +39,10 @@ namespace nil::crypto3::multiprecision {
             // Constructors
 
           protected:
-            inline constexpr modular_big_integer_impl(const big_integer_t x,
+            template<std::size_t Bits2>
+            inline constexpr modular_big_integer_impl(const big_integer<Bits2>& x,
                                                       modular_ops_storage_t&& modular_ops_storage)
                 : m_modular_ops_storage(std::move(modular_ops_storage)) {
-                // TODO(ioxid): do we need this?
-                // NIL_CO3_MP_ASSERT_MSG(Bits == msb(mod()) + 1,
-                //                  "modulus precision should match used big_integer");
                 ops().adjust_modular(m_raw_base, x);
             }
 
@@ -51,7 +50,6 @@ namespace nil::crypto3::multiprecision {
             // Comparison
 
             constexpr bool compare_eq(const modular_big_integer_impl& o) const {
-                // TODO(ioxid): ensure modulus comparison is done in compile time when possible
                 return ops().compare_eq(o.ops()) && m_raw_base == o.m_raw_base;
             }
 
@@ -101,24 +99,20 @@ namespace nil::crypto3::multiprecision {
 
         using typename base_type::big_integer_t;
 
-        constexpr modular_big_integer_ct_impl() : base_type({}, {}) {}
-
-        constexpr modular_big_integer_ct_impl(const big_integer_t& b) : base_type(b, {}) {
-            this->ops().adjust_modular(this->m_raw_base, b);
-        }
+        constexpr modular_big_integer_ct_impl() : base_type(big_integer_t(0u), {}) {}
 
         template<std::size_t Bits2>
-        constexpr explicit modular_big_integer_ct_impl(const big_integer<Bits2>& b)
-            : base_type(b, {}) {
+        constexpr modular_big_integer_ct_impl(const big_integer<Bits2>& b) : base_type(b, {}) {
             this->ops().adjust_modular(this->m_raw_base, b);
         }
 
+        // TODO(ioxid): this is buggy, need to remove it asap
         // A method for converting a signed integer to a modular adaptor. We are not supposed to
         // have this, but in the code we already have conversion for an 'int' into modular type.
         // In the future we must remove.
         template<typename SI,
                  typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-        constexpr modular_big_integer_ct_impl(SI b) : base_type(0u, {}) {
+        constexpr modular_big_integer_ct_impl(SI b) : base_type(big_integer_t(0u), {}) {
             if (b >= 0) {
                 this->m_raw_base = static_cast<std::make_unsigned_t<SI>>(b);
             } else {
@@ -133,7 +127,8 @@ namespace nil::crypto3::multiprecision {
 
         template<typename UI, typename std::enable_if_t<
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
-        constexpr modular_big_integer_ct_impl(UI b) : base_type(b, {}) {}
+        constexpr modular_big_integer_ct_impl(UI b)
+            : base_type(big_integer<sizeof(UI) * CHAR_BIT>(b), {}) {}
 
         template<std::size_t Bits2>
         inline constexpr modular_big_integer_ct_impl with_replaced_base(
@@ -153,7 +148,8 @@ namespace nil::crypto3::multiprecision {
 
         template<typename SI,
                  std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-        constexpr modular_big_integer_rt_impl(SI b, const big_integer_t& m) : base_type(0u, m) {
+        constexpr modular_big_integer_rt_impl(SI b, const big_integer_t& m)
+            : base_type(big_integer_t(0u), m) {
             if (b >= 0) {
                 this->m_raw_base = b;
             } else {
@@ -166,13 +162,14 @@ namespace nil::crypto3::multiprecision {
             this->ops().adjust_modular(this->m_raw_base);
         }
 
-        template<typename UI, typename std::enable_if_t<
-                                  std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
-        constexpr modular_big_integer_rt_impl(UI b, const big_integer_t& m) : base_type(b, m) {}
-
         template<std::size_t Bits2>
         constexpr modular_big_integer_rt_impl(const big_integer<Bits2>& b, const big_integer_t& m)
             : base_type(b, m) {}
+
+        template<typename UI, typename std::enable_if_t<
+                                  std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
+        constexpr modular_big_integer_rt_impl(UI b, const big_integer_t& m)
+            : base_type(big_integer<sizeof(UI) * CHAR_BIT>(b), m) {}
 
         template<std::size_t Bits2>
         inline constexpr modular_big_integer_rt_impl with_replaced_base(
@@ -359,7 +356,6 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits, typename modular_ops_t>
     inline constexpr std::size_t hash_value(
         const detail::modular_big_integer_impl<Bits, modular_ops_t>& val) noexcept {
-        // TODO(ioxid): also hash modulus for runtime type
         return hash_value(val.raw_base());
     }
 
