@@ -69,6 +69,10 @@ namespace nil {
                     return used_rows_ == other.used_rows_;
                 }
 
+                bool operator[](size_t row) const {
+                    return used_rows_.at(row);
+                }
+
                 // Iterator class
                 class const_iterator {
                 public:
@@ -144,8 +148,22 @@ namespace nil {
                     return *this;
                 }*/
 
+
+                row_selector& operator<<=(size_t bitcount) {
+                    used_rows_ <<= bitcount;
+                    return *this;
+                }
+
+                row_selector& operator>>=(size_t bitcount) {
+                    used_rows_ >>= bitcount;
+                    return *this;
+                }
+
                 template<typename BLOCK2>
                 friend std::size_t hash_value(const row_selector<BLOCK2>& a);
+
+                template<typename BLOCK2>
+                friend std::ostream& operator<<(std::ostream& os, const row_selector<BLOCK2>& rows);
 
             private:
                 // Contains true if selector is enabled for the given row.
@@ -155,6 +173,15 @@ namespace nil {
             template<typename BLOCK>
             inline std::size_t hash_value(const row_selector<BLOCK>& bitset) {
                 return hash_value(bitset.used_rows_);
+            }
+
+            template<typename BLOCK = unsigned int>
+            std::ostream& operator<<(std::ostream& os, const row_selector<BLOCK>& rows) {
+                // NOTE: os << rows.used_rows_ prints in the reversed order, which is harder to read.
+                for (size_t i = 0; i < rows.used_rows_.size(); i++) {
+                    os << rows.used_rows_[i];
+                }
+                return os;
             }
 
         } // namespace bbf
