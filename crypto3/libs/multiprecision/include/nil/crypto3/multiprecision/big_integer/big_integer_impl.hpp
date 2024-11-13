@@ -1336,7 +1336,6 @@ namespace nil::crypto3::multiprecision {
 
     NIL_CO3_MP_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr big_integer_t operator-(const big_integer_t& /* unused */) noexcept {
-        // TODO(ioxid): implement?
         static_assert(detail::always_false<big_integer_t>, "can't negate unsigned type");
     }
 
@@ -1435,7 +1434,6 @@ namespace nil::crypto3::multiprecision {
     }
     NIL_CO3_MP_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator<<=(big_integer_t& a, unsigned shift) noexcept {
-        // TODO(ioxid): check
         big_integer_t::left_shift(a, shift);
         return a;
     }
@@ -1448,7 +1446,6 @@ namespace nil::crypto3::multiprecision {
     }
     NIL_CO3_MP_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator>>=(big_integer_t& a, unsigned shift) noexcept {
-        // TODO(ioxid): check
         big_integer_t::right_shift(a, shift);
         return a;
     }
