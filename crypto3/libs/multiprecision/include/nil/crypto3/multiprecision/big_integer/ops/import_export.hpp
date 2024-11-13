@@ -27,7 +27,7 @@ namespace nil::crypto3::multiprecision {
          * of `bits` into `val` at `bit_location` in case where `val`
          * is larger than one limb (machine word).
          */
-        template<std::size_t Bits, class Unsigned>
+        template<std::size_t Bits, typename Unsigned>
         void assign_bits(big_integer<Bits>& val, Unsigned bits, std::size_t bit_location,
                          std::size_t chunk_bits) {
             unsigned limb = bit_location / (sizeof(limb_type) * CHAR_BIT);
@@ -39,6 +39,7 @@ namespace nil::crypto3::multiprecision {
 
             limb_type value = static_cast<limb_type>(bits & mask) << shift;
             if (value) {
+                // TODO(ioxid): when should we throw?
                 // We are ignoring any bits that will not fit into the number.
                 // We are not throwing, we will use as many bits from the input as we need to.
                 if (val.size() > limb) {
@@ -62,7 +63,7 @@ namespace nil::crypto3::multiprecision {
          * of `bits` into `val` at `bit_location` in case where `val`
          * fits into one limb (machine word).
          */
-        template<std::size_t Bits, class Unsigned>
+        template<std::size_t Bits, typename Unsigned>
         void assign_bits(big_integer<Bits>& val, Unsigned bits, std::size_t bit_location,
                          std::size_t chunk_bits,
                          const std::integral_constant<bool, true>& /*unused*/) {
@@ -85,9 +86,8 @@ namespace nil::crypto3::multiprecision {
             //
             bit_location = sizeof(limb_type) * CHAR_BIT - bit_location;
 
-            // We are not throwing, we will use as many bits from the input as we need to.
-            // NIL_CO3_MP_ASSERT(!((bit_location < sizeof(bits) * CHAR_BIT) && (bits >>=
-            // bit_location)));
+            NIL_CO3_MP_ASSERT(
+                !((bit_location < sizeof(bits) * CHAR_BIT) && (bits >>= bit_location)));
         }
 
         template<std::size_t Bits>
@@ -110,7 +110,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        template<std::size_t Bits, class Iterator>
+        template<std::size_t Bits, typename Iterator>
         big_integer<Bits>& import_bits_generic(big_integer<Bits>& result, Iterator i, Iterator j,
                                                std::size_t chunk_size = 0, bool msv_first = true) {
             big_integer<Bits> newval;
@@ -126,8 +126,7 @@ namespace nil::crypto3::multiprecision {
             size_type limbs = std::distance(i, j);
             size_type bits = limbs * chunk_size;
 
-            // We are not throwing, we will use as many bits from the input as we need to.
-            // NIL_CO3_MP_ASSERT(bits <= Bits);
+            NIL_CO3_MP_ASSERT(bits <= Bits);
 
             difference_type bit_location = msv_first ? bits - chunk_size : 0;
             difference_type bit_location_change =
@@ -146,7 +145,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        template<std::size_t Bits, class T>
+        template<std::size_t Bits, typename T>
         inline big_integer<Bits> import_bits_fast(big_integer<Bits>& result, T* i, T* j,
                                                   std::size_t chunk_size = 0) {
             std::size_t byte_len = (j - i) * (chunk_size ? chunk_size / CHAR_BIT : sizeof(*i));
@@ -166,13 +165,13 @@ namespace nil::crypto3::multiprecision {
         }
     }  // namespace detail
 
-    template<std::size_t Bits, class Iterator>
+    template<std::size_t Bits, typename Iterator>
     inline big_integer<Bits>& import_bits(big_integer<Bits>& val, Iterator i, Iterator j,
                                           std::size_t chunk_size = 0, bool msv_first = true) {
         return detail::import_bits_generic(val, i, j, chunk_size, msv_first);
     }
 
-    template<std::size_t Bits, class T>
+    template<std::size_t Bits, typename T>
     inline big_integer<Bits>& import_bits(big_integer<Bits>& val, T* i, T* j,
                                           std::size_t chunk_size = 0, bool msv_first = true) {
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE
@@ -183,7 +182,7 @@ namespace nil::crypto3::multiprecision {
         return detail::import_bits_generic(val, i, j, chunk_size, msv_first);
     }
 
-    template<std::size_t Bits, class OutputIterator>
+    template<std::size_t Bits, typename OutputIterator>
     OutputIterator export_bits(const big_integer<Bits>& val, OutputIterator out,
                                std::size_t chunk_size, bool msv_first = true) {
         if (!val) {
