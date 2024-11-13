@@ -37,10 +37,12 @@
 #include <nil/blueprint/component.hpp>
 #include <nil/blueprint/manifest.hpp>
 
-#include <nil/blueprint/bbf/generic.hpp> 
-#include <nil/blueprint/bbf/exp_table.hpp> // also included by exp.hpp below
-#include <nil/blueprint/bbf/exp.hpp>
-
+#include <nil/blueprint/bbf/gate_optimizer.hpp>
+#include <nil/blueprint/bbf/generic.hpp> // also included by is_zero.hpp below
+#include <nil/blueprint/bbf/is_zero.hpp>
+#include <nil/blueprint/bbf/choice_function.hpp>
+#include <nil/blueprint/bbf/carry_on_addition.hpp>
+#include <nil/blueprint/bbf/useless.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_table_definition.hpp>
 
@@ -92,10 +94,13 @@ namespace nil {
                     return max_rows;
                 }
 
-                constexpr static const std::size_t gates_amount = 6; // TODO: this is very unoptimized!
-                const std::size_t rows_amount = get_rows_amount(this->witness_amount(),max_rows, max_exponentiations);
-                const std::size_t empty_rows_amount = get_empty_rows_amount(this->witness_amount(),max_rows, max_exponentiations);
-                const std::string component_name = "wrapper of exp BBF-component";
+                // TODO: this is very unoptimized! There are 6 gates initially, 3 lookup gates and 3 constraint gates,
+                // but in this test only 2 are left of each, because their selectors are re-used.
+                constexpr static const std::size_t gates_amount = 4;
+
+                const std::size_t rows_amount = get_rows_amount(this->witness_amount());
+                const std::size_t empty_rows_amount = get_empty_rows_amount();
+                const std::string component_name = "wrapper of BBF-components";
 
                 class input_type : public bbf::exp_table_input_type {
 
@@ -206,81 +211,6 @@ namespace nil {
                 EXP_TABLE   exp_table     = EXP_TABLE(ct1, instance_input, component.max_exponentiations + 1);
                 EXP_CIRCUIT exp_component = EXP_CIRCUIT(ct2, instance_input, component.max_rows, component.max_exponentiations);
 
-                ct.optimize_gates();
-
-                // compatibility layer: constraint list => gates & selectors
-                std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list = 
-                    ct.get_constraints();
-
-                for(const auto& [row_list, constraints] : constraint_list) {
-                    /*
-                    std::cout << "GATE:\n";
-                    for(const auto& c : constraints) {
-                        std::cout << c << "\n";
-                    }
-                    std::cout << "Rows: ";
-                    */
-                    std::size_t selector_index = bp.add_gate(constraints);
-                    for(const std::size_t& row_index : row_list) {
-                        // std::cout << row_index << " ";
-                        assignment.enable_selector(selector_index, row_index);
-                    }
-                    //std::cout << "\n";
-                }
-
-                // compatibility layer: copy constraint list
-                std::vector<plonk_copy_constraint> copy_constraints = ct.get_copy_constraints();
-                for(const auto& cc : copy_constraints) {
-                    bp.add_copy_constraint(cc);
-                }
-
-                // compatibility layer: dynamic lookup tables
-                std::map<std::string,std::pair<std::vector<std::size_t>,row_selector<>>>
-                    dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
-
-                // compatibility layer: lookup constraint list
-                std::unordered_map<row_selector<>, std::vector<std::pair<std::string, std::vector<constraint_type>>>>
-                    lookup_constraints = ct.get_lookup_constraints();
-                std::set<std::string> lookup_tables;
-                for(const auto& [row_list, lookup_list] : lookup_constraints) {
-                    std::vector<lookup_constraint_type> lookup_gate;
-                    for(const auto& single_lookup_constraint : lookup_list) {
-                        std::string table_name = single_lookup_constraint.first;
-                        if (lookup_tables.find(table_name) == lookup_tables.end()) {
-                            if (dynamic_lookup_tables.find(table_name) != dynamic_lookup_tables.end()) {
-                                bp.reserve_dynamic_table(table_name);
-                            } else {
-                                bp.reserve_table(table_name);
-                            }
-                            lookup_tables.insert(table_name);
-                        }
-                        std::size_t table_index = bp.get_reserved_indices().at(table_name);
-                        lookup_gate.push_back({table_index,single_lookup_constraint.second});
-                    }
-                    std::size_t selector_index = bp.add_lookup_gate(lookup_gate);
-                    for(std::size_t row_index : row_list) {
-                        assignment.enable_selector(selector_index, row_index);
-                    }
-                }
-
-                // compatibility layer: dynamic lookup tables - continued
-                for(const auto& [name, area] : dynamic_lookup_tables) {
-                    bp.register_dynamic_table(name);
-                    std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
-                    for(std::size_t row_index : area.second) {
-                        assignment.enable_selector(selector_index,row_index);
-                    }
-                    crypto3::zk::snark::plonk_lookup_table<BlueprintFieldType> table_specs;
-                    table_specs.tag_index = selector_index;
-                    table_specs.columns_number = area.first.size();
-                    std::vector<var> dynamic_lookup_cols;
-                    for(const auto& c : area.first) {
-                        dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness)); // TODO: does this make sense?!
-                    }
-                    table_specs.lookup_options = {dynamic_lookup_cols};
-                    bp.define_dynamic_table(name,table_specs);
-                }
-
                 // compatibility layer: constants
                 auto c_list = ct.get_constants();
                 // std::cout << "const list size = " << c_list.size() << "\n";
@@ -290,6 +220,72 @@ namespace nil {
                         // std::cout << i << ", " << j << ": " << c_list[i][j] << "\n";
                         assignment.constant(component.C(i), j) = c_list[i][j];
                     }
+                }
+
+                //////////////////////////  Don't use 'ct' below this line, we just moved it!!! /////////////////////////////
+                nil::blueprint::bbf::gates_optimizer<BlueprintFieldType> optimizer(std::move(ct));
+                nil::blueprint::bbf::optimized_gates<BlueprintFieldType> gates = optimizer.optimize_gates();
+
+                // Register all the selectors.
+                for (const auto& [row_list, selector_id]: gates.selectors_) {
+                    for(std::size_t row_index : row_list) {
+                        assignment.enable_selector(selector_id, row_index);
+                    }
+                }
+
+                for (const auto& [selector_id, constraints] : gates.constraint_list) {
+                    /*
+                    std::cout << "GATE:\n";
+                    for(const auto& c : constraints) {
+                        std::cout << c << "\n";
+                    }
+                    std::cout << "Rows: ";
+                    */
+                    bp.add_gate(selector_id, constraints);
+
+                    //std::cout << "\n";
+                }
+
+                // compatibility layer: copy constraint list
+                for(const auto& cc : gates.copy_constraints) {
+                    bp.add_copy_constraint(cc);
+                }
+
+                std::set<std::string> lookup_tables;
+                for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
+                    std::vector<lookup_constraint_type> lookup_gate;
+                    for(const auto& single_lookup_constraint : lookup_list) {
+                        std::string table_name = single_lookup_constraint.first;
+                        if (lookup_tables.find(table_name) == lookup_tables.end()) {
+                            if (gates.dynamic_lookup_tables.find(table_name) != gates.dynamic_lookup_tables.end()) {
+                                bp.reserve_dynamic_table(table_name);
+                            } else {
+                                bp.reserve_table(table_name);
+                            }
+                            lookup_tables.insert(table_name);
+                        }
+                        std::size_t table_index = bp.get_reserved_indices().at(table_name);
+                        lookup_gate.push_back({table_index,single_lookup_constraint.second});
+                    }
+
+                    bp.add_lookup_gate(selector_id, lookup_gate);
+                }
+
+                // compatibility layer: dynamic lookup tables - continued
+                for(const auto& [name, area] : gates.dynamic_lookup_tables) {
+                    bp.register_dynamic_table(name);
+
+                    std::size_t selector_index = area.second;
+                    
+                    crypto3::zk::snark::plonk_lookup_table<BlueprintFieldType> table_specs;
+                    table_specs.tag_index = selector_index;
+                    table_specs.columns_number = area.first.size();
+                    std::vector<var> dynamic_lookup_cols;
+                    for(const auto& c : area.first) {
+                        dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness)); // TODO: does this make sense?!
+                    }
+                    table_specs.lookup_options = {dynamic_lookup_cols};
+                    bp.define_dynamic_table(name,table_specs);
                 }
 
                 // std::cout << "Gates amount = " << bp.num_gates() << "\n";

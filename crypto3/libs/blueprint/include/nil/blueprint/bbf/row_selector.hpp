@@ -53,18 +53,6 @@ namespace nil {
                     }
                 }
 
-                void set_interval(std::size_t start_row, std::size_t end_row) {
-                    BOOST_ASSERT( end_row < used_rows_.size());
-                    BOOST_ASSERT( start_row < end_row );
-                    if (start_row  < end_row && end_row < used_rows_.size()) {
-                        used_rows_.set(start_row, end_row-start_row + 1, true);
-                    }
-                }
-
-                bool is_set(std::size_t row) const {
-                    return used_rows_.at(row);
-                }
-
                 bool operator==(const row_selector& other) const {
                     return used_rows_ == other.used_rows_;
                 }

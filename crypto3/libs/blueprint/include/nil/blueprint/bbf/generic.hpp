@@ -370,13 +370,6 @@ namespace nil {
                     }
                 }
 
-                TYPE relativize(const TYPE& C, int32_t shift) {
-                     auto constraint = C.rotate(shift);
-                     if (!constraint)
-                         throw std::logic_error("Can't shift the constraint in the given direction.");
-                     return *constraint;
-                }
-
                 std::vector<TYPE> relativize(const std::vector<TYPE>& C, int32_t shift) {
                     std::vector<TYPE> res;
                     for(const TYPE& c_part : C) {
@@ -472,8 +465,8 @@ namespace nil {
                 }
 
                 // accesible only at GenerationStage::CONSTRAINTS !
-                void relative_lookup(const std::vector<TYPE> &C, std::string table_name, std::size_t row) {
-                    for(const TYPE& c_part : C) {
+                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t row) {
+                    for(const TYPE c_part : C) {
                         if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
