@@ -5,13 +5,31 @@
 
 #pragma once
 
+#include <cstddef>
+
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
-#define CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(Bits)                                \
-    namespace nil::crypto3::multiprecision::literals {                             \
-        constexpr auto operator"" _big_integer##Bits(const char *str) {            \
-            return nil::crypto3::multiprecision::detail::parse_int_hex<Bits>(str); \
-        }                                                                          \
+namespace nil::crypto3::multiprecision::literals {
+    namespace detail {
+        template<std::size_t N>
+        constexpr auto operator_impl(const char (&str)[N]) {
+            static_assert(N > 2, "literal should start with 0x");
+            return nil::crypto3::multiprecision::detail::parse_int_hex<(N - 2) * 4>(str, N);
+        }
+    }  // namespace detail
+
+    template<char... C>
+    constexpr auto operator"" _big_integer() {
+        return detail::operator_impl({C...});
+    }
+}  // namespace nil::crypto3::multiprecision::literals
+
+#define CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(Bits)                           \
+    namespace nil::crypto3::multiprecision::literals {                        \
+        constexpr auto operator"" _big_integer##Bits(const char *str) {       \
+            return nil::crypto3::multiprecision::detail::parse_int_hex<Bits>( \
+                str, std::char_traits<char>::length(str));                    \
+        }                                                                     \
     }
 
 // This is a comprehensive list of all bitlengths we use in algebra.

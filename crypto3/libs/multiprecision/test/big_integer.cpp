@@ -151,6 +151,11 @@ BOOST_AUTO_TEST_CASE(multilimb) {
     BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer36 / 0x2_big_integer36, 0x7FFFFFFF_big_integer36);
 }
 
+BOOST_AUTO_TEST_CASE(failing_small) {
+    BOOST_CHECK_EQUAL(0x442a8c9973ac96aec_big_integer / 0x1874dfece1887_big_integer,
+                      0x2c988_big_integer);
+}
+
 BOOST_AUTO_TEST_CASE(big) {
     BOOST_CHECK_EQUAL(
         0x1BDC9C98EE1BE3D7952E78252011D4D4D5_big_integer133 / 0x7DDD38BA708356E41324F_big_integer83,
@@ -167,6 +172,23 @@ BOOST_AUTO_TEST_CASE(simple) {
 
 BOOST_AUTO_TEST_CASE(multilimb) {
     BOOST_CHECK_EQUAL(0xFFFFFFFF_big_integer36 % 0x7_big_integer36, 0x3_big_integer36);
+}
+
+BOOST_AUTO_TEST_CASE(failing) {
+    BOOST_CHECK_EQUAL(
+        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_integer256 % 2, 1u);
+}
+
+BOOST_AUTO_TEST_CASE(failing2) {
+    BOOST_CHECK_EQUAL(
+        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_integer256 %
+            0x200000000_big_integer,
+        0x100000001_big_integer);
+}
+
+BOOST_AUTO_TEST_CASE(failing3) {
+    BOOST_CHECK_EQUAL(0xFFFFFFFFFFFFFFFFFFFFFFFF_big_integer % 0x100000000FFFFFFFF_big_integer,
+                      0x1fffffffe_big_integer);
 }
 
 BOOST_AUTO_TEST_CASE(big) {

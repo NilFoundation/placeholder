@@ -14,7 +14,6 @@ CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(36)
 CRYPTO3_MP_DEFINE_BIG_INTEGER_LITERAL(60)
 
 using namespace nil::crypto3::multiprecision::literals;
-using namespace boost::multiprecision::literals;
 
 constexpr auto mod = 0x123456789ABCDEF_big_integer64;
 using modular_big_int = montgomery_modular_big_integer<mod>;

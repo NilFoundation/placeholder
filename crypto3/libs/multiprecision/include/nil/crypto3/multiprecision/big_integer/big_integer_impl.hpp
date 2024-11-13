@@ -14,7 +14,6 @@
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -23,47 +22,6 @@
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
-
-// TODO(ioxid): remove
-
-#include <boost/multiprecision/cpp_int.hpp>
-namespace nil::crypto3::multiprecision {
-    template<std::size_t Bits>
-    class big_integer;
-
-    namespace detail {
-        template<std::size_t Bits>
-        using unsigned_cpp_int_type1 =
-            boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
-                Bits, Bits, boost::multiprecision::unsigned_magnitude,
-                boost::multiprecision::unchecked>>;
-        template<std::size_t Bits>
-        using signed_cpp_int_type1 =
-            boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
-                Bits, Bits, boost::multiprecision::signed_magnitude,
-                boost::multiprecision::unchecked>>;
-
-        template<std::size_t Bits>
-        inline constexpr unsigned_cpp_int_type1<Bits> to_cpp_int(const big_integer<Bits>& a) {
-            unsigned_cpp_int_type1<Bits> result;
-            for (const auto limb : a.limbs_array() | std::views::reverse) {
-                result <<= detail::limb_bits;
-                result |= limb;
-            }
-            return result;
-        }
-
-        template<std::size_t Bits>
-        inline constexpr big_integer<Bits> to_big_integer(unsigned_cpp_int_type1<Bits> cppint) {
-            big_integer<Bits> result;
-            for (auto& limb : result.limbs_array()) {
-                limb = static_cast<detail::limb_type>(cppint & static_cast<detail::limb_type>(-1));
-                cppint >>= detail::limb_bits;
-            }
-            return result;
-        }
-    }  // namespace detail
-}  // namespace nil::crypto3::multiprecision
 
 // TODO(ioxid): boost is used for
 // boost::multiprecision::detail::addcarry_limb
@@ -78,7 +36,7 @@ namespace nil::crypto3::multiprecision {
             return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
         }
 
-        constexpr int parse_hex_digit(char c) {
+        constexpr unsigned parse_hex_digit(char c) {
             if ('0' <= c && c <= '9') {
                 return c - '0';
             }
@@ -89,15 +47,15 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits>
-        constexpr big_integer<Bits> parse_int_hex(const char* str) {
-            if (str[0] != '0' || str[1] != 'x') {
+        constexpr big_integer<Bits> parse_int_hex(const char* str, std::size_t length) {
+            if (length < 2 || str[0] != '0' || str[1] != 'x') {
                 throw std::invalid_argument("hex literal should start with 0x");
             }
 
             big_integer<Bits> result{0};
 
             std::size_t bits = 0;
-            for (std::size_t i = 2; str[i] != '\0'; ++i) {
+            for (std::size_t i = 2; i < length; ++i) {
                 char c = str[i];
                 if (!is_valid_hex_digit(c)) {
                     throw std::invalid_argument("non hex character in literal");
@@ -106,18 +64,10 @@ namespace nil::crypto3::multiprecision {
                 if (bits != 0) {
                     bits += 4;
                 }
-                int digit = parse_hex_digit(c);
+                unsigned digit = parse_hex_digit(c);
                 result += digit;
                 if (bits == 0 && digit != 0) {
-                    if (digit >= 8) {
-                        bits += 4;
-                    } else if (digit >= 4) {
-                        bits += 3;
-                    } else if (digit >= 2) {
-                        bits += 2;
-                    } else {
-                        bits += 1;
-                    }
+                    bits += std::bit_width(digit);
                 }
             }
             if (bits > Bits) {
@@ -127,10 +77,10 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits>
-        constexpr big_integer<Bits> parse_int_decimal(const char* str) {
+        constexpr big_integer<Bits> parse_int_decimal(const char* str, std::size_t length) {
             big_integer<Bits> result{0};
 
-            for (std::size_t i = 0; str[i] != '\0'; ++i) {
+            for (std::size_t i = 0; i < length; ++i) {
                 char c = str[i];
                 if (c < '0' || c > '9') {
                     throw std::invalid_argument("non decimal character in literal");
@@ -142,11 +92,11 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits>
-        constexpr big_integer<Bits> parse_int(const char* str) {
-            if (str[0] == '0' && str[1] == 'x') {
-                return parse_int_hex<Bits>(str);
+        constexpr big_integer<Bits> parse_int(const char* str, std::size_t length) {
+            if (length >= 2 && str[0] == '0' && str[1] == 'x') {
+                return parse_int_hex<Bits>(str, length);
             }
-            return parse_int_decimal<Bits>(str);
+            return parse_int_decimal<Bits>(str, length);
         }
     }  // namespace detail
 
@@ -223,14 +173,14 @@ namespace nil::crypto3::multiprecision {
         inline constexpr big_integer(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
-                NIL_CO3_MP_ASSERT(*this == other);
+                NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
             }
         }
 
         // Assignment
 
         inline constexpr big_integer& operator=(const char* str) {
-            *this = detail::parse_int<Bits>(str);
+            *this = detail::parse_int<Bits>(str, std::char_traits<char>::length(str));
             return *this;
         }
 
@@ -238,7 +188,7 @@ namespace nil::crypto3::multiprecision {
         inline constexpr big_integer& operator=(const big_integer<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
-                NIL_CO3_MP_ASSERT(*this == other);
+                NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
             }
             return *this;
         }
@@ -1010,19 +960,11 @@ namespace nil::crypto3::multiprecision {
         // This should be called only for creation of Montgomery and Barett
         // params, not during "normal" execution, so we do not care about the execution speed.
 
-        template<std::size_t Bits2, std::size_t Bits3>
-        static inline constexpr void divide(big_integer* result, const big_integer<Bits2>& x,
-                                            const big_integer<Bits3>& y, big_integer& r) {
-            // TODO(ioxid): fix
-
-            if (result) {
-                *result = detail::to_big_integer(detail::to_cpp_int(x) / detail::to_cpp_int(y));
-            }
-            r = detail::to_big_integer(detail::to_cpp_int(x) % detail::to_cpp_int(y));
-            return;
-
+        template<std::size_t Bits2>
+        static inline constexpr void divide(big_integer* div, const big_integer& x,
+                                            const big_integer<Bits2>& y, big_integer& rem) {
             /*
-            Very simple, fairly braindead long division.
+            Very simple long division.
             Start by setting the remainder equal to x, and the
             result equal to 0.  Then in each loop we calculate our
             "best guess" for how many times y divides into r,
@@ -1048,68 +990,59 @@ namespace nil::crypto3::multiprecision {
 
             if (is_zero(x)) {
                 // x is zero, so is the result:
-                r = x;
-                if (result) {
-                    *result = x;
+                rem = x;
+                if (div) {
+                    *div = x;
                 }
                 return;
             }
 
-            r = x;
-            std::size_t r_order = r.order();
+            rem = x;
+            std::size_t rem_order = rem.order();
             std::size_t y_order = y.order();
-            if (result) {
-                *result = static_cast<limb_type>(0u);
+            if (div) {
+                *div = 0u;
             }
             //
             // Check if the remainder is already less than the divisor, if so
             // we already have the result.  Note we try and avoid a full compare
             // if we can:
             //
-            if (r_order <= y_order) {
-                if ((r_order < y_order) || (r < y)) {
-                    return;
-                }
+            if (rem < y) {
+                return;
             }
 
             big_integer t;
-            bool r_neg = false;
+            bool rem_neg = false;
 
             //
             // See if we can short-circuit long division, and use basic arithmetic instead:
             //
-            if (r_order == 0) {
-                if (result) {
-                    *result = px[0] / py[0];
+            if (rem_order == 0) {
+                if (div) {
+                    *div = px[0] / py[0];
                 }
-                r = px[0] % py[0];
+                rem = px[0] % py[0];
                 return;
             }
-            if (r_order == 1) {
+            if (rem_order == 1) {
                 double_limb_type a = (static_cast<double_limb_type>(px[1]) << limb_bits) | px[0];
                 double_limb_type b =
                     y_order ? (static_cast<double_limb_type>(py[1]) << limb_bits) | py[0] : py[0];
-                if (result) {
-                    *result = a / b;
+                if (div) {
+                    *div = a / b;
                 }
-                r = a % b;
+                rem = a % b;
                 return;
             }
-            //
-            // prepare result:
-            //
-            // if (result) result->resize(1 + r_order - y_order, 1 + r_order - y_order);
-            if (result) {
-                *result = 0u;
-            }
-            const_limb_pointer prem = r.limbs();
+            const_limb_pointer prem = rem.limbs();
             // This is initialised just to keep the compiler from emitting useless warnings later
             // on:
-            limb_pointer pr = limb_pointer();
-            if (result) {
-                pr = result->limbs();
-                for (std::size_t i = 1; i < 1 + r_order - y_order; ++i) {
-                    pr[i] = 0;
+            limb_pointer pdiv = limb_pointer();
+            if (div) {
+                pdiv = div->limbs();
+                for (std::size_t i = 1; i < 1 + rem_order - y_order; ++i) {
+                    pdiv[i] = 0;
                 }
             }
             bool first_pass = true;
@@ -1119,22 +1052,22 @@ namespace nil::crypto3::multiprecision {
                 // Calculate our best guess for how many times y divides into r:
                 //
                 limb_type guess = 1;
-                if ((prem[r_order] <= py[y_order]) && (r_order > 0)) {
+                if (rem_order > 0 && prem[rem_order] <= py[y_order]) {
                     double_limb_type a =
-                        (static_cast<double_limb_type>(prem[r_order]) << limb_bits) |
-                        prem[r_order - 1];
+                        (static_cast<double_limb_type>(prem[rem_order]) << limb_bits) |
+                        prem[rem_order - 1];
                     double_limb_type b = py[y_order];
                     double_limb_type v = a / b;
                     if (v <= max_limb_value) {
                         guess = static_cast<limb_type>(v);
-                        --r_order;
+                        --rem_order;
                     }
-                } else if (r_order == 0) {
+                } else if (rem_order == 0) {
                     guess = prem[0] / py[y_order];
                 } else {
                     double_limb_type a =
-                        (static_cast<double_limb_type>(prem[r_order]) << limb_bits) |
-                        prem[r_order - 1];
+                        (static_cast<double_limb_type>(prem[rem_order]) << limb_bits) |
+                        prem[rem_order - 1];
                     double_limb_type b =
                         (y_order > 0) ? (static_cast<double_limb_type>(py[y_order]) << limb_bits) |
                                             py[y_order - 1]
@@ -1147,28 +1080,22 @@ namespace nil::crypto3::multiprecision {
                 //
                 // Update result:
                 //
-                std::size_t shift = r_order - y_order;
-                if (result) {
-                    if (r_neg) {
-                        if (pr[shift] > guess) {
-                            pr[shift] -= guess;
+                std::size_t shift = rem_order - y_order;
+                if (div) {
+                    if (rem_neg) {
+                        if (pdiv[shift] > guess) {
+                            pdiv[shift] -= guess;
                         } else {
-                            // t.resize(shift + 1, shift + 1);
+                            t = 0u;
                             t.limbs()[shift] = guess;
-                            for (std::size_t i = 0; i < shift; ++i) {
-                                t.limbs()[i] = 0;
-                            }
-                            *result -= t;
+                            *div -= t;
                         }
-                    } else if (max_limb_value - pr[shift] > guess) {
-                        pr[shift] += guess;
+                    } else if (max_limb_value - pdiv[shift] > guess) {
+                        pdiv[shift] += guess;
                     } else {
-                        // t.resize(shift + 1, shift + 1);
+                        t = 0u;
                         t.limbs()[shift] = guess;
-                        for (std::size_t i = 0; i < shift; ++i) {
-                            t.limbs()[i] = 0;
-                        }
-                        *result += t;
+                        *div += t;
                     }
                 }
                 //
@@ -1178,19 +1105,17 @@ namespace nil::crypto3::multiprecision {
                 double_limb_type carry = 0;
                 // t.resize(y.size() + shift + 1, y.size() + shift);
                 // bool truncated_t = (t.size() != y.size() + shift + 1);
-                const bool truncated_t = false;
+                const bool truncated_t = y_order + shift + 2 > internal_limb_count;
+                t = 0u;
                 limb_pointer pt = t.limbs();
-                for (std::size_t i = 0; i < shift; ++i) {
-                    pt[i] = 0;
-                }
-                for (std::size_t i = 0; i < y.order() + 1; ++i) {
+                for (std::size_t i = 0; i < y_order + 1; ++i) {
                     carry +=
                         static_cast<double_limb_type>(py[i]) * static_cast<double_limb_type>(guess);
                     pt[i + shift] = static_cast<limb_type>(carry);
                     carry >>= limb_bits;
                 }
                 if (carry && !truncated_t) {
-                    pt[t.order()] = static_cast<limb_type>(carry);
+                    pt[y_order + shift + 1] = static_cast<limb_type>(carry);
                 } else if (!truncated_t) {
                     // t.resize(t.size() - 1, t.size() - 1);
                 }
@@ -1199,60 +1124,58 @@ namespace nil::crypto3::multiprecision {
                 // in case the argument types are unsigned:
                 //
                 if (truncated_t && carry) {
+                    NIL_CO3_MP_ASSERT_MSG(false, "how can this even happen");
                     // We need to calculate 2^n + t - r
                     // where n is the number of bits in this type.
                     // Simplest way is to get 2^n - r by complementing
                     // r, then add t to it.  Note that we can't call eval_complement
                     // in case this is a signed checked type:
-                    for (std::size_t i = 0; i <= r_order; ++i) {
-                        r.limbs()[i] = ~prem[i];
+                    for (std::size_t i = 0; i <= rem_order; ++i) {
+                        rem.limbs()[i] = ~prem[i];
                     }
-                    r.normalize();
-                    ++r;
-                    r += t;
-                    r_neg = !r_neg;
-                } else if (r > t) {
-                    r -= t;
+                    rem.normalize();
+                    ++rem;
+                    rem += t;
+                    rem_neg = !rem_neg;
+                } else if (rem > t) {
+                    rem -= t;
                 } else {
-                    std::swap(r, t);
-                    r -= t;
-                    prem = r.limbs();
-                    r_neg = !r_neg;
+                    std::swap(rem, t);
+                    rem -= t;
+                    prem = rem.limbs();
+                    rem_neg = !rem_neg;
                 }
                 //
                 // First time through we need to strip any leading zero, otherwise
                 // the termination condition goes belly-up:
                 //
-                if (result && first_pass) {
-                    first_pass = false;
-                    // while (pr[result->size() - 1] == 0)
-                    //     result->resize(result->size() - 1, result->size() - 1);
-                }
+                // if (div && first_pass) {
+                //     first_pass = false;
+                //     // while (pdiv[div->size() - 1] == 0)
+                //     //     div->resize(div->size() - 1, div->size() - 1);
+                // }
                 //
-                // Update r_order:
+                // Update rem_order:
                 //
-                r_order = r.order();
-                if (r_order < y_order) {
-                    break;
-                }
+                rem_order = rem.order();
             }
             // Termination condition is really just a check that r > y, but with a common
             // short-circuit case handled first:
-            while ((r_order > y_order) || (r >= y));
+            while ((rem_order >= y_order) && ((rem_order > y_order) || (rem >= y)));
 
             //
             // We now just have to normalise the result:
             //
-            if (r_neg && !is_zero(r)) {
+            if (rem_neg && !is_zero(rem)) {
                 // We have one too many in the result:
-                if (result) {
-                    --*result;
+                if (div) {
+                    --*div;
                 }
-                r = y - r;
+                rem = y - rem;
             }
 
-            NIL_CO3_MP_ASSERT(r <
-                              y);  // remainder must be less than the divisor or our code has failed
+            // remainder must be less than the divisor or our code has failed
+            NIL_CO3_MP_ASSERT(rem < y);
         }
 
         // Multiplication
@@ -1296,6 +1219,7 @@ namespace nil::crypto3::multiprecision {
                 if (carry) {
                     // TODO(ioxid): throw?
                     // resize_for_carry(result, i + j + 1);  // May throw if checking is enabled
+                    NIL_CO3_MP_ASSERT(internal_limb_count > i + j);
                     if (i + j < result.size()) {
                         pr[i + j] = static_cast<limb_type>(carry);
                     }
@@ -1311,20 +1235,25 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        inline constexpr void do_assign_integral(T a) noexcept {
+        inline constexpr void do_assign_integral(const T& a) noexcept {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 this->limbs()[0] = a;
                 this->zero_after(1);
             } else {
                 static_assert(sizeof(T) % sizeof(limb_type) == 0);
-                constexpr std::size_t n = sizeof(T) / sizeof(limb_type);
+                constexpr std::size_t n =
+                    std::min(internal_limb_count, sizeof(T) / sizeof(limb_type));
+                auto a_copy = a;
                 for (std::size_t i = 0; i < n; ++i) {
-                    limbs()[i] = a & static_cast<T>(static_cast<limb_type>(-1));
-                    a >>= limb_bits;
+                    limbs()[i] = a_copy & static_cast<T>(static_cast<limb_type>(-1));
+                    a_copy >>= limb_bits;
                 }
                 zero_after(n);
             }
             this->normalize();
+            if constexpr (sizeof(T) * CHAR_BIT > Bits) {
+                NIL_CO3_MP_ASSERT(big_integer<sizeof(T) * CHAR_BIT>(a).compare(*this) == 0);
+            }
         }
 
         template<std::size_t Bits2>
