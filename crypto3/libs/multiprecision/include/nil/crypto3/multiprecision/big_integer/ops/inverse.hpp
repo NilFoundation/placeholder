@@ -16,6 +16,7 @@
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/signed_big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename signed_big_integer_t>
@@ -62,7 +63,7 @@ namespace nil::crypto3::multiprecision {
     constexpr void inverse_extended_euclidean_algorithm(signed_big_integer_t& result,
                                                         const signed_big_integer_t& a,
                                                         const signed_big_integer_t& m) {
-        // TODO(ioxid): check if the number of bits is correct
+        // TODO(ioxid): can use less bits here, +1 should be enough
         using signed_big_integer_doubled_t = signed_big_integer<signed_big_integer_t::Bits * 2>;
 
         signed_big_integer_t aa = a, mm = m, x, y, g;
@@ -83,8 +84,7 @@ namespace nil::crypto3::multiprecision {
     constexpr void inverse_extended_euclidean_algorithm(big_integer<Bits>& result,
                                                         const big_integer<Bits>& a,
                                                         const big_integer<Bits>& m) {
-        // Careful here, we NEED signed magnitude numbers here.
-        using signed_big_integer_t = signed_big_integer<Bits + 1>;
+        using signed_big_integer_t = signed_big_integer<Bits>;
 
         signed_big_integer_t a_signed = a;
         signed_big_integer_t m_signed = m;
@@ -319,8 +319,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr void inverse_mod(big_integer<Bits>& result, const big_integer<Bits>& n,
                                const big_integer<Bits>& mod) {
-        // Careful here, we NEED signed magnitude numbers here.
-        using signed_big_integer_t = signed_big_integer<Bits + 1>;
+        using signed_big_integer_t = signed_big_integer<Bits>;
 
         signed_big_integer_t n_signed = n;
         signed_big_integer_t mod_signed = mod;
@@ -401,8 +400,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr void monty_inverse(big_integer<Bits>& result, const big_integer<Bits>& a,
                                  const big_integer<Bits>& p, const big_integer<Bits>& k) {
-        // Careful here, we NEED signed magnitude numbers here.
-        using signed_big_integer_t = signed_big_integer<Bits + 1>;
+        using signed_big_integer_t = signed_big_integer<Bits>;
 
         signed_big_integer_t a_signed = a;
         signed_big_integer_t p_signed = p;
