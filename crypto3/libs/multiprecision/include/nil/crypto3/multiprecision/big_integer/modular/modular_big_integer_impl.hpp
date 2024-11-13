@@ -134,6 +134,12 @@ namespace nil::crypto3::multiprecision {
         template<typename UI, typename std::enable_if_t<
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
         constexpr modular_big_integer_ct_impl(UI b) : base_type(b, {}) {}
+
+        template<std::size_t Bits2>
+        inline constexpr modular_big_integer_ct_impl with_replaced_base(
+            const big_integer<Bits2>& b) const {
+            return modular_big_integer_ct_impl(b);
+        }
     };
 
     template<std::size_t Bits, template<typename> typename modular_ops_template>
@@ -167,6 +173,15 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits2>
         constexpr modular_big_integer_rt_impl(const big_integer<Bits2>& b, const big_integer_t& m)
             : base_type(b, m) {}
+
+        template<std::size_t Bits2>
+        inline constexpr modular_big_integer_rt_impl with_replaced_base(
+            const big_integer<Bits2>& b) const {
+            auto copy = *this;
+            copy.m_raw_base = b;
+            copy.ops().adjust_modular(copy.m_raw_base);
+            return copy;
+        }
     };
 
     namespace detail {
