@@ -26,11 +26,11 @@
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
-        template<typename big_integer_t_, typename modular_ops_storage_t>
+        template<std::size_t Bits_, typename modular_ops_storage_t>
         class modular_big_integer_impl {
           public:
-            using big_integer_t = big_integer_t_;
-            constexpr static auto Bits = big_integer_t::Bits;
+            constexpr static auto Bits = Bits_;
+            using big_integer_t = big_integer<Bits>;
             using limb_type = typename big_integer_t::limb_type;
             using double_limb_type = typename big_integer_t::double_limb_type;
             using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
@@ -55,14 +55,6 @@ namespace nil::crypto3::multiprecision {
                 return ops().compare_eq(o.ops()) && m_raw_base == o.m_raw_base;
             }
 
-            // TODO(ioxid): do we need this? If yes then need to make sure this is not chosen for T
-            // = modular_big_integer
-            //
-            // template<class T> constexpr bool compare_eq(const T& val) const
-            // {
-            //     return base() == val;
-            // }
-
             inline constexpr big_integer_t base() const {
                 return ops().adjusted_regular(m_raw_base);
             }
@@ -71,8 +63,7 @@ namespace nil::crypto3::multiprecision {
             // String conversion
 
             inline constexpr std::string str() const {
-                // TODO(ioxid): add module to output
-                return base().str();
+                return base().str() + " mod " + mod().str();
             }
 
             // Mathemetical operations
@@ -102,10 +93,10 @@ namespace nil::crypto3::multiprecision {
     template<const auto& modulus, template<typename> typename modular_ops_template>
     struct modular_big_integer_ct_impl
         : public detail::modular_big_integer_impl<
-              std::decay_t<decltype(modulus)>,
+              std::decay_t<decltype(modulus)>::Bits,
               detail::modular_ops_storage_ct<modulus, modular_ops_template>> {
         using base_type = detail::modular_big_integer_impl<
-            std::decay_t<decltype(modulus)>,
+            std::decay_t<decltype(modulus)>::Bits,
             detail::modular_ops_storage_ct<modulus, modular_ops_template>>;
 
         using typename base_type::big_integer_t;
@@ -148,11 +139,9 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits, template<typename> typename modular_ops_template>
     struct modular_big_integer_rt_impl
         : public detail::modular_big_integer_impl<
-              big_integer<Bits>,
-              detail::modular_ops_storage_rt<big_integer<Bits>, modular_ops_template>> {
+              Bits, detail::modular_ops_storage_rt<big_integer<Bits>, modular_ops_template>> {
         using base_type = detail::modular_big_integer_impl<
-            big_integer<Bits>,
-            detail::modular_ops_storage_rt<big_integer<Bits>, modular_ops_template>>;
+            Bits, detail::modular_ops_storage_rt<big_integer<Bits>, modular_ops_template>>;
 
         using typename base_type::big_integer_t;
 
@@ -274,9 +263,8 @@ namespace nil::crypto3::multiprecision {
 
     namespace detail {
         template<std::size_t Bits, typename modular_ops_t>
-        constexpr void subtract(
-            modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& result,
-            const modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& o) {
+        constexpr void subtract(modular_big_integer_impl<Bits, modular_ops_t>& result,
+                                const modular_big_integer_impl<Bits, modular_ops_t>& o) {
             if (result.raw_base() < o.raw_base()) {
                 auto v = result.mod();
                 v -= o.raw_base();
@@ -345,17 +333,17 @@ namespace nil::crypto3::multiprecision {
         return a;
     }
 
-    template<class big_integer_t, typename modular_ops_t>
+    template<std::size_t Bits, typename modular_ops_t>
     constexpr bool is_zero(
-        const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& val) noexcept {
+        const detail::modular_big_integer_impl<Bits, modular_ops_t>& val) noexcept {
         return is_zero(val.raw_base());
     }
 
     // Hash
 
-    template<typename big_integer_t, typename modular_ops_t>
+    template<std::size_t Bits, typename modular_ops_t>
     inline constexpr std::size_t hash_value(
-        const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& val) noexcept {
+        const detail::modular_big_integer_impl<Bits, modular_ops_t>& val) noexcept {
         // TODO(ioxid): also hash modulus for runtime type
         return hash_value(val.raw_base());
     }
