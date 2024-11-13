@@ -54,15 +54,19 @@ namespace nil {
                     TYPE K_lo;
                     std::vector<TYPE> V(16);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        auto K_hi = w_hi<FieldType>(current_state.stack_top());
-                        auto K_lo = w_lo<FieldType>(current_state.stack_top());
+                        K_hi = w_hi<FieldType>(current_state.stack_top());
+                        K_lo = w_lo<FieldType>(current_state.stack_top());
                         auto v = w_to_16(current_state.storage(current_state.stack_top()));
+                        std::cout << "K = " << std::hex << K_hi << " " << K_lo << std::dec << std::endl;
+                        std::cout << "v = " << std::hex << current_state.storage(current_state.stack_top()) << std::endl;
                         for(std::size_t i = 0; i < 16; i++) V[i] = v[i];
                     }
                     for(std::size_t i = 0; i < 16; i++)
                         allocate(V[i], i,0);
                     allocate(K_hi, 32, 0);
                     allocate(K_lo, 33, 0);
+                    std::cout << "\tK_hi = " << K_hi << std::endl;
+                    std::cout << "\tK_lo = " << K_lo << std::endl;
                     auto V_128 = chunks16_to_chunks128<TYPE>(V);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition

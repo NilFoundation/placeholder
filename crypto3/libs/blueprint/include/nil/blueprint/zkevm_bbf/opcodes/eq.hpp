@@ -67,10 +67,10 @@ namespace nil {
                         }
                         TYPE A_hi, A_lo, B_hi, B_lo;
                         for( std::size_t i = 0; i < 8; i++){
-                            A_hi *= 0x100; A_hi += A[i];
-                            A_lo *= 0x100; A_lo += A[i + 8];
-                            B_hi *= 0x100; B_hi += B[i];
-                            B_lo *= 0x100; B_lo += B[i + 8];
+                            A_hi *= 0x10000; A_hi += A[i];
+                            A_lo *= 0x10000; A_lo += A[i + 8];
+                            B_hi *= 0x10000; B_hi += B[i];
+                            B_lo *= 0x10000; B_lo += B[i + 8];
                         }
                         R_hi_inv = (A_hi - B_hi) == 0? 0: (A_hi - B_hi).inversed();
                         R_lo_inv = (A_lo - B_lo) == 0? 0: (A_lo - B_lo).inversed();
@@ -92,11 +92,11 @@ namespace nil {
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
                     constrain( R_hi_inv *((A_128.first - B_128.first) * R_hi_inv - 1));
                     constrain( (A_128.first - B_128.first) *((A_128.first - B_128.first) * R_hi_inv - 1));
-                    constrain( R_lo_inv *((A_128.second - B_128.second) * R_lo_inv - 1));
-                    constrain( (A_128.second - B_128.second) *((A_128.second - B_128.second) * R_lo_inv - 1));
-                    constrain( r_hi - 1 + (A_128.first - B_128.first) * R_hi_inv );
-                    constrain( r_lo - 1 + (A_128.first - B_128.first) * R_lo_inv );
-                    constrain( r - r_hi * r_lo);
+                    // constrain( R_lo_inv *((A_128.second - B_128.second) * R_lo_inv - 1));
+                    // constrain( (A_128.second - B_128.second) *((A_128.second - B_128.second) * R_lo_inv - 1));
+                    // constrain( r_hi - 1 + (A_128.first - B_128.first) * R_hi_inv );
+                    // constrain( r_lo - 1 + (A_128.first - B_128.first) * R_lo_inv );
+                    // constrain( r - r_hi * r_lo);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
                         constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition

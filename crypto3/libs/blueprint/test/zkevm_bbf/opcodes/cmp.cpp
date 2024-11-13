@@ -62,48 +62,57 @@ using namespace nil::blueprint::bbf;
 // Here they are different for different tests just for fast and easy testing
 BOOST_AUTO_TEST_SUITE(zkevm_opcode_test_suite)
 
-BOOST_AUTO_TEST_CASE(bitwize) {
+BOOST_AUTO_TEST_CASE(cmp) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 
     l1_size_restrictions max_sizes;
 
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x3_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::AND);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x3_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::OR);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x3_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::XOR);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::AND);
+    opcode_tester.push_opcode(zkevm_opcode::GT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::OR);
+    opcode_tester.push_opcode(zkevm_opcode::LT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::XOR);
+    opcode_tester.push_opcode(zkevm_opcode::EQ);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::SGT);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::SLT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::AND);
+    opcode_tester.push_opcode(zkevm_opcode::GT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::OR);
+    opcode_tester.push_opcode(zkevm_opcode::LT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::XOR);
+    opcode_tester.push_opcode(zkevm_opcode::EQ);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::SGT);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::SLT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::AND);
+    opcode_tester.push_opcode(zkevm_opcode::GT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::OR);
+    opcode_tester.push_opcode(zkevm_opcode::LT);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::XOR);
+    opcode_tester.push_opcode(zkevm_opcode::EQ);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::SGT);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::SLT);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 
     max_sizes.max_keccak_blocks = 10;

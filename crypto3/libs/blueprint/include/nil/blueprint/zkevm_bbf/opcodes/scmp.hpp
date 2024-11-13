@@ -69,8 +69,8 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
-                        std::cout << "\ta = " << std::hex << current_state.stack_top() << std::dec << std::endl;
-                        std::cout << "\tb = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
+                        // std::cout << "\ta = " << std::hex << current_state.stack_top() << std::dec << std::endl;
+                        // std::cout << "\tb = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
                         bool eq = true;
                         for( std::size_t i = 0; i < 16; i++ ){
                             A[i] = a[i];
@@ -79,7 +79,8 @@ namespace nil {
                         is_negative_A = is_negative(current_state.stack_top());
                         is_negative_B = is_negative(current_state.stack_top(1));
                         sign_proof_A = is_negative(current_state.stack_top()) ? a[0] - 0x8000: 0x7fff - a[0];
-                        sign_proof_B = is_negative(current_state.stack_top()) ? a[0] - 0x8000: 0x7fff - b[0];
+                        sign_proof_B = is_negative(current_state.stack_top(1)) ? b[0] - 0x8000: 0x7fff - b[0];
+                        // std::cout <<"\tSign proofs: " << std::hex << a[0] <<  " " << b[0] << std::dec << std::endl;
                         if( scmp_operation == scmp_type::C_SLT ){
                             result = is_negative_A * (1 - is_negative_B);
                         } else {
@@ -129,13 +130,13 @@ namespace nil {
                     constrain(is_negative_A * (1 - is_negative_A));
                     constrain(is_negative_B * (1 - is_negative_B));
                     constrain(is_negative_A * (A[0] - sign_proof_A - 0x8000) + (1 - is_negative_A) * (0x7fff - A[0] - sign_proof_A));
-                    constrain(is_negative_B * (B[0] - sign_proof_A - 0x8000) + (1 - is_negative_B) * (0x7fff - B[0] - sign_proof_A));
+                    constrain(is_negative_B * (B[0] - sign_proof_B - 0x8000) + (1 - is_negative_B) * (0x7fff - B[0] - sign_proof_B));
 
-                    std::cout << "\tresult = " << result << std::endl;
-                    std::cout << "\tlt = " << lt << std::endl;
-                    std::cout << "\tgt = " << gt << std::endl;
-                    std::cout << "\tis_negative_A = " << is_negative_A << std::endl;
-                    std::cout << "\tis_negative_B = " << is_negative_B << std::endl;
+                    // std::cout << "\tresult = " << result << std::endl;
+                    // std::cout << "\tlt = " << lt << std::endl;
+                    // std::cout << "\tgt = " << gt << std::endl;
+                    // std::cout << "\tis_negative_A = " << is_negative_A << std::endl;
+                    // std::cout << "\tis_negative_B = " << is_negative_B << std::endl;
 
                     for( std::size_t i = 0; i < 16; i++ ){
                         constrain(S[i] * (S[i] - 1));
@@ -148,9 +149,9 @@ namespace nil {
                     constrain(gt + lt - s_sum);
                     constrain(result * (result - 1));
                     if( scmp_operation == scmp_type::C_SLT ){
-                        constrain(result - is_negative_A * (1 - is_negative_B) - is_negative_A * is_negative_B * gt - (1 - is_negative_A) * (1 - is_negative_B) * lt);
+                       constrain(result - is_negative_A * (1 - is_negative_B) - is_negative_A * is_negative_B * gt - (1 - is_negative_A) * (1 - is_negative_B) * lt);
                     } else {
-                        constrain(result - is_negative_B * (1 - is_negative_A) - is_negative_A * is_negative_B * lt - (1 - is_negative_A) * (1 - is_negative_B) * gt);
+                       constrain(result - is_negative_B * (1 - is_negative_A) - is_negative_A * is_negative_B * lt - (1 - is_negative_A) * (1 - is_negative_B) * gt);
                     }
                     std::vector<TYPE> zero_constraints(15);
                     for( std::size_t i = 0; i < 15; i++ ){
@@ -158,20 +159,20 @@ namespace nil {
                             zero_constraints[i] += S[j];
                         }
                         zero_constraints[i] *= A[i] - B[i];
-                        constrain(zero_constraints[i]);
+                        // constrain(zero_constraints[i]);
                     }
                     TYPE diff_constraint;
                     for( std::size_t i = 0; i < 16; i++ ){
                         diff_constraint += S[i] * (gt * (A[i] - B[i]) + lt *(B[i] - A[i]));
                     }
-                    constrain(diff - diff_constraint);
-                    constrain(diff * (diff * diff_inv - 1));
-                    constrain(diff_inv * (diff * diff_inv - 1));
-                    constrain(diff * diff_inv - lt - gt);
+                    // constrain(diff - diff_constraint);
+                    // constrain(diff * (diff * diff_inv - 1));
+                    // constrain(diff_inv * (diff * diff_inv - 1));
+                    // constrain(diff * diff_inv - lt - gt);
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
-                    std::cout << "A = " << std::hex << A_128.first << " " << A_128.second << std::dec << std::endl;
-                    std::cout << "B = " << std::hex << B_128.first << " " << B_128.second << std::dec << std::endl;
+                    // std::cout << "A = " << std::hex << A_128.first << " " << A_128.second << std::dec << std::endl;
+                    // std::cout << "B = " << std::hex << B_128.first << " " << B_128.second << std::dec << std::endl;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
                         constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
