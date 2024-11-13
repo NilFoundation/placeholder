@@ -246,23 +246,31 @@ namespace nil {
                 BOOST_ASSERT(lpc_scheme_);
 
                 BOOST_LOG_TRIVIAL(info) << "Generating proof...";
-                Proof proof = nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams>::process(
+                nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams> prover(
                     *public_preprocessed_data_,
                     *private_preprocessed_data_,
                     *table_description_,
                     *constraint_system_,
-                    *lpc_scheme_
+                    std::move(*lpc_scheme_)
                 );
+                auto proof = prover.process();
                 BOOST_LOG_TRIVIAL(info) << "Proof generated";
 
+                create_lpc_scheme(); // reset to default scheme to do the verification
+                bool verify_ok{};
                 if (skip_verification) {
                     BOOST_LOG_TRIVIAL(info) << "Skipping proof verification";
+                    verify_ok = true;
                 } else {
-                    if (!verify(proof)) {
-                        return false;
-                    }
+                    verify_ok = verify(proof);
                 }
+                lpc_scheme_.emplace(std::move(prover.move_commitment_scheme())); // get back the commitment scheme used in prover
 
+                if (!verify_ok) {
+                    BOOST_LOG_TRIVIAL(error) << "Proof verification failed";
+                    return false;
+                }
+                
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
@@ -316,10 +324,12 @@ namespace nil {
                         *private_preprocessed_data_,
                         *table_description_,
                         *constraint_system_,
-                        *lpc_scheme_,
+                        std::move(*lpc_scheme_),
                         true);
                 Proof proof = prover.process();
                 BOOST_LOG_TRIVIAL(info) << "Proof generated";
+
+                lpc_scheme_.emplace(prover.move_commitment_scheme()); // get back the commitment scheme used in prover
 
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
@@ -358,19 +368,19 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Failed to write challenge to file.";
                 }
 
-                auto commitment_scheme = prover.get_commitment_scheme();
+                lpc_scheme_.emplace(prover.move_commitment_scheme());
 
-                commitment_scheme.state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::QUOTIENT_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::LOOKUP_BATCH);
-                commitment_scheme.mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::QUOTIENT_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::LOOKUP_BATCH);
+                lpc_scheme_->mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
 
-                commitment_scheme.set_fixed_polys_values(common_data_.has_value() ? common_data_->commitment_scheme_data :
+                lpc_scheme_->set_fixed_polys_values(common_data_.has_value() ? common_data_->commitment_scheme_data :
                                                                                     public_preprocessed_data_->common_data.commitment_scheme_data);
 
-                std::size_t theta_power = commitment_scheme.compute_theta_power_for_combined_Q();
+                std::size_t theta_power = lpc_scheme_->compute_theta_power_for_combined_Q();
 
                 auto output_file = open_file<std::ofstream>(theta_power_file->string(), std::ios_base::out);
                 (*output_file) << theta_power << std::endl;
@@ -512,14 +522,13 @@ namespace nil {
                     return false;
                 }
 
-                lpc_scheme_.emplace(commitment_scheme.value());
+                lpc_scheme_.emplace(std::move(commitment_scheme.value()));
                 return true;
             }
 
-            bool verify(const Proof& proof) const {
+            bool verify(const Proof& proof) {
                 BOOST_LOG_TRIVIAL(info) << "Verifying proof...";
-                bool verification_result =
-                    nil::crypto3::zk::snark::placeholder_verifier<BlueprintField, PlaceholderParams>::process(
+                bool verification_result = nil::crypto3::zk::snark::placeholder_verifier<BlueprintField, PlaceholderParams>::process(
                         public_preprocessed_data_.has_value() ? public_preprocessed_data_->common_data : *common_data_,
                         proof,
                         *table_description_,

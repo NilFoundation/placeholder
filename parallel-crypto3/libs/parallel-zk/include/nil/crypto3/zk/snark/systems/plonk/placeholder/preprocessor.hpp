@@ -76,6 +76,7 @@ namespace nil {
                     using commitment_type = typename commitment_scheme_type::commitment_type;
                     using transcript_type = typename commitment_scheme_type::transcript_type;
                     using transcript_hash_type = typename commitment_scheme_type::transcript_hash_type;
+                    using public_assignment_type = typename policy_type::variable_assignment_type::public_table_type;
 
                 public:
                     static std::size_t permutation_partitions_num(
@@ -264,7 +265,7 @@ namespace nil {
                         };
 
                         bool operator==(const preprocessed_data_type &rhs) const {
-                            return public_polynomial_table == rhs.public_polynomial_table &&
+                            return shared_ptr_equal(public_polynomial_table, rhs.public_polynomial_table) && 
                                 permutation_polynomials == rhs.permutation_polynomials &&
                                 identity_polynomials == rhs.identity_polynomials &&
                                 q_last == rhs.q_last &&
@@ -276,7 +277,7 @@ namespace nil {
                             return !(rhs == *this);
                         }
 
-                        plonk_public_polynomial_dfs_table_type public_polynomial_table;
+                        std::shared_ptr<plonk_public_polynomial_dfs_table_type> public_polynomial_table;
 
                         // S_sigma
                         std::vector<polynomial_dfs_type>  permutation_polynomials;
@@ -287,6 +288,19 @@ namespace nil {
                         polynomial_dfs_type q_blind;
 
                         common_data_type common_data;
+
+                    private:
+                        template<typename T>
+                        static bool shared_ptr_equal(const std::shared_ptr<T> &lhs, const std::shared_ptr<T> &rhs) {
+                            bool both_null = (lhs == nullptr && rhs == nullptr);
+                            if (both_null) {
+                                return true;
+                            }
+                            if (lhs == nullptr || rhs == nullptr) {
+                                return false;
+                            }
+                            return *lhs == *rhs;
+                        }
                     };
 
                 private:
@@ -383,6 +397,18 @@ namespace nil {
                             return _mapping[key];
                         }
                     };
+
+                    static inline std::shared_ptr<plonk_public_polynomial_dfs_table<FieldType>> convert_public_table(
+                        std::shared_ptr<public_assignment_type> public_assignment,
+                        std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain
+                    ) {
+                        return std::make_shared<plonk_public_polynomial_dfs_table<FieldType>>(    
+                            detail::column_range_polynomial_dfs<FieldType>(public_assignment->public_inputs(), basic_domain),
+                            detail::column_range_polynomial_dfs<FieldType>(public_assignment->constants(), basic_domain),
+                            detail::column_range_polynomial_dfs<FieldType>(public_assignment->selectors(), basic_domain)
+                        );
+                    }
+
 
                 public:
                     static inline std::vector<std::set<int>>
@@ -535,7 +561,7 @@ namespace nil {
                     // TODO: columns_with_copy_constraints -- It should be extracted from constraint_system
                     static inline preprocessed_data_type process(
                         const plonk_constraint_system<FieldType> &constraint_system,
-                        typename policy_type::variable_assignment_type::public_table_type public_assignment,
+                        std::shared_ptr<public_assignment_type> public_assignment,
                         const plonk_table_description<FieldType>
                             &table_description,
                         typename ParamsType::commitment_scheme_type &commitment_scheme,
@@ -580,15 +606,7 @@ namespace nil {
                         q_last_q_blind[0] = lagrange_polynomial(basic_domain, usable_rows);
                         q_last_q_blind[1] = selector_blind(usable_rows, basic_domain);
 
-                        plonk_public_polynomial_dfs_table<FieldType>
-                            public_polynomial_table =
-                                plonk_public_polynomial_dfs_table<FieldType>(
-                                    detail::column_range_polynomial_dfs<FieldType>(public_assignment.move_public_inputs(),
-                                                                                   basic_domain),
-                                    detail::column_range_polynomial_dfs<FieldType>(public_assignment.move_constants(),
-                                                                                   basic_domain),
-                                    detail::column_range_polynomial_dfs<FieldType>(public_assignment.move_selectors(),
-                                                                                   basic_domain));
+                        auto public_polynomial_table = convert_public_table(std::move(public_assignment), basic_domain);
 
                         // prepare commitments for short verifier
                         //typename preprocessed_data_type::public_precommitments_type public_precommitments =
@@ -600,7 +618,7 @@ namespace nil {
                         std::size_t lookup_parts_num = constraint_system.lookup_parts(max_quotient_poly_chunks).size();
 
                         typename preprocessed_data_type::public_commitments_type public_commitments = commitments(
-                            public_polynomial_table, id_perm_polys,
+                            *public_polynomial_table, id_perm_polys,
                             sigma_perm_polys, q_last_q_blind, commitment_scheme
                         );
 
@@ -658,12 +676,14 @@ namespace nil {
                     struct preprocessed_data_type {
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain;
 
-                        plonk_private_polynomial_dfs_table<FieldType> private_polynomial_table;
+                        std::shared_ptr<plonk_private_polynomial_dfs_table<FieldType>> private_polynomial_table;
                     };
+
+                    using private_assignment_type = typename policy_type::variable_assignment_type::private_table_type;
 
                     static inline preprocessed_data_type process(
                         const plonk_constraint_system<FieldType>  &constraint_system,
-                        typename policy_type::variable_assignment_type::private_table_type private_assignment,
+                        std::shared_ptr<private_assignment_type> private_assignment,
                         const plonk_table_description<FieldType>  &table_description
                     ) {
                         std::size_t N_rows = table_description.rows_amount;
@@ -671,10 +691,13 @@ namespace nil {
                         std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain =
                             math::make_evaluation_domain<FieldType>(N_rows);
 
-                        plonk_private_polynomial_dfs_table<FieldType>
-                            private_polynomial_table(detail::column_range_polynomial_dfs<FieldType>(
-                                private_assignment.move_witnesses(), basic_domain));
-                        return preprocessed_data_type({basic_domain, std::move(private_polynomial_table)});
+                        auto private_polynomial_table = std::make_shared<plonk_private_polynomial_dfs_table<FieldType>>(
+                            detail::column_range_polynomial_dfs<FieldType>(
+                                private_assignment->witnesses(),
+                                basic_domain
+                            )
+                        );
+                        return preprocessed_data_type({basic_domain, private_polynomial_table});
                     }
                 };
             }    // namespace snark

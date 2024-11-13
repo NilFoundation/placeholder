@@ -26,6 +26,7 @@
 #ifndef MARSHALLING_PROCESSING_ALIGNED_UNION_HPP
 #define MARSHALLING_PROCESSING_ALIGNED_UNION_HPP
 
+#include <cstddef>
 #include <type_traits>
 
 namespace nil {
@@ -34,27 +35,25 @@ namespace nil {
 
             /// @cond SKIP_DOC
             template<typename TType, typename... TTypes>
-            class aligned_union {
+            class aligned_union {                
                 using other_storage_type = typename aligned_union<TTypes...>::type;
-                static const std::size_t other_size = sizeof(other_storage_type);
-                static const std::size_t other_alignment = std::alignment_of<other_storage_type>::value;
                 using first_storage_type = typename aligned_union<TType>::type;
-                static const std::size_t first_size = sizeof(first_storage_type);
-                static const std::size_t first_alignment = std::alignment_of<first_storage_type>::value;
-                static const std::size_t max_size = first_size > other_size ? first_size : other_size;
-                static const std::size_t max_alignment
-                    = first_alignment > other_alignment ? first_alignment : other_alignment;
-
+                using align_type = std::conditional_t<
+                    alignof(first_storage_type) >= alignof(other_storage_type), 
+                    first_storage_type, 
+                    other_storage_type
+                >;
+                
             public:
                 /// Type that has proper size and proper alignment to keep any of the
                 /// specified types
-                using type = typename std::aligned_storage<max_size, max_alignment>::type;
+                struct alignas(align_type) type { std::byte __data[sizeof(align_type)]; };
             };
 
             template<typename TType>
             class aligned_union<TType> {
             public:
-                using type = typename std::aligned_storage<sizeof(TType), std::alignment_of<TType>::value>::type;
+                struct alignas(TType) type { std::byte __data[sizeof(TType)]; };
             };
 
             /// @endcond

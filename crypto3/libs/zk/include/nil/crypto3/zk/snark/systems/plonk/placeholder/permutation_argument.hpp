@@ -43,6 +43,7 @@
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/detail/placeholder_policy.hpp>
 #include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 
 #include <nil/crypto3/bench/scoped_profiler.hpp>
 
@@ -73,7 +74,7 @@ namespace nil {
                         const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type
                             preprocessed_data,
                         const plonk_table_description<FieldType> &table_description,
-                        const plonk_polynomial_dfs_table<FieldType> &column_polynomials,
+                        const plonk_polynomial_dfs_table<FieldType>& column_polynomials,
                         typename ParamsType::commitment_scheme_type& commitment_scheme,
                         transcript_type& transcript
                     ) {
