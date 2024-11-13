@@ -11,6 +11,8 @@
 
 #pragma once
 
+// IWYU pragma: private
+
 #include <climits>
 #include <cstddef>
 #include <limits>
@@ -20,11 +22,10 @@
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
-#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
-    template<typename big_integer_t>
-    constexpr bool check_montgomery_constraints(const big_integer_t &m) {
+    template<std::size_t Bits>
+    constexpr bool check_montgomery_constraints(const big_integer<Bits> &m) {
         // Check m % 2 == 0
         return bit_test(m, 0u);
     }
@@ -645,7 +646,7 @@ namespace nil::crypto3::multiprecision::detail {
         big_integer_t m_montgomery_r2;
         limb_type m_montgomery_p_dash = 0;
 
-        // If set, no-carry optimization is allowed. Must be initialized by function
+        // If set, no-carry optimization is allowed. Is set to
         // is_applicable_for_no_carry_montgomery_mul() after initialization.
         bool m_no_carry_montgomery_mul_allowed = false;
     };

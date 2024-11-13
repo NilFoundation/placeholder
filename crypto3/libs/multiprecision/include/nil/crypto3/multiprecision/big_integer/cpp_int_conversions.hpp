@@ -23,8 +23,8 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     inline constexpr unsigned_cpp_int_type<Bits> to_cpp_int(const big_integer<Bits>& a) {
         unsigned_cpp_int_type<Bits> result;
-        for (const limb_type limb : a.limbs_array() | std::views::reverse) {
-            result <<= limb_bits;
+        for (const auto limb : a.limbs_array() | std::views::reverse) {
+            result <<= detail::limb_bits;
             result |= limb;
         }
         return result;
@@ -33,9 +33,9 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     inline constexpr big_integer<Bits> to_big_integer(unsigned_cpp_int_type<Bits> cppint) {
         big_integer<Bits> result;
-        for (limb_type& limb : result.limbs_array()) {
+        for (auto& limb : result.limbs_array()) {
             limb = static_cast<detail::limb_type>(cppint & static_cast<detail::limb_type>(-1));
-            cppint >>= limb_bits;
+            cppint >>= detail::limb_bits;
         }
         return result;
     }

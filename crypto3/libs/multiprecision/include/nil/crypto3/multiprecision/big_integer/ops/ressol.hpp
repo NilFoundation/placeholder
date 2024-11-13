@@ -10,13 +10,14 @@
 
 #pragma once
 
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_additional_ops.hpp"
 #include "nil/crypto3/multiprecision/big_integer/ops/jacobi.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 

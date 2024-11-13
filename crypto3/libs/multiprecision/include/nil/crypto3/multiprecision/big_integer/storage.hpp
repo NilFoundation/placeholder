@@ -1,5 +1,7 @@
 #pragma once
 
+// IWYU pragma: private
+
 #include <climits>
 #include <cstdint>
 
@@ -24,5 +26,4 @@ namespace nil::crypto3::multiprecision::detail {
         b = X;
         a = X >> limb_bits;
     }
-
 }  // namespace nil::crypto3::multiprecision::detail

@@ -8,18 +8,22 @@
 
 #pragma once
 
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+
 #include <array>
 #include <cstddef>
 #include <limits>
 #include <vector>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     /* Vector version */
-    template<typename big_integer_t>
-    std::vector<long> find_wnaf(const size_t window_size, const big_integer_t& scalar) noexcept {
+    template<std::size_t Bits>
+    std::vector<long> find_wnaf(const size_t window_size,
+                                const big_integer<Bits>& scalar) noexcept {
+        using big_integer_t = big_integer<Bits>;
         using ui_type = detail::limb_type;
 
         // upper bound
@@ -56,8 +60,9 @@ namespace nil::crypto3::multiprecision {
     }
 
     /* Array version */
-    template<typename big_integer_t>
-    constexpr auto find_wnaf_a(const size_t window_size, const big_integer_t& scalar) noexcept {
+    template<std::size_t Bits>
+    constexpr auto find_wnaf_a(const size_t window_size, const big_integer<Bits>& scalar) noexcept {
+        using big_integer_t = big_integer<Bits>;
         using ui_type = detail::limb_type;
 
         // upper bound

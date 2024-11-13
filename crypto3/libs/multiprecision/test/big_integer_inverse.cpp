@@ -15,9 +15,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/inverse.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/ops/inverse.hpp"
 
 using namespace nil::crypto3::multiprecision;
 

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <climits>
+#include <cstddef>
 #include <limits>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
@@ -41,10 +42,7 @@ namespace std {
 
       public:
         static constexpr bool is_specialized = true;
-        //
-        // Largest and smallest numbers are bounded only by available memory, set
-        // to zero:
-        //
+
         static constexpr number_type(min)() {
             return nil::crypto3::multiprecision::detail::get_min<Bits>();
         }
@@ -81,5 +79,4 @@ namespace std {
         static constexpr bool traps = false;
         static constexpr bool tinyness_before = false;
     };
-
 }  // namespace std

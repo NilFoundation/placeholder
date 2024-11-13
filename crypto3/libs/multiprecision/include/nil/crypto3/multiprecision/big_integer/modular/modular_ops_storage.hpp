@@ -11,7 +11,10 @@
 
 #pragma once
 
+// IWYU pragma: private
+
 #include <type_traits>
+
 namespace nil::crypto3::multiprecision::detail {
     template<const auto &Modulus, template<typename> typename modular_ops_template>
     class modular_ops_storage_ct {
