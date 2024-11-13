@@ -1161,9 +1161,7 @@ namespace nil::crypto3::multiprecision {
                     NIL_CO3_MP_ASSERT(carry <= max_limb_value);
                 }
                 if (carry) {
-                    // TODO(ioxid): throw?
-                    // resize_for_carry(result, i + j + 1);  // May throw if checking is enabled
-                    NIL_CO3_MP_ASSERT(internal_limb_count > i + j);
+                    NIL_CO3_MP_ASSERT(result.size() > i + j);
                     if (i + j < result.size()) {
                         pr[i + j] = static_cast<limb_type>(carry);
                     }

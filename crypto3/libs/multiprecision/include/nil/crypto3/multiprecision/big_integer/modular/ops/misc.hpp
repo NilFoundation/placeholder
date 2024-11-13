@@ -26,7 +26,7 @@ namespace nil::crypto3::multiprecision {
     constexpr modular_big_integer_t powm(const modular_big_integer_t &b,
                                          const big_integer<Bits> &e) {
         auto result = b;
-        result.ops().exp(result.base_data(), b.base_data(), e);
+        result.ops().exp(result.raw_base(), b.raw_base(), e);
         return result;
     }
 }  // namespace nil::crypto3::multiprecision

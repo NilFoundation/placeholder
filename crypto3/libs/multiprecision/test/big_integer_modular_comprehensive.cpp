@@ -54,7 +54,7 @@ constexpr void pow_test(const big_integer_t& a, const big_integer_t& b, const bi
     // modular_number a_m_powm_b_m = powm(a_m, b_m);
     modular_number a_m_powm_b = powm(a_m, b);
     // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_m_powm_b_m)) == a_powm_b, "powm error");
-    BOOST_ASSERT_MSG(to_cpp_int(a_m_powm_b.remove_modulus()) == a_powm_b, "powm error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_m_powm_b.base()) == a_powm_b, "powm error");
 }
 
 template<typename big_integer_t>
@@ -113,7 +113,7 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     // modular_number a_and_b = a & b;
     // modular_number a_or_b = a | b;
     // modular_number a_xor_b = a ^ b;
-    modular_number a_powm_b = powm(a, b.remove_modulus());
+    modular_number a_powm_b = powm(a, b.base());
     // modular_number a_bit_set = a;
     // bit_set(a_bit_set, 1);
     // modular_number a_bit_unset = a;
@@ -126,9 +126,9 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
 
     // We cannot use convert_to here, because there's a bug inside boost, convert_to is constexpr,
     // but it calls function generic_interconvert which is not.
-    BOOST_ASSERT_MSG(to_cpp_int(a_add_b.remove_modulus()) == a_add_b_s, "addition error");
-    BOOST_ASSERT_MSG(to_cpp_int(a_sub_b.remove_modulus()) == a_sub_b_s, "subtraction error");
-    BOOST_ASSERT_MSG(to_cpp_int(a_mul_b.remove_modulus()) == a_mul_b_s, "multiplication error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_add_b.base()) == a_add_b_s, "addition error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_sub_b.base()) == a_sub_b_s, "subtraction error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_mul_b.base()) == a_mul_b_s, "multiplication error");
 
     // BOOST_ASSERT_MSG((a > b) == (a_cppint > b_cppint), "g error");
     // BOOST_ASSERT_MSG((a >= b) == (a_cppint >= b_cppint), "ge error");
@@ -141,7 +141,7 @@ bool base_operations_test(std::array<big_integer_t, test_set_len> test_set) {
     // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_or_b)) == a_or_b_s, "or error");
     // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_xor_b)) == a_xor_b_s, "xor error");
 
-    BOOST_ASSERT_MSG(to_cpp_int(a_powm_b.remove_modulus()) == a_powm_b_s, "powm error");
+    BOOST_ASSERT_MSG(to_cpp_int(a_powm_b.base()) == a_powm_b_s, "powm error");
     pow_test(test_set[a_e], test_set[b_e], test_set[mod_e]);
 
     // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_bit_set)) == a_bit_set_s, "bit set error");

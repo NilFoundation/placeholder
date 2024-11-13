@@ -22,6 +22,7 @@
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops_storage.hpp"
+#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -41,9 +42,9 @@ namespace nil::crypto3::multiprecision {
                                                       modular_ops_storage_t&& modular_ops_storage)
                 : m_modular_ops_storage(std::move(modular_ops_storage)) {
                 // TODO(ioxid): do we need this?
-                // NIL_CO3_MP_ASSERT_MSG(Bits == msb(ops().get_mod()) + 1,
+                // NIL_CO3_MP_ASSERT_MSG(Bits == msb(mod()) + 1,
                 //                  "modulus precision should match used big_integer");
-                ops().adjust_modular(m_base, x);
+                ops().adjust_modular(m_raw_base, x);
             }
 
           public:
@@ -51,7 +52,7 @@ namespace nil::crypto3::multiprecision {
 
             constexpr bool compare_eq(const modular_big_integer_impl& o) const {
                 // TODO(ioxid): ensure modulus comparison is done in compile time when possible
-                return ops().compare_eq(o.ops()) && m_base == o.m_base;
+                return ops().compare_eq(o.ops()) && m_raw_base == o.m_raw_base;
             }
 
             // TODO(ioxid): do we need this? If yes then need to make sure this is not chosen for T
@@ -59,27 +60,28 @@ namespace nil::crypto3::multiprecision {
             //
             // template<class T> constexpr bool compare_eq(const T& val) const
             // {
-            //     return remove_modulus() == val;
+            //     return base() == val;
             // }
 
-            constexpr big_integer_t remove_modulus() const {
-                return ops().adjusted_regular(m_base);
+            inline constexpr big_integer_t base() const {
+                return ops().adjusted_regular(m_raw_base);
             }
+            inline constexpr const big_integer_t& mod() const { return ops().get_mod(); }
 
             // String conversion
 
             inline constexpr std::string str() const {
                 // TODO(ioxid): add module to output
-                return remove_modulus().str();
+                return base().str();
             }
 
             // Mathemetical operations
 
             inline constexpr void negate() {
-                if (!is_zero(m_base)) {
-                    auto initial_m_base = m_base;
-                    m_base = ops().get_mod();
-                    m_base -= initial_m_base;
+                if (!is_zero(m_raw_base)) {
+                    auto initial_m_base = m_raw_base;
+                    m_raw_base = mod();
+                    m_raw_base -= initial_m_base;
                 }
             }
 
@@ -97,9 +99,9 @@ namespace nil::crypto3::multiprecision {
                     }
                     part.assign(s, p);
                     if (!part.empty()) {
-                        m_base = part.c_str();
+                        m_raw_base = part.c_str();
                     } else {
-                        m_base = zero;
+                        m_raw_base = zero;
                     }
                     s = p;
                     if (*p && (*p != ')')) {
@@ -117,14 +119,14 @@ namespace nil::crypto3::multiprecision {
                         m_modular_ops_storage.set_modular_ops(zero);
                     }
                 } else {
-                    m_base = s;
+                    m_raw_base = s;
                     m_modular_ops_storage.set_modular_ops(zero);
                 }
                 return *this;
             }
 
-            constexpr auto& base_data() { return m_base; }
-            constexpr const auto& base_data() const { return m_base; }
+            constexpr auto& raw_base() { return m_raw_base; }
+            constexpr const auto& raw_base() const { return m_raw_base; }
 
             constexpr auto& ops() { return m_modular_ops_storage.ops(); }
             constexpr const auto& ops() const { return m_modular_ops_storage.ops(); }
@@ -132,7 +134,7 @@ namespace nil::crypto3::multiprecision {
           protected:
             modular_ops_storage_t m_modular_ops_storage;
 
-            big_integer_t m_base;
+            big_integer_t m_raw_base;
         };
     }  // namespace detail
 
@@ -150,13 +152,13 @@ namespace nil::crypto3::multiprecision {
         constexpr modular_big_integer_ct_impl() : base_type({}, {}) {}
 
         constexpr modular_big_integer_ct_impl(const big_integer_t& b) : base_type(b, {}) {
-            this->ops().adjust_modular(this->m_base, b);
+            this->ops().adjust_modular(this->m_raw_base, b);
         }
 
         template<std::size_t Bits2>
         constexpr explicit modular_big_integer_ct_impl(const big_integer<Bits2>& b)
             : base_type(b, {}) {
-            this->ops().adjust_modular(this->m_base, b);
+            this->ops().adjust_modular(this->m_raw_base, b);
         }
 
         // A method for converting a signed integer to a modular adaptor. We are not supposed to
@@ -166,15 +168,15 @@ namespace nil::crypto3::multiprecision {
                  typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
         constexpr modular_big_integer_ct_impl(SI b) : base_type(0u, {}) {
             if (b >= 0) {
-                this->m_base = static_cast<std::make_unsigned_t<SI>>(b);
+                this->m_raw_base = static_cast<std::make_unsigned_t<SI>>(b);
             } else {
-                this->m_base = this->ops().get_mod();
+                this->m_raw_base = this->mod();
                 // TODO(ioxid): should work not just with limb_type, and this does not really
                 // work (m_base may underflow)
-                this->m_base -= static_cast<detail::limb_type>(-b);
+                this->m_raw_base -= static_cast<detail::limb_type>(-b);
             }
 
-            this->ops().adjust_modular(this->m_base);
+            this->ops().adjust_modular(this->m_raw_base);
         }
 
         template<typename UI, typename std::enable_if_t<
@@ -197,15 +199,15 @@ namespace nil::crypto3::multiprecision {
                  std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
         constexpr modular_big_integer_rt_impl(SI b, const big_integer_t& m) : base_type(0u, m) {
             if (b >= 0) {
-                this->m_base = b;
+                this->m_raw_base = b;
             } else {
-                this->m_base = this->ops().get_mod();
+                this->m_raw_base = this->mod();
                 // TODO(ioxid): should work not just with limb_type, and this does not really
                 // work (m_base may underflow)
-                this->m_base -= static_cast<detail::limb_type>(-b);
+                this->m_raw_base -= static_cast<detail::limb_type>(-b);
             }
 
-            this->ops().adjust_modular(this->m_base);
+            this->ops().adjust_modular(this->m_raw_base);
         }
 
         template<typename UI, typename std::enable_if_t<
@@ -284,13 +286,13 @@ namespace nil::crypto3::multiprecision {
     inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         largest_t result = a;
-        a.ops().add(result.base_data(), b.base_data());
+        a.ops().add(result.raw_base(), b.raw_base());
         return result;
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator+=(modular_big_integer_t& a, const T& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
-        a.ops().add(a.base_data(), b.base_data());
+        a.ops().add(a.raw_base(), b.raw_base());
         return a;
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
@@ -314,12 +316,12 @@ namespace nil::crypto3::multiprecision {
         constexpr void subtract(
             modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& result,
             const modular_big_integer_impl<big_integer<Bits>, modular_ops_t>& o) {
-            if (result.base_data() < o.base_data()) {
-                auto v = result.ops().get_mod();
-                v -= o.base_data();
-                result.base_data() += v;
+            if (result.raw_base() < o.raw_base()) {
+                auto v = result.mod();
+                v -= o.raw_base();
+                result.raw_base() += v;
             } else {
-                result.base_data() -= o.base_data();
+                result.raw_base() -= o.raw_base();
             }
         }
     }  // namespace detail
@@ -360,13 +362,13 @@ namespace nil::crypto3::multiprecision {
     inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         largest_t result = a;
-        a.ops().mul(result.base_data(), b.base_data());
+        a.ops().mul(result.raw_base(), b.raw_base());
         return result;
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator*=(modular_big_integer_t& a, const T& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
-        a.ops().mul(a.base_data(), b.base_data());
+        a.ops().mul(a.raw_base(), b.raw_base());
         return a;
     }
 
@@ -385,7 +387,7 @@ namespace nil::crypto3::multiprecision {
     template<class big_integer_t, typename modular_ops_t>
     constexpr bool is_zero(
         const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& val) noexcept {
-        return is_zero(val.base_data());
+        return is_zero(val.raw_base());
     }
 
     // Hash
@@ -394,7 +396,7 @@ namespace nil::crypto3::multiprecision {
     inline constexpr std::size_t hash_value(
         const detail::modular_big_integer_impl<big_integer_t, modular_ops_t>& val) noexcept {
         // TODO(ioxid): also hash modulus for runtime type
-        return hash_value(val.base_data());
+        return hash_value(val.raw_base());
     }
 
     // IO

@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(inverse_tests) {
 
 BOOST_AUTO_TEST_CASE(test_modular_big_integer_6_bits) {
     auto modular = modular_big_integer_rt<6>(10u, 37u);
-    BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(modular).remove_modulus(), 26u);
+    BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(modular).base(), 26u);
 }
 
 // BOOST_AUTO_TEST_CASE(test_cpp_int_modular_backend_6_bits) {
