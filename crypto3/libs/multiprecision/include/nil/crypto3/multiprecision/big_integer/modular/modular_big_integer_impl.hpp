@@ -259,15 +259,16 @@ namespace nil::crypto3::multiprecision {
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator++(modular_big_integer_t& a) noexcept {
-        // TODO(ioxid): implement faster
-        a += static_cast<modular_big_integer_t>(1u);
+        ++a.raw_base();
+        if (a.raw_base() == a.mod()) {
+            a.raw_base() = 0u;
+        }
         return a;
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator++(modular_big_integer_t& a, int) noexcept {
         auto copy = a;
-        // TODO(ioxid): implement faster
-        a += static_cast<modular_big_integer_t>(1u);
+        ++a;
         return copy;
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
@@ -300,15 +301,16 @@ namespace nil::crypto3::multiprecision {
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator--(modular_big_integer_t& a) noexcept {
-        // TODO(ioxid): implement faster
-        a -= static_cast<modular_big_integer_t>(1u);
+        if (is_zero(a.raw_base())) {
+            a.raw_base() = a.mod();
+        }
+        --a.raw_base();
         return a;
     }
     NIL_CO3_MP_MODULAR_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator--(modular_big_integer_t& a, int) noexcept {
         auto copy = a;
-        // TODO(ioxid): implement faster
-        a -= static_cast<modular_big_integer_t>(1u);
+        --a;
         return copy;
     }
 
