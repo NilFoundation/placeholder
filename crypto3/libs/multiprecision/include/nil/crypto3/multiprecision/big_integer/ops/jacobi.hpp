@@ -21,6 +21,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr int jacobi(const big_integer<Bits> &a, const big_integer<Bits> &n) {
         using big_integer_t = big_integer<Bits>;
+
         if (n % 2 == 0 || n <= 1) {
             throw std::invalid_argument("jacobi: second argument must be odd and > 1");
         }

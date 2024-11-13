@@ -17,8 +17,9 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_integer/detail/endian.hpp"
+#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -174,9 +175,10 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits, class T>
     inline big_integer<Bits>& import_bits(big_integer<Bits>& val, T* i, T* j,
                                           std::size_t chunk_size = 0, bool msv_first = true) {
-#if CRYPTO3_MP_ENDIAN_LITTLE_BYTE
-        if (((chunk_size % CHAR_BIT) == 0) && !msv_first && (sizeof(*i) * CHAR_BIT == chunk_size))
+#if NIL_CO3_MP_ENDIAN_LITTLE_BYTE
+        if (((chunk_size % CHAR_BIT) == 0) && !msv_first && (sizeof(*i) * CHAR_BIT == chunk_size)) {
             return detail::import_bits_fast(val, i, j, chunk_size);
+        }
 #endif
         return detail::import_bits_generic(val, i, j, chunk_size, msv_first);
     }
