@@ -62,7 +62,7 @@ namespace nil::crypto3::multiprecision {
             ++exp_padded;
             exp_padded >>= 2u;
 
-            return powm(a_mod, big_integer_t(exp_padded)).remove_modulus();
+            return powm(a_mod, big_integer_t(exp_padded)).base();
         }
 
         big_integer_t p_negone = p;
@@ -81,8 +81,8 @@ namespace nil::crypto3::multiprecision {
         n_mod *= r_sq_mod;
         r_mod *= a_mod;
 
-        if (n_mod.remove_modulus() == 1u) {
-            return r_mod.remove_modulus();
+        if (n_mod.base() == 1u) {
+            return r_mod.base();
         }
 
         // find random quadratic nonresidue z
@@ -101,17 +101,17 @@ namespace nil::crypto3::multiprecision {
 
         auto c_mod = powm(z_mod, q);
 
-        while (n_mod.remove_modulus() > 1u) {
+        while (n_mod.base() > 1u) {
             size_t i = 0u;
 
             auto q_mod = n_mod;
 
-            while (q_mod.remove_modulus() != 1u) {
+            while (q_mod.base() != 1u) {
                 q_mod = powm(q_mod, two);
                 ++i;
 
                 if (i >= s) {
-                    // TODO(ioxid): what error exactly should be returned here?
+                    // TODO(ioxid): when can this happen?
                     throw std::invalid_argument("Not a quadratic residue");
                 }
             }
@@ -127,6 +127,6 @@ namespace nil::crypto3::multiprecision {
             s = i;
         }
 
-        return r_mod.remove_modulus();
+        return r_mod.base();
     }
 }  // namespace nil::crypto3::multiprecision

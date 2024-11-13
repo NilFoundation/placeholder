@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(big) {
     modular_big_integer<mod> b =
         0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_integer224;
 
-    BOOST_CHECK_EQUAL((a * b).remove_modulus(),
+    BOOST_CHECK_EQUAL((a * b).base(),
                       0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_integer224);
 }
 
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(big_assign) {
 
     a *= b;
 
-    BOOST_CHECK_EQUAL(a.remove_modulus(),
+    BOOST_CHECK_EQUAL(a.base(),
                       0x107BC09A9F3443A6F6458495ADD98CBA1FCD15F17D0EAB66302FEFA6_big_integer224);
 }
 
