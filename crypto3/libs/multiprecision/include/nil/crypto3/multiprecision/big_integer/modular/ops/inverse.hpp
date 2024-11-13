@@ -16,9 +16,7 @@ namespace nil::crypto3::multiprecision {
     template<typename modular_big_integer_t>
     constexpr modular_big_integer_t inverse_extended_euclidean_algorithm(
         const modular_big_integer_t &modular) {
-        typename modular_big_integer_t::big_integer_t res;
-
-        inverse_extended_euclidean_algorithm(res, modular.base(), modular.mod());
-        return {res, modular.mod()};
+        return modular.with_replaced_base(
+            inverse_extended_euclidean_algorithm(modular.base(), modular.mod()));
     }
 }  // namespace nil::crypto3::multiprecision
