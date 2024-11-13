@@ -299,13 +299,15 @@ namespace nil::crypto3::multiprecision::detail {
             m_no_carry_montgomery_mul_allowed = is_applicable_for_no_carry_montgomery_mul();
         }
 
-        // TODO(ioxid): no exception actually
         /*
          * Compute -input^-1 mod 2^limb_bits. Throws an exception if input
          * is even. If input is odd, then input and 2^n are relatively prime
          * and an inverse exists.
          */
         constexpr limb_type monty_inverse(const limb_type &a) {
+            if (a % 2 == 0) {
+                throw std::invalid_argument("inverse does not exist");
+            }
             limb_type b = 1;
             limb_type r = 0;
 
@@ -350,15 +352,11 @@ namespace nil::crypto3::multiprecision::detail {
                 accum += prod;
             }
             accum >>= this->m_mod.size() * limb_bits;
-            // TODO(ioxid): true?
-            // We cannot use -= for numbers of difference sizes, so resizing
-            // m_mod.
-            big_integer_doubled_padded_limbs large_mod = this->m_mod;
-            if (accum >= large_mod) {
-                accum -= large_mod;
+
+            if (accum >= this->m_mod) {
+                accum -= this->m_mod;
             }
-            // Here only the bytes that fit in sizeof result will be copied, and that's
-            // intentional.
+
             result = accum;
         }
 
