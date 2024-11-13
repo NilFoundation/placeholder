@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <boost/functional/hash.hpp>
+#include <boost/functional/hash_fwd.hpp>
 #include <cctype>
 #include <charconv>
 #include <climits>
@@ -16,6 +18,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <type_traits>
 
@@ -26,6 +29,7 @@
 // TODO(ioxid): boost is used for
 // boost::multiprecision::detail::addcarry_limb
 // boost::multiprecision::detail::subborrow_limb
+// boost::hash_combine
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
@@ -47,18 +51,18 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits>
-        constexpr big_integer<Bits> parse_int_hex(const char* str, std::size_t length) {
-            if (length < 2 || str[0] != '0' || str[1] != 'x') {
+        constexpr big_integer<Bits> parse_int_hex(std::string_view str) {
+            if (str.size() < 2 || str[0] != '0' || str[1] != 'x') {
                 throw std::invalid_argument("hex literal should start with 0x");
             }
 
             big_integer<Bits> result{0};
 
             std::size_t bits = 0;
-            for (std::size_t i = 2; i < length; ++i) {
+            for (std::size_t i = 2; i < str.size(); ++i) {
                 char c = str[i];
                 if (!is_valid_hex_digit(c)) {
-                    throw std::invalid_argument("non hex character in literal");
+                    throw std::invalid_argument("non-hex character in literal");
                 }
                 result <<= 4;
                 if (bits != 0) {
@@ -77,10 +81,10 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits>
-        constexpr big_integer<Bits> parse_int_decimal(const char* str, std::size_t length) {
+        constexpr big_integer<Bits> parse_int_decimal(std::string_view str) {
             big_integer<Bits> result{0};
 
-            for (std::size_t i = 0; i < length; ++i) {
+            for (std::size_t i = 0; i < str.size(); ++i) {
                 char c = str[i];
                 if (c < '0' || c > '9') {
                     throw std::invalid_argument("non decimal character in literal");
@@ -92,11 +96,11 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits>
-        constexpr big_integer<Bits> parse_int(const char* str, std::size_t length) {
-            if (length >= 2 && str[0] == '0' && str[1] == 'x') {
-                return parse_int_hex<Bits>(str, length);
+        constexpr big_integer<Bits> parse_int(std::string_view str) {
+            if (str.size() >= 2 && str[0] == '0' && str[1] == 'x') {
+                return parse_int_hex<Bits>(str);
             }
-            return parse_int_decimal<Bits>(str, length);
+            return parse_int_decimal<Bits>(str);
         }
     }  // namespace detail
 
@@ -180,7 +184,7 @@ namespace nil::crypto3::multiprecision {
         // Assignment
 
         inline constexpr big_integer& operator=(const char* str) {
-            *this = detail::parse_int<Bits>(str, std::char_traits<char>::length(str));
+            *this = detail::parse_int<Bits>(str);
             return *this;
         }
 
@@ -967,9 +971,9 @@ namespace nil::crypto3::multiprecision {
             Very simple long division.
             Start by setting the remainder equal to x, and the
             result equal to 0.  Then in each loop we calculate our
-            "best guess" for how many times y divides into r,
+            "best guess" for how many times y divides into rem,
             add our guess to the result, and subtract guess*y
-            from the remainder r.  One wrinkle is that the remainder
+            from the remainder rem.  One wrinkle is that the remainder
             may go negative, in which case we subtract the current guess
             from the result rather than adding.  The value of the guess
             is determined by dividing the most-significant-limb of the
@@ -1049,7 +1053,7 @@ namespace nil::crypto3::multiprecision {
 
             do {
                 //
-                // Calculate our best guess for how many times y divides into r:
+                // Calculate our best guess for how many times y divides into rem:
                 //
                 limb_type guess = 1;
                 if (rem_order > 0 && prem[rem_order] <= py[y_order]) {
@@ -1120,15 +1124,15 @@ namespace nil::crypto3::multiprecision {
                     // t.resize(t.size() - 1, t.size() - 1);
                 }
                 //
-                // Update r in a way that won't actually produce a negative result
+                // Update rem in a way that won't actually produce a negative result
                 // in case the argument types are unsigned:
                 //
                 if (truncated_t && carry) {
                     NIL_CO3_MP_ASSERT_MSG(false, "how can this even happen");
-                    // We need to calculate 2^n + t - r
+                    // We need to calculate 2^n + t - rem
                     // where n is the number of bits in this type.
-                    // Simplest way is to get 2^n - r by complementing
-                    // r, then add t to it.  Note that we can't call eval_complement
+                    // Simplest way is to get 2^n - rem by complementing
+                    // rem, then add t to it.  Note that we can't call eval_complement
                     // in case this is a signed checked type:
                     for (std::size_t i = 0; i <= rem_order; ++i) {
                         rem.limbs()[i] = ~prem[i];
@@ -1159,7 +1163,7 @@ namespace nil::crypto3::multiprecision {
                 //
                 rem_order = rem.order();
             }
-            // Termination condition is really just a check that r > y, but with a common
+            // Termination condition is really just a check that rem > y, but with a common
             // short-circuit case handled first:
             while ((rem_order >= y_order) && ((rem_order > y_order) || (rem >= y)));
 
@@ -1280,4 +1284,258 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t>
         friend class big_integer;
     };
+
+    namespace detail {
+        template<typename T>
+        static constexpr bool always_false = false;
+
+        template<typename T>
+        constexpr bool is_big_integer_v = false;
+
+        template<std::size_t Bits>
+        constexpr bool is_big_integer_v<big_integer<Bits>> = true;
+
+        template<typename T>
+        constexpr bool is_integral_v = std::is_integral_v<T> || is_big_integer_v<T>;
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        constexpr std::size_t get_bits() {
+            return sizeof(T) * CHAR_BIT;
+        }
+
+        template<typename T, std::enable_if_t<is_big_integer_v<T>, int> = 0>
+        constexpr std::size_t get_bits() {
+            return T::Bits;
+        }
+    }  // namespace detail
+
+#define CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE                                                  \
+    template<typename T1, typename T2,                                                            \
+             std::enable_if_t<detail::is_integral_v<T1> && detail::is_integral_v<T2> &&           \
+                                  (detail::is_big_integer_v<T1> || detail::is_big_integer_v<T2>), \
+                              int> = 0,                                                           \
+             typename largest_t =                                                                 \
+                 big_integer<std::max(detail::get_bits<T1>(), detail::get_bits<T2>())>>
+
+    // TODO(ioxid): somehow error on overflow
+#define CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                                        \
+    template<typename big_integer_t, typename T,                                                   \
+             std::enable_if_t<detail::is_big_integer_v<big_integer_t> && detail::is_integral_v<T>, \
+                              int> = 0>
+
+#define CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE \
+    template<typename big_integer_t,          \
+             std::enable_if_t<detail::is_big_integer_v<big_integer_t>, int> = 0>
+
+    // Comparison
+
+#define CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(op)                           \
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE                               \
+    inline constexpr bool operator op(const T1& a, const T2& b) noexcept { \
+        largest_t ap = a;                                                  \
+        largest_t bp = b;                                                  \
+        return ap.compare(bp) op 0;                                        \
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(<)
+    CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(<=)
+    CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(>)
+    CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(>=)
+    CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(==)
+    CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR(!=)
+
+    // TODO(ioxid): implement comparison with signed types, needed for boost::random
+#undef CRYPTO3_MP_BIG_INTEGER_IMPL_OPERATOR
+
+    // Arithmetic operations
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
+        big_integer<largest_t::Bits + 1> result = a;
+        decltype(result)::add(result, result, b);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator+=(big_integer_t& a, const T& b) noexcept {
+        big_integer_t::add(a, a, b);
+        return a;
+    }
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto& operator++(big_integer_t& a) noexcept {
+        a.increment();
+        return a;
+    }
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto operator++(big_integer_t& a, int) noexcept {
+        auto copy = a;
+        ++a;
+        return copy;
+    }
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto operator+(const big_integer_t& a) noexcept { return a; }
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
+        T1 result;
+        T1::subtract(result, a, b);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator-=(big_integer_t& a, const T& b) {
+        big_integer_t::subtract(a, a, b);
+        return a;
+    }
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto& operator--(big_integer_t& a) noexcept {
+        a.decrement();
+        return a;
+    }
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto operator--(big_integer_t& a, int) noexcept {
+        auto copy = a;
+        --a;
+        return copy;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr big_integer_t operator-(const big_integer_t& /* unused */) noexcept {
+        // TODO(ioxid): implement?
+        static_assert(detail::always_false<big_integer_t>, "can't negate unsigned type");
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
+        big_integer<detail::get_bits<T1>() + detail::get_bits<T2>()> result;
+        decltype(result)::multiply(result, a, b);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator*=(big_integer_t& a, const T& b) noexcept {
+        big_integer<detail::get_bits<big_integer_t>() + detail::get_bits<T>()> result;
+        decltype(result)::multiply(result, a, static_cast<big_integer_t>(b));
+        a = result;
+        return a;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
+        largest_t result;
+        largest_t modulus;
+        largest_t::divide(&result, a, b, modulus);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator/=(big_integer_t& a, const T& b) noexcept {
+        big_integer_t result;
+        big_integer_t modulus;
+        big_integer_t::divide(&result, a, b, modulus);
+        a = result;
+        return a;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator%(const T1& a, const T2& b) noexcept {
+        largest_t modulus;
+        largest_t::divide(nullptr, static_cast<largest_t>(a), static_cast<largest_t>(b), modulus);
+        return modulus;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator%=(big_integer_t& a, const T& b) {
+        big_integer_t modulus;
+        big_integer_t::divide(nullptr, a, b, modulus);
+        a = modulus;
+        return a;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator&(const T1& a, const T2& b) noexcept {
+        largest_t result = a;
+        T1::bitwise_and(result, b);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator&=(big_integer_t& a, const T& b) {
+        big_integer_t::bitwise_and(a, b);
+        return a;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator|(const T1& a, const T2& b) noexcept {
+        largest_t result = a;
+        T1::bitwise_or(result, b);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator|=(big_integer_t& a, const T& b) {
+        big_integer_t::bitwise_or(a, b);
+        return a;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
+    inline constexpr auto operator^(const T1& a, const T2& b) noexcept {
+        largest_t result = a;
+        T1::bitwise_xor(result, b);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    inline constexpr auto& operator^=(big_integer_t& a, const T& b) {
+        big_integer_t::bitwise_or(a, b);
+        return a;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto operator~(const big_integer_t& a) noexcept {
+        big_integer_t result;
+        big_integer_t::complement(result, a);
+        return result;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto operator<<(const big_integer_t& a, unsigned shift) noexcept {
+        big_integer_t result = a;
+        big_integer_t::left_shift(result, shift);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto& operator<<=(big_integer_t& a, unsigned shift) noexcept {
+        // TODO(ioxid): check
+        big_integer_t::left_shift(a, shift);
+        return a;
+    }
+
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto operator>>(const big_integer_t& a, unsigned shift) noexcept {
+        big_integer_t result = a;
+        big_integer_t::right_shift(result, shift);
+        return result;
+    }
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    inline constexpr auto& operator>>=(big_integer_t& a, unsigned shift) noexcept {
+        // TODO(ioxid): check
+        big_integer_t::right_shift(a, shift);
+        return a;
+    }
+
+    // Hash
+
+    template<std::size_t Bits>
+    inline constexpr std::size_t hash_value(const big_integer<Bits>& val) noexcept {
+        std::size_t result = 0;
+        for (unsigned i = 0; i < val.size(); ++i) {
+            boost::hash_combine(result, val.limbs()[i]);
+        }
+        return result;
+    }
+
+    // IO
+
+    CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+    std::ostream& operator<<(std::ostream& os, const big_integer_t& value) {
+        os << value.str();
+        return os;
+    }
+
+#undef CRYPTO3_MP_BIG_INTEGER_UNARY_TEMPLATE
+#undef CRYPTO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+#undef CRYPTO3_MP_BIG_INTEGER_INTEGRAL_TEMPLATE
 }  // namespace nil::crypto3::multiprecision

@@ -9,11 +9,13 @@
 
 #pragma once
 
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+
 #include <cstddef>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/signed_big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_integer/signed_big_integer.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename signed_big_integer_t>

@@ -11,26 +11,22 @@
 
 #pragma once
 
-#include <boost/functional/hash_fwd.hpp>
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
+
 #include <cmath>
 #include <cstddef>
-#include <vector>
+#include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 
 namespace nil::crypto3::multiprecision {
-    // TODO(ioxid): remove this
-    using namespace detail;
-
-    template<typename modular_big_integer_t, typename T>
-    constexpr modular_big_integer_t powm(const modular_big_integer_t &b, const T &e) {
-        // TODO(ioxid): rewrite
+    template<typename modular_big_integer_t, std::size_t Bits,
+             std::enable_if_t<detail::is_modular_big_integer_v<modular_big_integer_t>, int> = 0>
+    constexpr modular_big_integer_t powm(const modular_big_integer_t &b,
+                                         const big_integer<Bits> &e) {
         auto result = b;
         result.ops().exp(result.base_data(), b.base_data(), e);
         return result;
     }
-
-    // TODO(ioxid): hash
 }  // namespace nil::crypto3::multiprecision

@@ -8,6 +8,8 @@
 
 #pragma once
 
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
+
 #include "nil/crypto3/multiprecision/big_integer/ops/inverse.hpp"
 
 namespace nil::crypto3::multiprecision {
