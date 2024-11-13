@@ -134,8 +134,8 @@ namespace nil::crypto3::multiprecision {
         inline constexpr const_limb_pointer limbs() const noexcept { return m_data.data(); }
         inline constexpr auto& limbs_array() noexcept { return m_data; }
         inline constexpr const auto& limbs_array() const noexcept { return m_data; }
-        inline constexpr bool sign() const noexcept { return false; }
 
+      private:
         // Zeros out everything after limb[i], replaces resizing.
         inline constexpr void zero_after(std::size_t start_index) {
             auto pr = this->limbs();
@@ -143,12 +143,13 @@ namespace nil::crypto3::multiprecision {
                 pr[i] = 0;
             }
         }
-        inline constexpr bool has_carry() const noexcept { return m_carry; }
-        inline constexpr void set_carry(bool carry) noexcept { m_carry = carry; }
-
         inline constexpr void normalize() noexcept {
             limbs()[internal_limb_count - 1] &= upper_limb_mask;
         }
+
+      public:
+        inline constexpr bool has_carry() const noexcept { return m_carry; }
+        inline constexpr void set_carry(bool carry) noexcept { m_carry = carry; }
 
         // Constructor
 
