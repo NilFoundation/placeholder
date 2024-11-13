@@ -111,7 +111,7 @@ namespace nil::crypto3::multiprecision {
                 ++i;
 
                 if (i >= s) {
-                    // TODO(ioxid): when can this happen?
+                    // TODO(ioxid): when can this happen? (jacobi said that this should not happen)
                     throw std::invalid_argument("Not a quadratic residue");
                 }
             }

@@ -23,7 +23,6 @@
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/big_integer/modular/modular_ops_storage.hpp"
-#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -83,7 +82,6 @@ namespace nil::crypto3::multiprecision {
           protected:
             modular_ops_storage_t m_modular_ops_storage;
 
-            // TODO(ioxid): separate type for montgomery form to make the form explicit
             big_integer_t m_raw_base;
         };
     }  // namespace detail
@@ -106,23 +104,17 @@ namespace nil::crypto3::multiprecision {
             this->ops().adjust_modular(this->m_raw_base, b);
         }
 
-        // TODO(ioxid): this is buggy, need to remove it asap
-        // A method for converting a signed integer to a modular adaptor. We are not supposed to
+        // A method for converting a signed integer to a modular adaptor.
+        // TODO: We are not supposed to
         // have this, but in the code we already have conversion for an 'int' into modular type.
         // In the future we must remove.
         template<typename SI,
                  typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-        constexpr modular_big_integer_ct_impl(SI b) : base_type(big_integer_t(0u), {}) {
-            if (b >= 0) {
-                this->m_raw_base = static_cast<std::make_unsigned_t<SI>>(b);
-            } else {
-                this->m_raw_base = this->mod();
-                // TODO(ioxid): should work not just with limb_type, and this does not really
-                // work (m_base may underflow)
-                this->m_raw_base -= static_cast<detail::limb_type>(-b);
+        constexpr modular_big_integer_ct_impl(SI b)
+            : base_type(big_integer<sizeof(SI) * CHAR_BIT>(b), {}) {
+            if (b < 0) {
+                this->negate();
             }
-
-            this->ops().adjust_modular(this->m_raw_base);
         }
 
         template<typename UI, typename std::enable_if_t<
@@ -149,17 +141,10 @@ namespace nil::crypto3::multiprecision {
         template<typename SI,
                  std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
         constexpr modular_big_integer_rt_impl(SI b, const big_integer_t& m)
-            : base_type(big_integer_t(0u), m) {
-            if (b >= 0) {
-                this->m_raw_base = b;
-            } else {
-                this->m_raw_base = this->mod();
-                // TODO(ioxid): should work not just with limb_type, and this does not really
-                // work (m_base may underflow)
-                this->m_raw_base -= static_cast<detail::limb_type>(-b);
+            : base_type(big_integer<sizeof(SI) * CHAR_BIT>(std::abs(b)), m) {
+            if (b < 0) {
+                this->negate();
             }
-
-            this->ops().adjust_modular(this->m_raw_base);
         }
 
         template<std::size_t Bits2>
@@ -207,7 +192,6 @@ namespace nil::crypto3::multiprecision {
 
     // Comparison
 
-// TODO(ioxid): comparison with big_integer and basic types (including signed)
 #define NIL_CO3_MP_MODULAR_BIG_INTEGER_COMPARISON_IMPL(op)                 \
     template<typename T1, typename T2,                                     \
              std::enable_if_t<detail::is_modular_big_integer_v<T1> &&      \

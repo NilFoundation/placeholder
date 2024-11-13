@@ -27,9 +27,6 @@
 #include "nil/crypto3/multiprecision/big_integer/detail/intel_intrinsics.hpp"
 #include "nil/crypto3/multiprecision/big_integer/storage.hpp"
 
-// TODO(ioxid): boost is used for
-// boost::hash_combine
-
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     class big_integer;
@@ -159,7 +156,6 @@ namespace nil::crypto3::multiprecision {
 
         inline constexpr big_integer(const char* str) { *this = str; }
 
-        // TODO(ioxid): forbid signed, implement comparison with signed instead
         template<class T,
                  std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
         inline constexpr big_integer(T val) noexcept {
@@ -195,7 +191,6 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        // TODO(ioxid): forbid signed, implement comparison with signed instead
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
         inline constexpr big_integer& operator=(T val) noexcept {
@@ -278,12 +273,11 @@ namespace nil::crypto3::multiprecision {
             return 0;
         }
 
-        // TODO(ioxid): make them private?
-
         // Arithmetic operations
 
         // Addition/subtraction
 
+      private:
         static inline constexpr void add_constexpr(big_integer& result, const big_integer& a,
                                                    const big_integer& b) noexcept {
             //
@@ -317,7 +311,7 @@ namespace nil::crypto3::multiprecision {
                 carry >>= big_integer::limb_bits;
                 ++pr, ++pa, ++pb;
             }
-            if (Bits % big_integer::limb_bits == 0) {
+            if constexpr (Bits % big_integer::limb_bits == 0) {
                 result.set_carry(carry);
             } else {
                 limb_type mask = big_integer::upper_limb_mask;
@@ -363,6 +357,7 @@ namespace nil::crypto3::multiprecision {
             NIL_CO3_MP_ASSERT(0 == borrow);
         }
 
+      public:
 #ifdef NIL_CO3_MP_HAS_IMMINTRIN_H
         //
         // This is the key addition routine:
@@ -436,7 +431,7 @@ namespace nil::crypto3::multiprecision {
                     std::copy(pa + i, pa + x, pr + i);
                 }
 
-                if (Bits % big_integer::limb_bits == 0) {
+                if constexpr (Bits % big_integer::limb_bits == 0) {
                     result.set_carry(carry);
                 } else {
                     limb_type mask = big_integer::upper_limb_mask;
@@ -530,7 +525,7 @@ namespace nil::crypto3::multiprecision {
             if (&a != &result) {
                 std::copy(pa + i, pa + a.size(), pr + i);
             }
-            if (Bits % big_integer::limb_bits == 0) {
+            if constexpr (Bits % big_integer::limb_bits == 0) {
                 result.set_carry(carry);
             } else {
                 limb_type mask = big_integer::upper_limb_mask;
@@ -1253,7 +1248,6 @@ namespace nil::crypto3::multiprecision {
              typename largest_t =                                                                 \
                  big_integer<std::max(detail::get_bits<T1>(), detail::get_bits<T2>())>>
 
-    // TODO(ioxid): somehow error on overflow
 #define NIL_CO3_MP_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                                        \
     template<typename big_integer_t, typename T,                                                   \
              std::enable_if_t<detail::is_big_integer_v<big_integer_t> && detail::is_integral_v<T>, \
@@ -1280,7 +1274,6 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_BIG_INTEGER_IMPL_OPERATOR(==)
     NIL_CO3_MP_BIG_INTEGER_IMPL_OPERATOR(!=)
 
-    // TODO(ioxid): implement comparison with signed types, needed for boost::random
 #undef NIL_CO3_MP_BIG_INTEGER_IMPL_OPERATOR
 
     // Arithmetic operations

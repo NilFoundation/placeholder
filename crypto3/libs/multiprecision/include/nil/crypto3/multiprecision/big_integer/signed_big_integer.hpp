@@ -12,9 +12,6 @@
 #include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
 
-// TODO(ioxid): boost is used for
-// boost::hash_combine
-
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits_>
     class signed_big_integer {
@@ -267,7 +264,6 @@ namespace nil::crypto3::multiprecision {
              typename largest_t =                                                                  \
                  signed_big_integer<std::max(detail::get_bits<T1>(), detail::get_bits<T2>())>>
 
-    // TODO(ioxid): somehow error on overflow
 #define NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                     \
     template<typename signed_big_integer_t, typename T,                                \
              std::enable_if_t<detail::is_signed_big_integer_v<signed_big_integer_t> && \
@@ -295,7 +291,6 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(==)
     NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(!=)
 
-    // TODO(ioxid): implement comparison with signed types, needed for boost::random
 #undef NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR
 
     // Arithmetic operations
