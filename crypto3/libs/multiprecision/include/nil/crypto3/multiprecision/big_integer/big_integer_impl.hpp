@@ -741,8 +741,8 @@ namespace nil::crypto3::multiprecision {
             }
 
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(NIL_CO3_MP_USE_LIMB_SHIFT)
-            constexpr const limb_type limb_shift_mask = big_integer::limb_bits - 1;
-            constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
+            constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
+            constexpr limb_type byte_shift_mask = CHAR_BIT - 1;
 
             if ((s & limb_shift_mask) == 0) {
                 left_shift_limb(result, s);
@@ -750,16 +750,16 @@ namespace nil::crypto3::multiprecision {
                 left_shift_byte(result, s);
             }
 #elif NIL_CO3_MP_ENDIAN_LITTLE_BYTE
-            constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
-
             constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
+            constexpr limb_type byte_shift_mask = CHAR_BIT - 1;
+
             if (std::is_constant_evaluated() && ((s & limb_shift_mask) == 0)) {
                 left_shift_limb(result, s);
             } else if (((s & byte_shift_mask) == 0) && !std::is_constant_evaluated()) {
                 left_shift_byte(result, s);
             }
 #else
-            constexpr const limb_type limb_shift_mask = big_integer::limb_bits - 1;
+            constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
 
             if ((s & limb_shift_mask) == 0) {
                 left_shift_limb(result, s);
@@ -853,8 +853,8 @@ namespace nil::crypto3::multiprecision {
             }
 
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(NIL_CO3_MP_USE_LIMB_SHIFT)
-            constexpr const limb_type limb_shift_mask = big_integer::limb_bits - 1;
-            constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
+            constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
+            constexpr limb_type byte_shift_mask = CHAR_BIT - 1;
 
             if ((s & limb_shift_mask) == 0) {
                 right_shift_limb(result, s);
@@ -862,7 +862,7 @@ namespace nil::crypto3::multiprecision {
                 right_shift_byte(result, s);
             }
 #elif NIL_CO3_MP_ENDIAN_LITTLE_BYTE
-            constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
+            constexpr limb_type byte_shift_mask = CHAR_BIT - 1;
 
             constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
             if (std::is_constant_evaluated() && ((s & limb_shift_mask) == 0)) {
@@ -871,7 +871,7 @@ namespace nil::crypto3::multiprecision {
                 right_shift_byte(result, s);
             }
 #else
-            constexpr const limb_type limb_shift_mask = big_integer::limb_bits - 1;
+            constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
 
             if ((s & limb_shift_mask) == 0) {
                 right_shift_limb(result, s);
