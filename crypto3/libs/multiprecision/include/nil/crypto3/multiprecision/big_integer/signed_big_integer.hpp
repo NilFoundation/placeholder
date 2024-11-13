@@ -254,7 +254,7 @@ namespace nil::crypto3::multiprecision {
         }
     }  // namespace detail
 
-#define CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE                                            \
+#define NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE                                            \
     template<typename T1, typename T2,                                                             \
              std::enable_if_t<                                                                     \
                  detail::is_signed_integral_v<T1> && detail::is_signed_integral_v<T2> &&           \
@@ -264,115 +264,115 @@ namespace nil::crypto3::multiprecision {
                  signed_big_integer<std::max(detail::get_bits<T1>(), detail::get_bits<T2>())>>
 
     // TODO(ioxid): somehow error on overflow
-#define CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                     \
+#define NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE                     \
     template<typename signed_big_integer_t, typename T,                                \
              std::enable_if_t<detail::is_signed_big_integer_v<signed_big_integer_t> && \
                                   detail::is_signed_integral_v<T>,                     \
                               int> = 0>
 
-#define CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE \
+#define NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE \
     template<typename signed_big_integer_t,          \
              std::enable_if_t<detail::is_signed_big_integer_v<signed_big_integer_t>, int> = 0>
 
     // Comparison
 
-#define CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(op)                    \
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE                        \
+#define NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(op)                    \
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE                        \
     inline constexpr bool operator op(const T1& a, const T2& b) noexcept { \
         largest_t ap = a;                                                  \
         largest_t bp = b;                                                  \
         return ap.compare(bp) op 0;                                        \
     }
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(<)
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(<=)
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(>)
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(>=)
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(==)
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(!=)
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(<)
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(<=)
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(>)
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(>=)
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(==)
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR(!=)
 
     // TODO(ioxid): implement comparison with signed types, needed for boost::random
-#undef CRYPTO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR
+#undef NIL_CO3_MP_SIGNED_BIG_INTEGER_IMPL_OPERATOR
 
     // Arithmetic operations
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
         signed_big_integer<largest_t::Bits + 1> result;
         result = decltype(result)::add(a, b);
         return result;
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator+=(signed_big_integer_t& a, const T& b) noexcept {
         a = a + b;
         return a;
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator++(signed_big_integer_t& a) noexcept {
         a.increment();
         return a;
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator++(signed_big_integer_t& a, int) noexcept {
         auto copy = a;
         ++a;
         return copy;
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator+(const signed_big_integer_t& a) noexcept { return a; }
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
         return T1::subtract(a, b);
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator-=(signed_big_integer_t& a, const T& b) {
         a = a - b;
         return a;
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto& operator--(signed_big_integer_t& a) noexcept {
         a.decrement();
         return a;
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr auto operator--(signed_big_integer_t& a, int) noexcept {
         auto copy = a;
         --a;
         return copy;
     }
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
     inline constexpr signed_big_integer_t operator-(signed_big_integer_t a) noexcept {
         a.negate();
         return a;
     }
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
         return std::decay_t<decltype(a)>::multiply(a, b);
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator*=(signed_big_integer_t& a, const T& b) noexcept {
         a = a * b;
         return a;
     }
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
         return largest_t::divide(static_cast<largest_t>(a), static_cast<largest_t>(b));
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator/=(signed_big_integer_t& a, const T& b) noexcept {
         a = a / b;
         return a;
     }
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
     inline constexpr auto operator%(const T1& a, const T2& b) noexcept {
         return largest_t::modulus(static_cast<largest_t>(a), static_cast<largest_t>(b));
     }
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
     inline constexpr auto& operator%=(signed_big_integer_t& a, const T& b) {
         a = a % b;
         return a;
@@ -382,14 +382,14 @@ namespace nil::crypto3::multiprecision {
 
     // IO
 
-    CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+    NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
     std::ostream& operator<<(std::ostream& os, const signed_big_integer_t& value) {
         os << value.str();
         return os;
     }
 
-#undef CRYPTO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
-#undef CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
-#undef CRYPTO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
+#undef NIL_CO3_MP_SIGNED_BIG_INTEGER_UNARY_TEMPLATE
+#undef NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_ASSIGNMENT_TEMPLATE
+#undef NIL_CO3_MP_SIGNED_BIG_INTEGER_INTEGRAL_TEMPLATE
 
 }  // namespace nil::crypto3::multiprecision
