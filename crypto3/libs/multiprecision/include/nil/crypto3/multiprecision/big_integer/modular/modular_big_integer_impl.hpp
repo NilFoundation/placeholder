@@ -85,46 +85,6 @@ namespace nil::crypto3::multiprecision {
                 }
             }
 
-            // TODO(ioxid): who needs this and why is it an assignment operator
-            // This function sets default modulus value to zero to make sure it fails if not used
-            // with compile-time fixed modulus.
-            modular_big_integer_impl& operator=(const char* s) {
-                limb_type zero = 0u;
-
-                if (s && (*s == '(')) {
-                    std::string part;
-                    const char* p = ++s;
-                    while (*p && (*p != ',') && (*p != ')')) {
-                        ++p;
-                    }
-                    part.assign(s, p);
-                    if (!part.empty()) {
-                        m_raw_base = part.c_str();
-                    } else {
-                        m_raw_base = zero;
-                    }
-                    s = p;
-                    if (*p && (*p != ')')) {
-                        ++p;
-                        while (*p && (*p != ')')) {
-                            ++p;
-                        }
-                        part.assign(s + 1, p);
-                    } else {
-                        part.erase();
-                    }
-                    if (!part.empty()) {
-                        m_modular_ops_storage.set_modular_ops(part.c_str());
-                    } else {
-                        m_modular_ops_storage.set_modular_ops(zero);
-                    }
-                } else {
-                    m_raw_base = s;
-                    m_modular_ops_storage.set_modular_ops(zero);
-                }
-                return *this;
-            }
-
             constexpr auto& raw_base() { return m_raw_base; }
             constexpr const auto& raw_base() const { return m_raw_base; }
 
@@ -134,6 +94,7 @@ namespace nil::crypto3::multiprecision {
           protected:
             modular_ops_storage_t m_modular_ops_storage;
 
+            // TODO(ioxid): separate type for montgomery form to make the form explicit
             big_integer_t m_raw_base;
         };
     }  // namespace detail
