@@ -8,12 +8,12 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#include <stdexcept>
 #define BOOST_TEST_MODULE big_integer_ressol_test
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
+#include <stdexcept>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 #include "nil/crypto3/multiprecision/big_integer/ops/ressol.hpp"
@@ -24,7 +24,6 @@ BOOST_AUTO_TEST_SUITE(ressol_runtime_tests)
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_4_bit_tests) {
     using T = big_integer<4>;
-    using namespace boost::multiprecision;
     BOOST_CHECK_EQUAL(ressol(T(0u), T(11u)), 0u);
     BOOST_CHECK_EQUAL(ressol(T(5u), T(11u)), 4u);
 
