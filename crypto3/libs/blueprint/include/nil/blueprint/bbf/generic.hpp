@@ -271,8 +271,9 @@ namespace nil {
                     assignment_type &at;
             };
 
+            // circuit-specific definition
             template<typename FieldType>
-            class context<FieldType, GenerationStage::CONSTRAINTS> : public basic_context<FieldType> { // circuit-specific definition
+            class context<FieldType, GenerationStage::CONSTRAINTS> : public basic_context<FieldType> {
             public:
                 using constraint_id_type = gate_id<FieldType>;
                 using value_type = typename FieldType::value_type;

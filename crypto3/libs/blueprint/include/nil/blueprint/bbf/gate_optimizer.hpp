@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
+// Copyright (c) 2024 Martun Karapetyan <martun@nil.foundation>
 //
 // MIT License
 //
@@ -52,13 +52,15 @@ namespace nil {
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_input_constraints_type = crypto3::zk::snark::lookup_input_constraints<FieldType>;
                 using lookup_constraint_type = std::pair<std::string, lookup_input_constraints_type>;
-                using row_selector_ptr = std::shared_ptr<row_selector<>>;
 
-
-                std::vector<std::pair<std::vector<constraint_type, row_selector_ptr>> constraint_list;
+                // Here size_t is the index of the selector from 'selectors_'.
+                std::vector<std::pair<std::vector<constraint_type, size_t>> constraint_list;
                 std::vector<plonk_copy_constraint> copy_constraints;
-                std::map<std::string, std::pair<std::vector<std::size_t>, row_selector_ptr>> dynamic_lookup_tables;
-                std::vector<std::pair<std::vector<lookup_constraint_type>, row_selector_ptr> lookup_constraints;
+                std::map<std::string, std::pair<std::vector<std::size_t>, size_t>> dynamic_lookup_tables;
+                std::vector<std::pair<std::vector<lookup_constraint_type>, size_t> lookup_constraints;
+
+                // We will map each selector to the corresponding number.
+                std::vector<row_selector<>> selectors_;
             };
 
             template<typename FieldType>
@@ -71,12 +73,65 @@ namespace nil {
                 gates_optimizer(context_type&& c)
                     : context_(std::make_unique<context_type>(std::move(c))) {
                 }
-               
+
+                /** Tries to shift the constraints to left or right. 
+                 *  \param[in] shift - Must be +-1, we cannot shift more than by 1.
+                 */
+                std::optional<std::pair<row_selector<>, std::vector<constraint_type>>> try_shift_constraints(
+                    const std::vector<constraint_type> constraints, const row_selector<>& selector, size_t shift) {
+                    if (shift != -1 && shift != 1)
+                        return nullptr;
+                    if (shift == -1 && selector[0])
+                        return nullptr;
+                    if (shift == 1 && selector[selector.size() - 1])
+                        return nullptr;
+
+                    row_selector<> shifted_selector = selector;
+                    if (shift == 1)
+                        shifted_selector >>= 1;
+                    else
+                        shifted_selector <<= 1;
+
+                    // try to shift the constraints.
+                    std::optional<std::vector<constraint_type>> shifted_constraints = shift_constraints(constraints, shift); 
+                    if (!shifted_constraints)
+                        return nullptr;
+                    return {shifted_selector, *shifted_constraints};
+                }
+
+                /** Tries to shift the lookup constraints to left or right. 
+                 *  \param[in] shift - Must be +-1, we cannot shift more than by 1.
+                 */
+                std::optional<std::pair<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>>
+                try_shift_lookup_constraints(
+                        const std::vector<typename context_type::lookup_constraint_type>& lookup_list,
+                        const row_selector<>& selector, size_t shift) {
+                    if (shift != -1 && shift != 1)
+                        return nullptr;
+                    if (shift == -1 && selector[0])
+                        return nullptr;
+                    if (shift == 1 && selector[selector.size() - 1])
+                        return nullptr;
+
+                    row_selector<> shifted_selector = selector;
+                    if (shift == 1)
+                        shifted_selector >>= 1;
+                    else
+                        shifted_selector <<= 1;
+
+                    // try to shift the constraints.
+                    std::optional<std::vector<typename context_type::lookup_constraint_type>> shifted_constraints =
+                        shift_lookup_constraints(lookup_list, shift); 
+                    if (!shifted_constraints)
+                        return nullptr;
+                    return {shifted_selector, *shifted_constraints};
+                }
+
                 optimized_gates<FieldType> optimize_gates() {
                     optimized_gates<FieldType> result;
 
                     // Take everything out of context, and erase the context to free its memory.
-                    std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list = context_.get_constraints();
+                    std::unordered_map<row_selector<>, std::vector<constraint_type>> constraint_list = context_.get_constraints();
                     std::map<std::string, std::pair<std::vector<std::size_t>, row_selector<>>>
                         dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
                     std::vector<plonk_copy_constraint> copy_constraints = ct.get_copy_constraints();
@@ -84,33 +139,7 @@ namespace nil {
                         lookup_constraints = ct.get_lookup_constraints();
                     context_.reset(nullptr);
 
-                    // Push all the selectos into the 'selectors_' map, this will eliminate duplicates.
-                    for (auto& [selector, constraints]: constraint_list) {
-                        if (has_selector(selector)) {
-                            continue;
-                        }
-
-                        if (!selector[0]) {
-                            // Consider shifting left, if that would help.
-                            row_selector<> shifted_left = selector;
-                            shifted_left <<= 1;
-                            if (has_selector(shifted_left)) {
-                                // try to shift left the constraints, if all can be shifted, we better re-use the selector.
-                                std::optional<std::vector<constraint_type>> shifted_constraints = shift_constraints(constraints, -1); 
-                                if (shifted_constraints) {
-                                    // If we were able to rotate constraints to the left, keep the rotated version.
-                                }
-                                continue;
-                            }
-                        }
-                        row_selector<> shifted_right = selector;
-                        shifted_right <<= 1;
-                        if (has_selector(shifted_right)) {
-                            // try to shift left the constraints, if all can be shifted, we better re-use the selector.
-                            continue;
-                        }
-                        add_selector(selector);
-                    }
+                    optimize_selectors_by_shifting(constraint_list, lookup_constraints);
 
                     for (const auto& [name, area] : dynamic_lookup_tables) {
                         const auto& selector = area.second; 
@@ -122,7 +151,7 @@ namespace nil {
                     }
  
                     return result;
-                } 
+                }
 
                 size_t add_selector(const row_selector<>& selector) {
                     auto iter = selectors_.find(selector);
@@ -130,10 +159,49 @@ namespace nil {
                         selectors_.insert({selector, next_selector_id_});
                         return next_selector_id_++;
                     }
-                    return itee->second;
+                    return iter->second;
                 }
 
             private:
+
+                /** This function tries to reduce the number of selectors required by rotating the constraints by +-1.
+                 *  \param[in, out] constraint_list - Gate constraints.
+                 *  \param[in, out] lookup_constraints - Lookup constraints.
+                 */
+                void optimize_selectors_by_shifting(
+                        std::unordered_map<row_selector<>, std::vector<constraint_type>>& constraint_list,
+                        std::unordered_map<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>& lookup_constraints) {
+                    auto shift_optimize = [&constraint_list](size_t shift) {
+                        // Check if some gate constraint can be shifted to match the selector of another one.
+                        for (auto& [selector, constraints]: constraint_list) {
+                            if (constraints.empty())
+                                continue;
+
+                            // Consider shifting left, if that would help.
+                            std::optional<std::pair<row_selector<>, std::vector<constraint_type>>> shifted = try_shift_constraints(
+                                constraints, selector, shift);
+                            if (shifted) {
+                                auto iter = constraint_list.find(shifted->first);
+                                if (iter != constraint_list.end()) {
+                                    iter->second.insert(iter->second.end(), shifted->second.begin(), shifted->second.end());
+                                    // We don't want to erase a key in 'constraint_list' while iterating over it, so just
+                                    // drop the constraints for now.
+                                    constraints.resize(0);
+                                    continue;
+                                }
+                            }
+                        }
+                        // Check if constraints in the lookup constraints can be shifted to match another one, or some 
+                        // selector in the gate constraints.
+                        for (const auto& [row_list, lookup_list] : lookup_constraints) {
+                            
+                        }
+                    };
+
+                    shift_optimize(-1);
+                    shift_optimize(+1);
+                }
+
                 std::unique_ptr<context<FieldType, GenerationStage::CONSTRAINTS>> context_;
 
                 // We will map each selector to the corresponding number.
