@@ -194,12 +194,28 @@ namespace nil {
                         // Check if constraints in the lookup constraints can be shifted to match another one, or some 
                         // selector in the gate constraints.
                         for (const auto& [row_list, lookup_list] : lookup_constraints) {
-                            
+                            if (constraints.empty())
+                                continue;
+
+                            // Consider shifting left, if that would help.
+                            std::optional<std::pair<row_selector<>, std::vector<constraint_type>>> shifted = try_shift_constraints(
+                                constraints, selector, shift);
+                            if (shifted) {
+                                auto iter = constraint_list.find(shifted->first);
+                                if (iter != constraint_list.end()) {
+                                    iter->second.insert(iter->second.end(), shifted->second.begin(), shifted->second.end());
+                                    // We don't want to erase a key in 'constraint_list' while iterating over it, so just
+                                    // drop the constraints for now.
+                                    constraints.resize(0);
+                                    continue;
+                                }
+                            }
                         }
                     };
 
-                    shift_optimize(-1);
+                    // Always shift down first, because if we have 3 selectors, we want to move all 3 to the middle one.
                     shift_optimize(+1);
+                    shift_optimize(-1);
                 }
 
                 std::unique_ptr<context<FieldType, GenerationStage::CONSTRAINTS>> context_;
