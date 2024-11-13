@@ -12,18 +12,18 @@
 // IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
 
 #include <cstddef>
+#include <stdexcept>
 
 #include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision {
 
     template<std::size_t Bits>
-    constexpr int jacobi(const big_integer<Bits> &a, const big_integer<Bits> &n) noexcept {
+    constexpr int jacobi(const big_integer<Bits> &a, const big_integer<Bits> &n) {
         using big_integer_t = big_integer<Bits>;
-        // BOOST_THROW_EXCEPTION(std::invalid_argument("jacobi: second argument must be odd
-        // and > 1"));
-        NIL_CO3_MP_ASSERT(n % 2 && n > 1);
+        if (n % 2 == 0 || n <= 1) {
+            throw std::invalid_argument("jacobi: second argument must be odd and > 1");
+        }
 
         big_integer_t x = a, y = n;
         int J = 1;
@@ -59,10 +59,7 @@ namespace nil::crypto3::multiprecision {
                 J = -J;
             }
 
-            // std::swap(x, y);
-            auto tmp = x;
-            x = y;
-            y = tmp;
+            std::swap(x, y);
         }
         return J;
     }
