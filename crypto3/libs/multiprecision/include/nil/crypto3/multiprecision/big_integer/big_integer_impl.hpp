@@ -387,12 +387,9 @@ namespace nil::crypto3::multiprecision {
         //
         static inline constexpr void add(big_integer& result, const big_integer& a,
                                          const big_integer& b) noexcept {
-#ifndef BOOST_MP_NO_CONSTEXPR_DETECTION
-            if (BOOST_MP_IS_CONST_EVALUATED(a.size())) {
+            if (std::is_constant_evaluated()) {
                 add_constexpr(result, a, b);
-            } else
-#endif
-            {
+            } else {
                 using std::swap;
 
                 // Nothing fancy, just let uintmax_t take the strain:
@@ -413,27 +410,6 @@ namespace nil::crypto3::multiprecision {
                 limb_pointer pr = result.limbs();
 
                 unsigned char carry = 0;
-#if defined(BOOST_MSVC) && !defined(BOOST_HAS_INT128) && defined(_M_X64)
-                //
-                // Special case for 32-bit limbs on 64-bit architecture - we can process
-                // 2 limbs with each instruction.
-                //
-                std::size_t i = 0;
-                for (; i + 8 <= s; i += 8) {
-                    carry = _addcarry_u64(carry, *(unsigned long long*)(pa + i + 0),
-                                          *(unsigned long long*)(pb + i + 0),
-                                          (unsigned long long*)(pr + i));
-                    carry = _addcarry_u64(carry, *(unsigned long long*)(pa + i + 2),
-                                          *(unsigned long long*)(pb + i + 2),
-                                          (unsigned long long*)(pr + i + 2));
-                    carry = _addcarry_u64(carry, *(unsigned long long*)(pa + i + 4),
-                                          *(unsigned long long*)(pb + i + 4),
-                                          (unsigned long long*)(pr + i + 4));
-                    carry = _addcarry_u64(carry, *(unsigned long long*)(pa + i + 6),
-                                          *(unsigned long long*)(pb + i + 6),
-                                          (unsigned long long*)(pr + i + 6));
-                }
-#else
                 for (; i + 4 <= s; i += 4) {
                     carry = ::boost::multiprecision::detail::addcarry_limb(carry, pa[i + 0],
                                                                            pb[i + 0], pr + i);
@@ -444,7 +420,6 @@ namespace nil::crypto3::multiprecision {
                     carry = ::boost::multiprecision::detail::addcarry_limb(carry, pa[i + 3],
                                                                            pb[i + 3], pr + i + 3);
                 }
-#endif
                 for (; i < s; ++i)
                     carry =
                         ::boost::multiprecision::detail::addcarry_limb(carry, pa[i], pb[i], pr + i);
@@ -467,12 +442,9 @@ namespace nil::crypto3::multiprecision {
                                               const big_integer& b) noexcept {
             NIL_CO3_MP_ASSERT(!eval_lt(a, b));
 
-#ifndef BOOST_MP_NO_CONSTEXPR_DETECTION
-            if (BOOST_MP_IS_CONST_EVALUATED(a.size())) {
+            if (std::is_constant_evaluated()) {
                 subtract_constexpr(result, a, b);
-            } else
-#endif
-            {
+            } else {
                 using std::swap;
 
                 // Nothing fancy, just let uintmax_t take the strain:
@@ -493,30 +465,6 @@ namespace nil::crypto3::multiprecision {
                 std::size_t i = 0;
                 unsigned char borrow = 0;
                 // First where a and b overlap:
-#if defined(BOOST_MSVC) && !defined(BOOST_HAS_INT128) && defined(_M_X64)
-                //
-                // Special case for 32-bit limbs on 64-bit architecture - we can process
-                // 2 limbs with each instruction.
-                //
-                for (; i + 8 <= m; i += 8) {
-                    borrow =
-                        _subborrow_u64(borrow, *reinterpret_cast<const unsigned long long*>(pa + i),
-                                       *reinterpret_cast<const unsigned long long*>(pb + i),
-                                       reinterpret_cast<unsigned long long*>(pr + i));
-                    borrow = _subborrow_u64(
-                        borrow, *reinterpret_cast<const unsigned long long*>(pa + i + 2),
-                        *reinterpret_cast<const unsigned long long*>(pb + i + 2),
-                        reinterpret_cast<unsigned long long*>(pr + i + 2));
-                    borrow = _subborrow_u64(
-                        borrow, *reinterpret_cast<const unsigned long long*>(pa + i + 4),
-                        *reinterpret_cast<const unsigned long long*>(pb + i + 4),
-                        reinterpret_cast<unsigned long long*>(pr + i + 4));
-                    borrow = _subborrow_u64(
-                        borrow, *reinterpret_cast<const unsigned long long*>(pa + i + 6),
-                        *reinterpret_cast<const unsigned long long*>(pb + i + 6),
-                        reinterpret_cast<unsigned long long*>(pr + i + 6));
-                }
-#else
                 for (; i + 4 <= m; i += 4) {
                     borrow =
                         boost::multiprecision::detail::subborrow_limb(borrow, pa[i], pb[i], pr + i);
@@ -527,7 +475,6 @@ namespace nil::crypto3::multiprecision {
                     borrow = boost::multiprecision::detail::subborrow_limb(borrow, pa[i + 3],
                                                                            pb[i + 3], pr + i + 3);
                 }
-#endif
                 for (; i < m; ++i)
                     borrow =
                         boost::multiprecision::detail::subborrow_limb(borrow, pa[i], pb[i], pr + i);
@@ -779,33 +726,22 @@ namespace nil::crypto3::multiprecision {
                 return;
             }
 
-#if BOOST_ENDIAN_LITTLE_BYTE && defined(CRYPTO3_MP_USE_LIMB_SHIFT)
+#if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(CRYPTO3_MP_USE_LIMB_SHIFT)
             constexpr const limb_type limb_shift_mask = big_integer::limb_bits - 1;
             constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
 
             if ((s & limb_shift_mask) == 0) {
                 left_shift_limb(result, s);
-            }
-#ifdef BOOST_MP_NO_CONSTEXPR_DETECTION
-            else if ((s & byte_shift_mask) == 0)
-#else
-            else if (((s & byte_shift_mask) == 0) && !BOOST_MP_IS_CONST_EVALUATED(s))
-#endif
-            {
+            } else if (((s & byte_shift_mask) == 0) && !std::is_constant_evaluated()) {
                 left_shift_byte(result, s);
             }
-#elif BOOST_ENDIAN_LITTLE_BYTE
+#elif NIL_CO3_MP_ENDIAN_LITTLE_BYTE
             constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
 
-#ifdef BOOST_MP_NO_CONSTEXPR_DETECTION
-            if ((s & byte_shift_mask) == 0)
-#else
             constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
-            if (BOOST_MP_IS_CONST_EVALUATED(s) && ((s & limb_shift_mask) == 0)) {
+            if (std::is_constant_evaluated() && ((s & limb_shift_mask) == 0)) {
                 left_shift_limb(result, s);
-            } else if (((s & byte_shift_mask) == 0) && !BOOST_MP_IS_CONST_EVALUATED(s))
-#endif
-            {
+            } else if (((s & byte_shift_mask) == 0) && !std::is_constant_evaluated()) {
                 left_shift_byte(result, s);
             }
 #else
@@ -902,31 +838,21 @@ namespace nil::crypto3::multiprecision {
                 return;
             }
 
-#if BOOST_ENDIAN_LITTLE_BYTE && defined(CRYPTO3_MP_USE_LIMB_SHIFT)
+#if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(CRYPTO3_MP_USE_LIMB_SHIFT)
             constexpr const limb_type limb_shift_mask = big_integer::limb_bits - 1;
             constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
 
             if ((s & limb_shift_mask) == 0) right_shift_limb(result, s);
-#ifdef BOOST_MP_NO_CONSTEXPR_DETECTION
-            else if ((s & byte_shift_mask) == 0)
-#else
-            else if (((s & byte_shift_mask) == 0) && !BOOST_MP_IS_CONST_EVALUATED(s))
-#endif
-            {
+            else if (((s & byte_shift_mask) == 0) && !std::is_constant_evaluated()) {
                 right_shift_byte(result, s);
             }
-#elif BOOST_ENDIAN_LITTLE_BYTE
+#elif NIL_CO3_MP_ENDIAN_LITTLE_BYTE
             constexpr const limb_type byte_shift_mask = CHAR_BIT - 1;
 
-#ifdef BOOST_MP_NO_CONSTEXPR_DETECTION
-            if ((s & byte_shift_mask) == 0)
-#else
             constexpr limb_type limb_shift_mask = big_integer::limb_bits - 1;
-            if (BOOST_MP_IS_CONST_EVALUATED(s) && ((s & limb_shift_mask) == 0)) {
+            if (std::is_constant_evaluated() && ((s & limb_shift_mask) == 0)) {
                 right_shift_limb(result, s);
-            } else if (((s & byte_shift_mask) == 0) && !BOOST_MP_IS_CONST_EVALUATED(s))
-#endif
-            {
+            } else if (((s & byte_shift_mask) == 0) && !std::is_constant_evaluated()) {
                 right_shift_byte(result, s);
             }
 #else

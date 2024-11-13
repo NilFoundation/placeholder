@@ -154,7 +154,7 @@ namespace nil::crypto3::multiprecision {
                 ++limb_len;
             }
 
-            BOOST_VERIFY(result.size() > limb_len);
+            NIL_CO3_MP_ASSERT(result.size() > limb_len);
 
             result.limbs()[result.size() - 1] = 0u;
             std::memcpy(result.limbs(), i, (std::min)(byte_len, result.size() * sizeof(limb_type)));
