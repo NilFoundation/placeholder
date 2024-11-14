@@ -40,6 +40,8 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
+                using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
                 struct input_type{
                     TYPE rlc_challenge;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, nullptr_t>::type bytecodes;
@@ -128,7 +130,6 @@ namespace nil {
                     std::vector<TYPE>       rlc(max_copy);
                     std::vector<TYPE>       rlc_challenge(max_copy);
                     std::vector<TYPE>       is_last(max_copy);
-                    std::vector<TYPE>       length_inv(max_copy);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::size_t current_row = 0;
@@ -148,8 +149,6 @@ namespace nil {
                                 rlc[current_row + 1] = rlc[current_row] + bytes[current_row];
                                 type_selector[current_row][copy_op_to_num(cp.source_type) - 1] = 1;
                                 type_selector[current_row + 1][copy_op_to_num(cp.destination_type) - 1] = 1;
-                                length_inv[current_row] = (length[current_row] - 1) == 0? 0: (length[current_row] - 1).inversed();
-                                length_inv[current_row+1] = length_inv[current_row];
 
                                 current_row += 2;
                             }
@@ -165,8 +164,7 @@ namespace nil {
                         allocate(bytes[i],6, i);
                         allocate(rlc[i],7, i);
                         allocate(rlc_challenge[i],8, i);
-                        allocate(length_inv[i],9, i);
-                        allocate(is_last[i],10, i);
+                        allocate(is_last[i], 9, i);
 
                         TYPE memory_selector = type_selector[i][copy_op_to_num(copy_operand_type::memory) - 1];
                         TYPE keccak_selector = type_selector[i][copy_op_to_num(copy_operand_type::keccak) - 1];
@@ -210,8 +208,6 @@ namespace nil {
                         }
                         every.push_back(context_object.relativize(type_selector_sum  * (type_selector_sum - 1), -1));
                         every.push_back(context_object.relativize(cp_type_constraint - cp_type[1], -1));
-                        every.push_back(context_object.relativize(type_selector_sum  * (length[1] - 1) * ((length[1] - 1) * length_inv[1] - 1), -1));
-                        every.push_back(context_object.relativize(type_selector_sum  * length_inv[1] * ((length[1] - 1) * length_inv[1] - 1), -1));
                         every.push_back(context_object.relativize((type_selector_sum - 1)* is_last[1], -1));
                         every.push_back(context_object.relativize((type_selector_sum - 1)* is_first[1], -1));
 
