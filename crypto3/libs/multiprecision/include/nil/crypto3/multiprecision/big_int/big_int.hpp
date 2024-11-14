@@ -13,6 +13,17 @@
 #include "nil/crypto3/multiprecision/big_int/detail/config.hpp"
 
 namespace nil::crypto3::multiprecision {
+    /**
+     * @brief Big signed integer type
+     *
+     * @tparam Bits Number of bits, not including the sign bit
+     *
+     * @details
+     * The sign bit is stored separately from the rest of the integer.
+     *
+     * @note
+     * Like big_uint, this is not optimized. It is provided for convenience.
+     */
     template<std::size_t Bits_>
     class big_int {
       public:
