@@ -254,6 +254,7 @@ namespace nil {
                                 }
                                 _copy_events.push_back(cpy);
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, hash_value));
+                                _keccaks.new_buffer(cpy.bytes);
                                 memory_size_before = memory_next.size();
                             } else if(opcode == "ADDRESS") {
                                 // 0x30

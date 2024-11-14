@@ -146,10 +146,6 @@ namespace nil {
 
                             if (!constraint_result.is_zero()) {
                                 std::cout<< std::endl;
-                                std::cout<< "Offended constraint result" << std::endl;
-                                for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
-                                    std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
-                                }
                                 std::cout << std::endl;
                                 std::cout << "Constraint " << j << " from gate " << i << " on row " << selector_row
                                           << " is not satisfied." << std::endl;
@@ -157,6 +153,13 @@ namespace nil {
                                 std::cout << "Constraint result: " << constraint_result << std::endl;
                                 std::cout << "Constraint: " << gates[i].constraints[j] << std::endl;
                                 std::cout << "Offending gate:" << std::endl;
+                                std::cout<<  "Offended constraint result" << std::endl;
+                                for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
+                                    if( selector[ind].is_zero() )
+                                        std::cout << "0 ";
+                                    else
+                                        std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
+                                }
 
                                 std::size_t k = 0;
                                 for (const auto &constraint : gates[i].constraints) {
@@ -173,7 +176,7 @@ namespace nil {
 
             std::cout << "Gates checked. Check lookups" << std::endl;
             for (const auto& i : used_lookup_gates) {
-                std::cout << "Lookup gate " << i << std::endl;
+                std::cout << "\tLookup gate " << i << std::endl;
                 crypto3::zk::snark::plonk_column<BlueprintFieldType> selector =
                     assignments.crypto3::zk::snark::
                         template plonk_assignment_table<BlueprintFieldType>::selector(
