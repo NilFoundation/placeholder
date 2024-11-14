@@ -104,7 +104,8 @@ namespace nil::crypto3::multiprecision {
         // In the future we must remove.
         template<typename SI,
                  typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-        constexpr big_mod_ct_impl(SI b) : base_type(big_uint<sizeof(SI) * CHAR_BIT>(b), {}) {
+        constexpr big_mod_ct_impl(SI b)
+            : base_type(big_uint<sizeof(SI) * CHAR_BIT>(std::abs(b)), {}) {
             if (b < 0) {
                 this->negate();
             }
