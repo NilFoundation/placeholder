@@ -8,4 +8,3 @@
 #include "nil/crypto3/multiprecision/big_int/ops/misc.hpp"           // IWYU pragma: export
 #include "nil/crypto3/multiprecision/big_int/ops/ressol.hpp"         // IWYU pragma: export
 #include "nil/crypto3/multiprecision/big_int/ops/wnaf.hpp"           // IWYU pragma: export
-#include "nil/crypto3/multiprecision/big_int/storage.hpp"            // IWYU pragma: export
