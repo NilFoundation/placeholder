@@ -112,6 +112,7 @@ namespace nil::crypto3::multiprecision {
 
                 if (i >= s) {
                     // TODO(ioxid): when can this happen? (jacobi said that this should not happen)
+                    // Martun: the value now has a square root
                     throw std::invalid_argument("Not a quadratic residue");
                 }
             }
