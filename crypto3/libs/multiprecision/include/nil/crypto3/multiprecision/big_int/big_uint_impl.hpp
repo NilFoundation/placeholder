@@ -1441,6 +1441,10 @@ namespace nil::crypto3::multiprecision {
         return a;
     }
 
+#undef NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
+#undef NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
+#undef NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
+
     // Hash
 
     template<std::size_t Bits>
@@ -1454,13 +1458,9 @@ namespace nil::crypto3::multiprecision {
 
     // IO
 
-    NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    std::ostream& operator<<(std::ostream& os, const big_uint_t& value) {
+    template<std::size_t Bits>
+    std::ostream& operator<<(std::ostream& os, const big_uint<Bits>& value) {
         os << value.str();
         return os;
     }
-
-#undef NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-#undef NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-#undef NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
 }  // namespace nil::crypto3::multiprecision

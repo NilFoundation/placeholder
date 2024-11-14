@@ -187,6 +187,7 @@ namespace nil::crypto3::multiprecision {
 
     NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(==)
     NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(!=)
+
 #undef NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL
 
 #define NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE                                       \
@@ -295,6 +296,10 @@ namespace nil::crypto3::multiprecision {
         return a;
     }
 
+#undef NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
+#undef NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
+#undef NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
+
     // Additional operations
 
     template<std::size_t Bits, typename modular_ops_t>
@@ -317,10 +322,6 @@ namespace nil::crypto3::multiprecision {
         os << value.str();
         return os;
     }
-
-#undef NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-#undef NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-#undef NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
 
     template<const auto& modulus>
     using montgomery_big_mod = big_mod_ct_impl<modulus, detail::montgomery_modular_ops>;
