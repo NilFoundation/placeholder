@@ -34,15 +34,17 @@ namespace nil::crypto3::multiprecision::detail {
     struct modular_policy {
         using big_uint_t = big_uint<Bits>;
 
-        constexpr static auto limbs_count = big_uint_t::internal_limb_count;
-        constexpr static auto limb_bits = big_uint_t::limb_bits;
+        inline constexpr static std::size_t limbs_count = big_uint_t::internal_limb_count;
+        inline constexpr static std::size_t limb_bits = big_uint_t::limb_bits;
 
-        constexpr static auto BitsCount_doubled = 2u * Bits;
-        constexpr static auto BitsCount_doubled_1 = BitsCount_doubled + 1;
-        constexpr static auto BitsCount_quadruple_1 = 2u * BitsCount_doubled + 1;
-        constexpr static auto BitsCount_padded_limbs = limbs_count * limb_bits + limb_bits;
-        constexpr static auto BitsCount_doubled_limbs = 2u * limbs_count * limb_bits;
-        constexpr static auto BitsCount_doubled_padded_limbs = BitsCount_doubled_limbs + limb_bits;
+        inline constexpr static std::size_t BitsCount_doubled = 2u * Bits;
+        inline constexpr static std::size_t BitsCount_doubled_1 = BitsCount_doubled + 1;
+        inline constexpr static std::size_t BitsCount_quadruple_1 = 2u * BitsCount_doubled + 1;
+        inline constexpr static std::size_t BitsCount_padded_limbs =
+            limbs_count * limb_bits + limb_bits;
+        inline constexpr static std::size_t BitsCount_doubled_limbs = 2u * limbs_count * limb_bits;
+        inline constexpr static std::size_t BitsCount_doubled_padded_limbs =
+            BitsCount_doubled_limbs + limb_bits;
 
         using big_uint_doubled = big_uint<BitsCount_doubled>;
         using big_uint_doubled_1 = big_uint<BitsCount_doubled_1>;
@@ -55,7 +57,7 @@ namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits_>
     class barrett_modular_ops {
       public:
-        constexpr static std::size_t Bits = Bits_;
+        inline constexpr static std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
         using policy_type = modular_policy<Bits>;
 
@@ -65,8 +67,8 @@ namespace nil::crypto3::multiprecision::detail {
         using big_uint_doubled_limbs = typename policy_type::big_uint_doubled_limbs;
         using big_uint_doubled_padded_limbs = typename policy_type::big_uint_doubled_padded_limbs;
 
-        constexpr static auto limbs_count = policy_type::limbs_count;
-        constexpr static auto limb_bits = policy_type::limb_bits;
+        inline constexpr static std::size_t limbs_count = policy_type::limbs_count;
+        inline constexpr static std::size_t limb_bits = policy_type::limb_bits;
 
         constexpr barrett_modular_ops(const big_uint_t &m) : m_mod(m), m_barrett_mu(0u) {
             std::size_t bit = 2u * (1u + msb(m_mod));
@@ -218,7 +220,7 @@ namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits_>
     class montgomery_modular_ops : public barrett_modular_ops<Bits_> {
       public:
-        constexpr static std::size_t Bits = Bits_;
+        inline constexpr static std::size_t Bits = Bits_;
         using big_uint_t = big_uint<Bits>;
         using policy_type = modular_policy<Bits>;
 
@@ -228,8 +230,8 @@ namespace nil::crypto3::multiprecision::detail {
         using big_uint_doubled_limbs = typename policy_type::big_uint_doubled_limbs;
         using big_uint_doubled_padded_limbs = typename policy_type::big_uint_doubled_padded_limbs;
 
-        constexpr static auto limbs_count = policy_type::limbs_count;
-        constexpr static auto limb_bits = policy_type::limb_bits;
+        inline constexpr static std::size_t limbs_count = policy_type::limbs_count;
+        inline constexpr static std::size_t limb_bits = policy_type::limb_bits;
 
         constexpr montgomery_modular_ops(const big_uint_t &m) : barrett_modular_ops<Bits_>(m) {
             if (!check_montgomery_constraints(m)) {
