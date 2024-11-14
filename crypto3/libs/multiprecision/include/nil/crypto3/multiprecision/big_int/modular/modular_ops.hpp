@@ -93,22 +93,6 @@ namespace nil::crypto3::multiprecision::detail {
             barrett_reduce(result, result);
         }
 
-        // // TODO(ioxid): something wrong with parameters here
-        // //
-        // // this overloaded barrett_reduce is intended to work with built-in integral types
-        // //
-        // template<std::size_t Bits2, typename T>
-        // constexpr typename std::enable_if<std::is_integral<T>::value &&
-        //                                   std::is_unsigned<T>::value>::type
-        // barrett_reduce(big_uint<Bits2> &result, T input) const {
-        //     using input_big_uint_type = typename std::conditional_t<bool(big_uint<Bits3>::Bits >
-        //     Bits),
-        //                                                             big_uint<Bits3>, big_uint_t>;
-
-        //     input_big_uint_type input_adjusted(input);
-        //     barrett_reduce(result, input_adjusted);
-        // }
-
         template<std::size_t Bits2, std::size_t Bits3,
                  std::enable_if_t<
                      /// result should fit in the output parameter
