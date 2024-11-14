@@ -31,8 +31,6 @@ namespace nil::crypto3::multiprecision {
           public:
             inline constexpr static std::size_t Bits = Bits_;
             using big_uint_t = big_uint<Bits>;
-            using limb_type = typename big_uint_t::limb_type;
-            using double_limb_type = typename big_uint_t::double_limb_type;
             using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
 
             // Constructors
@@ -71,15 +69,14 @@ namespace nil::crypto3::multiprecision {
                 }
             }
 
+            // Accessing raw base value. Should only be used internally by multiprecision library.
             constexpr auto& raw_base() { return m_raw_base; }
             constexpr const auto& raw_base() const { return m_raw_base; }
 
-            constexpr auto& ops() { return m_modular_ops_storage.ops(); }
             constexpr const auto& ops() const { return m_modular_ops_storage.ops(); }
 
           protected:
             modular_ops_storage_t m_modular_ops_storage;
-
             big_uint_t m_raw_base;
         };
     }  // namespace detail
