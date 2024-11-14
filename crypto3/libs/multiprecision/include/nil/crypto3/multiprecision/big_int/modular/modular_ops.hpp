@@ -553,12 +553,12 @@ namespace nil::crypto3::multiprecision::detail {
                 bool lsb = bit_test(exp, 0);
                 exp >>= 1u;
                 if (lsb) {
-                    montgomery_mul(R_mod_m, base);
+                    mul(R_mod_m, base);
                     if (exp == 0u) {
                         break;
                     }
                 }
-                montgomery_mul(base, base);
+                mul(base, base);
             }
             result = R_mod_m;
         }

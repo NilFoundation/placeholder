@@ -54,7 +54,7 @@ namespace nil::crypto3::multiprecision {
             throw std::invalid_argument("Not a quadratic residue");
         }
 
-        big_mod_rt<Bits> a_mod(a, p);
+        montgomery_big_mod_rt<Bits> a_mod(a, p);
 
         if (p % 4 == 3) {
             big_uint_padded_t exp_padded = p;
@@ -74,7 +74,7 @@ namespace nil::crypto3::multiprecision {
         --q;
         q >>= 1u;
 
-        big_mod_rt<Bits> n_mod = a_mod;
+        montgomery_big_mod_rt<Bits> n_mod = a_mod;
 
         auto r_mod = powm(a_mod, q);
         auto r_sq_mod = powm(r_mod, two);
@@ -97,7 +97,7 @@ namespace nil::crypto3::multiprecision {
         q <<= 1u;
         ++q;
 
-        big_mod_rt<Bits> z_mod(z, p);
+        montgomery_big_mod_rt<Bits> z_mod(z, p);
 
         auto c_mod = powm(z_mod, q);
 
