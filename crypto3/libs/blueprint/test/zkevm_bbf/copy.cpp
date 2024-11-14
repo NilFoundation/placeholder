@@ -42,6 +42,10 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
 #include "./test_l1_wrapper.hpp"
@@ -148,6 +152,22 @@ BOOST_AUTO_TEST_CASE(calldatacopy_contract){
     using field_type = typename algebra::curves::pallas::base_field_type;
     std::cout << "../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/" << std::endl;
     auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/calldatacopy/");
+    l1_size_restrictions max_sizes;
+
+    max_sizes.max_keccak_blocks = 50;
+    max_sizes.max_bytecode = 3000;
+    max_sizes.max_mpt = 0;
+    max_sizes.max_rw = 10000;
+    max_sizes.max_copy = 3000;
+    max_sizes.max_zkevm_rows = 4500;
+
+    test_zkevm_copy<field_type>(bytecodes, pts, max_sizes);
+}
+
+BOOST_AUTO_TEST_CASE(keccak_contract){
+    using field_type = typename algebra::curves::pallas::base_field_type;
+    std::cout << "../crypto3/libs/blueprint/test/zkevm/data/keccak/" << std::endl;
+    auto [bytecodes, pts] = load_hardhat_input("../crypto3/libs/blueprint/test/zkevm/data/keccak/");
     l1_size_restrictions max_sizes;
 
     max_sizes.max_keccak_blocks = 50;

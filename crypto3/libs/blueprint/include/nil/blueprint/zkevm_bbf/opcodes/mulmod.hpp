@@ -134,7 +134,7 @@ namespace nil {
                     return (last_carry + a_0 + b_0 - r_0 - result_carry * two_16);
                 };
 
-                TYPE res[chunk_amount];
+                std::vector<TYPE> res;
 
               public:
                 zkevm_mulmod_bbf(context_type &context_object,
@@ -145,7 +145,6 @@ namespace nil {
                         boost::multiprecision::backends::cpp_int_modular_backend<257>>;
                     using extended_integral_type = boost::multiprecision::number<
                         boost::multiprecision::backends::cpp_int_modular_backend<512>>;
-
                     // The central relation is a * b = s = Nr + q, q < N.
 
                     std::vector<TYPE> v_chunks(chunk_amount);
@@ -164,6 +163,7 @@ namespace nil {
                     TYPE N_sum;
                     TYPE N_sum_inverse;
                     TYPE N_nonzero;
+                    TYPE N_nonzero_2;
                     TYPE carry[3][carry_amount + 1];
 
                     std::vector<TYPE> s_c_1_chunks(4);
@@ -375,14 +375,14 @@ namespace nil {
                     }
                     c_one = c_zero + 1;
                     N_nonzero = N_sum * N_sum_inverse;
+                    N_nonzero_2 = N_nonzero;
 
-                    allocate(N_nonzero, 4, 8);
+                    allocate(N_nonzero, 32, 5);
                     for (std::size_t i = 0; i < chunk_amount; i++) {
-                        res[i] = q_chunks[i];
-
                         allocate(N_chunks[i], i, 0);
                         allocate(q_chunks[i], i, 1);
                         allocate(v_chunks[i], i + chunk_amount, 0);
+                        res[i] = q_chunks[i];
 
                         allocate(Nr_p_chunks[i], i, 2);
                         allocate(sp_chunks[i], i + chunk_amount, 2);
@@ -393,8 +393,9 @@ namespace nil {
                         allocate(a_chunks[i], i, 5);
                         allocate(input_a_chunks[i], i + chunk_amount, 5);
                         constrain((a_chunks[i] - N_nonzero * input_a_chunks[i]));
-                    }
 
+                        allocate(b_chunks[i], i, 6);
+                    }
                     allocate(carry[0][0], chunk_amount, 1);
                     for (std::size_t i = 0; i < carry_amount - 1; i++) {
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -418,22 +419,20 @@ namespace nil {
                              v_chunks[3 * (carry_amount - 1)]) >= two_16;
                     }
                     allocate(carry[0][carry_amount], chunk_amount + carry_amount, 1);
-                    allocate(N_nonzero, chunk_amount + carry_amount + 1, 1);
+                    allocate(N_nonzero_2, chunk_amount + carry_amount + 1, 1);
                     constrain(last_carry_on_addition_constraint(
                         N_chunks[3 * (carry_amount - 1)], v_chunks[3 * (carry_amount - 1)],
                         q_chunks[3 * (carry_amount - 1)], carry[0][carry_amount - 1],
                         carry[0][carry_amount]));
                     // last carry is 0 or 1, but should be 1 if N_nonzero = 1
-                    constrain((N_nonzero + (1 - N_nonzero) * carry[0][carry_amount]) *
+                    constrain((N_nonzero_2 + (1 - N_nonzero_2) * carry[0][carry_amount]) *
                               (1 - carry[0][carry_amount]));
-
                     for (std::size_t i = 0; i < 4; i++) {
                         // s = a * b carries
                         allocate(s_c_1_chunks[i], i + 8, 4);
                         allocate(s_c_3_chunks[i], i + 12, 4);
                         allocate(s_c_5_chunks[i], i + 16, 4);
                     }
-
                     allocate(s_first_carryless, 32, 0);
                     allocate(s_second_carryless, 33, 0);
                     allocate(s_third_carryless, 34, 0);
@@ -448,7 +447,7 @@ namespace nil {
                     constrain(s_first_carryless - s_c_1_64 * two128 - s_c_2 * two192);
                     constrain((s_second_carryless + s_c_1_64 + s_c_2 * two_64 - s_c_3_64 * two128 -
                                s_c_4 * two192));
-                    // add constraints for s_c_2/s_c_4/s_c_6: s_c_2 is 0/1, s_c_4 is 0/1/2/3, s_c_6
+                    // add constraints for s_c_2/s_c_4/s_c_6: s_c_2 is 0/1, s_c_4 is 0/1/2/3,s_c_6
                     // is 0/1
                     constrain(s_c_2 * (s_c_2 - 1));
                     constrain(s_c_4 * (s_c_4 - 1) * (s_c_4 - 2) * (s_c_4 - 3));
@@ -511,9 +510,9 @@ namespace nil {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         carry[2][carry_amount] = (carry[2][carry_amount - 1] +
                                                   Nr_pp_chunks[3 * (carry_amount - 1)]) >= two_16;
+                        BOOST_ASSERT(carry[2][carry_amount] == 0);
                     }
                     // ^^^^ normally should be zero, so instead we put c_zero
-                    BOOST_ASSERT(carry[2][carry_amount] == 0);
                     constrain(carry[2][carry_amount]);
                     last_carry_on_addition_constraint(Nr_pp_chunks[3 * (carry_amount - 1)], c_zero,
                                                       spp_chunks[3 * (carry_amount - 1)],
@@ -550,7 +549,8 @@ namespace nil {
                     constrain(
                         (third_carryless + c_3_64 + c_4 * two_64 - c_5_64 * two128 - c_6 * two192));
                     constrain((forth_carryless + c_5_64 + c_6 * two_64));
-                    auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
+
+                    auto A_128 = chunks16_to_chunks128_reversed<TYPE>(input_a_chunks);
                     auto B_128 = chunks16_to_chunks128_reversed<TYPE>(b_chunks);
                     auto N_128 = chunks16_to_chunks128_reversed<TYPE>(N_chunks);
                     auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
@@ -566,14 +566,14 @@ namespace nil {
                         Res0 = Res_128.first;
                         Res1 = Res_128.second;
                     }
-                    allocate(A0, 32, 2);
-                    allocate(A1, 32, 3);
-                    allocate(B0, 33, 2);
-                    allocate(B1, 33, 3);
-                    allocate(N0, 34, 2);
-                    allocate(N1, 34, 3);
-                    allocate(Res0, 35, 2);
-                    allocate(Res1, 35, 3);
+                    allocate(A0, 33, 4);
+                    allocate(A1, 33, 5);
+                    allocate(B0, 34, 5);
+                    allocate(B1, 34, 6);
+                    allocate(N0, 42, 0);
+                    allocate(N1, 42, 1);
+                    allocate(Res0, 34, 2);
+                    allocate(Res1, 34, 3);
 
                     constrain(A0 - A_128.first);
                     constrain(A1 - A_128.second);
@@ -584,46 +584,46 @@ namespace nil {
                     constrain(Res0 - Res_128.first);
                     constrain(Res1 - Res_128.second);
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
-                        constrain(current_state.pc_next() - current_state.pc(4) -
+                        constrain(current_state.pc_next() - current_state.pc(6) -
                                   1);  // PC transition
-                        constrain(current_state.gas(4) - current_state.gas_next() -
+                        constrain(current_state.gas(6) - current_state.gas_next() -
                                   8);  // GAS transition
-                        constrain(current_state.stack_size(4) - current_state.stack_size_next() -
+                        constrain(current_state.stack_size(6) - current_state.stack_size_next() -
                                   2);  // stack_size transition
-                        constrain(current_state.memory_size(4) -
+                        constrain(current_state.memory_size(6) -
                                   current_state.memory_size_next());  // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(4) -
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(6) -
                                   4);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(2),
-                               current_state.stack_size(2) - 1,
+                               current_state.call_id(5),
+                               current_state.stack_size(5) - 1,
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(2),
+                               current_state.rw_counter(5),
                                TYPE(0),  // is_write
                                A0,
                                A1};
                         lookup(tmp, "zkevm_rw");
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(1),
-                               current_state.stack_size(1) - 2,
+                               current_state.call_id(5),
+                               current_state.stack_size(5) - 2,
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(1) + 1,
+                               current_state.rw_counter(5) + 1,
                                TYPE(0),  // is_write
                                B0,
                                B1};
                         lookup(tmp, "zkevm_rw");
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(2),
-                               current_state.stack_size(2) - 3,
+                               current_state.call_id(1),
+                               current_state.stack_size(1) - 3,
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(2) + 2,
+                               current_state.rw_counter(1) + 2,
                                TYPE(0),  // is_write
                                N0,
                                N1};
@@ -639,6 +639,8 @@ namespace nil {
                                Res0,
                                Res1};
                         lookup(tmp, "zkevm_rw");
+                    } else {
+                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };
@@ -650,13 +652,19 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type
                         &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
-                        &current_state) {}
+                        &current_state) {
+                    zkevm_mulmod_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context,
+                                                                                     current_state);
+                }
                 virtual void fill_context(
                     typename generic_component<FieldType,
                                                GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
-                        &current_state) {}
-                virtual std::size_t rows_amount() override { return 8; }
+                        &current_state) {
+                    zkevm_mulmod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
+                        context, current_state);
+                }
+                virtual std::size_t rows_amount() override { return 7; }
             };
         }  // namespace bbf
     }  // namespace blueprint

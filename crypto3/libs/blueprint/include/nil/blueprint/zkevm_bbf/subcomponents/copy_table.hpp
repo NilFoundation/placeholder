@@ -62,7 +62,7 @@ namespace nil {
                 {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "Copy table assignment " << input.size() << std::endl;
-                        std::size_t current_row = 1;
+                        std::size_t current_row = 0;
                         for( auto &cp: input ){
                             // std::cout
                             //     << "\tCopy event " << copy_op_to_num(cp.source_type)
@@ -91,17 +91,17 @@ namespace nil {
                                 id_lo[current_row] = w_lo<FieldType>(cp.source_id);
                                 id_hi[current_row+1] = w_hi<FieldType>(cp.destination_id);
                                 id_lo[current_row+1] = w_lo<FieldType>(cp.destination_id);
-                                is_write[current_row] = 0;
-                                is_write[current_row+1] = 1;
                                 src_rw_counter++;
                                 dst_rw_counter++;
                                 current_row += 2;
                             }
                         }
                     } else {
-//                        std::cout << "Copy table circuit" << std::endl;
                     }
                     for( std::size_t i = 0; i < max_copy_size; i++ ){
+                        if constexpr ( stage == GenerationStage::ASSIGNMENT )
+                            is_write[i] = i%2 ? 1 : 0;
+
                         allocate(is_first[i], 0, i);
                         allocate(id_hi[i], 1, i);
                         allocate(id_lo[i], 2, i);

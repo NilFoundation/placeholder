@@ -127,7 +127,7 @@ namespace nil {
                     std::vector<TYPE>       rlc_challenge(max_copy);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        std::size_t current_row = 1;
+                        std::size_t current_row = 0;
                         for( auto &cp: input.copy_events ){
                             std::cout
                                 << "\tCopy event " << copy_op_to_num(cp.source_type)
@@ -170,8 +170,26 @@ namespace nil {
                             memory_selector * bytes[i]
                         };
                         lookup(tmp, "zkevm_rw");
+                        TYPE selector_sum;
                         for(std::size_t j = 0; j < 6; j++){
                             constrain(type_selector[i][j] * (type_selector[i][j] - 1));
+                            selector_sum += type_selector[i][j] + 1;
+                        }
+                    }
+                    if constexpr( stage == GenerationStage::CONSTRAINTS ){
+                        std::vector<TYPE> even;
+                        std::vector<TYPE> odd;
+                        even.push_back(context_object.relativize(is_write[1], -1));
+                        odd.push_back(context_object.relativize(1 - is_write[1], -1));
+                        for( std::size_t i = 0; i < even.size(); i++ ){
+                            for( std::size_t j = 0; j < max_copy-1; j+=2 ){
+                                context_object.relative_constrain(even[i], j);
+                            }
+                        }
+                        for( std::size_t i = 0; i < odd.size(); i++ ){
+                            for( std::size_t j = 1; j <= max_copy-1; j+=2 ){
+                                context_object.relative_constrain(odd[i], j);
+                            }
                         }
                     }
                 }

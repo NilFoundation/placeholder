@@ -87,7 +87,7 @@ namespace nil {
                     witness_amount += CopyTable::get_witness_amount();
                     witness_amount += 10;
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 5, 20);
-                    desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode)));
+                    desc.usable_rows_amount = std::max(max_zkevm_rows, std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode)) + 1);
                     return desc;
                 }
 
@@ -150,10 +150,10 @@ namespace nil {
                     std::cout << std::endl;
                     std::cout << std::endl;
 
-                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
-                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
-                    context_type rw_ct = context_object.subcontext(rw_lookup_area,0,max_rw);
-                    context_type copy_ct = context_object.subcontext( copy_lookup_area, 0, max_copy);
+                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,1,max_bytecode + 1);
+                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 1, max_keccak_blocks + 1);
+                    context_type rw_ct = context_object.subcontext(rw_lookup_area,1,max_rw + 1);
+                    context_type copy_ct = context_object.subcontext( copy_lookup_area, 1, max_copy + 1);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
                     KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
