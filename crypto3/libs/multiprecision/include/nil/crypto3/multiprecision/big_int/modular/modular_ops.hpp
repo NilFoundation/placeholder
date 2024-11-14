@@ -394,37 +394,37 @@ namespace nil::crypto3::multiprecision::detail {
                 // normally mod_size == 4.
                 std::size_t j = 1;
 
-#define MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(X)    \
-    /* "(A,t[X])  := t[X] + a[X]*b[i] + A" */   \
-    tmp = a_limbs[X];                           \
-    tmp *= b_limbs[i];                          \
-    tmp += result_limbs[X];                     \
-    tmp += A;                                   \
-    dbl_limb_to_limbs(tmp, A, result_limbs[X]); \
-                                                \
-    /* "(C,t[X-1]) := t[X] + m*q[X] + C" */     \
-    tmp = m;                                    \
-    tmp *= m_mod_limbs[X];                      \
-    tmp += result_limbs[X];                     \
-    tmp += C;                                   \
+#define NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(X) \
+    /* "(A,t[X])  := t[X] + a[X]*b[i] + A" */           \
+    tmp = a_limbs[X];                                   \
+    tmp *= b_limbs[i];                                  \
+    tmp += result_limbs[X];                             \
+    tmp += A;                                           \
+    dbl_limb_to_limbs(tmp, A, result_limbs[X]);         \
+                                                        \
+    /* "(C,t[X-1]) := t[X] + m*q[X] + C" */             \
+    tmp = m;                                            \
+    tmp *= m_mod_limbs[X];                              \
+    tmp += result_limbs[X];                             \
+    tmp += C;                                           \
     dbl_limb_to_limbs(tmp, C, result_limbs[(X) - 1]);
 
                 for (; j + 5 <= N; j += 5) {
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j);
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 1);
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 2);
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 3);
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 4);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 1);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 2);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 3);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 4);
                 }
 
                 for (; j + 3 <= N; j += 3) {
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j);
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 1);
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 2);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 1);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j + 2);
                 }
 
                 for (; j < N; ++j) {
-                    MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j);
+                    NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY(j);
                 }
 
                 // "t[N-1] = C + A"
@@ -436,6 +436,7 @@ namespace nil::crypto3::multiprecision::detail {
             }
             c = result;
         }
+#undef NIL_CO3_MP_MONTGOMERY_MUL_NO_CARRY_LOOP_BODY
 
         template<std::size_t Bits2>
         constexpr void montgomery_mul_CIOS_impl(big_uint<Bits2> &result,
@@ -486,7 +487,7 @@ namespace nil::crypto3::multiprecision::detail {
                 // normally mod_size == 4.
                 double_limb_type t = 0, t2 = 0;
 
-#define MONTGOMERY_MUL_CIOS_LOOP_BODY(X)                                                    \
+#define NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(X)                                         \
     t = static_cast<double_limb_type>(y_limbs[X]) * static_cast<double_limb_type>(x_i) +    \
         A_limbs[X] + k;                                                                     \
     t2 = static_cast<double_limb_type>(mod_limbs[X]) * static_cast<double_limb_type>(u_i) + \
@@ -496,21 +497,21 @@ namespace nil::crypto3::multiprecision::detail {
     k2 = static_cast<limb_type>(t2 >> std::numeric_limits<limb_type>::digits);
 
                 for (; j + 5 <= mod_size; j += 5) {
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j);
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 1);
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 2);
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 3);
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 4);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 1);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 2);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 3);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 4);
                 }
 
                 for (; j + 3 <= mod_size; j += 3) {
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j);
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 1);
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 2);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 1);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j + 2);
                 }
 
                 for (; j < mod_size; ++j) {
-                    MONTGOMERY_MUL_CIOS_LOOP_BODY(j);
+                    NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY(j);
                 }
 
                 double_limb_type tmp = static_cast<double_limb_type>(carry) + k + k2;
@@ -527,6 +528,7 @@ namespace nil::crypto3::multiprecision::detail {
 
             result = A;
         }
+#undef NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY
 
         template<std::size_t Bits2, std::size_t Bits3, std::size_t Bits4,
                  /// result should fit in the output parameter
