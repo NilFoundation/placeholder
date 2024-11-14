@@ -12,7 +12,6 @@
 
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 #include "nil/crypto3/multiprecision/big_int/literals.hpp"
-#include "nil/crypto3/multiprecision/big_int/ops/jacobi.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
