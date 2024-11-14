@@ -327,16 +327,20 @@ namespace nil::crypto3::multiprecision {
     // big_uint constant.
     template<const auto& modulus>
     using montgomery_big_mod = big_mod_ct_impl<modulus, detail::montgomery_modular_ops>;
+
     // Montgomery runtime modular big integer type.
     template<std::size_t Bits>
     using montgomery_big_mod_rt = big_mod_rt_impl<Bits, detail::montgomery_modular_ops>;
-    template<const auto& modulus>
+
     // Simple modular big integer type with compile-time modulus. Modulus should be a static
     // big_uint constant. Uses barret optimizations.
+    template<const auto& modulus>
     using big_mod = big_mod_ct_impl<modulus, detail::barrett_modular_ops>;
-    template<std::size_t Bits>
+
     // Simple runtime modular big integer type. Uses barret optimizations.
+    template<std::size_t Bits>
     using big_mod_rt = big_mod_rt_impl<Bits, detail::barrett_modular_ops>;
+
     // Modular big integer type with compile-time modulus, which automatically uses montomery form
     // whenever possible (for odd moduli). Modulus should be a static big_uint constant.
     template<const auto& modulus>
