@@ -83,11 +83,13 @@ namespace nil::crypto3::multiprecision::detail {
             m_mod_compliment = compliment;
         }
 
-        constexpr const auto &get_mod() const { return m_mod; }
+        constexpr const auto &mod() const { return m_mod; }
+
+      protected:
+        constexpr const auto &mod_compliment() const { return m_mod_compliment; }
 
       private:
-        constexpr const auto &get_mod_compliment() const { return m_mod_compliment; }
-        constexpr const auto &get_mu() const { return m_barrett_mu; }
+        constexpr const auto &mu() const { return m_barrett_mu; }
 
       public:
         template<std::size_t Bits2>
@@ -101,21 +103,21 @@ namespace nil::crypto3::multiprecision::detail {
                      Bits2 >= big_uint_t::Bits, int> = 0>
         constexpr void barrett_reduce(big_uint<Bits2> &result, big_uint<Bits3> input) const {
             if (!is_zero(input)) {
-                if (msb(input) < 2u * msb(m_mod) + 1u) {
+                if (msb(input) < 2u * msb(mod()) + 1u) {
                     big_uint_quadruple_1 t1(input);
 
                     t1 *= m_barrett_mu;
-                    std::size_t shift_size = 2u * (1u + msb(m_mod));
+                    std::size_t shift_size = 2u * (1u + msb(mod()));
                     t1 >>= shift_size;
-                    t1 *= m_mod;
+                    t1 *= mod();
 
                     input -= t1;
 
-                    if (input >= m_mod) {
-                        input -= m_mod;
+                    if (input >= mod()) {
+                        input -= mod();
                     }
                 } else {
-                    input %= m_mod;
+                    input %= mod();
                 }
             }
             result = input;
@@ -125,7 +127,7 @@ namespace nil::crypto3::multiprecision::detail {
                  // result should fit in the output parameter
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
         constexpr void add(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
-            NIL_CO3_MP_ASSERT(result < m_mod && y < m_mod);
+            NIL_CO3_MP_ASSERT(result < mod() && y < mod());
 
             result += y;
             // If we overflow and set the carry, we need to subtract the modulus, which is
@@ -133,10 +135,10 @@ namespace nil::crypto3::multiprecision::detail {
             // After this we know for sure that the result < Modulus, do not waste time on
             // checking again.
             if (result.has_carry()) {
-                result += m_mod_compliment;
+                result += mod_compliment();
                 result.set_carry(false);
-            } else if (result >= m_mod) {
-                result -= m_mod;
+            } else if (result >= mod()) {
+                result -= mod();
             }
         }
 
@@ -152,14 +154,15 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits2, std::size_t Bits3, std::size_t Bits4,
                  /// result should fit in the output parameter
                  std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits, int> = 0>
-        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a, big_uint<Bits4> exp) const {
-            NIL_CO3_MP_ASSERT(a < m_mod);
+        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a,
+                           big_uint<Bits4> exp) const {
+            NIL_CO3_MP_ASSERT(a < mod());
 
             if (exp == 0u) {
                 result = 1u;
                 return;
             }
-            if (m_mod == 1u) {
+            if (mod() == 1u) {
                 result = 0u;
                 return;
             }
@@ -186,8 +189,8 @@ namespace nil::crypto3::multiprecision::detail {
 
         constexpr void adjust_modular(big_uint_t &result) const { adjust_modular(result, result); }
 
-        template<std::size_t Bits3>
-        constexpr void adjust_modular(big_uint_t &result, big_uint<Bits3> input) const {
+        template<std::size_t Bits2>
+        constexpr void adjust_modular(big_uint_t &result, big_uint<Bits2> input) const {
             big_uint_doubled_limbs tmp;
             barrett_reduce(tmp, input);
             result = tmp;
@@ -206,9 +209,7 @@ namespace nil::crypto3::multiprecision::detail {
             result = input;
         }
 
-        constexpr bool compare_eq(const barrett_modular_ops &o) const {
-            return get_mod() == o.get_mod();
-        }
+        constexpr bool compare_eq(const barrett_modular_ops &o) const { return mod() == o.mod(); }
 
       protected:
         big_uint_t m_mod;
@@ -248,12 +249,6 @@ namespace nil::crypto3::multiprecision::detail {
             // correct.
             m_montgomery_r2 = static_cast<big_uint_t>(r);
 
-            // Compute 2^Bits - Modulus, no matter if modulus is even or odd.
-            big_uint_padded_limbs compliment = 1u, modulus = this->m_mod;
-            compliment <<= Bits;
-            compliment -= modulus;
-            this->m_mod_compliment = compliment;
-
             m_no_carry_montgomery_mul_allowed = is_applicable_for_no_carry_montgomery_mul();
         }
 
@@ -285,8 +280,8 @@ namespace nil::crypto3::multiprecision::detail {
             return r;
         }
 
-        constexpr const auto &get_r2() const { return m_montgomery_r2; }
-        constexpr const auto &get_p_dash() const { return m_montgomery_p_dash; }
+        constexpr const auto &r2() const { return m_montgomery_r2; }
+        constexpr const auto &p_dash() const { return m_montgomery_p_dash; }
 
       public:
         template<std::size_t Bits2,
@@ -296,29 +291,30 @@ namespace nil::crypto3::multiprecision::detail {
             big_uint_doubled_padded_limbs accum(result);
             big_uint_doubled_padded_limbs prod;
 
-            for (size_t i = 0; i < this->m_mod.size(); ++i) {
+            for (size_t i = 0; i < this->mod().size(); ++i) {
                 limb_type limb_accum = accum.limbs()[i];
                 double_limb_type mult_res = limb_accum *
                                             /// to prevent overflow error in constexpr
-                                            static_cast<double_limb_type>(m_montgomery_p_dash);
+                                            static_cast<double_limb_type>(p_dash());
                 limb_type mult_res_limb = static_cast<limb_type>(mult_res);
 
-                prod = this->m_mod;
+                prod = this->mod();
                 prod *= mult_res_limb;
                 prod <<= i * limb_bits;
                 accum += prod;
             }
-            accum >>= this->m_mod.size() * limb_bits;
+            accum >>= this->mod().size() * limb_bits;
 
-            if (accum >= this->m_mod) {
-                accum -= this->m_mod;
+            if (accum >= this->mod()) {
+                accum -= this->mod();
             }
 
             result = accum;
         }
 
         // Delegates Montgomery multiplication to one of corresponding algorithms.
-        constexpr void mul(big_uint_t &result, const big_uint_t &y) const {
+        template<std::size_t Bits2>
+        constexpr void mul(big_uint<Bits2> &result, const big_uint<Bits2> &y) const {
             if (m_no_carry_montgomery_mul_allowed) {
                 montgomery_mul_no_carry_impl(result, y);
             } else {
@@ -335,8 +331,8 @@ namespace nil::crypto3::multiprecision::detail {
             // additional "unused" bit in the number.
             // 2. Some other bit in modulus is 0.
             // 3. The number has < 12 limbs.
-            return this->m_mod.internal_limb_count < 12 && (Bits % sizeof(limb_type) != 0) &&
-                   this->m_mod_compliment != big_uint_t(limb_type(1u));
+            return this->mod().internal_limb_count < 12 && (Bits % sizeof(limb_type) != 0) &&
+                   this->mod_compliment() != limb_type(1u);
         }
 
       public:
@@ -346,7 +342,7 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits2>
         constexpr void montgomery_mul_no_carry_impl(big_uint<Bits2> &c,
                                                     const big_uint<Bits2> &b) const {
-            NIL_CO3_MP_ASSERT(c < this->m_mod && b < this->m_mod);
+            NIL_CO3_MP_ASSERT(c < this->mod() && b < this->mod());
             NIL_CO3_MP_ASSERT(is_applicable_for_no_carry_montgomery_mul());
 
             // Obtain number of limbs
@@ -367,7 +363,7 @@ namespace nil::crypto3::multiprecision::detail {
             auto *a_limbs = a.limbs();
             auto *b_limbs = b.limbs();
             auto *result_limbs = result.limbs();
-            auto *m_mod_limbs = this->m_mod.limbs();
+            auto *m_mod_limbs = this->mod().limbs();
 
             for (int i = 0; i < N; ++i) {
                 // "(A,t[0]) := t[0] + a[0]*b[i]"
@@ -379,7 +375,7 @@ namespace nil::crypto3::multiprecision::detail {
                 // "m := t[0]*q'[0] mod W"
                 tmp = result_limbs[0];
                 // tmp *= q.limbs()[0];
-                tmp *= m_montgomery_p_dash;
+                tmp *= p_dash();
                 // tmp = -tmp;
                 // Note that m is a shorter integer, and we are taking the last bits of tmp.
                 limb_type m = tmp;
@@ -431,8 +427,8 @@ namespace nil::crypto3::multiprecision::detail {
                 result_limbs[N - 1] = C + A;
             }
 
-            if (result >= this->m_mod) {
-                result -= this->m_mod;
+            if (result >= this->mod()) {
+                result -= this->mod();
             }
             c = result;
         }
@@ -441,11 +437,11 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits2>
         constexpr void montgomery_mul_CIOS_impl(big_uint<Bits2> &result,
                                                 const big_uint<Bits2> &y) const {
-            NIL_CO3_MP_ASSERT(result < this->m_mod && y < this->m_mod);
+            NIL_CO3_MP_ASSERT(result < this->mod() && y < this->mod());
 
             big_uint_t A(limb_type(0u));
-            const std::size_t mod_size = this->m_mod.size();
-            auto *mod_limbs = this->m_mod.limbs();
+            const std::size_t mod_size = this->mod().size();
+            auto *mod_limbs = this->mod().limbs();
             auto mod_last_limb = static_cast<double_limb_type>(mod_limbs[0]);
             auto y_last_limb = y.limbs()[0];
             auto *y_limbs = y.limbs();
@@ -467,7 +463,7 @@ namespace nil::crypto3::multiprecision::detail {
             for (std::size_t i = 0; i < mod_size; ++i) {
                 x_i = x_limbs[i];
                 A_0 = A_limbs[0];
-                u_i = (A_0 + x_i * y_last_limb) * m_montgomery_p_dash;
+                u_i = (A_0 + x_i * y_last_limb) * p_dash();
 
                 // A += x[i] * y + u_i * m followed by a 1 limb-shift to the right
                 k = 0;
@@ -521,9 +517,9 @@ namespace nil::crypto3::multiprecision::detail {
 
             if (carry) {
                 // The value of A is actually A + 2 ^ Bits, so remove that 2 ^ Bits.
-                A += this->m_mod_compliment;
-            } else if (A >= this->m_mod) {
-                A -= this->m_mod;
+                A += this->mod_compliment();
+            } else if (A >= this->mod()) {
+                A -= this->mod();
             }
 
             result = A;
@@ -536,7 +532,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a,
                            big_uint<Bits4> exp) const {
             /// input parameter should be less than modulus
-            NIL_CO3_MP_ASSERT(a < this->m_mod);
+            NIL_CO3_MP_ASSERT(a < this->mod());
 
             big_uint_t R_mod_m(1u);
             adjust_modular(R_mod_m);
@@ -548,7 +544,7 @@ namespace nil::crypto3::multiprecision::detail {
                 adjust_modular(result);
                 return;
             }
-            if (this->m_mod == 1u) {
+            if (this->mod() == 1u) {
                 result = 0u;
                 return;
             }
@@ -575,7 +571,7 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void adjust_modular(big_uint_t &result, const big_uint<Bits3> &input) const {
             big_uint_doubled_limbs tmp;
             this->barrett_reduce(tmp, input);
-            tmp *= get_r2();
+            tmp *= r2();
             montgomery_reduce(tmp);
             result = tmp;
         }
@@ -596,10 +592,10 @@ namespace nil::crypto3::multiprecision::detail {
 
       protected:
         big_uint_t m_montgomery_r2;
-        limb_type m_montgomery_p_dash = 0;
+        limb_type m_montgomery_p_dash;
 
         // If set, no-carry optimization is allowed. Is set to
         // is_applicable_for_no_carry_montgomery_mul() after initialization.
-        bool m_no_carry_montgomery_mul_allowed = false;
+        bool m_no_carry_montgomery_mul_allowed;
     };
 }  // namespace nil::crypto3::multiprecision::detail
