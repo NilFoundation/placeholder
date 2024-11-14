@@ -98,7 +98,7 @@ namespace nil::crypto3::multiprecision {
             return {m_negative, m_abs.template truncate<Bits2>()};
         }
 
-        // cast to integral types
+        // Cast to integral types
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
         explicit inline constexpr operator T() const {
@@ -119,7 +119,7 @@ namespace nil::crypto3::multiprecision {
             return negative() ? -1 : (is_zero(m_abs) ? 0 : 1);
         }
 
-        inline constexpr unsigned_type abs() const { return m_abs; }
+        inline constexpr const unsigned_type& abs() const { return m_abs; }
 
         inline constexpr void negate() {
             if (is_zero(m_abs)) {
@@ -130,8 +130,8 @@ namespace nil::crypto3::multiprecision {
 
         // Comparision
 
-        template<std::size_t Bits>
-        inline constexpr int compare(const big_int<Bits>& other) const noexcept {
+        template<std::size_t Bits2>
+        inline constexpr int compare(const big_int<Bits2>& other) const noexcept {
             if (negative() && !other.negative()) {
                 return -1;
             }
@@ -197,7 +197,7 @@ namespace nil::crypto3::multiprecision {
             return static_cast<big_int>(x - static_cast<big_int>((x / y) * y));
         }
 
-        // Divide
+        // Division
 
         static inline constexpr big_int divide(const big_int& x, const big_int& y) {
             return x.m_abs / y.m_abs;

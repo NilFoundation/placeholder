@@ -19,7 +19,7 @@ namespace nil::crypto3::multiprecision::detail {
     }
 
     template<std::size_t Bits>
-    inline constexpr nil::crypto3::multiprecision::big_uint<Bits> get_max() {
+    inline constexpr big_uint<Bits> get_max() {
         constexpr auto val = ~big_uint<Bits>(0u);
         return val;
     }
