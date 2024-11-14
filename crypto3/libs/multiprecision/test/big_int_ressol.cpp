@@ -16,7 +16,6 @@
 #include <stdexcept>
 
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
-#include "nil/crypto3/multiprecision/big_int/ops/ressol.hpp"
 
 using namespace nil::crypto3::multiprecision;
 
