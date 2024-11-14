@@ -8,22 +8,22 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_integer_ressol_test
+#define BOOST_TEST_MODULE big_int_ressol_test
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/ops/ressol.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/ops/ressol.hpp"
 
 using namespace nil::crypto3::multiprecision;
 
 BOOST_AUTO_TEST_SUITE(ressol_runtime_tests)
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_4_bit_tests) {
-    using T = big_integer<4>;
+    using T = big_uint<4>;
     BOOST_CHECK_EQUAL(ressol(T(0u), T(11u)), 0u);
     BOOST_CHECK_EQUAL(ressol(T(5u), T(11u)), 4u);
 
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(ressol_runtime_4_bit_tests) {
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_521_bit_tests) {
-    using T = big_integer<521>;
+    using T = big_uint<521>;
     BOOST_CHECK_EQUAL(
         ressol(T(5u), T("68647976601306097149819007990813932172694353001433054093944634591855431833"
                         "9765605212255"
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(ressol_runtime_521_bit_tests) {
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_224_bit_tests) {
-    using T = big_integer<224>;
+    using T = big_uint<224>;
     BOOST_CHECK_EQUAL(
         ressol(T("20749193632488214633180774027217139706413443729200940480695355894185"),
                T("26959946667150639794667015087019630673557916260026308143510066298881")),
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(ressol_runtime_224_bit_tests) {
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_315_bit_tests) {
-    using T = big_integer<315>;
+    using T = big_uint<315>;
     BOOST_CHECK_EQUAL(
         ressol(
             T(1024u),
@@ -82,37 +82,37 @@ BOOST_AUTO_TEST_CASE(ressol_runtime_315_bit_tests) {
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_18_bit_tests) {
-    using T = big_integer<18>;
+    using T = big_uint<18>;
 
     BOOST_CHECK_EQUAL(ressol(T(1024u), T(174763u)), 174731u);
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_7_bit_tests) {
-    using T = big_integer<7>;
+    using T = big_uint<7>;
 
     BOOST_CHECK_THROW(ressol(T(64), T(85)), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_8_bit_tests) {
-    using T = big_integer<8>;
+    using T = big_uint<8>;
 
     BOOST_CHECK_THROW(ressol(T(181), T(217)), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_16_bit_tests) {
-    using T = big_integer<16>;
+    using T = big_uint<16>;
 
     BOOST_CHECK_THROW(ressol(T(4225), T(33153)), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_15_bit_tests) {
-    using T = big_integer<15>;
+    using T = big_uint<15>;
 
-    BOOST_CHECK_THROW(ressol(T(2048), T(31417)), std::invalid_argument);
+    BOOST_CHECK_THROW(ressol(T(2048), T(31417)), std::logic_error);
 }
 
 BOOST_AUTO_TEST_CASE(ressol_runtime_13_bit_tests) {
-    using T = big_integer<13>;
+    using T = big_uint<13>;
 
     BOOST_CHECK_THROW(ressol(T(2), T(4369)), std::invalid_argument);
 }

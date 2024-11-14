@@ -6,7 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_integer_comparision_test
+#define BOOST_TEST_MODULE big_int_comparision_test
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/random_device.hpp>
@@ -17,24 +17,24 @@
 // We need cpp_int to compare to it.
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/cpp_int_conversions.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/cpp_int_conversions.hpp"
 
 using namespace boost::multiprecision;
 
-using nil::crypto3::multiprecision::big_integer;
+using nil::crypto3::multiprecision::big_uint;
 using nil::crypto3::multiprecision::to_cpp_int;
 using nil::crypto3::multiprecision::unsigned_cpp_int_type;
 
-// This test case uses normal boost::cpp_int for comparison to our big_integer
+// This test case uses normal boost::cpp_int for comparison to our big_uint
 template<std::size_t Bits1, std::size_t Bits2>
-void value_comparisons_tests(const big_integer<Bits1>& a, const big_integer<Bits2>& b) {
-    typedef big_integer<Bits1> Backend1;
-    typedef big_integer<Bits2> Backend2;
+void value_comparisons_tests(const big_uint<Bits1>& a, const big_uint<Bits2>& b) {
+    typedef big_uint<Bits1> Backend1;
+    typedef big_uint<Bits2> Backend2;
     typedef unsigned_cpp_int_type<Bits1> cpp_int_number1;
     typedef unsigned_cpp_int_type<Bits2> cpp_int_number2;
 
-    // Convert from big_integer to cpp_int_backend numbers.
+    // Convert from big_uint to cpp_int_backend numbers.
     cpp_int_number1 a_cppint = to_cpp_int(a);
     cpp_int_number2 b_cppint = to_cpp_int(b);
 
@@ -48,8 +48,8 @@ void value_comparisons_tests(const big_integer<Bits1>& a, const big_integer<Bits
 
 template<std::size_t Bits1, std::size_t Bits2>
 void value_comparisons_tests(const std::size_t N) {
-    using standard_number1 = big_integer<Bits1>;
-    using standard_number2 = big_integer<Bits2>;
+    using standard_number1 = big_uint<Bits1>;
+    using standard_number2 = big_uint<Bits2>;
 
     int seed = 0;
     boost::random::mt19937 gen(seed);

@@ -8,30 +8,29 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 
 #include <array>
 #include <cstddef>
 #include <limits>
 #include <vector>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     /* Vector version */
     template<std::size_t Bits>
-    std::vector<long> find_wnaf(const size_t window_size,
-                                const big_integer<Bits>& scalar) noexcept {
-        using big_integer_t = big_integer<Bits>;
+    std::vector<long> find_wnaf(const size_t window_size, const big_uint<Bits>& scalar) noexcept {
+        using big_uint_t = big_uint<Bits>;
         using ui_type = detail::limb_type;
 
         // upper bound
         constexpr std::size_t length =
-            big_integer_t::internal_limb_count * std::numeric_limits<ui_type>::digits;
+            big_uint_t::internal_limb_count * std::numeric_limits<ui_type>::digits;
         std::vector<long> res(length + 1);
 
-        big_integer_t c(scalar);
+        big_uint_t c(scalar);
         ui_type j = 0;
 
         while (is_zero(c)) {
@@ -61,17 +60,17 @@ namespace nil::crypto3::multiprecision {
 
     /* Array version */
     template<std::size_t Bits>
-    constexpr auto find_wnaf_a(const size_t window_size, const big_integer<Bits>& scalar) noexcept {
-        using big_integer_t = big_integer<Bits>;
+    constexpr auto find_wnaf_a(const size_t window_size, const big_uint<Bits>& scalar) noexcept {
+        using big_uint_t = big_uint<Bits>;
         using ui_type = detail::limb_type;
 
         // upper bound
         constexpr std::size_t length =
-            big_integer_t::internal_limb_count * std::numeric_limits<ui_type>::digits;
+            big_uint_t::internal_limb_count * std::numeric_limits<ui_type>::digits;
 
         std::array<long, length + 1> res{0};
 
-        big_integer_t c(scalar);
+        big_uint_t c(scalar);
         ui_type j = 0;
 
         while (!is_zero(c)) {

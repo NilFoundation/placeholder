@@ -8,14 +8,13 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/modular/big_mod.hpp"
 
-#include "nil/crypto3/multiprecision/big_integer/ops/inverse.hpp"
+#include "nil/crypto3/multiprecision/big_int/ops/inverse.hpp"
 
 namespace nil::crypto3::multiprecision {
-    template<typename modular_big_integer_t>
-    constexpr modular_big_integer_t inverse_extended_euclidean_algorithm(
-        const modular_big_integer_t &modular) {
+    template<typename big_mod_t>
+    constexpr big_mod_t inverse_extended_euclidean_algorithm(const big_mod_t &modular) {
         return modular.with_replaced_base(
             inverse_extended_euclidean_algorithm(modular.base(), modular.mod()));
     }

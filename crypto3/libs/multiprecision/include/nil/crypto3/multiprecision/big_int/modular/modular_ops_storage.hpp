@@ -19,10 +19,10 @@ namespace nil::crypto3::multiprecision::detail {
     template<const auto &Modulus, template<typename> typename modular_ops_template>
     class modular_ops_storage_ct {
       public:
-        using big_integer_t = std::decay_t<decltype(Modulus)>;
-        using modular_ops_t = modular_ops_template<big_integer_t>;
+        using big_uint_t = std::decay_t<decltype(Modulus)>;
+        using modular_ops_t = modular_ops_template<big_uint_t>;
 
-        static_assert(big_integer_t::Bits == msb(Modulus) + 1,
+        static_assert(big_uint_t::Bits == msb(Modulus) + 1,
                       "modulus bit width should match used precision");
 
         constexpr modular_ops_storage_ct() {}
@@ -33,13 +33,13 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr modular_ops_t m_modular_ops{Modulus};
     };
 
-    template<typename big_integer_t_, template<typename> typename modular_ops_template>
+    template<typename big_uint_t_, template<typename> typename modular_ops_template>
     class modular_ops_storage_rt {
       public:
-        using big_integer_t = big_integer_t_;
-        using modular_ops_t = modular_ops_template<big_integer_t>;
+        using big_uint_t = big_uint_t_;
+        using modular_ops_t = modular_ops_template<big_uint_t>;
 
-        constexpr modular_ops_storage_rt(const big_integer_t &input) : m_modular_ops(input) {}
+        constexpr modular_ops_storage_rt(const big_uint_t &input) : m_modular_ops(input) {}
 
         constexpr const modular_ops_t &ops() const { return m_modular_ops; }
 
