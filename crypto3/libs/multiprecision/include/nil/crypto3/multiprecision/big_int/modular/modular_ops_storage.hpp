@@ -13,17 +13,20 @@
 
 // IWYU pragma: private
 
+#include <cstddef>
 #include <type_traits>
 
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
-    template<const auto &Modulus, template<typename> typename modular_ops_template>
+    template<const auto &Modulus, template<std::size_t> typename modular_ops_template>
     class modular_ops_storage_ct {
       public:
         using big_uint_t = std::decay_t<decltype(Modulus)>;
-        using modular_ops_t = modular_ops_template<big_uint_t>;
+        inline constexpr static std::size_t Bits = big_uint_t::Bits;
+        using modular_ops_t = modular_ops_template<Bits>;
 
-        static_assert(big_uint_t::Bits == msb(Modulus) + 1,
-                      "modulus bit width should match used precision");
+        static_assert(Bits == msb(Modulus) + 1, "modulus bit width should match used precision");
 
         constexpr modular_ops_storage_ct() {}
 
@@ -33,11 +36,11 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr modular_ops_t m_modular_ops{Modulus};
     };
 
-    template<typename big_uint_t_, template<typename> typename modular_ops_template>
+    template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
     class modular_ops_storage_rt {
       public:
-        using big_uint_t = big_uint_t_;
-        using modular_ops_t = modular_ops_template<big_uint_t>;
+        using big_uint_t = big_uint<Bits>;
+        using modular_ops_t = modular_ops_template<Bits>;
 
         constexpr modular_ops_storage_rt(const big_uint_t &input) : m_modular_ops(input) {}
 

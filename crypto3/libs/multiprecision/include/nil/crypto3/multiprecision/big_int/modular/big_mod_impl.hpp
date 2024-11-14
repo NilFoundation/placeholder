@@ -84,7 +84,7 @@ namespace nil::crypto3::multiprecision {
         };
     }  // namespace detail
 
-    template<const auto& modulus, template<typename> typename modular_ops_template>
+    template<const auto& modulus, template<std::size_t> typename modular_ops_template>
     struct big_mod_ct_impl : public detail::big_mod_impl<
                                  std::decay_t<decltype(modulus)>::Bits,
                                  detail::modular_ops_storage_ct<modulus, modular_ops_template>> {
@@ -123,12 +123,12 @@ namespace nil::crypto3::multiprecision {
         }
     };
 
-    template<std::size_t Bits, template<typename> typename modular_ops_template>
+    template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
     struct big_mod_rt_impl
-        : public detail::big_mod_impl<
-              Bits, detail::modular_ops_storage_rt<big_uint<Bits>, modular_ops_template>> {
-        using base_type = detail::big_mod_impl<
-            Bits, detail::modular_ops_storage_rt<big_uint<Bits>, modular_ops_template>>;
+        : public detail::big_mod_impl<Bits,
+                                      detail::modular_ops_storage_rt<Bits, modular_ops_template>> {
+        using base_type =
+            detail::big_mod_impl<Bits, detail::modular_ops_storage_rt<Bits, modular_ops_template>>;
 
         using typename base_type::big_uint_t;
 
@@ -163,10 +163,10 @@ namespace nil::crypto3::multiprecision {
         template<typename T>
         constexpr bool is_big_mod_v = false;
 
-        template<const auto& modulus, template<typename> typename modular_ops_storage_t>
+        template<const auto& modulus, template<std::size_t> typename modular_ops_storage_t>
         constexpr bool is_big_mod_v<big_mod_ct_impl<modulus, modular_ops_storage_t>> = true;
 
-        template<std::size_t Bits, template<typename> typename modular_ops_storage_t>
+        template<std::size_t Bits, template<std::size_t> typename modular_ops_storage_t>
         constexpr bool is_big_mod_v<big_mod_rt_impl<Bits, modular_ops_storage_t>> = true;
 
         template<typename T>
