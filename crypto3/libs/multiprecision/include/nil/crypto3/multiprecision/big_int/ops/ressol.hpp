@@ -10,34 +10,34 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/ops/misc.hpp"
-#include "nil/crypto3/multiprecision/big_integer/ops/jacobi.hpp"
-#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_int/modular/big_mod_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/modular/ops/misc.hpp"
+#include "nil/crypto3/multiprecision/big_int/ops/jacobi.hpp"
+#include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
-    constexpr big_integer<Bits> ressol(const big_integer<Bits> &a, const big_integer<Bits> &p) {
+    constexpr big_uint<Bits> ressol(const big_uint<Bits> &a, const big_uint<Bits> &p) {
         /*
          * The implementation is split for two different cases:
          *   1. if p mod 4 == 3 we apply Handbook of Applied Cryptography algorithm 3.36 and compute
          * r directly as r = n(p+1)/4 mod p
          *   2. otherwise we use Tonelli-Shanks algorithm
          */
-        using big_integer_t = big_integer<Bits>;
-        using big_integer_padded_t = big_integer<Bits + 1>;
+        using big_uint_t = big_uint<Bits>;
+        using big_uint_padded_t = big_uint<Bits + 1>;
 
         using ui_type = detail::limb_type;
 
-        big_integer_t two = ui_type(2u);
-        big_integer_t res;
+        big_uint_t two = ui_type(2u);
+        big_uint_t res;
 
         if (is_zero(a)) {
             return 0u;
@@ -54,27 +54,27 @@ namespace nil::crypto3::multiprecision {
             throw std::invalid_argument("Not a quadratic residue");
         }
 
-        modular_big_integer_rt<Bits> a_mod(a, p);
+        big_mod_rt<Bits> a_mod(a, p);
 
         if (p % 4 == 3) {
-            big_integer_padded_t exp_padded = p;
+            big_uint_padded_t exp_padded = p;
 
             ++exp_padded;
             exp_padded >>= 2u;
 
-            return powm(a_mod, big_integer_t(exp_padded)).base();
+            return powm(a_mod, big_uint_t(exp_padded)).base();
         }
 
-        big_integer_t p_negone = p;
+        big_uint_t p_negone = p;
         --p_negone;
         std::size_t s = lsb(p_negone);
 
-        big_integer_t q = p;
+        big_uint_t q = p;
         q >>= s;
         --q;
         q >>= 1u;
 
-        modular_big_integer_rt<Bits> n_mod = a_mod;
+        big_mod_rt<Bits> n_mod = a_mod;
 
         auto r_mod = powm(a_mod, q);
         auto r_sq_mod = powm(r_mod, two);
@@ -86,7 +86,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         // find random quadratic nonresidue z
-        big_integer_t z = two;
+        big_uint_t z = two;
         while (jacobi(z, p) == 1) {
             if (is_zero(z)) {
                 throw std::invalid_argument("No quadratic nonresidue");
@@ -97,7 +97,7 @@ namespace nil::crypto3::multiprecision {
         q <<= 1u;
         ++q;
 
-        modular_big_integer_rt<Bits> z_mod(z, p);
+        big_mod_rt<Bits> z_mod(z, p);
 
         auto c_mod = powm(z_mod, q);
 
@@ -116,7 +116,7 @@ namespace nil::crypto3::multiprecision {
                 }
             }
 
-            big_integer_t power_of_2;
+            big_uint_t power_of_2;
 
             bit_set(power_of_2, s - i - 1);
             c_mod = powm(c_mod, power_of_2);

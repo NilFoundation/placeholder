@@ -8,19 +8,19 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 
 #include <bit>
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/detail/config.hpp"
-#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/detail/config.hpp"
+#include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr bool is_zero(const big_integer<Bits> &val) noexcept {
+    NIL_CO3_MP_FORCEINLINE constexpr bool is_zero(const big_uint<Bits> &val) noexcept {
         for (std::size_t i = 0; i < val.size(); ++i) {
             if (val.limbs()[i] != 0) {
                 return false;
@@ -30,7 +30,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr unsigned lsb(const big_integer<Bits> &a) {
+    inline constexpr unsigned lsb(const big_uint<Bits> &a) {
         //
         // Find the index of the least significant limb that is non-zero:
         //
@@ -43,17 +43,17 @@ namespace nil::crypto3::multiprecision {
         //
         unsigned result = std::countr_zero(a.limbs()[index]);
 
-        return result + index * big_integer<Bits>::limb_bits;
+        return result + index * big_uint<Bits>::limb_bits;
     }
 
     template<std::size_t Bits>
-    inline constexpr unsigned msb(const big_integer<Bits> &a) {
+    inline constexpr unsigned msb(const big_uint<Bits> &a) {
         //
         // Find the index of the most significant bit that is non-zero:
         //
         for (std::size_t i = a.size() - 1; i > 0; --i) {
             if (a.limbs()[i] != 0) {
-                return i * big_integer<Bits>::limb_bits + std::bit_width(a.limbs()[i]) - 1;
+                return i * big_uint<Bits>::limb_bits + std::bit_width(a.limbs()[i]) - 1;
             }
         }
         if (a.limbs()[0] == 0) {
@@ -63,11 +63,11 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr bool bit_test(const big_integer<Bits> &val, std::size_t index) noexcept {
+    inline constexpr bool bit_test(const big_uint<Bits> &val, std::size_t index) noexcept {
         using detail::limb_type;
 
-        unsigned offset = index / big_integer<Bits>::limb_bits;
-        unsigned shift = index % big_integer<Bits>::limb_bits;
+        unsigned offset = index / big_uint<Bits>::limb_bits;
+        unsigned shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
         if (offset >= val.size()) {
             return false;
@@ -76,11 +76,11 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr void bit_set(big_integer<Bits> &val, std::size_t index) {
+    inline constexpr void bit_set(big_uint<Bits> &val, std::size_t index) {
         using detail::limb_type;
 
-        unsigned offset = index / big_integer<Bits>::limb_bits;
-        unsigned shift = index % big_integer<Bits>::limb_bits;
+        unsigned offset = index / big_uint<Bits>::limb_bits;
+        unsigned shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
         if (offset >= val.size()) {
             return;  // fixed precision overflow
@@ -89,11 +89,11 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr void bit_unset(big_integer<Bits> &val, std::size_t index) noexcept {
+    inline constexpr void bit_unset(big_uint<Bits> &val, std::size_t index) noexcept {
         using detail::limb_type;
 
-        unsigned offset = index / big_integer<Bits>::limb_bits;
-        unsigned shift = index % big_integer<Bits>::limb_bits;
+        unsigned offset = index / big_uint<Bits>::limb_bits;
+        unsigned shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
         if (offset >= val.size()) {
             return;
@@ -103,11 +103,11 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr void bit_flip(big_integer<Bits> &val, std::size_t index) {
+    inline constexpr void bit_flip(big_uint<Bits> &val, std::size_t index) {
         using detail::limb_type;
 
-        unsigned offset = index / big_integer<Bits>::limb_bits;
-        unsigned shift = index % big_integer<Bits>::limb_bits;
+        unsigned offset = index / big_uint<Bits>::limb_bits;
+        unsigned shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
         if (offset >= val.size()) {
             return;  // fixed precision overflow

@@ -11,20 +11,19 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/modular/big_mod.hpp"
 
 #include <cmath>
 #include <cstddef>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/modular/big_mod_impl.hpp"
 
 namespace nil::crypto3::multiprecision {
-    template<typename modular_big_integer_t, std::size_t Bits,
-             std::enable_if_t<detail::is_modular_big_integer_v<modular_big_integer_t>, int> = 0>
-    constexpr modular_big_integer_t powm(const modular_big_integer_t &b,
-                                         const big_integer<Bits> &e) {
+    template<typename big_mod_t, std::size_t Bits,
+             std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
+    constexpr big_mod_t powm(const big_mod_t &b, const big_uint<Bits> &e) {
         auto result = b;
         result.ops().exp(result.raw_base(), b.raw_base(), e);
         return result;

@@ -19,23 +19,23 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
-#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
-    constexpr bool check_montgomery_constraints(const big_integer<Bits> &m) {
+    constexpr bool check_montgomery_constraints(const big_uint<Bits> &m) {
         // Check m % 2 == 0
         return bit_test(m, 0u);
     }
 
     template<std::size_t Bits>
     struct modular_policy {
-        using big_integer_t = big_integer<Bits>;
+        using big_uint_t = big_uint<Bits>;
 
-        constexpr static auto limbs_count = big_integer_t::internal_limb_count;
-        constexpr static auto limb_bits = big_integer_t::limb_bits;
+        constexpr static auto limbs_count = big_uint_t::internal_limb_count;
+        constexpr static auto limb_bits = big_uint_t::limb_bits;
 
         constexpr static auto BitsCount_doubled = 2u * Bits;
         constexpr static auto BitsCount_doubled_1 = BitsCount_doubled + 1;
@@ -44,38 +44,37 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr static auto BitsCount_doubled_limbs = 2u * limbs_count * limb_bits;
         constexpr static auto BitsCount_doubled_padded_limbs = BitsCount_doubled_limbs + limb_bits;
 
-        using big_integer_doubled = big_integer<BitsCount_doubled>;
-        using big_integer_doubled_1 = big_integer<BitsCount_doubled_1>;
-        using big_integer_quadruple_1 = big_integer<BitsCount_quadruple_1>;
-        using big_integer_padded_limbs = big_integer<BitsCount_padded_limbs>;
-        using big_integer_doubled_limbs = big_integer<BitsCount_doubled_limbs>;
-        using big_integer_doubled_padded_limbs = big_integer<BitsCount_doubled_padded_limbs>;
+        using big_uint_doubled = big_uint<BitsCount_doubled>;
+        using big_uint_doubled_1 = big_uint<BitsCount_doubled_1>;
+        using big_uint_quadruple_1 = big_uint<BitsCount_quadruple_1>;
+        using big_uint_padded_limbs = big_uint<BitsCount_padded_limbs>;
+        using big_uint_doubled_limbs = big_uint<BitsCount_doubled_limbs>;
+        using big_uint_doubled_padded_limbs = big_uint<BitsCount_doubled_padded_limbs>;
     };
 
-    template<typename big_integer_t>
+    template<typename big_uint_t>
     class barrett_modular_ops {
       public:
-        constexpr static std::size_t Bits = big_integer_t::Bits;
+        constexpr static std::size_t Bits = big_uint_t::Bits;
         using policy_type = modular_policy<Bits>;
 
-        using big_integer_doubled_1 = typename policy_type::big_integer_doubled_1;
-        using big_integer_quadruple_1 = typename policy_type::big_integer_quadruple_1;
-        using big_integer_padded_limbs = typename policy_type::big_integer_padded_limbs;
-        using big_integer_doubled_limbs = typename policy_type::big_integer_doubled_limbs;
-        using big_integer_doubled_padded_limbs =
-            typename policy_type::big_integer_doubled_padded_limbs;
+        using big_uint_doubled_1 = typename policy_type::big_uint_doubled_1;
+        using big_uint_quadruple_1 = typename policy_type::big_uint_quadruple_1;
+        using big_uint_padded_limbs = typename policy_type::big_uint_padded_limbs;
+        using big_uint_doubled_limbs = typename policy_type::big_uint_doubled_limbs;
+        using big_uint_doubled_padded_limbs = typename policy_type::big_uint_doubled_padded_limbs;
 
         constexpr static auto limbs_count = policy_type::limbs_count;
         constexpr static auto limb_bits = policy_type::limb_bits;
 
-        constexpr barrett_modular_ops(const big_integer_t &m) : m_mod(m), m_barrett_mu(0u) {
+        constexpr barrett_modular_ops(const big_uint_t &m) : m_mod(m), m_barrett_mu(0u) {
             std::size_t bit = 2u * (1u + msb(m_mod));
             bit_set(m_barrett_mu, bit);
 
             m_barrett_mu /= m_mod;
 
             // Compute 2^Bits - Modulus, no matter if modulus is even or odd.
-            big_integer_padded_limbs compliment = 1u, modulus = m_mod;
+            big_uint_padded_limbs compliment = 1u, modulus = m_mod;
             compliment <<= Bits;
             compliment -= modulus;
             m_mod_compliment = compliment;
@@ -88,8 +87,8 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr const auto &get_mod() const { return m_mod; }
         constexpr const auto &get_mu() const { return m_barrett_mu; }
 
-        template<typename big_integer_t1>
-        constexpr void barrett_reduce(big_integer_t1 &result) const {
+        template<typename big_uint_t1>
+        constexpr void barrett_reduce(big_uint_t1 &result) const {
             barrett_reduce(result, result);
         }
 
@@ -97,47 +96,46 @@ namespace nil::crypto3::multiprecision::detail {
         //
         // this overloaded barrett_reduce is intended to work with built-in integral types
         //
-        template<typename big_integer_t1, typename big_integer_t2>
-        constexpr typename std::enable_if<std::is_integral<big_integer_t2>::value &&
-                                          std::is_unsigned<big_integer_t2>::value>::type
-        barrett_reduce(big_integer_t1 &result, big_integer_t2 input) const {
-            using input_big_integer_type =
-                typename std::conditional_t<bool(big_integer_t2::Bits > Bits), big_integer_t2,
-                                            big_integer_t>;
+        template<typename big_uint_t1, typename big_uint_t2>
+        constexpr typename std::enable_if<std::is_integral<big_uint_t2>::value &&
+                                          std::is_unsigned<big_uint_t2>::value>::type
+        barrett_reduce(big_uint_t1 &result, big_uint_t2 input) const {
+            using input_big_uint_type = typename std::conditional_t<bool(big_uint_t2::Bits > Bits),
+                                                                    big_uint_t2, big_uint_t>;
 
-            input_big_integer_type input_adjusted(input);
+            input_big_uint_type input_adjusted(input);
             barrett_reduce(result, input_adjusted);
         }
 
         //
-        // this overloaded barrett_reduce is intended to work with input big_integer_t2 type of
-        // less precision than modular big_integer_t to satisfy constraints of core barrett_reduce
+        // this overloaded barrett_reduce is intended to work with input big_uint_t2 type of
+        // less precision than modular big_uint_t to satisfy constraints of core barrett_reduce
         // overloading
         //
-        template<typename big_integer_t1, typename big_integer_t2,
-                 std::enable_if_t<(big_integer_t2::Bits < big_integer_t::Bits), int> = 0>
-        constexpr void barrett_reduce(big_integer_t1 &result, const big_integer_t2 &input) const {
-            big_integer_t input_adjusted(input);
+        template<typename big_uint_t1, typename big_uint_t2,
+                 std::enable_if_t<(big_uint_t2::Bits < big_uint_t::Bits), int> = 0>
+        constexpr void barrett_reduce(big_uint_t1 &result, const big_uint_t2 &input) const {
+            big_uint_t input_adjusted(input);
             barrett_reduce(result, input_adjusted);
         }
 
-        template<typename big_integer_t1, typename big_integer_t2,
+        template<typename big_uint_t1, typename big_uint_t2,
                  std::enable_if_t<
                      /// result should fit in the output parameter
-                     big_integer_t1::Bits >= big_integer_t::Bits &&
+                     big_uint_t1::Bits >= big_uint_t::Bits &&
                          /// to prevent problems with trivial cpp_int
-                         big_integer_t2::Bits >= big_integer_t::Bits,
+                         big_uint_t2::Bits >= big_uint_t::Bits,
                      int> = 0>
-        constexpr void barrett_reduce(big_integer_t1 &result, big_integer_t2 input) const {
+        constexpr void barrett_reduce(big_uint_t1 &result, big_uint_t2 input) const {
             // TODO(ioxid): what problems?
             //
             // to prevent problems with trivial cpp_int
             //
-            big_integer_t2 modulus(m_mod);
+            big_uint_t2 modulus(m_mod);
 
             if (!is_zero(input)) {
                 if (msb(input) < 2u * msb(modulus) + 1u) {
-                    big_integer_quadruple_1 t1(input);
+                    big_uint_quadruple_1 t1(input);
 
                     t1 *= m_barrett_mu;
                     std::size_t shift_size = 2u * (1u + msb(modulus));
@@ -145,8 +143,8 @@ namespace nil::crypto3::multiprecision::detail {
                     t1 *= modulus;
 
                     // We do NOT allow subtracting a larger size number from a smaller one,
-                    // we need to cast to big_integer_t2 here.
-                    input -= static_cast<big_integer_t2>(t1);
+                    // we need to cast to big_uint_t2 here.
+                    input -= static_cast<big_uint_t2>(t1);
 
                     if (input >= modulus) {
                         input -= modulus;
@@ -161,7 +159,7 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits1, std::size_t Bits2,
                  // result should fit in the output parameter
                  std::enable_if_t<Bits1 >= Bits2, int> = 0>
-        constexpr void add(big_integer<Bits1> &result, const big_integer<Bits2> &y) const {
+        constexpr void add(big_uint<Bits1> &result, const big_uint<Bits2> &y) const {
             NIL_CO3_MP_ASSERT(result < m_mod && y < m_mod);
 
             result += y;
@@ -177,19 +175,19 @@ namespace nil::crypto3::multiprecision::detail {
             }
         }
 
-        template<typename big_integer_t1, typename big_integer_t2,
+        template<typename big_uint_t1, typename big_uint_t2,
                  /// result should fit in the output parameter
-                 std::enable_if_t<big_integer_t1::Bits >= big_integer_t::Bits, int> = 0>
-        constexpr void mul(big_integer_t1 &result, const big_integer_t2 &y) const {
-            big_integer_doubled_limbs tmp = result;
+                 std::enable_if_t<big_uint_t1::Bits >= big_uint_t::Bits, int> = 0>
+        constexpr void mul(big_uint_t1 &result, const big_uint_t2 &y) const {
+            big_uint_doubled_limbs tmp = result;
             tmp *= y;
             barrett_reduce(result, tmp);
         }
 
-        template<typename big_integer_t1, typename big_integer_t2, typename big_integer_t3,
+        template<typename big_uint_t1, typename big_uint_t2, typename big_uint_t3,
                  /// result should fit in the output parameter
-                 std::enable_if_t<big_integer_t1::Bits >= big_integer_t::Bits, int> = 0>
-        constexpr void exp(big_integer_t1 &result, big_integer_t2 &a, big_integer_t3 exp) const {
+                 std::enable_if_t<big_uint_t1::Bits >= big_uint_t::Bits, int> = 0>
+        constexpr void exp(big_uint_t1 &result, big_uint_t2 &a, big_uint_t3 exp) const {
             NIL_CO3_MP_ASSERT(a < m_mod);
 
             if (exp == 0u) {
@@ -201,7 +199,7 @@ namespace nil::crypto3::multiprecision::detail {
                 return;
             }
 
-            big_integer_doubled_limbs base(a), res(1u);
+            big_uint_doubled_limbs base(a), res(1u);
 
             while (true) {
                 bool lsb = bit_test(exp, 0);
@@ -221,20 +219,17 @@ namespace nil::crypto3::multiprecision::detail {
 
         // Adjust to/from modular form
 
-        constexpr void adjust_modular(big_integer_t &result) const {
-            adjust_modular(result, result);
-        }
+        constexpr void adjust_modular(big_uint_t &result) const { adjust_modular(result, result); }
 
         template<std::size_t Bits2>
-        constexpr void adjust_modular(big_integer_t &result,
-                                      const big_integer<Bits2> &input) const {
-            big_integer_doubled_limbs tmp;
+        constexpr void adjust_modular(big_uint_t &result, const big_uint<Bits2> &input) const {
+            big_uint_doubled_limbs tmp;
             barrett_reduce(tmp, input);
             result = tmp;
         }
 
-        [[nodiscard]] constexpr big_integer_t adjusted_regular(const big_integer_t &a) const {
-            big_integer_t result;
+        [[nodiscard]] constexpr big_uint_t adjusted_regular(const big_uint_t &a) const {
+            big_uint_t result;
             adjust_regular(result, a);
             return result;
         }
@@ -242,8 +237,7 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits1, std::size_t Bits2,
                  /// input number should fit in result
                  std::enable_if_t<Bits1 >= Bits2, int> = 0>
-        constexpr void adjust_regular(big_integer<Bits1> &result,
-                                      const big_integer<Bits2> &input) const {
+        constexpr void adjust_regular(big_uint<Bits1> &result, const big_uint<Bits2> &input) const {
             result = input;
         }
 
@@ -252,46 +246,44 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
       protected:
-        big_integer_t m_mod;
+        big_uint_t m_mod;
         // This is 2^Bits - m_mod, precomputed.
-        big_integer_t m_mod_compliment;
-        big_integer_doubled_1 m_barrett_mu;
+        big_uint_t m_mod_compliment;
+        big_uint_doubled_1 m_barrett_mu;
     };
 
-    template<typename big_integer_t>
-    class montgomery_modular_ops : public barrett_modular_ops<big_integer_t> {
+    template<typename big_uint_t>
+    class montgomery_modular_ops : public barrett_modular_ops<big_uint_t> {
       public:
-        constexpr static std::size_t Bits = big_integer_t::Bits;
+        constexpr static std::size_t Bits = big_uint_t::Bits;
         using policy_type = modular_policy<Bits>;
 
-        using big_integer_doubled_1 = typename policy_type::big_integer_doubled_1;
-        using big_integer_quadruple_1 = typename policy_type::big_integer_quadruple_1;
-        using big_integer_padded_limbs = typename policy_type::big_integer_padded_limbs;
-        using big_integer_doubled_limbs = typename policy_type::big_integer_doubled_limbs;
-        using big_integer_doubled_padded_limbs =
-            typename policy_type::big_integer_doubled_padded_limbs;
+        using big_uint_doubled_1 = typename policy_type::big_uint_doubled_1;
+        using big_uint_quadruple_1 = typename policy_type::big_uint_quadruple_1;
+        using big_uint_padded_limbs = typename policy_type::big_uint_padded_limbs;
+        using big_uint_doubled_limbs = typename policy_type::big_uint_doubled_limbs;
+        using big_uint_doubled_padded_limbs = typename policy_type::big_uint_doubled_padded_limbs;
 
         constexpr static auto limbs_count = policy_type::limbs_count;
         constexpr static auto limb_bits = policy_type::limb_bits;
 
-        constexpr montgomery_modular_ops(const big_integer_t &m)
-            : barrett_modular_ops<big_integer_t>(m) {
+        constexpr montgomery_modular_ops(const big_uint_t &m) : barrett_modular_ops<big_uint_t>(m) {
             if (!check_montgomery_constraints(m)) {
                 throw std::invalid_argument("module not usable with montgomery");
             }
 
             m_montgomery_p_dash = this->monty_inverse(this->m_mod.limbs()[0]);
 
-            big_integer_doubled_padded_limbs r;
+            big_uint_doubled_padded_limbs r;
             bit_set(r, 2 * this->m_mod.size() * limb_bits);
             this->barrett_reduce(r);
 
             // Here we are intentionally throwing away half of the bits of r, it's
             // correct.
-            m_montgomery_r2 = static_cast<big_integer_t>(r);
+            m_montgomery_r2 = static_cast<big_uint_t>(r);
 
             // Compute 2^Bits - Modulus, no matter if modulus is even or odd.
-            big_integer_padded_limbs compliment = 1u, modulus = this->m_mod;
+            big_uint_padded_limbs compliment = 1u, modulus = this->m_mod;
             compliment <<= Bits;
             compliment -= modulus;
             this->m_mod_compliment = compliment;
@@ -335,9 +327,9 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits1,
                  // result should fit in the output parameter
                  std::enable_if_t<Bits1 >= Bits, int> = 0>
-        constexpr void montgomery_reduce(big_integer<Bits1> &result) const {
-            big_integer_doubled_padded_limbs accum(result);
-            big_integer_doubled_padded_limbs prod;
+        constexpr void montgomery_reduce(big_uint<Bits1> &result) const {
+            big_uint_doubled_padded_limbs accum(result);
+            big_uint_doubled_padded_limbs prod;
 
             for (size_t i = 0; i < this->m_mod.size(); ++i) {
                 limb_type limb_accum = accum.limbs()[i];
@@ -361,7 +353,7 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         // Delegates Montgomery multiplication to one of corresponding algorithms.
-        constexpr void mul(big_integer_t &result, const big_integer_t &y) const {
+        constexpr void mul(big_uint_t &result, const big_uint_t &y) const {
             if (m_no_carry_montgomery_mul_allowed) {
                 montgomery_mul_no_carry_impl(result, y);
             } else {
@@ -379,28 +371,27 @@ namespace nil::crypto3::multiprecision::detail {
             // 2. Some other bit in modulus is 0.
             // 3. The number has < 12 limbs.
             return this->m_mod.internal_limb_count < 12 && (Bits % sizeof(limb_type) != 0) &&
-                   this->m_mod_compliment != big_integer_t(limb_type(1u));
+                   this->m_mod_compliment != big_uint_t(limb_type(1u));
         }
 
       public:
         // Non-carry implementation of Montgomery multiplication.
         // Implemented from pseudo-code at
         //   "https://hackmd.io/@gnark/modular_multiplication".
-        template<typename big_integer_t1>
-        constexpr void montgomery_mul_no_carry_impl(big_integer_t1 &c,
-                                                    const big_integer_t1 &b) const {
+        template<typename big_uint_t1>
+        constexpr void montgomery_mul_no_carry_impl(big_uint_t1 &c, const big_uint_t1 &b) const {
             NIL_CO3_MP_ASSERT(c < this->m_mod && b < this->m_mod);
             NIL_CO3_MP_ASSERT(is_applicable_for_no_carry_montgomery_mul());
 
             // Obtain number of limbs
-            constexpr int N = big_integer_t1::internal_limb_count;
+            constexpr int N = big_uint_t1::internal_limb_count;
 
-            const big_integer_t1 a(c);  // Copy the first argument, as the implemented
-                                        // algorithm doesn't work in-place.
+            const big_uint_t1 a(c);  // Copy the first argument, as the implemented
+                                     // algorithm doesn't work in-place.
 
             // We cannot write directly to 'c', because b may be equal to c, and by changing
             // the value of 'c' we will change 'b' as well.
-            big_integer_t1 result = limb_type(0u);
+            big_uint_t1 result = limb_type(0u);
 
             // Prepare temporary variables
             limb_type A(0u), C(0u);
@@ -481,12 +472,11 @@ namespace nil::crypto3::multiprecision::detail {
         }
 
         // A specialization for non-trivial cpp_int_modular types only.
-        template<typename big_integer_t1>
-        constexpr void montgomery_mul_CIOS_impl(big_integer_t1 &result,
-                                                const big_integer_t1 &y) const {
+        template<typename big_uint_t1>
+        constexpr void montgomery_mul_CIOS_impl(big_uint_t1 &result, const big_uint_t1 &y) const {
             NIL_CO3_MP_ASSERT(result < this->m_mod && y < this->m_mod);
 
-            big_integer_t A(limb_type(0u));
+            big_uint_t A(limb_type(0u));
             const std::size_t mod_size = this->m_mod.size();
             auto *mod_limbs = this->m_mod.limbs();
             auto mod_last_limb = static_cast<double_limb_type>(mod_limbs[0]);
@@ -572,18 +562,17 @@ namespace nil::crypto3::multiprecision::detail {
             result = A;
         }
 
-        template<typename big_integer_t1, typename big_integer_t2, typename big_integer_t3,
+        template<typename big_uint_t1, typename big_uint_t2, typename big_uint_t3,
                  /// result should fit in the output parameter
-                 std::enable_if_t<big_integer_t1::Bits >= big_integer_t::Bits, int> = 0>
-        constexpr void exp(big_integer_t1 &result, const big_integer_t2 &a,
-                           big_integer_t3 exp) const {
+                 std::enable_if_t<big_uint_t1::Bits >= big_uint_t::Bits, int> = 0>
+        constexpr void exp(big_uint_t1 &result, const big_uint_t2 &a, big_uint_t3 exp) const {
             /// input parameter should be less than modulus
             NIL_CO3_MP_ASSERT(a < this->m_mod);
 
-            big_integer_t R_mod_m(1u);
+            big_uint_t R_mod_m(1u);
             adjust_modular(R_mod_m);
 
-            big_integer_t base(a);
+            big_uint_t base(a);
 
             if (exp == 0u) {
                 result = 1u;
@@ -611,22 +600,19 @@ namespace nil::crypto3::multiprecision::detail {
 
         // Adjust to/from modular form
 
-        constexpr void adjust_modular(big_integer_t &result) const {
-            adjust_modular(result, result);
-        }
+        constexpr void adjust_modular(big_uint_t &result) const { adjust_modular(result, result); }
 
         template<std::size_t Bits2>
-        constexpr void adjust_modular(big_integer_t &result,
-                                      const big_integer<Bits2> &input) const {
-            big_integer_doubled_limbs tmp;
+        constexpr void adjust_modular(big_uint_t &result, const big_uint<Bits2> &input) const {
+            big_uint_doubled_limbs tmp;
             this->barrett_reduce(tmp, input);
             tmp *= get_r2();
             montgomery_reduce(tmp);
             result = tmp;
         }
 
-        [[nodiscard]] constexpr big_integer_t adjusted_regular(const big_integer_t &a) const {
-            big_integer_t result;
+        [[nodiscard]] constexpr big_uint_t adjusted_regular(const big_uint_t &a) const {
+            big_uint_t result;
             adjust_regular(result, a);
             return result;
         }
@@ -634,14 +620,13 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits1, std::size_t Bits2,
                  /// input number should fit in result
                  std::enable_if_t<Bits1 >= Bits2, int> = 0>
-        constexpr void adjust_regular(big_integer<Bits1> &result,
-                                      const big_integer<Bits2> &input) const {
+        constexpr void adjust_regular(big_uint<Bits1> &result, const big_uint<Bits2> &input) const {
             result = input;
             montgomery_reduce(result);
         }
 
       protected:
-        big_integer_t m_montgomery_r2;
+        big_uint_t m_montgomery_r2;
         limb_type m_montgomery_p_dash = 0;
 
         // If set, no-carry optimization is allowed. Is set to

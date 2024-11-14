@@ -6,7 +6,7 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 
 #include <climits>
 #include <cstddef>
@@ -16,10 +16,10 @@
 #include <limits>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
-#include "nil/crypto3/multiprecision/big_integer/detail/assert.hpp"
-#include "nil/crypto3/multiprecision/big_integer/detail/endian.hpp"
-#include "nil/crypto3/multiprecision/big_integer/storage.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_int/detail/endian.hpp"
+#include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -28,7 +28,7 @@ namespace nil::crypto3::multiprecision {
          * is larger than one limb (machine word).
          */
         template<std::size_t Bits, typename Unsigned>
-        void assign_bits(big_integer<Bits>& val, Unsigned bits, std::size_t bit_location,
+        void assign_bits(big_uint<Bits>& val, Unsigned bits, std::size_t bit_location,
                          std::size_t chunk_bits) {
             unsigned limb = bit_location / (sizeof(limb_type) * CHAR_BIT);
             unsigned shift = bit_location % (sizeof(limb_type) * CHAR_BIT);
@@ -64,10 +64,10 @@ namespace nil::crypto3::multiprecision {
          * fits into one limb (machine word).
          */
         template<std::size_t Bits, typename Unsigned>
-        void assign_bits(big_integer<Bits>& val, Unsigned bits, std::size_t bit_location,
+        void assign_bits(big_uint<Bits>& val, Unsigned bits, std::size_t bit_location,
                          std::size_t chunk_bits,
                          const std::integral_constant<bool, true>& /*unused*/) {
-            using limb_type = typename big_integer<Bits>::limb_type;
+            using limb_type = typename big_uint<Bits>::limb_type;
             //
             // Check for possible overflow, this may trigger an exception, or have no effect
             // depending on whether this is a checked integer or not:
@@ -91,7 +91,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits>
-        std::uintmax_t extract_bits(const big_integer<Bits>& val, std::size_t location,
+        std::uintmax_t extract_bits(const big_uint<Bits>& val, std::size_t location,
                                     std::size_t count) {
             std::size_t limb = location / (sizeof(limb_type) * CHAR_BIT);
             std::size_t shift = location % (sizeof(limb_type) * CHAR_BIT);
@@ -111,9 +111,9 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits, typename Iterator>
-        big_integer<Bits>& import_bits_generic(big_integer<Bits>& result, Iterator i, Iterator j,
-                                               std::size_t chunk_size = 0, bool msv_first = true) {
-            big_integer<Bits> newval;
+        big_uint<Bits>& import_bits_generic(big_uint<Bits>& result, Iterator i, Iterator j,
+                                            std::size_t chunk_size = 0, bool msv_first = true) {
+            big_uint<Bits> newval;
 
             using value_type = typename std::iterator_traits<Iterator>::value_type;
             using difference_type = typename std::iterator_traits<Iterator>::difference_type;
@@ -146,8 +146,8 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits, typename T>
-        inline big_integer<Bits> import_bits_fast(big_integer<Bits>& result, T* i, T* j,
-                                                  std::size_t chunk_size = 0) {
+        inline big_uint<Bits> import_bits_fast(big_uint<Bits>& result, T* i, T* j,
+                                               std::size_t chunk_size = 0) {
             std::size_t byte_len = (j - i) * (chunk_size ? chunk_size / CHAR_BIT : sizeof(*i));
             std::size_t limb_len = byte_len / sizeof(limb_type);
             if (byte_len % sizeof(limb_type)) {
@@ -166,14 +166,14 @@ namespace nil::crypto3::multiprecision {
     }  // namespace detail
 
     template<std::size_t Bits, typename Iterator>
-    inline big_integer<Bits>& import_bits(big_integer<Bits>& val, Iterator i, Iterator j,
-                                          std::size_t chunk_size = 0, bool msv_first = true) {
+    inline big_uint<Bits>& import_bits(big_uint<Bits>& val, Iterator i, Iterator j,
+                                       std::size_t chunk_size = 0, bool msv_first = true) {
         return detail::import_bits_generic(val, i, j, chunk_size, msv_first);
     }
 
     template<std::size_t Bits, typename T>
-    inline big_integer<Bits>& import_bits(big_integer<Bits>& val, T* i, T* j,
-                                          std::size_t chunk_size = 0, bool msv_first = true) {
+    inline big_uint<Bits>& import_bits(big_uint<Bits>& val, T* i, T* j, std::size_t chunk_size = 0,
+                                       bool msv_first = true) {
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE
         if (((chunk_size % CHAR_BIT) == 0) && !msv_first && (sizeof(*i) * CHAR_BIT == chunk_size)) {
             return detail::import_bits_fast(val, i, j, chunk_size);
@@ -183,7 +183,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits, typename OutputIterator>
-    OutputIterator export_bits(const big_integer<Bits>& val, OutputIterator out,
+    OutputIterator export_bits(const big_uint<Bits>& val, OutputIterator out,
                                std::size_t chunk_size, bool msv_first = true) {
         if (!val) {
             *out = 0;

@@ -9,18 +9,18 @@
 #include <cstddef>
 #include <limits>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
-    inline constexpr big_integer<Bits> get_min() {
-        constexpr big_integer<Bits> val = 0u;
+    inline constexpr big_uint<Bits> get_min() {
+        constexpr big_uint<Bits> val = 0u;
         return val;
     }
 
     template<std::size_t Bits>
-    inline constexpr nil::crypto3::multiprecision::big_integer<Bits> get_max() {
-        constexpr auto val = ~big_integer<Bits>(0u);
+    inline constexpr nil::crypto3::multiprecision::big_uint<Bits> get_max() {
+        constexpr auto val = ~big_uint<Bits>(0u);
         return val;
     }
 
@@ -37,8 +37,8 @@ namespace nil::crypto3::multiprecision::detail {
 
 namespace std {
     template<std::size_t Bits>
-    class numeric_limits<nil::crypto3::multiprecision::big_integer<Bits>> {
-        using number_type = nil::crypto3::multiprecision::big_integer<Bits>;
+    class numeric_limits<nil::crypto3::multiprecision::big_uint<Bits>> {
+        using number_type = nil::crypto3::multiprecision::big_uint<Bits>;
 
       public:
         static constexpr bool is_specialized = true;

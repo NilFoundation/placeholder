@@ -8,14 +8,14 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_integer_inverse_test
+#define BOOST_TEST_MODULE big_int_inverse_test
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/modular/modular_big_integer.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/modular/big_mod.hpp"
 
 using namespace nil::crypto3::multiprecision;
 
@@ -256,13 +256,13 @@ void test_monty_inverse() {
 BOOST_AUTO_TEST_SUITE(runtime_tests)
 
 BOOST_AUTO_TEST_CASE(inverse_tests) {
-    // test_monty_inverse<big_integer<4096>>();
-    // test_inverse_mod<big_integer<4096>>();
-    // test_inverse_extended_euclidean_algorithm<big_integer<4096>>();
+    // test_monty_inverse<big_uint<4096>>();
+    // test_inverse_mod<big_uint<4096>>();
+    // test_inverse_extended_euclidean_algorithm<big_uint<4096>>();
 }
 
-BOOST_AUTO_TEST_CASE(test_modular_big_integer_6_bits) {
-    auto modular = modular_big_integer_rt<6>(10u, 37u);
+BOOST_AUTO_TEST_CASE(test_big_mod_6_bits) {
+    auto modular = big_mod_rt<6>(10u, 37u);
     BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(modular).base(), 26u);
 }
 

@@ -9,34 +9,34 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer_impl.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 
 namespace nil::crypto3::multiprecision {
 
     template<std::size_t Bits>
-    constexpr int jacobi(const big_integer<Bits> &a, const big_integer<Bits> &n) {
-        using big_integer_t = big_integer<Bits>;
+    constexpr int jacobi(const big_uint<Bits> &a, const big_uint<Bits> &n) {
+        using big_uint_t = big_uint<Bits>;
 
         if (n % 2 == 0 || n <= 1) {
             throw std::invalid_argument("jacobi: second argument must be odd and > 1");
         }
 
-        big_integer_t x = a, y = n;
+        big_uint_t x = a, y = n;
         int J = 1;
 
         while (y > 1) {
             x %= y;
 
-            big_integer_t yd2 = y;
+            big_uint_t yd2 = y;
             yd2 >>= 1;
 
             if (x > yd2) {
-                big_integer_t tmp(y);
+                big_uint_t tmp(y);
                 tmp -= x;
                 x = tmp;
                 if (y % 4 == 3) {

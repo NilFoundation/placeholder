@@ -4,15 +4,15 @@
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
-#define BOOST_TEST_MODULE big_integer_jacobi_test
+#define BOOST_TEST_MODULE big_int_jacobi_test
 
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "nil/crypto3/multiprecision/big_integer/big_integer.hpp"
-#include "nil/crypto3/multiprecision/big_integer/literals.hpp"
-#include "nil/crypto3/multiprecision/big_integer/ops/jacobi.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/literals.hpp"
+#include "nil/crypto3/multiprecision/big_int/ops/jacobi.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
@@ -53,13 +53,12 @@ void test() {
 BOOST_AUTO_TEST_SUITE(jacobi_tests)
 
 BOOST_AUTO_TEST_CASE(jacobi_test) {
-    test<big_integer<2048>>();
+    test<big_uint<2048>>();
 
-    constexpr auto a = 0x4931a5f_big_integer256;
-    constexpr auto b =
-        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_integer256;
+    constexpr auto a = 0x4931a5f_bigui256;
+    constexpr auto b = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_bigui256;
     static_assert(jacobi(a, b) == -1, "jacobi error");
-    static_assert(jacobi(0x2_big_integer4, 0xb_big_integer4) == -1);
+    static_assert(jacobi(0x2_bigui4, 0xb_bigui4) == -1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
