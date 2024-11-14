@@ -29,7 +29,7 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits_, typename modular_ops_storage_t>
         class big_mod_impl {
           public:
-            constexpr static auto Bits = Bits_;
+            inline constexpr static std::size_t Bits = Bits_;
             using big_uint_t = big_uint<Bits>;
             using limb_type = typename big_uint_t::limb_type;
             using double_limb_type = typename big_uint_t::double_limb_type;
