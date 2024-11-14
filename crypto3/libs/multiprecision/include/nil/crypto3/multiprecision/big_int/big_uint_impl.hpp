@@ -100,6 +100,21 @@ namespace nil::crypto3::multiprecision {
         }
     }  // namespace detail
 
+    /**
+     * @brief Big unsigned integer type
+     *
+     * @tparam Bits Number of bits
+     *
+     * @details
+     * This is a class that represents a big unsigned integer with a fixed size in bits.
+     *
+     * @note
+     * Addition and subtraction operations are optimized, while multiplication and division are not.
+     * Multiplication and division should be used in compile time or in non-performance critical
+     * code.
+     * If you need fast arithmetic, you probably are looking for big_mod, which implements fast
+     * modular arithmetic.
+     */
     template<std::size_t Bits_>
     class big_uint {
       public:
