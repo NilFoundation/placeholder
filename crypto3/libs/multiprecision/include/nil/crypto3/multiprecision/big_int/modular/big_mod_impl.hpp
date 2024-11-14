@@ -298,17 +298,7 @@ namespace nil::crypto3::multiprecision {
         return a;
     }
 
-    NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
-        largest_t result;
-        eval_divide(result, a, b);
-        return result;
-    }
-    NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator/=(big_mod_t& a, const T& b) noexcept {
-        eval_divide(a, b);
-        return a;
-    }
+    // Additional operations
 
     template<std::size_t Bits, typename modular_ops_t>
     constexpr bool is_zero(const detail::big_mod_impl<Bits, modular_ops_t>& val) noexcept {
