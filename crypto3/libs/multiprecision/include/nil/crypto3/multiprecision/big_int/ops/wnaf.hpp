@@ -21,7 +21,8 @@
 namespace nil::crypto3::multiprecision {
     /* Vector version */
     template<std::size_t Bits>
-    std::vector<long> find_wnaf(const size_t window_size, const big_uint<Bits>& scalar) noexcept {
+    std::vector<long> find_wnaf(const std::size_t window_size,
+                                const big_uint<Bits>& scalar) noexcept {
         using big_uint_t = big_uint<Bits>;
         using ui_type = detail::limb_type;
 
@@ -60,7 +61,8 @@ namespace nil::crypto3::multiprecision {
 
     /* Array version */
     template<std::size_t Bits>
-    constexpr auto find_wnaf_a(const size_t window_size, const big_uint<Bits>& scalar) noexcept {
+    constexpr auto find_wnaf_a(const std::size_t window_size,
+                               const big_uint<Bits>& scalar) noexcept {
         using big_uint_t = big_uint<Bits>;
         using ui_type = detail::limb_type;
 

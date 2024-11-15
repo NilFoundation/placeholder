@@ -264,7 +264,7 @@ namespace nil::crypto3::multiprecision::detail {
             limb_type b = 1;
             limb_type r = 0;
 
-            for (size_t i = 0; i != limb_bits; ++i) {
+            for (std::size_t i = 0; i != limb_bits; ++i) {
                 const limb_type bi = b % 2;
                 r >>= 1;
                 r += bi << (limb_bits - 1);
@@ -290,7 +290,7 @@ namespace nil::crypto3::multiprecision::detail {
             big_uint_doubled_padded_limbs accum(result);
             big_uint_doubled_padded_limbs prod;
 
-            for (size_t i = 0; i < this->mod().size(); ++i) {
+            for (std::size_t i = 0; i < this->mod().size(); ++i) {
                 limb_type limb_accum = accum.limbs()[i];
                 double_limb_type mult_res = limb_accum *
                                             /// to prevent overflow error in constexpr
