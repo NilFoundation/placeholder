@@ -327,11 +327,11 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr bool is_applicable_for_no_carry_montgomery_mul() const {
             // Check that
             // 1. The most significant bit of modulus is non-zero, meaning we have at least
-            // 1 additional bit in the number. I.E. if modulus is 255 bits, then we have 1
+            // 1 additional bit in the number. E.g. if modulus is 255 bits, then we have 1
             // additional "unused" bit in the number.
             // 2. Some other bit in modulus is 0.
             // 3. The number has < 12 limbs.
-            return this->mod().internal_limb_count < 12 && (Bits % sizeof(limb_type) != 0) &&
+            return this->mod().size() < 12 && (Bits % sizeof(limb_type) != 0) &&
                    this->mod_compliment() != limb_type(1u);
         }
 
