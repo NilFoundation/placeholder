@@ -35,9 +35,14 @@ namespace nil::crypto3::multiprecision {
         // Find the index of the least significant limb that is non-zero:
         //
         std::size_t index = 0;
-        while (!a.limbs()[index] && (index < a.limbs_count())) {
+        while ((index < a.limbs_count()) && !a.limbs()[index]) {
             ++index;
         }
+
+        if (index == a.limbs_count()) {
+            throw std::invalid_argument("zero has no lsb");
+        }
+
         //
         // Find the index of the least significant bit within that limb:
         //
