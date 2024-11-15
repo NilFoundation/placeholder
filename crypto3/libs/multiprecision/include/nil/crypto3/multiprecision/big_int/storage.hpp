@@ -6,11 +6,20 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "nil/crypto3/multiprecision/big_int/detail/int128.hpp"
+
 namespace nil::crypto3::multiprecision::detail {
+#ifdef NIL_CO3_MP_HAS_INT128
+    using limb_type = std::uint64_t;
+    using double_limb_type = uint128_t;
+    using signed_limb_type = std::int64_t;
+    using signed_double_limb_type = int128_t;
+#else
     using limb_type = std::uint32_t;
     using double_limb_type = std::uint64_t;
     using signed_limb_type = std::int32_t;
     using signed_double_limb_type = std::int64_t;
+#endif
 
     using limb_type = limb_type;
     using double_limb_type = double_limb_type;
