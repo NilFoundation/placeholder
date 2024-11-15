@@ -6,6 +6,7 @@
 
 #include "nil/crypto3/multiprecision/big_int/big_int.hpp"
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
 // Converting to and from cpp_int. Should be used only in tests.
 
