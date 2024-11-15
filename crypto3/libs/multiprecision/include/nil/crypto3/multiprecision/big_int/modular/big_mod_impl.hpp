@@ -99,9 +99,9 @@ namespace nil::crypto3::multiprecision {
         }
 
         // A method for converting a signed integer to a modular adaptor.
-        // TODO: We are not supposed to
-        // have this, but in the code we already have conversion for an 'int' into modular type.
-        // In the future we must remove.
+        //
+        // TODO: We are not supposed to have this, but in the code we already have conversions from
+        // 'int' into modular type. In the future we must remove this.
         template<typename SI,
                  typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
         constexpr big_mod_ct_impl(SI b)
@@ -130,6 +130,10 @@ namespace nil::crypto3::multiprecision {
 
         using typename base_type::big_uint_t;
 
+        // A method for converting a signed integer to a modular adaptor.
+        //
+        // TODO: We are not supposed to have this, but in the code we already have conversions from
+        // 'int' into modular type. In the future we must remove this.
         template<typename SI,
                  std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
         constexpr big_mod_rt_impl(SI b, const big_uint_t& m)
@@ -191,6 +195,8 @@ namespace nil::crypto3::multiprecision {
 
 #undef NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL
 
+    // Arithmetic operations
+
 #define NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE                                       \
     template<typename T1, typename T2,                                                      \
              std::enable_if_t<std::is_same_v<T1, T2> && detail::is_big_mod_v<T1>, int> = 0, \
@@ -203,8 +209,6 @@ namespace nil::crypto3::multiprecision {
 
 #define NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE \
     template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
-
-    // Arithmetic operations
 
     NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
     inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
@@ -305,6 +309,8 @@ namespace nil::crypto3::multiprecision {
 
     template<std::size_t Bits, typename modular_ops_t>
     constexpr bool is_zero(const detail::big_mod_impl<Bits, modular_ops_t>& val) noexcept {
+        // In barrett form raw_base is the same as base
+        // In montgomery form raw_base is base multiplied by r, so it is zero iff base is
         return is_zero(val.raw_base());
     }
 
@@ -329,7 +335,7 @@ namespace nil::crypto3::multiprecision {
     template<const auto& modulus>
     using montgomery_big_mod = big_mod_ct_impl<modulus, detail::montgomery_modular_ops>;
 
-    // Montgomery runtime modular big integer type.
+    // Montgomery modular big integer type with runtime modulus.
     template<std::size_t Bits>
     using montgomery_big_mod_rt = big_mod_rt_impl<Bits, detail::montgomery_modular_ops>;
 
@@ -338,12 +344,12 @@ namespace nil::crypto3::multiprecision {
     template<const auto& modulus>
     using big_mod = big_mod_ct_impl<modulus, detail::barrett_modular_ops>;
 
-    // Simple runtime modular big integer type. Uses barret optimizations.
+    // Simple modular big integer type with runtime modulus. Uses barret optimizations.
     template<std::size_t Bits>
     using big_mod_rt = big_mod_rt_impl<Bits, detail::barrett_modular_ops>;
 
     // Modular big integer type with compile-time modulus, which automatically uses montomery form
-    // whenever possible (for odd moduli). Modulus should be a static big_uint constant.
+    // whenever possible (i.e. for odd moduli). Modulus should be a static big_uint constant.
     template<const auto& modulus>
     using auto_big_mod = std::conditional_t<detail::check_montgomery_constraints(modulus),
                                             montgomery_big_mod<modulus>, big_mod<modulus>>;

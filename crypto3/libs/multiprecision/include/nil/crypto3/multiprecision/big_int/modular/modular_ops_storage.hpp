@@ -19,6 +19,7 @@
 #include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
+    // Compile-time storage for modular arithmetic operations. Stores them in a constexpr variable.
     template<const auto &Modulus, template<std::size_t> typename modular_ops_template>
     class modular_ops_storage_ct {
       public:
@@ -36,6 +37,8 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr modular_ops_t m_modular_ops{Modulus};
     };
 
+    // Runtime storage for modular arithmetic operations. Stores them in a plain variable
+    // constructed at runtime.
     template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
     class modular_ops_storage_rt {
       public:
