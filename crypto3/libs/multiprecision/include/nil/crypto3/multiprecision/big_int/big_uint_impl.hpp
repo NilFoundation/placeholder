@@ -118,7 +118,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits_>
     class big_uint {
       public:
-        constexpr static std::size_t Bits = Bits_;
+        static constexpr std::size_t Bits = Bits_;
         using self_type = big_uint;
 
         using limb_type = detail::limb_type;
