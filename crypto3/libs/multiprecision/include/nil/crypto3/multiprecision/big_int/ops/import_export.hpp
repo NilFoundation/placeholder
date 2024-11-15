@@ -30,10 +30,10 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits, typename Unsigned>
         void assign_bits(big_uint<Bits>& val, Unsigned bits, std::size_t bit_location,
                          std::size_t chunk_bits) {
-            std::size_t limb = bit_location / (sizeof(limb_type) * CHAR_BIT);
-            std::size_t shift = bit_location % (sizeof(limb_type) * CHAR_BIT);
+            std::size_t limb = bit_location / limb_bits;
+            std::size_t shift = bit_location % limb_bits;
 
-            limb_type mask = chunk_bits >= sizeof(limb_type) * CHAR_BIT
+            limb_type mask = chunk_bits >= limb_bits
                                  ? ~static_cast<limb_type>(0u)
                                  : (static_cast<limb_type>(1u) << chunk_bits) - 1;
 
@@ -48,8 +48,8 @@ namespace nil::crypto3::multiprecision {
             }
 
             /* If some extra bits need to be assigned to the next limb */
-            if (chunk_bits > sizeof(limb_type) * CHAR_BIT - shift) {
-                shift = sizeof(limb_type) * CHAR_BIT - shift;
+            if (chunk_bits > limb_bits - shift) {
+                shift = limb_bits - shift;
                 chunk_bits -= shift;
                 bit_location += shift;
                 auto extra_bits = bits >> shift;
@@ -73,9 +73,9 @@ namespace nil::crypto3::multiprecision {
             // depending on whether this is a checked integer or not:
             //
             // We are not throwing, we will use as many bits from the input as we need to.
-            // NIL_CO3_MP_ASSERT(!((bit_location >= sizeof(limb_type) * CHAR_BIT) && bits));
+            // NIL_CO3_MP_ASSERT(!((bit_location >= limb_bits) && bits));
 
-            limb_type mask = chunk_bits >= sizeof(limb_type) * CHAR_BIT
+            limb_type mask = chunk_bits >= limb_bits
                                  ? ~static_cast<limb_type>(0u)
                                  : (static_cast<limb_type>(1u) << chunk_bits) - 1;
             limb_type value = (static_cast<limb_type>(bits) & mask) << bit_location;
@@ -84,7 +84,7 @@ namespace nil::crypto3::multiprecision {
             //
             // Check for overflow bits:
             //
-            bit_location = sizeof(limb_type) * CHAR_BIT - bit_location;
+            bit_location = limb_bits - bit_location;
 
             NIL_CO3_MP_ASSERT(
                 !((bit_location < sizeof(bits) * CHAR_BIT) && (bits >>= bit_location)));
@@ -93,16 +93,16 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits>
         std::uintmax_t extract_bits(const big_uint<Bits>& val, std::size_t location,
                                     std::size_t count) {
-            std::size_t limb = location / (sizeof(limb_type) * CHAR_BIT);
-            std::size_t shift = location % (sizeof(limb_type) * CHAR_BIT);
+            std::size_t limb = location / limb_bits;
+            std::size_t shift = location % limb_bits;
             std::uintmax_t result = 0;
             std::uintmax_t mask = count == std::numeric_limits<std::uintmax_t>::digits
                                       ? ~static_cast<std::uintmax_t>(0)
                                       : (static_cast<std::uintmax_t>(1u) << count) - 1;
-            if (count > (sizeof(limb_type) * CHAR_BIT - shift)) {
-                result = extract_bits(val, location + sizeof(limb_type) * CHAR_BIT - shift,
-                                      count - sizeof(limb_type) * CHAR_BIT + shift);
-                result <<= sizeof(limb_type) * CHAR_BIT - shift;
+            if (count > (limb_bits - shift)) {
+                result = extract_bits(val, location + limb_bits - shift,
+                                      count - limb_bits + shift);
+                result <<= limb_bits - shift;
             }
             if (limb < val.limbs_count()) {
                 result |= (val.limbs()[limb] >> shift) & mask;
