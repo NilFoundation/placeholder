@@ -277,7 +277,7 @@ namespace nil {
                     dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
 
                 // compatibility layer: lookup constraint list
-                std::unordered_map<row_selector<>, std::vector<std::pair<std::string, std::vector<constraint_type>>>>
+                std::unordered_map<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>
                     lookup_constraints = ct.get_lookup_constraints();
                 std::set<std::string> lookup_tables;
                 for(const auto& [row_list, lookup_list] : lookup_constraints) {
@@ -293,7 +293,7 @@ namespace nil {
                             lookup_tables.insert(table_name);
                         }
                         std::size_t table_index = bp.get_reserved_indices().at(table_name);
-                        lookup_gate.push_back({table_index,single_lookup_constraint.second});
+                        lookup_gate.push_back({table_index, single_lookup_constraint.second});
                     }
 
                     auto iter = selector_to_index_map.find(row_list);
