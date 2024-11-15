@@ -29,7 +29,7 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits_, typename modular_ops_storage_t>
         class big_mod_impl {
           public:
-            inline constexpr static std::size_t Bits = Bits_;
+            constexpr static std::size_t Bits = Bits_;
             using big_uint_t = big_uint<Bits>;
             using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
 
@@ -37,8 +37,8 @@ namespace nil::crypto3::multiprecision {
 
           protected:
             template<std::size_t Bits2>
-            inline constexpr big_mod_impl(const big_uint<Bits2>& x,
-                                          modular_ops_storage_t&& modular_ops_storage)
+            constexpr big_mod_impl(const big_uint<Bits2>& x,
+                                   modular_ops_storage_t&& modular_ops_storage)
                 : m_modular_ops_storage(std::move(modular_ops_storage)) {
                 ops().adjust_modular(m_raw_base, x);
             }
@@ -50,18 +50,16 @@ namespace nil::crypto3::multiprecision {
                 return ops().compare_eq(o.ops()) && m_raw_base == o.m_raw_base;
             }
 
-            inline constexpr big_uint_t base() const { return ops().adjusted_regular(m_raw_base); }
-            inline constexpr const big_uint_t& mod() const { return ops().mod(); }
+            constexpr big_uint_t base() const { return ops().adjusted_regular(m_raw_base); }
+            constexpr const big_uint_t& mod() const { return ops().mod(); }
 
             // String conversion
 
-            inline constexpr std::string str() const {
-                return base().str() + " mod " + mod().str();
-            }
+            constexpr std::string str() const { return base().str() + " mod " + mod().str(); }
 
             // Mathemetical operations
 
-            inline constexpr void negate() {
+            constexpr void negate() {
                 if (!is_zero(m_raw_base)) {
                     auto initial_m_base = m_raw_base;
                     m_raw_base = mod();
@@ -116,7 +114,7 @@ namespace nil::crypto3::multiprecision {
         constexpr big_mod_ct_impl(UI b) : base_type(big_uint<sizeof(UI) * CHAR_BIT>(b), {}) {}
 
         template<std::size_t Bits2>
-        inline constexpr big_mod_ct_impl with_replaced_base(const big_uint<Bits2>& b) const {
+        constexpr big_mod_ct_impl with_replaced_base(const big_uint<Bits2>& b) const {
             return big_mod_ct_impl(b);
         }
     };
@@ -153,7 +151,7 @@ namespace nil::crypto3::multiprecision {
             : base_type(big_uint<sizeof(UI) * CHAR_BIT>(b), m) {}
 
         template<std::size_t Bits2>
-        inline constexpr big_mod_rt_impl with_replaced_base(const big_uint<Bits2>& b) const {
+        constexpr big_mod_rt_impl with_replaced_base(const big_uint<Bits2>& b) const {
             auto copy = *this;
             copy.m_raw_base = b;
             copy.ops().adjust_modular(copy.m_raw_base);
@@ -186,7 +184,7 @@ namespace nil::crypto3::multiprecision {
 #define NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(op)                                       \
     template<typename T1, typename T2,                                                        \
              std::enable_if_t<detail::is_big_mod_v<T1> && detail::is_big_mod_v<T2>, int> = 0> \
-    inline constexpr bool operator op(const T1& a, const T2& b) noexcept {                    \
+    constexpr bool operator op(const T1& a, const T2& b) noexcept {                           \
         return a.compare_eq(b) op true;                                                       \
     }
 
@@ -211,20 +209,20 @@ namespace nil::crypto3::multiprecision {
     template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
 
     NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
+    constexpr auto operator+(const T1& a, const T2& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         largest_t result = a;
         a.ops().add(result.raw_base(), b.raw_base());
         return result;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator+=(big_mod_t& a, const T& b) noexcept {
+    constexpr auto& operator+=(big_mod_t& a, const T& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         a.ops().add(a.raw_base(), b.raw_base());
         return a;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto& operator++(big_mod_t& a) noexcept {
+    constexpr auto& operator++(big_mod_t& a) noexcept {
         ++a.raw_base();
         if (a.raw_base() == a.mod()) {
             a.raw_base() = 0u;
@@ -232,13 +230,13 @@ namespace nil::crypto3::multiprecision {
         return a;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator++(big_mod_t& a, int) noexcept {
+    constexpr auto operator++(big_mod_t& a, int) noexcept {
         auto copy = a;
         ++a;
         return copy;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator+(const big_mod_t& a) noexcept { return a; }
+    constexpr auto operator+(const big_mod_t& a) noexcept { return a; }
 
     namespace detail {
         template<std::size_t Bits, typename modular_ops_t>
@@ -255,18 +253,18 @@ namespace nil::crypto3::multiprecision {
     }  // namespace detail
 
     NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
+    constexpr auto operator-(const T1& a, const T2& b) noexcept {
         largest_t result = a;
         detail::subtract(result, b);
         return result;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator-=(big_mod_t& a, const T& b) {
+    constexpr auto& operator-=(big_mod_t& a, const T& b) {
         detail::subtract(a, b);
         return a;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto& operator--(big_mod_t& a) noexcept {
+    constexpr auto& operator--(big_mod_t& a) noexcept {
         if (is_zero(a.raw_base())) {
             a.raw_base() = a.mod();
         }
@@ -274,28 +272,28 @@ namespace nil::crypto3::multiprecision {
         return a;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator--(big_mod_t& a, int) noexcept {
+    constexpr auto operator--(big_mod_t& a, int) noexcept {
         auto copy = a;
         --a;
         return copy;
     }
 
     NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr big_mod_t operator-(const big_mod_t& a) noexcept {
+    constexpr big_mod_t operator-(const big_mod_t& a) noexcept {
         big_mod_t result = a;
         result.negate();
         return result;
     }
 
     NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
+    constexpr auto operator*(const T1& a, const T2& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         largest_t result = a;
         a.ops().mul(result.raw_base(), b.raw_base());
         return result;
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator*=(big_mod_t& a, const T& b) noexcept {
+    constexpr auto& operator*=(big_mod_t& a, const T& b) noexcept {
         NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
         a.ops().mul(a.raw_base(), b.raw_base());
         return a;
@@ -317,7 +315,7 @@ namespace nil::crypto3::multiprecision {
     // Hash
 
     template<std::size_t Bits, typename modular_ops_t>
-    inline constexpr std::size_t hash_value(
+    constexpr std::size_t hash_value(
         const detail::big_mod_impl<Bits, modular_ops_t>& val) noexcept {
         return hash_value(val.raw_base());
     }
