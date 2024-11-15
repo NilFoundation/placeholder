@@ -21,8 +21,6 @@ namespace nil::crypto3::multiprecision::detail {
     using signed_double_limb_type = std::int64_t;
 #endif
 
-    using limb_type = limb_type;
-    using double_limb_type = double_limb_type;
     using limb_pointer = limb_type *;
     using const_limb_pointer = const limb_type *;
 
