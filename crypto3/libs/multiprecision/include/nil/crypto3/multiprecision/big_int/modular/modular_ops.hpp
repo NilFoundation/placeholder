@@ -274,7 +274,7 @@ namespace nil::crypto3::multiprecision::detail {
             }
 
             // Now invert in addition space
-            r = (~0u - r) + 1;
+            r = (~static_cast<limb_type>(0u) - r) + 1;
 
             return r;
         }
