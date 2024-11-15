@@ -69,11 +69,9 @@ namespace nil::crypto3::multiprecision {
                          const std::integral_constant<bool, true>& /*unused*/) {
             using limb_type = typename big_uint<Bits>::limb_type;
             //
-            // Check for possible overflow, this may trigger an exception, or have no effect
-            // depending on whether this is a checked integer or not:
+            // Check for possible overflow.
             //
-            // We are not throwing, we will use as many bits from the input as we need to.
-            // NIL_CO3_MP_ASSERT(!((bit_location >= limb_bits) && bits));
+            NIL_CO3_MP_ASSERT(!((bit_location >= limb_bits) && bits));
 
             limb_type mask = chunk_bits >= limb_bits
                                  ? ~static_cast<limb_type>(0u)
