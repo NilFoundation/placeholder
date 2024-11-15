@@ -47,7 +47,7 @@ namespace nil::crypto3::multiprecision {
                 return 0;
             }
 
-            size_t shifts = lsb(x);
+            std::size_t shifts = lsb(x);
             x >>= shifts;
             if (shifts & 1) {
                 std::size_t y_mod_8 = static_cast<std::size_t>(y % 8);

@@ -102,7 +102,7 @@ namespace nil::crypto3::multiprecision {
         auto c_mod = powm(z_mod, q);
 
         while (n_mod.base() > 1u) {
-            size_t i = 0u;
+            std::size_t i = 0u;
 
             auto q_mod = n_mod;
 
