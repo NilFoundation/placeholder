@@ -526,7 +526,7 @@ namespace nil::crypto3::multiprecision {
             double_limb_type carry = o;
             limb_pointer pr = result.limbs();
             const_limb_pointer pa = a.limbs();
-            unsigned i = 0;
+            std::size_t i = 0;
             // Addition with carry until we either run out of digits or carry is zero:
             for (; carry && (i < result.size()); ++i) {
                 carry += static_cast<double_limb_type>(pa[i]);
@@ -572,7 +572,7 @@ namespace nil::crypto3::multiprecision {
                 *pr = b - *pa;
             } else {
                 *pr = static_cast<limb_type>((borrow + *pa) - b);
-                unsigned i = 1;
+                std::size_t i = 1;
                 while (!pa[i]) {
                     pr[i] = big_uint::max_limb_value;
                     ++i;
@@ -610,19 +610,19 @@ namespace nil::crypto3::multiprecision {
             //
             // First figure out how big the result needs to be and set up some data:
             //
-            unsigned rs = result.size();
-            unsigned os = o.size();
+            std::size_t rs = result.size();
+            std::size_t os = o.size();
             auto [m, x] = std::minmax(rs, os);
             limb_pointer pr = result.limbs();
             const_limb_pointer po = o.limbs();
-            for (unsigned i = rs; i < x; ++i) {
+            for (std::size_t i = rs; i < x; ++i) {
                 pr[i] = 0;
             }
 
-            for (unsigned i = 0; i < os; ++i) {
+            for (std::size_t i = 0; i < os; ++i) {
                 pr[i] = op(pr[i], po[i]);
             }
-            for (unsigned i = os; i < x; ++i) {
+            for (std::size_t i = os; i < x; ++i) {
                 pr[i] = op(pr[i], limb_type(0));
             }
             result.normalize();
@@ -663,8 +663,8 @@ namespace nil::crypto3::multiprecision {
 
         NIL_CO3_MP_FORCEINLINE static constexpr void complement(big_uint& result,
                                                                 const big_uint& o) noexcept {
-            unsigned os = o.size();
-            for (unsigned i = 0; i < os; ++i) {
+            std::size_t os = o.size();
+            for (std::size_t i = 0; i < os; ++i) {
                 result.limbs()[i] = ~o.limbs()[i];
             }
             result.normalize();
@@ -699,7 +699,7 @@ namespace nil::crypto3::multiprecision {
                 // Set result to 0.
                 result.zero_after(0);
             } else {
-                unsigned i = offset;
+                std::size_t i = offset;
                 std::size_t rs = result.size() + offset;
                 for (; i < result.size(); ++i) {
                     pr[rs - 1 - i] = pr[result.size() - 1 - i];
@@ -779,8 +779,8 @@ namespace nil::crypto3::multiprecision {
         static void right_shift_byte(big_uint& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             NIL_CO3_MP_ASSERT((s % CHAR_BIT) == 0);
-            unsigned ors = result.size();
-            unsigned rs = ors;
+            std::size_t ors = result.size();
+            std::size_t rs = ors;
             if (offset >= rs) {
                 result.zero_after(0);
                 return;
@@ -804,15 +804,15 @@ namespace nil::crypto3::multiprecision {
         static constexpr void right_shift_limb(big_uint& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             NIL_CO3_MP_ASSERT((s % limb_bits) == 0);
-            unsigned ors = result.size();
-            unsigned rs = ors;
+            std::size_t ors = result.size();
+            std::size_t rs = ors;
             if (offset >= rs) {
                 result.zero_after(0);
                 return;
             }
             rs -= offset;
             limb_pointer pr = result.limbs();
-            unsigned i = 0;
+            std::size_t i = 0;
             for (; i < rs; ++i) {
                 pr[i] = pr[i + offset];
             }
@@ -823,8 +823,8 @@ namespace nil::crypto3::multiprecision {
         static constexpr void right_shift_generic(big_uint& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             limb_type shift = static_cast<limb_type>(s % limb_bits);
-            unsigned ors = result.size();
-            unsigned rs = ors;
+            std::size_t ors = result.size();
+            std::size_t rs = ors;
 
             if (offset >= rs) {
                 result = limb_type(0);
@@ -838,7 +838,7 @@ namespace nil::crypto3::multiprecision {
                     return;
                 }
             }
-            unsigned i = 0;
+            std::size_t i = 0;
 
             // This code only works for non-zero shift, otherwise we invoke undefined behaviour!
             NIL_CO3_MP_ASSERT(shift);
@@ -1204,8 +1204,8 @@ namespace nil::crypto3::multiprecision {
 
         template<std::size_t Bits2>
         constexpr void do_assign(const big_uint<Bits2>& other) noexcept {
-            unsigned count = (std::min)(other.size(), this->size());
-            for (unsigned i = 0; i < count; ++i) {
+            std::size_t count = (std::min)(other.size(), this->size());
+            for (std::size_t i = 0; i < count; ++i) {
                 this->limbs()[i] = other.limbs()[i];
             }
             // Zero out everything after (std::min)(other.size(), size()), so if size of
@@ -1429,25 +1429,25 @@ namespace nil::crypto3::multiprecision {
     }
 
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto operator<<(const big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto operator<<(const big_uint_t& a, std::size_t shift) noexcept {
         big_uint_t result = a;
         big_uint_t::left_shift(result, shift);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto& operator<<=(big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto& operator<<=(big_uint_t& a, std::size_t shift) noexcept {
         big_uint_t::left_shift(a, shift);
         return a;
     }
 
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto operator>>(const big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto operator>>(const big_uint_t& a, std::size_t shift) noexcept {
         big_uint_t result = a;
         big_uint_t::right_shift(result, shift);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto& operator>>=(big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto& operator>>=(big_uint_t& a, std::size_t shift) noexcept {
         big_uint_t::right_shift(a, shift);
         return a;
     }
@@ -1461,7 +1461,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr std::size_t hash_value(const big_uint<Bits>& val) noexcept {
         std::size_t result = 0;
-        for (unsigned i = 0; i < val.size(); ++i) {
+        for (std::size_t i = 0; i < val.size(); ++i) {
             boost::hash_combine(result, val.limbs()[i]);
         }
         return result;
