@@ -3,6 +3,7 @@
 // IWYU pragma: private
 
 #include <climits>
+#include <cstddef>
 #include <cstdint>
 
 namespace nil::crypto3::multiprecision::detail {
