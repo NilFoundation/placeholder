@@ -241,7 +241,7 @@ namespace nil::crypto3::multiprecision::detail {
             m_montgomery_p_dash = this->monty_inverse(this->m_mod.limbs()[0]);
 
             big_uint_doubled_padded_limbs r;
-            bit_set(r, 2 * this->m_mod.size() * limb_bits);
+            bit_set(r, 2 * this->m_mod.limbs_count() * limb_bits);
             this->barrett_reduce(r);
 
             // Here we are intentionally throwing away half of the bits of r, it's
@@ -290,7 +290,7 @@ namespace nil::crypto3::multiprecision::detail {
             big_uint_doubled_padded_limbs accum(result);
             big_uint_doubled_padded_limbs prod;
 
-            for (std::size_t i = 0; i < this->mod().size(); ++i) {
+            for (std::size_t i = 0; i < this->mod().limbs_count(); ++i) {
                 limb_type limb_accum = accum.limbs()[i];
                 double_limb_type mult_res = limb_accum *
                                             /// to prevent overflow error in constexpr
@@ -302,7 +302,7 @@ namespace nil::crypto3::multiprecision::detail {
                 prod <<= i * limb_bits;
                 accum += prod;
             }
-            accum >>= this->mod().size() * limb_bits;
+            accum >>= this->mod().limbs_count() * limb_bits;
 
             if (accum >= this->mod()) {
                 accum -= this->mod();
@@ -330,7 +330,7 @@ namespace nil::crypto3::multiprecision::detail {
             // additional "unused" bit in the number.
             // 2. Some other bit in modulus is 0.
             // 3. The number has < 12 limbs.
-            return this->mod().size() < 12 && (Bits % sizeof(limb_type) != 0) &&
+            return this->mod().limbs_count() < 12 && (Bits % sizeof(limb_type) != 0) &&
                    this->mod_compliment() != limb_type(1u);
         }
 
@@ -439,7 +439,7 @@ namespace nil::crypto3::multiprecision::detail {
             NIL_CO3_MP_ASSERT(result < this->mod() && y < this->mod());
 
             big_uint_t A(limb_type(0u));
-            const std::size_t mod_size = this->mod().size();
+            const std::size_t mod_size = this->mod().limbs_count();
             auto *mod_limbs = this->mod().limbs();
             auto mod_last_limb = static_cast<double_limb_type>(mod_limbs[0]);
             auto y_last_limb = y.limbs()[0];

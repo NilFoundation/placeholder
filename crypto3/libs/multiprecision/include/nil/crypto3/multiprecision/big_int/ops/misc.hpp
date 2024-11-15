@@ -21,7 +21,7 @@
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     NIL_CO3_MP_FORCEINLINE constexpr bool is_zero(const big_uint<Bits> &val) noexcept {
-        for (std::size_t i = 0; i < val.size(); ++i) {
+        for (std::size_t i = 0; i < val.limbs_count(); ++i) {
             if (val.limbs()[i] != 0) {
                 return false;
             }
@@ -35,7 +35,7 @@ namespace nil::crypto3::multiprecision {
         // Find the index of the least significant limb that is non-zero:
         //
         std::size_t index = 0;
-        while (!a.limbs()[index] && (index < a.size())) {
+        while (!a.limbs()[index] && (index < a.limbs_count())) {
             ++index;
         }
         //
@@ -51,7 +51,7 @@ namespace nil::crypto3::multiprecision {
         //
         // Find the index of the most significant bit that is non-zero:
         //
-        for (std::size_t i = a.size() - 1; i > 0; --i) {
+        for (std::size_t i = a.limbs_count() - 1; i > 0; --i) {
             if (a.limbs()[i] != 0) {
                 return i * big_uint<Bits>::limb_bits + std::bit_width(a.limbs()[i]) - 1;
             }
@@ -69,7 +69,7 @@ namespace nil::crypto3::multiprecision {
         std::size_t offset = index / big_uint<Bits>::limb_bits;
         std::size_t shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
-        if (offset >= val.size()) {
+        if (offset >= val.limbs_count()) {
             return false;
         }
         return static_cast<bool>(val.limbs()[offset] & mask);
@@ -82,7 +82,7 @@ namespace nil::crypto3::multiprecision {
         std::size_t offset = index / big_uint<Bits>::limb_bits;
         std::size_t shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
-        if (offset >= val.size()) {
+        if (offset >= val.limbs_count()) {
             return;  // fixed precision overflow
         }
         val.limbs()[offset] |= mask;
@@ -95,7 +95,7 @@ namespace nil::crypto3::multiprecision {
         std::size_t offset = index / big_uint<Bits>::limb_bits;
         std::size_t shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
-        if (offset >= val.size()) {
+        if (offset >= val.limbs_count()) {
             return;
         }
         val.limbs()[offset] &= ~mask;
@@ -109,7 +109,7 @@ namespace nil::crypto3::multiprecision {
         std::size_t offset = index / big_uint<Bits>::limb_bits;
         std::size_t shift = index % big_uint<Bits>::limb_bits;
         limb_type mask = limb_type(1u) << shift;
-        if (offset >= val.size()) {
+        if (offset >= val.limbs_count()) {
             return;  // fixed precision overflow
         }
         val.limbs()[offset] ^= mask;
