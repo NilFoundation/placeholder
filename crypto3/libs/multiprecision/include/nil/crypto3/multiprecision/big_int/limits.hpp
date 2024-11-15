@@ -13,18 +13,18 @@
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
-    inline constexpr big_uint<Bits> get_min() {
+    constexpr big_uint<Bits> get_min() {
         constexpr big_uint<Bits> val = 0u;
         return val;
     }
 
     template<std::size_t Bits>
-    inline constexpr big_uint<Bits> get_max() {
+    constexpr big_uint<Bits> get_max() {
         constexpr auto val = ~big_uint<Bits>(0u);
         return val;
     }
 
-    inline constexpr unsigned calc_digits10(unsigned d) {
+    constexpr unsigned calc_digits10(unsigned d) {
         //
         // We need floor(log10(2) * (d-1)), see:
         // https://www.exploringbinary.com/number-of-digits-required-for-round-trip-conversions/

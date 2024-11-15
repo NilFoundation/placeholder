@@ -30,7 +30,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr unsigned lsb(const big_uint<Bits> &a) {
+    constexpr unsigned lsb(const big_uint<Bits> &a) {
         //
         // Find the index of the least significant limb that is non-zero:
         //
@@ -47,7 +47,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr unsigned msb(const big_uint<Bits> &a) {
+    constexpr unsigned msb(const big_uint<Bits> &a) {
         //
         // Find the index of the most significant bit that is non-zero:
         //
@@ -63,7 +63,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr bool bit_test(const big_uint<Bits> &val, std::size_t index) noexcept {
+    constexpr bool bit_test(const big_uint<Bits> &val, std::size_t index) noexcept {
         using detail::limb_type;
 
         unsigned offset = index / big_uint<Bits>::limb_bits;
@@ -76,7 +76,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr void bit_set(big_uint<Bits> &val, std::size_t index) {
+    constexpr void bit_set(big_uint<Bits> &val, std::size_t index) {
         using detail::limb_type;
 
         unsigned offset = index / big_uint<Bits>::limb_bits;
@@ -89,7 +89,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr void bit_unset(big_uint<Bits> &val, std::size_t index) noexcept {
+    constexpr void bit_unset(big_uint<Bits> &val, std::size_t index) noexcept {
         using detail::limb_type;
 
         unsigned offset = index / big_uint<Bits>::limb_bits;
@@ -103,7 +103,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    inline constexpr void bit_flip(big_uint<Bits> &val, std::size_t index) {
+    constexpr void bit_flip(big_uint<Bits> &val, std::size_t index) {
         using detail::limb_type;
 
         unsigned offset = index / big_uint<Bits>::limb_bits;

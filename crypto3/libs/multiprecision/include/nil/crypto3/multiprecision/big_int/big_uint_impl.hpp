@@ -118,7 +118,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits_>
     class big_uint {
       public:
-        inline constexpr static std::size_t Bits = Bits_;
+        constexpr static std::size_t Bits = Bits_;
         using self_type = big_uint;
 
         using limb_type = detail::limb_type;
@@ -141,40 +141,38 @@ namespace nil::crypto3::multiprecision {
         //
         // Helper functions for getting at our internal data, and manipulating storage:
         //
-        inline constexpr std::size_t size() const noexcept {
+        constexpr std::size_t size() const noexcept {
             static_assert(internal_limb_count != 0, "No limbs in storage.");
             return internal_limb_count;
         }
-        inline constexpr limb_pointer limbs() noexcept { return m_data.data(); }
-        inline constexpr const_limb_pointer limbs() const noexcept { return m_data.data(); }
-        inline constexpr auto& limbs_array() noexcept { return m_data; }
-        inline constexpr const auto& limbs_array() const noexcept { return m_data; }
+        constexpr limb_pointer limbs() noexcept { return m_data.data(); }
+        constexpr const_limb_pointer limbs() const noexcept { return m_data.data(); }
+        constexpr auto& limbs_array() noexcept { return m_data; }
+        constexpr const auto& limbs_array() const noexcept { return m_data; }
 
       private:
         // Zeros out everything after limb[i], replaces resizing.
-        inline constexpr void zero_after(std::size_t start_index) {
+        constexpr void zero_after(std::size_t start_index) {
             auto pr = this->limbs();
             for (std::size_t i = start_index; i < this->size(); ++i) {
                 pr[i] = 0;
             }
         }
-        inline constexpr void normalize() noexcept {
-            limbs()[internal_limb_count - 1] &= upper_limb_mask;
-        }
+        constexpr void normalize() noexcept { limbs()[internal_limb_count - 1] &= upper_limb_mask; }
 
       public:
-        inline constexpr bool has_carry() const noexcept { return m_carry; }
-        inline constexpr void set_carry(bool carry) noexcept { m_carry = carry; }
+        constexpr bool has_carry() const noexcept { return m_carry; }
+        constexpr void set_carry(bool carry) noexcept { m_carry = carry; }
 
         // Constructor
 
-        inline constexpr big_uint() noexcept {}
+        constexpr big_uint() noexcept {}
 
-        inline constexpr big_uint(const char* str) { *this = str; }
+        constexpr big_uint(const char* str) { *this = str; }
 
         template<class T,
                  std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
-        inline constexpr big_uint(T val) noexcept {
+        constexpr big_uint(T val) noexcept {
             if (val < 0) {
                 std::cerr << "big_uint: assignment from negative integer" << std::endl;
                 std::terminate();
@@ -184,7 +182,7 @@ namespace nil::crypto3::multiprecision {
 
         // This should be implicit even for Bits2 < Bits because it's used in boost random
         template<std::size_t Bits2>
-        inline constexpr big_uint(const big_uint<Bits2>& other) noexcept {
+        constexpr big_uint(const big_uint<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
                 NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
@@ -193,13 +191,13 @@ namespace nil::crypto3::multiprecision {
 
         // Assignment
 
-        inline constexpr big_uint& operator=(const char* str) {
+        constexpr big_uint& operator=(const char* str) {
             *this = detail::parse_int<Bits>(str);
             return *this;
         }
 
         template<std::size_t Bits2>
-        inline constexpr big_uint& operator=(const big_uint<Bits2>& other) noexcept {
+        constexpr big_uint& operator=(const big_uint<Bits2>& other) noexcept {
             do_assign(other);
             if constexpr (Bits2 > Bits) {
                 NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
@@ -209,13 +207,13 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
-        inline constexpr big_uint& operator=(T val) noexcept {
+        constexpr big_uint& operator=(T val) noexcept {
             NIL_CO3_MP_ASSERT_MSG(val >= 0, "big_uint: assignment from negative integer");
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
             return *this;
         }
 
-        inline std::string str() const {
+        constexpr std::string str() const {
             std::string result;
             result.reserve(order() * limb_bits / 4 + 2);
             result += "0x";
@@ -251,7 +249,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
-        inline constexpr big_uint<Bits2> truncate() const noexcept {
+        constexpr big_uint<Bits2> truncate() const noexcept {
             big_uint<Bits2> result;
             result.do_assign(*this);
             return result;
@@ -261,7 +259,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        explicit inline constexpr operator T() const {
+        explicit constexpr operator T() const {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 return static_cast<T>(this->limbs()[0]);
             } else {
@@ -278,7 +276,7 @@ namespace nil::crypto3::multiprecision {
 
         // Comparisions
 
-        inline constexpr int compare(const big_uint& b) const noexcept {
+        constexpr int compare(const big_uint& b) const noexcept {
             auto pa = limbs();
             auto pb = b.limbs();
             for (int i = size() - 1; i >= 0; --i) {
@@ -294,8 +292,8 @@ namespace nil::crypto3::multiprecision {
         // Addition/subtraction
 
       private:
-        static inline constexpr void add_constexpr(big_uint& result, const big_uint& a,
-                                                   const big_uint& b) noexcept {
+        static constexpr void add_constexpr(big_uint& result, const big_uint& a,
+                                            const big_uint& b) noexcept {
             //
             // This is the generic, C++ only version of addition.
             // It's also used for all constexpr branches, hence the name.
@@ -343,8 +341,8 @@ namespace nil::crypto3::multiprecision {
         // Core subtraction routine:
         // It is the caller's responsibility to make sure that a >= b.
         //
-        static inline constexpr void subtract_constexpr(big_uint& result, const big_uint& a,
-                                                        const big_uint& b) noexcept {
+        static constexpr void subtract_constexpr(big_uint& result, const big_uint& a,
+                                                 const big_uint& b) noexcept {
             NIL_CO3_MP_ASSERT(a >= b);
 
             //
@@ -391,8 +389,7 @@ namespace nil::crypto3::multiprecision {
         // for basically all x86 processors.  That means gcc-9, clang-9, msvc-14.2 and up
         // are required to support these intrinsics.
         //
-        static inline constexpr void add(big_uint& result, const big_uint& a,
-                                         const big_uint& b) noexcept {
+        static constexpr void add(big_uint& result, const big_uint& a, const big_uint& b) noexcept {
             if (std::is_constant_evaluated()) {
                 add_constexpr(result, a, b);
             } else {
@@ -461,8 +458,8 @@ namespace nil::crypto3::multiprecision {
         }
 
         // It is the caller's responsibility to make sure that a > b.
-        static inline constexpr void subtract(big_uint& result, const big_uint& a,
-                                              const big_uint& b) noexcept {
+        static constexpr void subtract(big_uint& result, const big_uint& a,
+                                       const big_uint& b) noexcept {
             NIL_CO3_MP_ASSERT(a.compare(b) >= 0);
 
             if (std::is_constant_evaluated()) {
@@ -510,20 +507,19 @@ namespace nil::crypto3::multiprecision {
 
 #else
 
-        static inline constexpr void add(big_uint& result, const big_uint& a,
-                                         const big_uint& b) noexcept {
+        static constexpr void add(big_uint& result, const big_uint& a, const big_uint& b) noexcept {
             add_constexpr(result, a, b);
         }
 
-        static inline constexpr void subtract(big_uint& result, const big_uint& a,
-                                              const big_uint& b) noexcept {
+        static constexpr void subtract(big_uint& result, const big_uint& a,
+                                       const big_uint& b) noexcept {
             subtract_constexpr(result, a, b);
         }
 
 #endif
 
-        static inline constexpr void add(big_uint& result, const big_uint& a,
-                                         const limb_type& o) noexcept {
+        static constexpr void add(big_uint& result, const big_uint& a,
+                                  const limb_type& o) noexcept {
             // Addition using modular arithmetic.
             // Nothing fancy, just let uintmax_t take the strain:
 
@@ -557,8 +553,8 @@ namespace nil::crypto3::multiprecision {
         // And again to subtract a single limb: caller is responsible to check that a > b and
         // the result is non-negative.
         //
-        static inline constexpr void subtract(big_uint& result, const big_uint& a,
-                                              const limb_type& b) noexcept {
+        static constexpr void subtract(big_uint& result, const big_uint& a,
+                                       const limb_type& b) noexcept {
             NIL_CO3_MP_ASSERT(a >= b);
 
             // Subtract one limb.
@@ -676,7 +672,7 @@ namespace nil::crypto3::multiprecision {
 
         // Left shift will throw away upper Bits.
         // This function must be called only when s % 8 == 0, i.e. we shift bytes.
-        static inline void left_shift_byte(big_uint& result, double_limb_type s) {
+        static void left_shift_byte(big_uint& result, double_limb_type s) {
             limb_pointer pr = result.limbs();
 
             std::size_t bytes = static_cast<std::size_t>(s / CHAR_BIT);
@@ -693,7 +689,7 @@ namespace nil::crypto3::multiprecision {
         // Left shift will throw away upper Bits.
         // This function must be called only when s % limb_bits == 0, i.e. we shift limbs, which
         // are normally 64 bit.
-        static inline constexpr void left_shift_limb(big_uint& result, double_limb_type s) {
+        static constexpr void left_shift_limb(big_uint& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             NIL_CO3_MP_ASSERT(static_cast<limb_type>(s % limb_bits) == 0);
 
@@ -715,7 +711,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         // Left shift will throw away upper Bits.
-        static inline constexpr void left_shift_generic(big_uint& result, double_limb_type s) {
+        static constexpr void left_shift_generic(big_uint& result, double_limb_type s) {
             if (s >= Bits) {
                 // Set result to 0.
                 result.zero_after(0);
@@ -744,7 +740,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         // Shifting left throws away upper Bits.
-        static inline constexpr void left_shift(big_uint& result, double_limb_type s) noexcept {
+        static constexpr void left_shift(big_uint& result, double_limb_type s) noexcept {
             if (!s) {
                 return;
             }
@@ -780,7 +776,7 @@ namespace nil::crypto3::multiprecision {
             result.normalize();
         }
 
-        static inline void right_shift_byte(big_uint& result, double_limb_type s) {
+        static void right_shift_byte(big_uint& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             NIL_CO3_MP_ASSERT((s % CHAR_BIT) == 0);
             unsigned ors = result.size();
@@ -805,7 +801,7 @@ namespace nil::crypto3::multiprecision {
             result.zero_after(rs);
         }
 
-        static inline constexpr void right_shift_limb(big_uint& result, double_limb_type s) {
+        static constexpr void right_shift_limb(big_uint& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             NIL_CO3_MP_ASSERT((s % limb_bits) == 0);
             unsigned ors = result.size();
@@ -824,7 +820,7 @@ namespace nil::crypto3::multiprecision {
             result.zero_after(rs);
         }
 
-        static inline constexpr void right_shift_generic(big_uint& result, double_limb_type s) {
+        static constexpr void right_shift_generic(big_uint& result, double_limb_type s) {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             limb_type shift = static_cast<limb_type>(s % limb_bits);
             unsigned ors = result.size();
@@ -856,7 +852,7 @@ namespace nil::crypto3::multiprecision {
             result.zero_after(rs);
         }
 
-        static inline constexpr void right_shift(big_uint& result, double_limb_type s) noexcept {
+        static constexpr void right_shift(big_uint& result, double_limb_type s) noexcept {
             if (!s) {
                 return;
             }
@@ -891,7 +887,7 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        inline constexpr std::size_t used_limbs() const noexcept {
+        constexpr std::size_t used_limbs() const noexcept {
             for (int i = internal_limb_count - 1; i >= 0; --i) {
                 if (limbs()[i] != 0) {
                     return i + 1;
@@ -900,7 +896,7 @@ namespace nil::crypto3::multiprecision {
             return 0;
         }
 
-        inline constexpr std::size_t order() const noexcept {
+        constexpr std::size_t order() const noexcept {
             for (int i = internal_limb_count - 1; i >= 0; --i) {
                 if (limbs()[i] != 0) {
                     return i;
@@ -915,8 +911,8 @@ namespace nil::crypto3::multiprecision {
         // params, not during "normal" execution, so we do not care about the execution speed.
 
         template<std::size_t Bits2>
-        static inline constexpr void divide(big_uint* div, const big_uint& x,
-                                            const big_uint<Bits2>& y, big_uint& rem) {
+        static constexpr void divide(big_uint* div, const big_uint& x, const big_uint<Bits2>& y,
+                                     big_uint& rem) {
             /*
             Very simple long division.
             Start by setting the remainder equal to x, and the
@@ -1141,8 +1137,8 @@ namespace nil::crypto3::multiprecision {
         // Caller is responsible for the result to fit in Bits bits, we will NOT throw!!!
 
         template<std::size_t Bits2, std::size_t Bits3>
-        static inline constexpr void multiply(big_uint& result, const big_uint<Bits2>& a,
-                                              const big_uint<Bits3>& b) noexcept {
+        static constexpr void multiply(big_uint& result, const big_uint<Bits2>& a,
+                                       const big_uint<Bits3>& b) noexcept {
             std::size_t as = a.size();
             std::size_t bs = b.size();
             const_limb_pointer pa = a.limbs();
@@ -1185,7 +1181,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        inline constexpr void do_assign_integral(const T& a) noexcept {
+        constexpr void do_assign_integral(const T& a) noexcept {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 this->limbs()[0] = a;
                 this->zero_after(1);
@@ -1207,7 +1203,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits2>
-        inline constexpr void do_assign(const big_uint<Bits2>& other) noexcept {
+        constexpr void do_assign(const big_uint<Bits2>& other) noexcept {
             unsigned count = (std::min)(other.size(), this->size());
             for (unsigned i = 0; i < count; ++i) {
                 this->limbs()[i] = other.limbs()[i];
@@ -1273,12 +1269,12 @@ namespace nil::crypto3::multiprecision {
 
     // Comparison
 
-#define NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(op)                              \
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                                  \
-    inline constexpr bool operator op(const T1& a, const T2& b) noexcept { \
-        largest_t ap = a;                                                  \
-        largest_t bp = b;                                                  \
-        return ap.compare(bp) op 0;                                        \
+#define NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(op)                       \
+    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                           \
+    constexpr bool operator op(const T1& a, const T2& b) noexcept { \
+        largest_t ap = a;                                           \
+        largest_t bp = b;                                           \
+        return ap.compare(bp) op 0;                                 \
     }
 
     NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(<)
@@ -1293,66 +1289,66 @@ namespace nil::crypto3::multiprecision {
     // Arithmetic operations
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
+    constexpr auto operator+(const T1& a, const T2& b) noexcept {
         big_uint<largest_t::Bits + 1> result = a;
         decltype(result)::add(result, result, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator+=(big_uint_t& a, const T& b) noexcept {
+    constexpr auto& operator+=(big_uint_t& a, const T& b) noexcept {
         big_uint_t::add(a, a, b);
         return a;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto& operator++(big_uint_t& a) noexcept {
+    constexpr auto& operator++(big_uint_t& a) noexcept {
         a.increment();
         return a;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator++(big_uint_t& a, int) noexcept {
+    constexpr auto operator++(big_uint_t& a, int) noexcept {
         auto copy = a;
         ++a;
         return copy;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator+(const big_uint_t& a) noexcept { return a; }
+    constexpr auto operator+(const big_uint_t& a) noexcept { return a; }
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
+    constexpr auto operator-(const T1& a, const T2& b) noexcept {
         T1 result;
         T1::subtract(result, a, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator-=(big_uint_t& a, const T& b) {
+    constexpr auto& operator-=(big_uint_t& a, const T& b) {
         big_uint_t::subtract(a, a, b);
         return a;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto& operator--(big_uint_t& a) noexcept {
+    constexpr auto& operator--(big_uint_t& a) noexcept {
         a.decrement();
         return a;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator--(big_uint_t& a, int) noexcept {
+    constexpr auto operator--(big_uint_t& a, int) noexcept {
         auto copy = a;
         --a;
         return copy;
     }
 
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr big_uint_t operator-(const big_uint_t& /* unused */) noexcept {
+    constexpr big_uint_t operator-(const big_uint_t& /* unused */) noexcept {
         static_assert(detail::always_false<big_uint_t>, "can't negate unsigned type");
     }
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
+    constexpr auto operator*(const T1& a, const T2& b) noexcept {
         big_uint<detail::get_bits<T1>() + detail::get_bits<T2>()> result;
         decltype(result)::multiply(result, a, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator*=(big_uint_t& a, const T& b) noexcept {
+    constexpr auto& operator*=(big_uint_t& a, const T& b) noexcept {
         big_uint<detail::get_bits<big_uint_t>() + detail::get_bits<T>()> result;
         decltype(result)::multiply(result, a, static_cast<big_uint_t>(b));
         a = result;
@@ -1360,14 +1356,14 @@ namespace nil::crypto3::multiprecision {
     }
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
+    constexpr auto operator/(const T1& a, const T2& b) noexcept {
         largest_t result;
         largest_t modulus;
         largest_t::divide(&result, a, b, modulus);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator/=(big_uint_t& a, const T& b) noexcept {
+    constexpr auto& operator/=(big_uint_t& a, const T& b) noexcept {
         big_uint_t result;
         big_uint_t modulus;
         big_uint_t::divide(&result, a, b, modulus);
@@ -1376,13 +1372,13 @@ namespace nil::crypto3::multiprecision {
     }
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator%(const T1& a, const T2& b) noexcept {
+    constexpr auto operator%(const T1& a, const T2& b) noexcept {
         largest_t modulus;
         largest_t::divide(nullptr, static_cast<largest_t>(a), static_cast<largest_t>(b), modulus);
         return modulus;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator%=(big_uint_t& a, const T& b) {
+    constexpr auto& operator%=(big_uint_t& a, const T& b) {
         big_uint_t modulus;
         big_uint_t::divide(nullptr, a, b, modulus);
         a = modulus;
@@ -1390,68 +1386,68 @@ namespace nil::crypto3::multiprecision {
     }
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator&(const T1& a, const T2& b) noexcept {
+    constexpr auto operator&(const T1& a, const T2& b) noexcept {
         largest_t result = a;
         T1::bitwise_and(result, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator&=(big_uint_t& a, const T& b) {
+    constexpr auto& operator&=(big_uint_t& a, const T& b) {
         big_uint_t::bitwise_and(a, b);
         return a;
     }
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator|(const T1& a, const T2& b) noexcept {
+    constexpr auto operator|(const T1& a, const T2& b) noexcept {
         largest_t result = a;
         T1::bitwise_or(result, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator|=(big_uint_t& a, const T& b) {
+    constexpr auto& operator|=(big_uint_t& a, const T& b) {
         big_uint_t::bitwise_or(a, b);
         return a;
     }
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator^(const T1& a, const T2& b) noexcept {
+    constexpr auto operator^(const T1& a, const T2& b) noexcept {
         largest_t result = a;
         T1::bitwise_xor(result, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator^=(big_uint_t& a, const T& b) {
+    constexpr auto& operator^=(big_uint_t& a, const T& b) {
         big_uint_t::bitwise_or(a, b);
         return a;
     }
 
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator~(const big_uint_t& a) noexcept {
+    constexpr auto operator~(const big_uint_t& a) noexcept {
         big_uint_t result;
         big_uint_t::complement(result, a);
         return result;
     }
 
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator<<(const big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto operator<<(const big_uint_t& a, unsigned shift) noexcept {
         big_uint_t result = a;
         big_uint_t::left_shift(result, shift);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto& operator<<=(big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto& operator<<=(big_uint_t& a, unsigned shift) noexcept {
         big_uint_t::left_shift(a, shift);
         return a;
     }
 
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto operator>>(const big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto operator>>(const big_uint_t& a, unsigned shift) noexcept {
         big_uint_t result = a;
         big_uint_t::right_shift(result, shift);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-    inline constexpr auto& operator>>=(big_uint_t& a, unsigned shift) noexcept {
+    constexpr auto& operator>>=(big_uint_t& a, unsigned shift) noexcept {
         big_uint_t::right_shift(a, shift);
         return a;
     }
@@ -1463,7 +1459,7 @@ namespace nil::crypto3::multiprecision {
     // Hash
 
     template<std::size_t Bits>
-    inline constexpr std::size_t hash_value(const big_uint<Bits>& val) noexcept {
+    constexpr std::size_t hash_value(const big_uint<Bits>& val) noexcept {
         std::size_t result = 0;
         for (unsigned i = 0; i < val.size(); ++i) {
             boost::hash_combine(result, val.limbs()[i]);

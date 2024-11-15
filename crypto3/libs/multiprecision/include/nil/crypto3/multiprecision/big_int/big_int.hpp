@@ -27,20 +27,20 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits_>
     class big_int {
       public:
-        inline constexpr static std::size_t Bits = Bits_;
+        constexpr static std::size_t Bits = Bits_;
         using self_type = big_int<Bits>;
 
         using unsigned_type = big_uint<Bits>;
 
         // Constructor
 
-        inline constexpr big_int() noexcept {}
+        constexpr big_int() noexcept {}
 
         template<std::size_t Bits2>
-        inline constexpr big_int(const big_uint<Bits2>& b) noexcept : m_abs(b) {}
+        constexpr big_int(const big_uint<Bits2>& b) noexcept : m_abs(b) {}
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        inline constexpr big_int(T val) noexcept : m_abs(abs(val)) {
+        constexpr big_int(T val) noexcept : m_abs(abs(val)) {
             // for ADL
             using std::abs;
             if (val < 0) {
@@ -49,22 +49,22 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        inline constexpr big_int(T val) noexcept : m_abs(val) {}
+        constexpr big_int(T val) noexcept : m_abs(val) {}
 
         template<std::size_t Bits2>
-        inline constexpr big_int(const big_int<Bits2>& other) noexcept
+        constexpr big_int(const big_int<Bits2>& other) noexcept
             : m_negative(other.negative()), m_abs(other.abs()) {}
 
         // Assignment
 
         template<std::size_t Bits2>
-        inline constexpr big_int& operator=(const big_uint<Bits2>& b) {
+        constexpr big_int& operator=(const big_uint<Bits2>& b) {
             m_negative = false;
             m_abs = b;
         }
 
         template<std::size_t Bits2>
-        inline constexpr big_int& operator=(const big_int<Bits2>& other) noexcept {
+        constexpr big_int& operator=(const big_int<Bits2>& other) noexcept {
             m_negative = other.negative();
             m_abs = other.abs();
             return *this;
@@ -72,7 +72,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        inline constexpr big_int& operator=(T val) noexcept {
+        constexpr big_int& operator=(T val) noexcept {
             using std::abs;
             m_abs = abs(val);
             if (val < 0) {
@@ -83,45 +83,43 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        inline constexpr big_int& operator=(T val) noexcept {
+        constexpr big_int& operator=(T val) noexcept {
             m_negative = false;
             m_abs = val;
             return *this;
         }
 
-        inline std::string str() const {
+        constexpr std::string str() const {
             return (negative() ? std::string("-") : std::string("")) + m_abs.str();
         }
 
         template<std::size_t Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
-        inline constexpr big_int<Bits2> truncate() const noexcept {
+        constexpr big_int<Bits2> truncate() const noexcept {
             return {m_negative, m_abs.template truncate<Bits2>()};
         }
 
         // Cast to integral types
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        explicit inline constexpr operator T() const {
+        explicit constexpr operator T() const {
             return multiplied_by_sign(static_cast<T>(abs()));
         }
 
         template<std::size_t Bits2>
-        explicit inline constexpr operator big_uint<Bits2>() const {
+        explicit constexpr operator big_uint<Bits2>() const {
             NIL_CO3_MP_ASSERT(!this->negative());
             return m_abs;
         }
 
         // Utilities
 
-        inline constexpr bool negative() const { return m_negative; }
+        constexpr bool negative() const { return m_negative; }
 
-        inline constexpr int sign() const noexcept {
-            return negative() ? -1 : (is_zero(m_abs) ? 0 : 1);
-        }
+        constexpr int sign() const noexcept { return negative() ? -1 : (is_zero(m_abs) ? 0 : 1); }
 
-        inline constexpr const unsigned_type& abs() const { return m_abs; }
+        constexpr const unsigned_type& abs() const { return m_abs; }
 
-        inline constexpr void negate() {
+        constexpr void negate() {
             if (is_zero(m_abs)) {
                 return;
             }
@@ -131,7 +129,7 @@ namespace nil::crypto3::multiprecision {
         // Comparision
 
         template<std::size_t Bits2>
-        inline constexpr int compare(const big_int<Bits2>& other) const noexcept {
+        constexpr int compare(const big_int<Bits2>& other) const noexcept {
             if (negative() && !other.negative()) {
                 return -1;
             }
@@ -148,7 +146,7 @@ namespace nil::crypto3::multiprecision {
 
         // Addition/subtraction
 
-        static inline constexpr big_int<Bits + 1> add(const big_int& a, const big_int& b) noexcept {
+        static constexpr big_int<Bits + 1> add(const big_int& a, const big_int& b) noexcept {
             if (!a.negative() && !b.negative()) {
                 return a.m_abs + b.m_abs;
             }
@@ -164,8 +162,7 @@ namespace nil::crypto3::multiprecision {
             return -big_int<Bits + 1>(a.m_abs + b.m_abs);
         }
 
-        static inline constexpr big_int<Bits + 1> subtract(const big_int& a,
-                                                           const big_int& b) noexcept {
+        static constexpr big_int<Bits + 1> subtract(const big_int& a, const big_int& b) noexcept {
             return add(a, -b);
         }
 
@@ -193,21 +190,21 @@ namespace nil::crypto3::multiprecision {
 
         // Modulus
 
-        static inline constexpr big_int modulus(const big_int& x, const big_int& y) {
+        static constexpr big_int modulus(const big_int& x, const big_int& y) {
             return static_cast<big_int>(x - static_cast<big_int>((x / y) * y));
         }
 
         // Division
 
-        static inline constexpr big_int divide(const big_int& x, const big_int& y) {
+        static constexpr big_int divide(const big_int& x, const big_int& y) {
             return x.m_abs / y.m_abs;
         }
 
         // Multiplication
 
         template<std::size_t Bits2>
-        static inline constexpr big_int<Bits + Bits2> multiply(const big_int& a,
-                                                               const big_int<Bits2>& b) noexcept {
+        static constexpr big_int<Bits + Bits2> multiply(const big_int& a,
+                                                        const big_int<Bits2>& b) noexcept {
             big_int<Bits + Bits2> result = a.m_abs * b.m_abs;
             if (a.sign() * b.sign() < 0) {
                 result = -result;
@@ -216,20 +213,20 @@ namespace nil::crypto3::multiprecision {
         }
 
       private:
-        inline constexpr void normalize() noexcept {
+        constexpr void normalize() noexcept {
             if (is_zero(m_abs)) {
                 m_negative = false;
             }
         }
 
         template<typename T>
-        inline constexpr void multiply_by_sign(T& a) const {
+        constexpr void multiply_by_sign(T& a) const {
             if (negative()) {
                 a = -a;
             }
         }
         template<typename T>
-        inline constexpr T multiplied_by_sign(const T& a) const {
+        constexpr T multiplied_by_sign(const T& a) const {
             if (negative()) {
                 return -a;
             }
@@ -279,12 +276,12 @@ namespace nil::crypto3::multiprecision {
 
     // Comparison
 
-#define NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(op)                               \
-    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE                                   \
-    inline constexpr bool operator op(const T1& a, const T2& b) noexcept { \
-        largest_t ap = a;                                                  \
-        largest_t bp = b;                                                  \
-        return ap.compare(bp) op 0;                                        \
+#define NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(op)                        \
+    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE                            \
+    constexpr bool operator op(const T1& a, const T2& b) noexcept { \
+        largest_t ap = a;                                           \
+        largest_t bp = b;                                           \
+        return ap.compare(bp) op 0;                                 \
     }
 
     NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<)
@@ -299,89 +296,87 @@ namespace nil::crypto3::multiprecision {
     // Arithmetic operations
 
     NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator+(const T1& a, const T2& b) noexcept {
+    constexpr auto operator+(const T1& a, const T2& b) noexcept {
         big_int<largest_t::Bits + 1> result;
         result = decltype(result)::add(a, b);
         return result;
     }
     NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator+=(big_int_t& a, const T& b) noexcept {
+    constexpr auto& operator+=(big_int_t& a, const T& b) noexcept {
         a = a + b;
         return a;
     }
     NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    inline constexpr auto& operator++(big_int_t& a) noexcept {
+    constexpr auto& operator++(big_int_t& a) noexcept {
         a.increment();
         return a;
     }
     NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    inline constexpr auto operator++(big_int_t& a, int) noexcept {
+    constexpr auto operator++(big_int_t& a, int) noexcept {
         auto copy = a;
         ++a;
         return copy;
     }
     NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    inline constexpr auto operator+(const big_int_t& a) noexcept { return a; }
+    constexpr auto operator+(const big_int_t& a) noexcept { return a; }
 
     NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator-(const T1& a, const T2& b) noexcept {
-        return T1::subtract(a, b);
-    }
+    constexpr auto operator-(const T1& a, const T2& b) noexcept { return T1::subtract(a, b); }
     NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator-=(big_int_t& a, const T& b) {
+    constexpr auto& operator-=(big_int_t& a, const T& b) {
         a = a - b;
         return a;
     }
     NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    inline constexpr auto& operator--(big_int_t& a) noexcept {
+    constexpr auto& operator--(big_int_t& a) noexcept {
         a.decrement();
         return a;
     }
     NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    inline constexpr auto operator--(big_int_t& a, int) noexcept {
+    constexpr auto operator--(big_int_t& a, int) noexcept {
         auto copy = a;
         --a;
         return copy;
     }
 
     NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    inline constexpr big_int_t operator-(big_int_t a) noexcept {
+    constexpr big_int_t operator-(big_int_t a) noexcept {
         a.negate();
         return a;
     }
 
     NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator*(const T1& a, const T2& b) noexcept {
+    constexpr auto operator*(const T1& a, const T2& b) noexcept {
         return std::decay_t<decltype(a)>::multiply(a, b);
     }
     NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator*=(big_int_t& a, const T& b) noexcept {
+    constexpr auto& operator*=(big_int_t& a, const T& b) noexcept {
         a = a * b;
         return a;
     }
 
     NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator/(const T1& a, const T2& b) noexcept {
+    constexpr auto operator/(const T1& a, const T2& b) noexcept {
         return largest_t::divide(static_cast<largest_t>(a), static_cast<largest_t>(b));
     }
     NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator/=(big_int_t& a, const T& b) noexcept {
+    constexpr auto& operator/=(big_int_t& a, const T& b) noexcept {
         a = a / b;
         return a;
     }
 
     NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    inline constexpr auto operator%(const T1& a, const T2& b) noexcept {
+    constexpr auto operator%(const T1& a, const T2& b) noexcept {
         return largest_t::modulus(static_cast<largest_t>(a), static_cast<largest_t>(b));
     }
     NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    inline constexpr auto& operator%=(big_int_t& a, const T& b) {
+    constexpr auto& operator%=(big_int_t& a, const T& b) {
         a = a % b;
         return a;
     }
 
     template<std::size_t Bits>
-    inline constexpr std::size_t hash_value(const big_int<Bits>& val) noexcept {
+    constexpr std::size_t hash_value(const big_int<Bits>& val) noexcept {
         std::size_t result = 0;
         boost::hash_combine(result, hash_value(val.abs()));
         boost::hash_combine(result, val.negative());
