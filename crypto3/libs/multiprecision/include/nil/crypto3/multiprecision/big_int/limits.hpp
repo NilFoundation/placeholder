@@ -24,14 +24,15 @@ namespace nil::crypto3::multiprecision::detail {
         return val;
     }
 
-    constexpr unsigned calc_digits10(unsigned d) {
+    constexpr std::size_t calc_digits10(std::size_t d) {
         //
         // We need floor(log10(2) * (d-1)), see:
         // https://www.exploringbinary.com/number-of-digits-required-for-round-trip-conversions/
         // and references therein.
         //
-        return static_cast<unsigned>(0.301029995663981195213738894724493026768189881462108541310 *
-                                     static_cast<double>(d - 1u));
+        return static_cast<std::size_t>(
+            0.301029995663981195213738894724493026768189881462108541310 *
+            static_cast<double>(d - 1u));
     }
 }  // namespace nil::crypto3::multiprecision::detail
 

@@ -30,8 +30,8 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits, typename Unsigned>
         void assign_bits(big_uint<Bits>& val, Unsigned bits, std::size_t bit_location,
                          std::size_t chunk_bits) {
-            unsigned limb = bit_location / (sizeof(limb_type) * CHAR_BIT);
-            unsigned shift = bit_location % (sizeof(limb_type) * CHAR_BIT);
+            std::size_t limb = bit_location / (sizeof(limb_type) * CHAR_BIT);
+            std::size_t shift = bit_location % (sizeof(limb_type) * CHAR_BIT);
 
             limb_type mask = chunk_bits >= sizeof(limb_type) * CHAR_BIT
                                  ? ~static_cast<limb_type>(0u)

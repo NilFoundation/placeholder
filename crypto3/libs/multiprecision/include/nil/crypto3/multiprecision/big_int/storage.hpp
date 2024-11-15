@@ -16,7 +16,7 @@ namespace nil::crypto3::multiprecision::detail {
     using limb_pointer = limb_type *;
     using const_limb_pointer = const limb_type *;
 
-    static constexpr unsigned limb_bits = sizeof(limb_type) * CHAR_BIT;
+    static constexpr std::size_t limb_bits = sizeof(limb_type) * CHAR_BIT;
     static constexpr limb_type max_limb_value = ~static_cast<limb_type>(0u);
 
     // Given a value represented in 'double_limb_type', decomposes it into
