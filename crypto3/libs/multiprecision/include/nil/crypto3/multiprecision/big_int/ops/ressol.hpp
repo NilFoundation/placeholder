@@ -54,6 +54,8 @@ namespace nil::crypto3::multiprecision {
             throw std::invalid_argument("Not a quadratic residue");
         }
 
+        // We can use montgomery_big_mod because p is odd
+
         montgomery_big_mod_rt<Bits> a_mod(a, p);
 
         if (p % 4 == 3) {
