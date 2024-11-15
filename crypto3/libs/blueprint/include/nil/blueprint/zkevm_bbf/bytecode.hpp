@@ -167,7 +167,7 @@ namespace nil {
                                 tag[i] + 1 - tag[i], // TODO: update math::expression constructor with constant parameter
                                 tag[i-1] * (1 - tag[i]) * value_rlc[i-1],
                                 tag[i-1] * (1 - tag[i]) * hash_hi[i-1] + (1 - tag[i-1] * (1 - tag[i])) * w_hi<FieldType>(zerohash),
-                                tag[i-1] * (1 - tag[i]) * hash_lo[i-1] + (1 - tag[i-1] * (1 - tag[i])) * w_hi<FieldType>(zerohash)
+                                tag[i-1] * (1 - tag[i]) * hash_lo[i-1] + (1 - tag[i-1] * (1 - tag[i])) * w_lo<FieldType>(zerohash)
                             }), "keccak_table");
                         }
                     }

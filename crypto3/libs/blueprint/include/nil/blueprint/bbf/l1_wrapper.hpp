@@ -240,8 +240,7 @@ namespace nil {
                     dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
 
                 // compatibility layer: lookup constraint list
-                std::unordered_map<row_selector<>, std::vector<std::pair<std::string, std::vector<constraint_type>>>>
-                    lookup_constraints = ct.get_lookup_constraints();
+                auto lookup_constraints = ct.get_lookup_constraints();
                 std::set<std::string> lookup_tables;
                 for(const auto& [row_list, lookup_list] : lookup_constraints) {
                     std::vector<lookup_constraint_type> lookup_gate;

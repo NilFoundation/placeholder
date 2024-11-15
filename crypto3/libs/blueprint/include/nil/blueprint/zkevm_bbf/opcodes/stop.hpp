@@ -37,23 +37,7 @@ namespace nil {
             class opcode_abstract;
 
             template<typename FieldType>
-            class zkevm_sload_operation : public opcode_abstract<FieldType> {
-            public:
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) {}
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) {}
-                virtual std::size_t rows_amount() override {
-                    return 2;
-                }
-            };
-
-            template<typename FieldType>
-            class zkevm_sstore_operation : public opcode_abstract<FieldType> {
+            class zkevm_stop_operation : public opcode_abstract<FieldType> {
             public:
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,

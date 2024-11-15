@@ -119,7 +119,7 @@ namespace nil {
 
             std::cout << "Satisfiability check. Check" << std::endl;
             for (const auto& i : used_gates) {
-                //std::cout << "Check gate " << i << std::endl;
+                std::cout << "\tCheck gate " << i << std::endl;
                 crypto3::zk::snark::plonk_column<BlueprintFieldType> selector =
                     assignments.crypto3::zk::snark::
                         template plonk_assignment_table<BlueprintFieldType>::selector(
@@ -129,6 +129,10 @@ namespace nil {
                 //}
 
                 for (const auto& selector_row : selector_rows) {
+                    if( selector_row % (selector_rows.size()/100) == 0 ) {
+                        std::cout << ".";
+                        std::cout.flush();
+                    }
                     // std::cout << "selector row " << selector_row << ": ";
                     // for( std::size_t j = 0; j < assignments.witnesses_amount(); j++){
                     //     std::cout << assignments.witness(j)[selector_row] << " ";
@@ -141,10 +145,7 @@ namespace nil {
                                 gates[i].constraints[j].evaluate(selector_row, assignments);
 
                             if (!constraint_result.is_zero()) {
-                                std::cout<< "Offended constraint result" << std::endl;
-                                for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
-                                    std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
-                                }
+                                std::cout<< std::endl;
                                 std::cout << std::endl;
                                 std::cout << "Constraint " << j << " from gate " << i << " on row " << selector_row
                                           << " is not satisfied." << std::endl;
@@ -152,6 +153,13 @@ namespace nil {
                                 std::cout << "Constraint result: " << constraint_result << std::endl;
                                 std::cout << "Constraint: " << gates[i].constraints[j] << std::endl;
                                 std::cout << "Offending gate:" << std::endl;
+                                std::cout<<  "Offended constraint result" << std::endl;
+                                for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
+                                    if( selector[ind].is_zero() )
+                                        std::cout << "0 ";
+                                    else
+                                        std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
+                                }
 
                                 std::size_t k = 0;
                                 for (const auto &constraint : gates[i].constraints) {
@@ -163,16 +171,22 @@ namespace nil {
                         }
                     }
                 }
+                std::cout << std::endl;
             }
 
             std::cout << "Gates checked. Check lookups" << std::endl;
             for (const auto& i : used_lookup_gates) {
+                std::cout << "\tLookup gate " << i << std::endl;
                 crypto3::zk::snark::plonk_column<BlueprintFieldType> selector =
                     assignments.crypto3::zk::snark::
                         template plonk_assignment_table<BlueprintFieldType>::selector(
                             lookup_gates[i].tag_index);
 
                 for (const auto& selector_row : selector_rows) {
+                    if( selector_row % (selector_rows.size()/100) == 0 ) {
+                        std::cout << ".";
+                        std::cout.flush();
+                    }
                     if (selector_row < selector.size() && !selector[selector_row].is_zero()) {
                         for (std::size_t j = 0; j < lookup_gates[i].constraints.size(); j++) {
                             std::vector<typename BlueprintFieldType::value_type> input_values;
@@ -189,6 +203,7 @@ namespace nil {
                                         used_dynamic_tables[table_name] = load_dynamic_lookup(bp, assignments, lookup_gates[i].constraints[j].table_id);
                                     }
                                     if( used_dynamic_tables[table_name].find(input_values) == used_dynamic_tables[table_name].end() ) {
+                                        std::cout << std::endl;
                                         std::cout << "Constraint " << j << " from lookup gate " << i << " from table "
                                                 << table_name << " on row " << selector_row << " is not satisfied."
                                                 << std::endl;
@@ -243,6 +258,7 @@ namespace nil {
                                     }
                                 }
                                 if (!found) {
+                                    std::cout << std::endl;
                                     std::cout << "Input values:";
                                     for (std::size_t k = 0; k < input_values.size(); k++) {
                                         std::cout << std::hex <<  input_values[k] << std::dec <<  " ";
@@ -270,6 +286,7 @@ namespace nil {
                         }
                     }
                 }
+                std::cout << std::endl;
             }
 
             for (const auto& i : used_copy_constraints) {

@@ -138,8 +138,7 @@ namespace nil {
                                 &constraint_system,
                             const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type
                                 &preprocessed_data,
-                            const plonk_polynomial_dfs_table<FieldType>
-                                &plonk_columns,
+                            const plonk_polynomial_dfs_table<FieldType>& plonk_columns,
                             commitment_scheme_type &commitment_scheme,
                             transcript_type &transcript)
                         : constraint_system(constraint_system)
@@ -496,6 +495,7 @@ namespace nil {
                                     for (std::size_t i = 0; i < l_table.columns_number; i++) {
                                         v += theta_acc * lookup_tag * plonk_columns.get_variable_value_without_rotation(
                                             l_table.lookup_options[o_id][i]);
+                                        theta_acc *= this->theta;
                                     }
                                     (*lookup_value_ptr)[lookup_values_used + o_id] = v;
                                 }, ThreadPool::PoolLevel::HIGH);
@@ -703,7 +703,7 @@ namespace nil {
 
                     const plonk_constraint_system<FieldType> &constraint_system;
                     const typename placeholder_public_preprocessor<FieldType, ParamsType>::preprocessed_data_type& preprocessed_data;
-                    const plonk_polynomial_dfs_table<FieldType> &plonk_columns;
+                    const plonk_polynomial_dfs_table<FieldType>& plonk_columns;
                     commitment_scheme_type& commitment_scheme;
                     transcript_type& transcript;
                     std::shared_ptr<math::evaluation_domain<FieldType>> basic_domain;

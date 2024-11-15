@@ -237,7 +237,7 @@ namespace nil {
                     boost::filesystem::path proof_file_,
                     boost::filesystem::path json_file_,
                     bool skip_verification) {
-                if (!nil::proof_generator::can_write_to_file(proof_file_.string())) {
+                if (!can_write_to_file(proof_file_.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't write to file " << proof_file_;
                     return false;
                 }
@@ -249,27 +249,35 @@ namespace nil {
                 BOOST_ASSERT(lpc_scheme_);
 
                 BOOST_LOG_TRIVIAL(info) << "Generating proof...";
-                Proof proof = nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams>::process(
+                nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams> prover(
                     *public_preprocessed_data_,
                     *private_preprocessed_data_,
                     *table_description_,
                     *constraint_system_,
-                    *lpc_scheme_
+                    std::move(*lpc_scheme_)
                 );
+                auto proof = prover.process();
                 BOOST_LOG_TRIVIAL(info) << "Proof generated";
 
+                create_lpc_scheme(); // reset to default scheme to do the verification
+                bool verify_ok{};
                 if (skip_verification) {
                     BOOST_LOG_TRIVIAL(info) << "Skipping proof verification";
+                    verify_ok = true;
                 } else {
-                    if (!verify(proof)) {
-                        return false;
-                    }
+                    verify_ok = verify(proof);
                 }
+                lpc_scheme_.emplace(std::move(prover.move_commitment_scheme())); // get back the commitment scheme used in prover
 
+                if (!verify_ok) {
+                    BOOST_LOG_TRIVIAL(error) << "Proof verification failed";
+                    return false;
+                }
+                
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     proof_file_,
                     filled_placeholder_proof,
                     true
@@ -302,7 +310,7 @@ namespace nil {
                     boost::filesystem::path proof_file_,
                     std::optional<boost::filesystem::path> challenge_file_,
                     std::optional<boost::filesystem::path> theta_power_file) {
-                if (!nil::proof_generator::can_write_to_file(proof_file_.string())) {
+                if (!can_write_to_file(proof_file_.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't write to file " << proof_file_;
                     return false;
                 }
@@ -320,17 +328,19 @@ namespace nil {
                         *private_preprocessed_data_,
                         *table_description_,
                         *constraint_system_,
-                        *lpc_scheme_,
+                        std::move(*lpc_scheme_),
                         true);
                 Proof proof = prover.process();
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
                 std::cout << "POOF GENERATE: " << duration.count() << "\n";
                 BOOST_LOG_TRIVIAL(info) << "Proof generated";
 
+                lpc_scheme_.emplace(prover.move_commitment_scheme()); // get back the commitment scheme used in prover
+
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     proof_file_,
                     filled_placeholder_proof,
                     true
@@ -364,19 +374,19 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Failed to write challenge to file.";
                 }
 
-                auto commitment_scheme = prover.get_commitment_scheme();
+                lpc_scheme_.emplace(prover.move_commitment_scheme());
 
-                commitment_scheme.state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::QUOTIENT_BATCH);
-                commitment_scheme.state_commited(crypto3::zk::snark::LOOKUP_BATCH);
-                commitment_scheme.mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::FIXED_VALUES_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::VARIABLE_VALUES_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::PERMUTATION_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::QUOTIENT_BATCH);
+                lpc_scheme_->state_commited(crypto3::zk::snark::LOOKUP_BATCH);
+                lpc_scheme_->mark_batch_as_fixed(crypto3::zk::snark::FIXED_VALUES_BATCH);
 
-                commitment_scheme.set_fixed_polys_values(common_data_.has_value() ? common_data_->commitment_scheme_data :
+                lpc_scheme_->set_fixed_polys_values(common_data_.has_value() ? common_data_->commitment_scheme_data :
                                                                                     public_preprocessed_data_->common_data.commitment_scheme_data);
 
-                std::size_t theta_power = commitment_scheme.compute_theta_power_for_combined_Q();
+                std::size_t theta_power = lpc_scheme_->compute_theta_power_for_combined_Q();
 
                 auto output_file = open_file<std::ofstream>(theta_power_file->string(), std::ios_base::out);
                 (*output_file) << theta_power << std::endl;
@@ -410,7 +420,7 @@ namespace nil {
                     nil::crypto3::marshalling::types::fill_placeholder_common_data<Endianness, CommonData>(
                         public_preprocessed_data_->common_data
                     );
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     preprocessed_common_data_file,
                     marshalled_common_data
                 );
@@ -450,7 +460,7 @@ namespace nil {
                     fill_placeholder_preprocessed_public_data<Endianness, PreprocessedPublicDataType>(
                         *public_preprocessed_data_
                     );
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     preprocessed_data_file,
                     marshalled_preprocessed_public_data
                 );
@@ -488,7 +498,7 @@ namespace nil {
 
                 auto marshalled_lpc_state = fill_commitment_scheme<Endianness, LpcScheme>(
                     *lpc_scheme_);
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     commitment_scheme_state_file,
                     marshalled_lpc_state
                 );
@@ -518,14 +528,13 @@ namespace nil {
                     return false;
                 }
 
-                lpc_scheme_.emplace(commitment_scheme.value());
+                lpc_scheme_.emplace(std::move(commitment_scheme.value()));
                 return true;
             }
 
-            bool verify(const Proof& proof) const {
+            bool verify(const Proof& proof) {
                 BOOST_LOG_TRIVIAL(info) << "Verifying proof...";
-                bool verification_result =
-                    nil::crypto3::zk::snark::placeholder_verifier<BlueprintField, PlaceholderParams>::process(
+                bool verification_result = nil::crypto3::zk::snark::placeholder_verifier<BlueprintField, PlaceholderParams>::process(
                         public_preprocessed_data_.has_value() ? public_preprocessed_data_->common_data : *common_data_,
                         proof,
                         *table_description_,
@@ -562,7 +571,7 @@ namespace nil {
             }
 
             bool save_circuit_to_file(boost::filesystem::path circuit_file) {
-                using writer = nil::proof_generator::circuit_writer<Endianness, BlueprintField>;
+                using writer = circuit_writer<Endianness, BlueprintField>;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing circuit to " << circuit_file;
                 if (!constraint_system_) {
@@ -622,7 +631,7 @@ namespace nil {
             }
 
             bool save_binary_assignment_table_to_file(const boost::filesystem::path& output_filename) {
-                using writer = nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>;
+                using writer = assignment_table_writer<Endianness, BlueprintField>;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
                 
@@ -667,7 +676,7 @@ namespace nil {
 
 
                 const auto write = [&](std::ostream& out) -> bool {
-                    return nil::proof_generator::assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
+                    return assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
                         out, 
                         assignment_table_.value(), 
                         table_description_.value(),
@@ -697,7 +706,7 @@ namespace nil {
                     nil::crypto3::marshalling::types::fill_assignment_table_description<Endianness, BlueprintField>(
                         *table_description_
                     );
-                bool res = nil::proof_generator::detail::encode_marshalling_to_file(
+                bool res = detail::encode_marshalling_to_file(
                     assignment_description_file,
                     marshalled_assignment_description
                 );
@@ -730,7 +739,7 @@ namespace nil {
                 using challenge_marshalling_type = nil::crypto3::marshalling::types::field_element<
                     TTypeBase, typename BlueprintField::value_type>;
 
-                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                if (!can_read_from_file(input_file.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
                     return std::nullopt;
                 }
@@ -856,7 +865,7 @@ namespace nil {
                 using polynomial_marshalling_type = typename nil::crypto3::marshalling::types::polynomial<
                     TTypeBase, PolynomialType>::type;
 
-                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                if (!can_read_from_file(input_file.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
                     return std::nullopt;
                 }
@@ -1018,7 +1027,7 @@ namespace nil {
                 using challenge_vector_marshalling_type = nil::crypto3::marshalling::types::field_element_vector<
                     typename BlueprintField::value_type, TTypeBase>;
 
-                if (!nil::proof_generator::can_read_from_file(input_file.string())) {
+                if (!can_read_from_file(input_file.string())) {
                     BOOST_LOG_TRIVIAL(error) << "Can't read file " << input_file;
                     return std::nullopt;
                 }

@@ -51,37 +51,35 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     std::vector<TYPE> A_bytes(32);
-                    std::vector<TYPE> A_bytes_255(32);
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         std::cout << "\tASSIGNMENT implemented" << std::endl;
                         auto bytes = nil::blueprint::w_to_8(current_state.additional_input);
                         for( std::size_t i = 0; i < 32; i++ ){
                             A_bytes[i] = bytes[i];
-                            A_bytes_255[i] = 255 - A_bytes[i];
                         }
                     }
-                    for( std::size_t i = 0; i < 32; i++){
+                    for( std::size_t i = 0; i < 16; i++){
                         allocate(A_bytes[i], i, 0);
-                        allocate(A_bytes_255[i], i, 1);
-                    }
-                    for( std::size_t i = 0; i < 32; i++){
-                        constrain(A_bytes[i] + A_bytes_255[i] - 255);
+                        allocate(A_bytes[i + 16], i, 1);
                     }
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(1) - x - 1);                   // PC transition
-                        constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
+                        if( x == 0 )
+                            constrain(current_state.gas(1) - current_state.gas_next() - 2);                 // GAS transition
+                        else
+                            constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
                         constrain(current_state.stack_size_next() - current_state.stack_size(1) - 1);       // stack_size transition
                         constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 1);   // rw_counter transition
                         auto A_128 = chunks8_to_chunks128<TYPE>(A_bytes);
                         std::vector<TYPE> tmp({
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(1),
-                            current_state.stack_size(1),
+                            current_state.call_id(0),
+                            current_state.stack_size(0),
                             TYPE(0),// storage_key_hi
                             TYPE(0),// storage_key_lo
                             TYPE(0),// field
-                            current_state.rw_counter(1),
+                            current_state.rw_counter(0),
                             TYPE(1),// is_write
                             A_128.first,
                             A_128.second
@@ -91,14 +89,25 @@ namespace nil {
                             constrain(A_bytes[i]);
                         }
                         for( std::size_t j = 32-x; j < 32; j++){
-                            tmp = {
-                                TYPE(1),
-                                current_state.pc(0) + j - (32 - x) + 1,
-                                A_bytes[j],
-                                TYPE(0),
-                                current_state.bytecode_hash_hi(0),
-                                current_state.bytecode_hash_lo(0)
-                            };
+                            if( j < 16 ){
+                                tmp = {
+                                    TYPE(1),
+                                    current_state.pc(0) + j - (32 - x) + 1,
+                                    A_bytes[j],
+                                    TYPE(0),
+                                    current_state.bytecode_hash_hi(0),
+                                    current_state.bytecode_hash_lo(0)
+                                };
+                            } else {
+                                tmp = {
+                                    TYPE(1),
+                                    current_state.pc(1) + j - (32 - x) + 1,
+                                    A_bytes[j],
+                                    TYPE(0),
+                                    current_state.bytecode_hash_hi(1),
+                                    current_state.bytecode_hash_lo(1)
+                                };
+                            }
                             lookup(tmp, "zkevm_bytecode");
                         }
                     }

@@ -54,6 +54,7 @@ macro(define_blueprint_test test)
         crypto3::algebra
         crypto3::zk
         crypto3::random
+        crypto3::block
     )
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
@@ -225,6 +226,12 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/l1_wrapper"
     "zkevm_bbf/rw"
     "zkevm_bbf/bytecode"
+    "zkevm_bbf/copy"
+    "zkevm_bbf/opcodes/pushx"
+    "zkevm_bbf/opcodes/iszero"
+    "zkevm_bbf/opcodes/mod_ops"
+    "zkevm_bbf/opcodes/bitwise"
+    "zkevm_bbf/opcodes/cmp"
 )
 
 

@@ -65,6 +65,7 @@ namespace nil {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
                         //std::cout << "RW assign size = " << rw_trace.size() << std::endl;
+                        BOOST_ASSERT(rw_trace.size() < max_rw_size);
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
                             //if( rw_trace[i].op != nil::blueprint::PADDING_OP ) std::cout << "\t" << i << "." << rw_trace[i] << std::endl;
                             op[i] = rw_op_to_num(rw_trace[i].op);

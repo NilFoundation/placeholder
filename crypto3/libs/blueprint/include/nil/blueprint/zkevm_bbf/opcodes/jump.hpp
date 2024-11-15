@@ -113,7 +113,6 @@ namespace nil {
                 }
             };
 
-
             template<typename FieldType, GenerationStage stage>
             class zkevm_jumpdest_bbf : generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;

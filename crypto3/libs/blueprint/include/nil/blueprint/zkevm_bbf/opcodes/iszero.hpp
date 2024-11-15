@@ -58,12 +58,14 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         std::cout << "\tASSIGNMENT implemented" << std::endl;
                         zkevm_word_type A = current_state.stack_top();
-                        a_chunks = zkevm_word_to_field_element<FieldType>(A);
+                        auto a = w_to_16(A);
                         for( std::size_t i = 0; i < a_chunks.size(); i++ ){
+                            a_chunks[i] = a[i];
                             chunks_sum += a_chunks[i];
                         }
-                        chunks_sum_inv = chunks_sum_inv == 0? 0 : chunks_sum.inversed();
+                        chunks_sum_inv = chunks_sum == 0? 0 : chunks_sum.inversed();
                         result = 1 - chunks_sum * chunks_sum_inv;
+                        std::cout << "\tiszero(" << A << ") = " << result << " chunks_sum = " << chunks_sum << std::endl;
                     }
                     TYPE chunks_sum_expr;
                     for( std::size_t i = 0; i < a_chunks.size(); i++ ){
@@ -73,6 +75,7 @@ namespace nil {
                     allocate(chunks_sum, 32, 0);
                     allocate(chunks_sum_inv, 33, 0);
                     allocate(result, 34, 0);
+
                     constrain(chunks_sum_expr - chunks_sum);
                     constrain(result + chunks_sum * chunks_sum_inv - 1);
                     constrain(result * (result - 1));

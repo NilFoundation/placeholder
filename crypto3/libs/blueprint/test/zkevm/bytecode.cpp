@@ -214,12 +214,14 @@ BOOST_AUTO_TEST_CASE(two_small_contracts){
     nil::blueprint::components::bytecode_input_type input;
     input.new_bytecode(hex_string_to_bytes(bytecode_for));
     input.new_bytecode(hex_string_to_bytes(bytecode_addition));
+    input.new_bytecode(hex_string_to_bytes(bytecode_mstore8));
+
 
     nil::blueprint::components::plonk_keccak_table<field_type>::input_type keccak_input;
     keccak_input.new_buffer(hex_string_to_bytes(bytecode_for));
     keccak_input.new_buffer(hex_string_to_bytes(bytecode_addition));
     keccak_input.new_buffer(hex_string_to_bytes("0xffaa129870189274891702983470189234701829347123948710293874091872310192329140879210"));
 
-    test_zkevm_bytecode<field_type>(input.get_bytecodes(), keccak_input, 2046, 30);
+    test_zkevm_bytecode<field_type>(input.get_bytecodes(), keccak_input, 10000, 30);
 }
 BOOST_AUTO_TEST_SUITE_END()

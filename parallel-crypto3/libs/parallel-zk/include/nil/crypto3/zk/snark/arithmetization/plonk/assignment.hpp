@@ -29,8 +29,10 @@
 
 #include <algorithm>
 
+#include <memory>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/padding.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
+#include <nil/crypto3/math/polynomial/shift.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
@@ -103,7 +105,8 @@ namespace nil {
                         }
                     }
 
-                    ColumnType get_variable_value(const VariableType& var, std::shared_ptr<math::evaluation_domain<FieldType>> domain) const {
+                    ColumnType get_variable_value(const VariableType& var,
+                            std::shared_ptr<math::evaluation_domain<FieldType>> domain) const {
                          if (var.rotation == 0) {
                              return get_variable_value_without_rotation(var);
                          }
@@ -119,10 +122,6 @@ namespace nil {
 
                     const witnesses_container_type& witnesses() const {
                         return _witnesses;
-                    }
-
-                    witnesses_container_type move_witnesses() {
-                        return std::move(_witnesses);
                     }
 
                     const ColumnType& operator[](std::uint32_t index) const {
@@ -255,11 +254,6 @@ namespace nil {
                         return _selectors;
                     }
 
-                    selector_container_type move_selectors() {
-
-                        return std::move(_selectors);
-                    }
-
                     void fill_constant(std::uint32_t index, const ColumnType& column) {
                         BOOST_ASSERT(index < constants_amount());
                         BOOST_ASSERT(_constants[index].size() == 0);
@@ -324,24 +318,35 @@ namespace nil {
 
                 protected:
                     // These are normally created by the assigner, or read from a file.
-                    private_table_type _private_table;
-                    public_table_type _public_table;
+                    std::shared_ptr<private_table_type> _private_table;
+                    std::shared_ptr<public_table_type> _public_table;
 
                 public:
                     virtual ~plonk_table() = default;
 
-                    plonk_table(private_table_type private_table = {},
-                                public_table_type public_table = {})
-                        : _private_table(std::move(private_table))
-                        , _public_table(std::move(public_table)) {
+                    plonk_table():
+                        _private_table(std::make_shared<plonk_private_table<FieldType, ColumnType>>()),
+                        _public_table(std::make_shared<plonk_public_table<FieldType, ColumnType>>()) {
+                    }
+
+                    plonk_table(std::shared_ptr<private_table_type> private_table,
+                                std::shared_ptr<public_table_type> public_table)
+                        : _private_table(private_table)
+                        , _public_table(public_table) {
                     }
 
                     plonk_table(std::size_t witnesses_amount,
                                 std::size_t public_inputs_amount,
                                 std::size_t constants_amount,
                                 std::size_t selectors_amount)
-                        : _private_table(witnesses_amount)
-                        , _public_table(public_inputs_amount, constants_amount, selectors_amount) {
+                        : _private_table(std::make_shared<private_table_type>(witnesses_amount))
+                        , _public_table(std::make_shared<public_table_type>(public_inputs_amount, constants_amount, selectors_amount)) {
+                    }
+
+                    crypto3::zk::snark::plonk_table_description<FieldType> get_description() const {
+                        return crypto3::zk::snark::plonk_table_description<FieldType>(
+                            witnesses_amount(), public_inputs_amount(), constants_amount(), selectors_amount(),
+                            rows_amount(), std::pow(2, std::ceil(std::log2(rows_amount()))));
                     }
 
                     crypto3::zk::snark::plonk_table_description<FieldType> get_description() const {
@@ -377,56 +382,55 @@ namespace nil {
                     }
 
                     const ColumnType& witness(std::uint32_t index) const {
-                        return _private_table.witness(index);
+                        return _private_table->witness(index);
                     }
 
                     typename field_type::value_type &witness(
                         std::uint32_t witness_index, std::uint32_t row_index) {
 
                         if (witness_column_size(witness_index) <= row_index)
-                            this->_private_table._witnesses[witness_index].resize(row_index + 1);
+                            this->_private_table->_witnesses[witness_index].resize(row_index + 1);
 
-                        return this->_private_table._witnesses[witness_index][row_index];
+                        return this->_private_table->_witnesses[witness_index][row_index];
                     }
 
                     const ColumnType& public_input(std::uint32_t index) const {
-                        return _public_table.public_input(index);
+                        return _public_table->public_input(index);
                     }
 
                     typename field_type::value_type &public_input(
                         std::uint32_t public_input_index, std::uint32_t row_index) {
 
                         if (public_input_column_size(public_input_index) <= row_index)
-                            this->_public_table._public_inputs[public_input_index].resize(row_index + 1);
+                            this->_public_table->_public_inputs[public_input_index].resize(row_index + 1);
 
-                        return this->_public_table._public_inputs[public_input_index][row_index];
+                        return this->_public_table->_public_inputs[public_input_index][row_index];
                     }
 
-
                     const ColumnType& constant(std::uint32_t index) const {
-                        return _public_table.constant(index);
+                        return _public_table->constant(index);
                     }
 
                     typename field_type::value_type &constant(
                         std::uint32_t constant_index, std::uint32_t row_index) {
 
                         if (constant_column_size(constant_index) <= row_index)
-                            this->_public_table._constants[constant_index].resize(row_index + 1);
+                            this->_public_table->_constants[constant_index].resize(row_index + 1);
 
-                        return this->_public_table._constants[constant_index][row_index];
+                        return this->_public_table->_constants[constant_index][row_index];
                     }
 
                     const ColumnType& selector(std::uint32_t index) const {
-                        return _public_table.selector(index);
+                        return _public_table->selector(index);
                     }
 
                     typename field_type::value_type &selector(
                         std::uint32_t selector_index, std::uint32_t row_index) {
 
                         if (selector_column_size(selector_index) <= row_index)
-                            this->_public_table._selectors[selector_index].resize(row_index + 1);
+                            this->_public_table->_selectors[selector_index].resize(row_index + 1);
 
-                        return this->_public_table._selectors[selector_index][row_index];
+                        return this->_public_table->_selectors[selector_index][row_index];
                     }
 
                     void enable_selector(const std::size_t selector_index, const std::size_t row_index) {
@@ -435,104 +439,104 @@ namespace nil {
                     }
 
                     virtual void fill_constant(std::uint32_t index, const ColumnType& column) {
-                        _public_table.fill_constant(index, column);
+                        _public_table->fill_constant(index, column);
                     }
 
                     virtual void fill_selector(std::uint32_t index, const ColumnType& column) {
-                        _public_table.fill_selector(index, column);
+                        _public_table->fill_selector(index, column);
                     }
 
                     const witnesses_container_type& witnesses() const {
-                        return _private_table.witnesses();
+                        return _private_table->witnesses();
                     }
 
                     const public_input_container_type& public_inputs() const {
-                        return _public_table.public_inputs();
+                        return _public_table->public_inputs();
                     }
 
                     const constant_container_type& constants() const {
-                        return _public_table.constants();
+                        return _public_table->constants();
                     }
 
                     const selector_container_type& selectors() const {
-                        return _public_table.selectors();
+                        return _public_table->selectors();
                     }
 
                     virtual void resize_witnesses(std::uint32_t new_size) {
-                        _private_table.resize_witnesses(new_size);
+                        _private_table->resize_witnesses(new_size);
                     }
 
                     virtual void resize_public_inputs(std::uint32_t new_size) {
-                        _public_table.resize_public_inputs(new_size);
+                        _public_table->resize_public_inputs(new_size);
                     }
 
                     virtual void resize_constants(std::uint32_t new_size) {
-                        _public_table.resize_constants(new_size);
+                        _public_table->resize_constants(new_size);
                     }
 
                     virtual void resize_selectors(std::uint32_t new_size) {
-                        _public_table.resize_selectors(new_size);
+                        _public_table->resize_selectors(new_size);
                     }
 
                     const ColumnType& operator[](std::uint32_t index) const {
-                        if (index < _private_table.size())
-                            return _private_table[index];
-                        index -= _private_table.size();
-                        if (index < _public_table.size())
-                            return _public_table[index];
+                        if (index < _private_table->size())
+                            return (*_private_table)[index];
+                        index -= _private_table->size();
+                        if (index < _public_table->size())
+                            return (*_public_table)[index];
                         throw std::out_of_range("Private table index out of range.");
                     }
 
-                    const private_table_type& private_table() const {
+                    std::shared_ptr<private_table_type> private_table() const {
                         return _private_table;
                     }
 
-                    private_table_type move_private_table() {
+                    std::shared_ptr<private_table_type> move_private_table() {
                         return std::move(_private_table);
                     }
 
-                    const public_table_type& public_table() const {
+                    std::shared_ptr<public_table_type> public_table() const {
                         return _public_table;
                     }
 
-                    public_table_type move_public_table() {
+                    std::shared_ptr<public_table_type> move_public_table() {
                         return std::move(_public_table);
                     }
 
                     std::uint32_t size() const {
-                        return _private_table.size() + _public_table.size();
+                        return _private_table->size() + _public_table->size();
                     }
 
                     std::uint32_t witnesses_amount() const {
-                        return _private_table.witnesses_amount();
+                        return _private_table->witnesses_amount();
                     }
 
                     std::uint32_t witness_column_size(std::uint32_t index) const {
-                        return _private_table.witness_column_size(index);
+                        return _private_table->witness_column_size(index);
                     }
 
                     std::uint32_t public_inputs_amount() const {
-                        return _public_table.public_inputs_amount();
+                        return _public_table->public_inputs_amount();
                     }
 
                     std::uint32_t public_input_column_size(std::uint32_t index) const {
-                        return _public_table.public_input_column_size(index);
+                        return _public_table->public_input_column_size(index);
                     }
 
                     std::uint32_t constants_amount() const {
-                        return _public_table.constants_amount();
+                        return _public_table->constants_amount();
                     }
 
                     std::uint32_t constant_column_size(std::uint32_t index) const {
-                        return _public_table.constant_column_size(index);
+                        return _public_table->constant_column_size(index);
                     }
 
                     std::uint32_t selectors_amount() const {
-                        return _public_table.selectors_amount();
+                        return _public_table->selectors_amount();
                     }
 
                     std::uint32_t selector_column_size(std::uint32_t index) const {
-                        return _public_table.selector_column_size(index);
+                        return _public_table->selector_column_size(index);
                     }
 
                     std::uint32_t rows_amount() const {
@@ -562,7 +566,7 @@ namespace nil {
                     }
 
                     bool operator==(plonk_table<FieldType, ColumnType> const &other) const {
-                        return _private_table == other._private_table && _public_table == other._public_table;
+                        return *_private_table == *other._private_table && *_public_table == *other._public_table;
                     }
 
                     friend std::uint32_t basic_padding<FieldType, ColumnType>(
