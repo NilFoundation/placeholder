@@ -47,35 +47,65 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
                 zkevm_add_sub_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, bool is_add):
                     generic_component<FieldType,stage>(context_object, false)
                 {
+                    integral_type two_128 = integral_type(1) << 128;
+
                     std::vector<TYPE> A(16);
                     std::vector<TYPE> B(16);
-                    std::vector<TYPE> C(16);
+                    std::vector<TYPE> S(16); // S = A+B
+                    TYPE carry0;
+                    TYPE carry1;
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
+                        auto s =
+                            is_add ?
+                            w_to_16(current_state.stack_top() + current_state.stack_top(1)):
+                            w_to_16(current_state.stack_top() - current_state.stack_top(1));
+
                         for( std::size_t i = 0; i < 16; i++){
-                            A[i] = a[i];
+                            A[i] = is_add? a[i]: s[i];
                             B[i] = b[i];
+                            S[i] = is_add? s[i] : a[i];
                         }
+                        auto A_128 = chunks16_to_chunks128<TYPE>(A);
+                        auto B_128 = chunks16_to_chunks128<TYPE>(B);
+                        auto S_128 = chunks16_to_chunks128<TYPE>(S);
+                        carry0 = (A_128.second + B_128.second >= two_128);
+                        carry1 = (A_128.first + B_128.first + carry0 >= two_128);
+                        std::cout << std::hex;
+                        std::cout << "\tA = " << A_128.first << " " << A_128.second << std::endl;
+                        std::cout << "\tB = " << B_128.first << " " << B_128.second << std::endl;
+                        std::cout << "\tS = " << S_128.first << " " << S_128.second << std::endl;
+                        std::cout << "\tcarry0 = " << carry0 << std::endl;
+                        std::cout << "\tcarry1 = " << carry1 << std::endl;
+                        std::cout << std::dec;
                     }
                     for( std::size_t i = 0; i < 16; i++){
                         allocate(A[i], i, 0);
                         allocate(B[i], i + 16, 0);
-                        allocate(C[i], i, 1);
+                        allocate(S[i], i, 1);
                     }
+                    allocate(carry0, 32, 0);
+                    allocate(carry1, 33, 0);
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
+                    auto S_128 = chunks16_to_chunks128<TYPE>(S);
+                    constrain(carry0 * (carry0 - 1));
+                    constrain(carry1 * (carry1 - 1));
+                    constrain(A_128.second + B_128.second - carry0 * two_128 - S_128.second);
+                    constrain(A_128.first + B_128.first + carry0 - carry1 * two_128 - S_128.first);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
-                        constrain(current_state.gas(2) - current_state.gas_next() - 3);                 // GAS transition
-                        constrain(current_state.stack_size(2) - current_state.stack_size_next() - 1);   // stack_size transition
-                        constrain(current_state.memory_size(2) - current_state.memory_size_next());     // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(2) - 3);   // rw_counter transition
+                        constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
+                        constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
+                        constrain(current_state.stack_size(1) - current_state.stack_size_next() - 1);   // stack_size transition
+                        constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 3);   // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
@@ -86,8 +116,8 @@ namespace nil {
                             TYPE(0),// field
                             current_state.rw_counter(1),
                             TYPE(0),// is_write
-                            A_128.first,
-                            A_128.second
+                            is_add? A_128.first: S_128.first,
+                            is_add? A_128.second: S_128.second
                         };
                         lookup(tmp, "zkevm_rw");
                         tmp = {
@@ -103,6 +133,21 @@ namespace nil {
                             B_128.second
                         };
                         lookup(tmp, "zkevm_rw");
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 2,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(1) + 2,
+                            TYPE(1),// is_write
+                            is_add? S_128.first: A_128.first,
+                            is_add? S_128.second: A_128.second
+                        };
+                        lookup(tmp, "zkevm_rw");
+                    } else {
+                        std::cout << "\tAssignment implemented" << std::endl;
                     }
                 }
             };
@@ -125,7 +170,7 @@ namespace nil {
                 zkevm_add_sub_operation(bool _is_add):is_add(_is_add){
                 }
                 std::size_t rows_amount() override {
-                    return 3;
+                    return 2;
                 }
             protected:
                 bool is_add;
