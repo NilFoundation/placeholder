@@ -62,7 +62,7 @@ using namespace nil::blueprint::bbf;
 // Here they are different for different tests just for fast and easy testing
 BOOST_AUTO_TEST_SUITE(zkevm_opcode_test_suite)
 
-BOOST_AUTO_TEST_CASE(iszero) {
+BOOST_AUTO_TEST_CASE(mod_ops) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;
 

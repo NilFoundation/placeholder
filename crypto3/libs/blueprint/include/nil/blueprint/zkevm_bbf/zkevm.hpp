@@ -185,7 +185,7 @@ namespace nil {
                             );
                             std::size_t opcode_id = (std::find(implemented_opcodes.begin(), implemented_opcodes.end(), current_opcode) - implemented_opcodes.begin());
                             std::cout << current_opcode
-                                << " with id = " << opcode_id
+                                << " with id = "  << opcode_id
                                 << " will be assigned as " << std::hex << current_state.opcode << std::dec
                                 << " on row " << current_row
                                 << " rows_amount = " << current_opcode_rows_amount
