@@ -105,6 +105,19 @@ namespace nil {
                             stack.push_back(result);
                             pc++;
                             gas -= 3;
+                        } else if (opcode == zkevm_opcode::MUL){
+                            // 0x02
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = (a * b);
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
                         } else if (opcode == zkevm_opcode::SUB){
                             // 0x03
                             zkevm_word_type a = stack.back();
