@@ -144,8 +144,7 @@ namespace nil {
                 constraint_type c_1_64 = chunk_sum_64<constraint_type, var>(c_1_chunks, 0);
                 constraint_type c_3_64 = chunk_sum_64<constraint_type, var>(c_3_chunks, 0);
                 constraint_type first_carryless = first_carryless_consrtruct<constraint_type>(
-                    a_64_chunks, b_64_chunks, r_64_chunks
-                );
+                    a_64_chunks, b_64_chunks, r_64_chunks);
                 constraints.push_back({position, (first_carryless - c_1_64 * two128 - c_2 * two192)});
                 constraint_type second_carryless = second_carryless_construct<constraint_type>(
                     a_64_chunks, b_64_chunks, r_64_chunks);

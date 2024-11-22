@@ -74,6 +74,18 @@ BOOST_AUTO_TEST_CASE(mul) {
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2);
     opcode_tester.push_opcode(zkevm_opcode::MUL);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1111111111111111111111111111111111111111111111111111111111111111_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2);
+    opcode_tester.push_opcode(zkevm_opcode::MUL);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x4444444444444444333333333333333322222222222222221111111111111111_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2);
+    opcode_tester.push_opcode(zkevm_opcode::MUL);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x88888888888888888888888888888888_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2);
+    opcode_tester.push_opcode(zkevm_opcode::MUL);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x8888888888888888888888888888888888888888888888888888888888888888_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2);
+    opcode_tester.push_opcode(zkevm_opcode::MUL);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::MUL);
@@ -85,6 +97,9 @@ BOOST_AUTO_TEST_CASE(mul) {
     opcode_tester.push_opcode(zkevm_opcode::MUL);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1234567890);
+    opcode_tester.push_opcode(zkevm_opcode::MUL);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1e);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1e);
     opcode_tester.push_opcode(zkevm_opcode::MUL);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 

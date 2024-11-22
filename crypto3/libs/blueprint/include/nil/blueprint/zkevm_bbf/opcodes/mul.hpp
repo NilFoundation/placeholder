@@ -80,10 +80,10 @@ namespace nil {
                     const std::vector<TYPE> &r_64_chunks
                 ) {
                     return
-                        (a_64_chunks[3] * b_64_chunks[1] + a_64_chunks[2] * b_64_chunks[2] +
+                       (a_64_chunks[3] * b_64_chunks[1] + a_64_chunks[2] * b_64_chunks[2] +
                         a_64_chunks[1] * b_64_chunks[3] - r_64_chunks[1]) +
                         two_64 * (a_64_chunks[3] * b_64_chunks[0] + a_64_chunks[1] * b_64_chunks[2] +
-                                a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[0] * b_64_chunks[3] - r_64_chunks[0]);
+                            a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[0] * b_64_chunks[3] - r_64_chunks[0]);
                 }
 
                 zkevm_mul_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
@@ -139,18 +139,14 @@ namespace nil {
                         TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
                         TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
 
-                        std::cout << "\tlo_carries = " << std::hex << lo_carries.data << std::dec << std::endl;
-                        std::cout << "\thi_carries = " << std::hex << lo_carries.data << std::dec << std::endl;
                         integral_type c_first_i = typename FieldType::integral_type(lo_carries.data) >> 128;
                         auto c_first = w_to_16(zwordc(c_first_i));
-                        integral_type c_second_i = typename FieldType::integral_type(hi_carries.data) >> 128;
+                        integral_type c_second_i = (typename FieldType::integral_type(hi_carries.data) + c_first_i) >> 128;
                         auto c_second = w_to_16(zwordc(c_second_i));
                         C3[3] = c_first[15]; C3[2] = c_first[14]; C3[1] = c_first[13]; C3[0] = c_first[12];
                         C2 = c_first[11];
                         C1[3] = c_second[15]; C1[2] = c_second[14]; C1[1] = c_second[13]; C1[0] = c_second[12];
                         C0 = c_second[11];
-                        std::cout << "\tC0 = " << C0 << std::endl;
-                        std::cout << "\tC2 = " << C2<< std::endl;
                     }
 
                     TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
@@ -174,7 +170,7 @@ namespace nil {
                     constrain(C0 * (C0 - 1) * (C0 - 2) * (C0 - 3));
 
                     constrain(lo_carries - C3_64 * two_128 - C2 * two_192);
-                    //constrain(hi_carries  + C3_64 + C2 * two_64 + C1_64 * two_128 + C0_64 * two_192);
+                    constrain(hi_carries + C3_64 + C2 * two_64 - C1_64 * two_128 - C0 * two_192);
 
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
@@ -225,6 +221,8 @@ namespace nil {
                             R_128.second
                         };
                         lookup(tmp, "zkevm_rw");
+                    } else {
+                        std::cout << "\tAssignment implemented" << std::endl;
                     }
                 }
             };
