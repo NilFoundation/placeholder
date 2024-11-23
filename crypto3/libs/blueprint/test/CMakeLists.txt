@@ -95,6 +95,7 @@ set(COMMON_TEST_FILES
     "bbf/row_seletor_test"
     "bbf/gate_optimizer"
     "bbf/poseidon"
+    "bbf/test_circuit_builder"
     )
 
 set(NON_NATIVE_TESTS_FILES
