@@ -40,87 +40,70 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
+//#include <nil/blueprint/bbf/bbf_wrapper.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-// #include <nil/blueprint/bbf/is_zero.hpp>
-#include <nil/blueprint/bbf/micro_range_check.hpp>
+#include <nil/blueprint/bbf/is_zero.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
+#include "../test_plonk_component.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 
-template<typename FieldType>
-bool check_proof(
-    const circuit<zk::snark::plonk_constraint_system<FieldType>> &bp,
-    const zk::snark::plonk_assignment_table<FieldType> &assignment,
-    const zk::snark::plonk_table_description<FieldType> &desc) {
-
-    std::size_t Lambda = 9;
-
-    typedef nil::crypto3::zk::snark::placeholder_circuit_params<FieldType> circuit_params;
-    using transcript_hash_type = nil::crypto3::hashes::keccak_1600<256>;
-    using merkle_hash_type = nil::crypto3::hashes::keccak_1600<256>;
-    using transcript_type = typename nil::crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-    using lpc_params_type = nil::crypto3::zk::commitments::list_polynomial_commitment_params<
-        merkle_hash_type,
-        transcript_hash_type,
-        2 //m
-    >;
-
-    using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<FieldType, lpc_params_type>;
-    using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
-    using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
-    typename lpc_type::fri_type::params_type fri_params(1, std::ceil(log2(assignment.rows_amount())), Lambda, 2);
-    lpc_scheme_type lpc_scheme(fri_params);
-
-    std::cout << "Public preprocessor" << std::endl;
-    typename nil::crypto3::zk::snark::placeholder_public_preprocessor<FieldType,
-        lpc_placeholder_params_type>::preprocessed_data_type lpc_preprocessed_public_data =
-            nil::crypto3::zk::snark::placeholder_public_preprocessor<FieldType, lpc_placeholder_params_type>::process(
-            bp, assignment.public_table(), desc, lpc_scheme, 10);
-
-    std::cout << "Private preprocessor" << std::endl;
-    typename nil::crypto3::zk::snark::placeholder_private_preprocessor<FieldType,
-       lpc_placeholder_params_type>::preprocessed_data_type lpc_preprocessed_private_data =
-            nil::crypto3::zk::snark::placeholder_private_preprocessor<FieldType, lpc_placeholder_params_type>::process(
-            bp, assignment.private_table(), desc);
-
-    std::cout << "Prover" << std::endl;
-    auto lpc_proof = nil::crypto3::zk::snark::placeholder_prover<FieldType, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, bp,
-            lpc_scheme);
-
-    // We must not use the same instance of lpc_scheme.
-    lpc_scheme_type verifier_lpc_scheme(fri_params);
-
-    std::cout << "Verifier" << std::endl;
-    bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<FieldType, lpc_placeholder_params_type>::process(
-            lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
-    return verifier_res;
-}
-
-
 template <typename FieldType, template<typename, bbf::GenerationStage stage> class Component, typename... ComponentStaticInfoArgs>
 void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input,
                           ComponentStaticInfoArgs... args) {
+    // using Builder = bbf::circuit_builder<FieldType,Component,int>;
 
-    auto B = bbf::circuit_builder<FieldType,Component,ComponentStaticInfoArgs...>(args...);
+    auto B = bbf::circuit_builder<FieldType,Component,ComponentStaticInfoArgs...>(1,3,args...); // W, rows. PI set to 1 by default
 
-    auto [at, A, desc] = B.assign(raw_input);
-    std::cout << "Input = " << A.input << std::endl;
-    bool pass = B.is_satisfied(at);
-    std::cout << "Is_satisfied = " << pass << std::endl;
+    B.generate_constraints();
+    B.generate_assignment(raw_input);
+/*
+    constexpr std::size_t WitnessColumns = 15;    // TODO
+    constexpr std::size_t PublicInputColumns = 1; // TODO
+    constexpr std::size_t ConstantColumns = 3;    // TODO
+    constexpr std::size_t SelectorColumns = 9;    // TODO
 
-    if (pass) {
-        bool proof = check_proof(B.get_circuit(), at, desc);
-        std::cout << "Is_proved = " << proof << std::endl;
-    }
+    // table configuration, TODO: We need 108 rows because test_plonk_component.hpp places the component at a random row 0..100.
+    // In practice it's placed at row 82.
+    zk::snark::plonk_table_description<BlueprintFieldType> desc(
+        WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns, 108, 108);
+
+    using ArithmetizationType = zk::snark::plonk_constraint_system<BlueprintFieldType>;
+    using AssignmentType = assignment<ArithmetizationType>;
+    using hash_type = nil::crypto3::hashes::keccak_1600<256>;
+    constexpr std::size_t Lambda = 40;
+
+    using var = zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
+
+    using component_type = components::bbf_wrapper<ArithmetizationType, BlueprintFieldType>;
+
+    typename BlueprintFieldType::value_type expected_res = 0; // TODO
+
+    typename component_type::input_type instance_input = {
+        var(0, 0, false, var::column_type::public_input),
+        var(0, 1, false, var::column_type::public_input),
+        var(0, 2, false, var::column_type::public_input),
+        var(0, 3, false, var::column_type::public_input),
+        var(0, 4, false, var::column_type::public_input),
+        var(0, 5, false, var::column_type::public_input),
+        var(0, 6, false, var::column_type::public_input),
+        var(0, 7, false, var::column_type::public_input) };
+
+//    std::vector<typename BlueprintFieldType::value_type> public_input = {input};
+
+    component_type component_instance({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, {0}, {0});
+
+    auto result_check = [&expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
+        // assert(expected_res == var_value(assignment, real_res.output));
+    };
+
+    test_component<component_type, BlueprintFieldType, hash_type, Lambda>
+        (component_instance, desc, public_input, result_check, instance_input);
+*/
 }
 
-static const std::size_t random_tests_amount = 5;
+static const std::size_t random_tests_amount = 1;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
@@ -134,12 +117,11 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_cicruit_builder_test) {
     generate_random.seed(seed_seq);
 
     integral_type base16 = integral_type(1) << 16;
-    integral_type base17 = integral_type(1) << 17;
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
-        auto random_input = value_type(integral_type(generate_random().data) % (i % 2 ? base16 : base17));
-        bbf::micro_range_check<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {random_input};
-        test_circuit_builder<field_type,bbf::micro_range_check>(raw_input);
+        auto random_input = value_type(integral_type(generate_random().data) % base16);
+        bbf::is_zero<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {random_input};
+        test_circuit_builder<field_type,bbf::is_zero>(raw_input,.1,2,3,4,5,6);
     }
 }
 

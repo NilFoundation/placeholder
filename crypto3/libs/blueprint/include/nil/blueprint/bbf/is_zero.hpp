@@ -41,6 +41,9 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+            template<typename FieldType, GenerationStage stage>
+            struct is_zero_public_input;
+
             template<typename FieldType>
             struct is_zero_raw_input {
                 using TYPE = typename FieldType::value_type;
