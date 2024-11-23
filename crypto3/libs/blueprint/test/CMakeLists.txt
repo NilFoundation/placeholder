@@ -86,6 +86,7 @@ set(COMMON_TEST_FILES
     "bbf/bbf_wrapper"
     "bbf/gate_optimizer"
     "bbf/poseidon"
+    "bbf/test_circuit_builder"
     )
 
 set(NON_NATIVE_TESTS_FILES
