@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include <nil/crypto3/multiprecision/big_int/literals.hpp>
 
 #include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
@@ -36,22 +36,12 @@
 namespace nil {
     namespace blueprint {
 
-        constexpr inline boost::multiprecision::number<
-                boost::multiprecision::backends::cpp_int_modular_backend<257>> zkevm_modulus =
-                        0x10000000000000000000000000000000000000000000000000000000000000000_cppui_modular257;
+        constexpr inline auto zkevm_modulus =
+                        0x10000000000000000000000000000000000000000000000000000000000000000_bigui257;
 
-        constexpr inline boost::multiprecision::backends::modular_params<
-                boost::multiprecision::backends::cpp_int_modular_backend<257>>
-                    zkevm_modular_params = zkevm_modulus.backend();
+        using zkevm_word_type = nil::crypto3::multiprecision::auto_big_mod<zkevm_modulus>;
 
-        using zkevm_word_type = boost::multiprecision::number<
-            boost::multiprecision::backends::modular_adaptor<
-                boost::multiprecision::backends::cpp_int_modular_backend<257>,
-                boost::multiprecision::backends::modular_params_ct<
-                    boost::multiprecision::backends::cpp_int_modular_backend<257>,
-                    zkevm_modular_params>>>;
-
-        using zkevm_word_integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+        using zkevm_word_integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
         template<typename T>
         constexpr zkevm_word_type zwordc(const T &value) {

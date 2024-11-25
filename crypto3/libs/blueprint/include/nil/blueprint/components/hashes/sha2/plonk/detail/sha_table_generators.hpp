@@ -118,7 +118,7 @@ namespace nil {
 
                     std::vector<bool> value(table_size);
                     for (std::size_t j = 0; j < table_size; j++) {
-                        value[table_size - j - 1] = boost::multiprecision::bit_test(i, j);
+                        value[table_size - j - 1] = i.bit_test(j);
                     }
                     // s0
                     const std::array<std::vector<integral_type>, 2> a_chunks =
@@ -258,7 +258,7 @@ namespace nil {
 
                     std::vector<bool> value(table_size);
                     for (std::size_t j = 0; j < table_size; j++) {
-                        value[table_size - j - 1] = boost::multiprecision::bit_test(i, j);
+                        value[table_size - j - 1] = i.bit_test(j);
                     }
 
                     std::array<std::vector<typename BlueprintFieldType::integral_type>, 2> e_chunks =

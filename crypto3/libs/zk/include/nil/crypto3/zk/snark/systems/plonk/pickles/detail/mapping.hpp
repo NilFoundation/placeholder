@@ -99,14 +99,14 @@ namespace nil {
                             a = a.doubled();
                             b = b.doubled();
 
-                            bool r_2i = boost::multiprecision::bit_test(rep, 2 * i);
+                            bool r_2i = rep.bit_test(2 * i);
                             typename FieldType::value_type s;
                             if (r_2i) {
                                 s = one;
                             } else {
                                 s = neg_one;
                             }
-                            if (boost::multiprecision::bit_test(rep, 2 * i + 1) == 0) {
+                            if (rep.bit_test(2 * i + 1) == 0) {
                                 b += s;
                             } else {
                                 a += s;

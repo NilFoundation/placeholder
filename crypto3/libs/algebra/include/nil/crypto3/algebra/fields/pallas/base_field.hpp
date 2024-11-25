@@ -52,18 +52,11 @@ namespace nil {
 #else
 
                     constexpr static const integral_type modulus =
-                        0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_cppui_modular255;
+                        0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_bigui255;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1u) / 2 ;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<pallas_base_field>> value_type;
 #endif
                 };

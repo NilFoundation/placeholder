@@ -25,10 +25,8 @@
 
 #include <iostream>
 
-#include <nil/crypto3/multiprecision/cpp_modular.hpp>
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
+#include <nil/crypto3/multiprecision/big_int/literals.hpp>
+
 
 #include <nil/crypto3/algebra/fields/fp2.hpp>
 #include <nil/crypto3/algebra/fields/fp3.hpp>

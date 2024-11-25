@@ -118,11 +118,11 @@ namespace nil {
 
                         for (std::size_t i = 0; i < length; i++) {
                             // Should be
-                            // std::size_t bn_exponents_i_msb = boost::multiprecision::msb(exponents[i].data) + 1;
+                            // std::size_t bn_exponents_i_msb = exponents[i].data.msb() + 1;
                             // But boost::multiprecision::msb doesn't work for zero value
                             std::size_t bn_exponents_i_msb = 1;
                             if (exponents[i] != field_value_type::zero()) {
-                                bn_exponents_i_msb = boost::multiprecision::msb(exponents[i].data) + 1;
+                                bn_exponents_i_msb = exponents[i].data.msb() + 1;
                             }
                             num_bits = std::max(num_bits, bn_exponents_i_msb);
                         }
@@ -145,7 +145,7 @@ namespace nil {
                             for (std::size_t i = 0; i < length; i++) {
                                 std::size_t id = 0;
                                 for (std::size_t j = 0; j < c; j++) {
-                                    if (boost::multiprecision::bit_test(exponents[i].data, k * c + j)) {
+                                    if (exponents[i].data.bit_test(k * c + j)) {
                                         id |= 1 << j;
                                     }
                                 }
@@ -268,7 +268,7 @@ namespace nil {
                             detail::ordered_exponent<integral_type> &b =
                                 (opt_q[1] < opt_q[2] ? opt_q[2] : opt_q[1]);
 
-                            const std::size_t abits = boost::multiprecision::msb(a.r) + 1;
+                            const std::size_t abits = a.r.msb() + 1;
 
                             if (b.r.is_zero()) {
                                 // opt_result = opt_result + (a.r * g[a.idx]);
@@ -276,7 +276,7 @@ namespace nil {
                                 break;
                             }
 
-                            const std::size_t bbits = boost::multiprecision::msb(b.r) + 1;
+                            const std::size_t bbits = b.r.msb() + 1;
                             const std::size_t limit = (abits - bbits >= 20 ? 20 : abits - bbits);
 
                             if (bbits < 1ul << limit) {
