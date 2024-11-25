@@ -55,7 +55,8 @@ BOOST_AUTO_TEST_CASE(vector_multiplication_test) {
         }, nil::crypto3::ThreadPool::PoolLevel::HIGH));
 
     for (std::size_t i = 0; i < size; ++i) {
-        BOOST_CHECK(v[i] == i * i);
+        if(v[i] != i * i) // If uncomment, test result parser will log an error: CData section too big found
+            BOOST_CHECK(v[i] == i * i);
     }
 }
 
