@@ -306,13 +306,13 @@ namespace nil {
                             pc++;
                             gas -= 3;
                         }else if(opcode == zkevm_opcode::SHL) {
-                            // // 0x1b
-                            zkevm_word_type a = stack.back();
-                            stack.pop_back();
-                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            // 0x1b
                             zkevm_word_type b = stack.back();
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
                             int shift = (integral_type(b) < 256) ? int(integral_type(b)) : 256;
                             zkevm_word_type result = zkevm_word_type(integral_type(a) << shift);
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
@@ -321,12 +321,12 @@ namespace nil {
                             gas -= 3;
                         }else if(opcode == zkevm_opcode::SHR) {
                             // 0x1c
-                            zkevm_word_type a = stack.back();
-                            stack.pop_back();
-                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
                             zkevm_word_type b = stack.back();
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
                             int shift = (integral_type(b) < 256) ? int(integral_type(b)) : 256;
                             integral_type r_integral = integral_type(a) >> shift;
                             zkevm_word_type result = zkevm_word_type::backend_type(r_integral.backend());

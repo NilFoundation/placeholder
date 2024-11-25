@@ -78,13 +78,6 @@ namespace nil {
                         auto S_128 = chunks16_to_chunks128<TYPE>(S);
                         carry0 = (A_128.second + B_128.second >= two_128);
                         carry1 = (A_128.first + B_128.first + carry0 >= two_128);
-                        std::cout << std::hex;
-                        std::cout << "\tA = " << A_128.first << " " << A_128.second << std::endl;
-                        std::cout << "\tB = " << B_128.first << " " << B_128.second << std::endl;
-                        std::cout << "\tS = " << S_128.first << " " << S_128.second << std::endl;
-                        std::cout << "\tcarry0 = " << carry0 << std::endl;
-                        std::cout << "\tcarry1 = " << carry1 << std::endl;
-                        std::cout << std::dec;
                     }
                     for( std::size_t i = 0; i < 16; i++){
                         allocate(A[i], i, 0);

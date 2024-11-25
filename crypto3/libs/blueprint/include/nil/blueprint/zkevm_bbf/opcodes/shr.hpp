@@ -180,8 +180,8 @@ namespace nil {
                     TYPE carry[carry_amount + 1];
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        zkevm_word_type a = current_state.stack_top();
-                        zkevm_word_type input_b = current_state.stack_top(1);
+                        zkevm_word_type a = current_state.stack_top(1);
+                        zkevm_word_type input_b = current_state.stack_top();
 
                         int shift =
                             (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
@@ -389,7 +389,7 @@ namespace nil {
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(1),
+                               current_state.rw_counter(1) + 1,
                                TYPE(0),  // is_write
                                A0,
                                A1};
@@ -400,7 +400,7 @@ namespace nil {
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(1) + 1,
+                               current_state.rw_counter(1),
                                TYPE(0),  // is_write
                                B0,
                                B1};

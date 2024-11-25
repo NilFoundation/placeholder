@@ -136,13 +136,16 @@ namespace nil {
                     std::vector<TYPE> r_chunks(chunk_amount);
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        zkevm_word_type a = current_state.stack_top();
-                        zkevm_word_type input_b = current_state.stack_top(1);
+                        zkevm_word_type a = current_state.stack_top(1);
+                        zkevm_word_type input_b = current_state.stack_top();
 
                         int shift =
                             (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
 
                         zkevm_word_type result = zkevm_word_type(integral_type(a) << shift);
+                        std::cout << "\ta = " << std::hex << a << std::endl;
+                        std::cout << "\tb = " << std::hex << input_b << std::endl;
+                        std::cout << "\tresult = " << std::hex << result << std::dec << std::endl;
 
                         zkevm_word_type b = zkevm_word_type(integral_type(1) << shift);
 
@@ -304,8 +307,8 @@ namespace nil {
                                TYPE(0),  // field
                                current_state.rw_counter(1),
                                TYPE(0),  // is_write
-                               A0,
-                               A1};
+                               B0,
+                               B1};
                         lookup(tmp, "zkevm_rw");
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
                                current_state.call_id(1),
@@ -315,8 +318,8 @@ namespace nil {
                                TYPE(0),  // field
                                current_state.rw_counter(1) + 1,
                                TYPE(0),  // is_write
-                               B0,
-                               B1};
+                               A0,
+                               A1};
                         lookup(tmp, "zkevm_rw");
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
                                current_state.call_id(1),
