@@ -388,7 +388,7 @@ namespace nil {
                             zkevm_word_type b = stack.back();
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
-                            zkevm_word_type result = a & b;
+                            zkevm_word_type result = a.base() & b.base();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
@@ -401,7 +401,7 @@ namespace nil {
                             zkevm_word_type b = stack.back();
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
-                            zkevm_word_type result = a | b;
+                            zkevm_word_type result = a.base() & b.base();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
@@ -414,7 +414,7 @@ namespace nil {
                             zkevm_word_type b = stack.back();
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
-                            zkevm_word_type result = a ^ b;
+                            zkevm_word_type result = a.base() & b.base();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;

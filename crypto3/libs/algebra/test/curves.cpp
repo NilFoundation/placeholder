@@ -215,7 +215,7 @@ void fp_curve_test_init(std::vector<typename FpCurveGroup::value_type> &points,
     for (auto &point : test_set.second.get_child("point_coordinates")) {
         auto i = 0;
         for (auto &coordinate : point.second) {
-            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data().c_str()));
+            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data()));
         }
 
         if (p1_to_affine == p) {
@@ -231,7 +231,7 @@ void fp_curve_test_init(std::vector<typename FpCurveGroup::value_type> &points,
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(std::stoul(constant.second.data().c_str()));
+        constants.emplace_back(std::stoul(constant.second.data()));
     }
 }
 
@@ -250,7 +250,7 @@ void fp_curve_twisted_edwards_test_init(
     for (auto &point : test_set.second.get_child("point_coordinates")) {
         auto i = 0;
         for (auto &coordinate : point.second) {
-            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data().c_str()));
+            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data()));
         }
         typename FpCurveGroup::value_type curve_element(coordinates[0], coordinates[1]);
         BOOST_CHECK_MESSAGE(curve_element.is_well_formed(), "point " << p << " is not well-formed");
@@ -259,7 +259,7 @@ void fp_curve_twisted_edwards_test_init(
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(integral_type(constant.second.data().c_str())));
+        constants.emplace_back(scalar_value_type(integral_type(constant.second.data())));
     }
 }
 
@@ -282,7 +282,7 @@ void fp_extended_curve_twisted_edwards_test_init(
     for (auto &point : test_set.second.get_child("point_coordinates")) {
         auto i = 0;
         for (auto &coordinate : point.second) {
-            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data().c_str()));
+            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data()));
         }
         typename group_affine_type::value_type curve_element_affine(coordinates[0], coordinates[1]);
         BOOST_CHECK_MESSAGE(curve_element_affine.is_well_formed(), "point " << p << " is not well-formed");
@@ -293,7 +293,7 @@ void fp_extended_curve_twisted_edwards_test_init(
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(integral_type(constant.second.data().c_str())));
+        constants.emplace_back(scalar_value_type(integral_type(constant.second.data())));
     }
 }
 
@@ -314,7 +314,7 @@ void fp2_curve_test_init(std::vector<typename Fp2CurveGroup::value_type> &points
         auto i = 0;
         for (auto &coordinate_pairs : point.second) {
             for (auto &coordinate : coordinate_pairs.second) {
-                coordinates[i++] = integral_type(coordinate.second.data().c_str());
+                coordinates[i++] = integral_type(coordinate.second.data());
             }
         }
         typename Fp2CurveGroup::value_type curve_element(
@@ -327,7 +327,7 @@ void fp2_curve_test_init(std::vector<typename Fp2CurveGroup::value_type> &points
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data().c_str())));
+        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data())));
     }
 }
 
@@ -348,7 +348,7 @@ void fp3_curve_test_init(std::vector<typename Fp3CurveGroup::value_type> &points
         auto i = 0;
         for (auto &coordinate_pairs : point.second) {
             for (auto &coordinate : coordinate_pairs.second) {
-                coordinates[i++] = integral_type(coordinate.second.data().c_str());
+                coordinates[i++] = integral_type(coordinate.second.data());
             }
         }
         typename Fp3CurveGroup::value_type curve_element(
@@ -361,7 +361,7 @@ void fp3_curve_test_init(std::vector<typename Fp3CurveGroup::value_type> &points
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data().c_str())));
+        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data())));
     }
 }
 

@@ -12,6 +12,7 @@
 // IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 
 #include <cstddef>
+#include <stdexcept>
 
 #include "nil/crypto3/multiprecision/big_int/big_int.hpp"
 #include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
@@ -34,7 +35,7 @@ namespace nil::crypto3::multiprecision {
             bezout_y = 0u;
 
             // Extended Euclidean Algorithm
-            while (!is_zero(tmp_num2)) {
+            while (!tmp_num2.is_zero()) {
                 big_int<Bits> quotient = tmp_num1;
                 big_int<Bits> remainder = tmp_num1;
                 big_int<Bits> placeholder;
@@ -61,12 +62,20 @@ namespace nil::crypto3::multiprecision {
     }  // namespace detail
 
     template<std::size_t Bits>
+    constexpr big_uint<Bits> gcd(const big_uint<Bits>& a, const big_uint<Bits>& b) {
+        big_int<Bits> aa = a, bb = b, x, y, g;
+        g = detail::extended_euclidean_algorithm(aa, bb, x, y);
+        NIL_CO3_MP_ASSERT(!g.negative());
+        return g.abs();
+    }
+
+    template<std::size_t Bits>
     constexpr big_uint<Bits> inverse_extended_euclidean_algorithm(const big_uint<Bits>& a,
                                                                   const big_uint<Bits>& m) {
         big_int<Bits> aa = a, mm = m, x, y, g;
         g = detail::extended_euclidean_algorithm(aa, mm, x, y);
         if (g != 1u) {
-            return 0u;
+            throw std::invalid_argument("no multiplicative inverse");
         }
         x %= m;
         if (x.negative()) {

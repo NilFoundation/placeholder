@@ -228,7 +228,7 @@ namespace nil {
 
                         template<typename PowerType>
                         constexpr element_fp pow(const PowerType &pwr) const {
-                            return element_fp(nil::crypto3::multiprecision::powm(data, pwr));
+                            return element_fp(nil::crypto3::multiprecision::pow(data, pwr));
                         }
                     };
 
