@@ -34,7 +34,6 @@
 #include <unordered_map>
 #include <functional>
 #include <boost/functional/hash.hpp>
-#include <boost/multiprecision/number.hpp>
 #include <boost/variant.hpp>
 #include <boost/variant/recursive_wrapper.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/variable.hpp>
@@ -115,8 +114,8 @@ namespace nil {
                 }
 
                 // Constructor for number<cpp_int_backend<...>>.
-                template<class BackendType>
-                expression(const boost::multiprecision::number<BackendType>& coeff)
+                template<std::size_t Bits>
+                expression(const nil::crypto3::multiprecision::big_uint<Bits>& coeff)
                   : expr(term<VariableType>((assignment_type)coeff)) {
                     update_hash();
                 }

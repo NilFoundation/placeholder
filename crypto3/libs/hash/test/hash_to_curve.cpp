@@ -36,8 +36,6 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
@@ -49,7 +47,6 @@
 #include <nil/crypto3/hash/detail/h2c/ep2.hpp>
 #include <nil/crypto3/hash/detail/h2c/h2c_expand.hpp>
 
-using namespace boost::multiprecision;
 using namespace nil::crypto3;
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::algebra::curves::detail;

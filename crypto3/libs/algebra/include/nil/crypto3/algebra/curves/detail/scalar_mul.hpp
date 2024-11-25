@@ -30,10 +30,7 @@
 
 #include <nil/crypto3/algebra/type_traits.hpp>
 
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
-
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
 
 #include <nil/crypto3/algebra/wnaf.hpp>
 
@@ -43,10 +40,10 @@ namespace nil {
             namespace curves {
                 namespace detail {
 
-                    template<typename CurveElementType, unsigned int bits>
+                    template<typename CurveElementType, std::size_t Bits>
                     constexpr void scalar_mul_inplace(
                             CurveElementType &base,
-                            boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<bits>> const& scalar)
+                            nil::crypto3::multiprecision::big_uint<Bits> const& scalar)
                     {
                         if (scalar.is_zero()) {
                             base = CurveElementType::zero();
@@ -54,7 +51,7 @@ namespace nil {
                         }
 
                         const size_t window_size = 3;
-                        auto naf = boost::multiprecision::eval_find_wnaf_a(window_size + 1, scalar.backend());
+                        auto naf = nil::crypto3::multiprecision::find_wnaf_a(window_size + 1, scalar);
                         std::array<CurveElementType, 1ul << window_size > table;
                         CurveElementType dbl = base;
                         dbl.double_inplace();

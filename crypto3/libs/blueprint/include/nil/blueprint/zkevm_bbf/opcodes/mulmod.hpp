@@ -52,11 +52,11 @@ namespace nil {
                 constexpr static const value_type two_16 = 65536;
                 constexpr static const value_type two_32 = 4294967296;
                 constexpr static const value_type two_48 = 281474976710656;
-                constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
+                constexpr static const value_type two_64 = 0x10000000000000000_bigui254;
                 constexpr static const value_type two128 =
-                    0x100000000000000000000000000000000_cppui_modular254;
+                    0x100000000000000000000000000000000_bigui254;
                 constexpr static const value_type two192 =
-                    0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+                    0x1000000000000000000000000000000000000000000000000_bigui254;
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
@@ -142,8 +142,7 @@ namespace nil {
                                  bool make_links = true)
                     : generic_component<FieldType, stage>(context_object), res(chunk_amount) {
                     using integral_type = zkevm_word_integral_type;
-                    using extended_integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<512>>;
+                    using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
                     // The central relation is a * b = s = Nr + q, q < N.
 
                     std::vector<TYPE> v_chunks(chunk_amount);

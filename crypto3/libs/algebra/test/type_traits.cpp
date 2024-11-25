@@ -51,8 +51,6 @@
 
 #include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/type_traits.hpp>
 
 using namespace nil::crypto3::algebra;

@@ -222,7 +222,7 @@ namespace nil {
                             break;
                         case zkevm_opcode::NOT:{
                             word_type a = stack_pop();
-                            word_type not_a = word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257) - a;
+                            word_type not_a = word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui257) - a;
                             stack.push(not_a);
                             pc++; gas -=  3;
                             break;

@@ -67,8 +67,8 @@ namespace nil {
 #endif
 
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
-                            typename field_type::value_type(0x3b4c382ce37aa192a4019e763036f4f5dd4d7ebb_cppui_modular160),
-                            typename field_type::value_type(0x938cf935318fdced6bc28286531733c3f03c4fee_cppui_modular160)};
+                            typename field_type::value_type(0x3b4c382ce37aa192a4019e763036f4f5dd4d7ebb_bigui160),
+                            typename field_type::value_type(0x938cf935318fdced6bc28286531733c3f03c4fee_bigui160)};
                     };
 
                     constexpr typename secp_k1_types<160>::base_field_type::value_type const
@@ -117,9 +117,9 @@ namespace nil {
 
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
-                                0xdb4ff10ec057e9ae26b07d0280b7f4341da5d1b1eae06c7d_cppui_modular192),
+                                0xdb4ff10ec057e9ae26b07d0280b7f4341da5d1b1eae06c7d_bigui192),
                             typename field_type::value_type(
-                                0x9b2f2f6d9c5628a7844163d015be86344082aa88d95e2f9d_cppui_modular192)};
+                                0x9b2f2f6d9c5628a7844163d015be86344082aa88d95e2f9d_bigui192)};
                     };
 
                     constexpr typename secp_k1_types<192>::base_field_type::value_type const
@@ -166,9 +166,9 @@ namespace nil {
 
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
-                                0xa1455b334df099df30fc28a169a467e9e47075a90f7e650eb6b7a45c_cppui_modular224),
+                                0xa1455b334df099df30fc28a169a467e9e47075a90f7e650eb6b7a45c_bigui224),
                             typename field_type::value_type(
-                                0x7e089fed7fba344282cafbd6f7e319f7c0b0bd59e2ca4bdb556d61a5_cppui_modular224)};
+                                0x7e089fed7fba344282cafbd6f7e319f7c0b0bd59e2ca4bdb556d61a5_bigui224)};
                     };
 
                     constexpr typename secp_k1_types<224>::base_field_type::value_type const
@@ -215,9 +215,9 @@ namespace nil {
 
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
-                                0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798_cppui_modular256),
+                                0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798_bigui256),
                             typename field_type::value_type(
-                                0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8_cppui_modular256)};
+                                0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8_bigui256)};
                     };
 
                     constexpr typename secp_k1_types<256>::base_field_type::value_type const

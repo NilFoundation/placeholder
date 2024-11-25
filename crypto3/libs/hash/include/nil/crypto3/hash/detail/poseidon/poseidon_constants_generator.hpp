@@ -9,10 +9,10 @@
 #ifndef CRYPTO3_HASH_POSEIDON_LFSR_HPP
 #define CRYPTO3_HASH_POSEIDON_LFSR_HPP
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
+
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -20,8 +20,6 @@ namespace nil {
             namespace detail {
                 template<typename T>
                 class poseidon_constants;
-
-                using namespace boost::multiprecision;
 
                 // Uses Grain-LFSR stream cipher for constants generation.
                 template<typename PolicyType>
@@ -50,7 +48,7 @@ namespace nil {
                     typedef typename poseidon_constants_type::state_vector_type state_vector_type;
 
                     constexpr static const std::size_t lfsr_state_bits = 80;
-                    typedef number<backends::cpp_int_modular_backend<lfsr_state_bits>> lfsr_state_type;
+                    typedef nil::crypto3::multiprecision::big_uint<lfsr_state_bits> lfsr_state_type;
 
                     typedef typename poseidon_constants_type::round_constants_type round_constants_type;
 
@@ -182,7 +180,7 @@ namespace nil {
                     }
 
                     static constexpr inline bool get_lfsr_state_bit(lfsr_state_type state, std::size_t pos) {
-                        return bit_test(state, lfsr_state_bits - 1 - pos);
+                        return state.bit_test(lfsr_state_bits - 1 - pos);
                     }
 
                     template<typename T>

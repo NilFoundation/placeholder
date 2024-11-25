@@ -27,7 +27,6 @@
 #ifndef CRYPTO3_ALGEBRA_PAIRING_SHORT_WEIERSTRASS_JACOBIAN_WITH_A4_0_SBIT_ATE_DOUBLE_MILLER_LOOP_HPP
 #define CRYPTO3_ALGEBRA_PAIRING_SHORT_WEIERSTRASS_JACOBIAN_WITH_A4_0_SBIT_ATE_DOUBLE_MILLER_LOOP_HPP
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
 #include <nil/crypto3/algebra/pairing/pairing_policy.hpp>
 
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/jacobian_with_a4_0/types.hpp>
