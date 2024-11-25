@@ -115,12 +115,12 @@ namespace nil::crypto3::multiprecision {
 
         constexpr bool negative() const { return m_negative; }
 
-        constexpr int sign() const noexcept { return negative() ? -1 : (is_zero(m_abs) ? 0 : 1); }
+        constexpr int sign() const noexcept { return negative() ? -1 : (m_abs.is_zero() ? 0 : 1); }
 
         constexpr const unsigned_type& abs() const { return m_abs; }
 
         constexpr void negate() {
-            if (is_zero(m_abs)) {
+            if (m_abs.is_zero()) {
                 return;
             }
             m_negative = !m_negative;
@@ -212,9 +212,15 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
+        // Misc ops
+
+        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
+            return abs().is_zero();
+        }
+
       private:
         constexpr void normalize() noexcept {
-            if (is_zero(m_abs)) {
+            if (m_abs.is_zero()) {
                 m_negative = false;
             }
         }
@@ -236,11 +242,6 @@ namespace nil::crypto3::multiprecision {
         bool m_negative = false;
         big_uint<Bits> m_abs;
     };
-
-    template<std::size_t Bits>
-    NIL_CO3_MP_FORCEINLINE constexpr bool is_zero(const big_int<Bits>& val) noexcept {
-        return is_zero(val.abs());
-    }
 
     namespace detail {
         template<typename T>

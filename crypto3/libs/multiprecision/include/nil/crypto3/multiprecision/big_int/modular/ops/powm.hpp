@@ -13,16 +13,24 @@
 
 // IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/modular/big_mod.hpp"
 
+#include <cstddef>
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 #include "nil/crypto3/multiprecision/big_int/modular/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/big_int/ops/inverse.hpp"
 
 namespace nil::crypto3::multiprecision {
-    template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
-    constexpr big_mod_t inverse_extended_euclidean_algorithm(const big_mod_t &modular) {
-        return modular.with_replaced_base(
-            inverse_extended_euclidean_algorithm(modular.base(), modular.mod()));
+    template<typename big_mod_t, std::size_t Bits,
+             std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
+    constexpr big_mod_t powm(const big_mod_t &b, const big_uint<Bits> &e) {
+        auto result = b;
+        result.ops().exp(result.raw_base(), b.raw_base(), e);
+        return result;
+    }
+
+    template<typename big_mod_t, typename T,
+             std::enable_if_t<detail::is_big_mod_v<big_mod_t> && std::is_integral_v<T>, int> = 0>
+    constexpr big_mod_t powm(const big_mod_t &b, T e) {
+        return powm(b, static_cast<big_uint<detail::get_bits<T>()>>(e));
     }
 }  // namespace nil::crypto3::multiprecision

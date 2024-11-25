@@ -21,6 +21,7 @@
 
 #include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_int/detail/constexpr_support.hpp"
 #include "nil/crypto3/multiprecision/big_int/modular/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/big_int/modular/modular_ops_storage.hpp"
 
@@ -60,7 +61,7 @@ namespace nil::crypto3::multiprecision {
             // Mathemetical operations
 
             constexpr void negate() {
-                if (!is_zero(m_raw_base)) {
+                if (!m_raw_base.is_zero()) {
                     auto initial_m_base = m_raw_base;
                     m_raw_base = mod();
                     m_raw_base -= initial_m_base;
@@ -103,7 +104,7 @@ namespace nil::crypto3::multiprecision {
         template<typename SI,
                  typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
         constexpr big_mod_ct_impl(SI b)
-            : base_type(big_uint<sizeof(SI) * CHAR_BIT>(std::abs(b)), {}) {
+            : base_type(big_uint<sizeof(SI) * CHAR_BIT>(detail::constexpr_support::abs(b)), {}) {
             if (b < 0) {
                 this->negate();
             }
@@ -135,7 +136,7 @@ namespace nil::crypto3::multiprecision {
         template<typename SI,
                  std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
         constexpr big_mod_rt_impl(SI b, const big_uint_t& m)
-            : base_type(big_uint<sizeof(SI) * CHAR_BIT>(std::abs(b)), m) {
+            : base_type(big_uint<sizeof(SI) * CHAR_BIT>(detail::constexpr_support::abs(b)), m) {
             if (b < 0) {
                 this->negate();
             }
@@ -265,7 +266,7 @@ namespace nil::crypto3::multiprecision {
     }
     NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
     constexpr auto& operator--(big_mod_t& a) noexcept {
-        if (is_zero(a.raw_base())) {
+        if (a.raw_base().is_zero()) {
             a.raw_base() = a.mod();
         }
         --a.raw_base();

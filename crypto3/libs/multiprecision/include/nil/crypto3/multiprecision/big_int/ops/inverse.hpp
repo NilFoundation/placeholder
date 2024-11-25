@@ -34,7 +34,7 @@ namespace nil::crypto3::multiprecision {
             bezout_y = 0u;
 
             // Extended Euclidean Algorithm
-            while (!is_zero(tmp_num2)) {
+            while (!tmp_num2.is_zero()) {
                 big_int<Bits> quotient = tmp_num1;
                 big_int<Bits> remainder = tmp_num1;
                 big_int<Bits> placeholder;

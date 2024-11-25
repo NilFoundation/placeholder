@@ -931,14 +931,14 @@ namespace nil::crypto3::multiprecision {
             and avoids the normalisation step which would require extra storage.
             */
 
-            if (is_zero(y)) {
+            if (y.is_zero()) {
                 throw std::overflow_error("integer division by zero");
             }
 
             const_limb_pointer px = x.limbs();
             const_limb_pointer py = y.limbs();
 
-            if (is_zero(x)) {
+            if (x.is_zero()) {
                 // x is zero, so is the result:
                 rem = x;
                 if (div) {
@@ -1115,7 +1115,7 @@ namespace nil::crypto3::multiprecision {
             //
             // We now just have to normalise the result:
             //
-            if (rem_neg && !is_zero(rem)) {
+            if (rem_neg && !rem.is_zero()) {
                 // We have one too many in the result:
                 if (div) {
                     --*div;
@@ -1174,6 +1174,93 @@ namespace nil::crypto3::multiprecision {
                 carry = 0;
             }
             result.normalize();
+        }
+
+        // Misc ops
+
+        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
+            for (std::size_t i = 0; i < limbs_count(); ++i) {
+                if (limbs()[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        constexpr std::size_t lsb() const {
+            //
+            // Find the index of the least significant limb that is non-zero:
+            //
+            std::size_t index = 0;
+            while ((index < limbs_count()) && !limbs()[index]) {
+                ++index;
+            }
+
+            if (index == limbs_count()) {
+                throw std::invalid_argument("zero has no lsb");
+            }
+
+            //
+            // Find the index of the least significant bit within that limb:
+            //
+            std::size_t result = std::countr_zero(limbs()[index]);
+
+            return result + index * limb_bits;
+        }
+
+        constexpr std::size_t msb() const {
+            //
+            // Find the index of the most significant bit that is non-zero:
+            //
+            for (std::size_t i = limbs_count() - 1; i > 0; --i) {
+                if (limbs()[i] != 0) {
+                    return i * limb_bits + std::bit_width(limbs()[i]) - 1;
+                }
+            }
+            if (limbs()[0] == 0) {
+                throw std::invalid_argument("zero has no msb");
+            }
+            return std::bit_width(limbs()[0]) - 1;
+        }
+
+        constexpr bool bit_test(std::size_t index) const {
+            if (index >= Bits) {
+                throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            return static_cast<bool>(limbs()[offset] & mask);
+        }
+
+        constexpr void bit_set(std::size_t index) {
+            if (index >= Bits) {
+                throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            limbs()[offset] |= mask;
+        }
+
+        constexpr void bit_unset(std::size_t index) {
+            if (index >= Bits) {
+                throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            limbs()[offset] &= ~mask;
+        }
+
+        constexpr void bit_flip(big_uint<Bits>& val, std::size_t index) {
+            if (index >= Bits) {
+                throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            val.limbs()[offset] ^= mask;
         }
 
       private:
@@ -1359,7 +1446,7 @@ namespace nil::crypto3::multiprecision {
     constexpr auto operator/(const T1& a, const T2& b) noexcept {
         largest_t result;
         largest_t modulus;
-        largest_t::divide(&result, a, b, modulus);
+        largest_t::divide(&result, a, static_cast<big_uint<detail::get_bits<T2>()>>(b), modulus);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE

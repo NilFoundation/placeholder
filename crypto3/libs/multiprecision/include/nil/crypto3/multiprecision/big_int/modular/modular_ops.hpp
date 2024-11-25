@@ -27,7 +27,7 @@ namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
     constexpr bool check_montgomery_constraints(const big_uint<Bits> &m) {
         // Check m % 2 == 0
-        return bit_test(m, 0u);
+        return m.bit_test(0u);
     }
 
     template<std::size_t Bits>
@@ -70,8 +70,8 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t limb_bits = policy_type::limb_bits;
 
         constexpr barrett_modular_ops(const big_uint_t &m) : m_mod(m), m_barrett_mu(0u) {
-            std::size_t bit = 2u * (1u + msb(m_mod));
-            bit_set(m_barrett_mu, bit);
+            std::size_t bit = 2u * (1u + m_mod.msb());
+            m_barrett_mu.bit_set(bit);
 
             m_barrett_mu /= m_mod;
 
@@ -101,12 +101,12 @@ namespace nil::crypto3::multiprecision::detail {
                      /// result should fit in the output parameter
                      Bits2 >= big_uint_t::Bits, int> = 0>
         constexpr void barrett_reduce(big_uint<Bits2> &result, big_uint<Bits3> input) const {
-            if (!is_zero(input)) {
-                if (msb(input) < 2u * msb(mod()) + 1u) {
+            if (!input.is_zero()) {
+                if (input.msb() < 2u * mod().msb() + 1u) {
                     big_uint_quadruple_1 t1(input);
 
                     t1 *= m_barrett_mu;
-                    std::size_t shift_size = 2u * (1u + msb(mod()));
+                    std::size_t shift_size = 2u * (1u + mod().msb());
                     t1 >>= shift_size;
                     t1 *= mod();
 
@@ -169,12 +169,12 @@ namespace nil::crypto3::multiprecision::detail {
             big_uint_doubled_limbs base(a), res(1u);
 
             while (true) {
-                bool lsb = bit_test(exp, 0);
+                bool lsb = exp.bit_test(0u);
                 exp >>= 1u;
                 if (lsb) {
                     res *= base;
                     barrett_reduce(res);
-                    if (is_zero(exp)) {
+                    if (exp.is_zero()) {
                         break;
                     }
                 }
@@ -241,7 +241,7 @@ namespace nil::crypto3::multiprecision::detail {
             m_montgomery_p_dash = this->monty_inverse(this->m_mod.limbs()[0]);
 
             big_uint_doubled_padded_limbs r;
-            bit_set(r, 2 * this->m_mod.limbs_count() * limb_bits);
+            r.bit_set(2 * this->m_mod.limbs_count() * limb_bits);
             this->barrett_reduce(r);
 
             // Here we are intentionally throwing away half of the bits of r, it's
@@ -549,7 +549,7 @@ namespace nil::crypto3::multiprecision::detail {
             }
 
             while (true) {
-                bool lsb = bit_test(exp, 0);
+                bool lsb = exp.bit_test(0u);
                 exp >>= 1u;
                 if (lsb) {
                     mul(R_mod_m, base);
