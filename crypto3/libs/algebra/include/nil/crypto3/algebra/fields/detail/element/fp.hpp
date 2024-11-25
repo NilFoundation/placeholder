@@ -31,12 +31,8 @@
 #include <nil/crypto3/algebra/fields/detail/exponentiation.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/operations.hpp>
 
-#include <nil/crypto3/multiprecision/ressol.hpp>
-#include <nil/crypto3/multiprecision/inverse.hpp>
 #include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
 #include <nil/crypto3/multiprecision/big_int/modular/big_mod.hpp>
-
-#include <boost/type_traits/is_integral.hpp>
 
 #include <type_traits>
 
@@ -231,7 +227,7 @@ namespace nil {
                         }
 
                         template<typename PowerType>
-                        constexpr element_fp pow(PowerType pwr) const {
+                        constexpr element_fp pow(const PowerType &pwr) const {
                             return element_fp(nil::crypto3::multiprecision::powm(data, pwr));
                         }
                     };

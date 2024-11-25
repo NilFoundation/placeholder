@@ -88,20 +88,17 @@ namespace nil {
              *
              * @return a root of unity.
              */
-            template<typename Backend,
-                    boost::multiprecision::expression_template_option ExpressionTemplates>
+            template<std::size_t Bits>
             nil::crypto3::multiprecision::big_uint<Bits>
             unity_root(uint32_t m, const nil::crypto3::multiprecision::big_uint<Bits> &modulo) {
-                using namespace boost::multiprecision;
+                nil::crypto3::multiprecision::big_uint<Bits> M(m);
 
-                number<Backend, ExpressionTemplates> M(m);
-
-                if ((modulo - number<Backend, ExpressionTemplates>(1) % M) % M != 0) {
+                if ((modulo - nil::crypto3::multiprecision::big_uint<Bits>(1) % M) % M != 0) {
                     return {};
                 }
 
-                number<backends::modular_adaptor<Backend, backends::modular_params_rt<Backend>>, ExpressionTemplates>
-                        gen(find_generator(modulo), modulo), result = boost::multiprecision::pow(gen, (modulo - 1) / M);
+                nil::crypto3::multiprecision::big_mod_rt<Bits>
+                        gen(find_generator(modulo), modulo), result = nil::crypto3::multiprecision::powm(gen, (modulo - 1) / M);
                 if (result == 1u) {
                     result = unity_root(m, modulo);
                 }

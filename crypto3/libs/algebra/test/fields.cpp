@@ -315,7 +315,7 @@ void field_test_init(std::vector<ElementType> &elements,
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(std::stoll(constant.second.data()));
+        constants.emplace_back(std::stoll(constant.second.data().c_str()));
     }
 }
 

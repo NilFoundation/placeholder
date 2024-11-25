@@ -25,8 +25,6 @@
 #ifndef CRYPTO3_ALGEBRA_WNAF_HPP
 #define CRYPTO3_ALGEBRA_WNAF_HPP
 
-#include <nil/crypto3/multiprecision/wnaf.hpp>
-
 #include <nil/crypto3/algebra/curves/params.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>
 
@@ -36,7 +34,7 @@ namespace nil {
             template<typename BaseValueType, std::size_t Bits>
             BaseValueType fixed_window_wnaf_exp(const std::size_t window_size, const BaseValueType &base,
                                                 const nil::crypto3::multiprecision::big_uint<Bits> &scalar) {
-                std::vector<long> naf = boost::multiprecision::find_wnaf(window_size, scalar);
+                std::vector<long> naf = nil::crypto3::multiprecision::find_wnaf(window_size, scalar);
                 std::vector<BaseValueType> table(1ul << (window_size - 1));
                 BaseValueType tmp = base;
                 BaseValueType dbl = base;

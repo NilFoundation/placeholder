@@ -26,9 +26,6 @@
 #ifndef CRYPTO3_ALGEBRA_PAIRING_MNT6_298_ATE_MILLER_LOOP_HPP
 #define CRYPTO3_ALGEBRA_PAIRING_MNT6_298_ATE_MILLER_LOOP_HPP
 
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/curves/mnt6.hpp>
 #include <nil/crypto3/algebra/pairing/detail/mnt6/298/params.hpp>
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/projective/types.hpp>

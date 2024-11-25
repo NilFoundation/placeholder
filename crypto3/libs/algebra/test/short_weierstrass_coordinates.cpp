@@ -113,7 +113,7 @@ void fp_curve_test_init(std::vector<typename FpCurveGroup::value_type> &points,
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(std::stoul(constant.second.data()));
+        constants.emplace_back(std::stoul(constant.second.data().c_str()));
     }
 }
 
