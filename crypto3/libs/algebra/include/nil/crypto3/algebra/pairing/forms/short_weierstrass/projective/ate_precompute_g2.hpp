@@ -135,7 +135,7 @@ namespace nil {
                         bool found_one = false;
 
                         for (long i = params_type::integral_type_max_bits - 1; i >= 0; --i) {
-                            const bool bit = boost::multiprecision::bit_test(params_type::ate_loop_count, i);
+                            const bool bit = params_type::ate_loop_count.bit_test(i);
                             if (!found_one) {
                                 /* this skips the MSB itself */
                                 found_one |= bit;

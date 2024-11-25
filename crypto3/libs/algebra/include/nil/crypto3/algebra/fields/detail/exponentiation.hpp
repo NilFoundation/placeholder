@@ -46,12 +46,12 @@ namespace nil {
 
                         bool found_one = false;
 
-                        for (long i = boost::multiprecision::msb(exponent); i >= 0; --i) {
+                        for (long i = exponent.msb(); i >= 0; --i) {
                             if (found_one) {
                                 result = result.squared();
                             }
 
-                            if (boost::multiprecision::bit_test(exponent, i)) {
+                            if (exponent.bit_test(i)) {
                                 found_one = true;
                                 result *= base;
                             }

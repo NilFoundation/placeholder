@@ -107,7 +107,7 @@ void fp_curve_test_init(std::vector<typename FpCurveGroup::value_type> &points,
     for (auto &point : test_set.second.get_child("point_coordinates")) {
         auto i = 0;
         for (auto &coordinate : point.second) {
-            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data()));
+            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data().c_str()));
         }
         points.emplace_back(typename FpCurveGroup::value_type(coordinates[0], coordinates[1], coordinates[2]));
     }

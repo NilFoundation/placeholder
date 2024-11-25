@@ -124,7 +124,7 @@ namespace nil {
                         typename policy_type::ate_ell_coeffs c;
 
                         for (long i = params_type::integral_type_max_bits; i >= 0; --i) {
-                            const bool bit = boost::multiprecision::bit_test(loop_count, i);
+                            const bool bit = loop_count.bit_test(i);
                             if (!found_one) {
                                 /* this skips the MSB itself */
                                 found_one |= bit;

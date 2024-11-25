@@ -33,10 +33,9 @@
 namespace nil {
     namespace crypto3 {
         namespace algebra {
-            template<typename BaseValueType, typename Backend,
-                     boost::multiprecision::expression_template_option ExpressionTemplates>
+            template<typename BaseValueType, std::size_t Bits>
             BaseValueType fixed_window_wnaf_exp(const std::size_t window_size, const BaseValueType &base,
-                                                const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar) {
+                                                const nil::crypto3::multiprecision::big_uint<Bits> &scalar) {
                 std::vector<long> naf = boost::multiprecision::find_wnaf(window_size, scalar);
                 std::vector<BaseValueType> table(1ul << (window_size - 1));
                 BaseValueType tmp = base;
@@ -67,13 +66,12 @@ namespace nil {
                 return res;
             }
 
-            template<typename CurveGroupValueType, typename Backend,
-                     boost::multiprecision::expression_template_option ExpressionTemplates>
+            template<typename CurveGroupValueType, std::size_t Bits>
             std::enable_if_t<
                 is_curve_element<CurveGroupValueType>::value,
                 CurveGroupValueType>
             opt_window_wnaf_exp(const CurveGroupValueType &base,
-                const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar,
+                const nil::crypto3::multiprecision::big_uint<Bits> &scalar,
                 const std::size_t scalar_bits) {
                 std::size_t best = 0;
                 for (long i =

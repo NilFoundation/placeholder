@@ -41,10 +41,9 @@ namespace nil {
              Input: n the number to be factorized.
              Output: a factor of n.
              */
-            template<typename Backend,
-                    boost::multiprecision::expression_template_option ExpressionTemplates>
-            boost::multiprecision::number<Backend, ExpressionTemplates>
-            pollard_rho_factorization(const boost::multiprecision::number<Backend, ExpressionTemplates> &n) {
+            template<std::size_t Bits>
+            nil::crypto3::multiprecision::big_uint<Bits>
+            pollard_rho_factorization(const nil::crypto3::multiprecision::big_uint<Bits> &n) {
                 using namespace boost::multiprecision;
 
                 if (!(n % 2)) {
@@ -60,7 +59,7 @@ namespace nil {
                     xx = xx * xx + c;
                     divisor = boost::multiprecision::gcd((x > xx) ? x - xx : xx - x, nn);
                 } while (static_cast<int>(divisor) == 1);
-                return static_cast<boost::multiprecision::number<Backend, ExpressionTemplates>>(divisor);
+                return static_cast<nil::crypto3::multiprecision::big_uint<Bits>>(divisor);
             }
 
             /*

@@ -60,7 +60,7 @@ namespace nil {
                         const typename policy_type::integral_type &loop_count = params_type::ate_loop_count;
 
                         for (long i = params_type::integral_type_max_bits; i >= 0; --i) {
-                            const bool bit = boost::multiprecision::bit_test(loop_count, i);
+                            const bool bit = loop_count.bit_test(i);
                             if (!found_one) {
                                 /* this skips the MSB itself */
                                 found_one |= bit;

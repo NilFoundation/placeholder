@@ -55,7 +55,7 @@ namespace nil {
                  *
                  * (See the function get_evaluation_domain below.)
                  */
-                evaluation_domain(const std::size_t m) : m(m), log2_size(boost::multiprecision::msb(m)) {};
+                evaluation_domain(const std::size_t m) : m(m), log2_size(m.msb()) {};
 
                 inline std::size_t size() const {
                     return m;

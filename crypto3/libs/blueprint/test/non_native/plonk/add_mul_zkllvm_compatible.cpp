@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_mul_1) {
     typename CurveType::base_field_type::integral_type scal_integral;
     typename CurveType::base_field_type::value_type scal_rand;
     typename CurveType::base_field_type::value_type scal_max =
-        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular256;
+        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_bigui256;
     typename CurveType::base_field_type::value_type scal_zero = 0;
 
     typename Ed25519Type::template g1_type<crypto3::algebra::curves::coordinates::affine>

@@ -188,7 +188,7 @@ namespace nil {
                 for (std::size_t outer = 0; outer < outerc; ++outer) {
                     std::size_t inner = 0;
                     for (std::size_t i = 0; i < window; ++i) {
-                        if (boost::multiprecision::bit_test(pow_val, outer * window + i)) {
+                        if (pow_val.bit_test(outer * window + i)) {
                             inner |= 1u << i;
                         }
                     }

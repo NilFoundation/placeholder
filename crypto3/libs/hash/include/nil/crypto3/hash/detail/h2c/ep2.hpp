@@ -46,10 +46,6 @@ namespace nil {
                 typedef typename suite_type::group_value_type group_value_type;
                 typedef typename suite_type::field_value_type field_value_type;
                 typedef typename suite_type::modular_type modular_type;
-                typedef typename modular_type::backend_type modular_adaptor_type;
-                typedef typename suite_type::modular_backend modular_backend;
-
-                typedef boost::multiprecision::backends::modular_params<modular_backend> modular_params_type;
 
                 typedef typename suite_type::hash_type hash_type;
 
@@ -63,7 +59,6 @@ namespace nil {
 
                 typedef expand_message_xmd<k, hash_type> expand_message_ro;
                 // typedef expand_message_xof<k, hash_type> expand_message_nu;
-                constexpr static const modular_params_type p_modulus_params = suite_type::p.backend();
 
                 static_assert(m == 2, "underlying field has wrong extension");
 
@@ -100,8 +95,7 @@ namespace nil {
                             // Sometimes hash is 512 bits, while the group element is 256 or 381 bits.
                             // In these cases we take the number module the modulus of the group.
                             e %= p_modulus_params.get_mod();
-                            coordinates[j] = modular_type(modular_adaptor_type(
-                                modular_backend(e.backend()), p_modulus_params));
+                            coordinates[j] = modular_type(e, p);
                         }
                         result[i] = field_value_type(coordinates[0], coordinates[1]);
                     }
