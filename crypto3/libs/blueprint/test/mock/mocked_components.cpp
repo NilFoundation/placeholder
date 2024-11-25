@@ -197,10 +197,10 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_mock_test_suite)
         for (std::size_t i = 0; i < 4 * random_tests_amount; i++) { \
             cpp_int_type a = dist(seed_seq) * (sign_dist(seed_seq) ? 1 : -1); \
             cpp_int_type b = dist(seed_seq) * (sign_dist(seed_seq) ? 1 : -1); \
-            uint_type a_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(a)).backend()); \
-            uint_type b_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(b)).backend()); \
+            uint_type a_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(a))); \
+            uint_type b_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(b))); \
             cpp_int_type result = OP(a, b); \
-            uint_type result_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(result)).backend()); \
+            uint_type result_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(result))); \
             TEST_NAME<BlueprintFieldType, Size>( \
                 a >= 0 ? 0 : 1, a_modular, \
                 b >= 0 ? 0 : 1, b_modular, \
@@ -278,7 +278,7 @@ void test_small_signed_absolute() {
     boost::random::uniform_int_distribution<char> sign_dist(0, 1);
     for (std::size_t i = 0; i < 4 * random_tests_amount; i++) {
         cpp_int_type a = dist(seed_seq) * (sign_dist(seed_seq) ? 1 : -1);
-        uint_type a_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(a)).backend());
+        uint_type a_modular = typename uint_type::backend_type(cpp_uint_type(boost::multiprecision::abs(a)));
         test_small_signed_abs<BlueprintFieldType, Size>(
             a >= 0 ? 0 : 1, a_modular,
             0, a_modular);
@@ -330,8 +330,7 @@ void test_big_signed_absolute() {
             256u, 256u, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked>>;
     using cpp_uint_type = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<
             256u, 256u, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked>>;
-    using uint_type = boost::multiprecision::number<
-            boost::multiprecision::backends::cpp_int_modular_backend<256u>>;
+    using uint_type = nil::crypto3::multiprecision::big_uint<256u>;
     
     boost::random::mt19937 seed_seq;
     boost::random::uniform_int_distribution<cpp_uint_type>
@@ -343,8 +342,8 @@ void test_big_signed_absolute() {
         cpp_int_type a = dist(seed_seq) * (sign_dist(seed_seq) ? 1 : -1);
         cpp_int_type a_first = (a & top_mask) >> 128, 
                      a_second = a & bottom_mask;
-        uint_type a_first_modular = typename uint_type::backend_type(cpp_uint_type(a_first).backend());
-        uint_type a_second_modular = typename uint_type::backend_type(cpp_uint_type(a_second).backend());
+        uint_type a_first_modular = typename uint_type::backend_type(cpp_uint_type(a_first));
+        uint_type a_second_modular = typename uint_type::backend_type(cpp_uint_type(a_second));
         test_big_signed_abs<BlueprintFieldType>(
             a >= 0 ? 0 : 1, a_first_modular, a_second_modular,
             0, a_first_modular, a_second_modular);
@@ -623,12 +622,12 @@ OP_UNSIGNED_BIG_BOOL_TEST_FUNC_GEN(test_big_unsigned_greater_than_eq, test_big_u
             cpp_int_type b_top = (b & top_mask) >> 128; \
             cpp_int_type b_bottom = b & bottom_mask; \
 \
-            uint_type expected_first_modular = typename uint_type::backend_type(cpp_uint_type(expected_first).backend()); \
-            uint_type expected_second_modular = typename uint_type::backend_type(cpp_uint_type(expected_second).backend()); \
-            uint_type a_top_modular = typename uint_type::backend_type(cpp_uint_type(a_top).backend()); \
-            uint_type a_bottom_modular = typename uint_type::backend_type(cpp_uint_type(a_bottom).backend()); \
-            uint_type b_top_modular = typename uint_type::backend_type(cpp_uint_type(b_top).backend()); \
-            uint_type b_bottom_modular = typename uint_type::backend_type(cpp_uint_type(b_bottom).backend()); \
+            uint_type expected_first_modular = typename uint_type::backend_type(cpp_uint_type(expected_first)); \
+            uint_type expected_second_modular = typename uint_type::backend_type(cpp_uint_type(expected_second)); \
+            uint_type a_top_modular = typename uint_type::backend_type(cpp_uint_type(a_top)); \
+            uint_type a_bottom_modular = typename uint_type::backend_type(cpp_uint_type(a_bottom)); \
+            uint_type b_top_modular = typename uint_type::backend_type(cpp_uint_type(b_top)); \
+            uint_type b_bottom_modular = typename uint_type::backend_type(cpp_uint_type(b_bottom)); \
 \
             TEST_NAME<BlueprintFieldType>(a.sign() >= 0 ? 0 : 1, a_top_modular, a_bottom_modular, \
                                           b.sign() >= 0 ? 0 : 1, b_top_modular, b_bottom_modular, \

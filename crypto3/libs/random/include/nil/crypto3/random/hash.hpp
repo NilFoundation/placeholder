@@ -30,8 +30,6 @@
 #include <vector>
 #include <array>
 
-#include <boost/multiprecision/cpp_int.hpp>
-
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 
 #include <nil/crypto3/algebra/marshalling.hpp>

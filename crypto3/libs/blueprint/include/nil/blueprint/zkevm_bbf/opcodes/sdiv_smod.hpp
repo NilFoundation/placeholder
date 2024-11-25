@@ -51,11 +51,11 @@ namespace nil {
                 constexpr static const value_type two_16 = 65536;
                 constexpr static const value_type two_32 = 4294967296;
                 constexpr static const value_type two_48 = 281474976710656;
-                constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
+                constexpr static const value_type two_64 = 0x10000000000000000_bigui254;
                 constexpr static const value_type two_128 =
-                    0x100000000000000000000000000000000_cppui_modular254;
+                    0x100000000000000000000000000000000_bigui254;
                 constexpr static const value_type two_192 =
-                    0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+                    0x1000000000000000000000000000000000000000000000000_bigui254;
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
@@ -136,8 +136,7 @@ namespace nil {
                                     bool is_div)
                     : generic_component<FieldType, stage>(context_object, false),
                       res(chunk_amount) {
-                    using integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                    using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                     std::vector<TYPE> c_1_chunks(4);
                     TYPE c_2;

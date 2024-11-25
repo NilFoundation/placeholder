@@ -51,26 +51,18 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
                     constexpr static const std::size_t value_bits = modulus_bits;
                     constexpr static const std::size_t arity = 1;
-                    using extended_integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>;
+                    using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
 
                     typedef typename policy_type::integral_type integral_type;
 #ifdef __ZKLLVM__
                     typedef __zkllvm_field_curve25519_base value_type;
 #else
                     constexpr static const integral_type modulus =
-                        0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed_cppui_modular255;
+                        0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed_bigui255;
                     constexpr static const integral_type group_order_minus_one_half =
-                        0x3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6_cppui_modular255;
+                        0x3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6_bigui255;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<curve25519_base_field>> value_type;
 #endif
                 };
@@ -82,8 +74,6 @@ namespace nil {
 #ifdef __ZKLLVM__
 #else
                 constexpr typename curve25519_base_field::integral_type const curve25519_base_field::modulus;
-                constexpr
-                    typename curve25519_base_field::modular_params_type const curve25519_base_field::modulus_params;
 #endif
                 using curve25519_fq = curve25519_base_field;
 

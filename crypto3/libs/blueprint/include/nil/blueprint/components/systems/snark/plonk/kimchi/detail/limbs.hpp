@@ -381,7 +381,7 @@ namespace nil {
 
                 std::size_t row = start_row_index;
                 typename BlueprintFieldType::value_type value = var_value(assignment, instance_input.param);
-                auto value_data = value.data;
+                auto value_data = value.data.base();
                 auto shifted_data = value_data >> 64 << 64;
                 assignment.witness(component.W(0), row) = value_data;
                 assignment.witness(component.W(1), row) = value_data - shifted_data;
@@ -394,8 +394,7 @@ namespace nil {
                 value_data = value_data >> 64;
                 assignment.witness(component.W(4), row) = value_data;
 
-                using extended_integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<2 * BlueprintFieldType::policy_type::modulus_bits>>;
+                using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * BlueprintFieldType::policy_type::modulus_bits>;
 
                 extended_integral_type modulus_p = BlueprintFieldType::modulus;
                 extended_integral_type one = 1;
@@ -479,8 +478,7 @@ namespace nil {
 
                 using var = typename plonk_to_limbs<BlueprintFieldType>::var;
 
-                using extended_integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<2 * BlueprintFieldType::policy_type::modulus_bits>>;
+                using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * BlueprintFieldType::policy_type::modulus_bits>;
 
                 typename BlueprintFieldType::value_type scalar = 2;
                 extended_integral_type modulus_p = BlueprintFieldType::modulus;

@@ -34,8 +34,6 @@
 
 #include <nil/blueprint/components/hashes/sha2/plonk/detail/split_functions.hpp>
 
-#include <boost/multiprecision/cpp_int.hpp>
-
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
@@ -118,7 +116,7 @@ namespace nil {
 
                     std::vector<bool> value(table_size);
                     for (std::size_t j = 0; j < table_size; j++) {
-                        value[table_size - j - 1] = boost::multiprecision::bit_test(i, j);
+                        value[table_size - j - 1] = i.bit_test(j);
                     }
                     // s0
                     const std::array<std::vector<integral_type>, 2> a_chunks =
@@ -258,7 +256,7 @@ namespace nil {
 
                     std::vector<bool> value(table_size);
                     for (std::size_t j = 0; j < table_size; j++) {
-                        value[table_size - j - 1] = boost::multiprecision::bit_test(i, j);
+                        value[table_size - j - 1] = i.bit_test(j);
                     }
 
                     std::array<std::vector<typename BlueprintFieldType::integral_type>, 2> e_chunks =
