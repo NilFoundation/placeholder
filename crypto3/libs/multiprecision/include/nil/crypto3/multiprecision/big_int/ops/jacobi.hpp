@@ -43,11 +43,11 @@ namespace nil::crypto3::multiprecision {
                     J = -J;
                 }
             }
-            if (is_zero(x)) {
+            if (x.is_zero()) {
                 return 0;
             }
 
-            std::size_t shifts = lsb(x);
+            std::size_t shifts = x.lsb();
             x >>= shifts;
             if (shifts & 1) {
                 std::size_t y_mod_8 = static_cast<std::size_t>(y % 8);

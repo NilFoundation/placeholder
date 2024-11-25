@@ -29,42 +29,42 @@ BOOST_AUTO_TEST_CASE(construct_constexpr) {
 BOOST_AUTO_TEST_CASE(construct_modular_ct_trivial_montgomery) {
     static constexpr auto mod = 0x3_bigui2;
     auto_big_mod<mod> a = auto_big_mod<mod>(0x5_bigui);
-    BOOST_CHECK_EQUAL(a.str(), "0x2 mod 0x3");
+    BOOST_CHECK_EQUAL(a.str(), "0x2");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_trivial_montgomery) {
-    big_mod_rt<2> a{0x5_bigui, 0x3_bigui};
-    BOOST_CHECK_EQUAL(a.str(), "0x2 mod 0x3");
+    big_mod_rt<2> a(0x5_bigui, 0x3_bigui2);
+    BOOST_CHECK_EQUAL(a.str(), "0x2");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small_montgomery) {
     static constexpr auto mod = 0x79_bigui7;
     auto_big_mod<mod> a = auto_big_mod<mod>(0x1234_bigui);
-    BOOST_CHECK_EQUAL(a.str(), "0x3E mod 0x79");
+    BOOST_CHECK_EQUAL(a.str(), "0x3E");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small_montgomery) {
-    big_mod_rt<7> a{0x1234_bigui, 0x79_bigui};
-    BOOST_CHECK_EQUAL(a.str(), "0x3E mod 0x79");
+    big_mod_rt<7> a(0x1234_bigui, 0x79_bigui7);
+    BOOST_CHECK_EQUAL(a.str(), "0x3E");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_ct_small) {
     static constexpr auto mod = 0x78_bigui7;
     auto_big_mod<mod> a = auto_big_mod<mod>(0x1234_bigui);
-    BOOST_CHECK_EQUAL(a.str(), "0x64 mod 0x78");
+    BOOST_CHECK_EQUAL(a.str(), "0x64");
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small) {
-    big_mod_rt<7> a{0x1234_bigui, 0x78_bigui};
-    BOOST_CHECK_EQUAL(a.str(), "0x64 mod 0x78");
+    big_mod_rt<7> a(0x1234_bigui, 0x78_bigui7);
+    BOOST_CHECK_EQUAL(a.str(), "0x64");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_trivial) {
-    BOOST_CHECK_EQUAL((static_cast<big_mod_t>(0x1_bigui)).str(), "0x1 mod 0x123456789ABCDEF");
+    BOOST_CHECK_EQUAL((static_cast<big_mod_t>(0x1_bigui)).str(), "0x1");
 }
 
 BOOST_AUTO_TEST_CASE(to_string_small) {
-    BOOST_CHECK_EQUAL((static_cast<big_mod_t>(0x20_bigui)).str(), "0x20 mod 0x123456789ABCDEF");
+    BOOST_CHECK_EQUAL((static_cast<big_mod_t>(0x20_bigui)).str(), "0x20");
 }
 
 BOOST_AUTO_TEST_CASE(ops) {

@@ -30,7 +30,7 @@
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
-#include <nil/crypto3/multiprecision/big_int/common_ops.hpp>
+#include <nil/crypto3/multiprecision/big_int/integer.hpp>
 
 namespace nil {
     namespace crypto3 {

@@ -11,17 +11,22 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/modular/big_mod.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 
+#include <cstddef>
+#include <limits>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/big_int/modular/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/big_int/ops/gcd_inverse.hpp"
+#include "nil/crypto3/multiprecision/big_int/modular/ops/pow.hpp"
 
 namespace nil::crypto3::multiprecision {
-    template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
-    constexpr big_mod_t inverse_extended_euclidean_algorithm(const big_mod_t &modular) {
-        return big_mod_t(inverse_extended_euclidean_algorithm(modular.base(), modular.mod()), modular.ops_storage());
+    template<typename T1, std::size_t Bits, typename T2,
+             std::enable_if_t<std::numeric_limits<std::decay_t<T1>>::is_integer &&
+                                  std::numeric_limits<std::decay_t<T2>>::is_integer,
+                              int> = 0>
+    constexpr big_uint<Bits> powm(T1 &&b, T2 &&e, const big_uint<Bits> &m) {
+        return pow(big_mod_rt<Bits>(std::forward<T1>(b), m), std::forward<T2>(e)).base();
     }
 }  // namespace nil::crypto3::multiprecision
