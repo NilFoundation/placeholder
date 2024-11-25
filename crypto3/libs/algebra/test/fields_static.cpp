@@ -803,7 +803,7 @@ BOOST_AUTO_TEST_CASE(test_goldilocks) {
     using field_type = nil::crypto3::algebra::fields::goldilocks64;
     using value_type = field_type::value_type;
     constexpr value_type val = 0xdef0;
-    static_assert(val.data == 0xdef0u, "goldilocks initialization error");
+    static_assert(val.data.base() == 0xdef0u, "goldilocks initialization error");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

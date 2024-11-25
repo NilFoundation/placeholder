@@ -58,7 +58,7 @@
 #include <nil/crypto3/algebra/fields/fp2.hpp>
 #include <nil/crypto3/algebra/fields/fp3.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/big_int/literals.hpp>
 
 using namespace nil::crypto3::algebra;
 
@@ -231,7 +231,7 @@ void fp_curve_test_init(std::vector<typename FpCurveGroup::value_type> &points,
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(std::stoul(constant.second.data()));
+        constants.emplace_back(std::stoul(constant.second.data().c_str()));
     }
 }
 
@@ -443,34 +443,34 @@ BOOST_AUTO_TEST_CASE(curve_operation_test_babyjubjub_g1) {
 
     typename policy_type::value_type P4(
         typename policy_type::field_type::value_type(
-            0xF3C160E26FC96C347DD9E705EB5A3E8D661502728609FF95B3B889296901AB5_bigui252),
+            0xF3C160E26FC96C347DD9E705EB5A3E8D661502728609FF95B3B889296901AB5_bigui),
         typename policy_type::field_type::value_type(
-            0x9979273078B5C735585107619130E62E315C5CAFE683A064F79DFED17EB14E1_bigui252));
+            0x9979273078B5C735585107619130E62E315C5CAFE683A064F79DFED17EB14E1_bigui));
 
     P1.double_inplace();
     BOOST_CHECK_EQUAL(P1, P4);
 
     typename policy_type::value_type P5(
         typename policy_type::field_type::value_type(
-            0x274dbce8d15179969bc0d49fa725bddf9de555e0ba6a693c6adb52fc9ee7a82c_bigui252),
+            0x274dbce8d15179969bc0d49fa725bddf9de555e0ba6a693c6adb52fc9ee7a82c_bigui),
         typename policy_type::field_type::value_type(
-            0x5ce98c61b05f47fe2eae9a542bd99f6b2e78246231640b54595febfd51eb853_bigui252)),
+            0x5ce98c61b05f47fe2eae9a542bd99f6b2e78246231640b54595febfd51eb853_bigui)),
         et_s1P5(typename policy_type::field_type::value_type(
-                    0x2ad46cbfb78773b6254adc1d80c6efa02f3bf948c37e5a2222136421d7bec942_bigui252),
+                    0x2ad46cbfb78773b6254adc1d80c6efa02f3bf948c37e5a2222136421d7bec942_bigui),
                 typename policy_type::field_type::value_type(
-                    0x14e9693f16d75f7065ce51e1f46ae6c60841ca1e0cf264eda26398e36ca2ed69_bigui252)),
+                    0x14e9693f16d75f7065ce51e1f46ae6c60841ca1e0cf264eda26398e36ca2ed69_bigui)),
         et_s2P5(typename policy_type::field_type::value_type(
-                    0x031b924a83fbbdc206fb2d3bc85b7a724000714627f681a60b34885e4deca1d6_bigui252),
+                    0x031b924a83fbbdc206fb2d3bc85b7a724000714627f681a60b34885e4deca1d6_bigui),
                 typename policy_type::field_type::value_type(
-                    0x242e364702e64a6850c9aee7ece7ca79ba019ca7a63684e2df0873ca0d8f7e87_bigui252)),
+                    0x242e364702e64a6850c9aee7ece7ca79ba019ca7a63684e2df0873ca0d8f7e87_bigui)),
         P6(typename policy_type::field_type::value_type(
-               0xf3c160e26fc96c347dd9e705eb5a3e8d661502728609ff95b3b889296901ab5_bigui252),
+               0xf3c160e26fc96c347dd9e705eb5a3e8d661502728609ff95b3b889296901ab5_bigui),
            typename policy_type::field_type::value_type(
-               0x9979273078b5c735585107619130e62e315c5cafe683a064f79dfed17eb14e1_bigui252)),
+               0x9979273078b5c735585107619130e62e315c5cafe683a064f79dfed17eb14e1_bigui)),
         et_s1P6(typename policy_type::field_type::value_type(
-                    0x2e6475817d356adbbfcec42b2f7b90500d6f74e8cd4ec1ac0b6effd00ba854d7_bigui252),
+                    0x2e6475817d356adbbfcec42b2f7b90500d6f74e8cd4ec1ac0b6effd00ba854d7_bigui),
                 typename policy_type::field_type::value_type(
-                    0x195a50f93ff3f3e68bd593be5781301c32962777dc8237b099c23d39c24ec76a_bigui252));
+                    0x195a50f93ff3f3e68bd593be5781301c32962777dc8237b099c23d39c24ec76a_bigui));
 
     BOOST_CHECK_EQUAL(et_s1P5, scalar_value_type(integral_type(3u)) * P5);
     BOOST_CHECK_EQUAL(et_s2P5, scalar_value_type(integral_type(

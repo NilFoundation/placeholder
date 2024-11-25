@@ -69,8 +69,6 @@ namespace nil {
 #else
                 constexpr typename goldilocks64_base_field::integral_type const goldilocks64_base_field::modulus;
                 constexpr typename goldilocks64_base_field::integral_type const goldilocks64_base_field::group_order_minus_one_half;
-                constexpr
-                    typename goldilocks64_base_field::modular_params_type const goldilocks64_base_field::modulus_params;
 #endif
                 using goldilocks64_fq = goldilocks64_base_field;
 

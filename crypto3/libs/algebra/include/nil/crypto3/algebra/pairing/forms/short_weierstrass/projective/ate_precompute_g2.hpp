@@ -26,9 +26,6 @@
 #ifndef CRYPTO3_ALGEBRA_PAIRING_SHORT_WEIERSTRASS_PROJECTIVE_ATE_PRECOMPUTE_G2_HPP
 #define CRYPTO3_ALGEBRA_PAIRING_SHORT_WEIERSTRASS_PROJECTIVE_ATE_PRECOMPUTE_G2_HPP
 
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/projective/types.hpp>
 
 namespace nil {

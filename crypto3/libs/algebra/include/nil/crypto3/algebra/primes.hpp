@@ -44,14 +44,12 @@ namespace nil {
             template<std::size_t Bits>
             nil::crypto3::multiprecision::big_uint<Bits>
             pollard_rho_factorization(const nil::crypto3::multiprecision::big_uint<Bits> &n) {
-                using namespace boost::multiprecision;
-
                 if (!(n % 2)) {
                     return 2;
                 }
 
-                boost::random::independent_bits_engine<std::mt19937, 256, number<Backend, ExpressionTemplates>> rng;
-                number<backends::modular_adaptor<Backend, backends::modular_params_rt<Backend>>, ExpressionTemplates> divisor,
+                boost::random::independent_bits_engine<std::mt19937, 256, nil::crypto3::multiprecision::big_uint<Bits>> rng;
+                nil::crypto3::multiprecision::montgomery_big_mod_rt divisor(0u, n),
                         c(rng(), n), x(rng(), n), nn(n, n), xx = x;
                 do {
                     x = x * x + c;
