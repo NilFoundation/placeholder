@@ -97,7 +97,7 @@
           # fetched from the cache.
           all = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3 proof-producer];
+            paths = [ crypto3 parallel-crypto3 proof-producer];
           };
           default = all;
         };
