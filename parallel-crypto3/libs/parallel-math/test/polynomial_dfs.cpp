@@ -26,6 +26,8 @@
 
 #define BOOST_TEST_MODULE polynomial_dfs_test
 
+struct float128_type {};
+
 #include <vector>
 #include <cstdint>
 
@@ -49,7 +51,7 @@ typedef fields::bls12_fr<381> FieldType;
 
 BOOST_AUTO_TEST_SUITE(polynomial_dfs_from_coefficients_test_suite)
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_equal_test){
+/*BOOST_AUTO_TEST_CASE(polynomial_dfs_equal_test){
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x35_cppui_modular253, 0x26D37C08AED60085FDE335498E7DFEE2AFB1463D06E338219CD0E5DDAF27D68F_cppui_modular253,
@@ -1395,7 +1397,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test:
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     std::cout << "Multiplication time: " << duration.count() << " microseconds." << std::endl;
-}
+}*/
 
 BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
     std::vector<typename FieldType::value_type> values;

@@ -86,10 +86,10 @@ namespace nil {
                         }
                     }
 
-                    if (!fft_cache) {
+                    /*if (!fft_cache) {
                         create_fft_cache();
-                    }
-                    detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->first);
+                    }*/
+                    detail::basic_radix2_fft_cached<FieldType>(a, omega);
                 }
 
                 void inverse_fft(std::vector<value_type> &a) override {
@@ -101,10 +101,10 @@ namespace nil {
                         }
                     }
 
-                    if (!fft_cache) {
+                    /*if (!fft_cache) {
                         create_fft_cache();
-                    }
-                    detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->second);
+                    }*/
+                    detail::basic_radix2_fft_cached<FieldType>(a, omega.inversed());
 
                     const field_value_type sconst = field_value_type(a.size()).inversed();
                     for (std::size_t i = 0; i < a.size(); ++i) {

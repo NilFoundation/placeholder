@@ -24,28 +24,42 @@
 
 #pragma once
 
-#include <functional>
-#include <hipsycl/sycl.hpp>
-
 namespace nil {
     namespace crypto3 {
-        template<class Function>
+        /*template<class Function>
         void sycl_run_in_chunks(
             std::size_t elements_count,
             Function func
         ) {
-            hipsycl::queue q;
-            std::size_t max_compute_units = q.get_device().get_info<hipsycl::info::device::max_compute_units>();
+            hipsycl::sycl::queue q;
+            // show what device we are on
+            std::cout << "Running on device: " << q.get_device().get_info<sycl::info::device::name>() << std::endl;
+            std::size_t max_compute_units = q.get_device().get_info<hipsycl::sycl::info::device::max_compute_units>();
             std::size_t workers_to_use =
                 std::max(static_cast<std::size_t>(1), std::min(elements_count, max_compute_units));
+            //std::cout << "Using " << workers_to_use << " workers" << std::endl;
             {
-                q.submit([&](hipsycl::handler& cgh) {
+                q.submit([&](sycl::handler& cgh) {
                     cgh.parallel_for<class ParallelRunKernel>(
-                            hipsycl::range<1>(workers_to_use), [=](hipsycl::id<1> idx) {
+                            sycl::range<1>(workers_to_use), [=](sycl::id<1> idx) {
                         const std::size_t i = idx[0];
                         const std::size_t chunk_size = elements_count / workers_to_use;
                         const std::size_t remainder = elements_count % workers_to_use;
-                        const std::size_t begin = i * chunk_size + hipsycl::min(i, remainder);
+                        const std::size_t begin = i * chunk_size + sycl::min(i, remainder);
+                        const std::size_t end = begin + chunk_size + (i < remainder ? 1 : 0);
+                        func(begin, end);
+                    });
+                });
+                // The buffer destructor ensures synchronization
+            }
+            {
+                q.submit([&](sycl::handler& cgh) {
+                    cgh.parallel_for<class ParallelRunKernel>(
+                            sycl::range<1>(workers_to_use), [=](sycl::id<1> idx) {
+                        const std::size_t i = idx[0];
+                        const std::size_t chunk_size = elements_count / workers_to_use;
+                        const std::size_t remainder = elements_count % workers_to_use;
+                        const std::size_t begin = i * chunk_size + sycl::min(i, remainder);
                         const std::size_t end = begin + chunk_size + (i < remainder ? 1 : 0);
                         func(begin, end);
                     });
@@ -60,16 +74,16 @@ namespace nil {
             std::size_t end,
             Function func
         ) {
-            hipsycl::queue q;
+            sycl::queue q;
             {
-                q.submit([&](hipsycl::handler& cgh) {
+                q.submit([&](sycl::handler& cgh) {
                     cgh.parallel_for<class ParallelForKernel>(
-                            hipsycl::range<1>(end - start), [=](hipsycl::id<1> idx) {
+                            sycl::range<1>(end - start), [=](sycl::id<1> idx) {
                         func(start + idx[0]);
                     });
                 });
                 // The buffer destructor ensures synchronization
             }
-        }
+        }*/
     }   // namespace crypto3
 }   // namespace nil

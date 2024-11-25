@@ -30,6 +30,9 @@
 #include <memory>
 #include <vector>
 
+#include <functional>
+#include <sycl/sycl.hpp>
+
 #include <nil/crypto3/algebra/type_traits.hpp>
 
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
@@ -37,7 +40,6 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
-#include <nil/actor/core/sycl_parallelization_utils.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -81,50 +83,40 @@ namespace nil {
                     if (n != (1u << logn))
                         throw std::invalid_argument("expected n == (1u << logn)");
 
+                    auto a_buffer = sycl::buffer<typename FieldType::value_type, 1>(
+                        a.data(), n, sycl::property::buffer::use_host_ptr{});
+                    sycl::queue q;
                     // swapping in place (from Storer's book)
                     // We can parallelize this look, since k and rk are pairs, they will never intersect.
-                    sycl_parallel_for(0, n,
-                        [logn, &a](std::size_t k) {
-                            const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
-                            if (k < rk)
-                                std::swap(a[k], a[rk]);
-                        }
-                    );
-
-
+                    q.submit([&](sycl::handler &cgh) {
+                        auto a_acc = a_buffer. template get_access<sycl::access::mode::read_write>(cgh);
+                        cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> idx) {
+                            const std::size_t ridx = crypto3::math::detail::bitreverse(idx, logn);
+                            if (idx < ridx)
+                                std::swap(a_acc[idx], a_acc[ridx]);
+                        });
+                    });
+                    q.wait();
+                    auto omega_cache_buffer =
+                        sycl::buffer<typename FieldType::value_type, 1>(
+                            omega_cache.data(), n, sycl::property::buffer::use_host_ptr{});
                     // invariant: m = 2^{s-1}
-                    value_type t;
                     for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
-                        // w_m is 2^s-th root of unity now
-                        size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
-
-                        // Here we can parallelize on the both loops with 'k' and 'm', because for each value of k and m
-                        // the ranges of array 'a' used do not intersect. Think of these 2 loops as 1.
-                        sycl_run_in_chunks(
-                            m * count_k,
-                            [&a, m, count_k, inc, &omega_cache](std::size_t begin, std::size_t end) {
-                                size_t current_index = begin;
-                                size_t start_k = begin / m;
-                                value_type t;
-                                for (std::size_t k_index = start_k; k_index < count_k; ++k_index) {
-                                    std::size_t k = k_index * 2 * m;
-
-                                    std::size_t j = (start_k == k_index) ? (begin % m): 0;
-                                    std::size_t idx = j * inc;
-
-                                    for (; j < m; ++j, idx += inc) {
-                                        t = a[k + j + m];
-                                        t *= omega_cache[idx];
-                                        a[k + j + m] = a[k + j];
-                                        a[k + j + m] -= t;
-                                        a[k + j] += t;
-
-                                        ++current_index;
-                                        if (current_index == end)
-                                            return;
-                                    }
-                                }
-                            }));
+                        const size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
+                        q.submit([&](sycl::handler &cgh) {
+                            auto a_acc = a_buffer. template get_access<sycl::access::mode::read_write>(cgh);
+                            auto omega_acc = omega_cache_buffer. template get_access<sycl::access::mode::read>(cgh);
+                            cgh.parallel_for(sycl::range<1>(count_k * m), [=](sycl::id<1> index) {
+                                const std::size_t k = (index / m) * m * 2;
+                                const std::size_t j = index % m;
+                                const std::size_t idx = j * inc;
+                                const value_type t = a_acc[k + j + m] * omega_acc[idx];
+                                a_acc[k + j + m] = a_acc[k + j];
+                                a_acc[k + j + m] -= t;
+                                a_acc[k + j] += t;
+                            });
+                        });
+                        q.wait();
                     }
                 }
 

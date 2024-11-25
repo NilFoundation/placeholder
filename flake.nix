@@ -50,6 +50,7 @@
             enableDebug = false;
           });
           parallel-crypto3-tests = (pkgs.callPackage ./parallel-crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
           });
