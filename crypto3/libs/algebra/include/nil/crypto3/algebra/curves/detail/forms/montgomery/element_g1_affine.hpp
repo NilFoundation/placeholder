@@ -87,10 +87,9 @@ namespace nil {
                         constexpr curve_element(const field_value_type &in_X, const field_value_type &in_Y) :
                             is_inf_point(false), X(in_X), Y(in_Y) {};
 
-                        template<typename Backend,
-                                 boost::multiprecision::expression_template_option ExpressionTemplates>
+                        template<std::size_t Bits>
                         explicit constexpr curve_element(
-                                  const boost::multiprecision::number<Backend, ExpressionTemplates> &value) {
+                                  const nil::crypto3::multiprecision::big_uint<Bits> &value) {
                             *this = one() * value;
                         }
 
@@ -203,10 +202,9 @@ namespace nil {
                             return *this;
                         }
 
-                        template<typename Backend,
-                                 boost::multiprecision::expression_template_option ExpressionTemplates>
+                        template<std::size_t Bits>
                         constexpr const curve_element& operator=(
-                                  const boost::multiprecision::number<Backend, ExpressionTemplates> &value) {
+                                  const nil::crypto3::multiprecision::big_uint<Bits> &value) {
                             *this = one() * value;
                             return *this;
                         }

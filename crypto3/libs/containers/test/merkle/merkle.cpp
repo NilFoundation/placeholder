@@ -284,14 +284,14 @@ BOOST_AUTO_TEST_CASE(merkletree_validate_test_1) {
 
     BOOST_STATIC_ASSERT_MSG(algebra::is_field_element<original_poseidon_type::word_type>::value, "Expecting Poseidon to consume field elements");
     std::vector<std::array<original_poseidon_type::word_type, 1>> v_field = {
-        {0x0_cppui_modular255},
-        {0x1_cppui_modular255},
-        {0x2_cppui_modular255},
-        {0x3_cppui_modular255},
-        {0x4_cppui_modular255},
-        {0x5_cppui_modular255},
-        {0x6_cppui_modular255},
-        {0x7_cppui_modular255}
+        {0x0_bigui255},
+        {0x1_bigui255},
+        {0x2_bigui255},
+        {0x3_bigui255},
+        {0x4_bigui255},
+        {0x5_bigui255},
+        {0x6_bigui255},
+        {0x7_bigui255}
     };
     testing_validate_template<original_poseidon_type, 2>(v_field);
     testing_validate_template<poseidon_type, 2>(v_field);
@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE(merkletree_hash_test_1) {
         wrappers.emplace_back(inner_containers);
     }
     merkle_tree<poseidon_type, 2> tree = make_merkle_tree<poseidon_type, 2>(wrappers.begin(), wrappers.end());
-    BOOST_CHECK(tree.root() == 0x6E7641F1EAE17C0DA8227840EFEA6E1D17FB5EBA600D9DC34F314D5400E5BF3_cppui_modular255);
+    BOOST_CHECK(tree.root() == 0x6E7641F1EAE17C0DA8227840EFEA6E1D17FB5EBA600D9DC34F314D5400E5BF3_bigui255);
 }
 
 BOOST_AUTO_TEST_CASE(merkletree_hash_test_2) {

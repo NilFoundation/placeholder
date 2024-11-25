@@ -58,7 +58,7 @@
 #include <nil/crypto3/algebra/fields/fp2.hpp>
 #include <nil/crypto3/algebra/fields/fp3.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/big_int/literals.hpp>
 
 using namespace nil::crypto3::algebra;
 
@@ -215,7 +215,7 @@ void fp_curve_test_init(std::vector<typename FpCurveGroup::value_type> &points,
     for (auto &point : test_set.second.get_child("point_coordinates")) {
         auto i = 0;
         for (auto &coordinate : point.second) {
-            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data()));
+            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data().c_str()));
         }
 
         if (p1_to_affine == p) {
@@ -231,7 +231,7 @@ void fp_curve_test_init(std::vector<typename FpCurveGroup::value_type> &points,
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(std::stoul(constant.second.data()));
+        constants.emplace_back(std::stoul(constant.second.data().c_str()));
     }
 }
 
@@ -250,7 +250,7 @@ void fp_curve_twisted_edwards_test_init(
     for (auto &point : test_set.second.get_child("point_coordinates")) {
         auto i = 0;
         for (auto &coordinate : point.second) {
-            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data()));
+            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data().c_str()));
         }
         typename FpCurveGroup::value_type curve_element(coordinates[0], coordinates[1]);
         BOOST_CHECK_MESSAGE(curve_element.is_well_formed(), "point " << p << " is not well-formed");
@@ -259,7 +259,7 @@ void fp_curve_twisted_edwards_test_init(
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(integral_type(constant.second.data())));
+        constants.emplace_back(scalar_value_type(integral_type(constant.second.data().c_str())));
     }
 }
 
@@ -282,7 +282,7 @@ void fp_extended_curve_twisted_edwards_test_init(
     for (auto &point : test_set.second.get_child("point_coordinates")) {
         auto i = 0;
         for (auto &coordinate : point.second) {
-            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data()));
+            coordinates[i++] = field_value_type(typename field_value_type::integral_type(coordinate.second.data().c_str()));
         }
         typename group_affine_type::value_type curve_element_affine(coordinates[0], coordinates[1]);
         BOOST_CHECK_MESSAGE(curve_element_affine.is_well_formed(), "point " << p << " is not well-formed");
@@ -293,7 +293,7 @@ void fp_extended_curve_twisted_edwards_test_init(
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(integral_type(constant.second.data())));
+        constants.emplace_back(scalar_value_type(integral_type(constant.second.data().c_str())));
     }
 }
 
@@ -314,7 +314,7 @@ void fp2_curve_test_init(std::vector<typename Fp2CurveGroup::value_type> &points
         auto i = 0;
         for (auto &coordinate_pairs : point.second) {
             for (auto &coordinate : coordinate_pairs.second) {
-                coordinates[i++] = integral_type(coordinate.second.data());
+                coordinates[i++] = integral_type(coordinate.second.data().c_str());
             }
         }
         typename Fp2CurveGroup::value_type curve_element(
@@ -327,7 +327,7 @@ void fp2_curve_test_init(std::vector<typename Fp2CurveGroup::value_type> &points
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data())));
+        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data().c_str())));
     }
 }
 
@@ -348,7 +348,7 @@ void fp3_curve_test_init(std::vector<typename Fp3CurveGroup::value_type> &points
         auto i = 0;
         for (auto &coordinate_pairs : point.second) {
             for (auto &coordinate : coordinate_pairs.second) {
-                coordinates[i++] = integral_type(coordinate.second.data());
+                coordinates[i++] = integral_type(coordinate.second.data().c_str());
             }
         }
         typename Fp3CurveGroup::value_type curve_element(
@@ -361,7 +361,7 @@ void fp3_curve_test_init(std::vector<typename Fp3CurveGroup::value_type> &points
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data())));
+        constants.emplace_back(scalar_value_type(scalar_integral_type(constant.second.data().c_str())));
     }
 }
 
@@ -427,50 +427,50 @@ BOOST_AUTO_TEST_CASE(curve_operation_test_babyjubjub_g1) {
 
     typename policy_type::value_type P1(
         typename policy_type::field_type::value_type(
-            0x274DBCE8D15179969BC0D49FA725BDDF9DE555E0BA6A693C6ADB52FC9EE7A82C_cppui_modular254),
+            0x274DBCE8D15179969BC0D49FA725BDDF9DE555E0BA6A693C6ADB52FC9EE7A82C_bigui254),
         typename policy_type::field_type::value_type(
-            0x5CE98C61B05F47FE2EAE9A542BD99F6B2E78246231640B54595FEBFD51EB853_cppui_modular251)),
+            0x5CE98C61B05F47FE2EAE9A542BD99F6B2E78246231640B54595FEBFD51EB853_bigui251)),
         P2(typename policy_type::field_type::value_type(
-               0x2491ABA8D3A191A76E35BC47BD9AFE6CC88FEE14D607CBE779F2349047D5C157_cppui_modular254),
+               0x2491ABA8D3A191A76E35BC47BD9AFE6CC88FEE14D607CBE779F2349047D5C157_bigui254),
            typename policy_type::field_type::value_type(
-               0x2E07297F8D3C3D7818DBDDFD24C35583F9A9D4ED0CB0C1D1348DD8F7F99152D7_cppui_modular254)),
+               0x2E07297F8D3C3D7818DBDDFD24C35583F9A9D4ED0CB0C1D1348DD8F7F99152D7_bigui254)),
         P3(typename policy_type::field_type::value_type(
-               0x11805510440A3488B3B811EAACD0EC7C72DDED51978190E19067A2AFAEBAF361_cppui_modular253),
+               0x11805510440A3488B3B811EAACD0EC7C72DDED51978190E19067A2AFAEBAF361_bigui253),
            typename policy_type::field_type::value_type(
-               0x1F07AA1B3C598E2FF9FF77744A39298A0A89A9027777AF9FA100DD448E072C13_cppui_modular253));
+               0x1F07AA1B3C598E2FF9FF77744A39298A0A89A9027777AF9FA100DD448E072C13_bigui253));
 
     BOOST_CHECK_EQUAL(P1 + P2, P3);
 
     typename policy_type::value_type P4(
         typename policy_type::field_type::value_type(
-            0xF3C160E26FC96C347DD9E705EB5A3E8D661502728609FF95B3B889296901AB5_cppui_modular252),
+            0xF3C160E26FC96C347DD9E705EB5A3E8D661502728609FF95B3B889296901AB5_bigui),
         typename policy_type::field_type::value_type(
-            0x9979273078B5C735585107619130E62E315C5CAFE683A064F79DFED17EB14E1_cppui_modular252));
+            0x9979273078B5C735585107619130E62E315C5CAFE683A064F79DFED17EB14E1_bigui));
 
     P1.double_inplace();
     BOOST_CHECK_EQUAL(P1, P4);
 
     typename policy_type::value_type P5(
         typename policy_type::field_type::value_type(
-            0x274dbce8d15179969bc0d49fa725bddf9de555e0ba6a693c6adb52fc9ee7a82c_cppui_modular252),
+            0x274dbce8d15179969bc0d49fa725bddf9de555e0ba6a693c6adb52fc9ee7a82c_bigui),
         typename policy_type::field_type::value_type(
-            0x5ce98c61b05f47fe2eae9a542bd99f6b2e78246231640b54595febfd51eb853_cppui_modular252)),
+            0x5ce98c61b05f47fe2eae9a542bd99f6b2e78246231640b54595febfd51eb853_bigui)),
         et_s1P5(typename policy_type::field_type::value_type(
-                    0x2ad46cbfb78773b6254adc1d80c6efa02f3bf948c37e5a2222136421d7bec942_cppui_modular252),
+                    0x2ad46cbfb78773b6254adc1d80c6efa02f3bf948c37e5a2222136421d7bec942_bigui),
                 typename policy_type::field_type::value_type(
-                    0x14e9693f16d75f7065ce51e1f46ae6c60841ca1e0cf264eda26398e36ca2ed69_cppui_modular252)),
+                    0x14e9693f16d75f7065ce51e1f46ae6c60841ca1e0cf264eda26398e36ca2ed69_bigui)),
         et_s2P5(typename policy_type::field_type::value_type(
-                    0x031b924a83fbbdc206fb2d3bc85b7a724000714627f681a60b34885e4deca1d6_cppui_modular252),
+                    0x031b924a83fbbdc206fb2d3bc85b7a724000714627f681a60b34885e4deca1d6_bigui),
                 typename policy_type::field_type::value_type(
-                    0x242e364702e64a6850c9aee7ece7ca79ba019ca7a63684e2df0873ca0d8f7e87_cppui_modular252)),
+                    0x242e364702e64a6850c9aee7ece7ca79ba019ca7a63684e2df0873ca0d8f7e87_bigui)),
         P6(typename policy_type::field_type::value_type(
-               0xf3c160e26fc96c347dd9e705eb5a3e8d661502728609ff95b3b889296901ab5_cppui_modular252),
+               0xf3c160e26fc96c347dd9e705eb5a3e8d661502728609ff95b3b889296901ab5_bigui),
            typename policy_type::field_type::value_type(
-               0x9979273078b5c735585107619130e62e315c5cafe683a064f79dfed17eb14e1_cppui_modular252)),
+               0x9979273078b5c735585107619130e62e315c5cafe683a064f79dfed17eb14e1_bigui)),
         et_s1P6(typename policy_type::field_type::value_type(
-                    0x2e6475817d356adbbfcec42b2f7b90500d6f74e8cd4ec1ac0b6effd00ba854d7_cppui_modular252),
+                    0x2e6475817d356adbbfcec42b2f7b90500d6f74e8cd4ec1ac0b6effd00ba854d7_bigui),
                 typename policy_type::field_type::value_type(
-                    0x195a50f93ff3f3e68bd593be5781301c32962777dc8237b099c23d39c24ec76a_cppui_modular252));
+                    0x195a50f93ff3f3e68bd593be5781301c32962777dc8237b099c23d39c24ec76a_bigui));
 
     BOOST_CHECK_EQUAL(et_s1P5, scalar_value_type(integral_type(3u)) * P5);
     BOOST_CHECK_EQUAL(et_s2P5, scalar_value_type(integral_type(
@@ -604,8 +604,8 @@ class bls12_377_orders_2_4_runner {
         o2_Y = 0u;
     // point of order 4
     static constexpr curve_type::base_field_type::value_type
-        o4_X = 0x126f980765bb3d634f9d5cb49909db8af2e185fb13bdb7dc4aedcadf9d8dad86bba02eda906066c9153bdf72ddce76c_cppui_modular377,
-        o4_Y = 0x06e4b66bb23ef4bef715f597162d6662d8161cd062d6212d39392e17232444a0760b5dc479db98123ab3887aa3cb34e_cppui_modular377;
+        o4_X = 0x126f980765bb3d634f9d5cb49909db8af2e185fb13bdb7dc4aedcadf9d8dad86bba02eda906066c9153bdf72ddce76c_bigui377,
+        o4_Y = 0x06e4b66bb23ef4bef715f597162d6662d8161cd062d6212d39392e17232444a0760b5dc479db98123ab3887aa3cb34e_bigui377;
 
     public:
     bool static run() {
@@ -646,13 +646,13 @@ BOOST_AUTO_TEST_CASE(twisted_edwards_extended_order_test) {
 
     /* Point of order 2 */
     curve_type::base_field_type::value_type
-        o2_X = 0x0_cppui_modular255,
+        o2_X = 0x0_bigui255,
         o2_Y = curve_type::base_field_type::modulus - 1;
 
     /* Point of order 4 */
     curve_type::base_field_type::value_type
-        o4_X = 0x547cdb7fb03e20f4d4b2ff66c2042858d0bce7f952d01b873b11e4d8b5f15f3d_cppui_modular255,
-        o4_Y = 0x0_cppui_modular255;
+        o4_X = 0x547cdb7fb03e20f4d4b2ff66c2042858d0bce7f952d01b873b11e4d8b5f15f3d_bigui255,
+        o4_Y = 0x0_bigui255;
 
     typename g1_type::value_type o4(o4_X, o4_Y), o2(o2_X, o2_Y), check;
 

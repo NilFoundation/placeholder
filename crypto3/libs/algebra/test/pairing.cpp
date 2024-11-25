@@ -38,8 +38,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/curves/mnt6.hpp>
@@ -59,7 +57,6 @@
 
 using namespace nil::crypto3::algebra::pairing;
 using namespace nil::crypto3::algebra;
-using namespace boost::multiprecision;
 
 namespace boost {
     namespace test_tools {
@@ -174,7 +171,7 @@ void check_pairing_operations(std::vector<Fr_value_type> const& Fr_elements,
     std::cout << " * Reduced pairing tests with pow started..." << std::endl;
     BOOST_CHECK_EQUAL(
         *pair_reduced<CurveType>(Fr_elements[VKx_poly] * G1_elements[A1], G2_elements[B1]),
-        pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1])->pow(Fr_elements[VKx_poly].data));
+        pair_reduced<CurveType>(G1_elements[A1], G2_elements[B1])->pow(Fr_elements[VKx_poly].data.base()));
     std::cout << " * Reduced pairing tests with pow finished." << std::endl << std::endl;
 
     std::cout << " * Miller loop tests started..." << std::endl;
@@ -201,7 +198,7 @@ struct field_element_init<fields::detail::element_fp<FieldParams>> {
 
     template<typename ElementData>
     static inline element_type process(const ElementData &element_data) {
-        return element_type(typename element_type::integral_type(element_data.second.data()));
+        return element_type(typename element_type::integral_type(element_data.second.data().c_str()));
     }
 };
 

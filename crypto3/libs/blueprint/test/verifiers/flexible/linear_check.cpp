@@ -277,22 +277,22 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_13_k_3) {
     constexpr std::size_t m = 13;
     constexpr std::size_t k = 3;
     constexpr std::size_t n = 7;
-    value_type theta = 0x17f3269be06ff6c76417c00b03b877502ec58a8292c09a689aad0de2e3e6a209_cppui_modular255;
-    value_type x   = 0x1109ad4c5183f69681888cf1ac9c73233ae4e3bd5ca9ad8e34b81c1a11794627_cppui_modular255;
+    value_type theta = 0x17f3269be06ff6c76417c00b03b877502ec58a8292c09a689aad0de2e3e6a209_bigui255;
+    value_type x   = 0x1109ad4c5183f69681888cf1ac9c73233ae4e3bd5ca9ad8e34b81c1a11794627_bigui255;
     std::array<value_type, n> y = {
-        0x109c08b6434fdac4656b1b3b9c169ea0bb3763c54a0f226544f2e7cbb07699d3_cppui_modular255,
-        0x29807c67ad0e77f1cb7df52eaacda8c8aeb7323998949e1e6dc96ace49d7ffdb_cppui_modular255,
-        0x1e3b7cc212edf2735ccafdfe4ed9cb66692b11ad423a6980084a7fc3fd3c174c_cppui_modular255,
-        0x2597470a24d0a2cbbbc6d526352a994e8238fc24baeb88e8101812c861ac984b_cppui_modular255,
-        0x1ce5a2c4753bad5ebe0a964361f32d6407d1b2b3424371d7202059510025a368_cppui_modular255,
-        0x171f218f4a75c541784cc7754b0ce73200eeb37529f6d49df003e453ca9243b4_cppui_modular255,
-        0xbd0de19ad7279aef43773c595c3d8b8cfd9c7469e3192e86f1f9abf3adb3ad2_cppui_modular255
+        0x109c08b6434fdac4656b1b3b9c169ea0bb3763c54a0f226544f2e7cbb07699d3_bigui255,
+        0x29807c67ad0e77f1cb7df52eaacda8c8aeb7323998949e1e6dc96ace49d7ffdb_bigui255,
+        0x1e3b7cc212edf2735ccafdfe4ed9cb66692b11ad423a6980084a7fc3fd3c174c_bigui255,
+        0x2597470a24d0a2cbbbc6d526352a994e8238fc24baeb88e8101812c861ac984b_bigui255,
+        0x1ce5a2c4753bad5ebe0a964361f32d6407d1b2b3424371d7202059510025a368_bigui255,
+        0x171f218f4a75c541784cc7754b0ce73200eeb37529f6d49df003e453ca9243b4_bigui255,
+        0xbd0de19ad7279aef43773c595c3d8b8cfd9c7469e3192e86f1f9abf3adb3ad2_bigui255
     };
     
     std::array<value_type, k> xi = {
-        0x3c4b5c29d2934183497c35596d868ddb8e0005397f67d2f26c91188ada9bd1c3_cppui_modular255,
-        0x21ec40745cf822c5d422dc11f80a07845c4cb6ba727804c56a340f52bcfc6ace_cppui_modular255,
-        0x15f359e7d0a1a4b1eff1de3a593890a472f721a83b8d7145bd1a4e830bc72298_cppui_modular255
+        0x3c4b5c29d2934183497c35596d868ddb8e0005397f67d2f26c91188ada9bd1c3_bigui255,
+        0x21ec40745cf822c5d422dc11f80a07845c4cb6ba727804c56a340f52bcfc6ace_bigui255,
+        0x15f359e7d0a1a4b1eff1de3a593890a472f721a83b8d7145bd1a4e830bc72298_bigui255
     };
 
 
@@ -315,19 +315,19 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_13_k_3) {
     std::vector<std::vector<value_type>> z(n, std::vector<value_type>());
     std::array<std::array<value_type, k>, n> z_ij;
     
-    z_ij[0][0] = 0x20d25fb8470fd8fabc58145cb26ad8742c475753ae5ca5d8f3c1b44684ce4f0_cppui_modular255;
-    z_ij[1][0] = 0x33c5922b908b7477233c66f1794147c57e3efd2bb2521669380e8178fac300c1_cppui_modular255;
-    z_ij[2][0] = 0xd4c90ee14439e9196e9d185b8ca15dda515922c05ca40df31cf7f770e6aa49d_cppui_modular255;
-    z_ij[3][0] = 0x228cee3a770a9e2f04a8fa727b31864730a2183747a1ef6d6a2b6b0946d099a4_cppui_modular255;
-    z_ij[3][1] = 0x1784c045ae5ab50022bc3f598811196d5c195a66ec67b8d0aa43c45d321288bb_cppui_modular255;
-    z_ij[3][2] = 0x23df4e8277cb5df68d32d783b1887bfb179f15717571db08c5579894e8c0ea42_cppui_modular255;
-    z_ij[4][0] = 0x3806fca6f22cd78d49d22c125e67d81f6fd336faed8e8d16303309e4f9165b90_cppui_modular255;
-    z_ij[4][1] = 0x3e5190c6669cce05fb6b3d63156f59f100cea0ff9730894e6133407213b8fc4b_cppui_modular255;
-    z_ij[4][2] = 0x175df5a226a4870b5b45d0b050471dee42c433c8ecc42cab79829156528711bf_cppui_modular255;
-    z_ij[5][0] = 0x2e8f89d9ffb7318286019c2ff4b8eba03fa812c97243a3e636b158c25e858c70_cppui_modular255;
-    z_ij[5][2] = 0x29c647fa69040c8b336a6bd63fc97477441b147f4c98e6d9632ba3290f434b8d_cppui_modular255;
-    z_ij[6][0] = 0x2a6a12ac90b00570b8b7dcb18540363ee0d7069aab9ab74bc30e92b8c3534cf1_cppui_modular255;
-    z_ij[6][2] = 0xf244b829bb26edce0aed5a36c70c09c43e6e612cd9b328bbc6518f427fe5988_cppui_modular255;
+    z_ij[0][0] = 0x20d25fb8470fd8fabc58145cb26ad8742c475753ae5ca5d8f3c1b44684ce4f0_bigui255;
+    z_ij[1][0] = 0x33c5922b908b7477233c66f1794147c57e3efd2bb2521669380e8178fac300c1_bigui255;
+    z_ij[2][0] = 0xd4c90ee14439e9196e9d185b8ca15dda515922c05ca40df31cf7f770e6aa49d_bigui255;
+    z_ij[3][0] = 0x228cee3a770a9e2f04a8fa727b31864730a2183747a1ef6d6a2b6b0946d099a4_bigui255;
+    z_ij[3][1] = 0x1784c045ae5ab50022bc3f598811196d5c195a66ec67b8d0aa43c45d321288bb_bigui255;
+    z_ij[3][2] = 0x23df4e8277cb5df68d32d783b1887bfb179f15717571db08c5579894e8c0ea42_bigui255;
+    z_ij[4][0] = 0x3806fca6f22cd78d49d22c125e67d81f6fd336faed8e8d16303309e4f9165b90_bigui255;
+    z_ij[4][1] = 0x3e5190c6669cce05fb6b3d63156f59f100cea0ff9730894e6133407213b8fc4b_bigui255;
+    z_ij[4][2] = 0x175df5a226a4870b5b45d0b050471dee42c433c8ecc42cab79829156528711bf_bigui255;
+    z_ij[5][0] = 0x2e8f89d9ffb7318286019c2ff4b8eba03fa812c97243a3e636b158c25e858c70_bigui255;
+    z_ij[5][2] = 0x29c647fa69040c8b336a6bd63fc97477441b147f4c98e6d9632ba3290f434b8d_bigui255;
+    z_ij[6][0] = 0x2a6a12ac90b00570b8b7dcb18540363ee0d7069aab9ab74bc30e92b8c3534cf1_bigui255;
+    z_ij[6][2] = 0xf244b829bb26edce0aed5a36c70c09c43e6e612cd9b328bbc6518f427fe5988_bigui255;
 
     for(std::size_t i=0; i<n; i++){
         for(std::size_t j=0; j<k; j++){
@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_dfri_linear_check_test_pallas_m_13_k_3) {
     }
     
     
-    value_type expected_res = 0x349c635dc7675c9f442067d5ebd60641e51c89a1a049a4e3bf917fcc47c346c2_cppui_modular255;
+    value_type expected_res = 0x349c635dc7675c9f442067d5ebd60641e51c89a1a049a4e3bf917fcc47c346c2_bigui255;
 
     test_dfri_linear_check<field_type, 9, 1>(public_inputs, expected_res, m, eval_map);
     test_dfri_linear_check<field_type, 18, 2>(public_inputs, expected_res, m, eval_map);

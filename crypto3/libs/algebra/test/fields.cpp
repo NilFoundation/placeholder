@@ -122,7 +122,7 @@ struct field_element_init<fields::detail::element_fp<FieldParams>> {
 
     template<typename ElementData>
     static inline element_type process(const ElementData &element_data) {
-        return element_type(typename element_type::integral_type(element_data.second.data()));
+        return element_type(typename element_type::integral_type(element_data.second.data().c_str()));
     }
 };
 
@@ -315,7 +315,7 @@ void field_test_init(std::vector<ElementType> &elements,
     }
 
     for (auto &constant : test_set.second.get_child("constants")) {
-        constants.emplace_back(std::stoll(constant.second.data()));
+        constants.emplace_back(std::stoll(constant.second.data().c_str()));
     }
 }
 

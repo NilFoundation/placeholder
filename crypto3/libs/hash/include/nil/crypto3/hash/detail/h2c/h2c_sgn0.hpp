@@ -36,24 +36,15 @@ namespace nil {
 
             template<typename FieldParams>
             inline bool sgn0(const element_fp<FieldParams> &e) {
-                using modular_type = typename FieldParams::modular_type;
-
-                static const modular_type two = typename modular_type::backend_type(2u);
-
-                return static_cast<bool>(e.data % two);
+                return e.data.base().bit_test(0);
             }
 
             template<typename FieldParams>
             inline bool sgn0(const element_fp2<FieldParams> &e) {
-                using underlying_type = typename element_fp2<FieldParams>::underlying_type;
-                using modular_type = typename FieldParams::modular_type;
-
-                static const modular_type two = typename modular_type::backend_type(2u);
-
-                modular_type sign_0 = e.data[0].data % two;
+                bool sign_0 = e.data[0].data.base().bit_test(0);
                 bool zero_0 = e.data[0].data.is_zero();
-                modular_type sign_1 = e.data[1].data % two;
-                return static_cast<bool>(sign_0) || (zero_0 && static_cast<bool>(sign_1));
+                bool sign_1 = e.data[1].data.base().bit_test(0);
+                return sign_0 || (zero_0 && sign_1);
             }
         }    // namespace hashes
     }    // namespace crypto3

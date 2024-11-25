@@ -33,7 +33,8 @@
 #include <nil/crypto3/hash/detail/h2f/h2f_suites.hpp>
 #include <nil/crypto3/hash/detail/h2f/h2f_functions.hpp>
 #include <nil/crypto3/hash/detail/stream_processors/stream_processors_enum.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -140,10 +141,10 @@ namespace nil {
                                       std::cbegin(uniform_bytes) + elm_offset + L,
                                       std::back_inserter(imported_octets));
                             nil::marshalling::status_type status;
-                            boost::multiprecision::number<boost::multiprecision::cpp_int_modular_backend<L * CHAR_BIT>> tmp =
+                            nil::crypto3::multiprecision::big_uint<L * CHAR_BIT> tmp =
                                 nil::marshalling::pack<nil::marshalling::option::big_endian>(imported_octets, status);
                             THROW_IF_ERROR_STATUS(status, "h2f::process");
-                            coordinates[j] = modular_type(typename modular_type::backend_type(tmp.backend()));
+                            coordinates[j] = modular_type(tmp);
                         }
                         result[i] = coordinates[0];
                     }
@@ -169,10 +170,10 @@ namespace nil {
                                       std::cbegin(uniform_bytes) + elm_offset + L,
                                       std::back_inserter(imported_octets));
                             nil::marshalling::status_type status;
-                            boost::multiprecision::number<boost::multiprecision::cpp_int_modular_backend<L * CHAR_BIT>> tmp =
+                            nil::crypto3::multiprecision::big_uint<L * CHAR_BIT> tmp =
                                 nil::marshalling::pack<nil::marshalling::option::big_endian>(imported_octets, status);
                             THROW_IF_ERROR_STATUS(status, "h2f::process");
-                            coordinates[j] = modular_type(typename modular_type::backend_type(tmp.backend()));
+                            coordinates[j] = modular_type(tmp);
                         }
                         result[i] = field_value_type(coordinates[0], coordinates[1]);
                     }

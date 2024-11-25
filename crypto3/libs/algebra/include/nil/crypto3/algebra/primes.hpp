@@ -30,7 +30,9 @@
 #include <set>
 
 #include <boost/multiprecision/miller_rabin.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
+#include <nil/crypto3/multiprecision/big_int/modular/big_mod.hpp>
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+
 #include "random_element.hpp"
 
 namespace nil {
@@ -41,26 +43,23 @@ namespace nil {
              Input: n the number to be factorized.
              Output: a factor of n.
              */
-            template<typename Backend,
-                    boost::multiprecision::expression_template_option ExpressionTemplates>
-            boost::multiprecision::number<Backend, ExpressionTemplates>
-            pollard_rho_factorization(const boost::multiprecision::number<Backend, ExpressionTemplates> &n) {
-                using namespace boost::multiprecision;
-
+            template<std::size_t Bits>
+            nil::crypto3::multiprecision::big_uint<Bits>
+            pollard_rho_factorization(const nil::crypto3::multiprecision::big_uint<Bits> &n) {
                 if (!(n % 2)) {
                     return 2;
                 }
 
-                boost::random::independent_bits_engine<std::mt19937, 256, number<Backend, ExpressionTemplates>> rng;
-                number<backends::modular_adaptor<Backend, backends::modular_params_rt<Backend>>, ExpressionTemplates> divisor,
+                boost::random::independent_bits_engine<std::mt19937, 256, nil::crypto3::multiprecision::big_uint<Bits>> rng;
+                nil::crypto3::multiprecision::montgomery_big_mod_rt divisor(0u, n),
                         c(rng(), n), x(rng(), n), nn(n, n), xx = x;
                 do {
                     x = x * x + c;
                     xx = xx * xx + c;
                     xx = xx * xx + c;
-                    divisor = boost::multiprecision::gcd((x > xx) ? x - xx : xx - x, nn);
+                    divisor = nil::crypto3::multiprecision::gcd((x > xx) ? x - xx : xx - x, nn);
                 } while (static_cast<int>(divisor) == 1);
-                return static_cast<boost::multiprecision::number<Backend, ExpressionTemplates>>(divisor);
+                return divisor.base();
             }
 
             /*
