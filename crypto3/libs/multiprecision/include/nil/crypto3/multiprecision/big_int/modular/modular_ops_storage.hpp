@@ -27,7 +27,7 @@ namespace nil::crypto3::multiprecision::detail {
         static constexpr std::size_t Bits = big_uint_t::Bits;
         using modular_ops_t = modular_ops_template<Bits>;
 
-        static_assert(Bits == msb(Modulus) + 1, "modulus bit width should match used precision");
+        static_assert(Bits == Modulus.msb() + 1, "modulus bit width should match used precision");
 
         constexpr modular_ops_storage_ct() {}
 

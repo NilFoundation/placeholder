@@ -31,7 +31,7 @@
 #include <type_traits>
 
 #include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
-#include <nil/crypto3/multiprecision/big_int/common_ops.hpp>
+#include <nil/crypto3/multiprecision/big_int/integer.hpp>
 
 #include <nil/marshalling/endianness.hpp>
 
