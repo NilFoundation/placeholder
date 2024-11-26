@@ -26,13 +26,12 @@
 #ifndef CRYPTO3_MARSHALLING_INTEGRAL_HPP
 #define CRYPTO3_MARSHALLING_INTEGRAL_HPP
 
+#include <cstddef>
 #include <ratio>
 #include <limits>
 #include <type_traits>
 
-#include <boost/type_traits/is_integral.hpp>
-
-#include <boost/multiprecision/number.hpp>
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
 
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/types/integral.hpp>
@@ -43,8 +42,8 @@
 #include <nil/marshalling/options.hpp>
 
 #include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_fixed_precision_type.hpp>
-#include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_non_fixed_precision_type.hpp>
 #include <nil/crypto3/marshalling/multiprecision/inference.hpp>
+#include <vector>
 
 namespace nil {
     namespace crypto3 {
@@ -97,16 +96,15 @@ namespace nil {
                 class integral;
 
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
-                class integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                class integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                     : public ::nil::marshalling::types::detail::adapt_basic_field_type<
-                          crypto3::marshalling::types::detail::basic_integral<TTypeBase, Backend, ExpressionTemplates>,
+                          crypto3::marshalling::types::detail::basic_integral<TTypeBase, Bits>,
                           TOptions...> {
 
                     using base_impl_type = ::nil::marshalling::types::detail::adapt_basic_field_type<
-                        crypto3::marshalling::types::detail::basic_integral<TTypeBase, Backend, ExpressionTemplates>,
+                        crypto3::marshalling::types::detail::basic_integral<TTypeBase, Bits>,
                         TOptions...>;
 
                 public:
@@ -327,13 +325,12 @@ namespace nil {
                 /// @return true in case fields are equal, false otherwise.
                 /// @related integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
                 bool operator==(
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field1,
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field2) {
                     return field1.value() == field2.value();
                 }
@@ -344,13 +341,12 @@ namespace nil {
                 /// @return true in case fields are NOT equal, false otherwise.
                 /// @related integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
                 bool operator!=(
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field1,
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field2) {
                     return field1.value() != field2.value();
                 }
@@ -361,13 +357,12 @@ namespace nil {
                 /// @return true in case value of the first field is lower than than the value of the second.
                 /// @related integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
                 bool operator<(
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field1,
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field2) {
                     return field1.value() < field2.value();
                 }
@@ -376,12 +371,11 @@ namespace nil {
                 ///     in order to have access to its internal types.
                 /// @related nil::marshalling::types::integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
-                inline integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...> &
+                inline integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...> &
                     to_field_base(
-                        integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...> &field) {
+                        integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...> &field) {
                     return field;
                 }
 
@@ -389,12 +383,11 @@ namespace nil {
                 ///     in order to have access to its internal types.
                 /// @related nil::marshalling::types::integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
-                inline const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...> &
+                inline const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...> &
                     to_field_base(
-                        const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                        const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                             &field) {
                     return field;
                 }
