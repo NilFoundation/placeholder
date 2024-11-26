@@ -54,8 +54,7 @@ namespace nil {
             std::vector<value_type> chunks;
             constexpr const std::size_t chunk_size = 16;
             constexpr const std::size_t num_chunks = 256 / chunk_size;
-            using integral_type = boost::multiprecision::number<
-                boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             constexpr const integral_type mask =
                 integral_type((zkevm_word_type(1) << chunk_size) - 1);
             integral_type word_copy = integral_type(word);

@@ -394,8 +394,7 @@ namespace nil {
                 value_data = value_data >> 64;
                 assignment.witness(component.W(4), row) = value_data;
 
-                using extended_integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<2 * BlueprintFieldType::policy_type::modulus_bits>>;
+                using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * BlueprintFieldType::policy_type::modulus_bits>;
 
                 extended_integral_type modulus_p = BlueprintFieldType::modulus;
                 extended_integral_type one = 1;
@@ -479,8 +478,7 @@ namespace nil {
 
                 using var = typename plonk_to_limbs<BlueprintFieldType>::var;
 
-                using extended_integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<2 * BlueprintFieldType::policy_type::modulus_bits>>;
+                using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * BlueprintFieldType::policy_type::modulus_bits>;
 
                 typename BlueprintFieldType::value_type scalar = 2;
                 extended_integral_type modulus_p = BlueprintFieldType::modulus;

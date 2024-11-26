@@ -216,10 +216,9 @@ namespace nil {
                 zkevm_stack &stack = machine.stack;
                 word_type a = stack.pop();
                 word_type b = stack.pop();
-                using integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
                 integral_type result_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                word_type result = word_type::backend_type(result_integral.backend());
+                word_type result = word_type::backend_type(result_integral);
                 word_type q = b != 0u ? a % b : a;
 
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
