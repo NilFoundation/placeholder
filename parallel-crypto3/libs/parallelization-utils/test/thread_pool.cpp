@@ -39,6 +39,8 @@
 BOOST_AUTO_TEST_SUITE(thread_pool_test_suite)
 
 BOOST_AUTO_TEST_CASE(vector_multiplication_test) {
+    boost::unit_test::unit_test_log_t::instance().set_threshold_level( boost::unit_test::log_messages );
+    //boost::unit_test::framework::instance().set_report_level(boost::unit_test::log_silent);
     size_t size = 131072;
 
     std::vector<size_t> v(size);
