@@ -65,7 +65,7 @@ namespace nil {
                                         std::size_t i_th) {
                     assert(i_th < ratio && "non-native type does not have that much chunks!");
                     extended_integral_type result = extended_integral_type(
-                        non_native_field_type::integral_type(input.data.base()));
+                        non_native_field_type::integral_type(input.data));
                     native_field_type::integral_type base = 1;
                     native_field_type::integral_type mask = (base << chunk_sizes[i_th]) - 1;
                     std::size_t shift = 0;
@@ -87,13 +87,13 @@ namespace nil {
 
                 static non_native_field_type::value_type glue_non_native(chopped_value_type input) {
                     non_native_field_type::value_type result;
-                    result = non_native_field_type::value_type(native_field_type::integral_type(input[0].data.base()));
+                    result = non_native_field_type::value_type(native_field_type::integral_type(input[0].data));
                     for (std::size_t i = 1; i < ratio; i++) {
                         std::size_t shift = 0;
                         for (std::size_t j = 0; j < i; j++) {
                             shift += chunk_sizes[j];
                         }
-                        result += non_native_field_type::value_type(native_field_type::integral_type(input[i].data.base()) << shift);
+                        result += non_native_field_type::value_type(native_field_type::integral_type(input[i].data) << shift);
                     }
                     return result;
                 }
@@ -136,7 +136,7 @@ namespace nil {
                                         std::size_t i_th) {
                     assert(i_th < ratio && "non-native type does not have that much chunks!");
                     extended_integral_type result = extended_integral_type(
-                        input.data.base());
+                        input.data);
                     native_field_type::integral_type base = 1;
                     native_field_type::integral_type mask = (base << chunk_sizes[i_th]) - 1;
                     std::size_t shift = 0;
@@ -158,13 +158,13 @@ namespace nil {
 
                 static non_native_field_type::value_type glue_non_native(chopped_value_type input) {
                     non_native_field_type::value_type result;
-                    result = non_native_field_type::value_type(native_field_type::integral_type(input[0].data.base()));
+                    result = non_native_field_type::value_type(native_field_type::integral_type(input[0].data));
                     for (std::size_t i = 1; i < ratio; i++) {
                         std::size_t shift = 0;
                         for (std::size_t j = 0; j < i; j++) {
                             shift += chunk_sizes[j];
                         }
-                        result += non_native_field_type::value_type(native_field_type::integral_type(input[i].data.base()) << shift);
+                        result += non_native_field_type::value_type(native_field_type::integral_type(input[i].data) << shift);
                     }
                     return result;
                 }
@@ -314,13 +314,13 @@ namespace nil {
 
                 static non_native_field_type glue_non_native(chopped_value_type input) {
                     non_native_field_type result;
-                    result = non_native_field_type(native_field_type::integral_type(input[0].data.base()));
+                    result = non_native_field_type(native_field_type::integral_type(input[0].data));
                     for (std::size_t i = 1; i < ratio; i++) {
                         std::size_t shift = 0;
                         for (std::size_t j = 0; j < i; j++) {
                             shift += chunk_sizes[j];
                         }
-                        result += non_native_field_type(native_field_type::integral_type(input[i].data.base()) << shift);
+                        result += non_native_field_type(native_field_type::integral_type(input[i].data) << shift);
                     }
                     return result;
                 }
@@ -377,7 +377,7 @@ namespace nil {
         //                 } else {
         //                     return native_field_type::value_type(input.sign() == 0 ? 1 : -1) * 
         //                         native_integral_type(native_backend_type(
-        //                             non_native_unsigned_integral_type(input).data.base()));
+        //                             non_native_unsigned_integral_type(input).data));
         //                 }
         //             } else {
         //                 static const non_native_field_type top_mask = ((non_native_field_type(1) << 128) - 1) << 128;
@@ -387,10 +387,10 @@ namespace nil {
         //                     return input.sign() == 0 ? 1 : -1;
         //                 } else if (i_th == 1) {
         //                     return native_integral_type(native_backend_type(
-        //                             non_native_unsigned_integral_type(top_mask & input).data.base()));
+        //                             non_native_unsigned_integral_type(top_mask & input).data));
         //                 } else {
         //                     return native_integral_type(native_backend_type(
-        //                             non_native_unsigned_integral_type(bottom_mask & input).data.base()));
+        //                             non_native_unsigned_integral_type(bottom_mask & input).data));
         //                 }
         //             }
         //         }
@@ -408,14 +408,14 @@ namespace nil {
         //             typename non_native_field_type::value_type result;
         //             if constexpr (BitsAmount < 256) {
         //                 result =
-        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[0].data.base())) == 0 ? 1 : -1) * non_native_field_type::value_type(native_field_type::integral_type(input[1].data.base()));
+        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[0].data)) == 0 ? 1 : -1) * non_native_field_type::value_type(native_field_type::integral_type(input[1].data));
         //             } else {
         //                 static const non_native_field_type two_128 =
         //                 boost::multiprecision::pow(non_native_field_type(2), 128);
         //                 result =
-        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[0].data.base())) == 0 ? 1 : -1) *
-        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[1].data.base()) * two_128 +
-        //                     non_native_field_type::value_type(input[2].data.base())));
+        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[0].data)) == 0 ? 1 : -1) *
+        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[1].data) * two_128 +
+        //                     non_native_field_type::value_type(input[2].data)));
         //             }
         //             return result;
         //         }

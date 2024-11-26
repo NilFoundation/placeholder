@@ -243,7 +243,7 @@ namespace nil {
                             g.emplace_back(*vec_it);
 
                             opt_q.emplace_back(detail::ordered_exponent<integral_type>(
-                                i, scalar_it->data.base()));
+                                i, integral_type(scalar_it->data)));
                         }
 
                         std::make_heap(opt_q.begin(), opt_q.end());
