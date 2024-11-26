@@ -53,8 +53,8 @@ namespace nil {
                     apply_tester(tester);
                 }
 
-                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
-                using extended_integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<512>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
+                using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
 
                 void apply_tester(const zkevm_opcode_tester &tester, std::size_t initial_gas = 30000000){
                     transactions_amount++;
