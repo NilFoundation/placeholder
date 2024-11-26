@@ -61,6 +61,8 @@ namespace nil {
                 : public plonk_component<BlueprintFieldType> {
 
             public:
+                static constexpr std::size_t DEPTH = 24;
+
                 using component_type = plonk_component<BlueprintFieldType>;
                 using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
 
@@ -408,6 +410,7 @@ namespace nil {
                         assignment.witness(component.W(11 % WA), start_row_index + i + 11/WA) = other_key[i - 1]; // W[11][i] = other_key[i]
                         assignment.witness(component.W(12 % WA), start_row_index + i + 12/WA) = 1; // W[12][0] = path_type = common = 1 
                     }
+                    // assignment.witness(component.W(component_type::DEPTH), start_row_index + i) = 1;
                 }
 
                 // last row in account_trie
@@ -699,8 +702,8 @@ namespace nil {
                     mpt_nonce_changed_constraints.push_back(qLeaf_3*nextSegmentType);                
                 }
 
-                // 3.2. constraints for segment types
-                // std::cout << "\n3.2. Constraints for account leaf segment types" << std::endl; 
+                // // 3.2. constraints for segment types
+                // // std::cout << "\n3.2. Constraints for account leaf segment types" << std::endl; 
 
                 for(std::size_t i = account_trie_length + 1; i < assignment_table_rows; i++) {
                     Direction = var(component.W(7 % WA), i + 7/WA + row_shift, true);
@@ -723,7 +726,7 @@ namespace nil {
                 newNonce = var(component.W(3 % WA), assignment_table_rows - 1 + 3/WA + row_shift, true);
                 mpt_nonce_changed_constraints.push_back(oldHash_last - oldNonce*B - newHash_last + newNonce*B);
 
-                //BOOST_ASSERT_MSG(rows == component.rows_amount, "!!!component rows not equal to actual component rows!!!");      
+                // BOOST_ASSERT_MSG(rows == component.rows_amount, "!!!component rows not equal to actual component rows!!!");      
 
                 return bp.add_gate(mpt_nonce_changed_constraints);
             }
@@ -758,13 +761,14 @@ namespace nil {
             typename plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length>::result_type generate_circuit(
                 const plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length> &component,
                 circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-                assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>
-                    &assignment,
+                assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &assignment,
                 const typename plonk_mpt_nonce_changed<BlueprintFieldType,num_chunks,bit_size_chunk,account_trie_length>::input_type &instance_input,
                 const std::size_t start_row_index) {
 
                 using component_type = plonk_mpt_nonce_changed<BlueprintFieldType, num_chunks, bit_size_chunk, account_trie_length>;
                 using range_check_type = typename component_type::range_check_component;
+                using lookup_constraint_type = crypto3::zk::snark::plonk_lookup_constraint<BlueprintFieldType>;
+
                 using var = typename component_type::var;
                 using value_type = typename BlueprintFieldType::value_type;
                 
