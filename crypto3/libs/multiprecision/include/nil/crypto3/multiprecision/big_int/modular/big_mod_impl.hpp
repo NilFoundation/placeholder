@@ -57,6 +57,8 @@ namespace nil::crypto3::multiprecision {
             constexpr big_uint_t base() const { return ops().adjusted_regular(m_raw_base); }
             constexpr const big_uint_t& mod() const { return ops().mod(); }
 
+            explicit constexpr operator big_uint_t() const { return base(); }
+
             // String conversion
 
             constexpr std::string str() const { return base().str() + " mod " + mod().str(); }
