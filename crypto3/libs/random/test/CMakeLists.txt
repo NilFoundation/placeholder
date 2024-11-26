@@ -12,6 +12,7 @@ include(CMTest)
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
     ${CMAKE_WORKSPACE_NAME}::multiprecision
     Boost::unit_test_framework)
+set_target_properties(_cm_internal_tests-crypto3-random-test PROPERTIES CXX_STANDARD 20)
 target_precompile_headers(_cm_internal_tests-crypto3-random-test REUSE_FROM crypto3_precompiled_headers)
 
 macro(define_random_test test)
@@ -26,7 +27,7 @@ macro(define_random_test test)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-steps=2147483647")

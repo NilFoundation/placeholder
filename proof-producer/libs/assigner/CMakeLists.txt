@@ -28,6 +28,7 @@ endforeach()
 add_library(proof_generatorAssigner SHARED
             ${PROTO_SRC}
 )
+set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 20)
 
 target_include_directories(proof_generatorAssigner
                             PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${PROTOBUF_INCLUDE_DIR}
