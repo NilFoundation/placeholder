@@ -26,7 +26,7 @@ jobs:
       - name: Post logs to Sig Noz
         run: |
           ls -l -a
-          nix build -L .?#checks.x86_64-linux.all-sanitizers
+          nix build -L .?#checks.x86_64-linux.all-clang-sanitize
           cat ./result/test-logs/test_errors.txt
           export UndefinedBehaviorSanitizer=$(grep UndefinedBehaviorSanitizer result/test-logs/test_errors.txt | wc -l)
           export AddressSanitizer=$(grep AddressSanitizer result/test-logs/test_errors.txt | wc -l)

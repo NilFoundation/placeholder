@@ -113,7 +113,7 @@ void benchmark_curve_operations(std::string const& curve_name)
             return A *= B;
             });
 
-    if constexpr (has_template_g2_type<curve_type>::value) {
+    if constexpr (has_type_g2_type<curve_type>::value) {
         using g2_type = typename curve_type::template g2_type<>;
 
         using g2_field = typename g2_type::field_type;
