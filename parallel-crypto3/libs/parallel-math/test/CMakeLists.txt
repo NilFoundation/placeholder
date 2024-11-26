@@ -34,7 +34,7 @@ macro(define_math_test name)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20)
 
 endmacro()
 

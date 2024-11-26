@@ -24,6 +24,11 @@ endif()
 # Add dummy target for the more efficient reusing of precompiled headers
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
 add_library(crypto3_precompiled_headers STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
+set_target_properties(crypto3_precompiled_headers PROPERTIES
+    LINKER_LANGUAGE CXX
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED TRUE
+)
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy-23.cpp)
 add_library(crypto3_precompiled_headers_23 STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy-23.cpp)
