@@ -1,8 +1,14 @@
 name: Nightly Testing
 
+#on:
+#  schedule:
+#    - cron: '0 0 * * *'
 on:
-  schedule:
-    - cron: '0 0 * * *'
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - master
 
 jobs:
   test-linux-sanitizers:
