@@ -272,13 +272,11 @@ namespace nil {
             */
             template<typename BlueprintFieldType>
             struct basic_non_native_policy_field_type<BlueprintFieldType,
-                    boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<256>>> {
+                    nil::crypto3::multiprecision::big_uint<256>> {
 
                 constexpr static const std::uint32_t ratio = 2; // 128, 128 bits
                 // not actually a field, but we preserve the interface
-                using non_native_field_type = typename boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<256>>;
+                using non_native_field_type = typename nil::crypto3::multiprecision::big_uint<256>;
                 using native_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
                 using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * native_field_type::policy_type::modulus_bits>;
                 using var = crypto3::zk::snark::plonk_variable<typename native_field_type::value_type>;
@@ -293,7 +291,7 @@ namespace nil {
                                         std::size_t i_th) {
                     assert(i_th < ratio && "non-native type does not have that much chunks!");
                     extended_integral_type result = extended_integral_type(
-                        input.backend());
+                        input);
 
                     native_field_type::integral_type base = 1;
                     native_field_type::integral_type mask = (base << chunk_sizes[i_th]) - 1;
@@ -362,7 +360,6 @@ namespace nil {
 
                 using native_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
                 using native_integral_type = typename native_field_type::integral_type;
-                using native_backend_type = typename native_integral_type::backend_type;
                 using var = crypto3::zk::snark::plonk_variable<typename native_field_type::value_type>;
 
                 typedef std::array<var, ratio> non_native_var_type;
@@ -380,7 +377,7 @@ namespace nil {
                         } else {
                             return native_field_type::value_type(input.sign() == 0 ? 1 : -1) * 
                                 native_integral_type(native_backend_type(
-                                    non_native_unsigned_integral_type(input).data.backend()));
+                                    non_native_unsigned_integral_type(input).data));
                         }
                     } else {
                         static const non_native_field_type top_mask = ((non_native_field_type(1) << 128) - 1) << 128;
@@ -390,10 +387,10 @@ namespace nil {
                             return input.sign() == 0 ? 1 : -1;
                         } else if (i_th == 1) {
                             return native_integral_type(native_backend_type(
-                                    non_native_unsigned_integral_type(top_mask & input).data.backend()));
+                                    non_native_unsigned_integral_type(top_mask & input).data));
                         } else {
                             return native_integral_type(native_backend_type(
-                                    non_native_unsigned_integral_type(bottom_mask & input).data.backend()));
+                                    non_native_unsigned_integral_type(bottom_mask & input).data));
                         }
                     }
                 }
