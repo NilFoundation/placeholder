@@ -34,7 +34,6 @@
 #include <complex>
 
 #include <boost/math/constants/constants.hpp>
-#include <boost/multiprecision/number.hpp>
 
 #include <nil/crypto3/algebra/totient.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>
@@ -92,20 +91,16 @@ namespace nil {
              *
              * @return a root of unity.
              */
-            template<typename Backend,
-                    boost::multiprecision::expression_template_option ExpressionTemplates>
-            boost::multiprecision::number<Backend, ExpressionTemplates>
-            unity_root(uint32_t m, const boost::multiprecision::number<Backend, ExpressionTemplates> &modulo) {
-                using namespace boost::multiprecision;
+            template<std::size_t Bits>
+            nil::crypto3::multiprecision::big_uint<Bits>
+            unity_root(uint32_t m, const nil::crypto3::multiprecision::big_uint<Bits> &modulo) {
+                nil::crypto3::multiprecision::big_uint<Bits> M(m);
 
-                number<Backend, ExpressionTemplates> M(m);
-
-                if ((modulo - number<Backend, ExpressionTemplates>(1) % M) % M != 0) {
+                if ((modulo - nil::crypto3::multiprecision::big_uint<Bits>(1) % M) % M != 0) {
                     return {};
                 }
 
-                number<backends::modular_adaptor<Backend, backends::modular_params_rt<Backend>>, ExpressionTemplates>
-                        gen(find_generator(modulo), modulo), result = boost::multiprecision::pow(gen, (modulo - 1) / M);
+                nil::crypto3::multiprecision::big_mod_rt<Bits> gen(find_generator(modulo), modulo), result = nil::crypto3::multiprecision::powm(gen, (modulo - 1) / M);
                 if (result == 1u) {
                     result = unity_root(m, modulo);
                 }
@@ -125,20 +120,20 @@ namespace nil {
                  *
                  */
 
-                boost::multiprecision::number<Backend, ExpressionTemplates> mu = modulo.ComputeMu();
-                boost::multiprecision::number<Backend, ExpressionTemplates> x(1);
+                nil::crypto3::multiprecision::big_uint<Bits> mu = modulo.ComputeMu();
+                nil::crypto3::multiprecision::big_uint<Bits> x(1);
                 x.ModMulEq(result, modulo, mu);
-                boost::multiprecision::number<Backend, ExpressionTemplates> minRU(x);
-                boost::multiprecision::number<Backend, ExpressionTemplates> curPowIdx(1);
-                std::vector<boost::multiprecision::number<Backend, ExpressionTemplates>> coprimes = algebra::totient_list<boost::multiprecision::number<Backend, ExpressionTemplates>>(
+                nil::crypto3::multiprecision::big_uint<Bits> minRU(x);
+                nil::crypto3::multiprecision::big_uint<Bits> curPowIdx(1);
+                std::vector<nil::crypto3::multiprecision::big_uint<Bits>> coprimes = algebra::totient_list<nil::crypto3::multiprecision::big_uint<Bits>>(
                         m);
                 for (uint32_t i = 0; i < coprimes.size(); i++) {
                     auto nextPowIdx = coprimes[i];
-                    boost::multiprecision::number<Backend, ExpressionTemplates> diffPow(nextPowIdx - curPowIdx);
+                    nil::crypto3::multiprecision::big_uint<Bits> diffPow(nextPowIdx - curPowIdx);
                     for (std::size_t j = 0; j < diffPow; j++) {
                         x.ModMulEq(result, modulo, mu);
                     }
-                    if (x < minRU && x != boost::multiprecision::number<Backend, ExpressionTemplates>(1)) {
+                    if (x < minRU && x != nil::crypto3::multiprecision::big_uint<Bits>(1)) {
                         minRU = x;
                     }
                     curPowIdx = nextPowIdx;

@@ -1351,6 +1351,7 @@ namespace nil::crypto3::multiprecision {
     constexpr auto& operator*=(big_uint_t& a, const T& b) noexcept {
         big_uint<detail::get_bits<big_uint_t>() + detail::get_bits<T>()> result;
         decltype(result)::multiply(result, a, static_cast<big_uint_t>(b));
+        // NB: this asserts on overflow, this is expected
         a = result;
         return a;
     }
