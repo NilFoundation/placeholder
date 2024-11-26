@@ -135,8 +135,8 @@ namespace nil {
                 static native_field_type::value_type get_i_th_chunk(non_native_field_type::value_type input,
                                         std::size_t i_th) {
                     assert(i_th < ratio && "non-native type does not have that much chunks!");
-                    extended_integral_type result = extended_integral_type::backend_type(
-                        input.data.backend().base_data());
+                    extended_integral_type result = extended_integral_type(
+                        input.data.base());
                     native_field_type::integral_type base = 1;
                     native_field_type::integral_type mask = (base << chunk_sizes[i_th]) - 1;
                     std::size_t shift = 0;
@@ -292,7 +292,7 @@ namespace nil {
                 static native_field_type::value_type get_i_th_chunk(non_native_field_type::value_type input,
                                         std::size_t i_th) {
                     assert(i_th < ratio && "non-native type does not have that much chunks!");
-                    extended_integral_type result = extended_integral_type::backend_type(
+                    extended_integral_type result = extended_integral_type(
                         input.backend());
 
                     native_field_type::integral_type base = 1;

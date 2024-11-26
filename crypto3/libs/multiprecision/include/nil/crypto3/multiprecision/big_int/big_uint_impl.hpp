@@ -1431,7 +1431,7 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
     constexpr auto operator*(const T1& a, const T2& b) noexcept {
         big_uint<detail::get_bits<T1>() + detail::get_bits<T2>()> result;
-        decltype(result)::multiply(result, a, b);
+        decltype(result)::multiply(result, big_uint<detail::get_bits<T1>()>(a), big_uint<detail::get_bits<T2>()>(b));
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE

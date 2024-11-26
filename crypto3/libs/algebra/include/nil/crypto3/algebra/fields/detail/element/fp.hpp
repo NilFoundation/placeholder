@@ -152,19 +152,19 @@ namespace nil {
                         }
 
                         constexpr bool operator<(const element_fp &B) const {
-                            return data < B.data;
+                            return data.base() < B.data.base();
                         }
 
                         constexpr bool operator>(const element_fp &B) const {
-                            return data > B.data;
+                            return data.base() > B.data.base();
                         }
 
                         constexpr bool operator<=(const element_fp &B) const {
-                            return data <= B.data;
+                            return data.base() <= B.data.base();
                         }
 
                         constexpr bool operator>=(const element_fp &B) const {
-                            return data >= B.data;
+                            return data.base() >= B.data.base();
                         }
 
                         constexpr element_fp &operator++() {

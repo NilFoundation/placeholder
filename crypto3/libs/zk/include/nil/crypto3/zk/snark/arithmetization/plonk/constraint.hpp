@@ -91,8 +91,8 @@ namespace nil {
                     }
 
                     // Constructor for number<cpp_int_backend<...>>.
-                    template<class BackendType>
-                    plonk_constraint(const boost::multiprecision::number<BackendType> &coeff)
+                    template<std::size_t Bits>
+                    plonk_constraint(const nil::crypto3::multiprecision::big_uint<Bits> &coeff)
                         : math::expression<VariableType>(coeff) {
                     }
 
