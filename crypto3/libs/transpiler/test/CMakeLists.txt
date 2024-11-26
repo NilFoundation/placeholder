@@ -33,7 +33,7 @@ macro(define_transpiler_test name)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(transpiler_${name}_test PROPERTIES CXX_STANDARD 17)
+    set_target_properties(transpiler_${name}_test PROPERTIES CXX_STANDARD 20)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
     if(target_type STREQUAL "SHARED_LIB")

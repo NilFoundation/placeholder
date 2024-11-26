@@ -22,7 +22,7 @@ macro(define_random_example name)
             ${CMAKE_WORKSPACE_NAME}::multiprecision
 
             Boost::container)
-    set_target_properties(random_${name}_example PROPERTIES CXX_STANDARD 17)
+    set_target_properties(random_${name}_example PROPERTIES CXX_STANDARD 20)
 endmacro()
 
 set(EXAMPLES_NAMES
