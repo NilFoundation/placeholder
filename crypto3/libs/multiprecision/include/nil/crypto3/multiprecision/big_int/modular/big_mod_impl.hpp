@@ -15,6 +15,7 @@
 
 #include <climits>
 #include <cstddef>
+#include <functional>
 #include <ostream>
 #include <string>
 #include <type_traits>
@@ -51,6 +52,8 @@ namespace nil::crypto3::multiprecision {
                 return ops().compare_eq(o.ops()) && m_raw_base == o.m_raw_base;
             }
 
+            // Components
+
             constexpr big_uint_t base() const { return ops().adjusted_regular(m_raw_base); }
             constexpr const big_uint_t& mod() const { return ops().mod(); }
 
@@ -66,6 +69,14 @@ namespace nil::crypto3::multiprecision {
                     m_raw_base = mod();
                     m_raw_base -= initial_m_base;
                 }
+            }
+
+            // Misc ops
+
+            constexpr bool is_zero() const noexcept {
+                // In barrett form raw_base is the same as base
+                // In montgomery form raw_base is base multiplied by r, so it is zero iff base is
+                return raw_base().is_zero();
             }
 
             // Accessing raw base value. Should only be used internally by multiprecision library.
@@ -304,21 +315,21 @@ namespace nil::crypto3::multiprecision {
 #undef NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
 #undef NIL_CO3_MP_MODULAR_BIG_UINT_INTEGRAL_TEMPLATE
 
-    // Additional operations
-
-    template<std::size_t Bits, typename modular_ops_t>
-    constexpr bool is_zero(const detail::big_mod_impl<Bits, modular_ops_t>& val) noexcept {
-        // In barrett form raw_base is the same as base
-        // In montgomery form raw_base is base multiplied by r, so it is zero iff base is
-        return is_zero(val.raw_base());
-    }
-
     // Hash
 
-    template<std::size_t Bits, typename modular_ops_t>
+    template<const auto& modulus, template<std::size_t> typename modular_ops_template>
     constexpr std::size_t hash_value(
-        const detail::big_mod_impl<Bits, modular_ops_t>& val) noexcept {
+        const big_mod_ct_impl<modulus, modular_ops_template>& val) noexcept {
         return hash_value(val.raw_base());
+    }
+
+    template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
+    constexpr std::size_t hash_value(
+        const big_mod_rt_impl<Bits, modular_ops_template>& val) noexcept {
+        std::size_t result = 0;
+        boost::hash_combine(result, val.base());
+        boost::hash_combine(result, val.mod());
+        return result;
     }
 
     // IO
@@ -353,3 +364,23 @@ namespace nil::crypto3::multiprecision {
     using auto_big_mod = std::conditional_t<detail::check_montgomery_constraints(modulus),
                                             montgomery_big_mod<modulus>, big_mod<modulus>>;
 }  // namespace nil::crypto3::multiprecision
+
+// std::hash specializations
+
+template<const auto& modulus_, template<std::size_t> typename modular_ops_template>
+struct std::hash<nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular_ops_template>> {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular_ops_template>& a)
+        const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular_ops_template>>{}(a);
+    }
+};
+
+template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
+struct std::hash<nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>> {
+    std::size_t operator()(
+        const nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>& a)
+        const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>>{}(a);
+    }
+};

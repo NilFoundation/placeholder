@@ -379,7 +379,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr std::size_t hash_value(const big_int<Bits>& val) noexcept {
         std::size_t result = 0;
-        boost::hash_combine(result, hash_value(val.abs()));
+        boost::hash_combine(result, val.abs());
         boost::hash_combine(result, val.negative());
         return result;
     }
