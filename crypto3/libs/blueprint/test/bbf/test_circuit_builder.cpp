@@ -40,11 +40,10 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-//#include <nil/blueprint/bbf/bbf_wrapper.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/is_zero.hpp>
 
-#include "../test_plonk_component.hpp"
+//#include "../test_plonk_component.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
@@ -52,12 +51,14 @@ using namespace nil::blueprint;
 template <typename FieldType, template<typename, bbf::GenerationStage stage> class Component, typename... ComponentStaticInfoArgs>
 void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input,
                           ComponentStaticInfoArgs... args) {
-    // using Builder = bbf::circuit_builder<FieldType,Component,int>;
+    using assignment_type = Component<FieldType,bbf::GenerationStage::ASSIGNMENT>;
 
-    auto B = bbf::circuit_builder<FieldType,Component,ComponentStaticInfoArgs...>(1,3,args...); // W, rows. PI set to 1 by default
+    auto B = bbf::circuit_builder<FieldType,Component,ComponentStaticInfoArgs...>(args...);
 
     B.generate_constraints();
-    B.generate_assignment(raw_input);
+    assignment_type A = B.assign(raw_input);
+    std::cout << "Input = " << A.input << std::endl << "Result = " << A.res << std::endl;
+
 /*
     constexpr std::size_t WitnessColumns = 15;    // TODO
     constexpr std::size_t PublicInputColumns = 1; // TODO
@@ -103,7 +104,7 @@ void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASS
 */
 }
 
-static const std::size_t random_tests_amount = 1;
+static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
@@ -121,8 +122,10 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_cicruit_builder_test) {
     for (std::size_t i = 0; i < random_tests_amount; i++) {
         auto random_input = value_type(integral_type(generate_random().data) % base16);
         bbf::is_zero<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {random_input};
-        test_circuit_builder<field_type,bbf::is_zero>(raw_input,.1,2,3,4,5,6);
+        test_circuit_builder<field_type,bbf::is_zero>(raw_input);
     }
+    bbf::is_zero<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {0};
+    test_circuit_builder<field_type,bbf::is_zero>(raw_input);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

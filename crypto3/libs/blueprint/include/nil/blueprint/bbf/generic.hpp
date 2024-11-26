@@ -54,7 +54,6 @@ namespace nil {
 
             template<typename FieldType>
             class basic_context {
-                using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 public:
@@ -178,7 +177,8 @@ namespace nil {
             public:
                 using TYPE = typename FieldType::value_type;
 
-                using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                // using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_input_constraints_type = std::vector<TYPE>;
@@ -293,7 +293,8 @@ namespace nil {
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
 
-                using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                // using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 using basic_context<FieldType>::row_shift;
@@ -512,11 +513,11 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<lookup_constraint_type>> res;
                     for(const auto& [id, data] : *lookup_constraints) {
                         auto it = res.find(data.second);
-		                if (it == res.end()) {
-		                	res[data.second] = {{id.first, data.first}};
-		                } else {
-		                	it->second.push_back({id.first, data.first});
-		                }
+		        if (it == res.end()) {
+		            res[data.second] = {{id.first, data.first}};
+		        } else {
+		            it->second.push_back({id.first, data.first});
+		        }
                     }
 
                     /*
@@ -627,13 +628,13 @@ namespace nil {
                     using context_type = context<FieldType, stage>;
                     using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
 
-            private:
-                context_type &ct;
+                private:
+                    context_type &ct;
 
-            public:
-                    static table_params get_minimal_requirements() {
-                        return {0,0,0,0};
-                    }
+                public:
+                static table_params get_minimal_requirements() {
+                    return {0,0,0,0};
+                }
 
                 void allocate(TYPE &C, column_type t = column_type::witness) {
                     auto [col, row] = ct.next_free_cell(t);
@@ -671,7 +672,7 @@ namespace nil {
                     if (crlf) { // TODO: Implement crlf parameter consequences
                         ct.new_line(column_type::witness);
                     }
-                };
+                }
             };
 
         } // namespace bbf
