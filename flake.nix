@@ -45,7 +45,12 @@
             runTests = true;
             enableDebug = false;
             sanitize = true;
-            bench = true;
+            benchmarkTests = true;
+          });
+          crypto3-clang-bench = (pkgs.callPackage ./crypto3.nix {
+            runTests = true;
+            enableDebug = false;
+            benchmarkTests = true;
           });
           crypto3-clang-debug = (pkgs.callPackage ./crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
@@ -108,6 +113,11 @@
             runTests = true;
             enableDebug = false;
           });
+          crypto3-gcc-bench = (pkgs.callPackage ./crypto3.nix {
+            runTests = true;
+            enableDebug = false;
+            benchmarkTests = true;
+          });
           crypto3-clang = (pkgs.callPackage ./crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
@@ -124,7 +134,7 @@
             runTests = true;
             enableDebug = false;
             sanitize = true;
-            bench = true;
+            benchmarkTests = true;
           });
 
           parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3.nix {
