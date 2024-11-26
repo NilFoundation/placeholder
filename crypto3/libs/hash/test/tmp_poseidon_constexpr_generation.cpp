@@ -3,14 +3,8 @@
 #include <array>
 #include <bitset>
 
-#include <boost/multiprecision/cpp_int.hpp>
-
-
-using namespace boost::multiprecision::literals;
-using boost::multiprecision::number;
-using boost::multiprecision::backends::cpp_int_backend;
-using boost::multiprecision::cpp_integer_type;
-using boost::multiprecision::cpp_int_check_type;
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+#include <nil/crypto3/multiprecision/big_int/literals.hpp>
 
 using std::cout;
 
@@ -18,8 +12,8 @@ using std::cout;
 #define GRAIN_LFSR_STATE_LEN 80
 
 
-BOOST_MP_DEFINE_SIZED_CPP_INT_LITERAL(BLS12_381_MODULUS_LEN);
-BOOST_MP_DEFINE_SIZED_CPP_INT_LITERAL(GRAIN_LFSR_STATE_LEN);
+NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(BLS12_381_MODULUS_LEN);
+NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(GRAIN_LFSR_STATE_LEN);
 
 
 template<std::size_t t, std::size_t full_rounds, std::size_t part_rounds>
@@ -27,10 +21,8 @@ struct round_constants_generator {
     constexpr static std::size_t modulus_bits = BLS12_381_MODULUS_LEN;
     constexpr static std::size_t state_bits = GRAIN_LFSR_STATE_LEN;
 
-    typedef number<cpp_int_backend<modulus_bits, modulus_bits, cpp_integer_type::unsigned_magnitude, cpp_int_check_type::unchecked, void>>
-        integral_type;
-    typedef number<cpp_int_backend<state_bits, state_bits, cpp_integer_type::unsigned_magnitude, cpp_int_check_type::unchecked, void>>
-        state_type;
+    typedef nil::crypto3::multiprecision::big_uint<modulus_bits> integral_type;
+    typedef nil::crypto3::multiprecision::big_uint<state_bits> state_type;
 
     constexpr static integral_type mod = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_bigui255;
 

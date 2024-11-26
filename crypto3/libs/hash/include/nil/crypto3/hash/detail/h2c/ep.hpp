@@ -33,8 +33,6 @@
 #include <type_traits>
 #include <climits>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 namespace nil {
     namespace crypto3 {
         namespace hashes {

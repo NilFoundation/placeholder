@@ -7,9 +7,6 @@
 #include <cstdint>
 #include <algorithm>
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/hash/detail/poseidon/poseidon_sponge.hpp>
 
 #include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>

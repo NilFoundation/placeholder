@@ -9,8 +9,6 @@
 #ifndef CRYPTO3_HASH_POSEIDON_LFSR_HPP
 #define CRYPTO3_HASH_POSEIDON_LFSR_HPP
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
