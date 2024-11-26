@@ -17,7 +17,7 @@
 
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
 #include "nil/crypto3/multiprecision/big_int/modular/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/big_int/ops/inverse.hpp"
+#include "nil/crypto3/multiprecision/big_int/ops/gcd_inverse.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
