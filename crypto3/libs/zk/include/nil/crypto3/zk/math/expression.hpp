@@ -114,8 +114,8 @@ namespace nil {
                 }
 
                 // Constructor for number<cpp_int_backend<...>>.
-                template<class BackendType>
-                expression(const boost::multiprecision::number<BackendType>& coeff)
+                template<std::size_t Bits>
+                expression(const nil::crypto3::multiprecision::big_uint<Bits>& coeff)
                   : expr(term<VariableType>((assignment_type)coeff)) {
                     update_hash();
                 }

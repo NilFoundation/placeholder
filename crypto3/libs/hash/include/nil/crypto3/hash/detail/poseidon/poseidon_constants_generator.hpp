@@ -12,6 +12,8 @@
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace hashes {
@@ -48,7 +50,7 @@ namespace nil {
                     typedef typename poseidon_constants_type::state_vector_type state_vector_type;
 
                     constexpr static const std::size_t lfsr_state_bits = 80;
-                    typedef number<backends::cpp_int_modular_backend<lfsr_state_bits>> lfsr_state_type;
+                    typedef nil::crypto3::multiprecision::big_uint<lfsr_state_bits> lfsr_state_type;
 
                     typedef typename poseidon_constants_type::round_constants_type round_constants_type;
 

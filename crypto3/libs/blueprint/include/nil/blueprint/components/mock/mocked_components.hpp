@@ -277,8 +277,8 @@ namespace nil {
                         const input_type &instance_input) const override { \
  \
  /*TODO(martun): on the next line we are converting 255-bit number to 8/32/64 bit numbers, probably losing some bits*/\
-                        uint_type a = static_cast<uint_type>(var_value(assignment, instance_input.a).data.backend().base_data()), \
-                                  b = static_cast<uint_type>(var_value(assignment, instance_input.b).data.backend().base_data()); \
+                        uint_type a = static_cast<uint_type>(var_value(assignment, instance_input.a).data.base()), \
+                                  b = static_cast<uint_type>(var_value(assignment, instance_input.b).data.base()); \
                         return {value_type(OP(a, b))}; \
                     } \
  \
