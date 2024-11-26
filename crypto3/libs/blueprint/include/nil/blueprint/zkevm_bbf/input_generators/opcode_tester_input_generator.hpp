@@ -69,9 +69,8 @@ namespace nil {
                     const std::map<std::size_t, std::uint8_t> memory;
                     const std::map<zkevm_word_type, zkevm_word_type> storage;
 
-                    for( std::size_t ind = 0; ind < tester.get_opcodes().size(); ind++ ){
-                        auto opcode = tester.get_opcodes()[ind].first;
-                        auto additional_input = tester.get_opcodes()[ind].second;
+                    while(true){
+                        auto [opcode,additional_input] = tester.get_opcode_by_pc(pc);
 
                         zkevm_state state;              // TODO:optimize
                         state.tx_hash = 0;              // * change it
@@ -82,7 +81,7 @@ namespace nil {
                         state.rw_counter = rw_counter;
                         state.bytecode_hash = _bytecodes.get_data()[current_buffer_id].second;
                         state.additional_input = additional_input;
-                        state.tx_finish = (ind == tester.get_opcodes().size() - 1);
+                        //state.tx_finish = (ind == tester.get_opcodes().size() - 1);
                         state.stack_size = stack.size();
                         state.memory_size = memory.size();
                         state.stack_slice = stack;
@@ -305,6 +304,16 @@ namespace nil {
                             stack.push_back(result);
                             pc++;
                             gas -= 3;
+                        } else if(opcode == zkevm_opcode::NOT) {
+                            // 0x18
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type result = zkevm_word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257) - a;;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
                         }else if(opcode == zkevm_opcode::SHL) {
                             // 0x1b
                             zkevm_word_type b = stack.back();
@@ -330,6 +339,28 @@ namespace nil {
                             int shift = (integral_type(b) < 256) ? int(integral_type(b)) : 256;
                             integral_type r_integral = integral_type(a) >> shift;
                             zkevm_word_type result = zkevm_word_type::backend_type(r_integral.backend());
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        }else if(opcode == zkevm_opcode::SAR) {
+                            //0x1d
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type input_a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, input_a));
+                            auto is_negative = [](zkevm_word_type x) {
+                            return (integral_type(x) > zkevm_modulus / 2 - 1);};
+                            auto negate_word = [](zkevm_word_type x) {
+                            return zkevm_word_type(zkevm_modulus - integral_type(x));};
+                            auto abs_word = [&is_negative, &negate_word](zkevm_word_type x) {
+                            return is_negative(x) ? negate_word(x) : x;};
+                            zkevm_word_type a = abs_word(input_a);
+                            int shift = (integral_type(b) < 256) ? int(integral_type(b)) : 256;
+                            integral_type r_integral = integral_type(a) >> shift;
+                            zkevm_word_type result = is_negative(a) ? ((r_integral == 0)? zkevm_word_type(zkevm_modulus-1) : negate_word(zkevm_word_type(r_integral))) : zkevm_word_type(r_integral);
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
