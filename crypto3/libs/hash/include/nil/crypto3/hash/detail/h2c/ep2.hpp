@@ -53,7 +53,7 @@ namespace nil {
 
                 // Sometimes hash is 512 bits, while the group element is 256 or 381 bits.
                 // In these cases we take the number module the modulus of the group.
-                typedef typename boost::multiprecision::cpp_int_modular_backend<L * CHAR_BIT> modular_backend_of_hash_size;
+                typedef nil::crypto3::multiprecision::big_uint<L * CHAR_BIT> big_uint_of_hash_size;
 
                 typedef expand_message_xmd<k, hash_type> expand_message_ro;
                 // typedef expand_message_xof<k, hash_type> expand_message_nu;
