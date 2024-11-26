@@ -170,14 +170,15 @@ namespace nil::crypto3::multiprecision {
 
         constexpr big_uint(const char* str) { *this = str; }
 
-        template<class T,
-                 std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
+        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         constexpr big_uint(T val) noexcept {
-            if (val < 0) {
-                std::cerr << "big_uint: assignment from negative integer" << std::endl;
-                std::terminate();
-            }
+            NIL_CO3_MP_ASSERT_MSG(val >= 0, "big_uint: assignment from negative integer");
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
+        }
+
+        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        constexpr big_uint(T val) noexcept {
+            do_assign_integral(val);
         }
 
         // This should be implicit even for Bits2 < Bits because it's used in boost random
@@ -206,10 +207,17 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> /*&& std::is_unsigned_v<T>*/, int> = 0>
+                 std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         constexpr big_uint& operator=(T val) noexcept {
             NIL_CO3_MP_ASSERT_MSG(val >= 0, "big_uint: assignment from negative integer");
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
+            return *this;
+        }
+
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        constexpr big_uint& operator=(T val) noexcept {
+            do_assign_integral(val);
             return *this;
         }
 
@@ -1431,7 +1439,8 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
     constexpr auto operator*(const T1& a, const T2& b) noexcept {
         big_uint<detail::get_bits<T1>() + detail::get_bits<T2>()> result;
-        decltype(result)::multiply(result, big_uint<detail::get_bits<T1>()>(a), big_uint<detail::get_bits<T2>()>(b));
+        decltype(result)::multiply(result, big_uint<detail::get_bits<T1>()>(a),
+                                   big_uint<detail::get_bits<T2>()>(b));
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
@@ -1453,7 +1462,7 @@ namespace nil::crypto3::multiprecision {
     constexpr auto& operator/=(big_uint_t& a, const T& b) noexcept {
         big_uint_t result;
         big_uint_t modulus;
-        big_uint_t::divide(&result, a, b, modulus);
+        big_uint_t::divide(&result, a, static_cast<big_uint<detail::get_bits<T>()>>(b), modulus);
         a = result;
         return a;
     }
