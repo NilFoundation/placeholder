@@ -57,7 +57,7 @@ namespace nil {
                     x = x * x + c;
                     xx = xx * xx + c;
                     xx = xx * xx + c;
-                    divisor = boost::multiprecision::gcd((x > xx) ? x - xx : xx - x, nn);
+                    divisor = nil::crypto3::multiprecision::gcd((x > xx) ? x - xx : xx - x, nn);
                 } while (static_cast<int>(divisor) == 1);
                 return divisor.base();
             }
