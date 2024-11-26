@@ -34,8 +34,6 @@
 
 #include <nil/blueprint/components/hashes/sha2/plonk/detail/split_functions.hpp>
 
-#include <boost/multiprecision/cpp_int.hpp>
-
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>

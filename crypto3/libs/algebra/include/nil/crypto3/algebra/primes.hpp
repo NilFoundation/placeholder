@@ -30,7 +30,9 @@
 #include <set>
 
 #include <boost/multiprecision/miller_rabin.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
+#include <nil/crypto3/multiprecision/big_int/modular/big_mod.hpp>
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+
 #include "random_element.hpp"
 
 namespace nil {
@@ -57,7 +59,7 @@ namespace nil {
                     xx = xx * xx + c;
                     divisor = boost::multiprecision::gcd((x > xx) ? x - xx : xx - x, nn);
                 } while (static_cast<int>(divisor) == 1);
-                return static_cast<nil::crypto3::multiprecision::big_uint<Bits>>(divisor);
+                return divisor.base();
             }
 
             /*

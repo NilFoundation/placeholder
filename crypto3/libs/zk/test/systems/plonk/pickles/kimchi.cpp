@@ -37,7 +37,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/json.hpp>
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
 
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
@@ -64,9 +64,9 @@ BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
     >;
 
     template<typename Iterator>
-    nil::crypto3::multiprecision::uint256_modular_t get_bigui256(Iterator it) {
+    nil::crypto3::multiprecision::uint256_t get_bigui256(Iterator it) {
         BOOST_ASSERT(it->second.template get_value<std::string>() != "");
-        return nil::crypto3::multiprecision::uint256_modular_t(it->second.template get_value<std::string>());
+        return nil::crypto3::multiprecision::uint256_t(it->second.template get_value<std::string>());
     }
 
 // make_proof function name is similar to crypto3/marshalling naming style
@@ -105,9 +105,9 @@ BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
         it = best_chain.second.get_child(base_path + "openings.proof.sg").begin();
         proof.proof.sg = {get_bigui256(it++), get_bigui256(it)};
 
-        proof.proof.z1 = nil::crypto3::multiprecision::uint256_modular_t(
+        proof.proof.z1 = nil::crypto3::multiprecision::uint256_t(
                 best_chain.second.get<std::string>(base_path + "openings.proof.z_1"));
-        proof.proof.z2 = nil::crypto3::multiprecision::uint256_modular_t(
+        proof.proof.z2 = nil::crypto3::multiprecision::uint256_t(
                 best_chain.second.get<std::string>(base_path + "openings.proof.z_2"));
 
         std::size_t ev_i = 0;
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
             ev_i++;
         }
 
-        proof.ft_eval1 = nil::crypto3::multiprecision::uint256_modular_t(
+        proof.ft_eval1 = nil::crypto3::multiprecision::uint256_t(
                 best_chain.second.get<std::string>(base_path + "openings.ft_eval1"));
         //            // public
         //            std::vector<typename CurveType::scalar_field_type::value_type> public_p; // TODO: where it is?
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
         // TODO Is it right? Is it a good way to set domain generator?
         // We need to assert, need to check that the input is indeed the root of unity
 
-        auto d_gen = nil::crypto3::multiprecision::uint256_modular_t(
+        auto d_gen = nil::crypto3::multiprecision::uint256_t(
                 const_root.get<std::string>("verify_index.domain.group_gen"));
         auto d_size = const_root.get<std::size_t>("verify_index.domain.log_size_of_group");
         // std::cout << d_gen << " " << d_size << std::endl;
@@ -227,8 +227,8 @@ BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
                           0x1764D9CB4C64EBA9A150920807637D458919CB6948821F4D15EB1994EADF9CE3_bigui256,
                           0x0140117C8BBC4CE4644A58F7007148577782213065BB9699BF5C391FBE1B3E6D_bigui256,
                           0x0000000000000000000000000000000000000000000000000000000000000001_bigui256};
-        ver_index.w = nil::crypto3::multiprecision::uint256_modular_t(const_root.get<std::string>("verify_index.w"));
-        ver_index.endo = nil::crypto3::multiprecision::uint256_modular_t(const_root.get<std::string>("verify_index.endo"));
+        ver_index.w = nil::crypto3::multiprecision::uint256_t(const_root.get<std::string>("verify_index.w"));
+        ver_index.endo = nil::crypto3::multiprecision::uint256_t(const_root.get<std::string>("verify_index.endo"));
 
         //ver_index.lookup_index = root.get_child("data.blockchainVerificationKey.index.lookup_index"); // TODO: null
         //ver_index.linearization;       // TODO: where it is?

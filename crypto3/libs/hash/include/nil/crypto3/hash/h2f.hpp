@@ -33,7 +33,6 @@
 #include <nil/crypto3/hash/detail/h2f/h2f_suites.hpp>
 #include <nil/crypto3/hash/detail/h2f/h2f_functions.hpp>
 #include <nil/crypto3/hash/detail/stream_processors/stream_processors_enum.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
 
 namespace nil {
     namespace crypto3 {
