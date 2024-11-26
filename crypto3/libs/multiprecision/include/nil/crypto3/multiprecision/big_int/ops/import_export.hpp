@@ -137,14 +137,15 @@ namespace nil::crypto3::multiprecision {
             }
 
             // This will remove the upper bits using upper_limb_mask.
-            newval.normalize();
+            // TODO(ioxid): bring back
+            //newval.normalize();
 
             result = std::move(newval);
             return result;
         }
 
         template<std::size_t Bits, typename T>
-        inline big_uint<Bits> import_bits_fast(big_uint<Bits>& result, T* i, T* j,
+        inline big_uint<Bits>& import_bits_fast(big_uint<Bits>& result, T* i, T* j,
                                                std::size_t chunk_size = 0) {
             std::size_t byte_len = (j - i) * (chunk_size ? chunk_size / CHAR_BIT : sizeof(*i));
             std::size_t limb_len = byte_len / sizeof(limb_type);
@@ -159,7 +160,8 @@ namespace nil::crypto3::multiprecision {
                         (std::min)(byte_len, result.limbs_count() * sizeof(limb_type)));
 
             // This is probably unneeded, but let it stay for now.
-            result.normalize();
+            // TODO(ioxid): bring back
+            //result.normalize();
             return result;
         }
     }  // namespace detail
