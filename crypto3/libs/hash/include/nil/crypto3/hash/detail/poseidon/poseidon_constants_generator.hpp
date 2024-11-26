@@ -21,8 +21,6 @@ namespace nil {
                 template<typename T>
                 class poseidon_constants;
 
-                using namespace boost::multiprecision;
-
                 // Uses Grain-LFSR stream cipher for constants generation.
                 template<typename PolicyType>
                 class poseidon_constants_generator {
