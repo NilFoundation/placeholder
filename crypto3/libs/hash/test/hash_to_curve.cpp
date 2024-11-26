@@ -47,7 +47,6 @@
 #include <nil/crypto3/hash/detail/h2c/ep2.hpp>
 #include <nil/crypto3/hash/detail/h2c/h2c_expand.hpp>
 
-using namespace boost::multiprecision;
 using namespace nil::crypto3;
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::algebra::curves::detail;

@@ -32,8 +32,6 @@ namespace nil {
     namespace crypto3 {
         namespace hashes {
             namespace detail {
-                using namespace boost::multiprecision;
-
                 // round constants generating is taken from poseidon_lsfr
                 template<typename FieldType>
                 struct reinforced_concrete_lfsr {

@@ -35,8 +35,6 @@
 namespace nil {
     namespace crypto3 {
         namespace hashes {
-            using namespace boost::multiprecision;
-
             template<typename GroupType>
             struct ep2_map {
                 typedef h2c_suite<GroupType> suite_type;
