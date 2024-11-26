@@ -33,7 +33,6 @@
           crypto3-debug-tests = (pkgs.callPackage ./crypto3.nix {
             enableDebug = true;
             runTests = true;
-            sanitize = true;
           });
           crypto3-sanitize = (pkgs.callPackage ./crypto3.nix {
             runTests = true;
@@ -154,7 +153,7 @@
             name = "all";
             paths = [ crypto3-clang parallel-crypto3-clang proof-producer-clang ];
           };
-          all-sanitizers = pkgs.symlinkJoin {
+          all-clang-sanitize = pkgs.symlinkJoin {
             name = "all";
             paths = [ crypto3-clang-sanitize parallel-crypto3-clang-sanitize proof-producer-sanitize ];
           };
