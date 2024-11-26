@@ -54,7 +54,6 @@ namespace nil {
 
             template<typename FieldType>
             class basic_context {
-                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 public:
@@ -177,7 +176,9 @@ namespace nil {
             class context<FieldType, GenerationStage::ASSIGNMENT> : public basic_context<FieldType> { // assignment-specific definition
             public:
                 using TYPE = typename FieldType::value_type;
-                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
+
+                // using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_input_constraints_type = std::vector<TYPE>;
@@ -298,7 +299,8 @@ namespace nil {
                 using basic_context<FieldType>::col_map;
                 using basic_context<FieldType>::add_rows_to_description;
 
-                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
+                // using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
 
                 using basic_context<FieldType>::row_shift;
@@ -680,11 +682,6 @@ namespace nil {
                 static table_params get_minimal_requirements() {
                     return {0,0,0,0};
                 }
-
-            public:
-                    static table_params get_minimal_requirements() {
-                        return {0,0,0,0};
-                    }
 
                 void allocate(TYPE &C, column_type t = column_type::witness) {
                     auto [col, row] = ct.next_free_cell(t);
