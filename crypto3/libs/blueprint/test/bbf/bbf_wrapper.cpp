@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_wrapper_test) {
     integral_type base16 = integral_type(1) << 16;
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
-        auto random_input = value_type(integral_type(generate_random().data.base()) % base16);
+        auto random_input = value_type(integral_type(generate_random().data) % base16);
         test_bbf_wrapper<field_type>({random_input,1,random_input,random_input,random_input,random_input,random_input,random_input});
     }
 }
