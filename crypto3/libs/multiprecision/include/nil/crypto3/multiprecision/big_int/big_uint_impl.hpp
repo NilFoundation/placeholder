@@ -1484,7 +1484,7 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
     constexpr auto operator&(const T1& a, const T2& b) noexcept {
         largest_t result = a;
-        T1::bitwise_and(result, b);
+        largest_t::bitwise_and(result, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
@@ -1496,7 +1496,7 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
     constexpr auto operator|(const T1& a, const T2& b) noexcept {
         largest_t result = a;
-        T1::bitwise_or(result, b);
+        largest_t::bitwise_or(result, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
@@ -1508,7 +1508,7 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
     constexpr auto operator^(const T1& a, const T2& b) noexcept {
         largest_t result = a;
-        T1::bitwise_xor(result, b);
+        largest_t::bitwise_xor(result, b);
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
