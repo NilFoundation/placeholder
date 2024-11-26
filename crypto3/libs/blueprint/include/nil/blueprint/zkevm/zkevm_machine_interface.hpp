@@ -78,8 +78,7 @@ namespace nil {
                 }
 
                 void run_opcode(){
-                    using integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                    using integral_type = nil::crypto3::multiprecision::big_uint<257>;
                     switch(opcode) {
                         case zkevm_opcode::PUSH0:
                             stack.push(0);
@@ -331,7 +330,7 @@ namespace nil {
                             int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
                             integral_type r_integral = integral_type(a) << shift;
                             word_type b = word_type(integral_type(1) << shift);
-                            stack.push(word_type::backend_type(r_integral.backend()));
+                            stack.push(r_integral);
                             pc++; gas -= 3;
                             break;
                         }

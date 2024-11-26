@@ -75,7 +75,7 @@ namespace nil {
                                 memory_next = byte_vector_from_ptree(std::next(it)->second.get_child("memory"));
                                 storage_next = key_value_storage_from_ptree(it->second.get_child("storage"));
                             }
-                            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                             zkevm_state state; // TODO:optimize
                             state.tx_hash = 0;  // TODO: change it

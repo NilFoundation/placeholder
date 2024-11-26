@@ -326,8 +326,7 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 word_type a = machine.stack_top();
                 word_type b = machine.stack_top(1);
@@ -339,7 +338,7 @@ namespace nil {
 
                 integral_type r_integral = N != 0u ? s_integral / integral_type(N) : 0u;
                 bool r_overflow = (r_integral >= zkevm_modulus);
-                word_type r = word_type::backend_type(r_integral.backend());
+                word_type r = r_integral;
 
                 // word_type q = N != 0u ? s % N : s;
                 word_type q = word_type(s_integral - r_integral*integral_type(N));

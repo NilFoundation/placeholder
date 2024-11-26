@@ -267,7 +267,7 @@ TEST_F(AssignerTest, field_bitwise_and) {
         BlueprintFieldType::integral_type tmp = 0;
         for (unsigned bit_number : bits)
         {
-            boost::multiprecision::bit_set(tmp, bit_number);
+            tmp.bit_set(bit_number);
         }
         return tmp;
     };
@@ -275,7 +275,7 @@ TEST_F(AssignerTest, field_bitwise_and) {
                                   std::unordered_set<unsigned> bits) {
         for (unsigned bit_number = 0; bit_number < BlueprintFieldType::number_bits; ++bit_number)
         {
-            EXPECT_EQ(boost::multiprecision::bit_test(val, bit_number), bits.contains(bit_number));
+            EXPECT_EQ(val.bit_test(bit_number), bits.contains(bit_number));
         }
     };
     std::initializer_list<unsigned> init_bits = {1, 12, 42, 77, 136, 201, 222};
