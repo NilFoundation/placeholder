@@ -34,16 +34,18 @@
             enableDebug = true;
             runTests = true;
           });
-          crypto3-sanitize = (pkgs.callPackage ./crypto3.nix {
-            runTests = true;
-            enableDebug = false;
-            sanitize = true;
-          });
           crypto3-clang-sanitize = (pkgs.callPackage ./crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
             sanitize = true;
+          });
+          crypto3-clang-sanitize-bench = (pkgs.callPackage ./crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = true;
+            enableDebug = false;
+            sanitize = true;
+            bench = true;
           });
           crypto3-clang-debug = (pkgs.callPackage ./crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
@@ -117,6 +119,13 @@
             enableDebug = false;
             sanitize = true;
           });
+          crypto3-clang-sanitize-bench = (pkgs.callPackage ./crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = true;
+            enableDebug = false;
+            sanitize = true;
+            bench = true;
+          });
 
           parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3.nix {
             runTests = true;
@@ -142,7 +151,7 @@
             runTests = true;
             enableDebug = false;
           });
-          proof-producer-sanitize = (pkgs.callPackage ./proof-producer.nix {
+          proof-producer-clang-sanitize = (pkgs.callPackage ./proof-producer.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
             runTests = true;
             enableDebug = false;
@@ -155,7 +164,7 @@
           };
           all-clang-sanitize = pkgs.symlinkJoin {
             name = "all";
-            paths = [ crypto3-clang-sanitize parallel-crypto3-clang-sanitize proof-producer-sanitize ];
+            paths = [ crypto3-clang-sanitize parallel-crypto3-clang-sanitize proof-producer-clang-sanitize ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
