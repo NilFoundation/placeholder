@@ -46,8 +46,6 @@ namespace nil {
 
             template<typename FieldType, template<typename, GenerationStage stage> class Component, typename... ComponentStaticInfoArgs>
             class circuit_builder {
-//                using static_info_args_storage_type = typename std::conditional<sizeof...(ComponentStaticInfoArgs) == 0,
-//                    std::tuple<>, std::tuple<ComponentStaticInfoArgs...>>::type;
                 using static_info_args_storage_type = std::tuple<ComponentStaticInfoArgs...>;
                 public:
 
@@ -55,31 +53,27 @@ namespace nil {
                     ComponentStaticInfoArgs... component_static_info_args) {
 
                     prepare_circuit_parameters(witnesses,public_inputs,user_constants,rows);
-       std::cout << std::tuple_size<static_info_args_storage_type>{} << std::endl;
-       std::cout << sizeof...(component_static_info_args) << std::endl;
-//                    static_info_args_storage = {component_static_info_args...};
+                    static_info_args_storage = {component_static_info_args...};
                 }
 
                 // typical setup: 1 PI column, 0 constant columns, witnesses × rows
                 circuit_builder(std::size_t witnesses, std::size_t rows, ComponentStaticInfoArgs... component_static_info_args) {
                     prepare_circuit_parameters(witnesses,1,0,rows);
-        std::cout << std::tuple_size<static_info_args_storage_type>{} << std::endl;
-       std::cout << sizeof...(component_static_info_args) << std::endl;
-//                    static_info_args_storage = {component_static_info_args...};
+                    static_info_args_storage = {component_static_info_args...};
                 }
 
                 // query component for minimal requirements
                 circuit_builder(ComponentStaticInfoArgs... component_static_info_args) {
                     using generator = Component<FieldType,GenerationStage::CONSTRAINTS>;
                     typename generator::table_params min_params = generator::get_minimal_requirements();
-                    prepare_circuit_parameters(min_params.witnesses,min_params.public_inputs,min_params.constants,min_params.rows);
-        std::cout << std::tuple_size<static_info_args_storage_type>{} << std::endl;
-       std::cout << sizeof...(component_static_info_args) << std::endl;
-//                    static_info_args_storage = {component_static_info_args...};
+                    prepare_circuit_parameters(min_params.witnesses,
+                                               std::max(min_params.public_inputs,std::size_t(1)), // assure at least 1 PI column is present
+                                               min_params.constants,
+                                               min_params.rows);
+                    static_info_args_storage = {component_static_info_args...};
                 }
 
                 private:
-//                static_info_args_storage_type static_info_args_storage;
 
                 void prepare_circuit_parameters(std::size_t witnesses, std::size_t public_inputs,
                                                 std::size_t user_constants, std::size_t rows) {
@@ -115,6 +109,7 @@ namespace nil {
                     public_inputs_amount = public_inputs;
 		    constants_amount = user_constants;
                     rows_amount = rows;
+                    presets = crypto3::zk::snark::plonk_assignment_table<FieldType>(0,0,constants_amount,0); // intended extensible
                 }
 
                 public:
@@ -137,7 +132,7 @@ namespace nil {
                         );
 
                     raw_input_type raw_input = {};
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input));
+                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
                     std::make_from_tuple<generator>(v);
 
                     // for the moment, does nothing
@@ -165,7 +160,7 @@ namespace nil {
                         dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
 
                     // lookup constraint list
-                    std::unordered_map<row_selector<>, std::vector<std::pair<std::string, std::vector<constraint_type>>>>
+                    std::unordered_map<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>
                         lookup_constraints = ct.get_lookup_constraints();
                     std::set<std::string> lookup_tables;
                     for(const auto& [row_list, lookup_list] : lookup_constraints) {
@@ -227,21 +222,20 @@ namespace nil {
                 void load_presets() { // TODO: arg = source
                 }
 
-                // template<typename... RawInputTypes>
-                void generate_assignment(typename Component<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input) {
+                Component<FieldType, GenerationStage::ASSIGNMENT>
+                assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input) {
                     using generator = Component<FieldType,GenerationStage::ASSIGNMENT>;
                     // using raw_input_type = typename generator::raw_input_type;
-                    using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                    // using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                    using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
                     using context_type = typename nil::blueprint::bbf::context<FieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-                    assignment_type at = assignment_type(crypto3::zk::snark::plonk_table_description<FieldType>(
-                            witnesses_amount, public_inputs_amount, constants_amount, 0, rows_amount,
-                            std::pow(2, std::ceil(std::log2(rows_amount)))));
+                    assignment_type at = assignment_type(witnesses_amount, public_inputs_amount, constants_amount, 0);
 
                     context_type ct = context_type(at, rows_amount, 0); // use all rows, start from 0
 
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input));
-                    std::make_from_tuple<generator>(v);
+                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
+                    return std::make_from_tuple<generator>(v);
                 }
 
                 private:
@@ -250,9 +244,10 @@ namespace nil {
                     std::size_t constants_amount;
                     std::size_t rows_amount;
 
+                    static_info_args_storage_type static_info_args_storage;
+
                     circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>> bp;
-                    crypto3::zk::snark::plonk_assignment_table<FieldType> presets =
-                        crypto3::zk::snark::plonk_assignment_table<FieldType>(0,0,constants_amount,0); // intended extensible
+                    crypto3::zk::snark::plonk_assignment_table<FieldType> presets;
             };
 
         }  // namespace bbf
