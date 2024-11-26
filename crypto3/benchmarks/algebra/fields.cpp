@@ -25,7 +25,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE algebra_fields_bench_test
+#define BOOST_TEST_MODULE algebra_fields_bench_benchmark
 
 #include <ostream>
 #include <fstream>
