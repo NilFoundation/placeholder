@@ -143,10 +143,6 @@ namespace nil {
                             (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
 
                         zkevm_word_type result = zkevm_word_type(integral_type(a) << shift);
-                        std::cout << "\ta = " << std::hex << a << std::endl;
-                        std::cout << "\tb = " << std::hex << input_b << std::endl;
-                        std::cout << "\tresult = " << std::hex << result << std::dec << std::endl;
-
                         zkevm_word_type b = zkevm_word_type(integral_type(1) << shift);
 
                         input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);

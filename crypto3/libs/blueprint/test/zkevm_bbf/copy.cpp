@@ -86,7 +86,7 @@ void test_zkevm_copy(
 
 
     // Max_copy, Max_rw, Max_keccak, Max_bytecode
-    bool result = test_l1_wrapper<field_type, nil::blueprint::bbf::copy>(
+    bool result = test_l1_wrapper_with_proof_verification<field_type, nil::blueprint::bbf::copy>(
         {7}, copy_assignment_input, copy_constraint_input,
         max_copy, max_rw, max_keccak_blocks, max_bytecode
     );

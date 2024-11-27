@@ -130,6 +130,93 @@ namespace nil {
                             stack.push_back(result);
                             pc++;
                             gas -= 3;
+                        } else if (opcode == zkevm_opcode::DIV){
+                            // 0x04
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
+                            zkevm_word_type result = zkevm_word_type::backend_type(r_integral.backend());
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 5;
+                        } else if (opcode == zkevm_opcode::SDIV){
+                            // 0x05
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b_input = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b_input));
+                            auto is_negative = [](zkevm_word_type x) {
+                                return (integral_type(x) > zkevm_modulus / 2 - 1);
+                            };
+                            auto negate_word = [](zkevm_word_type x) {
+                                return zkevm_word_type(zkevm_modulus - integral_type(x));
+                            };
+                            auto abs_word = [&is_negative, &negate_word](zkevm_word_type x) {
+                                return is_negative(x) ? negate_word(x) : x;
+                            };
+                            bool overflow = (integral_type(a) == zkevm_modulus - 1) && (integral_type(b_input) == zkevm_modulus / 2);
+                            zkevm_word_type b = overflow ? 1 : b_input;
+                            zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
+                            integral_type r_integral =(b != 0u) ? integral_type(a_abs) / integral_type(b_abs) : 0u;
+                            zkevm_word_type r_abs = zkevm_word_type::backend_type(r_integral.backend()),
+                                            result = (is_negative(a) == is_negative(b)) ? r_abs: negate_word(r_abs);
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 5;
+                        } else if (opcode == zkevm_opcode::MOD){
+                            // 0x06
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
+                            zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
+                            zkevm_word_type q = b != 0u ? a % b : a;
+                            zkevm_word_type result = b != 0u ? q : 0; // according to EVM spec a % 0 = 0
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 5;
+                        } else if (opcode == zkevm_opcode::SMOD){
+                            // 0x07
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b_input = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b_input));
+                            auto is_negative = [](zkevm_word_type x) {
+                                return (integral_type(x) > zkevm_modulus / 2 - 1);
+                            };
+                            auto negate_word = [](zkevm_word_type x) {
+                                return zkevm_word_type(zkevm_modulus - integral_type(x));
+                            };
+                            auto abs_word = [&is_negative, &negate_word](zkevm_word_type x) {
+                                return is_negative(x) ? negate_word(x) : x;
+                            };
+                            bool overflow = (integral_type(a) == zkevm_modulus - 1) && (integral_type(b_input) == zkevm_modulus / 2);
+                            zkevm_word_type b = overflow ? 1 : b_input;
+                            zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
+                            integral_type r_integral =(b != 0u) ? integral_type(a_abs) / integral_type(b_abs) : 0u;
+                            zkevm_word_type r_abs = zkevm_word_type::backend_type(r_integral.backend()),
+                                q_abs = b != 0u ? a_abs % b_abs : a_abs,
+                                r = (is_negative(a) == is_negative(b)) ? r_abs: negate_word(r_abs),
+                                q = is_negative(a) ? negate_word(q_abs) : q_abs;
+                            zkevm_word_type result = b != 0u ? q : 0;  // according to EVM spec a % 0 = 0
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 5;
                         } else if(opcode == zkevm_opcode::ADDMOD) {
                             // 0x08
                             zkevm_word_type a = stack.back();
@@ -305,11 +392,25 @@ namespace nil {
                             pc++;
                             gas -= 3;
                         } else if(opcode == zkevm_opcode::NOT) {
-                            // 0x18
+                            // 0x19
                             zkevm_word_type a = stack.back();
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
                             zkevm_word_type result = zkevm_word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257) - a;;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::BYTE) {
+                            // 0x1a
+                            zkevm_word_type N = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, N));
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            auto n = w_to_8(N)[31];
+                            zkevm_word_type result = w_to_8(a)[31];
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;

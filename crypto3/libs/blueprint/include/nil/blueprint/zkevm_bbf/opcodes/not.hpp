@@ -80,12 +80,12 @@ namespace nil {
                         std::vector<TYPE> tmp;
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 1,
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
                             TYPE(0),// storage_key_hi
                             TYPE(0),// storage_key_lo
                             TYPE(0),// field
-                            current_state.rw_counter(1),
+                            current_state.rw_counter(0),
                             TYPE(0),// is_write
                             A_128.first,
                             A_128.second
@@ -93,12 +93,12 @@ namespace nil {
                         lookup(tmp, "zkevm_rw");
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
-                            current_state.call_id(1),
-                            current_state.stack_size(1) - 1,
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
                             TYPE(0),// storage_key_hi
                             TYPE(0),// storage_key_lo
                             TYPE(0),// field
-                            current_state.rw_counter(1) + 1,
+                            current_state.rw_counter(0) + 1,
                             TYPE(1),// is_write
                             R_128.first,
                             R_128.second
@@ -126,7 +126,7 @@ namespace nil {
                     zkevm_not_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
-                    return 2;
+                    return 1;
                 }
             };
         } // namespace bbf

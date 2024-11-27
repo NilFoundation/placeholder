@@ -31,6 +31,8 @@
 #include <boost/assert.hpp>
 #include <boost/bimap.hpp>
 
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pushx.hpp>
