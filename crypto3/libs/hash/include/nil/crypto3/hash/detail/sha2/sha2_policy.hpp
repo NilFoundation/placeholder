@@ -29,7 +29,7 @@
 #include <array>
 #include <cstdint>
 
-#include <nil/crypto3/block/shacal2.hpp>
+#include <nil/crypto3/hash/shacal2.hpp>
 
 #include <nil/crypto3/detail/static_digest.hpp>
 

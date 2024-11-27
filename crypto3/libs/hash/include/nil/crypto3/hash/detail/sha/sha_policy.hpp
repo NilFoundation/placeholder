@@ -26,7 +26,7 @@
 #ifndef CRYPTO3_HASH_DETAIL_SHA_POLICY_HPP
 #define CRYPTO3_HASH_DETAIL_SHA_POLICY_HPP
 
-#include <nil/crypto3/block/shacal.hpp>
+#include <nil/crypto3/hash/shacal.hpp>
 
 #include <nil/crypto3/detail/static_digest.hpp>
 

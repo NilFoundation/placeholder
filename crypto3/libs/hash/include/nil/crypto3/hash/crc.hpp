@@ -19,7 +19,6 @@
 #include <boost/crc.hpp>
 
 #include <nil/crypto3/detail/basic_functions.hpp>
-#include <nil/crypto3/detail/primes.hpp>
 #include <nil/crypto3/detail/pack.hpp>
 #include <nil/crypto3/detail/static_digest.hpp>
 #include <nil/crypto3/hash/accumulators/hash.hpp>

@@ -33,8 +33,8 @@
 #include <nil/crypto3/detail/pack.hpp>
 #include <nil/crypto3/detail/digest.hpp>
 
-#include <nil/crypto3/block/accumulators/bits_count.hpp>
-#include <nil/crypto3/block/accumulators/parameters/bits.hpp>
+#include <nil/crypto3/hash/accumulators/bits_count.hpp>
+#include <nil/crypto3/hash/accumulators/parameters/bits.hpp>
 
 #include <boost/integer.hpp>
 #include <boost/cstdint.hpp>

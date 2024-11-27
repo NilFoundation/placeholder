@@ -26,10 +26,10 @@
 #ifndef CRYPTO3_BLOCK_SHACAL2_HPP
 #define CRYPTO3_BLOCK_SHACAL2_HPP
 
-#include <nil/crypto3/block/detail/shacal/shacal2_policy.hpp>
+#include <nil/crypto3/hash/detail/shacal/shacal2_policy.hpp>
 
-#include <nil/crypto3/block/detail/block_stream_processor.hpp>
-#include <nil/crypto3/block/detail/cipher_modes.hpp>
+#include <nil/crypto3/hash/detail/block_stream_processor.hpp>
+// #include <nil/crypto3/block/detail/cipher_modes.hpp>
 
 #include <boost/static_assert.hpp>
 
