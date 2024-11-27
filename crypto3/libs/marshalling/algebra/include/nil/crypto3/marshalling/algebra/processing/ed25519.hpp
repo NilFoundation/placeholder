@@ -90,7 +90,7 @@ namespace nil {
                         write_data<encoded_size, endianness>(static_cast<base_integral_type>(point_affine.Y.data),
                                 tmp_iter);
                         assert(!(encoded_value[encoded_size - 1] & 0x80));
-                        bool sign = (point_affine.X.data & 1) != 0u;
+                        bool sign = (point_affine.X.data.base() & 1u) != 0u;
                         encoded_value[encoded_size - 1] |=
                             (static_cast<std::uint8_t>(sign ? 1 : 0) << 7);
 

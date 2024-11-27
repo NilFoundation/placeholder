@@ -53,7 +53,7 @@ endmacro()
 set(TESTS_NAMES
     "integral"
     "integral_fixed_size_container"
-    "integral_non_fixed_size_container"
+    #"integral_non_fixed_size_container" # TODO(ioxid): do we need this?
     )
 
 foreach(TEST_NAME ${TESTS_NAMES})

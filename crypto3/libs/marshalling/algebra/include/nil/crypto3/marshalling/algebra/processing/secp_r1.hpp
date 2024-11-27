@@ -115,7 +115,7 @@ namespace nil {
                         typename group_type::curve_type::template g1_type<typename algebra::curves::coordinates::affine, form>::value_type
                             point_affine = point.to_affine();
 
-                        *iter++ = (point_affine.Y.data & 1) == 0u ? 0x02 : 0x03;
+                        *iter++ = (point_affine.Y.data.base() & 1u) == 0u ? 0x02 : 0x03;
                         write_data<params_type::bit_length(), endianness>(
                                 static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
                                 iter);
