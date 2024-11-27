@@ -140,7 +140,7 @@ namespace nil {
                             std::cout
                                 << "\tCopy event " << copy_op_to_num(cp.source_type)
                                 << " => " << copy_op_to_num(cp.destination_type)
-                                << " bytes size" << cp.bytes.size()
+                                << " bytes size " << cp.bytes.size()
                                 << std::endl;
                             for( std::size_t i = 0; i < cp.bytes.size(); i++ ){
                                 std::cout << std::hex << std::size_t(cp.bytes[i]) << " " << std::dec;

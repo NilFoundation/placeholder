@@ -3,6 +3,7 @@
 
 #include <nil/proof-generator/assigner/bytecode.hpp>
 #include <nil/proof-generator/assigner/rw.hpp>
+#include <nil/proof-generator/assigner/copy.hpp>
 #include <nil/proof-generator/assigner/zkevm.hpp>
 
 namespace nil {
@@ -14,11 +15,12 @@ namespace nil {
                     const boost::filesystem::path& trace_file_path)>> circuit_selector = {
                 {"bytecode", fill_bytecode_assignment_table<BlueprintFieldType>},
                 {"rw", fill_rw_assignment_table<BlueprintFieldType>},
-                {"zkevm", fill_zkevm_assignment_table<BlueprintFieldType>}
+                {"zkevm", fill_zkevm_assignment_table<BlueprintFieldType>},
+                {"copy", fill_copy_events_assignment_table<BlueprintFieldType>}
         };
 
         template<typename BlueprintFieldType>
-        void set_paddnig(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table) {
+        void set_padding(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table) {
             std::uint32_t used_rows_amount = assignment_table.rows_amount();
 
             std::uint32_t padded_rows_amount = std::pow(2, std::ceil(std::log2(used_rows_amount)));
@@ -68,7 +70,7 @@ namespace nil {
                 return err;
             }
             desc.usable_rows_amount = assignment_table.rows_amount();
-            set_paddnig(assignment_table);
+            set_padding(assignment_table);
             desc.rows_amount = assignment_table.rows_amount();
             BOOST_LOG_TRIVIAL(debug) << "total rows amount = " << desc.rows_amount << " for " << circuit_name << "\n";
             return {};

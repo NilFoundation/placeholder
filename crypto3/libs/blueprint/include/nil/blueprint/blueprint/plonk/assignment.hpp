@@ -169,6 +169,8 @@ namespace nil {
                           desc.constant_columns, desc.selector_columns) {
             }
 
+            assignment(const zk_type &other) : zk_type(other) {}
+
             crypto3::zk::snark::plonk_table_description<BlueprintFieldType> get_description() const {
                 return zk_type::get_description();
             }

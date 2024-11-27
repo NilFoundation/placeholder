@@ -177,7 +177,7 @@ namespace nil {
             public:
                 using TYPE = typename FieldType::value_type;
 
-                using assignment_type = assignment<crypto3::zk::snark::plonk_constraint_system<FieldType>>;
+                using assignment_type = nil::crypto3::zk::snark::plonk_assignment_table<FieldType>;
                 using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
                 using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                 using lookup_input_constraints_type = std::vector<TYPE>;

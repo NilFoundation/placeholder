@@ -349,12 +349,6 @@ namespace nil {
                             rows_amount(), std::pow(2, std::ceil(std::log2(rows_amount()))));
                     }
 
-                    crypto3::zk::snark::plonk_table_description<FieldType> get_description() const {
-                        return crypto3::zk::snark::plonk_table_description<FieldType>(
-                            witnesses_amount(), public_inputs_amount(), constants_amount(), selectors_amount(),
-                            rows_amount(), std::pow(2, std::ceil(std::log2(rows_amount()))));
-                    }
-
                     template <typename InputVariableType>
                     const ColumnType& get_variable_value_without_rotation(const InputVariableType& var) const {
                         switch (var.type) {

@@ -1,5 +1,5 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_ZKEVM_HPP_
-#define PROOF_GENERATOR_LIBS_ASSIGNER_BYTECODE_HPP_
+#define PROOF_GENERATOR_LIBS_ASSIGNER_ZKEVM_HPP
 
 #include <optional>
 #include <chrono>
@@ -8,6 +8,8 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
+#include <nil/proof-generator/assigner/limits.hpp>
+
 
 namespace nil {
     namespace proof_generator {
@@ -20,14 +22,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::zkevm<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            std::size_t max_zkevm_rows = 10000;
-            std::size_t max_copy = 500;
-            std::size_t max_rw = 15000;
-            std::size_t max_keccak_blocks = 100;
-            std::size_t max_bytecode = 10000;
-            std::size_t max_rows = 500000;
-
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
             typename ComponentType::input_type input;
 
@@ -57,7 +52,7 @@ namespace nil {
                 input.rw_operations.push_back(storage_op);
             }
 
-            // no copy events
+            
             // states
             const auto zkevm_states = deserialize_zkevm_state_traces_from_file(trace_file_path);
             if (!zkevm_states) {
@@ -65,8 +60,22 @@ namespace nil {
             }
             input.zkevm_states = zkevm_states.value();
 
+            const auto copy_events = deserialize_copy_events_from_file(trace_file_path);
+            if (!copy_events) {
+                return "can't read copy events from file";
+            }
+            input.copy_events = copy_events.value();
+
             auto start = std::chrono::high_resolution_clock::now();
-            ComponentType instance(context_object, input, max_zkevm_rows, max_copy, max_rw, max_keccak_blocks, max_bytecode);
+            ComponentType instance(
+                context_object, 
+                input, 
+                limits::max_zkevm_rows, 
+                limits::max_copy, 
+                limits::max_rw_size, 
+                limits::max_keccak_blocks, 
+                limits::max_bytecode_size
+            );
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
             std::cout << "FILL ASSIGNMENT TABLE: " << duration.count() << "\n";
             return {};
