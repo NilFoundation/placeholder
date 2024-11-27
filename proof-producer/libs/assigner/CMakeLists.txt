@@ -1,5 +1,4 @@
 find_package(Protobuf REQUIRED)
-find_package(absl REQUIRED)
 
 file(GLOB PROTO_FILES "proto/*.proto")
 
@@ -18,7 +17,6 @@ foreach(PROTO_FILE ${PROTO_FILES})
         DEPENDS ${PROTO_FILE}
         COMMENT "Generating ${PROTO_SRC} and ${PROTO_HDR} from ${PROTO_FILE}"
         VERBATIM
-
     )
 
     list(APPEND GENERATED_SOURCES ${PROTO_SRC})
@@ -41,15 +39,18 @@ endif()
 
 target_link_libraries(proof_generatorAssigner
                         PUBLIC
+                        proof_generatorPreset
                         crypto3::common
                         Boost::filesystem
                         Boost::log
-                        absl::log_internal_check_op
                         ${PROTOBUF_LIBRARY}
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(proof_generatorAssigner PRIVATE "-fconstexpr-steps=2147483647")
+    
+    # without it abseil-cpp fails to link with clang19-compiled code, see https://github.com/llvm/llvm-project/issues/102443
+    target_compile_options(proof_generatorAssigner PRIVATE "-fclang-abi-compat=17") 
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(proof_generatorAssigner PRIVATE "-fconstexpr-ops-limit=4294967295")
 endif ()
