@@ -36,9 +36,7 @@
 #include <boost/container/static_vector.hpp>
 #include <boost/parameter/value_type.hpp>
 
-#include <nil/crypto3/detail/endian_shift.hpp>
 #include <nil/crypto3/detail/make_array.hpp>
-#include <nil/crypto3/detail/static_digest.hpp>
 
 #include <nil/crypto3/hash/accumulators/bits_count.hpp>
 #include <nil/crypto3/hash/accumulators/parameters/iterator_last.hpp>
