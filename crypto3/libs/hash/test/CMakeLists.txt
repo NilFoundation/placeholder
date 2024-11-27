@@ -24,7 +24,7 @@ macro(define_hash_test name)
                                ${Boost_INCLUDE_DIRS})
 
     set_target_properties(${test_name} PROPERTIES
-                          CXX_STANDARD 17
+                          CXX_STANDARD 20
                           CXX_STANDARD_REQUIRED TRUE)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

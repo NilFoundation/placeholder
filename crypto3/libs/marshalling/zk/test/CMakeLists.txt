@@ -37,7 +37,7 @@ macro(define_marshalling_test test)
             ${Boost_INCLUDE_DIRS})
 
     set_target_properties(marshalling_zk_${name}_test PROPERTIES
-            CXX_STANDARD 17
+            CXX_STANDARD 20
             CXX_STANDARD_REQUIRED TRUE)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
