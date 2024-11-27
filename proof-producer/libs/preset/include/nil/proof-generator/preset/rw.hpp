@@ -5,6 +5,7 @@
 #include <nil/blueprint/bbf/enums.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/proof-generator/preset/limits.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <optional>
@@ -23,10 +24,7 @@ namespace nil {
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            std::size_t max_rw_size = 15000;
-            std::size_t max_mpt_size = 30;
-
-            const auto desc = ComponentType::get_table_description(max_rw_size, max_mpt_size);
+            const auto desc = ComponentType::get_table_description(limits::max_rw_size, limits::max_mpt_size);
             rw_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
             BOOST_LOG_TRIVIAL(debug) << "rw table:\n"
                                     << "witnesses = " << rw_table->witnesses_amount()
@@ -50,7 +48,7 @@ namespace nil {
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::rw, std::size_t, std::size_t>(
-                wrapper, circuit, *rw_table, input, start_row, max_rw_size, max_mpt_size);
+                wrapper, circuit, *rw_table, input, start_row, limits::max_rw_size, limits::max_mpt_size);
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),

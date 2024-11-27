@@ -9,6 +9,7 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
+#include <nil/proof-generator/preset/limits.hpp>
 #include <optional>
 #include <string>
 
@@ -25,9 +26,7 @@ namespace nil {
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            std::size_t max_bytecode_size = 10000;
-            std::size_t max_keccak_blocks = 100;
-            const auto desc = ComponentType::get_table_description(max_bytecode_size, max_keccak_blocks);
+            const auto desc = ComponentType::get_table_description(limits::max_bytecode_size, limits::max_keccak_blocks);
             bytecode_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
             BOOST_LOG_TRIVIAL(debug) << "bytecode table:\n"
                                     << "witnesses = " << bytecode_table->witnesses_amount()
@@ -51,7 +50,7 @@ namespace nil {
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::bytecode, std::size_t, std::size_t>(
-                wrapper, circuit, *bytecode_table, input, start_row, max_bytecode_size, max_keccak_blocks);
+                wrapper, circuit, *bytecode_table, input, start_row, limits::max_bytecode_size, limits::max_keccak_blocks);
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),
