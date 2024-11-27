@@ -340,7 +340,7 @@ namespace nil {
                 word_type b = word_type(integral_type(1) << shift);
 
                 word_type result = r_integral;
-                word_type q = b != 0u ? a % b : a;
+                word_type q = b != 0u ? a.base() % b.base() : a;
 
                 bool t_last = integral_type(q) < integral_type(b);
                 word_type v = word_type(integral_type(q) + integral_type(t_last)*zkevm_modulus - integral_type(b));
@@ -369,8 +369,8 @@ namespace nil {
                 auto first_row_carries_non_shifted =
                     first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data;
                 auto first_row_carries =
-                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data >> 128;
-                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data.base() >> 128;
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
                 BOOST_ASSERT(first_row_carries_non_shifted - c_1 * two128 - c_2 * two192 == 0);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);

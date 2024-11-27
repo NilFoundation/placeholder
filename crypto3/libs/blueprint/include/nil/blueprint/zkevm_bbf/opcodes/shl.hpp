@@ -182,9 +182,9 @@ namespace nil {
                             first_carryless_consrtruct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks);
                         auto first_row_carries =
                             first_carryless_consrtruct(a_64_chunks, b_64_chunks, r_64_chunks)
-                                .data >>
+                                .data.base() >>
                             128;
-                        c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                        c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
@@ -193,9 +193,9 @@ namespace nil {
                         auto second_row_carries =
                             (second_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks) +
                              c_1 + c_2 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
-                        c_3 = static_cast<value_type>(second_row_carries & (two_64 - 1).data);
+                        c_3 = static_cast<value_type>(second_row_carries & (two_64 - 1).data.base());
                         c_4 = static_cast<value_type>(second_row_carries >> 64);
                         c_3_chunks = chunk_64_to_16<FieldType>(c_3);
 

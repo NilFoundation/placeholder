@@ -204,10 +204,10 @@ namespace nil {
                                                                           r_64_chunks, q_64_chunks);
                         auto first_row_carries = first_carryless_construct(s_64_chunks, N_64_chunks,
                                                                            r_64_chunks, q_64_chunks)
-                                                     .data >>
+                                                     .data.base() >>
                                                  128;
                         value_type c_1 =
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
@@ -215,7 +215,7 @@ namespace nil {
                             (second_carryless_construct(s_64_chunks, N_64_chunks, r_64_chunks,
                                                         q_64_chunks) +
                              c_1 + c_2 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
                         c_3 = static_cast<value_type>(second_row_carries);
                         std::vector<value_type> c_3_chunks = chunk_64_to_16<FieldType>(c_3);
@@ -227,7 +227,7 @@ namespace nil {
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
                         auto third_row_carries =
-                            third_carryless_construct(N_64_chunks, r_64_chunks).data >> 128;
+                            third_carryless_construct(N_64_chunks, r_64_chunks).data.base() >> 128;
 
                         carry[0][0] = 0;
                         carry[1][0] = 0;

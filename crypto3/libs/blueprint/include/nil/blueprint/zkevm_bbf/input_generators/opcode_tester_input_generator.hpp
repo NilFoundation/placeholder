@@ -139,7 +139,7 @@ namespace nil {
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
                             integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                            zkevm_word_type result = zkevm_word_type::backend_type(r_integral.backend());
+                            zkevm_word_type result = r_integral;
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
@@ -165,7 +165,7 @@ namespace nil {
                             zkevm_word_type b = overflow ? 1 : b_input;
                             zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
                             integral_type r_integral =(b != 0u) ? integral_type(a_abs) / integral_type(b_abs) : 0u;
-                            zkevm_word_type r_abs = zkevm_word_type::backend_type(r_integral.backend()),
+                            zkevm_word_type r_abs = r_integral,
                                             result = (is_negative(a) == is_negative(b)) ? r_abs: negate_word(r_abs);
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
@@ -180,8 +180,8 @@ namespace nil {
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
                             integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                            zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
-                            zkevm_word_type q = b != 0u ? a % b : a;
+                            zkevm_word_type r = r_integral;
+                            zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
                             zkevm_word_type result = b != 0u ? q : 0; // according to EVM spec a % 0 = 0
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
@@ -208,8 +208,8 @@ namespace nil {
                             zkevm_word_type b = overflow ? 1 : b_input;
                             zkevm_word_type a_abs = abs_word(a), b_abs = abs_word(b);
                             integral_type r_integral =(b != 0u) ? integral_type(a_abs) / integral_type(b_abs) : 0u;
-                            zkevm_word_type r_abs = zkevm_word_type::backend_type(r_integral.backend()),
-                                q_abs = b != 0u ? a_abs % b_abs : a_abs,
+                            zkevm_word_type r_abs = r_integral,
+                                q_abs = b != 0u ? integral_type(a_abs) % integral_type(b_abs) : a_abs,
                                 r = (is_negative(a) == is_negative(b)) ? r_abs: negate_word(r_abs),
                                 q = is_negative(a) ? negate_word(q_abs) : q_abs;
                             zkevm_word_type result = b != 0u ? q : 0;  // according to EVM spec a % 0 = 0
@@ -467,7 +467,7 @@ namespace nil {
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
                             int shift = (integral_type(b) < 256) ? int(integral_type(b)) : 256;
                             integral_type r_integral = integral_type(a) >> shift;
-                            zkevm_word_type result = zkevm_word_type::backend_type(r_integral.backend());
+                            zkevm_word_type result = r_integral;
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
