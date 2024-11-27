@@ -45,7 +45,7 @@ namespace nil {
             namespace detail {
                 template<typename FieldParams>
                 inline bool sgn0(const algebra::fields::detail::element_fp<FieldParams> &e) {
-                    return e.data.base().big_test(0);
+                    return e.data.base().bit_test(0);
                 }
 
                 template<typename FieldParams>

@@ -39,8 +39,7 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <boost/multiprecision/number.hpp>
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
 
 #include <nil/marshalling/algorithms/pack.hpp>
 
@@ -63,7 +62,8 @@ T generate_random() {
     // If we overflow the number, like it was 23 bits, but we filled 1 limb of 64 bits,
     // or it was 254 bits but we filled the upper 2 bits, the number will not complain.
     // Nothing will be thrown, but errors will happen. The caller is responsible to not do so.
-    val.backend().normalize();
+    // TODO(ioxid): return?
+    // val.normalize();
 
     return val;
 }
@@ -97,8 +97,8 @@ void test_round_trip_fixed_size_container_fixed_precision_big_endian(
 
     for (std::size_t i = 0; i < TSize; i++) {
         std::size_t begin_index =
-            unitblob_size - ((boost::multiprecision::msb(val_container[i]) + 1) / units_bits +
-                             (((boost::multiprecision::msb(val_container[i]) + 1) % units_bits) ? 1 : 0));
+            unitblob_size - ((nil::crypto3::multiprecision::msb(val_container[i]) + 1) / units_bits +
+                             (((nil::crypto3::multiprecision::msb(val_container[i]) + 1) % units_bits) ? 1 : 0));
 
         export_bits(val_container[i], cv.begin() + unitblob_size * i + begin_index, units_bits, true);
     }
@@ -173,21 +173,21 @@ void test_round_trip_fixed_size_container_fixed_precision() {
 BOOST_AUTO_TEST_SUITE(integral_fixed_test_suite)
 
 BOOST_AUTO_TEST_CASE(integral_fixed_uint1024) {
-    test_round_trip_fixed_size_container_fixed_precision<boost::multiprecision::uint1024_modular_t, 128, unsigned char>();
+    test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint1024_t, 128, unsigned char>();
 }
 
 BOOST_AUTO_TEST_CASE(integral_fixed_cpp_uint512) {
-    test_round_trip_fixed_size_container_fixed_precision<boost::multiprecision::uint512_modular_t, 128, unsigned char>();
+    test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint512_t, 128, unsigned char>();
 }
 
 BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_64) {
     test_round_trip_fixed_size_container_fixed_precision<
-        boost::multiprecision::number<boost::multiprecision::cpp_int_modular_backend<64>>, 128, unsigned char>();
+        nil::crypto3::multiprecision::big_uint<64>, 128, unsigned char>();
 }
 
 BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_23) {
     test_round_trip_fixed_size_container_fixed_precision<
-        boost::multiprecision::number<boost::multiprecision::cpp_int_modular_backend<23>>, 128, unsigned char>();
+        nil::crypto3::multiprecision::big_uint<23>, 128, unsigned char>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -196,21 +196,21 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(integral_fixed_test_suite_bits)
 
 BOOST_AUTO_TEST_CASE(integral_fixed_uint1024_bits) {
-    test_round_trip_fixed_size_container_fixed_precision<boost::multiprecision::uint1024_modular_t, 128, bool>();
+    test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint1024_t, 128, bool>();
 }
 
 BOOST_AUTO_TEST_CASE(integral_fixed_cpp_uint512_bits) {
-    test_round_trip_fixed_size_container_fixed_precision<boost::multiprecision::uint512_modular_t, 128, bool>();
+    test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint512_t, 128, bool>();
 }
 
 BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_23_bits) {
     test_round_trip_fixed_size_container_fixed_precision<
-        boost::multiprecision::number<boost::multiprecision::cpp_int_modular_backend<23>>, 128, bool>();
+        nil::crypto3::multiprecision::big_uint<23>, 128, bool>();
 }
 
 BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_64_bits) {
     test_round_trip_fixed_size_container_fixed_precision<
-        boost::multiprecision::number<boost::multiprecision::cpp_int_modular_backend<64>>, 128, bool>();
+        nil::crypto3::multiprecision::big_uint<64>, 128, bool>();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
