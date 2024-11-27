@@ -11,6 +11,7 @@
   enableDebug ? false,
   runTests ? false,
   sanitize? false,
+  benchmarkTests ? false,
   }:
 let
   inherit (lib) optional;
@@ -34,6 +35,7 @@ in stdenv.mkDerivation {
       (if runTests then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
       (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
+      (if benchmarkTests then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
       "-DPARALLEL_CRYPTO3_ENABLE=TRUE"
     ];
 
