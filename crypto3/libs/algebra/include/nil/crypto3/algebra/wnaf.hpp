@@ -28,6 +28,8 @@
 #include <nil/crypto3/algebra/curves/params.hpp>
 #include <nil/crypto3/algebra/type_traits.hpp>
 
+#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace algebra {

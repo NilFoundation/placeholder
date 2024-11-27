@@ -45,24 +45,15 @@ namespace nil {
             namespace detail {
                 template<typename FieldParams>
                 inline bool sgn0(const algebra::fields::detail::element_fp<FieldParams> &e) {
-                    using modular_type = typename FieldParams::modular_type;
-
-                    static const modular_type two = modular_type(2u);
-
-                    return static_cast<bool>(e.data.base() % two);
+                    return e.data.base().big_test(0);
                 }
 
                 template<typename FieldParams>
                 inline bool sgn0(const algebra::fields::detail::element_fp2<FieldParams> &e) {
-                    using underlying_type = typename algebra::fields::detail::element_fp2<FieldParams>::underlying_type;
-                    using modular_type = typename FieldParams::modular_type;
-
-                    static const modular_type two = modular_type(2u);
-
-                    modular_type sign_0 = e.data[0].data.base() % two;
+                    bool sign_0 = e.data[0].data.base().bit_test(0);
                     bool zero_0 = e.data[0].data.is_zero();
-                    modular_type sign_1 = e.data[1].data.base() % two;
-                    return static_cast<bool>(sign_0) || (zero_0 && static_cast<bool>(sign_1));
+                    bool sign_1 = e.data[1].data.base().bit_test(0);
+                    return sign_0 || (zero_0 && sign_1);
                 }
 
                 template<typename Group>
