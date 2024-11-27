@@ -80,7 +80,7 @@ namespace nil {
                     std::array<std::uint8_t, N * m * L> uniform_bytes {0};
                     expand_message_type::process(N * m * L, msg, dst, uniform_bytes);
 
-                    number<modular_backend_of_hash_size> e;
+                    big_uint_of_hash_size e;
                     std::array<modular_type, m> coordinates;
                     std::array<field_value_type, N> result;
                     for (std::size_t i = 0; i < N; i++) {
