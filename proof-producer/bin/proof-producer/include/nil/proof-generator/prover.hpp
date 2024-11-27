@@ -68,6 +68,11 @@
 #include <nil/proof-generator/file_operations.hpp>
 
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
+#include <nil/blueprint/utils/satisfiability_check.hpp>
+#include "nil/blueprint/blueprint/plonk/assignment_proxy.hpp"
+#include "nil/blueprint/blueprint/plonk/circuit_proxy.hpp"
+
+
 namespace nil {
     namespace proof_generator {
         namespace detail {
@@ -249,6 +254,7 @@ namespace nil {
                 BOOST_ASSERT(lpc_scheme_);
 
                 BOOST_LOG_TRIVIAL(info) << "Generating proof...";
+                BOOST_LOG_TRIVIAL(info) << "table usable rows amount: " << table_description_->usable_rows_amount;
                 nil::crypto3::zk::snark::placeholder_prover<BlueprintField, PlaceholderParams> prover(
                     *public_preprocessed_data_,
                     *private_preprocessed_data_,
@@ -1129,6 +1135,15 @@ namespace nil {
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
                 std::cout << "PRESET: " << duration.count() << "\n";
 
+                // TODO debug purposes
+                blueprint::circuit<ConstraintSystem> cp(constraint_system_.value());
+                blueprint::assignment<ConstraintSystem> ap(assignment_table_.value(), table_description_.value());
+                bool checked = blueprint::is_satisfied(cp, ap);
+                if (!checked) {
+                    BOOST_LOG_TRIVIAL(error) << "Circuit is not satisfied";
+                    return false;
+                }
+
                 return true;
             }
 
@@ -1146,6 +1161,16 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table rom trace " << trace_file_path << ": " << err.value();
                     return false;
                 }
+
+                // TODO debug purposes
+                blueprint::circuit<ConstraintSystem> cp(constraint_system_.value());
+                blueprint::assignment<ConstraintSystem> ap(assignment_table_.value(), table_description_.value());
+                bool checked = blueprint::is_satisfied(cp, ap);
+                if (!checked) {
+                    BOOST_LOG_TRIVIAL(error) << "Circuit is not satisfied";
+                    return false;
+                }
+
                 return true;
             }
 

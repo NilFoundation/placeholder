@@ -8,6 +8,7 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
+#include <nil/proof-generator/assigner/limits.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -20,11 +21,7 @@ namespace nil {
 
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            std::size_t max_bytecode_size = 10000;
-            std::size_t max_keccak_blocks = 100;
-            std::size_t max_rows = 500000;
-
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
             typename ComponentType::input_type input;
             const auto contract_bytecodes = deserialize_bytecodes_from_file(trace_file_path);
@@ -39,7 +36,7 @@ namespace nil {
             }
 
             auto start = std::chrono::high_resolution_clock::now();
-            ComponentType instance(context_object, input, max_bytecode_size, max_keccak_blocks);
+            ComponentType instance(context_object, input, limits::max_bytecode_size, limits::max_keccak_blocks);
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
             std::cout << "FILL ASSIGNMENT TABLE: " << duration.count() << "\n";
             return {};

@@ -108,6 +108,8 @@ namespace nil {
                 : public crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> {
 
             using zk_type = crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>;
+            using zk_desc_type = crypto3::zk::snark::plonk_table_description<BlueprintFieldType>;
+
 
             typedef crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType> ArithmetizationType;
 
@@ -167,6 +169,10 @@ namespace nil {
             assignment(const crypto3::zk::snark::plonk_table_description<BlueprintFieldType> &desc)
                 : zk_type(desc.witness_columns, desc.public_input_columns,
                           desc.constant_columns, desc.selector_columns) {
+            }
+
+            assignment(const zk_type &other, const zk_desc_type& desc) : zk_type(other) {
+                assignment_allocated_rows = desc.usable_rows_amount;
             }
 
             crypto3::zk::snark::plonk_table_description<BlueprintFieldType> get_description() const {
