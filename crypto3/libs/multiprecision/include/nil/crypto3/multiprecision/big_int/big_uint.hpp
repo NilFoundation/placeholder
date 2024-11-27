@@ -11,4 +11,6 @@
 namespace nil::crypto3::multiprecision {
     using uint128_t = big_uint<128>;
     using uint256_t = big_uint<256>;
+    using uint512_t = big_uint<512>;
+    using uint1024_t = big_uint<1024>;
 }  // namespace nil::crypto3::multiprecision
