@@ -180,7 +180,7 @@ namespace nil {
                     }
 
                     static constexpr inline bool get_lfsr_state_bit(lfsr_state_type state, std::size_t pos) {
-                        return bit_test(state, lfsr_state_bits - 1 - pos);
+                        return state.bit_test(lfsr_state_bits - 1 - pos);
                     }
 
                     template<typename T>

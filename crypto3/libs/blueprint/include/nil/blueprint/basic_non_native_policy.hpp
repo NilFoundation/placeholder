@@ -136,7 +136,7 @@ namespace nil {
                                         std::size_t i_th) {
                     assert(i_th < ratio && "non-native type does not have that much chunks!");
                     extended_integral_type result = extended_integral_type(
-                        input.data);
+                        input.data.base());
                     native_field_type::integral_type base = 1;
                     native_field_type::integral_type mask = (base << chunk_sizes[i_th]) - 1;
                     std::size_t shift = 0;
