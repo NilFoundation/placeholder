@@ -251,7 +251,7 @@ namespace nil {
                             word_type a = stack_pop();
                             word_type b = stack_pop();
                             word_type N = stack_pop();
-                            stack.push(N? (a * b) % N: 0);
+                            stack.push(N? (a * b).base() % N.base() : 0u);
                             pc++; gas -=  8;
                             break;
                         }
@@ -259,13 +259,13 @@ namespace nil {
                             word_type a = stack_pop();
                             word_type b = stack_pop();
                             word_type N = stack_pop();
-                            stack.push(N? (a + b) % N: 0);
+                            stack.push(N? (a + b).base() % N.base() : 0u);
                             pc++; gas -=  8;
                             break;
                         }
                         case zkevm_opcode::ISZERO:{
                             word_type a = stack_pop();
-                            stack.push(a? 1 : 0);
+                            stack.push(a? 1u : 0u);
                             pc++; gas -=  3;
                             break;
                         }
@@ -350,21 +350,21 @@ namespace nil {
                         case zkevm_opcode::AND:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(a & b);
+                            stack.push(a.base() & b.base());
                             pc++; gas -= 3;
                             break;
                         }
                         case zkevm_opcode::OR:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(a | b);
+                            stack.push(a.base() | b.base());
                             pc++; gas -= 3;
                             break;
                         }
                         case zkevm_opcode::XOR:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(a ^ b);
+                            stack.push(a.base() ^ b.base());
                             pc++; gas -= 3;
                             break;
                         }

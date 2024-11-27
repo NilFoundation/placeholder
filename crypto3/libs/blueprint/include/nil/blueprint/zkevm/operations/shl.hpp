@@ -266,14 +266,14 @@ namespace nil {
                 const std::size_t curr_row = zkevm_table.get_current_row();
                 // caluclate first row carries
                 auto first_row_carries =
-                    first_carryless_consrtruct(a_64_chunks, b_64_chunks, r_64_chunks).data >> 128;
-                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                    first_carryless_consrtruct(a_64_chunks, b_64_chunks, r_64_chunks).data.base() >> 128;
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);
                 // no need for c_2 chunks as there is only a single chunk
                 auto second_row_carries =
-                    (second_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks) + c_1 + c_2 * two_64).data >> 128;
-                value_type c_3 = static_cast<value_type>(second_row_carries & (two_64 - 1).data);
+                    (second_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks) + c_1 + c_2 * two_64).data.base() >> 128;
+                value_type c_3 = static_cast<value_type>(second_row_carries & (two_64 - 1).data.base());
                 value_type c_4 = static_cast<value_type>(second_row_carries >> 64);
                 std::vector<value_type> c_3_chunks = chunk_64_to_16<BlueprintFieldType>(c_3);
                 // TODO: replace with memory access, which would also do range checks!

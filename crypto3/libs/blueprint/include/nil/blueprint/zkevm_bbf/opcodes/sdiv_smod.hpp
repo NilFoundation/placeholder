@@ -216,8 +216,8 @@ namespace nil {
 
                         integral_type r_integral =
                             (b != 0u) ? integral_type(a_abs) / integral_type(b_abs) : 0u;
-                        zkevm_word_type r_abs = zkevm_word_type::backend_type(r_integral.backend()),
-                                        q_abs = b != 0u ? a_abs % b_abs : a_abs,
+                        zkevm_word_type r_abs = r_integral,
+                                        q_abs = b != 0u ? integral_type(a_abs) % integral_type(b_abs) : a_abs,
                                         r = (is_negative(a) == is_negative(b)) ? r_abs
                                                                                : negate_word(r_abs),
                                         q = is_negative(a) ? negate_word(q_abs) : q_abs;
@@ -251,9 +251,9 @@ namespace nil {
                         // caluclate first row carries
                         first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
                                                                           r_64_chunks, q_64_chunks);
-                        auto first_row_carries = first_carryless.data >> 128;
+                        auto first_row_carries = first_carryless.data.base() >> 128;
                         value_type c_1 =
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
@@ -261,14 +261,14 @@ namespace nil {
                             (second_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks,
                                                         q_64_chunks) +
                              c_1 + c_2 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
 
                         // value_type
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
                         auto third_row_carries =
-                            third_carryless_construct(b_64_chunks, r_64_chunks).data >> 128;
+                            third_carryless_construct(b_64_chunks, r_64_chunks).data.base() >> 128;
 
                         b_sum = std::accumulate(b_chunks.begin(), b_chunks.end(), value_type(0));
                         a_sum = std::accumulate(a_chunks.begin(), a_chunks.end(), value_type(0)) -
