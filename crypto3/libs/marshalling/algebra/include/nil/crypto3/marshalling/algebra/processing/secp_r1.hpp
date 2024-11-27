@@ -171,7 +171,7 @@ namespace nil {
 
                         g1_field_value_type y_mod = y2_mod.sqrt();
 
-                        const chunk_type expected_prefix = (y_mod.data & 1) == 0u ? 0x02 : 0x03;
+                        const chunk_type expected_prefix = (y_mod.data.base() & 1u) == 0u ? 0x02 : 0x03;
 
                         if (expected_prefix == prefix) {
                             point = group_value_type(x_mod, y_mod);
