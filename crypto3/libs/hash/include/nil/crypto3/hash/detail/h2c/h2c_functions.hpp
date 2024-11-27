@@ -49,7 +49,7 @@ namespace nil {
 
                     static const modular_type two = modular_type(2u);
 
-                    return static_cast<bool>(e.data % two);
+                    return static_cast<bool>(e.data.base() % two);
                 }
 
                 template<typename FieldParams>
@@ -59,9 +59,9 @@ namespace nil {
 
                     static const modular_type two = modular_type(2u);
 
-                    modular_type sign_0 = e.data[0].data % two;
+                    modular_type sign_0 = e.data[0].data.base() % two;
                     bool zero_0 = e.data[0].data.is_zero();
-                    modular_type sign_1 = e.data[1].data % two;
+                    modular_type sign_1 = e.data[1].data.base() % two;
                     return static_cast<bool>(sign_0) || (zero_0 && static_cast<bool>(sign_1));
                 }
 
