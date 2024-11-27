@@ -46,7 +46,7 @@ namespace nil {
                     constexpr static const integral_type modulus = FieldType::modulus;
 
                     constexpr static const std::size_t lfsr_state_bits = 80;
-                    typedef number<backends::cpp_int_modular_backend<lfsr_state_bits>> lfsr_state_type;
+                    typedef nil::crypto3::multiprecision::big_uint<lfsr_state_bits> lfsr_state_type;
 
                     constexpr static const std::size_t constants_number = full_rounds * state_words;
                     typedef algebra::vector<element_type, constants_number> round_constants_type;
