@@ -22,39 +22,21 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_COPY_N_IF_HPP
-#define CRYPTO3_COPY_N_IF_HPP
+#ifndef CRYPTO3_BLOCK_CIPHERS_DETAIL_SHACAL1_POLICY_HPP
+#define CRYPTO3_BLOCK_CIPHERS_DETAIL_SHACAL1_POLICY_HPP
+
+#include <nil/crypto3/hash/detail/shacal/shacal_policy.hpp>
 
 namespace nil {
     namespace crypto3 {
         namespace block {
-            /*!
-             * @brief Combination of std::copy_n and std::copy_if algorithms
-             * @tparam TInputIterator
-             * @tparam TSize
-             * @tparam TOutputIterator
-             * @tparam TUnaryPredicate
-             * @param i_begin
-             * @param n
-             * @param o_begin
-             * @param predicate
-             * @return
-             */
-            template<typename TInputIterator, typename TSize, typename TOutputIterator, typename TUnaryPredicate>
-            TOutputIterator copy_n_if(TInputIterator i_begin, TSize n, TOutputIterator o_begin,
-                                      TUnaryPredicate predicate) {
-                while (n-- > 0) {
-                    if (predicate(*i_begin)) {
-                        *o_begin++ = *i_begin;
-                    }
+            namespace detail {
 
-                    ++i_begin;
-                }
+                typedef shacal_policy shacal1_policy;
 
-                return o_begin;
-            }
-        }    // namespace block
-    }        // namespace crypto3
+            }    // namespace detail
+        }        // namespace block
+    }            // namespace crypto3
 }    // namespace nil
 
-#endif    // CRYPTO3_COPY_N_IF_HPP
+#endif    // CRYPTO3_BLOCK_CIPHERS_DETAIL_SHACAL1_POLICY_HPP

@@ -22,26 +22,22 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_BLOCK_SHACAL_HPP
-#define CRYPTO3_BLOCK_SHACAL_HPP
+#ifndef CRYPTO3_BLOCK_SHACAL1_HPP
+#define CRYPTO3_BLOCK_SHACAL1_HPP
 
-#include <nil/crypto3/block/basic_shacal.hpp>
+#include <nil/crypto3/hash/basic_shacal.hpp>
 
 namespace nil {
     namespace crypto3 {
         namespace block {
             /*!
-             * @brief Shacal. Merkle-Damgård construction foundation for
-             * @ref nil::crypto3::hashes::sha "SHA" hashes.
+             * @brief Shacal1. Merkle-Damgård construction foundation for
+             * @ref nil::crypto3::hashes::sha1 "SHA1" hashes.
              *
              * @ingroup block
              *
              * Implemented directly from the SHA standard as found at
              * http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
-             *
-             * The original FIPS-180 seems to be gone, but FIPS 180-1
-             * (http://www.itl.nist.gov/fipspubs/fip180-1.htm) says the onl
-             * in SHA-1 from SHA(-0) is the rotation in the key scheduling.
              *
              * In SHA terminology:
              * - plaintext = H^(i-1)
@@ -49,16 +45,16 @@ namespace nil {
              * - key = M^(i)
              * - schedule = W
              */
-            class shacal : public basic_shacal {
+            class shacal1 : public basic_shacal {
             public:
-                shacal(const key_type &k) : basic_shacal(build_schedule(k)) {
+                shacal1(const key_type &k) : basic_shacal(build_schedule(k)) {
                 }
 
-                shacal(schedule_type s) : basic_shacal((prepare_schedule(s), s)) {
+                shacal1(schedule_type s) : basic_shacal((prepare_schedule(s), s)) {
                 }
 
             private:
-                static schedule_type build_schedule(const key_type &key) {
+                static schedule_type build_schedule(key_type const &key) {
                     // Copy key into beginning of round_constants_words
                     schedule_type schedule;
                     for (unsigned t = 0; t < key_words; ++t) {
@@ -71,14 +67,12 @@ namespace nil {
                 static void prepare_schedule(schedule_type &schedule) {
                     for (unsigned t = key_words; t < rounds; ++t) {
                         schedule[t] = schedule[t - 3] ^ schedule[t - 8] ^ schedule[t - 14] ^ schedule[t - 16];
+                        schedule[t] = policy_type::rotl<1>(schedule[t]);
                     }
                 }
             };
-
-            typedef shacal shacal0;
-
         }    // namespace block
     }        // namespace crypto3
 }    // namespace nil
 
-#endif    // CRYPTO3_BLOCK_CIPHERS_SHACAL_HPP
+#endif    // CRYPTO3_BLOCK_CIPHERS_SHACAL1_HPP
