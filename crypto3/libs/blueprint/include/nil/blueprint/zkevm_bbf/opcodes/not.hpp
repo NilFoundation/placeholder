@@ -51,13 +51,62 @@ namespace nil {
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     // NOT checked by current test
-                    // if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                    //     constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
-                    //     constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
-                    //     constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
-                    //     constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
-                    //     constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
-                    // }
+                    std::vector<TYPE> A(16);
+                    std::vector<TYPE> R(16);
+
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        auto a = w_to_16(current_state.stack_top());
+                        for( std::size_t i = 0; i < 16; i++ ){
+                            A[i] = a[i];
+                            R[i] = 0xFFFF - a[i];
+                        }
+                    }
+                    for( std::size_t i = 0; i < 16; i++ ){
+                        allocate(A[i], i, 0);
+                        allocate(R[i], i + 16, 0);
+                    }
+                    for( std::size_t i = 0; i < 16; i++ ){
+                        constrain(R[i] + A[i] - 0xFFFF);
+                    }
+
+                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
+                    auto R_128 = chunks16_to_chunks128<TYPE>(R);
+                    if constexpr( stage == GenerationStage::CONSTRAINTS ){
+                        constrain(current_state.pc_next() - current_state.pc(0) - 1);                   // PC transition
+                        constrain(current_state.gas(0) - current_state.gas_next() - 3);                 // GAS transition
+                        constrain(current_state.stack_size(0) - current_state.stack_size_next());       // stack_size transition
+                        constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(0) - 2);   // rw_counter transition
+                        std::vector<TYPE> tmp;
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(0),
+                            TYPE(0),// is_write
+                            A_128.first,
+                            A_128.second
+                        };
+                        lookup(tmp, "zkevm_rw");
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(0) + 1,
+                            TYPE(1),// is_write
+                            R_128.first,
+                            R_128.second
+                        };
+                        lookup(tmp, "zkevm_rw");
+                    } else {
+                        std::cout << "Assignment implemented" << std::endl;
+                    }
                 }
             };
 
@@ -77,7 +126,7 @@ namespace nil {
                     zkevm_not_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
-                    return 2;
+                    return 1;
                 }
             };
         } // namespace bbf

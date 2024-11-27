@@ -28,6 +28,7 @@
 #include <algorithm>
 
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 
 namespace nil {
@@ -115,7 +116,7 @@ namespace nil {
                         // constrain(current_state.memory_size(0) - current_state.memory_size_next());     // memory_size transition
                         // constrain(current_state.rw_counter_next() - current_state.rw_counter(0));       // rw_counter transition
                     } else {
-                        // std::cout << "\tASSIGNMENT implemented" << std::endl;
+                        std::cout << "\tASSIGNMENT implemented" << std::endl;
                     }
                 }
             };
