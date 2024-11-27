@@ -57,30 +57,33 @@ namespace nil {
                     TYPE a16, a16_hi, a16_lo, minus_a16_hi, minus_a16_lo, b_lo, b_sum, b_sum_inv, result;
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
-                        auto a = w_to_16(current_state.stack_top());
-                        auto b = w_to_16(current_state.stack_top(1));
+                        auto N = current_state.stack_top();
+                        auto b = w_to_16(current_state.stack_top());
+                        auto a = w_to_16(current_state.stack_top(1));
+                        std::cout << "\tb = " << std::hex << current_state.stack_top() << std::dec << std::endl;
+                        std::cout << "\ta = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
                         std::size_t mask = 0x8000;
                         for( std::size_t i = 0; i < 16; i++){
                             A[i] = a[i];
                             B[i] = b[i];
                             B_bits[i] = (( (b[15]/2) & mask )!= 0);
                             mask >>= 1;
-                            if( i = 15 ) b_sum += b[i];
+                            if( i != 15 ) b_sum += b[i];
                             if( i <= 10 ) b_sum += B[i];
                         }
                         b_sum_inv = b_sum == 0? 0: b_sum.inversed();
-                        b_lo = ((b[0] & 1) != 0);
-                        std::size_t chunk = (0<=b[15] && b[15]<32) ? a[b[15]/2] : 0;
+                        b_lo = ((b[15] & 1) != 0);
+                        std::size_t chunk = (0<=N && N<32) ? a[b[15]/2] : 0;
                         a16 = chunk;
-                        a16_lo = chunk && 0xFF;
-                        a16_hi = (chunk && 0xFF00) >> 16;
+                        a16_lo = chunk & 0xFF;
+                        a16_hi = (chunk & 0xFF00) >> 8;
                         minus_a16_hi = 255 - a16_hi;
                         minus_a16_lo = 255 - a16_lo;
                         result = (b_lo == 0)? a16_hi: a16_lo;
-                        std::cout << "\ta16 = " << a16 << std::endl;
+                        std::cout << "\ta16 = " << std::hex << a16 << std::endl;
                         std::cout << "\ta16_hi = " << a16_hi << std::endl;
                         std::cout << "\ta16_lo = " << a16_lo << std::endl;
-                        std::cout << "\tresult = " << result << std::endl;
+                        std::cout << "\tresult = " << result << std::dec << std::endl;
                     }
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);
@@ -92,55 +95,64 @@ namespace nil {
                     allocate(a16_lo, 2, 1);
                     allocate(minus_a16_hi, 3, 1);
                     allocate(minus_a16_hi, 4, 1);
-                    allocate(result, 5, 1);
+                    allocate(b_lo, 5, 1);
+                    allocate(result, 6, 1);
+
+                    constrain(a16_hi + minus_a16_hi - 255);
+                    constrain(a16_lo + minus_a16_lo - 255);
+                    constrain(a16 - a16_hi * 256 - a16_lo);
+                    constrain(b_lo * (b_lo - 1));
+
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
+                    std::cout << "\tA128 = " << std::hex << A_128.first << ", " << A_128.second << std::dec << std::endl;
+                    std::cout << "\tB128 = " << std::hex << B_128.first << ", " << B_128.second << std::dec << std::endl;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
                         constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition
                         constrain(current_state.stack_size(1) - current_state.stack_size_next() - 1);   // stack_size transition
                         constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
                         constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 3);   // rw_counter transition
-                        // std::vector<TYPE> tmp;
-                        // tmp = {
-                        //     TYPE(rw_op_to_num(rw_operation_type::stack)),
-                        //     current_state.call_id(0),
-                        //     current_state.stack_size(0) - 1,
-                        //     TYPE(0),// storage_key_hi
-                        //     TYPE(0),// storage_key_lo
-                        //     TYPE(0),// field
-                        //     current_state.rw_counter(0),
-                        //     TYPE(0),// is_write
-                        //     A_128.first,
-                        //     A_128.second
-                        // };
-                        // lookup(tmp, "zkevm_rw");
-                        // tmp = {
-                        //     TYPE(rw_op_to_num(rw_operation_type::stack)),
-                        //     current_state.call_id(0),
-                        //     current_state.stack_size(0) - 2,
-                        //     TYPE(0),// storage_key_hi
-                        //     TYPE(0),// storage_key_lo
-                        //     TYPE(0),// field
-                        //     current_state.rw_counter(0) + 1,
-                        //     TYPE(0),// is_write
-                        //     B_128.first,
-                        //     B_128.second
-                        // };
-                        // lookup(tmp, "zkevm_rw");
-                        // tmp = {
-                        //     TYPE(rw_op_to_num(rw_operation_type::stack)),
-                        //     current_state.call_id(1),
-                        //     current_state.stack_size(1) - 2,
-                        //     TYPE(0),// storage_key_hi
-                        //     TYPE(0),// storage_key_lo
-                        //     TYPE(0),// field
-                        //     current_state.rw_counter(1) + 2,
-                        //     TYPE(1),// is_write
-                        //     TYPE(0),
-                        //     result
-                        // };
-                        // lookup(tmp, "zkevm_rw");
+                        std::vector<TYPE> tmp;
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 1,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(0),
+                            TYPE(0),// is_write
+                            B_128.first,
+                            B_128.second
+                        };
+                        lookup(tmp, "zkevm_rw");
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(0),
+                            current_state.stack_size(0) - 2,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(0) + 1,
+                            TYPE(0),// is_write
+                            A_128.first,
+                            A_128.second
+                        };
+                        lookup(tmp, "zkevm_rw");
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 2,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(1) + 2,
+                            TYPE(1),// is_write
+                            TYPE(0),
+                            result
+                        };
+                        lookup(tmp, "zkevm_rw");
                     } else {
                         std::cout << "\tAssignment implemented" << std::endl;
                     }

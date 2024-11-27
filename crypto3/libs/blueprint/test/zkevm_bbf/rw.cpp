@@ -43,7 +43,10 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
-
+#include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
 #include "./test_l1_wrapper.hpp"
@@ -64,7 +67,7 @@ void test_zkevm_rw(
     typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
 
     std::cout << "rw_trace size = " <<  rw_trace.size() << std::endl;
-    bool result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_trace, null_input, max_rw_size, 0);
+    bool result = test_l1_wrapper_with_proof_verification<field_type, nil::blueprint::bbf::rw>({}, rw_trace, null_input, max_rw_size, 0);
     BOOST_ASSERT(result); // Max_rw, Max_mpt
 }
 

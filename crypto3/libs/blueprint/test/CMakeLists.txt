@@ -85,6 +85,7 @@ set(COMMON_TEST_FILES
     "component_batch"
     "bbf/bbf_wrapper"
     "bbf/opcode_poc"
+    "bbf/exp_wrapper"
     )
 
 set(NON_NATIVE_TESTS_FILES

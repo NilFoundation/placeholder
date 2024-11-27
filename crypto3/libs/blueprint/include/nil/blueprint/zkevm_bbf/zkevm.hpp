@@ -421,7 +421,7 @@ namespace nil {
                             std::size_t max_opcode_row_constraints = 0;
                             for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes.size(); opcode_num++ ){
                                 zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
-                                std::cout << "Build constraints for " << current_opcode << std::endl;
+                                //std::cout << "Build constraints for " << current_opcode << std::endl;
                                 if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
                                     std::cout << "\tImplementation for "<< current_opcode << " is not defined" << std::endl;
                                     continue;

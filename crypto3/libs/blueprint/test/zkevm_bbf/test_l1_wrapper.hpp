@@ -181,6 +181,7 @@ bool test_l1_wrapper_with_proof_verification(
     nil::blueprint::components::generate_circuit<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>(
         component_instance, bp, assignment, constraint_input, start_row, component_static_info_args...
     );
+    std::cout << "Rows amount after lookup packing " << assignment.rows_amount() << std::endl;
     zk::snark::pack_lookup_tables_horizontal(
         bp.get_reserved_indices(),
         bp.get_reserved_tables(),
@@ -189,14 +190,18 @@ bool test_l1_wrapper_with_proof_verification(
         assignment.rows_amount(),
         100000
     );
+    std::cout << "Rows amount after lookup packing " << assignment.rows_amount() << std::endl;
 
     nil::blueprint::components::generate_assignments<BlueprintFieldType, BBFType, ComponentStaticInfoArgs...>(
         component_instance, assignment, assignment_input, start_row, component_static_info_args...
     );
 
+    desc.usable_rows_amount = assignment.rows_amount();
     nil::crypto3::zk::snark::basic_padding(assignment);
-    bool sat = is_satisfied(bp, assignment);
     desc.rows_amount = assignment.rows_amount();
+    bool sat = is_satisfied(bp, assignment);
+    std::cout << "Desc.rows_amount = " << desc.rows_amount << std::endl;
+    std::cout << "Desc.usable_rows_amount = " << desc.usable_rows_amount << std::endl;
 
     if (sat )
         std::cout << "Circuit is satisfied" << std::endl;
@@ -208,9 +213,9 @@ bool test_l1_wrapper_with_proof_verification(
     using merkle_hash_type = nil::crypto3::hashes::keccak_1600<256>;
     using transcript_type = typename nil::crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
     using lpc_params_type = nil::crypto3::zk::commitments::list_polynomial_commitment_params<
-            merkle_hash_type,
-            transcript_hash_type,
-            2 //m
+        merkle_hash_type,
+        transcript_hash_type,
+        2 //m
     >;
 
     using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<BlueprintFieldType, lpc_params_type>;
@@ -222,7 +227,7 @@ bool test_l1_wrapper_with_proof_verification(
     std::cout << "Public preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
             lpc_preprocessed_public_data = nil::crypto3::zk::snark::placeholder_public_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::process(
-            bp, assignment.public_table(), desc, lpc_scheme, 0);
+            bp, assignment.public_table(), desc, lpc_scheme, 10);
 
     std::cout << "Private preprocessor" << std::endl;
     typename nil::crypto3::zk::snark::placeholder_private_preprocessor<BlueprintFieldType, lpc_placeholder_params_type>::preprocessed_data_type
