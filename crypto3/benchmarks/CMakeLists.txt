@@ -60,7 +60,7 @@ set(BENCHMARK_NAMES
 
     "multiprecision/modular_adaptor_fixed"
 
-    #"zk/lpc"
+    "zk/lpc"
     "zk/pedersen"
 )
 
