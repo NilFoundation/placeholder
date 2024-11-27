@@ -99,7 +99,7 @@ namespace nil {
                 for (std::size_t i = 0; i < chunk_amount; i++) {
                     assignment.witness(witness_cols[i], curr_row) = chunks[i];
                 }
-                assignment.witness(witness_cols[chunk_amount], curr_row) = (a == 0u);
+                assignment.witness(witness_cols[chunk_amount], curr_row) = (a.base() == 0u);
                 const value_type chunk_sum = std::accumulate(chunks.begin(), chunks.end(), value_type::zero());
                 assignment.witness(witness_cols[2*chunk_amount], curr_row) =
                     chunk_sum == 0 ? value_type::zero() : value_type::one() * chunk_sum.inversed();
