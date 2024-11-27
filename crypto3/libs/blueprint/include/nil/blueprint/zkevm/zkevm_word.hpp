@@ -55,8 +55,7 @@ namespace nil {
             constexpr const std::size_t chunk_size = 16;
             constexpr const std::size_t num_chunks = 256 / chunk_size;
             using integral_type = nil::crypto3::multiprecision::big_uint<257>;
-            constexpr const integral_type mask =
-                integral_type((zkevm_word_type(1) << chunk_size) - 1);
+            constexpr const integral_type mask = (integral_type(1) << chunk_size) - 1;
             integral_type word_copy = integral_type(word);
             for (std::size_t i = 0; i < num_chunks; ++i) {
                 chunks.push_back(word_copy & mask);
