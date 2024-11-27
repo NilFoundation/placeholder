@@ -7,10 +7,12 @@
 #include <nil/blueprint/bbf/enums.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
+#include <nil/proof-generator/preset/limits.hpp>
 #include <nil/blueprint/zkevm_bbf/zkevm.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <optional>
 #include <string>
+
 
 namespace nil {
     namespace proof_generator {
@@ -25,12 +27,8 @@ namespace nil {
             using ComponentType = nil::blueprint::bbf::zkevm<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
             // initialize assignment table
-            std::size_t max_zkevm_rows = 10000;
-            std::size_t max_copy = 500;
-            std::size_t max_rw = 15000;
-            std::size_t max_keccak_blocks = 100;
-            std::size_t max_bytecode = 10000;
-            const auto desc = ComponentType::get_table_description(max_zkevm_rows, max_copy, max_rw, max_keccak_blocks, max_bytecode);
+            const auto desc = ComponentType::get_table_description(limits::max_zkevm_rows, limits::max_copy, limits::max_rw_size, 
+                limits::max_keccak_blocks, limits::max_bytecode_size);
             zkevm_table.emplace(desc.witness_columns, desc.public_input_columns, desc.constant_columns, desc.selector_columns);
             BOOST_LOG_TRIVIAL(debug) << "zkevm table:\n"
                                     << "witnesses = " << zkevm_table->witnesses_amount()
@@ -55,7 +53,8 @@ namespace nil {
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
 
             nil::blueprint::components::generate_circuit<BlueprintFieldType, nil::blueprint::bbf::zkevm, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t>(
-                wrapper, circuit, *zkevm_table, input, start_row, max_zkevm_rows, max_copy, max_rw, max_keccak_blocks, max_bytecode);
+                wrapper, circuit, *zkevm_table, input, start_row,
+                 limits::max_zkevm_rows, limits::max_copy, limits::max_rw_size, limits::max_keccak_blocks, limits::max_bytecode_size);
 
             zk::snark::pack_lookup_tables_horizontal(
                 circuit.get_reserved_indices(),

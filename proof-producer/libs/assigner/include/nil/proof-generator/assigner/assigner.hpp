@@ -1,9 +1,13 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_ASSIGNER_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_ASSIGNER_HPP_
 
+#include <nil/proof-generator/preset/preset.hpp>
+
 #include <nil/proof-generator/assigner/bytecode.hpp>
 #include <nil/proof-generator/assigner/rw.hpp>
+#include <nil/proof-generator/assigner/copy.hpp>
 #include <nil/proof-generator/assigner/zkevm.hpp>
+
 
 namespace nil {
     namespace proof_generator {
@@ -12,13 +16,14 @@ namespace nil {
         std::map<const std::string, std::function<std::optional<std::string>(
                     nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
                     const boost::filesystem::path& trace_file_path)>> circuit_selector = {
-                {"bytecode", fill_bytecode_assignment_table<BlueprintFieldType>},
-                {"rw", fill_rw_assignment_table<BlueprintFieldType>},
-                {"zkevm", fill_zkevm_assignment_table<BlueprintFieldType>}
+                {circuits::BYTECODE, fill_bytecode_assignment_table<BlueprintFieldType>},
+                {circuits::RW, fill_rw_assignment_table<BlueprintFieldType>},
+                {circuits::ZKEVM, fill_zkevm_assignment_table<BlueprintFieldType>},
+                {circuits::COPY, fill_copy_events_assignment_table<BlueprintFieldType>}
         };
 
         template<typename BlueprintFieldType>
-        void set_paddnig(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table) {
+        void set_padding(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table) {
             std::uint32_t used_rows_amount = assignment_table.rows_amount();
 
             std::uint32_t padded_rows_amount = std::pow(2, std::ceil(std::log2(used_rows_amount)));
@@ -68,7 +73,7 @@ namespace nil {
                 return err;
             }
             desc.usable_rows_amount = assignment_table.rows_amount();
-            set_paddnig(assignment_table);
+            set_padding(assignment_table);
             desc.rows_amount = assignment_table.rows_amount();
             BOOST_LOG_TRIVIAL(debug) << "total rows amount = " << desc.rows_amount << " for " << circuit_name << "\n";
             return {};

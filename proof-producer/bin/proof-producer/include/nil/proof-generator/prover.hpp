@@ -67,7 +67,7 @@
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
+
 namespace nil {
     namespace proof_generator {
         namespace detail {
@@ -1126,7 +1126,6 @@ namespace nil {
                 }
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
                 std::cout << "PRESET: " << duration.count() << "\n";
-
                 return true;
             }
 

@@ -1,14 +1,97 @@
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/trivial.hpp>
 #include <fstream>
 #include <vector>
 #include <string>
 #include <cstdint>
 #include <unordered_map>
 #include <boost/filesystem.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <nil/proof-generator/assigner/trace_parser.hpp>
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include "nil/blueprint/zkevm/zkevm_word.hpp"
+
+#include <nil/proof-generator/assigner/trace.pb.h>
 
 namespace nil {
     namespace proof_generator {
+
+        namespace {
+
+            // Convert protobuf Uint256 to zkevm_word_type
+            [[nodiscard]] blueprint::zkevm_word_type proto_uint256_to_zkevm_word(const executionproofs::Uint256& pb_uint) {
+                blueprint::zkevm_word_type result = 0;
+                for (size_t i = 0; i < pb_uint.word_parts_size() && i < 4; i++) {
+                    result |= (static_cast<blueprint::zkevm_word_type>(pb_uint.word_parts(i)) << (i * 64));
+                }
+                return result;
+            }
+
+            [[nodiscard]] std::optional<executionproofs::ExecutionTraces> read_pb_traces_from_file(const boost::filesystem::path& filename) {
+                std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
+                if (!file.is_open()) {
+                    return std::nullopt;
+                }
+                if (!file) {
+                    return std::nullopt;
+                }
+
+                executionproofs::ExecutionTraces pb_traces;
+                if (!pb_traces.ParseFromIstream(&file)) {
+                    return std::nullopt;
+                }
+
+                return pb_traces;
+            }
+
+
+            [[nodiscard]] std::optional<std::pair<
+                blueprint::bbf::copy_operand_type,
+                blueprint::zkevm_word_type>
+            > copy_operand_from_proto(const ::executionproofs::CopyParticipant& pb_participant) noexcept {
+                using ::executionproofs::CopyLocation;
+                using blueprint::bbf::copy_operand_type;
+
+                static const std::unordered_map<CopyLocation, copy_operand_type> mapping_ = {
+                    {CopyLocation::MEMORY, copy_operand_type::memory},
+                    {CopyLocation::BYTECODE, copy_operand_type::bytecode},
+                    {CopyLocation::LOG, copy_operand_type::log},
+                    {CopyLocation::KECCAK, copy_operand_type::keccak},
+                    {CopyLocation::RETURNDATA, copy_operand_type::returndata},
+                    {CopyLocation::CALLDATA, copy_operand_type::calldata}
+                    // padding is not expected to be read from the trace file
+                };
+
+                const auto it = mapping_.find(pb_participant.location());
+                if (it == mapping_.end()) {
+                    BOOST_LOG_TRIVIAL(warning) << "Unknown copy operand type: " << static_cast<int>(pb_participant.location());
+                    return std::nullopt;
+                }
+
+                const auto _type = it->second;
+                blueprint::zkevm_word_type id{};
+                switch (_type) {
+                    case copy_operand_type::memory:
+                    case copy_operand_type::calldata:
+                    case copy_operand_type::returndata:
+                    case copy_operand_type::log:   
+                        id.assign(pb_participant.call_id());
+                        break;
+                    case copy_operand_type::bytecode:
+                        id = blueprint::zkevm_word_from_string(pb_participant.bytecode_hash());
+                        break;
+                    case copy_operand_type::keccak:
+                        id = blueprint::zkevm_word_from_string(pb_participant.keccak_hash());
+                        break;
+                    default:
+                        BOOST_LOG_TRIVIAL(warning) << "Unable to determine id for copy operand: " << static_cast<int>(_type);                
+                        return std::nullopt;
+                }
+
+                return std::make_pair(_type, id);
+            }
+        } // namespace
 
         std::vector<std::uint8_t> string_to_bytes(const std::string& str) {
             std::vector<std::uint8_t> res(str.size());
@@ -16,32 +99,6 @@ namespace nil {
                 res[i] = str[i];
             }
             return res;
-        }
-
-        // Convert protobuf Uint256 to zkevm_word_type
-        [[nodiscard]] blueprint::zkevm_word_type proto_uint256_to_zkevm_word(const executionproofs::Uint256& pb_uint) {
-            blueprint::zkevm_word_type result = 0;
-            for (size_t i = 0; i < pb_uint.word_parts_size() && i < 4; i++) {
-                result |= (static_cast<blueprint::zkevm_word_type>(pb_uint.word_parts(i)) << (i * 64));
-            }
-            return result;
-        }
-
-        [[nodiscard]] std::optional<executionproofs::ExecutionTraces> read_pb_traces_from_file(const boost::filesystem::path& filename) {
-            std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
-            if (!file.is_open()) {
-                return std::nullopt;
-            }
-            if (!file) {
-                return std::nullopt;
-            }
-
-            executionproofs::ExecutionTraces pb_traces;
-            if (!pb_traces.ParseFromIstream(&file)) {
-                return std::nullopt;
-            }
-
-            return pb_traces;
         }
 
         [[nodiscard]] std::optional<std::unordered_map<std::string, std::string>> deserialize_bytecodes_from_file(const boost::filesystem::path& filename) {
@@ -148,6 +205,45 @@ namespace nil {
             }
 
             return zkevm_states;
+        }
+
+        [[nodiscard]] std::optional<std::vector<blueprint::bbf::copy_event>> deserialize_copy_events_from_file(const boost::filesystem::path& filename) {
+            const auto pb_traces = read_pb_traces_from_file(filename);
+            if (!pb_traces) {
+                return std::nullopt;
+            }
+
+            namespace bbf = blueprint::bbf;
+
+            std::vector<bbf::copy_event> copy_events;
+            copy_events.reserve(pb_traces->copy_events_size());
+            for (const auto& pb_event: pb_traces->copy_events()) {
+                bbf::copy_event event;
+                event.initial_rw_counter = pb_event.rw_idx();
+        
+                const auto source = copy_operand_from_proto(pb_event.from());
+                if (!source) {
+                    return std::nullopt;
+                }
+                event.source_type = source->first;
+                event.source_id = source->second;
+                event.src_address = pb_event.from().mem_address();
+
+                const auto dest = copy_operand_from_proto(pb_event.to());
+                if (!dest) {
+                    return std::nullopt;
+                }
+                event.destination_type = dest->first;
+                event.destination_id = dest->second;
+                event.dst_address = pb_event.to().mem_address();
+                
+                event.bytes = std::move(string_to_bytes(pb_event.data()));
+                event.length = event.bytes.size();
+
+                copy_events.push_back(std::move(event));
+            }
+
+            return copy_events;
         }
     } // proof_generator
 } // nil

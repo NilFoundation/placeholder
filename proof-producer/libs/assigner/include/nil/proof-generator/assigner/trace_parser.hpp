@@ -1,12 +1,12 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 
+#include <boost/filesystem.hpp>
+
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
-
-#include <nil/proof-generator/assigner/trace.pb.h>
-
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -20,7 +20,7 @@ namespace nil {
         [[nodiscard]] std::optional<std::unordered_map<std::string, std::string>> deserialize_bytecodes_from_file(const boost::filesystem::path& filename);
         [[nodiscard]] std::optional<RWOperations> deserialize_rw_traces_from_file(const boost::filesystem::path& filename);
         [[nodiscard]] std::optional<std::vector<blueprint::bbf::zkevm_state>> deserialize_zkevm_state_traces_from_file(const boost::filesystem::path& filename);
-
+        [[nodiscard]] std::optional<std::vector<blueprint::bbf::copy_event>> deserialize_copy_events_from_file(const boost::filesystem::path& filename);
 
         std::vector<std::uint8_t> string_to_bytes(const std::string& str);
     } // namespace proof_generator

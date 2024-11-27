@@ -8,6 +8,8 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
 #include <nil/proof-generator/assigner/trace_parser.hpp>
+#include <nil/proof-generator/preset/limits.hpp>
+
 
 namespace nil {
     namespace proof_generator {
@@ -15,16 +17,12 @@ namespace nil {
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
         std::optional<std::string> fill_rw_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                                                             const boost::filesystem::path& trace_file_path) {
+                                                            const boost::filesystem::path& trace_file_path) {
             BOOST_LOG_TRIVIAL(debug) << "fill rw table from " << trace_file_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
-            std::size_t max_rw_size = 15000;
-            std::size_t max_mpt_size = 30;
-            std::size_t max_rows = 500000;
-
-            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, max_rows);
+            typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
             std::vector<nil::blueprint::bbf::rw_operation> input;
             const auto rw_operations = deserialize_rw_traces_from_file(trace_file_path);
@@ -46,7 +44,7 @@ namespace nil {
              << "storage " << rw_operations->storage_ops.size() << "\n";
 
             auto start = std::chrono::high_resolution_clock::now();
-            ComponentType instance(context_object, input, max_rw_size, max_mpt_size);
+            ComponentType instance(context_object, input, limits::max_rw_size, limits::max_mpt_size);
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
             std::cout << "FILL ASSIGNMENT TABLE: " << duration.count() << "\n";
             return {};
