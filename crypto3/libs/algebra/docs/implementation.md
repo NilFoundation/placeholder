@@ -2,7 +2,7 @@
 
 @tableofcontents
 
-The key idea of `algebra` is to provide usefull interfaces for basic cryptography math. It's based on NilFoundation fork of 
+The key idea of `algebra` is to provide useful interfaces for basic cryptography math. It's based on NilFoundation fork of 
 Boost.Multiprecision so that it can be used with boost cpp_int, gmp or other backends.
 
 We expanded Boost.Multiprecision with `modular_adaptor`, which is actually a multi-precision number by some modular. It contains 
