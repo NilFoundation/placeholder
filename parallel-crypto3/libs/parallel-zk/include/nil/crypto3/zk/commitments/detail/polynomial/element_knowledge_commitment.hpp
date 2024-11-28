@@ -189,20 +189,18 @@ namespace nil {
 
                     template<typename Type1,
                             typename Type2,
-                            typename Backend,
-                            boost::multiprecision::expression_template_option ExpressionTemplates>
-                    element_kc<Type1, Type2> operator*(const boost::multiprecision::number <Backend, ExpressionTemplates> &lhs,
+                            std::size_t Bits>
+                    element_kc<Type1, Type2> operator*(const nil::crypto3::multiprecision::big_uint<Bits> &lhs,
                                                        const element_kc<Type1, Type2> &rhs) {
                         return element_kc<Type1, Type2>(lhs * rhs.g, lhs * rhs.h);
                     }
 
                     template<typename Type1,
                             typename Type2,
-                            typename Backend,
-                            boost::multiprecision::expression_template_option ExpressionTemplates>
+                            std::size_t Bits>
                     element_kc<Type1, Type2>
                     operator*(const element_kc<Type1, Type2> &lhs,
-                              const boost::multiprecision::number <Backend, ExpressionTemplates> &rhs) {
+                              const nil::crypto3::multiprecision::big_uint<Bits> &rhs) {
                         return element_kc<Type1, Type2>(rhs * lhs.g, rhs * lhs.h);
                     }
 
