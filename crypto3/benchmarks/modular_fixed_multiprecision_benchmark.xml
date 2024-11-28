@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite tests="5" skipped="0" errors="0" failures="0" id="0" name="modular_fixed_multiprecision_benchmark" time="16.1268">
+<testcase assertions="0" classname="runtime_tests" name="modular_adaptor_montgomery_mult_perf_test" time="3.2846">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case runtime_tests/modular_adaptor_montgomery_mult_perf_test did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="runtime_tests" name="modular_adaptor_backend_sub_perf_test" time="3.15055">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case runtime_tests/modular_adaptor_backend_sub_perf_test did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="runtime_tests" name="modular_adaptor_backend_add_perf_test" time="3.13206">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case runtime_tests/modular_adaptor_backend_add_perf_test did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="runtime_tests" name="modular_adaptor_backend_mult_perf_test" time="3.26774">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case runtime_tests/modular_adaptor_backend_mult_perf_test did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="runtime_tests" name="modular_adaptor_number_mult_perf_test" time="3.29176">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case runtime_tests/modular_adaptor_number_mult_perf_test did not check any assertions
+
+]]></system-out>
+</testcase>
+</testsuite>

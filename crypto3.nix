@@ -39,7 +39,7 @@ in stdenv.mkDerivation {
     ];
 
   cmakeBuildType = if enableDebug then "Debug" else "Release";
-  doCheck = runTests; # tests are inside crypto3-tests derivation
+  doCheck = runTests || benchmarkTests;
 
   checkPhase = ''
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
