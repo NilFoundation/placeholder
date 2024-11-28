@@ -32,8 +32,6 @@
 
 #include <nil/crypto3/algebra/type_traits.hpp>
 
-#include <boost/multiprecision/number.hpp>
-
 namespace nil {
     namespace crypto3 {
         namespace zk {
