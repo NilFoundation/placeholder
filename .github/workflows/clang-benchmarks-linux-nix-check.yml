@@ -22,6 +22,10 @@ jobs:
         run: |
           nix build -L .?#checks.x86_64-linux.all-clang-benchmarks
           mkdir results
+          ls -l -a
+          ls -l -a ./result
+          ls -l -a ./result/test-logs/
+          cat ./result/test-logs/test_errors.txt
           cp result/test-logs/*_test.xml results/
           cp result/test-logs/*_benchmark.xml results/
           ls -l -a results/
