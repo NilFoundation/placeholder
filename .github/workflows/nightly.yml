@@ -19,7 +19,7 @@ jobs:
     secrets: inherit
 
   test-linux-benchmarks:
-    name: Linux placeholder testing and sanitize with clang
+    name: Linux placeholder benchmark testing with clang
     uses: ./.github/workflows/clang-benchmarks-linux-nix-check.yml
     if: |
       always() && !cancelled()
@@ -30,6 +30,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, aws_autoscaling]
     needs:
       - test-linux-sanitizers
+      - test-linux-benchmarks
     steps:
       - name: Checkout
         uses: actions/checkout@v3
