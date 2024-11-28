@@ -131,7 +131,6 @@ namespace nil {
                               const opcode_input_type<FieldType, stage> &current_state)
                     : generic_component<FieldType, stage>(context_object, false),
                       res(chunk_amount) {
-                    return;
                     using integral_type = boost::multiprecision::number<
                         boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
@@ -177,11 +176,14 @@ namespace nil {
                     std::vector<TYPE> q_chunks(chunk_amount);
                     std::vector<TYPE> v_chunks(chunk_amount);
 
+                    std::vector<TYPE> indic_1(chunk_amount);
+                    std::vector<TYPE> indic_2(chunk_amount);
+
                     TYPE carry[carry_amount + 1];
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        zkevm_word_type a = current_state.stack_top(1);
                         zkevm_word_type input_b = current_state.stack_top();
+                        zkevm_word_type a = current_state.stack_top(1);
 
                         int shift =
                             (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
@@ -219,11 +221,19 @@ namespace nil {
                         z = (1 - b0ppp * I1) *
                             (1 -
                              sum_part_b * I2);  // z is zero if input_b >= 256, otherwise it is 1
-                        two_powers =
-                            (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
-                        tp = z * two_powers;
-                        b_zero = 1 - b_sum_inverse * b_sum;
+                        tp = z * (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
                         b_sum_inverse = b_sum.is_zero() ? 0 : b_sum.inversed();
+                        b_zero = 1 - b_sum_inverse * b_sum;
+
+                        two_powers = 0;
+                        unsigned int pow = 1;
+                        for (std::size_t i = 0; i < chunk_amount; i++) {
+                            indic_1[i] = (b0p - i).is_zero() ? 0 : (b0p - i).inversed();
+                            indic_2[i] = (b0pp - i).is_zero() ? 0 : (b0pp - i).inversed();
+                            two_powers += (1 - (b0p - i) * indic_1[i]) * pow;
+                            pow *= 2;
+                        }
+
 
                         // note that we don't assign 64-chunks for a/b, as we can build them from
                         // 16-chunks with constraints under the same logic we only assign the 16 -
@@ -272,50 +282,58 @@ namespace nil {
                     allocate(b0p_range_check, 0, 3);
                     allocate(b0pp_range_check, 1, 3);
                     allocate(b0ppp_range_check, 2, 3);
-                    allocate(b_zero, 37, 1);
+                    allocate(b_zero, 32, 0);
                     for (std::size_t i = 0; i < 4; i++) {
                         allocate(c_1_chunks[i], 3 + i, 3);
                     }
 
                     for (std::size_t i = 0; i < chunk_amount; i++) {
-                        allocate(input_b_chunks[i], i, 0);
-                        allocate(r_chunks[i], i + chunk_amount, 0);
+                        allocate(input_b_chunks[i], i, 2);
+                        allocate(r_chunks[i], i + chunk_amount, 2);
                         allocate(a_chunks[i], i, 1);
                         allocate(b_chunks[i], i + chunk_amount, 1);
-                        allocate(q_chunks[i], i, 2);
-                        allocate(v_chunks[i], i + chunk_amount, 2);
+                        allocate(q_chunks[i], i, 0);
+                        allocate(v_chunks[i], i + chunk_amount, 0);
                         res[i] = r_chunks[i];
                         constrain(b_zero * r_chunks[i]);
                     }
 
-                    allocate(tp, 32, 1);
-                    allocate(z, 33, 1);
-                    allocate(I1, 34, 1);
-                    allocate(I2, 35, 1);
-                    allocate(two_powers, 36, 1);
+                    allocate(tp, 12, 3);
+                    allocate(z, 13, 3);
+                    allocate(I1, 40, 1);
+                    allocate(I2, 41, 1);
+                    allocate(two_powers, 42, 1);
+
+                    allocate(b0p, 9, 3);
+                    allocate(b0pp, 10, 3);
+                    allocate(b0ppp, 11, 3);
+                    allocate(sum_part_b, 39, 1);
+                    allocate(b_sum, 33, 0);
+                    allocate(b_sum_inverse, 34, 0);
 
                     constrain(tp - z * two_powers);
-
-                    allocate(b0p, 32, 0);
-                    allocate(b0pp, 33, 0);
-                    allocate(b0ppp, 34, 0);
-                    allocate(sum_part_b, 35, 0);
-                    allocate(b_sum, 36, 0);
-                    allocate(b_sum_inverse, 37, 0);
+                    for (std::size_t i = 0; i < chunk_amount; i++) {
+                        allocate(indic_1[i], i + 2 * chunk_amount, 2);
+                        allocate(indic_2[i], i + 2 * chunk_amount, 3);
+                        constrain((b0p - i) * (1 - (b0p - i) * indic_1[i]));
+                        constrain((b0pp - i) * (1 - (b0pp - i) * indic_2[i]));
+                        constrain(b_chunks[i] - tp * (1 - (b0pp - i) * indic_2[i]));
+                    }
 
                     constrain(b_sum_inverse * (b_sum_inverse * b_sum - 1));
                     constrain(b_sum * (b_sum_inverse * b_sum - 1));
+                    constrain(1 - b_sum_inverse * b_sum - b_zero);
                     constrain(input_b_chunks[0] - b0p - 16 * b0pp - 256 * b0ppp);
                     constrain(b0ppp * (1 - b0ppp * I1));
 
                     constrain(sum_part_b * (1 - sum_part_b * I2));
                     constrain((z - (1 - b0ppp * I1) * (1 - sum_part_b * I2)));
 
-                    allocate(first_carryless, 32, 2);
-                    allocate(second_carryless, 33, 2);
-                    allocate(third_carryless, 34, 2);
-                    allocate(c_1_64, 35, 2);
-                    allocate(c_2, 36, 2);
+                    allocate(first_carryless, 35, 0);
+                    allocate(second_carryless, 36, 0);
+                    allocate(third_carryless, 37, 0);
+                    allocate(c_1_64, 38, 0);
+                    allocate(c_2, 39, 0);
 
                     allocate(b_64_chunks[3], 7, 3);
                     allocate(r_64_chunks[3], 8, 3);
@@ -326,9 +344,9 @@ namespace nil {
                     constrain(third_carryless);
                     constrain(b_64_chunks[3] * r_64_chunks[3]);
 
-                    allocate(carry[0], 37, 2);
+                    allocate(carry[0], 32, 1);
                     for (std::size_t i = 0; i < carry_amount - 1; i++) {
-                        allocate(carry[i + 1], 38 + i, 2);
+                        allocate(carry[i + 1], 33 + i, 1);
                         constrain(carry_on_addition_constraint(
                             b_chunks[3 * i], b_chunks[3 * i + 1], b_chunks[3 * i + 2],
                             v_chunks[3 * i], v_chunks[3 * i + 1], v_chunks[3 * i + 2],
@@ -336,7 +354,7 @@ namespace nil {
                             carry[i + 1], i == 0));
                         constrain(carry[i + 1] * (1 - carry[i + 1]));
                     }
-                    allocate(carry[carry_amount], 43, 2);
+                    allocate(carry[carry_amount], 38, 1);
                     constrain(last_carry_on_addition_constraint(
                         b_chunks[3 * (carry_amount - 1)], v_chunks[3 * (carry_amount - 1)],
                         q_chunks[3 * (carry_amount - 1)], carry[carry_amount - 1],
@@ -349,27 +367,18 @@ namespace nil {
                     auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
 
                     TYPE A0, A1, B0, B1, Res0, Res1;
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         A0 = A_128.first;
                         A1 = A_128.second;
                         B0 = B_128.first;
                         B1 = B_128.second;
                         Res0 = Res_128.first;
                         Res1 = Res_128.second;
-                    }
-                    allocate(A0, 38, 0);
-                    allocate(A1, 38, 1);
-                    allocate(B0, 39, 0);
-                    allocate(B1, 39, 1);
-                    allocate(Res0, 40, 0);
-                    allocate(Res1, 40, 1);
-
-                    constrain(A0 - A_128.first);
-                    constrain(A1 - A_128.second);
-                    constrain(B0 - B_128.first);
-                    constrain(B1 - B_128.second);
-                    constrain(Res0 - Res_128.first);
-                    constrain(Res1 - Res_128.second);
+                    allocate(A0, 45, 0);
+                    allocate(A1, 45, 1);
+                    allocate(B0, 46, 0);
+                    allocate(B1, 46, 1);
+                    allocate(Res0, 47, 0);
+                    allocate(Res1, 47, 1);
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(3) -
@@ -389,10 +398,10 @@ namespace nil {
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(1) + 1,
+                               current_state.rw_counter(1),
                                TYPE(0),  // is_write
-                               A0,
-                               A1};
+                               B0,
+                               B1};
                         lookup(tmp, "zkevm_rw");
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
                                current_state.call_id(1),
@@ -400,10 +409,10 @@ namespace nil {
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(1),
+                               current_state.rw_counter(1) + 1,
                                TYPE(0),  // is_write
-                               B0,
-                               B1};
+                               A0,
+                               A1};
                         lookup(tmp, "zkevm_rw");
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
                                current_state.call_id(1),
@@ -422,22 +431,22 @@ namespace nil {
 
             template<typename FieldType>
             class zkevm_shr_operation : public opcode_abstract<FieldType> {
-            public:
+              public:
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type
                         &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
                         &current_state) {
-                   zkevm_shr_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context,
-                                                                                 current_state);
+                    zkevm_shr_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context,
+                                                                                  current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType,
                                                GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
                         &current_state) {
-                   zkevm_shr_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context,
-                                                                                  current_state);
+                    zkevm_shr_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context,
+                                                                                   current_state);
                 }
                 virtual std::size_t rows_amount() override { return 4; }
             };

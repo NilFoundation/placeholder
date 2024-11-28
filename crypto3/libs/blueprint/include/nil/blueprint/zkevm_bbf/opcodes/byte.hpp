@@ -60,8 +60,6 @@ namespace nil {
                         auto N = current_state.stack_top();
                         auto b = w_to_16(current_state.stack_top());
                         auto a = w_to_16(current_state.stack_top(1));
-                        std::cout << "\tb = " << std::hex << current_state.stack_top() << std::dec << std::endl;
-                        std::cout << "\ta = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
                         for( std::size_t i = 0; i < 16; i++){
                             A[i] = a[i];
                             B[i] = b[i];
@@ -80,11 +78,6 @@ namespace nil {
                         minus_a16_hi = 255 - a16_hi;
                         minus_a16_lo = 255 - a16_lo;
                         result = (b_last_bit == 0)? a16_hi: a16_lo;
-                        std::cout << "\ta16 = " << std::hex << a16 << std::endl;
-                        std::cout << "\ta16_hi = " << a16_hi << std::endl;
-                        std::cout << "\ta16_lo = " << a16_lo << std::endl;
-                        std::cout << "\tresult = " << result << std::endl;
-                        std::cout << "\tb_sum = " << b_sum << std::dec << std::endl;
                     }
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);
@@ -120,8 +113,6 @@ namespace nil {
                     b_sum_constraint += b_hi;
                     b_bits_composition *= 2;
                     b_bits_composition += b_last_bit;
-                    std::cout << "\tb_bits_composition = " << std::hex << b_bits_composition << std::dec << std::endl;
-                    std::cout << "\tb_sum_constraint = " << std::hex << b_sum_constraint << std::dec << std::endl;
                     constrain(b_bits_composition - b_bits_sum * b_lo);
                     constrain(b_sum_constraint - b_sum);
                     constrain(b_sum * (b_sum * b_sum_inv - 1));
@@ -136,8 +127,6 @@ namespace nil {
 
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
-                    std::cout << "\tA128 = " << std::hex << A_128.first << ", " << A_128.second << std::dec << std::endl;
-                    std::cout << "\tB128 = " << std::hex << B_128.first << ", " << B_128.second << std::dec << std::endl;
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
                         constrain(current_state.pc_next() - current_state.pc(1) - 1);                   // PC transition
                         constrain(current_state.gas(1) - current_state.gas_next() - 3);                 // GAS transition

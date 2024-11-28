@@ -135,14 +135,18 @@ namespace nil {
                     std::vector<TYPE> b_chunks(chunk_amount);
                     std::vector<TYPE> r_chunks(chunk_amount);
 
+                    std::vector<TYPE> indic_1(chunk_amount);
+                    std::vector<TYPE> indic_2(chunk_amount);
+
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        zkevm_word_type a = current_state.stack_top(1);
                         zkevm_word_type input_b = current_state.stack_top();
+                        zkevm_word_type a = current_state.stack_top(1);
 
                         int shift =
                             (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
 
                         zkevm_word_type result = zkevm_word_type(integral_type(a) << shift);
+
                         zkevm_word_type b = zkevm_word_type(integral_type(1) << shift);
 
                         input_b_chunks = zkevm_word_to_field_element<FieldType>(input_b);
@@ -162,9 +166,7 @@ namespace nil {
                         I2 = sum_b.is_zero() ? 0 : sum_b.inversed();
                         z = (1 - b0ppp * I1) *
                             (1 - sum_b * I2);  // z is zero if input_b >= 256, otherwise it is 1
-                        two_powers =
-                            (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
-                        tp = z * two_powers;
+                        tp = z * (static_cast<unsigned int>(1) << int(integral_type(input_b) % 16));
 
                         // note that we don't assign 64-chunks for a/b, as we can build them from
                         // 16-chunks with constraints under the same logic we only assign the 16 -
@@ -205,6 +207,15 @@ namespace nil {
                         b0p_range_check = 4096 * b0p;
                         b0pp_range_check = 4096 * b0pp;
                         b0ppp_range_check = 256 * b0ppp;
+
+                        two_powers = 0;
+                        unsigned int pow = 1;
+                        for (std::size_t i = 0; i < chunk_amount; i++) {
+                            indic_1[i] = (b0p - i).is_zero() ? 0 : (b0p - i).inversed();
+                            indic_2[i] = (b0pp - i).is_zero() ? 0 : (b0pp - i).inversed();
+                            two_powers += (1 - (b0p - i) * indic_1[i]) * pow;
+                            pow *= 2;
+                        }
                     }
 
                     allocate(b0p_range_check, 0, 2);
@@ -223,31 +234,38 @@ namespace nil {
                         res[i] = r_chunks[i];
                     }
 
-                    allocate(tp, 32, 0);
-                    allocate(z, 33, 0);
-                    allocate(I1, 34, 0);
-                    allocate(I2, 35, 0);
-                    allocate(two_powers, 36, 0);
+                    allocate(tp, 14, 2);
+                    allocate(z, 15, 2);
+                    allocate(I1, 33, 0);
+                    allocate(I2, 34, 0);
+
+                    allocate(b0p, 11, 2);
+                    allocate(b0pp, 12, 2);
+                    allocate(b0ppp, 13, 2);
+                    allocate(two_powers, 32, 0);
+                    allocate(sum_b, 35, 0);
 
                     constrain(tp - z * two_powers);
-
-                    allocate(b0p, 32, 1);
-                    allocate(b0pp, 33, 1);
-                    allocate(b0ppp, 34, 1);
-                    allocate(sum_b, 35, 1);
+                    for (std::size_t i = 0; i < chunk_amount; i++) {
+                        allocate(indic_1[i], i + 2 * chunk_amount, 1);
+                        allocate(indic_2[i], i + 2 * chunk_amount, 2);
+                        constrain((b0p - i) * (1 - (b0p - i) * indic_1[i]));
+                        constrain((b0pp - i) * (1 - (b0pp - i) * indic_2[i]));
+                        constrain(b_chunks[i] - tp * (1 - (b0pp - i) * indic_2[i]));
+                    }
 
                     constrain(input_b_chunks[0] - b0p - 16 * b0pp - 256 * b0ppp);
                     constrain(b0ppp * (1 - b0ppp * I1));
 
                     constrain(sum_b * (1 - sum_b * I2));
-                    constrain((z - (1 - b0ppp * I1) * (1 - sum_b * I2)));
+                    constrain(z - (1 - b0ppp * I1) * (1 - sum_b * I2));
 
-                    allocate(first_carryless, 32, 2);
-                    allocate(second_carryless, 33, 2);
-                    allocate(c_1_64, 34, 2);
-                    allocate(c_2, 35, 2);
-                    allocate(c_3_64, 36, 2);
-                    allocate(c_4, 37, 2);
+                    allocate(first_carryless, 16, 2);
+                    allocate(second_carryless, 17, 2);
+                    allocate(c_1_64, 18, 2);
+                    allocate(c_2, 19, 2);
+                    allocate(c_3_64, 20, 2);
+                    allocate(c_4, 21, 2);
 
                     constrain(first_carryless - c_1_64 * two_128 - c_2 * two_192);
                     constrain(second_carryless + c_1_64 + c_2 * two_64 - c_3_64 * two_128 -
@@ -261,27 +279,18 @@ namespace nil {
                     auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
 
                     TYPE A0, A1, B0, B1, Res0, Res1;
-                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
-                        A0 = A_128.first;
-                        A1 = A_128.second;
-                        B0 = B_128.first;
-                        B1 = B_128.second;
-                        Res0 = Res_128.first;
-                        Res1 = Res_128.second;
-                    }
-                    allocate(A0, 37, 0);
-                    allocate(A1, 37, 1);
+                    A0 = A_128.first;
+                    A1 = A_128.second;
+                    B0 = B_128.first;
+                    B1 = B_128.second;
+                    Res0 = Res_128.first;
+                    Res1 = Res_128.second;
+                    allocate(A0, 36, 0);
+                    allocate(A1, 37, 0);
                     allocate(B0, 38, 0);
-                    allocate(B1, 38, 1);
-                    allocate(Res0, 39, 0);
-                    allocate(Res1, 39, 1);
-
-                    constrain(A0 - A_128.first);
-                    constrain(A1 - A_128.second);
-                    constrain(B0 - B_128.first);
-                    constrain(B1 - B_128.second);
-                    constrain(Res0 - Res_128.first);
-                    constrain(Res1 - Res_128.second);
+                    allocate(B1, 39, 0);
+                    allocate(Res0, 40, 0);
+                    allocate(Res1, 41, 0);
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(2) -
@@ -296,12 +305,12 @@ namespace nil {
                                   3);  // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(1),
-                               current_state.stack_size(1) - 1,
+                               current_state.call_id(0),
+                               current_state.stack_size(0) - 1,
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(1),
+                               current_state.rw_counter(0),
                                TYPE(0),  // is_write
                                B0,
                                B1};
@@ -318,12 +327,12 @@ namespace nil {
                                A1};
                         lookup(tmp, "zkevm_rw");
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(1),
-                               current_state.stack_size(1) - 2,
+                               current_state.call_id(0),
+                               current_state.stack_size(0) - 2,
                                TYPE(0),  // storage_key_hi
                                TYPE(0),  // storage_key_lo
                                TYPE(0),  // field
-                               current_state.rw_counter(1) + 2,
+                               current_state.rw_counter(0) + 2,
                                TYPE(1),  // is_write
                                Res0,
                                Res1};

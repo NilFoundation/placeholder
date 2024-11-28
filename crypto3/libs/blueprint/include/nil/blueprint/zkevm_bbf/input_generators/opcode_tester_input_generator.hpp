@@ -411,10 +411,6 @@ namespace nil {
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
                             auto n = w_to_8(N)[31];
                             zkevm_word_type result = N > 31? 0: w_to_8(a)[n];
-                            // std::cout << "BYTE" << std::endl;
-                            // std::cout << std::hex << "\ta  = " << a << std::dec << std::endl;
-                            // std::cout << std::hex << "\tN  = " << N << std::dec << std::endl;
-                            // std::cout << std::hex << "\tresult = " << result << std::dec << std::endl;
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;
