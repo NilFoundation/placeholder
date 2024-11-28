@@ -54,7 +54,7 @@ namespace nil {
                     std::vector<TYPE> A(16);
                     std::vector<TYPE> B(16);
                     std::vector<TYPE> B_bits(16);
-                    TYPE a16, a16_hi, a16_lo, minus_a16_hi, minus_a16_lo, b_lo, b_sum, b_sum_inv, result;
+                    TYPE a16, a16_hi, a16_lo, minus_a16_hi, minus_a16_lo, b_last_bit, b_sum, b_hi, b_lo, b_sum_inv, result;
 
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto N = current_state.stack_top();
@@ -62,28 +62,29 @@ namespace nil {
                         auto a = w_to_16(current_state.stack_top(1));
                         std::cout << "\tb = " << std::hex << current_state.stack_top() << std::dec << std::endl;
                         std::cout << "\ta = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
-                        std::size_t mask = 0x8000;
                         for( std::size_t i = 0; i < 16; i++){
                             A[i] = a[i];
                             B[i] = b[i];
-                            B_bits[i] = (( (b[15]/2) & mask )!= 0);
-                            mask >>= 1;
+                            B_bits[i] = (N >= 0 && N < 32) && (b[15]/2 == i);
                             if( i != 15 ) b_sum += b[i];
-                            if( i <= 10 ) b_sum += B[i];
                         }
+                        b_last_bit = (0 <= N && N < 32) && ((b[15] & 1) != 0);
+                        b_hi = b[15] / 32;
+                        b_lo = b[15] % 32;
+                        b_sum += b_hi;
                         b_sum_inv = b_sum == 0? 0: b_sum.inversed();
-                        b_lo = ((b[15] & 1) != 0);
                         std::size_t chunk = (0<=N && N<32) ? a[b[15]/2] : 0;
                         a16 = chunk;
                         a16_lo = chunk & 0xFF;
                         a16_hi = (chunk & 0xFF00) >> 8;
                         minus_a16_hi = 255 - a16_hi;
                         minus_a16_lo = 255 - a16_lo;
-                        result = (b_lo == 0)? a16_hi: a16_lo;
+                        result = (b_last_bit == 0)? a16_hi: a16_lo;
                         std::cout << "\ta16 = " << std::hex << a16 << std::endl;
                         std::cout << "\ta16_hi = " << a16_hi << std::endl;
                         std::cout << "\ta16_lo = " << a16_lo << std::endl;
-                        std::cout << "\tresult = " << result << std::dec << std::endl;
+                        std::cout << "\tresult = " << result << std::endl;
+                        std::cout << "\tb_sum = " << b_sum << std::dec << std::endl;
                     }
                     for( std::size_t i = 0; i < 16; i++ ){
                         allocate(A[i], i, 0);
@@ -94,14 +95,44 @@ namespace nil {
                     allocate(a16_hi, 1, 1);
                     allocate(a16_lo, 2, 1);
                     allocate(minus_a16_hi, 3, 1);
-                    allocate(minus_a16_hi, 4, 1);
-                    allocate(b_lo, 5, 1);
-                    allocate(result, 6, 1);
+                    allocate(minus_a16_lo, 4, 1);
+                    allocate(b_hi, 5, 1);
+                    allocate(b_lo, 6, 1);
+                    allocate(b_last_bit, 7, 1);
+                    allocate(result, 8, 1);
+                    allocate(b_sum, 32, 0);
+                    allocate(b_sum_inv, 33, 0);
 
                     constrain(a16_hi + minus_a16_hi - 255);
                     constrain(a16_lo + minus_a16_lo - 255);
                     constrain(a16 - a16_hi * 256 - a16_lo);
-                    constrain(b_lo * (b_lo - 1));
+                    TYPE b_sum_constraint;
+                    TYPE b_bits_composition;
+                    TYPE b_bits_sum;
+                    TYPE chunk;
+                    for(std::size_t i = 0; i < 16; i++){
+                        constrain(B_bits[i] * (B_bits[i] - 1));
+                        if( i != 15) b_sum_constraint += B[i];
+                        b_bits_composition += i * B_bits[i];
+                        b_bits_sum += B_bits[i];
+                        chunk += B_bits[i] * A[i];
+                    }
+                    b_sum_constraint += b_hi;
+                    b_bits_composition *= 2;
+                    b_bits_composition += b_last_bit;
+                    std::cout << "\tb_bits_composition = " << std::hex << b_bits_composition << std::dec << std::endl;
+                    std::cout << "\tb_sum_constraint = " << std::hex << b_sum_constraint << std::dec << std::endl;
+                    constrain(b_bits_composition - b_bits_sum * b_lo);
+                    constrain(b_sum_constraint - b_sum);
+                    constrain(b_sum * (b_sum * b_sum_inv - 1));
+                    constrain(b_sum_inv * (b_sum * b_sum_inv - 1));
+                    constrain(b_sum * b_sum_inv * result);
+                    constrain(b_last_bit * (b_last_bit - 1));
+                    constrain(b_bits_sum + b_sum * b_sum_inv - 1);
+                    constrain(b_hi * 32 + b_lo - B[15]);
+                    constrain(a16_hi * 256 + a16_lo - a16);
+                    constrain(chunk - a16);
+                    constrain(b_bits_sum * (b_last_bit * (a16_lo - result) + (1 - b_last_bit) * (a16_hi - result)));
 
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
