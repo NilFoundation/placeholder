@@ -50,7 +50,7 @@ namespace nil {
                 template<typename value_type, typename integral_type>
                 std::vector<std::uint64_t> unpack(value_type &value) {
                     nil::marshalling::status_type status;
-                    integral_type scalar_value = integral_type(value.data);
+                    integral_type scalar_value = integral_type(value.data.base());
                     std::vector<std::uint64_t> limbs_lsb =
                         nil::marshalling::pack<nil::marshalling::option::big_endian>(scalar_value, status);
                     THROW_IF_ERROR_STATUS(status, "integral_type to std::vector<uint64_t>");
