@@ -46,6 +46,6 @@ print("Resulting JSON: {}".format(json.dumps(result)))
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 with tracer.start_as_current_span("nightly_span"):
     current_span = trace.get_current_span()
-    current_span.add_event("Nightly build finished")
+    current_span.add_event("Nightly sanitizers build finished")
     logging.getLogger().error(json.dumps(result))
 
