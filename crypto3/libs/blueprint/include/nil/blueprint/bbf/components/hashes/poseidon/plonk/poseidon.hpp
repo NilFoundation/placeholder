@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2023 Alexey Yashunsky <a.yashunsky@nil.foundation>
 // Copyright (c) 2023 Dmitrii Tabalin <d.tabalin@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <d.tabalin@nil.foundation>
 //
 // MIT License
 //
@@ -111,19 +112,19 @@ namespace nil {
                             X[0][2] = input_state[2];
                         }
 
+                        allocate(X[0][0]);
+                        allocate(X[0][1]);
+                        allocate(X[0][2]);
+
+                        allocate(input_state[0]);
+                        allocate(input_state[1]);
+                        allocate(input_state[2]);
+
                         if (make_links) {
                             copy_constrain(X[0][0], input_state[0]);
                             copy_constrain(X[0][1], input_state[1]);
                             copy_constrain(X[0][2], input_state[2]);
                         }
-
-                        W[0] = X[0][0];
-                        W[1] = X[0][1];
-                        W[2] = X[0][2];
-
-                        allocate(W[0]);
-                        allocate(W[1]);
-                        allocate(W[2]);
 
                         static_assert(state_size == 3);
 
@@ -136,9 +137,7 @@ namespace nil {
                                                   X[i][1].pow(sbox_alpha) * mds[j][1] +
                                                   X[i][2].pow(sbox_alpha) * mds[j][2] +
                                                   round_constant[i][j];
-                                    W[(i + 1) * 3 + j] = X[i + 1][j];
-                                    allocate(W[(i + 1) * 3 + j]);
-                                    constrain(X[i + 1][j] - W[(i + 1) * 3 + j]);
+                                    allocate(X[i + 1][j]);
                                 }
                             }
 
@@ -149,9 +148,7 @@ namespace nil {
                                     X[i + 1][j] = X[i][0].pow(sbox_alpha) * mds[j][0] +
                                                   X[i][1] * mds[j][1] + X[i][2] * mds[j][2] +
                                                   round_constant[i][j];
-                                    W[(i + 1) * 3 + j] = X[i + 1][j];
-                                    allocate(W[(i + 1) * 3 + j]);
-                                    constrain(X[i + 1][j] - W[(i + 1) * 3 + j]);
+                                    allocate(X[i + 1][j]);
                                 }
                             }
 
@@ -163,9 +160,7 @@ namespace nil {
                                                   X[i][1].pow(sbox_alpha) * mds[j][1] +
                                                   X[i][2].pow(sbox_alpha) * mds[j][2] +
                                                   round_constant[i][j];
-                                    W[(i + 1) * 3 + j] = X[i + 1][j];
-                                    allocate(W[(i + 1) * 3 + j]);
-                                    constrain(X[i + 1][j] - W[(i + 1) * 3 + j]);
+                                    allocate(X[i + 1][j]);
                                 }
                             }
                         } else {
@@ -179,9 +174,7 @@ namespace nil {
                                                       mds[j][1] +
                                                   (X[i][2] + round_constant[i][2]).pow(sbox_alpha) *
                                                       mds[j][2];
-                                    W[(i + 1) * 3 + j] = X[i + 1][j];
-                                    allocate(W[(i + 1) * 3 + j]);
-                                    constrain(X[i + 1][j] - W[(i + 1) * 3 + j]);
+                                    allocate(X[i + 1][j]);
                                 }
                             }
                             // Middle partial rounds
@@ -192,9 +185,7 @@ namespace nil {
                                                       mds[j][0] +
                                                   (X[i][1] + round_constant[i][1]) * mds[j][1] +
                                                   (X[i][2] + round_constant[i][2]) * mds[j][2];
-                                    W[(i + 1) * 3 + j] = X[i + 1][j];
-                                    allocate(W[(i + 1) * 3 + j]);
-                                    constrain(X[i + 1][j] - W[(i + 1) * 3 + j]);
+                                    allocate(X[i + 1][j]);
                                 }
                             }
                             // Final full rounds
@@ -207,9 +198,7 @@ namespace nil {
                                                       mds[j][1] +
                                                   (X[i][2] + round_constant[i][2]).pow(sbox_alpha) *
                                                       mds[j][2];
-                                    W[(i + 1) * 3 + j] = X[i + 1][j];
-                                    allocate(W[(i + 1) * 3 + j]);
-                                    constrain(X[i + 1][j] - W[(i + 1) * 3 + j]);
+                                    allocate(X[i + 1][j]);
                                 }
                             }
                         }
