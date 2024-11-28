@@ -37,7 +37,7 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/json.hpp>
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include <nil/crypto3/multiprecision/big_int/literals.hpp>
 
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
