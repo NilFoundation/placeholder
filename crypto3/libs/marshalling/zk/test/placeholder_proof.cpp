@@ -330,7 +330,10 @@ struct placeholder_lpc_proof_test_runner {
                 random_test_initializer.alg_random_engines.template get_alg_engine<field_type>(),
                 random_test_initializer.generic_random_engine
                 );
-        test_placeholder_aggregated_proof( {{partial_proofs, lpc_proof}}, fri_params);
+        AggregatedProofType aggregated_proof;
+        aggregated_proof.partial_proofs = partial_proofs;
+        aggregated_proof.aggregated_proof = lpc_proof;
+        test_placeholder_aggregated_proof(aggregated_proof, fri_params);
         return true;
     }
 
