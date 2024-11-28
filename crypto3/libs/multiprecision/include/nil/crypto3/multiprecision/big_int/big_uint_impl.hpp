@@ -282,6 +282,12 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+        explicit constexpr operator T() const {
+            return static_cast<T>(static_cast<std::make_unsigned_t<T>>(*this));
+        }
+
         // Comparisions
 
         constexpr int compare(const big_uint& b) const noexcept {
