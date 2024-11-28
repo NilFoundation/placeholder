@@ -566,8 +566,8 @@ namespace nil::crypto3::multiprecision::detail {
 
         constexpr void adjust_modular(big_uint_t &result) const { adjust_modular(result, result); }
 
-        template<std::size_t Bits3>
-        constexpr void adjust_modular(big_uint_t &result, const big_uint<Bits3> &input) const {
+        template<std::size_t Bits2>
+        constexpr void adjust_modular(big_uint_t &result, const big_uint<Bits2> &input) const {
             big_uint_doubled_limbs tmp;
             this->barrett_reduce(tmp, input);
             tmp *= r2();
