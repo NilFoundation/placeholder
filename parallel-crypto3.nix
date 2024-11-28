@@ -33,12 +33,12 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       (if runTests then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
-      (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       (if benchmarkTests then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
       "-DPARALLEL_CRYPTO3_ENABLE=TRUE"
     ];
 
+  cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = runTests; # tests are inside parallel-crypto3-tests derivation
 
   checkPhase = ''

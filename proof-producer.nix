@@ -33,14 +33,14 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
-      (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
       "-G Ninja"
     ];
 
-  doCheck = runTests;
+    cmakeBuildType = if enableDebug then "Debug" else "Release";
+    doCheck = runTests;
 
   checkPhase = ''
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
