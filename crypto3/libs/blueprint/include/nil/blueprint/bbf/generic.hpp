@@ -40,6 +40,7 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 //#include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/gate_id.hpp>
