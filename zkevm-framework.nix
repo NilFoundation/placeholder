@@ -36,11 +36,11 @@ in stdenv.mkDerivation rec {
   cmakeFlags =
   [
       (if runTests then "-DENABLE_TESTS=TRUE" else "")
-      (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       "-DZKEVM_FRAMEWORK_ENABLE=TRUE"
       "-G Ninja"
   ];
 
+  cmakeBuildType = if enableDebug then "Debug" else "Release";
   doBuild = true;
   doCheck = runTests;
 
