@@ -34,7 +34,7 @@ namespace nil::crypto3::multiprecision {
         big_uint_t c(scalar);
         ui_type j = 0;
 
-        while (c.is_zero()) {
+        while (!c.is_zero()) {
             long u = 0;
             if (c.bit_test(0u)) {
                 u = c.limbs()[0] % (1u << (window_size + 1));
