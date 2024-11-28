@@ -158,9 +158,11 @@ namespace nil::crypto3::multiprecision {
                 pr[i] = 0;
             }
         }
-        constexpr void normalize() noexcept { limbs()[internal_limb_count - 1] &= upper_limb_mask; }
 
       public:
+        // TODO(ioxid): this should be private
+        constexpr void normalize() noexcept { limbs()[internal_limb_count - 1] &= upper_limb_mask; }
+
         constexpr bool has_carry() const noexcept { return m_carry; }
         constexpr void set_carry(bool carry) noexcept { m_carry = carry; }
 
