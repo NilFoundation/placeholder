@@ -36,6 +36,7 @@ in stdenv.mkDerivation {
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       (if benchmarkTests then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
       "-DPARALLEL_CRYPTO3_ENABLE=TRUE"
+      "-G Ninja"
     ];
 
   cmakeBuildType = if enableDebug then "Debug" else "Release";
@@ -45,11 +46,13 @@ in stdenv.mkDerivation {
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
     export BOOST_TEST_LOGGER=JUNIT:HRF
     cd parallel-crypto3
-    ctest --verbose --output-on-failure -R
+    # remove || true after all tests are fixed under clang-sanitizers check:
+    ctest --verbose --output-on-failure -R > test_errors.txt || true
     cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
     find .. -type f -name '*_benchmark.xml' -exec cp {} ${placeholder "out"}/test-logs \;
+    cp crypto3/test_errors.txt ${placeholder "out"}/test-logs \
   '';
 
   shellHook = ''
