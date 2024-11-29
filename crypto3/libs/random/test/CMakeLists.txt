@@ -32,7 +32,7 @@ macro(define_random_test test)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
-
+    target_precompile_headers(${full_test_name} REUSE_FROM _cm_internal_tests-crypto3-hash-test)
 endmacro()
 
 # TODO(uncomment the failing tests once they pass)

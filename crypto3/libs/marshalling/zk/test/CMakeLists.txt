@@ -46,6 +46,7 @@ macro(define_marshalling_test test)
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
+    target_precompile_headers(${full_test_name} REUSE_FROM _cm_internal_tests-crypto3-hash-test)
 endmacro()
 
 set(TESTS_NAMES
