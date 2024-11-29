@@ -95,6 +95,12 @@
           debug-tools = (pkgs.callPackage ./debug-tools.nix {
           });
 
+          develop = (pkgs.callPackage ./develop.nix {
+            enableDebug = true;
+            runTests = true;
+            sanitize = true;
+            benchmarkTests = true;
+          });
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.
           # The packages that have no changes will not be rebuilt, and instead
@@ -103,7 +109,7 @@
             name = "all";
             paths = [ crypto3 parallel-crypto3 proof-producer];
           };
-          default = all;
+          default = develop;
         };
 
         checks = rec {
