@@ -223,10 +223,12 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        constexpr std::string str() const {
+        constexpr std::string str(std::ios_base::fmtflags flags = {}) const {
+            if (!(flags & std::ios_base::hex)) {
+                throw std::invalid_argument("big_uint: only hex format is supported");
+            }
             std::string result;
-            result.reserve(order() * limb_bits / 4 + 2);
-            result += "0x";
+            result.reserve(used_limbs() * limb_bits / 4);
             bool found_first = false;
             for (int i = internal_limb_count - 1; i >= 0; --i) {
                 auto limb = limbs()[i];
@@ -249,11 +251,16 @@ namespace nil::crypto3::multiprecision {
                     NIL_CO3_MP_ASSERT(ec == std::errc{});
                 }
             }
-            for (std::size_t i = 2; i < result.size(); ++i) {
-                result[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(result[i])));
+            if (flags & std::ios_base::uppercase) {
+                for (std::size_t i = 0; i < result.size(); ++i) {
+                    result[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(result[i])));
+                }
             }
-            if (result.size() == 2) {
+            if (result.size() == 0) {
                 result += '0';
+            }
+            if (flags & std::ios_base::showbase) {
+                result = "0x" + result;
             }
             return result;
         }
@@ -1577,7 +1584,7 @@ namespace nil::crypto3::multiprecision {
 
     template<std::size_t Bits>
     std::ostream& operator<<(std::ostream& os, const big_uint<Bits>& value) {
-        os << value.str();
+        os << value.str(os.flags());
         return os;
     }
 }  // namespace nil::crypto3::multiprecision
