@@ -223,7 +223,7 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        constexpr std::string str(std::ios_base::fmtflags flags = {}) const {
+        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase | std::ios_base::uppercase) const {
             if (!(flags & std::ios_base::hex)) {
                 throw std::invalid_argument("big_uint: only hex format is supported");
             }
