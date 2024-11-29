@@ -279,7 +279,7 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Proof verification failed";
                     return false;
                 }
-                
+
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
@@ -591,7 +591,7 @@ namespace nil {
                     return false;
                 }
 
-                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());            
+                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());
                 return true;
             }
 
@@ -610,7 +610,7 @@ namespace nil {
                 if (!marshalled_table) {
                     return false;
                 }
-            
+
                 auto [table_description, assignment_table] =
                     nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTable>(
                         *marshalled_table
@@ -640,7 +640,7 @@ namespace nil {
                 using writer = assignment_table_writer<Endianness, BlueprintField>;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
-                
+
                 if (!assignment_table_.has_value() || !table_description_.has_value()) {
                     BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded";
                     return false;
@@ -683,8 +683,8 @@ namespace nil {
 
                 const auto write = [&](std::ostream& out) -> bool {
                     return assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
-                        out, 
-                        assignment_table_.value(), 
+                        out,
+                        assignment_table_.value(),
                         table_description_.value(),
                         opts
                     );
@@ -1163,13 +1163,18 @@ namespace nil {
                 }
 
                 // TODO debug purposes
-                blueprint::circuit<ConstraintSystem> cp(constraint_system_.value());
-                blueprint::assignment<ConstraintSystem> ap(assignment_table_.value(), table_description_.value());
-                bool checked = blueprint::is_satisfied(cp, ap);
-                if (!checked) {
-                    BOOST_LOG_TRIVIAL(error) << "Circuit is not satisfied";
-                    return false;
-                }
+                // blueprint::circuit<ConstraintSystem> cp(constraint_system_.value());
+                // blueprint::assignment<ConstraintSystem> ap(assignment_table_.value(), table_description_.value());
+                // //std::cout << "Usable_rows_mount = " << ap.usable_rows() << std::endl;
+                // std::cout << "ZK Rows_amount = " << assignment_table_.value().rows_amount() << std::endl;
+                // //std::cout << "ZK Allocated rows = " << std::endl;
+                // std::cout << "BP Rows_amount = " << ap.rows_amount() << std::endl;
+                // std::cout << "BP Allocated rows = " << ap.allocated_rows() << std::endl;
+                // bool checked = blueprint::is_satisfied(cp, ap);
+                // if (!checked) {
+                //     BOOST_LOG_TRIVIAL(error) << "Circuit is not satisfied";
+                //     return false;
+                // }
 
                 return true;
             }

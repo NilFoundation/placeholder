@@ -96,7 +96,6 @@ namespace nil {
                     }
                 }
             }
-
             return result;
         }
 
@@ -124,11 +123,13 @@ namespace nil {
                     assignments.crypto3::zk::snark::
                         template plonk_assignment_table<BlueprintFieldType>::selector(
                             gates[i].selector_index);
+                std::cout << "Selector size = " << selector.size() << std::endl;
                 //for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
                 //    std::cout << gates[i].constraints[j] << std::endl;
                 //}
 
                 for (const auto& selector_row : selector_rows) {
+                    std::cout << "\tSelector row " << selector_row << std::endl;
                     if( selector_row % (selector_rows.size()/100) == 0 ) {
                         std::cout << ".";
                         std::cout.flush();
@@ -140,9 +141,11 @@ namespace nil {
                     // std::cout << std::endl;
                     if (selector_row < selector.size() && !selector[selector_row].is_zero()) {
                         for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
+                            std::cout << "\t\tConstraint: " << gates[i].constraints[i] << std::endl;
 
                             typename BlueprintFieldType::value_type constraint_result =
                                 gates[i].constraints[j].evaluate(selector_row, assignments);
+                            std::cout << "\t\tConstraint result: " << constraint_result << std::endl;
 
                             if (!constraint_result.is_zero()) {
                                 std::cout<< std::endl;
@@ -153,13 +156,13 @@ namespace nil {
                                 std::cout << "Constraint result: " << constraint_result << std::endl;
                                 std::cout << "Constraint: " << gates[i].constraints[j] << std::endl;
                                 std::cout << "Offending gate:" << std::endl;
-                                std::cout<<  "Offended constraint result" << std::endl;
-                                for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
-                                    if( selector[ind].is_zero() )
-                                        std::cout << "0 ";
-                                    else
-                                        std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
-                                }
+                                // std::cout<<  "Offended constraint result" << std::endl;
+                                // for( std::size_t ind = 0; ind < selector_rows.size(); ind++){
+                                //     if( selector[ind].is_zero() )
+                                //         std::cout << "0 ";
+                                //     else
+                                //         std::cout << gates[i].constraints[j].evaluate(ind, assignments) << " ";
+                                // }
 
                                 std::size_t k = 0;
                                 for (const auto &constraint : gates[i].constraints) {
@@ -188,15 +191,19 @@ namespace nil {
                         std::cout.flush();
                     }
                     if (selector_row < selector.size() && !selector[selector_row].is_zero()) {
+                        std::cout << selector_row << "." << std::endl;
                         for (std::size_t j = 0; j < lookup_gates[i].constraints.size(); j++) {
                             std::vector<typename BlueprintFieldType::value_type> input_values;
                             input_values.reserve(lookup_gates[i].constraints[j].lookup_input.size());
+                            std::cout << "Compute lookup input " << lookup_gates[i].constraints[j].table_id << std::endl;
                             for (std::size_t k = 0; k < lookup_gates[i].constraints[j].lookup_input.size(); k++) {
                                 input_values.emplace_back(lookup_gates[i].constraints[j].lookup_input[k].evaluate(
                                     selector_row, assignments));
                             }
+                            std::cout << "Find lookup_table for index " << lookup_gates[i].constraints[j].table_id << std::endl;
                             const auto table_name =
                                 bp.get_reserved_indices_right().at(lookup_gates[i].constraints[j].table_id);
+                            std::cout << table_name << std::endl;
                             try {
                                 if( bp.get_reserved_dynamic_tables().find(table_name) != bp.get_reserved_dynamic_tables().end() ){
                                     if( used_dynamic_tables.find(table_name) == used_dynamic_tables.end()){
