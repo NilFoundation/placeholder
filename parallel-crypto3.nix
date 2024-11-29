@@ -52,7 +52,7 @@ in stdenv.mkDerivation {
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
     find .. -type f -name '*_benchmark.xml' -exec cp {} ${placeholder "out"}/test-logs \;
-    cp crypto3/test_errors.txt ${placeholder "out"}/test-logs \
+    cp parallel-crypto3/test_errors.txt ${placeholder "out"}/test-logs \
   '';
 
   shellHook = ''
