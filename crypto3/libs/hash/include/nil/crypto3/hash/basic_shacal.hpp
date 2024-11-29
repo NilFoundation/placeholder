@@ -25,8 +25,8 @@
 #ifndef CRYPTO3_BLOCK_BASIC_SHACAL_HPP
 #define CRYPTO3_BLOCK_BASIC_SHACAL_HPP
 
-#include <nil/crypto3/block/detail/shacal/shacal_policy.hpp>
-#include <nil/crypto3/block/detail/shacal/shacal1_policy.hpp>
+#include <nil/crypto3/hash/detail/shacal/shacal_policy.hpp>
+#include <nil/crypto3/hash/detail/shacal/shacal1_policy.hpp>
 
 #include <boost/static_assert.hpp>
 
