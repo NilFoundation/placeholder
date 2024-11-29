@@ -43,12 +43,12 @@ macro(define_zk_test test)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
-
+    target_precompile_headers(${full_test_name} REUSE_FROM _cm_internal_tests-crypto3-hash-test)
 endmacro()
 
 set(TESTS_NAMES
-    "commitment/lpc"
     "commitment/fri"
+    "commitment/lpc"
     "commitment/kzg"
     "commitment/fold_polynomial"
     "commitment/proof_of_work"
