@@ -62,7 +62,11 @@ namespace nil::crypto3::multiprecision {
 
             // String conversion
 
-            constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase | std::ios_base::uppercase) const { return base().str(flags); }
+            constexpr std::string str(
+                std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase |
+                                                std::ios_base::uppercase) const {
+                return base().str(flags);
+            }
 
             // Mathemetical operations
 
@@ -375,7 +379,8 @@ struct std::hash<nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular
     std::size_t operator()(
         const nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular_ops_template>& a)
         const noexcept {
-        return boost::hash<nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular_ops_template>>{}(a);
+        return boost::hash<
+            nil::crypto3::multiprecision::big_mod_ct_impl<modulus_, modular_ops_template>>{}(a);
     }
 };
 
@@ -384,6 +389,7 @@ struct std::hash<nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops
     std::size_t operator()(
         const nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>& a)
         const noexcept {
-        return boost::hash<nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>>{}(a);
+        return boost::hash<
+            nil::crypto3::multiprecision::big_mod_rt_impl<Bits, modular_ops_template>>{}(a);
     }
 };

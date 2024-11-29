@@ -223,7 +223,9 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase | std::ios_base::uppercase) const {
+        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
+                                                                  std::ios_base::showbase |
+                                                                  std::ios_base::uppercase) const {
             if (!(flags & std::ios_base::hex)) {
                 throw std::invalid_argument("big_uint: only hex format is supported");
             }
@@ -253,7 +255,8 @@ namespace nil::crypto3::multiprecision {
             }
             if (flags & std::ios_base::uppercase) {
                 for (std::size_t i = 0; i < result.size(); ++i) {
-                    result[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(result[i])));
+                    result[i] =
+                        static_cast<char>(std::toupper(static_cast<unsigned char>(result[i])));
                 }
             }
             if (result.size() == 0) {
@@ -1250,7 +1253,7 @@ namespace nil::crypto3::multiprecision {
             if (index >= Bits) {
                 return false;
                 // TODO(ioxid): this throws in multiexp tests
-                //throw std::invalid_argument("fixed precision overflow");
+                // throw std::invalid_argument("fixed precision overflow");
             }
             std::size_t offset = index / limb_bits;
             std::size_t shift = index % limb_bits;
