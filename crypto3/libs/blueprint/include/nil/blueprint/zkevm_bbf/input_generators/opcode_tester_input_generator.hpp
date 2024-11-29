@@ -263,6 +263,21 @@ namespace nil {
                             stack.push_back(result);
                             pc++;
                             gas -= 8;
+                             } else if (opcode == zkevm_opcode::SIGNEXTEND){
+                            // 0x0b
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type x = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, x));
+                            int len = (integral_type(b) < 32) ? int(integral_type(b)) + 1 : 32;
+                            integral_type sign = (integral_type(x) << (8 * (32 - len) + 1)) >> 256;
+                            zkevm_word_type result = zkevm_word_type((((integral_type(1) << 8 * (32 - len)) - 1) << 8 * len) * sign) + zkevm_word_type((integral_type(x) << (8 * (32 - len) + 1)) >>(8 * (32 - len) + 1));
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 5;
                         } else if (opcode == zkevm_opcode::LT){
                             // 0x10
                             zkevm_word_type a = stack.back();

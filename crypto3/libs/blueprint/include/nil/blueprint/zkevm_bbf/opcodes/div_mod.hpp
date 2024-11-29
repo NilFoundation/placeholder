@@ -160,8 +160,6 @@ namespace nil {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         zkevm_word_type a = current_state.stack_top();
                         zkevm_word_type b = current_state.stack_top(1);
-
-
                         integral_type r_integral =
                             b != 0u ? integral_type(a) / integral_type(b) : 0u;
                         zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
@@ -326,18 +324,18 @@ namespace nil {
                                   3);  // rw_counter transition
                         std::vector<TYPE> tmp;
 
-                        // tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                        //        current_state.call_id(0),
-                        //        current_state.stack_size(0) - 1,
-                        //        TYPE(0),  // storage_key_hi
-                        //        TYPE(0),  // storage_key_lo
-                        //        TYPE(0),  // field
-                        //        current_state.rw_counter(0),
-                        //        TYPE(0),  // is_write
-                        //        A0,
-                        //        A1};
-                        // lookup(tmp, "zkevm_rw");
-                        /*
+                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
+                               current_state.call_id(0),
+                               current_state.stack_size(0) - 1,
+                               TYPE(0),  // storage_key_hi
+                               TYPE(0),  // storage_key_lo
+                               TYPE(0),  // field
+                               current_state.rw_counter(0),
+                               TYPE(0),  // is_write
+                               A0,
+                               A1};
+                        lookup(tmp, "zkevm_rw");
+                        
                         tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
                                current_state.call_id(0),
                                current_state.stack_size(0) - 2,
@@ -360,7 +358,7 @@ namespace nil {
                                TYPE(1),  // is_write
                                Res0,
                                Res1};
-                        lookup(tmp, "zkevm_rw");*/
+                        lookup(tmp, "zkevm_rw");
                     }
 
                 }
