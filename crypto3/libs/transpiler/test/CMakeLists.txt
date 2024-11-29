@@ -25,7 +25,9 @@ macro(define_transpiler_test name)
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(transpiler_${name}_test PRIVATE "-fconstexpr-steps=2147483647")
-    endif()
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(transpiler_${name}_test PRIVATE "-fconstexpr-ops-limit=4294967295")
+    endif ()
 
     target_include_directories(transpiler_${name}_test PRIVATE
                                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
