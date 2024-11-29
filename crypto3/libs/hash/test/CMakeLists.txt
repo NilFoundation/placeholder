@@ -44,9 +44,13 @@ macro(define_hash_test name)
         target_compile_options(${test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
+    target_precompile_headers(${test_name} REUSE_FROM _cm_internal_tests-crypto3-hash-test)
 endmacro()
 
 set(TESTS_NAMES
+    "tiger"
+    "blake2b"
+    "crc"
     "keccak"
     "pack"
     "sha2"
