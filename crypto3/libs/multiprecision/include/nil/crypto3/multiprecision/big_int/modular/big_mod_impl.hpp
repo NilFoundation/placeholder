@@ -16,6 +16,7 @@
 #include <climits>
 #include <cstddef>
 #include <functional>
+#include <ios>
 #include <ostream>
 #include <string>
 #include <type_traits>
@@ -61,7 +62,7 @@ namespace nil::crypto3::multiprecision {
 
             // String conversion
 
-            constexpr std::string str() const { return base().str() + " mod " + mod().str(); }
+            constexpr std::string str(std::ios_base::fmtflags flags = {}) const { return base().str(flags); }
 
             // Mathemetical operations
 
@@ -338,7 +339,7 @@ namespace nil::crypto3::multiprecision {
 
     template<typename T, std::enable_if_t<detail::is_big_mod_v<T>, int> = 0>
     std::ostream& operator<<(std::ostream& os, const T& value) {
-        os << value.str();
+        os << value.str(os.flags());
         return os;
     }
 
