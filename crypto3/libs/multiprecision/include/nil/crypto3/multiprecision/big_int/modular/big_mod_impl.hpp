@@ -62,7 +62,7 @@ namespace nil::crypto3::multiprecision {
 
             // String conversion
 
-            constexpr std::string str(std::ios_base::fmtflags flags = {}) const { return base().str(flags); }
+            constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase | std::ios_base::uppercase) const { return base().str(flags); }
 
             // Mathemetical operations
 
