@@ -27,7 +27,7 @@
 
 #include <array>
 
-#include <nil/crypto3/block/detail/shacal/shacal_functions.hpp>
+#include <nil/crypto3/hash/detail/shacal/shacal_functions.hpp>
 
 namespace nil {
     namespace crypto3 {
