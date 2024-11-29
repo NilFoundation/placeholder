@@ -60,7 +60,7 @@ namespace nil {
             }
 
             std::set<uint32_t> selector_rows;
-            for (std::uint32_t i = 0; i < assignments.allocated_rows(); i++) {
+            for (std::uint32_t i = 0; i < assignments.rows_amount(); i++) {
                 selector_rows.insert(i);
             }
 
@@ -129,7 +129,8 @@ namespace nil {
                 //}
 
                 for (const auto& selector_row : selector_rows) {
-                    if( selector_row % (selector_rows.size()/100) == 0 ) {
+                    const std::size_t step = selector_rows.size() > 100 ? selector_rows.size()/100: selector_rows.size();
+                    if( selector_row % step == 0 ) {
                         std::cout << ".";
                         std::cout.flush();
                     }
@@ -183,7 +184,8 @@ namespace nil {
                             lookup_gates[i].tag_index);
 
                 for (const auto& selector_row : selector_rows) {
-                    if( selector_row % (selector_rows.size()/100) == 0 ) {
+                    const std::size_t step = selector_rows.size() > 100 ? selector_rows.size()/100: selector_rows.size();
+                    if( selector_row % step == 0 ) {
                         std::cout << ".";
                         std::cout.flush();
                     }
