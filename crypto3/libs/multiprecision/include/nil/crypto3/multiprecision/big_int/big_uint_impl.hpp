@@ -226,8 +226,22 @@ namespace nil::crypto3::multiprecision {
         constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
                                                                   std::ios_base::showbase |
                                                                   std::ios_base::uppercase) const {
+            if (flags & std::ios_base::dec) {
+                // TODO(ioxid): this is inefficient
+                std::string result;
+                auto copy = *this;
+                while (!copy.is_zero()) {
+                    result += static_cast<char>(static_cast<unsigned int>(copy % 10) + '0');
+                    copy /= 10;
+                }
+                std::reverse(result.begin(), result.end());
+                if (result.empty()) {
+                    result += '0';
+                }
+                return result;
+            }
             if (!(flags & std::ios_base::hex)) {
-                throw std::invalid_argument("big_uint: only hex format is supported");
+                throw std::invalid_argument("big_uint: unsupported format flags");
             }
             std::string result;
             result.reserve(used_limbs() * limb_bits / 4);

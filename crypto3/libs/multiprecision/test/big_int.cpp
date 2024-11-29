@@ -1,8 +1,8 @@
-
 #define BOOST_TEST_MODULE big_int_test
 
 #include <boost/test/unit_test.hpp>
 #include <cstdint>
+#include <ios>
 #include <utility>
 
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
@@ -25,6 +25,8 @@ BOOST_AUTO_TEST_CASE(construct_constexpr) {
     constexpr nil::crypto3::multiprecision::big_uint<60> a = 0x123_bigui60;
 }
 
+BOOST_AUTO_TEST_CASE(to_string_zero) { BOOST_CHECK_EQUAL((0x0_bigui60).str(), "0x0"); }
+
 BOOST_AUTO_TEST_CASE(to_string_trivial) { BOOST_CHECK_EQUAL((0x1_bigui60).str(), "0x1"); }
 
 BOOST_AUTO_TEST_CASE(to_string_small) { BOOST_CHECK_EQUAL((0x20_bigui60).str(), "0x20"); }
@@ -37,6 +39,24 @@ BOOST_AUTO_TEST_CASE(to_string_medium) {
 BOOST_AUTO_TEST_CASE(to_string_big) {
     constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_bigui224;
     BOOST_CHECK_EQUAL(a.str(), "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001");
+}
+
+BOOST_AUTO_TEST_CASE(to_string_decimal_zero) {
+    BOOST_CHECK_EQUAL((0x0_bigui60).str(std::ios_base::dec), "0");
+}
+
+BOOST_AUTO_TEST_CASE(to_string_decimal_trivial) { BOOST_CHECK_EQUAL((0x1_bigui60).str(std::ios_base::dec), "1"); }
+
+BOOST_AUTO_TEST_CASE(to_string_decimal_small) { BOOST_CHECK_EQUAL((0x20_bigui60).str(std::ios_base::dec), "32"); }
+
+BOOST_AUTO_TEST_CASE(to_string_decimal_medium) {
+    constexpr auto a = 0x123456789ABCDEF1234321_bigui85;
+    BOOST_CHECK_EQUAL(a.str(std::ios_base::dec), "22007822920628982396437281");
+}
+
+BOOST_AUTO_TEST_CASE(to_string_decimal_big) {
+    constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_bigui224;
+    BOOST_CHECK_EQUAL(a.str(std::ios_base::dec), "26959946667150639794667015087019630673557916260026308143510066298881");
 }
 
 BOOST_AUTO_TEST_CASE(ops) {
