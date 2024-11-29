@@ -33,12 +33,12 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       (if runTests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
-      (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       (if benchmarkTests then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       "-G Ninja"
     ];
 
+  cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = runTests; # tests are inside crypto3-tests derivation
 
   checkPhase = ''
