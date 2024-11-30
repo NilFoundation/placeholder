@@ -2,7 +2,7 @@
 // Copyright (c) 2021-2022 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2021-2022 Nikita Kaskov <nbering@nil.foundation>
 // Copyright (c) 2022 Alisa Cherniaeva <a.cherniaeva@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <d.tabalin@nil.foundation>
+// Copyright (c) 2024 Antoine Cyr <antoinecyr@nil.foundation>
 //
 // MIT License
 //
@@ -32,6 +32,9 @@
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
+
+#include <nil/blueprint/bbf/circuit_builder.hpp>
+
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
@@ -43,11 +46,29 @@
 #include <nil/crypto3/random/algebraic_engine.hpp>
 
 using namespace nil;
+using namespace nil::blueprint;
 
 template<typename BlueprintFieldType>
 void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_input,
                    std::vector<typename BlueprintFieldType::value_type> expected_res) {
+
     using FieldType = BlueprintFieldType;
+
+    typename bbf::components::flexible_poseidon<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
+    raw_input.state = public_input;
+
+    auto B = bbf::circuit_builder<FieldType,bbf::components::flexible_poseidon>();
+    auto [at, A] = B.assign(raw_input);
+    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+
+    for (std::uint32_t i = 0; i < public_input.size(); i++) {
+        std::cout << "input[" << i << "]   : " << public_input[i].data << "\n";
+        std::cout << "expected[" << i << "]: " << expected_res[i].data << "\n";
+        std::cout << "real[" << i << "]    : " << A.res[i] << "\n";
+        assert(expected_res[i] == A.res[i]);
+    }
+
+/*
     using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<FieldType>;
     using AssignmentType = blueprint::assignment<ArithmetizationType>;
     using stage = nil::blueprint::bbf::GenerationStage;
@@ -75,14 +96,7 @@ void test_poseidon(std::vector<typename BlueprintFieldType::value_type> public_i
 
     Flexible_Poseidon c1 = Flexible_Poseidon(ct, input);
 
-    for (std::uint32_t i = 0; i < input.size(); i++) {
-#ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
-        std::cout << "input[" << i << "]   : " << public_input[i].data << "\n";
-        std::cout << "expected[" << i << "]: " << expected_res[i].data << "\n";
-        std::cout << "real[" << i << "]    : " << c1.res[i] << "\n";
-#endif
-        assert(expected_res[i] == c1.res[i]);
-    }
+*/
 }
 
 template<typename FieldType, typename PolicyType>
