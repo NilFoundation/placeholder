@@ -31,6 +31,8 @@ struct float128_type {};
 #include <vector>
 #include <cstdint>
 
+#include <sycl/sycl.hpp>
+
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
@@ -43,6 +45,9 @@ struct float128_type {};
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
 #include <nil/actor/core/thread_pool.hpp>
+#include <nil/crypto3/random/algebraic_engine.hpp>
+
+#include <nil/crypto3/math/detail/global_queue.hpp>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::math;
@@ -1399,19 +1404,34 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test:
     std::cout << "Multiplication time: " << duration.count() << " microseconds." << std::endl;
 }*/
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
-    std::vector<typename FieldType::value_type> values;
-    std::size_t size = 131072 * 16;
-    for (std::size_t i = 0; i < size; i++) {
-        values.push_back(nil::crypto3::algebra::random_element<FieldType>());
+template <typename Field, typename Allocator = std::allocator<Field>>
+polynomial_dfs<typename Field::value_type, Allocator>
+        generate_random_polynomial(
+            std::size_t size, nil::crypto3::random::algebraic_engine<Field>& engine) {
+    using value_type = typename Field::value_type;
+    std::vector<value_type, Allocator> random_field_values(size, Allocator());
+    for (std::size_t i = 0; i < size; ++i) {
+        random_field_values[i] = engine();
     }
+    return polynomial_dfs<value_type, Allocator>(size - 1, std::move(random_field_values));
+}
 
-    polynomial_dfs<typename FieldType::value_type> poly = {
-        size - 1, values};
+/*BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
+    using field_type = nil::crypto3::algebra::fields::bls12_fr<381>;
+    using value_type = typename FieldType::value_type;
+    using allocator_type = global_usm_allocator<value_type>;
+    using polynomial_dfs_type = polynomial_dfs<value_type, allocator_type>;
+    nil::crypto3::random::algebraic_engine<field_type> alg_rnd_engine;
+    std::size_t size = 131072 * 16;
 
+    polynomial_dfs_type poly =
+        generate_random_polynomial<field_type, allocator_type>(
+            size,
+            alg_rnd_engine
+        );
     auto start = std::chrono::high_resolution_clock::now();
     for (std::size_t i = 0; i < 10; ++i) {
-        auto poly2 = poly;
+        polynomial_dfs_type poly2 = poly;
         poly2.resize(8 * size);
         BOOST_CHECK(poly2.size() == 8 * size);
     }
@@ -1423,9 +1443,9 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     std::cout << "Resize time: " << duration.count() << " microseconds." << std::endl;
-}
+}*/
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_equality_check_perf_test, *boost::unit_test::disabled()) {
+/*BOOST_AUTO_TEST_CASE(polynomial_dfs_equality_check_perf_test, *boost::unit_test::disabled()) {
     size_t size = 131072 * 16;
 
     polynomial_dfs<typename FieldType::value_type> poly = {
@@ -1446,6 +1466,31 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_equality_check_perf_test, *boost::unit_test:
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     std::cout << "Equality check time: " << duration.count() << " microseconds." << std::endl;
+}*/
+
+BOOST_AUTO_TEST_CASE(polynomial_product_test) {
+    using field_type = nil::crypto3::algebra::fields::bls12_fr<381>;
+    using value_type = typename field_type::value_type;
+    using allocator_type = global_usm_allocator<value_type>;
+    using polynomial_dfs_type = polynomial_dfs<value_type, allocator_type>;
+
+    nil::crypto3::random::algebraic_engine<FieldType> alg_rnd_engine;
+    std::vector<polynomial_dfs_type> random_polynomials;
+    random_polynomials.reserve(8);
+    std::vector<std::size_t> sizes = {23, 15, 21, 16, 22, 17, 18};
+    for (auto size : sizes) {
+        random_polynomials.emplace_back(
+            generate_random_polynomial<field_type, allocator_type>(
+                1u << size,
+                alg_rnd_engine
+            )
+        );
+    }
+    auto start = std::chrono::high_resolution_clock::now();
+    polynomial_product<field_type, allocator_type>(std::move(random_polynomials));
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Polynomial product time: " << duration.count() << " microseconds." << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

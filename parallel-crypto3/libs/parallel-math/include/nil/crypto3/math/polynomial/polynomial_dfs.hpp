@@ -35,6 +35,8 @@
 #include <iterator>
 #include <unordered_map>
 
+#include <sycl/sycl.hpp>
+
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
@@ -42,6 +44,8 @@
 
 #include <nil/actor/core/thread_pool.hpp>
 #include <nil/actor/core/parallelization_utils.hpp>
+
+#include <nil/crypto3/math/detail/global_queue.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -72,6 +76,11 @@ namespace nil {
 
                 // Default constructor creates a zero polynomial of degree 0 and size 1.
                 polynomial_dfs() : val(1, FieldValueType::zero()), _d(0) {
+                }
+
+                polynomial_dfs(const polynomial_dfs& x) {
+                    val = x.val;
+                    _d = x._d;
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n) : val(n, FieldValueType::zero()), _d(d) {
@@ -108,29 +117,20 @@ namespace nil {
 
                 ~polynomial_dfs() = default;
 
-                polynomial_dfs(const polynomial_dfs& x) : val(x.val), _d(x._d) {
-                }
+                template<typename A = Allocator>
+                polynomial_dfs(const polynomial_dfs& x, const allocator_type& a = Allocator())
+                    : val(x.val, a), _d(x._d) {}
 
-                polynomial_dfs(const polynomial_dfs& x, const allocator_type& a) : val(x.val, a), _d(x._d) {
-                }
-
-                polynomial_dfs(std::size_t d, std::initializer_list<value_type> il) : val(il), _d(d) {
-                }
-
-                polynomial_dfs(size_t d, std::initializer_list<value_type> il, const allocator_type& a) :
+                template<typename A = Allocator>
+                polynomial_dfs(size_t d, std::initializer_list<value_type> il, const allocator_type& a = Allocator()) :
                     val(il, a), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
                                      "DFS optimal polynomial size must be a power of two");
                 }
                 // TODO: add constructor with omega
 
-                polynomial_dfs(polynomial_dfs&& x)
-                    BOOST_NOEXCEPT(std::is_nothrow_move_constructible<allocator_type>::value)
-                    : val(std::move(x.val))
-                    , _d(x._d) {
-                }
-
-                polynomial_dfs(polynomial_dfs&& x, const allocator_type& a)
+                template<typename A = Allocator>
+                polynomial_dfs(polynomial_dfs&& x, const allocator_type& a = Allocator())
                     : val(std::move(x.val), a)
                     , _d(x._d) {
                 }
@@ -335,8 +335,8 @@ namespace nil {
                 }
 
                 void resize(size_type _sz,
-                            std::shared_ptr<evaluation_domain<typename value_type::field_type>> old_domain = nullptr,
-                            std::shared_ptr<evaluation_domain<typename value_type::field_type>> new_domain = nullptr) {
+                            std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> old_domain = nullptr,
+                            std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> new_domain = nullptr) {
                     if (this->size() == _sz)
                     {
                         return;
@@ -350,14 +350,14 @@ namespace nil {
                     } else {
                         typedef typename value_type::field_type FieldType;
                         if (old_domain == nullptr) {
-                            old_domain = make_evaluation_domain<FieldType>(this->size());
+                            old_domain = make_evaluation_domain<FieldType, value_type, Allocator>(this->size());
                         } else {
                             BOOST_ASSERT_MSG(old_domain->size() == this->size(), "Old domain size is not equal to the polynomial size");
                         }
                         old_domain->inverse_fft(this->val);
                         this->val.resize(_sz, FieldValueType::zero());
                         if (new_domain == nullptr) {
-                            new_domain = make_evaluation_domain<FieldType>(_sz);
+                            new_domain = make_evaluation_domain<FieldType, value_type, Allocator>(_sz);
                         } else {
                             BOOST_ASSERT_MSG(new_domain->size() == _sz, "New domain size is not equal to the polynomial size");
                         }
@@ -542,9 +542,9 @@ namespace nil {
                  */
                 polynomial_dfs& cached_multiplication(
                         const polynomial_dfs& other,
-                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> domain = nullptr,
-                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> other_domain = nullptr,
-                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> new_domain = nullptr) {
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> domain = nullptr,
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> other_domain = nullptr,
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> new_domain = nullptr) {
 
                     const size_t polynomial_s =
                         detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
@@ -634,7 +634,7 @@ namespace nil {
                 }
 
                 std::vector<FieldValueType> coefficients(
-                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> domain = nullptr) const {
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> domain = nullptr) const {
                     typedef typename value_type::field_type FieldType;
                     value_type omega = unity_root<FieldType>(this->size());
                     std::vector<FieldValueType> tmp(this->begin(), this->end());
@@ -859,13 +859,14 @@ namespace nil {
                 return dfs_result;
             }
 
-            template<typename FieldType>
-            static inline polynomial_dfs<typename FieldType::value_type> polynomial_product(
-                    std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers) {
+            template<typename FieldType, typename Allocator = std::allocator<typename FieldType::value_type>>
+            static inline polynomial_dfs<typename FieldType::value_type, Allocator> polynomial_product(
+                    std::vector<math::polynomial_dfs<typename FieldType::value_type, Allocator>> multipliers) {
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
                 // parallelization-friendly. This single-threaded version may look a bit complicated,
                 // but it's now very similar to what we have in parallel code.
-                std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType>>> domain_cache;
+                using value_type = typename FieldType::value_type;
+                std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType, value_type, Allocator>>> domain_cache;
 
                 std::size_t min_domain_size = std::numeric_limits<std::size_t>::max();
                 std::size_t max_domain_size = 0;
@@ -888,7 +889,7 @@ namespace nil {
                 // We cannot use LOW level thread pool here, make_evaluation_domain uses it.
                 parallel_foreach(needed_domain_sizes.begin(), needed_domain_sizes.end(),
                     [&domain_cache](std::size_t domain_size) {
-                        domain_cache[domain_size] = make_evaluation_domain<FieldType>(domain_size);
+                        domain_cache[domain_size] = make_evaluation_domain<FieldType, value_type, Allocator>(domain_size);
                     }, ThreadPool::PoolLevel::HIGH);
 
                 for (std::size_t stride = 1; stride < multipliers.size(); stride <<= 1) {
@@ -899,8 +900,7 @@ namespace nil {
                         max_i++;
 
                     // We can't use LOW level thread pool here, it's used in cached_multiplication.
-                    parallel_for(0, max_i,
-                        [&multipliers, &domain_cache, stride, double_stride](std::size_t i) {
+                    for (std::size_t i = 0; i < max_i; ++i) {
                             std::size_t index1 = i * double_stride;
                             std::size_t index2 = index1 + stride;
 
@@ -919,8 +919,8 @@ namespace nil {
                                 domain_cache[new_domain_size]);
 
                             // Free the memory we are not going to use anymore.
-                            multipliers[index2] = polynomial_dfs<typename FieldType::value_type>();
-                    }, ThreadPool::PoolLevel::HIGH);
+                            multipliers[index2] = polynomial_dfs<value_type, Allocator>();
+                    }
                 }
                 return multipliers[0];
             }

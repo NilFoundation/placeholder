@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <nil/crypto3/math/detail/global_queue.hpp>
+
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -49,11 +51,11 @@ namespace nil {
                 /*
                  * Building caches for fft operations
                 */
-                template<typename FieldType>
+                template<typename FieldType, typename Allocator = std::allocator<typename FieldType::value_type>>
                 void create_fft_cache(
                         const std::size_t size,
                         const typename FieldType::value_type &omega,
-                        std::vector<typename FieldType::value_type> &cache) {
+                        std::vector<typename FieldType::value_type, Allocator> &cache) {
                     typedef typename FieldType::value_type value_type;
                     cache.resize(size, FieldType::value_type::zero());
                     wait_for_all(parallel_run_in_chunks<void>(
@@ -70,8 +72,8 @@ namespace nil {
                  * Below we make use of pseudocode from [CLRS 2n Ed, pp. 864].
                  * Also, note that it's the caller's responsibility to multiply by 1/N.
                  */
-                template<typename FieldType, typename Range>
-                void basic_radix2_fft_cached(Range &a, const std::vector<typename FieldType::value_type> &omega_cache) {
+                template<typename FieldType, typename Range, typename Allocator = std::allocator<typename FieldType::value_type>>
+                void basic_radix2_fft_cached(Range &a, const std::vector<typename FieldType::value_type, Allocator> &omega_cache) {
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;
                     BOOST_STATIC_ASSERT(algebra::is_field<FieldType>::value);
@@ -83,57 +85,52 @@ namespace nil {
                     if (n != (1u << logn))
                         throw std::invalid_argument("expected n == (1u << logn)");
 
-                    auto a_buffer = sycl::buffer<typename FieldType::value_type, 1>(
-                        a.data(), n, sycl::property::buffer::use_host_ptr{});
-                    sycl::queue q;
+
+                    value_type* a_ptr = a.data();
+                    const value_type* omega_cache_ptr = omega_cache.data();
                     // swapping in place (from Storer's book)
                     // We can parallelize this look, since k and rk are pairs, they will never intersect.
-                    q.submit([&](sycl::handler &cgh) {
-                        auto a_acc = a_buffer. template get_access<sycl::access::mode::read_write>(cgh);
-                        cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> idx) {
+                    GLOBAL_QUEUE.submit([&](sycl::handler &cgh) {
+                        cgh.parallel_for(sycl::range<1>(n), [a_ptr, logn](sycl::id<1> idx) {
                             const std::size_t ridx = crypto3::math::detail::bitreverse(idx, logn);
-                            if (idx < ridx)
-                                std::swap(a_acc[idx], a_acc[ridx]);
+                            if (idx < ridx) {
+                                std::swap(a_ptr[idx], a_ptr[ridx]);
+                            }
                         });
                     });
-                    q.wait();
-                    auto omega_cache_buffer =
-                        sycl::buffer<typename FieldType::value_type, 1>(
-                            omega_cache.data(), n, sycl::property::buffer::use_host_ptr{});
+                    GLOBAL_QUEUE.wait();
                     // invariant: m = 2^{s-1}
                     for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
                         const size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
-                        q.submit([&](sycl::handler &cgh) {
-                            auto a_acc = a_buffer. template get_access<sycl::access::mode::read_write>(cgh);
-                            auto omega_acc = omega_cache_buffer. template get_access<sycl::access::mode::read>(cgh);
-                            cgh.parallel_for(sycl::range<1>(count_k * m), [=](sycl::id<1> index) {
+                        GLOBAL_QUEUE.submit([&](sycl::handler &cgh) {
+                            cgh.parallel_for(sycl::range<1>(count_k * m), [a_ptr, omega_cache_ptr, m, inc](sycl::id<1> index) {
                                 const std::size_t k = (index / m) * m * 2;
                                 const std::size_t j = index % m;
                                 const std::size_t idx = j * inc;
-                                const value_type t = a_acc[k + j + m] * omega_acc[idx];
-                                a_acc[k + j + m] = a_acc[k + j];
-                                a_acc[k + j + m] -= t;
-                                a_acc[k + j] += t;
+                                const value_type t = a_ptr[k + j + m] * omega_cache_ptr[idx];
+                                a_ptr[k + j + m] = a_ptr[k + j];
+                                a_ptr[k + j + m] -= t;
+                                a_ptr[k + j] += t;
                             });
                         });
-                        q.wait();
+                        GLOBAL_QUEUE.wait();
                     }
                 }
 
                 /**
                  * Note that it's the caller's responsibility to multiply by 1/N.
                  */
-                template<typename FieldType, typename Range>
+                template<typename FieldType, typename Range, typename Allocator = std::allocator<typename FieldType::value_type>>
                 void basic_radix2_fft(
                     Range &a, const typename FieldType::value_type &omega,
-                    std::shared_ptr<std::vector<typename FieldType::value_type>> omega_cache = nullptr) {
+                    std::shared_ptr<std::vector<typename FieldType::value_type, Allocator>> omega_cache = nullptr) {
 
                     if (omega_cache == nullptr) {
-                        std::vector<typename FieldType::value_type> omega_powers;
-                        create_fft_cache<FieldType>(a.size(), omega, omega_powers);
-                        basic_radix2_fft_cached<FieldType>(a, omega_powers);
+                        std::vector<typename FieldType::value_type, Allocator> omega_powers;
+                        create_fft_cache<FieldType, Allocator>(a.size(), omega, omega_powers);
+                        basic_radix2_fft_cached<FieldType, Allocator>(a, omega_powers);
                     } else {
-                        basic_radix2_fft_cached<FieldType>(a, *omega_cache);
+                        basic_radix2_fft_cached<FieldType, Allocator>(a, *omega_cache);
                     }
                 }
 
@@ -141,14 +138,14 @@ namespace nil {
                  * Compute the m Lagrange coefficients, relative to the set S={omega^{0},...,omega^{m-1}}, at the
                  * field element t.
                  */
-                template<typename FieldType>
-                std::vector<typename FieldType::value_type>
+                template<typename FieldType, typename Allocator = std::allocator<typename FieldType::value_type>>
+                std::vector<typename FieldType::value_type, Allocator>
                     basic_radix2_evaluate_all_lagrange_polynomials(const std::size_t m,
                                                                    const typename FieldType::value_type &t) {
                     typedef typename FieldType::value_type value_type;
 
                     if (m == 1) {
-                        return std::vector<value_type>(1, value_type::one());
+                        return std::vector<value_type, Allocator>(1, value_type::one());
                     }
 
                     if (m != (1u << static_cast<std::size_t>(std::ceil(std::log2(m)))))
@@ -156,7 +153,7 @@ namespace nil {
 
                     const value_type omega = unity_root<FieldType>(m);
 
-                    std::vector<value_type> u(m, value_type::zero());
+                    std::vector<value_type, Allocator> u(m, value_type::zero());
 
                     /*
                      If t equals one of the roots of unity in S={omega^{0},...,omega^{m-1}}

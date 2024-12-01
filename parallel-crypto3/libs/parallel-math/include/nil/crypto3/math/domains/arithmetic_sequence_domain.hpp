@@ -42,11 +42,12 @@ namespace nil {
 
             using namespace nil::crypto3::algebra;
 
-            template<typename FieldType, typename ValueType>
+            template<typename FieldType, typename ValueType, typename Allocator>
             class evaluation_domain;
 
-            template<typename FieldType, typename ValueType = typename FieldType::value_type>
-            class arithmetic_sequence_domain : public evaluation_domain<FieldType, ValueType> {
+            template<typename FieldType, typename ValueType = typename FieldType::value_type,
+                     typename Allocator = std::allocator<ValueType>>
+            class arithmetic_sequence_domain : public evaluation_domain<FieldType, ValueType, Allocator> {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
 
