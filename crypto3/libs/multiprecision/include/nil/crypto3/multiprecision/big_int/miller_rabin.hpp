@@ -5,14 +5,15 @@
 
 #pragma once
 
+#include <boost/random.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <type_traits>
 #include <random>
+#include <type_traits>
 
-#include <boost/random.hpp>
-
+#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/common_ops.hpp"
 #include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision {

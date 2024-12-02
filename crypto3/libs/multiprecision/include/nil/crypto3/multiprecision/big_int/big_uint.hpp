@@ -5,6 +5,7 @@
 #include "nil/crypto3/multiprecision/big_int/ops/gcd_inverse.hpp"    // IWYU pragma: export
 #include "nil/crypto3/multiprecision/big_int/ops/import_export.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/big_int/ops/jacobi.hpp"         // IWYU pragma: export
+#include "nil/crypto3/multiprecision/big_int/ops/powm.hpp"           // IWYU pragma: export
 #include "nil/crypto3/multiprecision/big_int/ops/ressol.hpp"         // IWYU pragma: export
 #include "nil/crypto3/multiprecision/big_int/ops/wnaf.hpp"           // IWYU pragma: export
 
