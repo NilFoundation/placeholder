@@ -1129,6 +1129,11 @@ namespace nil {
                 return true;
             }
 
+            const ConstraintSystem& get_constraint_system() const {
+                BOOST_ASSERT(constraint_system_);
+                return constraint_system_.value();
+            }
+
             bool fill_assignment_table(const boost::filesystem::path& trace_file_path) {
                 if (!constraint_system_.has_value()) {
                     BOOST_LOG_TRIVIAL(error) << "Circuit is not initialized";
@@ -1144,6 +1149,16 @@ namespace nil {
                     return false;
                 }
                 return true;
+            }
+
+            const AssignmentTable& get_assignment_table() const {
+                BOOST_ASSERT(assignment_table_);
+                return assignment_table_.value();
+            }
+
+            const TableDescription& get_table_description() const {
+                BOOST_ASSERT(table_description_);
+                return table_description_.value();
             }
 
         private:

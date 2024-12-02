@@ -27,6 +27,14 @@ if(ZK_PLACEHOLDER_DEBUG)
     add_definitions(-DZK_PLACEHOLDER_DEBUG_ENABLED)
 endif()
 
+set(PROOF_PRODUCER_INCLUDES ${CURRENT_PROJECT_NAME}_include)
+add_library(${PROOF_PRODUCER_INCLUDES} INTERFACE)
+target_include_directories(${PROOF_PRODUCER_INCLUDES} INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+add_library(${CURRENT_PROJECT_NAME}::include ALIAS ${PROOF_PRODUCER_INCLUDES})
+
 # Function to setup common properties for a target
 function(setup_proof_generator_target)
     set(options "")
@@ -45,6 +53,7 @@ function(setup_proof_generator_target)
         Boost::log
         Boost::thread
         proof_generatorPreset
+        ${PROOF_PRODUCER_INCLUDES}
     )
     # Make sure to add these dependencies before the others, since for multi-threaded version dependency on
     # actor-zk must come first.
@@ -59,11 +68,6 @@ function(setup_proof_generator_target)
         Boost::program_options
         proof_generatorAssigner
         proof_generatorOutputArtifacts)
-
-    target_include_directories(${ARG_TARGET_NAME} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-    )
 
     set_target_properties(${ARG_TARGET_NAME} PROPERTIES
         LINKER_LANGUAGE CXX
