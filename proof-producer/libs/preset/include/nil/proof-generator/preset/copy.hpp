@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 #include <nil/blueprint/zkevm_bbf/copy.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
@@ -14,13 +15,12 @@ namespace nil {
 
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_copy_circuit(
-            std::optional<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& copy_circuit,
+            std::optional<blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& copy_circuit,
             std::optional<crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& copy_table) {
 
             namespace snark = crypto3::zk::snark;
             namespace bbf = nil::blueprint::bbf;
 
-            using AruthmetizationType = snark::plonk_constraint_system<BlueprintFieldType>;
             using ComponentType = bbf::copy<BlueprintFieldType, bbf::GenerationStage::CONSTRAINTS>;
 
 

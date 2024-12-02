@@ -26,7 +26,6 @@
 #ifndef CRYPTO3_BLUEPRINT_UTILS_PLONK_SATISFIABILITY_CHECK_HPP
 #define CRYPTO3_BLUEPRINT_UTILS_PLONK_SATISFIABILITY_CHECK_HPP
 
-#include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/table_description.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
@@ -43,7 +42,7 @@ namespace nil {
         template<typename BlueprintFieldType>
         bool is_satisfied(
             const circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-            const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &assignments) {
+            const crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignments) {
             std::set<uint32_t> used_gates;
             for (std::uint32_t i = 0; i < bp.gates().size(); i++) {
                 used_gates.insert(i);
@@ -71,7 +70,7 @@ namespace nil {
         std::set<std::vector<typename BlueprintFieldType::value_type>>
         load_dynamic_lookup(
             const circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-            const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &assignments,
+            const crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignments,
             std::size_t table_id
         ){
             std::set<std::vector<typename BlueprintFieldType::value_type>> result;
@@ -103,7 +102,7 @@ namespace nil {
         template<typename BlueprintFieldType>
         bool is_satisfied(
             const circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
-            const assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &assignments,
+            const crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType> &assignments,
             const std::set<std::uint32_t> &used_gates,
             const std::set<std::uint32_t> &used_lookup_gates,
             const std::set<std::uint32_t> &used_copy_constraints,
