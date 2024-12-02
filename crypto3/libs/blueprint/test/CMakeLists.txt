@@ -90,15 +90,8 @@ set(COMMON_TEST_FILES
     "proxy"
     #"mock/mocked_components"
     "component_batch"
-    "bbf/tester"
-    "bbf/opcode_poc"
-    "bbf/row_seletor_test"
+    "bbf/bbf_wrapper"
     "bbf/gate_optimizer"
-    "bbf/poseidon"
-    "bbf/test_circuit_builder"
-    "bbf/keccak_round"
-    "bbf/keccak_dynamic"
-    "bbf/no_assignment_checks"
     )
 
 set(NON_NATIVE_TESTS_FILES
