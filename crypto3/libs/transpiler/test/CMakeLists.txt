@@ -10,7 +10,7 @@ include(CMTest)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                       crypto3::algebra
-                      crypto3::hash
+                      crypto3::hash_precompiled
                       crypto3::marshalling-algebra
                       crypto3::marshalling-zk
                       crypto3::math

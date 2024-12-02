@@ -142,6 +142,15 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 
                            $<$<BOOL:${Boost_FOUND}>:${Boost_INCLUDE_DIRS}>)
 
+add_library(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_precompiled STATIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/nil/crypto3/hash/detail/poseidon/poseidon_constants.hpp>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/nil/crypto3/hash/detail/poseidon/original_constants.hpp>"
+)
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_precompiled INTERFACE
+                      ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
+set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_precompiled PROPERTIES LINKER_LANGUAGE CXX)
+add_library(${CMAKE_WORKSPACE_NAME}::${CURRENT_PROJECT_NAME}_precompiled ALIAS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_precompiled)
+
 if(${CMAKE_TARGET_ARCHITECTURE} STREQUAL "x86_64" OR ${CMAKE_TARGET_ARCHITECTURE} STREQUAL "x86")
     if(CXX_AVX512_FOUND)
         target_compile_definitions(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
