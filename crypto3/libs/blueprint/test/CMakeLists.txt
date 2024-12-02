@@ -84,6 +84,7 @@ set(COMMON_TEST_FILES
     #"mock/mocked_components"
     "component_batch"
     "bbf/bbf_wrapper"
+    "bbf/gate_optimizer"
     )
 
 set(NON_NATIVE_TESTS_FILES
