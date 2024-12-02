@@ -47,25 +47,16 @@
 
 template<class T>
 T generate_random() {
-    static const unsigned limbs = std::numeric_limits<T>::is_specialized && std::numeric_limits<T>::is_bounded ?
-                                      std::numeric_limits<T>::digits / std::numeric_limits<unsigned>::digits + 3 :
-                                      20;
+    static_assert(std::numeric_limits<T>::is_specialized
+                  && std::numeric_limits<T>::is_bounded
+                  && std::numeric_limits<T>::is_integer
+                  && std::numeric_limits<T>::radix == 2, "Only integer types are supported");
 
-    static boost::random::uniform_int_distribution<unsigned> ui(0, limbs);
+    static boost::random::uniform_int_distribution<std::size_t> len_distr(1, std::numeric_limits<T>::digits);
     static boost::random::mt19937 gen;
-    T val = gen();
-    unsigned lim = ui(gen);
-    for (unsigned i = 0; i < lim; ++i) {
-        val *= (gen.max)();
-        val += gen();
-    }
-    // If we overflow the number, like it was 23 bits, but we filled 1 limb of 64 bits,
-    // or it was 254 bits but we filled the upper 2 bits, the number will not complain.
-    // Nothing will be thrown, but errors will happen. The caller is responsible to not do so.
-    // TODO(ioxid): return?
-    // val.normalize();
-
-    return val;
+    std::size_t len = len_distr(gen);
+    boost::random::uniform_int_distribution<T> num_distr(T(1) << (len - 1), len == std::numeric_limits<T>::digits ? ~T(0) : (T(1) << len) - 1);
+    return num_distr(gen);
 }
 
 template<typename TIter>
