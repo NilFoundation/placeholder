@@ -18,7 +18,7 @@
 #include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/big_int/modular/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/big_int/modular/ops/powm.hpp"
+#include "nil/crypto3/multiprecision/big_int/modular/ops/pow.hpp"
 #include "nil/crypto3/multiprecision/big_int/ops/jacobi.hpp"
 #include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
@@ -64,7 +64,7 @@ namespace nil::crypto3::multiprecision {
             ++exp_padded;
             exp_padded >>= 2u;
 
-            return powm(a_mod, big_uint_t(exp_padded)).base();
+            return pow(a_mod, big_uint_t(exp_padded)).base();
         }
 
         big_uint_t p_negone = p;
@@ -78,8 +78,8 @@ namespace nil::crypto3::multiprecision {
 
         montgomery_big_mod_rt<Bits> n_mod = a_mod;
 
-        auto r_mod = powm(a_mod, q);
-        auto r_sq_mod = powm(r_mod, two);
+        auto r_mod = pow(a_mod, q);
+        auto r_sq_mod = pow(r_mod, two);
         n_mod *= r_sq_mod;
         r_mod *= a_mod;
 
@@ -101,7 +101,7 @@ namespace nil::crypto3::multiprecision {
 
         montgomery_big_mod_rt<Bits> z_mod(z, p);
 
-        auto c_mod = powm(z_mod, q);
+        auto c_mod = pow(z_mod, q);
 
         while (n_mod.base() > 1u) {
             std::size_t i = 0u;
@@ -109,7 +109,7 @@ namespace nil::crypto3::multiprecision {
             auto q_mod = n_mod;
 
             while (q_mod.base() != 1u) {
-                q_mod = powm(q_mod, two);
+                q_mod = pow(q_mod, two);
                 ++i;
 
                 if (i >= s) {
@@ -122,9 +122,9 @@ namespace nil::crypto3::multiprecision {
             big_uint_t power_of_2;
 
             power_of_2.bit_set(s - i - 1);
-            c_mod = powm(c_mod, power_of_2);
+            c_mod = pow(c_mod, power_of_2);
             r_mod *= c_mod;
-            c_mod = powm(c_mod, two);
+            c_mod = pow(c_mod, two);
             n_mod *= c_mod;
 
             s = i;

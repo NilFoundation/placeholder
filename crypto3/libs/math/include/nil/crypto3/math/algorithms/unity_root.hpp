@@ -99,7 +99,7 @@ namespace nil {
                 }
 
                 nil::crypto3::multiprecision::big_mod_rt<Bits>
-                        gen(find_generator(modulo), modulo), result = nil::crypto3::multiprecision::powm(gen, (modulo - 1) / M);
+                        gen(find_generator(modulo), modulo), result = nil::crypto3::multiprecision::pow(gen, (modulo - 1) / M);
                 if (result == 1u) {
                     result = unity_root(m, modulo);
                 }
