@@ -32,7 +32,6 @@
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
 
-// #include <boost/multiprecision/cpp_int.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
 namespace nil {
@@ -325,101 +324,6 @@ namespace nil {
                     return result;
                 }
             };
-
-            /*
-             * Small and big signed numbers. This one is different from the others, it accepts 
-             * boost::multiprecision::cpp_int_backend, which is not supposed to be used in algebra, so 
-             * conversions need to happen before it can be used.
-            */
-        //     template<typename BlueprintFieldType, unsigned BitsAmount>
-        //     struct basic_non_native_policy_field_type<BlueprintFieldType,
-        //             boost::multiprecision::number<
-        //                 boost::multiprecision::cpp_int_backend<BitsAmount, BitsAmount,
-        //                     boost::multiprecision::signed_magnitude,
-        //                     boost::multiprecision::unchecked, void>>> {
-
-        //         constexpr static const std::uint32_t ratio = BitsAmount < 256 ? 2 : 3; // sign and all other bits
-        //         static constexpr std::array<std::size_t, ratio> chunk_sizes_init() {
-        //             if constexpr (BitsAmount < 256) {
-        //                 return {1, BitsAmount - 1};
-        //             } else {
-        //                 return {1, 127, 128};
-        //             }
-        //         }
-
-        //         // not actually a field, but we preserve the interface
-        //         using non_native_field_type = typename boost::multiprecision::number<
-        //                 boost::multiprecision::cpp_int_backend<BitsAmount, BitsAmount,
-        //                 boost::multiprecision::signed_magnitude,
-        //                 boost::multiprecision::unchecked, void>>;
-
-        //         using non_native_unsigned_integral_type = typename boost::multiprecision::number<
-        //                 boost::multiprecision::cpp_int_backend<BitsAmount, BitsAmount,
-        //                 boost::multiprecision::unsigned_magnitude,
-        //                 boost::multiprecision::unchecked, void>>;
-
-        //         using native_field_type = typename crypto3::algebra::curves::pallas::base_field_type;
-        //         using native_integral_type = typename native_field_type::integral_type;
-        //         using var = crypto3::zk::snark::plonk_variable<typename native_field_type::value_type>;
-
-        //         typedef std::array<var, ratio> non_native_var_type;
-        //         typedef std::array<native_field_type::value_type, ratio> chopped_value_type;
-
-        //         constexpr static const std::array<std::size_t, ratio> chunk_sizes = chunk_sizes_init();
-
-        //         static native_field_type::value_type get_i_th_chunk(typename non_native_field_type::value_type input,
-        //                                 std::size_t i_th) {
-        //             assert(i_th < ratio && "non-native type does not have that much chunks!");
-
-        //             if constexpr (BitsAmount < 256) {
-        //                 if (i_th == 0) {
-        //                     return input.sign() == 0 ? 1 : -1;
-        //                 } else {
-        //                     return native_field_type::value_type(input.sign() == 0 ? 1 : -1) * 
-        //                         native_integral_type(native_backend_type(
-        //                             non_native_unsigned_integral_type(input).data));
-        //                 }
-        //             } else {
-        //                 static const non_native_field_type top_mask = ((non_native_field_type(1) << 128) - 1) << 128;
-        //                 static const non_native_field_type bottom_mask = (non_native_field_type(1) << 128) - 1;
-
-        //                 if (i_th == 0) {
-        //                     return input.sign() == 0 ? 1 : -1;
-        //                 } else if (i_th == 1) {
-        //                     return native_integral_type(native_backend_type(
-        //                             non_native_unsigned_integral_type(top_mask & input).data));
-        //                 } else {
-        //                     return native_integral_type(native_backend_type(
-        //                             non_native_unsigned_integral_type(bottom_mask & input).data));
-        //                 }
-        //             }
-        //         }
-
-
-        //         static chopped_value_type chop_non_native(typename non_native_field_type::value_type input) {
-        //             chopped_value_type result;
-        //             for (std::size_t i = 0; i < ratio; i++) {
-        //                 result[i] = get_i_th_chunk(input, i);
-        //             }
-        //             return result;
-        //         }
-
-        //         static typename non_native_field_type::value_type glue_non_native(chopped_value_type input) {
-        //             typename non_native_field_type::value_type result;
-        //             if constexpr (BitsAmount < 256) {
-        //                 result =
-        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[0].data)) == 0 ? 1 : -1) * non_native_field_type::value_type(native_field_type::integral_type(input[1].data));
-        //             } else {
-        //                 static const non_native_field_type two_128 =
-        //                 boost::multiprecision::pow(non_native_field_type(2), 128);
-        //                 result =
-        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[0].data)) == 0 ? 1 : -1) *
-        //                     (non_native_field_type::value_type(native_field_type::integral_type(input[1].data) * two_128 +
-        //                     non_native_field_type::value_type(input[2].data)));
-        //             }
-        //             return result;
-        //         }
-        //     };
         }    // namespace detail
 
         template<typename BlueprintFieldType>
