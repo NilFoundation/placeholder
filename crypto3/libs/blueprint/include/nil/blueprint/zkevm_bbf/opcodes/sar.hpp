@@ -155,6 +155,7 @@ namespace nil {
                     TYPE r_sum;
                     TYPE r_sum_inverse;
                     TYPE a_neg;
+                    TYPE a_neg_2;
 
                     std::vector<TYPE> a_64_chunks(4);
                     std::vector<TYPE> b_64_chunks(4);
@@ -171,8 +172,6 @@ namespace nil {
                     TYPE c_1_64;
                     TYPE c_3_64;
 
-                    TYPE c_zero;
-                    TYPE c_one;
                     TYPE b_zero;
 
                     std::vector<TYPE> input_a_chunks(chunk_amount);
@@ -337,11 +336,9 @@ namespace nil {
                             (carry[2][carry_amount - 1] + b_chunks[3 * (carry_amount - 1)] +
                              v_chunks[3 * (carry_amount - 1)]) >= two_16;
 
-                        c_zero = 0;
-                        c_one = c_zero + 1;
                         b_zero = 1 - b_sum_inverse * b_sum;
                     }
-
+                    
                     allocate(b0p_range_check, 0, 4);
                     allocate(b0pp_range_check, 1, 4);
                     allocate(b0ppp_range_check, 2, 4);
@@ -358,28 +355,28 @@ namespace nil {
                         allocate(q_chunks[i], i, 2);
                         allocate(v_chunks[i], i + chunk_amount, 2);
                         allocate(b_chunks[i], i, 3);
-                        allocate(input_b_chunks[i], i + chunk_amount, 3);
+                        allocate(input_b_chunks[i], i + chunk_amount, 4);
                         res[i] = r_chunks[i];
                         constrain(b_zero * r_chunks[i]);
                     }
-
-                    allocate(tp, 12, 4);
-                    allocate(z, 13, 4);
+                    
+                    allocate(tp, 16, 3);
+                    allocate(z, 17, 3);
                     allocate(I1, 39, 2);
                     allocate(I2, 40, 2);
                     allocate(two_powers, 41, 2);
 
                     allocate(b0p, 9, 4);
-                    allocate(b0pp, 10, 4);
-                    allocate(b0ppp, 11, 4);
+                    allocate(b0pp, 18, 3);
+                    allocate(b0ppp, 19, 3);
                     allocate(sum_part_b, 42, 2);
                     allocate(b_sum, 40, 1);
                     allocate(b_sum_inverse, 41, 1);
 
-                     constrain(tp - z * two_powers);
+                    constrain(tp - z * two_powers);
                     for (std::size_t i = 0; i < chunk_amount; i++) {
-                        allocate(indic_1[i], i + 2 * chunk_amount, 3);
-                        allocate(indic_2[i], i + 2 * chunk_amount, 4);
+                        allocate(indic_1[i], i + 2 * chunk_amount, 4);
+                        allocate(indic_2[i], i + 2 * chunk_amount, 3);
                         constrain((b0p - i) * (1 - (b0p - i) * indic_1[i]));
                         constrain((b0pp - i) * (1 - (b0pp - i) * indic_2[i]));
                         constrain(b_chunks[i] - tp * (1 - (b0pp - i) * indic_2[i]));
@@ -408,70 +405,62 @@ namespace nil {
                     constrain(third_carryless);
                     constrain(b_64_chunks[3] * r_64_chunks[3]);
 
-                    allocate(c_zero, 42, 1);
-                    allocate(c_one, 43, 1);
-                    allocate(a_neg, 44, 1);
-                    allocate(r_sum, 45, 1);
-                    allocate(r_sum_inverse, 46, 1);
-                    constrain(c_one - c_zero - 1);
-
-                    // force r = 0 if b = 0
+                    allocate(a_neg, 42, 1);
+                    allocate(r_sum, 44, 0);
+                    allocate(r_sum_inverse, 45, 0);
                     constrain(1 - b_sum_inverse * b_sum - b_zero);
-                    for (std::size_t i = 0; i < chunk_amount; i++) {
-                        constrain(b_zero * r_chunks[i]);
-                    }
 
-                    allocate(carry[0][0], 32, 0);
+                    allocate(carry[0][0], 32, 1);
                     for (std::size_t i = 0; i < carry_amount - 1; i++) {
-                        allocate(carry[0][i + 1], 33 + i, 0);
+                        allocate(carry[0][i + 1], 33 + i, 1);
                         constrain(a_neg * carry_on_addition_constraint(
                                               input_a_chunks[3 * i], input_a_chunks[3 * i + 1],
                                               input_a_chunks[3 * i + 2], a_chunks[3 * i],
-                                              a_chunks[3 * i + 1], a_chunks[3 * i + 2], c_zero,
-                                              c_zero, c_zero, carry[0][i], carry[0][i + 1],
-                                              i == 0));
+                                              a_chunks[3 * i + 1], a_chunks[3 * i + 2], 0, 0, 0,
+                                              carry[0][i], carry[0][i + 1], i == 0));
                         constrain(a_neg * carry[0][i + 1] * (1 - carry[0][i + 1]));
                     }
-                    allocate(carry[0][carry_amount], 38, 0);
+                    allocate(carry[0][carry_amount], 38, 1);
                     constrain(a_neg * last_carry_on_addition_constraint(
                                           input_a_chunks[3 * (carry_amount - 1)],
-                                          a_chunks[3 * (carry_amount - 1)], c_zero,
-                                          carry[0][carry_amount - 1], c_one));
-
+                                          a_chunks[3 * (carry_amount - 1)], 0,
+                                          carry[0][carry_amount - 1], 1));
                     // ^^^ if ever input_a + |input_a| = 2^256 is used, the last carry should be 1
-                    // since it is actually an overflow if a_neg = 0, we should have input_a= a
+
+                    // since it is an overflow, if a_neg = 0, we should have input_a= a
                     for (std::size_t i = 0; i < chunk_amount; i++) {
-                        constrain((1 - a_neg) * (input_a_chunks[i] - a_chunks[i]));
+                        constrain((1 - a_neg) *(input_a_chunks[i] - a_chunks[i]) );
                     }
 
                     constrain(r_sum * (1 - r_sum_inverse * r_sum));
 
-                    allocate(carry[1][0], 32, 1);
+                    allocate(carry[1][0], 32, 0);
                     for (std::size_t i = 0; i < carry_amount - 1; i++) {
-                        allocate(carry[1][i + 1], 33 + i, 1);
+                        allocate(carry[1][i + 1], 33 + i, 0);
                         constrain(a_neg * r_sum *
                                   carry_on_addition_constraint(
                                       results_chunks[3 * i], results_chunks[3 * i + 1],
                                       results_chunks[3 * i + 2], r_chunks[3 * i],
-                                      r_chunks[3 * i + 1], r_chunks[3 * i + 2], c_zero, c_zero,
-                                      c_zero, carry[1][i], carry[1][i + 1], i == 0));
+                                      r_chunks[3 * i + 1], r_chunks[3 * i + 2], 0, 0, 0,
+                                      carry[1][i], carry[1][i + 1], i == 0));
                         constrain(a_neg * r_sum * carry[1][i + 1] * (1 - carry[1][i + 1]));
                     }
-                    allocate(carry[1][carry_amount], 38, 1);
+                    allocate(carry[1][carry_amount], 38, 0);
                     constrain(
                         a_neg * r_sum *
                         last_carry_on_addition_constraint(results_chunks[3 * (carry_amount - 1)],
-                                                          r_chunks[3 * (carry_amount - 1)], c_zero,
-                                                          carry[1][carry_amount - 1], c_one));
+                                                          r_chunks[3 * (carry_amount - 1)], 0,
+                                                          carry[1][carry_amount - 1], 1));
+                    // ^^^ if ever result + r = 2^256 is used, the last carry should be 1 since is
+                    // actually an overflow
 
-                    // ^^^ if ever result + r = 2^256 is used, the last carry should be 1 since itis
-                    // actually an overflow if a_neg = 0, we should have result = r, if a_neg = 1
-                    // and r_sum_0 = 0 we should have result = 2^257 - 1, i.e. every chunk of result
-                    // should be 2^16 - 1
+                    // if a_neg = 0 we should have r = result
+                    // if a_neg = 1 and r_sum_0 = 0 we should have result = 2^257 - 1,
+                    // i.e. every chunk of result should be 2^16 - 1
+                    a_neg_2 = a_neg;
+                    allocate(a_neg_2, 43, 2);
                     for (std::size_t i = 0; i < chunk_amount; i++) {
-                        constrain((1 - a_neg) * (results_chunks[i] - r_chunks[i]) +
-                                  a_neg * (1 - r_sum * r_sum_inverse) *
-                                      (two_16 - 1 - results_chunks[i]));
+                       constrain((1 - a_neg_2) * (results_chunks[i] - r_chunks[i]) + a_neg_2 * (1 - r_sum * r_sum_inverse) *(two_16 - 1 -results_chunks[i]));
                     };
 
                     allocate(carry[2][0], 32, 2);
@@ -480,8 +469,8 @@ namespace nil {
                         constrain(carry_on_addition_constraint(
                             b_chunks[3 * i], b_chunks[3 * i + 1], b_chunks[3 * i + 2],
                             v_chunks[3 * i], v_chunks[3 * i + 1], v_chunks[3 * i + 2],
-                            q_chunks[3 * i], q_chunks[3 * i + 1], q_chunks[3 * i + 2], carry[2][i],
-                            carry[2][i + 1], i == 0));
+                            q_chunks[3 * i], q_chunks[3 * i + 1], q_chunks[3 * i + 2],
+                            carry[2][i], carry[2][i + 1], i == 0));
                         constrain(carry[2][i + 1] * (1 - carry[2][i + 1]));
                     }
                     allocate(carry[2][carry_amount], 38, 2);
@@ -491,7 +480,6 @@ namespace nil {
                         carry[2][carry_amount]));
 
                     // last carry is 0 or 1, but should be 1 if z = 1
-
                     constrain((z + (1 - z) * carry[2][carry_amount]) *
                               (1 - carry[2][carry_amount]));
 
@@ -501,18 +489,18 @@ namespace nil {
 
                     TYPE A0, A1, B0, B1, Res0, Res1;
 
-                        A0 = A_128.first;
-                        A1 = A_128.second;
-                        B0 = B_128.first;
-                        B1 = B_128.second;
-                        Res0 = Res_128.first;
-                        Res1 = Res_128.second;
-                    allocate(A0, 45, 0);
-                    allocate(A1, 46, 0);
-                    allocate(B0, 45, 2);
-                    allocate(B1, 46, 2);
-                    allocate(Res0, 47, 0);
-                    allocate(Res1, 47, 2);
+                    A0 = A_128.first;
+                    A1 = A_128.second;
+                    B0 = B_128.first;
+                    B1 = B_128.second;
+                    Res0 = Res_128.first;
+                    Res1 = Res_128.second;
+                    allocate(A0, 46, 0);
+                    allocate(A1, 47, 0);
+                    allocate(B0, 44, 2);
+                    allocate(B1, 45, 2);
+                    allocate(Res0, 46, 1);
+                    allocate(Res1, 47, 1);
 
                     if constexpr (stage == GenerationStage::CONSTRAINTS) {
                         constrain(current_state.pc_next() - current_state.pc(4) -
