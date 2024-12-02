@@ -57,13 +57,10 @@ namespace nil {
                 /// @tparam TOptions Zero or more options that modify/refine default behaviour
                 ///     of the field. If no option is provided The field's value is serialized as is.
                 ///     @code
-                ///         using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+                ///         using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
                 ///
                 ///         constexpr static const std::size_t modulus_bits = 381;
-                ///         using modulus_type =
-                ///         boost::multiprecision::number<boost::multiprecision::backends::cpp_int_backend<
-                ///            modulus_bits, modulus_bits, boost::multiprecision::unsigned_magnitude,
-                ///            boost::multiprecision::unchecked, void>>;
+                ///         using modulus_type = nil::crypto3::multiprecision::big_uint<modulus_bits>;
                 ///         using MyField = nil::crypto3::marshalling::types::integral<MyFieldBase, modulus_type>;
                 ///     @endcode
                 ///     In the example above it will
