@@ -29,12 +29,12 @@ namespace nil {
 
         template<typename BlueprintFieldType>
         class CircuitFactory {
-            static const std::map<const std::string, std::function<std::optional<std::string>(
-                    std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& circuit,
-                std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> circuit_selector;
+            static const std::map<const circuits::Name, std::function<std::optional<std::string>(
+                    std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& circuit,
+                    std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> circuit_selector;
         public:
             static std::optional<std::string> initialize_circuit(const std::string& circuit_name,
-                std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& circuit,
+                std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& circuit,
                 std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table,
                 std::optional<nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>>& desc) {
                 auto find_it = circuit_selector.find(circuit_name);
@@ -55,7 +55,7 @@ namespace nil {
 
         template<typename BlueprintFieldType>
         const std::map<const circuits::Name, std::function<std::optional<std::string>(
-                    std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& circuit,
+                    std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& circuit,
                     std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> CircuitFactory<BlueprintFieldType>::circuit_selector = {
                 {circuits::BYTECODE, initialize_bytecode_circuit<BlueprintFieldType>},
                 {circuits::RW, initialize_rw_circuit<BlueprintFieldType>},
