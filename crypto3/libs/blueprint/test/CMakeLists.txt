@@ -54,6 +54,7 @@ macro(define_blueprint_test test)
         crypto3::algebra
         crypto3::zk
         crypto3::random
+        crypto3::hash_precompiled
     )
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
