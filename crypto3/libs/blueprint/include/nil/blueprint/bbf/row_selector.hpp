@@ -48,7 +48,7 @@ namespace nil {
                 }
 
                 void set_row(std::size_t row) {
-                    if (row < used_rows_.size()) {
+                    if (row < max_index()) {
                         used_rows_[row] = true;
                     }
                 }
@@ -127,6 +127,11 @@ namespace nil {
                 // This is NOT maximal size, this is the number of true values in the set.
                 std::size_t size() const {
                     return used_rows_.count();
+                }
+
+				// This one is the maximal allowed index, I.E. the actual size.
+                std::size_t max_index() const {
+                    return used_rows_.size();
                 }
 
                 bool empty() const {
