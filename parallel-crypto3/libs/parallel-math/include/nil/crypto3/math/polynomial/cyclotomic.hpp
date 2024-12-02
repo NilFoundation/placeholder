@@ -22,8 +22,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_CYCLOTOMIC_HPP
-#define CRYPTO3_MATH_CYCLOTOMIC_HPP
+#ifndef PARALLEL_CRYPTO3_MATH_CYCLOTOMIC_HPP
+#define PARALLEL_CRYPTO3_MATH_CYCLOTOMIC_HPP
+
+#ifdef CRYPTO3_MATH_CYCLOTOMIC_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <vector>
 

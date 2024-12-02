@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MERKLE_TREE_HPP
-#define CRYPTO3_MERKLE_TREE_HPP
+#ifndef PARALLEL_CRYPTO3_MERKLE_TREE_HPP
+#define PARALLEL_CRYPTO3_MERKLE_TREE_HPP
+
+#ifdef CRYPTO3_MERKLE_TREE_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <vector>
 #include <cmath>

@@ -22,8 +22,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_PLACEHOLDER_EVAL_STORAGE_HPP
-#define CRYPTO3_ZK_PLACEHOLDER_EVAL_STORAGE_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLACEHOLDER_EVAL_STORAGE_HPP
+#define PARALLEL_CRYPTO3_ZK_PLACEHOLDER_EVAL_STORAGE_HPP
+
+#ifdef CRYPTO3_ZK_PLACEHOLDER_EVAL_STORAGE_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/zk/transcript/fiat_shamir.hpp>
 #include <nil/crypto3/zk/commitments/type_traits.hpp>

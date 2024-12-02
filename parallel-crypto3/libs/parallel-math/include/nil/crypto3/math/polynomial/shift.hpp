@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_MATH_POLYNOMIAL_SHIFT_HPP
-#define CRYPTO3_MATH_POLYNOMIAL_SHIFT_HPP
+#ifndef PARALLEL_CRYPTO3_MATH_POLYNOMIAL_SHIFT_HPP
+#define PARALLEL_CRYPTO3_MATH_POLYNOMIAL_SHIFT_HPP
+
+#ifdef CRYPTO3_MATH_POLYNOMIAL_SHIFT_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>

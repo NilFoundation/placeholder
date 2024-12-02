@@ -23,8 +23,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_MATH_INTEGER_PERMUTATION_HPP
-#define CRYPTO3_ZK_MATH_INTEGER_PERMUTATION_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_MATH_INTEGER_PERMUTATION_HPP
+#define PARALLEL_CRYPTO3_ZK_MATH_INTEGER_PERMUTATION_HPP
+
+#ifdef CRYPTO3_ZK_MATH_INTEGER_PERMUTATION_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <algorithm>
 #include <cstddef>
