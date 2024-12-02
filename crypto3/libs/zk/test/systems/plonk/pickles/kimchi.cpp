@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_SUITE(kimchi_proof_struct_test_suite)
         //i = 0;
         // No member shifts
         //for (auto &row : root.get_child("data.blockchainVerificationKey.index.shifts")) {
-        //    ver_index.shifts[i] = boost::multiprecision::cpp_int(row.second.get_value<std::string>());
+        //    ver_index.shifts[i] = nil::crypto3::multiprecision::uint256_t(row.second.get_value<std::string>());
         //    ++i;
         //}
 
