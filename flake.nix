@@ -95,11 +95,11 @@
           debug-tools = (pkgs.callPackage ./debug-tools.nix {
           });
 
-          develop = (pkgs.callPackage ./develop.nix {
+          develop = (pkgs.callPackage ./proof-producer.nix {
             enableDebug = true;
             runTests = true;
             sanitize = true;
-            benchmarkTests = true;
+            develop = true;
           });
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.
