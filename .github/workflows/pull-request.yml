@@ -7,14 +7,6 @@ on:
     branches:
       - master
 
-concurrency:
-  # In master we want to run for every commit, in other branches — only for the last one
-  group: ${{
-    ( github.ref == 'refs/heads/master' && format('{0}/{1}/{2}', github.workflow, github.ref, github.sha) )
-    ||
-    format('{0}/{1}', github.workflow, github.ref) }}
-  cancel-in-progress: true
-
 jobs:
   test-linux-gcc:
     name: Linux placeholder testing with gcc
