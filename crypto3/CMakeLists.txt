@@ -60,23 +60,6 @@ endfunction(add_tests)
 add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/")
 add_subdirectories("${CMAKE_CURRENT_LIST_DIR}/libs/marshalling/")
 
-add_library(${CMAKE_WORKSPACE_NAME}_all INTERFACE)
-add_library(${CMAKE_WORKSPACE_NAME}::all ALIAS ${CMAKE_WORKSPACE_NAME}_all)
-target_link_libraries(${CMAKE_WORKSPACE_NAME}_all INTERFACE
-    crypto3::algebra
-    crypto3::blueprint
-    crypto3::transpiler
-    crypto3::containers
-    crypto3::hash
-    crypto3::marshalling-algebra
-    crypto3::marshalling-core
-    crypto3::marshalling-multiprecision
-    crypto3::marshalling-zk
-    crypto3::math
-    crypto3::multiprecision
-    crypto3::random
-    crypto3::zk)
-
 add_library(${CMAKE_WORKSPACE_NAME}_common INTERFACE)
 add_library(${CMAKE_WORKSPACE_NAME}::common ALIAS ${CMAKE_WORKSPACE_NAME}_common)
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_common INTERFACE
@@ -92,6 +75,14 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_common INTERFACE
     crypto3::multiprecision
     crypto3::random
 )
+
+add_library(${CMAKE_WORKSPACE_NAME}_all INTERFACE)
+add_library(${CMAKE_WORKSPACE_NAME}::all ALIAS ${CMAKE_WORKSPACE_NAME}_all)
+target_link_libraries(${CMAKE_WORKSPACE_NAME}_all INTERFACE
+    ${CMAKE_WORKSPACE_NAME}::common
+    crypto3::containers
+    crypto3::math
+    crypto3::zk)
 
 if(BUILD_CRYPTO3_BENCH_TESTS)
     add_subdirectory(benchmarks)
