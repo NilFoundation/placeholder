@@ -12,6 +12,7 @@
   enableDebug ? false,
   runTests ? false,
   sanitize? false,
+  develop? false
   }:
 let
   inherit (lib) optional;
@@ -33,9 +34,13 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
-      (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
+      (if runTests || develop then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
+      (if develop then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
+      (if develop then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
+      (if develop then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
+      (if develop then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       "-G Ninja"
     ];
 
@@ -50,6 +55,7 @@ in stdenv.mkDerivation {
     cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
+    find .. -type f -name '*_benchmark.xml' -exec cp {} ${placeholder "out"}/test-logs \;
   '';
 
   shellHook = ''
