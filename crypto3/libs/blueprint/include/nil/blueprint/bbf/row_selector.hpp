@@ -53,6 +53,14 @@ namespace nil {
                     }
                 }
 
+                void set_interval(std::size_t start_row, std::size_t end_row) {
+                    BOOST_ASSERT( end_row < used_rows_.size());
+                    BOOST_ASSERT( start_row < end_row );
+                    if (start_row  < end_row && end_row < used_rows_.size()) {
+                        used_rows_.set(start_row, end_row-start_row + 1, true);
+                    }
+                }
+
                 bool is_set(std::size_t row) const {
                     return used_rows_.at(row);
                 }
@@ -69,16 +77,16 @@ namespace nil {
                     using pointer = value_type*;
                     using reference = value_type&;
                     using iterator_category = std::forward_iterator_tag;
-                
+
                     const_iterator(const BitSet& v, size_t pos)
                         : bitset(v), index(bitset.find_next(pos)) {
                     }
-                
+
                     // Dereference operator returns the current index
                     size_t operator*() const {
                         return index;
                     }
-                
+
                     // Increment operator
                     const_iterator& operator++() {
                         index = bitset.find_next(index);
@@ -89,7 +97,7 @@ namespace nil {
                     bool operator==(const const_iterator& other) const {
                         return index == other.index;
                     }
-                
+
                     bool operator!=(const const_iterator& other) const {
                         return index != other.index;
                     }
@@ -98,12 +106,12 @@ namespace nil {
                     const BitSet& bitset;   // Reference to the underlying bitset.
                     size_t index;        // Current index
                 };
-                
+
                 // Begin and end functions returning custom const_iterators
                 const_iterator begin() const {
                     return const_iterator(used_rows_, 0);
                 }
-                
+
                 const_iterator end() const {
                     return const_iterator(used_rows_, used_rows_.size());
                 }
@@ -132,7 +140,7 @@ namespace nil {
                         this->used_rows_ |= other_copy.used_rows_;
                     } else {
                         this->used_rows_ |= other.used_rows_;
-                    } 
+                    }
                     return *this;
                 }*/
 
@@ -141,7 +149,7 @@ namespace nil {
 
             private:
                 // Contains true if selector is enabled for the given row.
-                BitSet used_rows_; 
+                BitSet used_rows_;
             };
 
             template<typename BLOCK>

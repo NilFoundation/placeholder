@@ -62,10 +62,12 @@
 #include <nil/crypto3/marshalling/zk/types/plonk/constraint_system.hpp>
 #include <nil/crypto3/marshalling/zk/types/plonk/assignment_table.hpp>
 
-
 #include <functional>
 #include <utility>
 #include <map>
+
+using namespace nil;
+using namespace nil::crypto3::algebra;
 
 namespace nil {
     namespace blueprint {
@@ -360,6 +362,12 @@ namespace nil {
             // Stretched components do not have a manifest, as they are dynamically generated.
             if constexpr (!blueprint::components::is_component_stretcher<
                                     BlueprintFieldType, ComponentType>::value) {
+                if(bp.num_gates() + bp.num_lookup_gates() !=
+                                component_type::get_gate_manifest(component_instance.witness_amount(),
+                                                                  component_static_info_args...).get_gates_amount()){
+                    std::cout << bp.num_gates() + bp.num_lookup_gates() << " != " << component_type::get_gate_manifest(component_instance.witness_amount(),
+                                                                  component_static_info_args...).get_gates_amount() << std::endl;
+                }
                 BOOST_ASSERT_MSG(bp.num_gates() + bp.num_lookup_gates() ==
                                 component_type::get_gate_manifest(component_instance.witness_amount(),
                                                                   component_static_info_args...).get_gates_amount(),
@@ -367,6 +375,8 @@ namespace nil {
             }
 
             if (start_row + component_instance.rows_amount >= public_input.size()) {
+                if ( assignment.rows_amount() - start_row != component_instance.rows_amount )
+                    std::cout << assignment.rows_amount() << " != " << component_instance.rows_amount << std::endl;
                 BOOST_ASSERT_MSG(assignment.rows_amount() - start_row == component_instance.rows_amount,
                                 "Component rows amount does not match actual rows amount.");
                 // Stretched components do not have a manifest, as they are dynamically generated.
@@ -412,12 +422,13 @@ namespace nil {
                 // blueprint::detail::export_connectedness_zones(
                 //      zones, assignment, instance_input.all_vars(), start_row, rows_after_batching - start_row, std::cout);
 
-                // BOOST_ASSERT_MSG(is_connected,
-                //   "Component disconnected! See comment above this assert for a way to output a visual representation of the connectedness graph.");
+                BOOST_ASSERT_MSG(is_connected,
+                  "Component disconnected! See comment above this assert for a way to output a visual representation of the connectedness graph.");
             }
             desc.usable_rows_amount = assignment.rows_amount();
 
             if constexpr (nil::blueprint::use_lookups<component_type>()) {
+                std::cout << "Pack lookup tables horizontal" << std::endl;
                 desc.usable_rows_amount = zk::snark::pack_lookup_tables_horizontal(
                     bp.get_reserved_indices(),
                     bp.get_reserved_tables(),
@@ -428,6 +439,7 @@ namespace nil {
                 );
             }
             desc.rows_amount = zk::snark::basic_padding(assignment);
+            std::cout << "Rows amount = " << desc.rows_amount << std::endl;
 
 #ifdef BLUEPRINT_PLONK_PROFILING_ENABLED
             std::cout << "Usable rows: " << desc.usable_rows_amount << std::endl;
@@ -524,6 +536,7 @@ namespace nil {
             bool check_real_placeholder_proof,
             ComponentStaticInfoArgs... component_static_info_args
         ) {
+            std::cout << "Prepare compomemt" << std::endl;
             auto [desc, bp, assignments] = prepare_component<
                 ComponentType, BlueprintFieldType, Hash, Lambda,
                 PublicInputContainerType, FunctorResultCheck, PrivateInput,
@@ -537,6 +550,7 @@ namespace nil {
             );
 
             if( output_path != "" ){
+                std::cout << "Print to file" << std::endl;
                 print_bp_circuit_and_table_to_file(
                     output_path, bp, desc, assignments
                 );
