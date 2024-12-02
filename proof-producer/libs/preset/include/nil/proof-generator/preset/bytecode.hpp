@@ -17,11 +17,8 @@ namespace nil {
     namespace proof_generator {
         template<typename BlueprintFieldType>
         std::optional<std::string> initialize_bytecode_circuit(
-                std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& bytecode_circuit,
+                std::optional<blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>>& bytecode_circuit,
                 std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& bytecode_table) {
-
-            using ArithmetizationType =
-                    nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
 
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
 
