@@ -65,10 +65,12 @@ namespace nil {
                 typedef FieldType field_type;
 
                 field_value_type omega;
+                const field_value_type sconst;
 
                 basic_radix2_domain(const std::size_t m)
                         : evaluation_domain<FieldType, ValueType, Allocator>(m),
-                          omega(unity_root<FieldType>(m)) {
+                          omega(unity_root<FieldType>(m)),
+                          sconst(field_value_type(m).inversed()) {
                     if (m <= 1)
                         throw std::invalid_argument("basic_radix2(): expected m > 1");
 
@@ -106,10 +108,16 @@ namespace nil {
 
                     detail::basic_radix2_fft_cached<FieldType, container_type, Allocator>(a, fft_cache->second);
 
-                    const field_value_type sconst = field_value_type(a.size()).inversed();
-                    nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& a_i){
-                        a_i *= sconst;
-                    });
+                    field_value_type* a_ptr = a.data();
+                    const std::size_t n = a.size();
+                    const field_value_type& sconst = this->sconst;
+                    GLOBAL_QUEUE.submit(
+                        [a_ptr, sconst, n](sycl::handler& cgh) {
+                            cgh.parallel_for(sycl::range<1>(n), [a_ptr, sconst](sycl::id<1> index) {
+                                a_ptr[index] *= sconst;
+                            });
+                        });
+                    GLOBAL_QUEUE.wait();
                 }
 
                 container_type evaluate_all_lagrange_polynomials(const field_value_type &t) override {

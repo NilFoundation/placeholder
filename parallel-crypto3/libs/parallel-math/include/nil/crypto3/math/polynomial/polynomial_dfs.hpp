@@ -899,27 +899,26 @@ namespace nil {
                     if ((multipliers.size() - stride) % double_stride != 0)
                         max_i++;
 
-                    // We can't use LOW level thread pool here, it's used in cached_multiplication.
                     for (std::size_t i = 0; i < max_i; ++i) {
-                            std::size_t index1 = i * double_stride;
-                            std::size_t index2 = index1 + stride;
+                        std::size_t index1 = i * double_stride;
+                        std::size_t index2 = index1 + stride;
 
-                            const std::size_t current_domain_size = multipliers[index1].size();
-                            const std::size_t next_domain_size = multipliers[index2].size();
-                            const std::size_t new_domain_size =
-                                detail::power_of_two(std::max(
-                                    {current_domain_size,
-                                     next_domain_size,
-                                     multipliers[index1].degree() + multipliers[index2].degree() + 1}));
+                        const std::size_t current_domain_size = multipliers[index1].size();
+                        const std::size_t next_domain_size = multipliers[index2].size();
+                        const std::size_t new_domain_size =
+                            detail::power_of_two(std::max(
+                                {current_domain_size,
+                                    next_domain_size,
+                                    multipliers[index1].degree() + multipliers[index2].degree() + 1}));
 
-                            multipliers[index1].cached_multiplication(
-                                multipliers[index2],
-                                domain_cache[current_domain_size],
-                                domain_cache[next_domain_size],
-                                domain_cache[new_domain_size]);
+                        multipliers[index1].cached_multiplication(
+                            multipliers[index2],
+                            domain_cache[current_domain_size],
+                            domain_cache[next_domain_size],
+                            domain_cache[new_domain_size]);
 
-                            // Free the memory we are not going to use anymore.
-                            multipliers[index2] = polynomial_dfs<value_type, Allocator>();
+                        // Free the memory we are not going to use anymore.
+                        multipliers[index2] = polynomial_dfs<value_type, Allocator>();
                     }
                 }
                 return multipliers[0];
