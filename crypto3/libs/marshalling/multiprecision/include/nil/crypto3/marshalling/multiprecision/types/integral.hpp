@@ -41,7 +41,7 @@
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/options.hpp>
 
-#include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_fixed_precision_type.hpp>
+#include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_type.hpp>
 #include <nil/crypto3/marshalling/multiprecision/inference.hpp>
 #include <vector>
 
