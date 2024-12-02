@@ -172,6 +172,8 @@ namespace nil::crypto3::multiprecision {
 
         constexpr big_uint(const char* str) { *this = str; }
 
+        constexpr big_uint(std::string_view str) { *this = str; }
+
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         constexpr big_uint(T val) noexcept {
             NIL_CO3_MP_ASSERT_MSG(val >= 0, "big_uint: assignment from negative integer");
@@ -195,6 +197,11 @@ namespace nil::crypto3::multiprecision {
         // Assignment
 
         constexpr big_uint& operator=(const char* str) {
+            *this = detail::parse_int<Bits>(str);
+            return *this;
+        }
+
+        constexpr big_uint& operator=(std::string_view str) {
             *this = detail::parse_int<Bits>(str);
             return *this;
         }
