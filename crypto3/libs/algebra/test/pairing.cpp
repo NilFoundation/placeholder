@@ -198,7 +198,7 @@ struct field_element_init<fields::detail::element_fp<FieldParams>> {
 
     template<typename ElementData>
     static inline element_type process(const ElementData &element_data) {
-        return element_type(typename element_type::integral_type(element_data.second.data().c_str()));
+        return element_type(typename element_type::integral_type(element_data.second.data()));
     }
 };
 
