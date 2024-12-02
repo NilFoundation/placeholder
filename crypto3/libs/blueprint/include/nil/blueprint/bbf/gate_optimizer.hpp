@@ -105,7 +105,7 @@ namespace nil {
                 for (const auto& [selector, id]: gates.selectors_) {
                     auto iter = gates.constraint_list.find(id);
 		    		if (iter != gates.constraint_list.end()) {
-                    	os << "Selector #" << id << selector << std::endl;
+                    	os << "Selector #" << id << " " << selector << std::endl;
                     	for (const auto &constraint : iter->second) {
                     	    os << constraint << std::endl;
                     	}
@@ -189,9 +189,9 @@ namespace nil {
 
                 optimized_gates<FieldType> optimize_gates() {
                     optimized_gates<FieldType> result = context_to_gates();
-                    //std::cout << "Before: \n\n" << result << std::endl;
+                    // std::cout << "Before: \n\n" << result << std::endl;
                     optimize_selectors_by_shifting(result);
-                    //std::cout << "After: \n\n" << result << std::endl;
+                    // std::cout << "After: \n\n" << result << std::endl;
                     return result;
                 }
 
@@ -369,6 +369,11 @@ namespace nil {
                                 if (left_shifts[chain[j]] == chain[j - 1]) {
                                     chosen_shifts[chain[j - 1]] = {chain[j - 1], 0};
                                     chosen_shifts[chain[j]] = {chain[j - 1], -1};
+
+									// Check if chain[j - 2] can be skipped by rotating it to the right.
+                                    if (j >= 2 && right_shifts[chain[j - 2]] == chain[j - 1]) {
+                                        chosen_shifts[chain[j - 2]] = {chain[j - 1], +1};
+                                    }
                                 } else {
                                     // Include chain[j].
                                     chosen_shifts[chain[j]] = {chain[j], 0};
@@ -409,7 +414,7 @@ namespace nil {
                             }
                         }
 
-                        if (!selector[selector.size() - 1]) {
+                        if (!selector[selector.max_index() - 1]) {
                             row_selector<> right_selector = selector;
                             right_selector <<= 1;
                             auto iter = gates.selectors_.find(right_selector);
