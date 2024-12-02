@@ -43,4 +43,3 @@ jobs:
     if: |
       always() && !cancelled()
     secrets: inherit
-

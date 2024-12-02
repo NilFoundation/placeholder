@@ -28,7 +28,6 @@
 using namespace nil::crypto3;
 using namespace nil::crypto3::hashes;
 using namespace nil::crypto3::accumulators;
-using nil::crypto3::detail::largest_prime;
 
 namespace boost {
     namespace test_tools {

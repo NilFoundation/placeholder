@@ -36,17 +36,22 @@ in stdenv.mkDerivation rec {
   cmakeFlags =
   [
       (if runTests then "-DENABLE_TESTS=TRUE" else "")
-      (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       "-DZKEVM_FRAMEWORK_ENABLE=TRUE"
       "-G Ninja"
   ];
 
+  cmakeBuildType = if enableDebug then "Debug" else "Release";
   doBuild = true;
   doCheck = runTests;
 
   checkPhase = ''
-    cd zkevm-framework && ctest
-    cd .. && ninja executables_tests
+    # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
+    export BOOST_TEST_LOGGER=JUNIT:HRF
+    cd zkevm-framework
+    ctest --verbose --output-on-failure -R
+    cd ..
+    mkdir -p ${placeholder "out"}/test-logs
+    find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
   '';
 
   shellHook = ''

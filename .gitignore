@@ -626,7 +626,6 @@ callgrind.*
 /*.c
 /*.cpp
 /*.h
-/*.py
 /*.key
 /*.pem
 /*.der

@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
-// 
-// Copyright (c) 2024 Martun Karapetyan <martun@nil.foundation>
+// Copyright (c) 2018-2020 Mikhail Komarov <nemo@nil.foundation>
 //
 // MIT License
 //
@@ -23,42 +22,21 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE thread_pool_test
+#ifndef CRYPTO3_BLOCK_CIPHERS_DETAIL_SHACAL1_POLICY_HPP
+#define CRYPTO3_BLOCK_CIPHERS_DETAIL_SHACAL1_POLICY_HPP
 
-#include <vector>
-#include <cstdint>
+#include <nil/crypto3/hash/detail/shacal/shacal_policy.hpp>
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/data/test_case.hpp>
-#include <boost/test/data/monomorphic.hpp>
+namespace nil {
+    namespace crypto3 {
+        namespace block {
+            namespace detail {
 
-#include <nil/actor/core/thread_pool.hpp>
-#include <nil/actor/core/parallelization_utils.hpp>
+                typedef shacal_policy shacal1_policy;
 
+            }    // namespace detail
+        }        // namespace block
+    }            // namespace crypto3
+}    // namespace nil
 
-BOOST_AUTO_TEST_SUITE(thread_pool_test_suite)
-
-BOOST_AUTO_TEST_CASE(vector_multiplication_test) {
-    boost::unit_test::unit_test_log_t::instance().set_threshold_level( boost::unit_test::log_messages );
-    //boost::unit_test::framework::instance().set_report_level(boost::unit_test::log_silent);
-    size_t size = 131072;
-
-    std::vector<size_t> v(size);
-
-    for (std::size_t i = 0; i < size; ++i)
-        v[i] = i;
-
-    nil::crypto3::wait_for_all(nil::crypto3::parallel_run_in_chunks<void>(
-        size,
-        [&v](std::size_t begin, std::size_t end) {
-            for (std::size_t i = begin; i < end; ++i) {
-                v[i] *= v[i];
-            }
-        }, nil::crypto3::ThreadPool::PoolLevel::HIGH));
-
-    for (std::size_t i = 0; i < size; ++i) {
-        BOOST_CHECK_EQUAL(v[i], i * i);
-    }
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+#endif    // CRYPTO3_BLOCK_CIPHERS_DETAIL_SHACAL1_POLICY_HPP

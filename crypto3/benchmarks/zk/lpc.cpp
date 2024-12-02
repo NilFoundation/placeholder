@@ -135,11 +135,12 @@ void lpc_test_case(std::size_t steps)
                 math::calculate_domain_set<FieldType>(extended_log, r);
 
         typename fri_type::params_type fri_params(
-                d - 1,
-                D,
-                generate_random_step_list(r, steps),
+                steps,
                 r,
-                lambda
+                lambda,
+                2, //expand_factor
+                true, // use_grinding
+                12 // grinding_parameter
         );
 
         using lpc_scheme_type = nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type, math::polynomial<typename FieldType::value_type>>;

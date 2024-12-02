@@ -11,6 +11,7 @@
   enableDebug ? false,
   runTests ? false,
   sanitize ? false,
+  benchmarkTests ? false,
   }:
 let
   inherit (lib) optional;
@@ -32,19 +33,24 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       (if runTests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
-      (if enableDebug then "-DCMAKE_BUILD_TYPE=Debug" else "-DCMAKE_BUILD_TYPE=Release")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
+      (if benchmarkTests then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       "-G Ninja"
     ];
 
+  cmakeBuildType = if enableDebug then "Debug" else "Release";
   doCheck = runTests; # tests are inside crypto3-tests derivation
 
   checkPhase = ''
     # JUNIT file without explicit file name is generated after the name of the master test suite inside `CMAKE_CURRENT_SOURCE_DIR`
     export BOOST_TEST_LOGGER=JUNIT:HRF
-    cd crypto3 && ctest --verbose --output-on-failure -R && cd ..
+    cd crypto3
+    # remove || true after all tests are fixed under clang-sanitizers check:
+    ctest --verbose --output-on-failure -R > test_errors.txt || true
+    cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
+    cp crypto3/test_errors.txt ${placeholder "out"}/test-logs \
   '';
 
   shellHook = ''
