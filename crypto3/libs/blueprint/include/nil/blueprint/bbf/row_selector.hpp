@@ -117,7 +117,7 @@ namespace nil {
                     return used_rows_.count();
                 }
 
-                // This one is the maximal allowed index, I.E. the actual size.
+				// This one is the maximal allowed index, I.E. the actual size.
                 std::size_t max_index() const {
                     return used_rows_.size();
                 }
