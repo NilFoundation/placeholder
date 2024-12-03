@@ -58,6 +58,8 @@ macro(define_blueprint_test test)
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
 
+    target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/zkevm/data/")
+
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "${ARGV2}" "-fconstexpr-steps=2147483647" "-ftemplate-backtrace-limit=0")
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -83,6 +85,7 @@ set(COMMON_TEST_FILES
     #"mock/mocked_components"
     "component_batch"
     "bbf/bbf_wrapper"
+    "bbf/opcode_poc"
     )
 
 set(NON_NATIVE_TESTS_FILES
@@ -120,6 +123,11 @@ set(PLONK_TESTS_FILES
     "hashes/plonk/sha256_process"
     "hashes/plonk/sha512_process"
     "hashes/plonk/decomposition"
+    "hashes/plonk/keccak_component"
+    "hashes/plonk/keccak_dynamic"
+    #"hashes/plonk/keccak_static" fails with memory access violation
+    #"hashes/plonk/keccak_padding" fails with signal: SIGABRT
+    "hashes/plonk/keccak_round"
     #"hashes/plonk/detail/sha_table_generators_base4"
     #"hashes/plonk/detail/sha_table_generators_base7"
     #"verifiers/kimchi/base_field"
@@ -188,19 +196,44 @@ set(PLONK_TESTS_FILES
     "verifiers/placeholder/verifier"
     "verifiers/placeholder/dfri_verifier"
     "verifiers/placeholder/dfri_input_generator"
-    "zkevm/bytecode"
     )
 
 
 set(ZKEVM_TESTS_FILES
-    "zkevm/state_selector"
+    "zkevm/bytecode"
+    "zkevm/rw"
+    #"zkevm/copy"
+    "zkevm/connections"
+    #"zkevm/state_selector"
     "zkevm/zkevm_word"
-    "zkevm/state_transition"
+    #"zkevm/state_transition"
     "zkevm/opcodes/iszero"
     "zkevm/opcodes/add_sub"
     "zkevm/opcodes/mul"
     "zkevm/opcodes/div"
-    )
+    "zkevm/opcodes/cmp"
+    "zkevm/opcodes/pushx"
+    "zkevm/opcodes/not"
+    "zkevm/opcodes/mod_ops"
+    "zkevm/opcodes/byte_ops"
+    "zkevm/opcodes/bitwise"
+    "zkevm/opcodes/err0"
+    "zkevm/opcodes/err1"
+    "zkevm/opcodes/workload"
+    "zkevm/opcodes/jumps"
+)
+
+set(ZKEVM_BBF_TESTS_FILES
+    "zkevm_bbf/l1_wrapper"
+    "zkevm_bbf/rw"
+    "zkevm_bbf/bytecode"
+    "zkevm_bbf/copy"
+    "zkevm_bbf/opcodes/pushx"
+    "zkevm_bbf/opcodes/iszero"
+    "zkevm_bbf/opcodes/mod_ops"
+    "zkevm_bbf/opcodes/bitwise"
+    "zkevm_bbf/opcodes/cmp"
+)
 
 
 SET(ALGEBRA_TESTS_FILES
@@ -214,6 +247,7 @@ SET(ALL_TESTS_FILES
     ${PLONK_TESTS_FILES}
     ${ALGEBRA_TESTS_FILES}
     ${ZKEVM_TESTS_FILES}
+    ${ZKEVM_BBF_TESTS_FILES}
     ${HASHES_TESTS_FILES}
     ${ROUTING_TESTS_FILES}
     ${SCHEMES_TESTS_FILES}

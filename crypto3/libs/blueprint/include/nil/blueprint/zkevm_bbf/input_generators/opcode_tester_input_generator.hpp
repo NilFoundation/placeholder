@@ -1,0 +1,417 @@
+//---------------------------------------------------------------------------//
+// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//---------------------------------------------------------------------------//
+
+#pragma once
+#include <nil/crypto3/hash/type_traits.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
+#include <boost/property_tree/ptree.hpp>
+
+#include <nil/blueprint/components/hashes/keccak/util.hpp> //Move needed utils to bbf
+#include <nil/blueprint/bbf/generic.hpp>
+
+#include <nil/blueprint/zkevm/zkevm_word.hpp>
+
+#include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+
+#include <nil/blueprint/zkevm_bbf/types/zkevm_input_generator.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
+
+namespace nil {
+    namespace blueprint {
+        namespace bbf {
+            class zkevm_opcode_tester_input_generator:zkevm_abstract_input_generator{
+            public:
+                zkevm_opcode_tester_input_generator(
+                    const zkevm_opcode_tester &tester
+                ): rw_counter(1), transactions_amount(0){
+                    // It may be done for multiple transactions;
+                    _rw_operations.push_back(start_rw_operation());
+                    apply_tester(tester);
+                }
+
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using extended_integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<512>>;
+
+                void apply_tester(const zkevm_opcode_tester &tester, std::size_t initial_gas = 30000000){
+                    transactions_amount++;
+                    _keccaks.new_buffer(tester.get_bytecode());
+                    std::size_t current_buffer_id = _bytecodes.new_buffer(tester.get_bytecode());
+
+                    std::size_t call_id = transactions_amount - 1;
+                    std::size_t pc = 0;
+                    std::size_t gas = initial_gas;
+                    std::vector<zkevm_word_type> stack;
+                    zkevm_word_type bytecode_hash = _bytecodes.get_data()[current_buffer_id].second;
+                    const std::map<std::size_t, std::uint8_t> memory;
+                    const std::map<zkevm_word_type, zkevm_word_type> storage;
+
+                    for( std::size_t ind = 0; ind < tester.get_opcodes().size(); ind++ ){
+                        auto opcode = tester.get_opcodes()[ind].first;
+                        auto additional_input = tester.get_opcodes()[ind].second;
+
+                        zkevm_state state;              // TODO:optimize
+                        state.tx_hash = 0;              // * change it
+                        state.opcode = opcode_to_number(opcode);
+                        state.call_id = call_id;
+                        state.gas = gas;
+                        state.pc = pc;
+                        state.rw_counter = rw_counter;
+                        state.bytecode_hash = _bytecodes.get_data()[current_buffer_id].second;
+                        state.additional_input = additional_input;
+                        state.tx_finish = (ind == tester.get_opcodes().size() - 1);
+                        state.stack_size = stack.size();
+                        state.memory_size = memory.size();
+                        state.stack_slice = stack;
+                        state.memory_slice = memory;
+                        state.storage_slice = storage;
+                        _zkevm_states.push_back(state);
+
+                        if(opcode == zkevm_opcode::STOP){
+                            break;
+                        } else if (opcode == zkevm_opcode::ISZERO){
+                            // 0x5f
+                            zkevm_word_type a = stack.back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, a));
+                            stack.pop_back();
+                            zkevm_word_type result = a == 0u? 1u: 0u;
+                            stack.push_back(result);
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, true, result));
+                            gas -= 3;
+                            pc++;
+                        } else if (opcode == zkevm_opcode::PUSH0){
+                            // 0x5f
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 2;
+                            pc++;
+                        }  else  if(opcode == zkevm_opcode::PUSH1){
+                            // 0x60
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc+=2;
+                        } else if(opcode == zkevm_opcode::PUSH2){
+                            // 0x61
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 3;
+                        } else if(opcode == zkevm_opcode::PUSH3){
+                            // 0x62
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 4;
+                        } else if(opcode == zkevm_opcode::PUSH4){
+                            // 0x63
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 5;
+                        } else if(opcode == zkevm_opcode::PUSH5){
+                            // 0x64
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 6;
+                        } else if(opcode == zkevm_opcode::PUSH6){
+                            // 0x65
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 7;
+                        } else if(opcode == zkevm_opcode::PUSH7){
+                            // 0x66
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 8;
+                        } else if(opcode == zkevm_opcode::PUSH8){
+                            // 0x67
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 9;
+                        } else if(opcode == zkevm_opcode::PUSH9){
+                            // 0x68
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 10;
+                        } else if(opcode == zkevm_opcode::PUSH10){
+                            // 0x69
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 11;
+                        } else if(opcode == zkevm_opcode::PUSH11){
+                            // 0x6a
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 12;
+                        } else if(opcode == zkevm_opcode::PUSH12){
+                            // 0x6b
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 13;
+                        } else if(opcode == zkevm_opcode::PUSH13){
+                            // 0x6c
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 14;
+                        } else if(opcode == zkevm_opcode::PUSH14){
+                            // 0x6d
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 15;
+                        } else if(opcode == zkevm_opcode::PUSH15){
+                            // 0x6e
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 16;
+                        } else if(opcode == zkevm_opcode::PUSH16){
+                            // 0x6f
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 17;
+                        } else if(opcode == zkevm_opcode::PUSH17){
+                            // 0x70
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 18;
+                        } else if(opcode == zkevm_opcode::PUSH18){
+                            // 0x71
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 19;
+                        } else if(opcode == zkevm_opcode::PUSH19){
+                            // 0x72
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 20;
+                        } else if(opcode == zkevm_opcode::PUSH20){
+                            // 0x73
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 21;
+                        } else if(opcode == zkevm_opcode::PUSH21){
+                            // 0x74
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 22;
+                        } else if(opcode == zkevm_opcode::PUSH22){
+                            // 0x75
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 23;
+                        } else if(opcode == zkevm_opcode::PUSH23){
+                            // 0x76
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 24;
+                        } else if(opcode == zkevm_opcode::PUSH24){
+                            // 0x77
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 25;
+                        } else if(opcode == zkevm_opcode::PUSH25){
+                            // 0x78
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 26;
+                        } else if(opcode == zkevm_opcode::PUSH26){
+                            // 0x79
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 27;
+                        } else if(opcode == zkevm_opcode::PUSH27){
+                            // 0x7a
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 28;
+                        } else if(opcode == zkevm_opcode::PUSH28){
+                            // 0x7b
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 29;
+                        } else if(opcode == zkevm_opcode::PUSH29){
+                            // 0x7c
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 30;
+                        } else if(opcode == zkevm_opcode::PUSH30){
+                            // 0x7d
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 31;
+                        } else if(opcode == zkevm_opcode::PUSH31){
+                            // 0x7e
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 32;
+                        } else if(opcode == zkevm_opcode::PUSH32){
+                            // 0x7f
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, additional_input));
+                            stack.push_back(additional_input);
+                            gas -= 3;
+                            pc += 33;
+                        } else if(opcode == zkevm_opcode::ADDMOD) {
+                            // 0x08
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type modulus = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, modulus));
+                            // This is how the result is calculated inside the circuit
+                            // It is suppose to avoid overflow of the type zkevm_word_type
+                            integral_type s_integral = integral_type(a) + integral_type(b);
+                            integral_type r_integral = modulus != 0u ? s_integral / integral_type(modulus) : 0u;
+                            zkevm_word_type q = zkevm_word_type(s_integral - r_integral * integral_type(modulus));
+                            zkevm_word_type result = modulus != 0u ? q : 0;
+                            //zkevm_word_type result = integral_type(modulus) == 0? 0 :(a + b) % modulus;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 8;
+                        } else if(opcode == zkevm_opcode::MULMOD) {
+                            // 0x09
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type modulus = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, modulus));
+                            a = modulus != 0u ? a : 0;
+                            extended_integral_type s_integral = extended_integral_type(integral_type(a)) * extended_integral_type(integral_type(b));
+                            zkevm_word_type sp = zkevm_word_type(s_integral % extended_integral_type(zkevm_modulus));
+                            zkevm_word_type spp = zkevm_word_type(s_integral / extended_integral_type(zkevm_modulus));
+                            extended_integral_type r_integral = modulus != 0u ? s_integral / extended_integral_type(integral_type(modulus)): 0u;
+                            zkevm_word_type rp = zkevm_word_type(r_integral % extended_integral_type(zkevm_modulus));
+                            zkevm_word_type rpp = zkevm_word_type(r_integral / extended_integral_type(zkevm_modulus));
+                            zkevm_word_type result = modulus != 0u ? zkevm_word_type(s_integral % extended_integral_type(integral_type(modulus))): 0u;
+                            //zkevm_word_type result = integral_type(modulus) == 0? 0 : (a * b) % modulus;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 8;
+                        } else if(opcode == zkevm_opcode::AND) {
+                            // 0x16
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a & b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::OR) {
+                            // 0x17
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a | b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::XOR) {
+                            // 0x18
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a ^ b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else {
+                            std::cout << "Opcode tester machine doesn't contain " << opcode << " implementation" << std::endl;
+                            BOOST_ASSERT(false);
+                        }
+                    }
+
+                    std::sort(_rw_operations.begin(), _rw_operations.end(), [](rw_operation a, rw_operation b){
+                        return a < b;
+                    });
+                }
+            public:
+                virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
+                virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
+                virtual std::vector<rw_operation> rw_operations() override {return _rw_operations;}
+                virtual std::vector<copy_event> copy_events() override { return _copy_events;}
+                virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
+                virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
+            protected:
+                std::size_t                                              transactions_amount;
+                std::size_t                                              rw_counter;
+                zkevm_keccak_buffers                                     _keccaks;
+                zkevm_keccak_buffers                                     _bytecodes;
+                std::vector<rw_operation>                                _rw_operations;
+                std::vector<copy_event>                                  _copy_events;
+                std::vector<zkevm_state>                                 _zkevm_states;
+                std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;
+            };
+        } // namespace bbf
+    } // namespace blueprint
+} // namespace nil
