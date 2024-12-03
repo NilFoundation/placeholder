@@ -34,8 +34,9 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
-#include <nil/blueprint/manifest.hpp>
+//#include <nil/blueprint/manifest.hpp>
 
+#include <nil/blueprint/bbf/gate_optimizer.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_table_definition.hpp>
@@ -134,78 +135,6 @@ namespace nil {
                     auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
                     std::make_from_tuple<generator>(v);
 
-                    // constraint list => gates & selectors. TODO: super-selector + constant columns + contraints
-                    std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list = ct.get_constraints();
-
-                    for(const auto& [row_list, constraints] : constraint_list) {
-                        std::size_t selector_index = bp.add_gate(constraints);
-                        if (presets.selectors_amount() <= selector_index) {
-                            presets.resize_selectors(selector_index + 1);
-                        }
-                        for(std::size_t row_index : row_list) {
-                            presets.enable_selector(selector_index, row_index);
-                        }
-                    }
-
-                    // copy constraint list
-                    std::vector<copy_constraint_type> copy_constraints = ct.get_copy_constraints();
-                    for(const auto& cc : copy_constraints) {
-                        bp.add_copy_constraint(cc);
-                    }
-
-                    // dynamic lookup tables
-                    std::map<std::string,std::pair<std::vector<std::size_t>,row_selector<>>>
-                        dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
-
-                    // lookup constraint list
-                    std::unordered_map<row_selector<>, std::vector<typename context_type::lookup_constraint_type>>
-                        lookup_constraints = ct.get_lookup_constraints();
-                    std::set<std::string> lookup_tables;
-                    for(const auto& [row_list, lookup_list] : lookup_constraints) {
-                        std::vector<lookup_constraint_type> lookup_gate;
-                        for(const auto& single_lookup_constraint : lookup_list) {
-                            std::string table_name = single_lookup_constraint.first;
-                            if (lookup_tables.find(table_name) == lookup_tables.end()) {
-                                if (dynamic_lookup_tables.find(table_name) != dynamic_lookup_tables.end()) {
-                                    bp.reserve_dynamic_table(table_name);
-                                } else {
-                                    bp.reserve_table(table_name);
-                                }
-                                lookup_tables.insert(table_name);
-                            }
-                            std::size_t table_index = bp.get_reserved_indices().at(table_name);
-                            lookup_gate.push_back({table_index,single_lookup_constraint.second});
-                        }
-                        std::size_t selector_index = bp.add_lookup_gate(lookup_gate);
-                        if (presets.selectors_amount() <= selector_index) {
-                            presets.resize_selectors(selector_index + 1);
-                        }
-                        for(std::size_t row_index : row_list) {
-                            presets.enable_selector(selector_index, row_index);
-                        }
-                    }
-
-                    // dynamic lookup tables - continued
-                    for(const auto& [name, area] : dynamic_lookup_tables) {
-                        bp.register_dynamic_table(name);
-                        std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
-                        if (presets.selectors_amount() <= selector_index) {
-                            presets.resize_selectors(selector_index + 1);
-                        }
-                        for(std::size_t row_index : area.second) {
-                            presets.enable_selector(selector_index,row_index);
-                        }
-                        crypto3::zk::snark::plonk_lookup_table<FieldType> table_specs;
-                        table_specs.tag_index = selector_index;
-                        table_specs.columns_number = area.first.size();
-                        std::vector<var> dynamic_lookup_cols;
-                        for(const auto& c : area.first) {
-                            dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness)); // TODO: does this make sense?!
-                        }
-                        table_specs.lookup_options = {dynamic_lookup_cols};
-                        bp.define_dynamic_table(name,table_specs);
-                    }
-
                     // constants
                     auto c_list = ct.get_constants();
                     // std::cout << "const list size = " << c_list.size() << "\n";
@@ -215,6 +144,76 @@ namespace nil {
                             presets.constant(i,j) = c_list[i][j];
                         }
                     }
+
+                    //////////////////////////  Don't use 'ct' below this line, we just moved it!!! /////////////////////////////
+                    gates_optimizer<FieldType> optimizer(std::move(ct));
+                    optimized_gates<FieldType> gates = optimizer.optimize_gates();
+
+                    // Register all the selectors.
+                    for(const auto& [row_list, selector_id]: gates.selectors_) {
+                        for(std::size_t row_index : row_list) {
+                            if (presets.selectors_amount() <= selector_id) {
+                                presets.resize_selectors(selector_id + 1);
+                            }
+                            presets.enable_selector(selector_id, row_index);
+                        }
+                    }
+
+                    for(const auto& [selector_id, constraints] : gates.constraint_list) {
+                        /*
+                        std::cout << "GATE:\n";
+                        for(const auto& c : constraints) {
+                            std::cout << c << "\n";
+                        }
+                        std::cout << "Rows: ";
+                        */
+                        bp.add_gate(selector_id, constraints);
+
+                        //std::cout << "\n";
+                    }
+
+                    // compatibility layer: copy constraint list
+                    for(const auto& cc : gates.copy_constraints) {
+                        bp.add_copy_constraint(cc);
+                    }
+
+                    std::set<std::string> lookup_tables;
+                    for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
+                        std::vector<lookup_constraint_type> lookup_gate;
+                        for(const auto& single_lookup_constraint : lookup_list) {
+                            std::string table_name = single_lookup_constraint.first;
+                            if (lookup_tables.find(table_name) == lookup_tables.end()) {
+                                if (gates.dynamic_lookup_tables.find(table_name) != gates.dynamic_lookup_tables.end()) {
+                                    bp.reserve_dynamic_table(table_name);
+                                } else {
+                                    bp.reserve_table(table_name);
+                                }
+                                lookup_tables.insert(table_name);
+                            }
+                            std::size_t table_index = bp.get_reserved_indices().at(table_name);
+                            lookup_gate.push_back({table_index, single_lookup_constraint.second});
+                        }
+
+                        bp.add_lookup_gate(selector_id, lookup_gate);
+                    }
+
+                    // compatibility layer: dynamic lookup tables - continued
+                    for(const auto& [name, area] : gates.dynamic_lookup_tables) {
+                        bp.register_dynamic_table(name);
+
+                        std::size_t selector_index = area.second;
+
+                        crypto3::zk::snark::plonk_lookup_table<FieldType> table_specs;
+                        table_specs.tag_index = selector_index;
+                        table_specs.columns_number = area.first.size();
+                        std::vector<var> dynamic_lookup_cols;
+                        for(const auto& c : area.first) {
+                            // TODO: does this make sense?!
+                            dynamic_lookup_cols.push_back(var(c, 0, false, var::column_type::witness));
+                        }
+                        table_specs.lookup_options = {dynamic_lookup_cols};
+                        bp.define_dynamic_table(name,table_specs);
+                   }
 
                     // std::cout << "Gates amount = " << bp.num_gates() << "\n";
                     // std::cout << "Lookup gates amount = " << bp.num_lookup_gates() << "\n";
