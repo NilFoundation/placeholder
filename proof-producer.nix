@@ -6,6 +6,7 @@
   boost,
   gdb,
   lldb,
+  protobuf,
   cmake_modules,
   enableDebugging,
   gtest,
@@ -21,7 +22,7 @@ in stdenv.mkDerivation {
   src = lib.sourceByRegex ./. ["^proof-producer(/.*)?$" "^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
   hardeningDisable = [ "fortify" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++
+  nativeBuildInputs = [ cmake ninja pkg-config protobuf ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
