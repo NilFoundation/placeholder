@@ -199,11 +199,16 @@ namespace nil {
             // CALLOP, RETURN, REVERT, RETURNDATACOPY
 
             // This function is just for testing. It'll be fully rewritten in evm-assigner.
-            std::size_t copy_events_from_trace(std::vector<copy_event> &result,
-                                               boost::property_tree::ptree const &pt,
-                                               std::size_t rows_amount, std::size_t call_id = 0,
-                                               std::size_t transaction_id = 0,
-                                               std::size_t initial_rw_counter = 0) {
+            std::size_t copy_events_from_trace(
+                std::vector<copy_event>           &result,
+                boost::property_tree::ptree const &pt,
+                std::size_t rows_amount,
+                std::size_t call_id = 0,
+                std::size_t transaction_id = 0,
+                std::size_t initial_rw_counter = 0
+            ){
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
                 boost::property_tree::ptree ptrace = pt.get_child("result.structLogs");
                 boost::property_tree::ptree pstack;
                 boost::property_tree::ptree pmemory;

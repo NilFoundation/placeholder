@@ -157,23 +157,28 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
+                using integral_type = boost::multiprecision::number<
+                    boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
                 word_type b = machine.stack_top();
                 word_type x = machine.stack_top(1);
-                int len = (b < 32) ? int(b) + 1 : 32;
-                word_type sign = (x << (8 * (32 - len))) >> 255;
-                word_type result =
-                    (wrapping_sub(word_type(1) << 8 * (32 - len), 1) << 8 * len) * sign +
-                    ((x << (8 * (32 - len))) >> (8 * (32 - len)));
+                int len = (integral_type(b) < 32) ? int(integral_type(b)) + 1 : 32;
+                integral_type sign = (integral_type(x) << (8*(32-len) + 1)) >> 256;
+                word_type result = word_type((((integral_type(1) << 8*(32-len)) - 1) << 8*len)*sign) +
+                                   word_type((integral_type(x) << (8*(32-len) + 1)) >> (8*(32-len) + 1));
+                                                            // +1 because integral type is 257 bits long
 
-                unsigned int b0 = static_cast<unsigned int>(b % 65536), b0p = (b > 65535) ? 32 : b0;
+                unsigned int b0 = static_cast<unsigned int>(integral_type(b) % 65536),
+                             b0p = (integral_type(b) > 65535) ? 32 : b0;
                 int parity = b0p % 2,
                     n = (b0p - parity) / 2;
-                unsigned int xn = static_cast<unsigned int>(
-                                 (x << (16 * (n > 15 ? 16 : 15 - n) + 1)) >> (16 * 15 + 1)),
-                             // +1 because integral_type is 257 bits long
-                    xpp = xn % 256, xp = (xn - xpp) / 256, sb = (parity == 0) ? xpp : xp,
-                             sgn = (sb > 128), saux = sb + 128 - sgn * 256;
+                unsigned int xn = static_cast<unsigned int>((integral_type(x) << (16*(n > 15 ? 16 : 15 - n) + 1)) >> (16*15 + 1)),
+                                                                       // +1 because integral_type is 257 bits long
+                             xpp = xn % 256,
+                             xp = (xn - xpp) / 256,
+                             sb = (parity == 0) ? xpp : xp,
+                             sgn = (sb > 128),
+                             saux = sb + 128 - sgn*256;
 
                 const std::vector<value_type> b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(b);
                 const std::vector<value_type> x_chunks = zkevm_word_to_field_element<BlueprintFieldType>(x);

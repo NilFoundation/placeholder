@@ -455,7 +455,8 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using extended_integral_type = nil::crypto3::multiprecision::big_uint<512>;
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using extended_integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<512>>;
 
                 word_type input_a = machine.stack_top();
                 word_type b = machine.stack_top(1);
@@ -463,25 +464,23 @@ namespace nil {
 
                 word_type a = N != 0u ? input_a : 0;
 
-                extended_integral_type s_integral =
-                    extended_integral_type(a) * extended_integral_type(b);
+                extended_integral_type s_integral = extended_integral_type(integral_type(a)) * extended_integral_type(integral_type(b));
 
-                // TODO(ioxid): optimize all this: use divide_qr and bitwise operations
-                word_type sp = word_type(s_integral % extended_zkevm_mod);
-                word_type spp = word_type(s_integral / extended_zkevm_mod);
+                word_type sp  = word_type(s_integral % extended_integral_type(zkevm_modulus));
+                word_type spp = word_type(s_integral / extended_integral_type(zkevm_modulus));
 
-                extended_integral_type r_integral =
-                    N != 0u ? s_integral / extended_integral_type(N) : 0u;
-                word_type rp = word_type(r_integral % extended_zkevm_mod);
-                word_type rpp = word_type(r_integral / extended_zkevm_mod);
+                extended_integral_type r_integral = N != 0u ? s_integral / extended_integral_type(integral_type(N)) : 0u;
+                word_type rp  = word_type(r_integral % extended_integral_type(zkevm_modulus));
+                word_type rpp = word_type(r_integral / extended_integral_type(zkevm_modulus));
 
-                word_type q = N != 0u ? word_type(s_integral % extended_integral_type(N)) : 0u;
+                word_type q = N != 0u ? word_type(s_integral % extended_integral_type(integral_type(N))) : 0u;
 
-                extended_integral_type Nr_integral = s_integral - extended_integral_type(q);
-                word_type Nr_p = word_type(Nr_integral % extended_zkevm_mod);
-                word_type Nr_pp = word_type(Nr_integral / extended_zkevm_mod);
+                extended_integral_type Nr_integral = s_integral - extended_integral_type(integral_type(q));
+                word_type Nr_p  = word_type(Nr_integral % extended_integral_type(zkevm_modulus));
+                word_type Nr_pp = word_type(Nr_integral / extended_integral_type(zkevm_modulus));
 
-                word_type v = wrapping_sub(q, N);
+                bool t_last = integral_type(q) < integral_type(N);
+                word_type v = word_type(integral_type(q) + integral_type(t_last)*zkevm_modulus - integral_type(N));
 
                 word_type result = q;
 

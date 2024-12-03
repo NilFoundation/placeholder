@@ -48,6 +48,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
                 zkevm_bitwise_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, bitwise_type bitwise_operation):
                     generic_component<FieldType,stage>(context_object, false)
@@ -63,8 +64,8 @@ namespace nil {
                         zkevm_word_type b_word = current_state.stack_top(1);
                         auto a = w_to_8(a_word);
                         auto b = w_to_8(b_word);
-                        auto and_chunks = w_to_8(a_word & b_word);
-                        auto xor_chunks = w_to_8(a_word ^ b_word);
+                        auto and_chunks = w_to_8(a_word&b_word);
+                        auto xor_chunks = w_to_8(a_word^b_word);
 
                         for(std::size_t i = 0; i <32; i++){
                             A[i] = a[i];

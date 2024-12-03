@@ -45,6 +45,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
                 zkevm_keccak_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
@@ -56,11 +57,11 @@ namespace nil {
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         offset = w_lo<FieldType>(current_state.stack_top());
                         length = w_lo<FieldType>(current_state.stack_top(1));
-                        std::size_t start_offset = std::size_t(current_state.stack_top());
-                        std::size_t l = std::size_t(current_state.stack_top(1));
+                        std::size_t start_offset = std::size_t(integral_type(current_state.stack_top()));
+                        std::size_t l = std::size_t(integral_type(current_state.stack_top(1)));
                         std::vector<std::uint8_t> buffer;
                         for( std::size_t i = 0; i < l; i++ ){
-                            buffer.push_back(std::uint8_t(current_state.memory(start_offset + i)));
+                            buffer.push_back(std::uint8_t(integral_type(current_state.memory(start_offset + i))));
                         }
                         auto hash_value = zkevm_keccak_hash(buffer);
                         hash_hi = w_hi<FieldType>(hash_value);

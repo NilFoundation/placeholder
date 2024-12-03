@@ -143,19 +143,15 @@ namespace nil {
 
             void append_opcode(
                 std::string opcode,
-                const std::vector<zkevm_word_type> &stack,  // Stack state before operation
-                const std::vector<zkevm_word_type>
-                    &stack_next,  // stack state after operation. We need it for correct PUSH and
-                                  // correct SLOAD
-                const std::vector<uint8_t>
-                    &memory,  // Memory state before operation in bytes format
-                const std::vector<uint8_t>
-                    &memory_next,  // Memory state before operation in bytes format
-                const std::map<zkevm_word_type, zkevm_word_type>
-                    &storage,  // Storage state before operation
-                const std::map<zkevm_word_type, zkevm_word_type>
-                    &storage_next  // Storage state before operation
-            ) {
+                const std::vector<zkevm_word_type> &stack,       // Stack state before operation
+                const std::vector<zkevm_word_type> &stack_next,  // stack state after operation. We need it for correct PUSH and correct SLOAD
+                const std::vector<uint8_t> &memory ,     // Memory state before operation in bytes format
+                const std::vector<uint8_t> &memory_next ,     // Memory state before operation in bytes format
+                const std::map<zkevm_word_type, zkevm_word_type> &storage,// Storage state before operation
+                const std::map<zkevm_word_type, zkevm_word_type> &storage_next// Storage state before operation
+            ){
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
                 // Opcode is not presented in RW lookup table. We just take it from json
                 // // std::cout << opcode << std::endl;
                 if(opcode == "STOP") {
@@ -424,8 +420,8 @@ namespace nil {
                     // std::cout << "\t" << rw_ops[rw_ops.size()-1] << std::endl;
                     rw_ops.push_back(stack_operation(call_id,  stack.size()-1, rw_ops.size(), false, stack[stack.size()-1]));
                     // std::cout << "\t" << rw_ops[rw_ops.size()-1] << std::endl;
-                    std::size_t length = std::size_t(stack[stack.size()-3]);
-                    std::size_t dest = std::size_t(stack[stack.size()-1]);
+                    std::size_t length = std::size_t(integral_type(stack[stack.size()-3]));
+                    std::size_t dest = std::size_t(integral_type(stack[stack.size()-1]));
                     // std::cout << "Length = " << length << std::endl;
                     // std::cout << "Memory_size " << memory.size() << "=>" << memory_next.size() << std::endl;
                     for( std::size_t i = 0; i < length; i++){
@@ -588,7 +584,7 @@ namespace nil {
                     BOOST_ASSERT_MSG(addr < std::numeric_limits<std::size_t>::max(), "Cannot process so large memory address");
                     // std::cout << "\t\t Address = 0x" << std::hex << addr << std::dec << " memory size " << memory.size() << std::endl;
                     for( std::size_t i = 0; i < 32; i++){
-                        rw_ops.push_back(memory_operation(call_id, addr+i, rw_ops.size(), false, addr+i < memory.size() ? memory[std::size_t(addr+i)]: 0));
+                        rw_ops.push_back(memory_operation(call_id, addr+i, rw_ops.size(), false, addr+i < memory.size() ? memory[std::size_t(integral_type(addr+i))]: 0));
                         // std::cout << "\t" << rw_ops[rw_ops.size()-1] << std::endl;
                     }
                     rw_ops.push_back(stack_operation(call_id,  stack_next.size()-1, rw_ops.size(), true, stack_next[stack_next.size()-1]));
@@ -1260,7 +1256,6 @@ namespace nil {
                     BOOST_ASSERT(false);
                 }
             }
-
         public:
             rw_trace(boost::property_tree::ptree const &pt, std::size_t rows_amount, std::size_t _call_id = 0){
                 call_id = _call_id;

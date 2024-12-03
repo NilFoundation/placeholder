@@ -112,15 +112,9 @@ namespace nil {
 
                 word_type result;
                 switch(bit_operation) {
-                    case B_AND:
-                        result = a & b;
-                        break;
-                    case B_OR:
-                        result = a | b;
-                        break;
-                    case B_XOR:
-                        result = a ^ b;
-                        break;
+                    case B_AND: result = a & b; break;
+                    case B_OR:  result = a | b; break;
+                    case B_XOR: result = a ^ b; break;
                 }
 
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);

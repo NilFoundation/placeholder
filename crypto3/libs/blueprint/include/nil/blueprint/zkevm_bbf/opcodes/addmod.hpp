@@ -130,6 +130,9 @@ namespace nil {
                                  const opcode_input_type<FieldType, stage> &current_state,
                                  bool make_links = true)
                     : generic_component<FieldType, stage>(context_object), res(chunk_amount) {
+                    using integral_type = boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
                     std::vector<TYPE> c_1_chunks(4);
                     TYPE c_2;
                     TYPE c_3;
@@ -165,17 +168,20 @@ namespace nil {
                         zkevm_word_type b = current_state.stack_top(1);
                         zkevm_word_type N = current_state.stack_top(2);
 
-                        auto s_full = nil::crypto3::multiprecision::big_uint<257>(a) + b;
-                        zkevm_word_type s = s_full.truncate<256>();
-                        s_overflow = s_full.bit_test(256);
-                        auto r_full = N != 0u ? s_full / N : 0u;
-                        r_overflow = r_full.bit_test(256);
-                        zkevm_word_type r = r_full.truncate<256>();
+                        integral_type s_integral = integral_type(a) + integral_type(b);
+                        zkevm_word_type s = zkevm_word_type(s_integral);
+                        s_overflow = (s_integral >= zkevm_modulus);
+                        integral_type r_integral = N != 0u ? s_integral / integral_type(N) : 0u;
+                        r_overflow = (r_integral >= zkevm_modulus);
+                        zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
                         // word_type q = N != 0u ? s % N : s;
-                        zkevm_word_type q = zkevm_word_type(s_full - r_full * N);
-                        zkevm_word_type q_out =
-                            N != 0u ? q : 0u;  // according to EVM spec s % 0 = 0
-                        zkevm_word_type v = wrapping_sub(q, N);
+                        zkevm_word_type q =
+                            zkevm_word_type(s_integral - r_integral * integral_type(N));
+                        zkevm_word_type q_out = N != 0u ? q : 0;  // according to EVM spec s % 0 = 0
+                        bool t_last = integral_type(q) < integral_type(N);
+                        zkevm_word_type v = zkevm_word_type(integral_type(q) +
+                                                            integral_type(t_last) * zkevm_modulus -
+                                                            integral_type(N));
 
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
                         b_chunks = zkevm_word_to_field_element<FieldType>(b);

@@ -78,7 +78,9 @@ namespace nil {
                     return stack.pop();
                 }
 
-                void run_opcode() {
+                void run_opcode(){
+                    using integral_type = boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<257>>;
                     switch(opcode) {
                         case zkevm_opcode::PUSH0:
                             stack.push(0);
@@ -221,10 +223,7 @@ namespace nil {
                             break;
                         case zkevm_opcode::NOT:{
                             word_type a = stack_pop();
-                            word_type not_a =
-                                word_type(
-                                    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256) -
-                                a;
+                            word_type not_a = word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257) - a;
                             stack.push(not_a);
                             pc++; gas -=  3;
                             break;
@@ -232,21 +231,21 @@ namespace nil {
                         case zkevm_opcode::ADD:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(wrapping_add(a, b));
+                            stack.push(a+b);
                             pc++; gas -=  3;
                             break;
                         }
                         case zkevm_opcode::SUB:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(wrapping_sub(a, b));
+                            stack.push(a-b);
                             pc++; gas -=  3;
                             break;
                         }
                         case zkevm_opcode::MUL:{
                             word_type a = stack_pop();
                             word_type b = stack_pop();
-                            stack.push(wrapping_mul(a, b));
+                            stack.push(a*b);
                             pc++; gas -=  5;
                             break;
                         }
@@ -254,10 +253,7 @@ namespace nil {
                             word_type a = stack_pop();
                             word_type b = stack_pop();
                             word_type N = stack_pop();
-                            stack.push(
-                                N ? word_type((nil::crypto3::multiprecision::big_uint<512>(a) * b) %
-                                              N)
-                                  : 0u);
+                            stack.push(N? (a * b) % N: 0);
                             pc++; gas -=  8;
                             break;
                         }
@@ -265,10 +261,7 @@ namespace nil {
                             word_type a = stack_pop();
                             word_type b = stack_pop();
                             word_type N = stack_pop();
-                            stack.push(
-                                N ? word_type((nil::crypto3::multiprecision::big_uint<257>(a) + b) %
-                                              N)
-                                  : 0u);
+                            stack.push(N? (a + b) % N: 0);
                             pc++; gas -=  8;
                             break;
                         }
@@ -309,13 +302,10 @@ namespace nil {
                         case zkevm_opcode::SIGNEXTEND:{
                             word_type b = stack_pop();
                             word_type x = stack_pop();
-                            int len = (b < 32) ? int(b) + 1 : 32;
-                            word_type sign = (x << (8 * (32 - len))) >> 255;
-                            word_type result =
-                                (wrapping_sub(word_type(1) << 8 * (32 - len), 1)
-                                 << 8 * len) *
-                                    sign +
-                                ((x << (8 * (32 - len))) >> (8 * (32 - len)));
+                            int len = (integral_type(b) < 32) ? int(integral_type(b)) + 1 : 32;
+                            integral_type sign = (integral_type(x) << (8*(32-len) + 1)) >> 256;
+                            word_type result = word_type((((integral_type(1) << 8*(32-len)) - 1) << 8*len)*sign) +
+                                            word_type((integral_type(x) << (8*(32-len) + 1)) >> (8*(32-len) + 1));
                             stack.push(result);
                             pc++; gas -= 5;
                             break;
@@ -323,27 +313,26 @@ namespace nil {
                         case zkevm_opcode::BYTE:{
                             word_type i = stack_pop();
                             word_type x = stack_pop();
-                            int shift = (i < 32) ? int(i) : 32;
-                            stack.push((x << (8 * shift)) >> (31 * 8));
+                            int shift = (integral_type(i) < 32) ? int(integral_type(i)) : 32;
+                            stack.push(word_type((integral_type(x) << ((8*shift) + 1)) >> (31*8 + 1)));
                             pc++; gas -= 3;
                             break;
                         }
                         case zkevm_opcode::SHL:{
                             word_type a = stack_pop();
                             word_type input_b = stack_pop();
-                            int shift = (input_b < 256) ? int(input_b) : 256;
-                            stack.push(a << shift);
+                            int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
+                            stack.push(word_type(integral_type(a) << shift));
                             pc++; gas -= 3;
                             break;
                         }
                         case zkevm_opcode::SHR:{
                             word_type a = stack_pop();
                             word_type input_b = stack_pop();
-                            int shift = (input_b < 256) ? int(input_b) : 256;
-                            // TODO(ioxid): FIXME: this should be right shift
-                            word_type r = a << shift;
-                            // word_type b = word_type(1) << shift;
-                            stack.push(r);
+                            int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
+                            integral_type r_integral = integral_type(a) << shift;
+                            word_type b = word_type(integral_type(1) << shift);
+                            stack.push(word_type::backend_type(r_integral.backend()));
                             pc++; gas -= 3;
                             break;
                         }
@@ -351,10 +340,11 @@ namespace nil {
                             word_type input_a = stack_pop();
                             word_type input_b = stack_pop();
                             word_type a = abs_word(input_a);
-                            int shift = (input_b < 256) ? int(input_b) : 256;
-                            word_type r = a << shift;
-                            word_type result =
-                                is_negative(input_a) ? ((r == 0) ? neg_one : negate_word(r)) : r;
+                            int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
+                            integral_type r_integral = integral_type(a) << shift;
+                            word_type result = is_negative(input_a) ? (
+                                                (r_integral == 0)? word_type(zkevm_modulus-1) : negate_word(word_type(r_integral))
+                                            ) : word_type(r_integral);
                             stack.push(result);
                             pc++; gas -= 3;
                             break;

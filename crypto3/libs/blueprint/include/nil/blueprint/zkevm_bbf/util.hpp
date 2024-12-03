@@ -71,27 +71,6 @@ namespace nil {
                 }
                 return {result_hi, result_lo};
             }
-
-            zkevm_word_type exp_by_squaring(zkevm_word_type a, zkevm_word_type n) {
-                if (n == 0x00_big_uint256) return 1;
-                if (n == 0x01_big_uint256) return a;
-
-                zkevm_word_type exp = exp_by_squaring(a, n >> 1);
-                zkevm_word_type exp2 = wrapping_mul(exp, exp);
-                if (n & 1) {
-                    return wrapping_mul(exp2, a);
-                }
-                return exp2;
-            }
-
-            std::size_t log256(zkevm_word_type d) {
-                std::size_t result = 0;
-                while(d > 0){
-                    d /= 256u;
-                    result++;
-                }
-                return result;
-            }
         }
     }
 }

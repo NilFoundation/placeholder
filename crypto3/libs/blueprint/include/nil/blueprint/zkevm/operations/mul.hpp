@@ -160,7 +160,7 @@ namespace nil {
                 using word_type = typename zkevm_stack::word_type;
                 word_type a = machine.stack_top();
                 word_type b = machine.stack_top(1);
-                word_type result = wrapping_mul(a, b);
+                word_type result = a * b;
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
                 const std::vector<value_type> b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(b);
                 const std::vector<value_type> r_chunks = zkevm_word_to_field_element<BlueprintFieldType>(result);
