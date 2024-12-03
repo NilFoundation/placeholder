@@ -13,6 +13,10 @@
 .*.lb
 *.csv
 
+#protobuf generated files
+*pb.h
+*pb.cc
+
 ## Intermediate documents:
 *.dvi
 *.xdv

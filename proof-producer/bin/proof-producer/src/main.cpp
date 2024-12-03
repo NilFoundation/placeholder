@@ -76,6 +76,9 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     if (!prover_options.assignment_table_file_path.empty() && prover_result) {
                         prover_result = prover.save_binary_assignment_table_to_file(prover_options.assignment_table_file_path);
                     }
+                    if (!prover_options.assignment_description_file_path.empty() && prover_result) {
+                        prover_result = prover.save_assignment_description(prover_options.assignment_description_file_path);
+                    }
                     break;
                 case nil::proof_generator::detail::ProverStage::PREPROCESS:
                     prover_result =
@@ -115,6 +118,20 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                         prover.read_public_preprocessed_data_from_file(prover_options.preprocessed_public_data_path) &&
                         prover.read_preprocessed_common_data_from_file(prover_options.preprocessed_common_data_path) &&
                         prover.read_commitment_scheme_from_file(prover_options.commitment_scheme_state_path) &&
+                        prover.preprocess_private_data() &&
+                        prover.generate_partial_proof_to_file(
+                            prover_options.proof_file_path,
+                            prover_options.challenge_file_path,
+                            prover_options.theta_power_file_path) &&
+                        prover.save_commitment_state_to_file(prover_options.updated_commitment_scheme_state_path);
+                    break;
+                case nil::proof_generator::detail::ProverStage::FAST_GENERATE_PARTIAL_PROOF:
+                    // Preset, fill assignment table, preprocess
+                    prover_result =
+                        prover.setup_prover() &&
+                        prover.fill_assignment_table(prover_options.trace_file_path) &&
+                        prover.preprocess_public_data() &&
+                        prover.save_preprocessed_common_data_to_file(prover_options.preprocessed_common_data_path) &&
                         prover.preprocess_private_data() &&
                         prover.generate_partial_proof_to_file(
                             prover_options.proof_file_path,
