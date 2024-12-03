@@ -21,6 +21,7 @@
 
 #include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_int/integer_ops_base.hpp"
 #include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
@@ -150,14 +151,15 @@ namespace nil::crypto3::multiprecision::detail {
             barrett_reduce(result, tmp);
         }
 
-        template<std::size_t Bits2, std::size_t Bits3, std::size_t Bits4,
+        template<std::size_t Bits2, std::size_t Bits3, typename T,
                  /// result should fit in the output parameter
-                 std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits, int> = 0>
-        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a,
-                           big_uint<Bits4> exp) const {
+                 std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
+                                      std::numeric_limits<T>::is_integer,
+                                  int> = 0>
+        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             NIL_CO3_MP_ASSERT(a < mod());
 
-            if (exp == 0u) {
+            if (is_zero(exp)) {
                 result = 1u;
                 return;
             }
@@ -169,12 +171,12 @@ namespace nil::crypto3::multiprecision::detail {
             big_uint_doubled_limbs base(a), res(1u);
 
             while (true) {
-                bool lsb = exp.bit_test(0u);
+                bool lsb = bit_test(exp, 0u);
                 exp >>= 1u;
                 if (lsb) {
                     res *= base;
                     barrett_reduce(res);
-                    if (exp.is_zero()) {
+                    if (is_zero(exp)) {
                         break;
                     }
                 }
@@ -525,11 +527,12 @@ namespace nil::crypto3::multiprecision::detail {
         }
 #undef NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY
 
-        template<std::size_t Bits2, std::size_t Bits3, std::size_t Bits4,
+        template<std::size_t Bits2, std::size_t Bits3, typename T,
                  /// result should fit in the output parameter
-                 std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits, int> = 0>
-        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a,
-                           big_uint<Bits4> exp) const {
+                 std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
+                                      std::numeric_limits<T>::is_integer,
+                                  int> = 0>
+        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             /// input parameter should be less than modulus
             NIL_CO3_MP_ASSERT(a < this->mod());
 
@@ -538,7 +541,7 @@ namespace nil::crypto3::multiprecision::detail {
 
             big_uint_t base(a);
 
-            if (exp == 0u) {
+            if (is_zero(exp)) {
                 result = 1u;
                 adjust_modular(result);
                 return;
@@ -549,11 +552,11 @@ namespace nil::crypto3::multiprecision::detail {
             }
 
             while (true) {
-                bool lsb = exp.bit_test(0u);
+                bool lsb = bit_test(exp, 0u);
                 exp >>= 1u;
                 if (lsb) {
                     mul(R_mod_m, base);
-                    if (exp == 0u) {
+                    if (is_zero(exp)) {
                         break;
                     }
                 }
