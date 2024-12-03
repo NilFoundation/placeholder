@@ -113,13 +113,13 @@ namespace nil {
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) {
+                ) override {
                     zkevm_add_sub_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, is_add);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) {
+                ) override {
                     zkevm_add_sub_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, is_add);
                 }
                 zkevm_add_sub_operation(bool _is_add):is_add(_is_add){
