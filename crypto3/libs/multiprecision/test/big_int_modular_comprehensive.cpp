@@ -49,7 +49,7 @@ constexpr void pow_test(const big_uint_t& a, const big_uint_t& b, const big_uint
     // modular_number a_m_pow_b_m = pow(a_m, b_m);
     // powm could be used with mixed types
     // modular_number a_m_powm_b_m = powm(a_m, b_m);
-    modular_number a_m_powm_b = powm(a_m, b);
+    modular_number a_m_powm_b = pow(a_m, b);
     // BOOST_ASSERT_MSG(standard_number(to_cpp_int(a_m_powm_b_m)) == a_powm_b, "powm error");
     BOOST_ASSERT_MSG(to_cpp_int(a_m_powm_b.base()) == a_powm_b, "powm error");
 }
@@ -110,7 +110,7 @@ bool base_operations_test(std::array<big_uint_t, test_set_len> test_set) {
     // modular_number a_and_b = a & b;
     // modular_number a_or_b = a | b;
     // modular_number a_xor_b = a ^ b;
-    modular_number a_powm_b = powm(a, b.base());
+    modular_number a_powm_b = pow(a, b.base());
     // modular_number a_bit_set = a;
     // bit_set(a_bit_set, 1);
     // modular_number a_bit_unset = a;
