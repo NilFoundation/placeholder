@@ -99,8 +99,11 @@
             enableDebug = true;
             runTests = true;
             sanitize = true;
-            develop = true;
-          });
+            crypto3_tests = true;
+            parallel_crypto3_tets = true;
+            crypto3_bechmarks = true;
+            parallel_crypto3_bechmarks = true;
+            });
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.
           # The packages that have no changes will not be rebuilt, and instead
