@@ -22,16 +22,16 @@ namespace nil::crypto3::multiprecision::literals {
     }
 }  // namespace nil::crypto3::multiprecision::literals
 
-#define NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(Bits)                                            \
-    namespace nil::crypto3::multiprecision::literals {                                      \
-        template<char... C>                                                                 \
-        constexpr auto operator"" _bigui##Bits() {                                          \
-            constexpr std::size_t N = sizeof...(C);                                         \
-            constexpr std::array<char, N> str{C...};                                        \
-            constexpr auto result =                                                         \
-                nil::crypto3::multiprecision::detail::parse_int_hex<Bits>({str.data(), N}); \
-            return result;                                                                  \
-        }                                                                                   \
+#define NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(Bits)                                        \
+    namespace nil::crypto3::multiprecision::literals {                                  \
+        template<char... C>                                                             \
+        constexpr auto operator"" _bigui##Bits() {                                      \
+            constexpr std::size_t N = sizeof...(C);                                     \
+            constexpr std::array<char, N> str{C...};                                    \
+            constexpr auto result =                                                     \
+                nil::crypto3::multiprecision::detail::parse_int<Bits>({str.data(), N}); \
+            return result;                                                              \
+        }                                                                               \
     }
 
 // This is a comprehensive list of all bitlengths we use in algebra.
