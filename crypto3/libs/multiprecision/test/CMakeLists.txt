@@ -76,6 +76,7 @@ set(BIG_INT_TESTS_NAMES
     "big_int_cpp_int_conversions"
     "big_int_inverse"
     "big_int_jacobi"
+    "big_int_miller_rabin"
     "big_int_modular"
     "big_int_modular_comprehensive"
     "big_int_ressol"

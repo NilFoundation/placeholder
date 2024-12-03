@@ -1612,4 +1612,34 @@ namespace nil::crypto3::multiprecision {
         os << value.str(os.flags());
         return os;
     }
+
+    // Common ops
+
+    template<std::size_t Bits>
+    constexpr std::size_t msb(const big_uint<Bits> &a) {
+        return a.msb();
+    }
+
+    template<std::size_t Bits>
+    constexpr std::size_t lsb(const big_uint<Bits> &a) {
+        return a.lsb();
+    }
+
+    template<std::size_t Bits>
+    constexpr bool bit_test(const big_uint<Bits> &a, std::size_t index) {
+        return a.bit_test(index);
+    }
+
+    template<std::size_t Bits>
+    constexpr bool is_zero(const big_uint<Bits> &a) {
+        return a.is_zero();
+    }
+
+    template<std::size_t Bits1, std::size_t Bits2>
+    constexpr void divide_qr(big_uint<Bits1> a, big_uint<Bits2> b, big_uint<Bits1> &q,
+                             big_uint<Bits1> &r) {
+        // TODO(ioxid): make this efficient by using private `divide`
+        q = a / b;
+        r = a % b;
+    }
 }  // namespace nil::crypto3::multiprecision

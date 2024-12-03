@@ -13,7 +13,7 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
-#include "nil/crypto3/multiprecision/big_int/common_ops.hpp"
+#include "nil/crypto3/multiprecision/big_int/integer.hpp"
 #include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision {
@@ -21,7 +21,7 @@ namespace nil::crypto3::multiprecision {
         template<typename T1, typename T2>
         T2 integer_modulus(const T1& n, const T2& m) {
             // TODO(ioxid): optimize this
-            return n % m;
+            return static_cast<T2>(n % m);
         }
 
         template<class I>
@@ -98,18 +98,6 @@ namespace nil::crypto3::multiprecision {
             }
             return false;
         }
-
-        template<class I>
-        typename std::enable_if<std::is_convertible<I, unsigned>::value, unsigned>::type
-        cast_to_unsigned(const I& val) {
-            return static_cast<unsigned>(val);
-        }
-        template<class I>
-        typename std::enable_if<!std::is_convertible<I, unsigned>::value, unsigned>::type
-        cast_to_unsigned(const I& val) {
-            return val.template convert_to<unsigned>();
-        }
-
     }  // namespace detail
 
     template<class I, class Engine>
@@ -119,7 +107,7 @@ namespace nil::crypto3::multiprecision {
 
         if (n == 2) return true;                // Trivial special case.
         if (bit_test(n, 0) == 0) return false;  // n is even
-        if (n <= 227) return detail::is_small_prime(detail::cast_to_unsigned(n));
+        if (n <= 227) return detail::is_small_prime(static_cast<unsigned>(n));
 
         if (!detail::check_small_factors(n)) return false;
 
