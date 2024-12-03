@@ -330,7 +330,6 @@ namespace nil {
                         std::vector<size_t> chain;
                         chain.push_back(i);
 
-                        // Go all the way to the left.
                         size_t current_node = i;
 
                         // Go all the way to the right.
