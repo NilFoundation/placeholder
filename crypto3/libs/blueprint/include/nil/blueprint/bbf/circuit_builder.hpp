@@ -134,9 +134,6 @@ namespace nil {
                     auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
                     std::make_from_tuple<generator>(v);
 
-                    // for the moment, does nothing
-                    ct.optimize_gates();
-
                     // constraint list => gates & selectors. TODO: super-selector + constant columns + contraints
                     std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list = ct.get_constraints();
 
