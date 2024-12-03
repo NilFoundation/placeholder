@@ -220,6 +220,8 @@ namespace nil {
                             }
                             BOOST_ASSERT(C == at.constant(get_col(col,t), get_row(row)));
                         break;
+                        default:
+                           throw std::logic_error("Unknown column type."); 
                     }
                     mark_allocated(col, row, t);
                 }
