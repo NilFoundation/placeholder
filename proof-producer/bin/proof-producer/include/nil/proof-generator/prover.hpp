@@ -454,10 +454,9 @@ namespace nil {
 
                 BOOST_LOG_TRIVIAL(info) << "Writing all preprocessed public data to " <<
                     preprocessed_data_file;
-                using PreprocessedPublicDataType = typename PublicPreprocessedData::preprocessed_data_type;
 
                 auto marshalled_preprocessed_public_data =
-                    fill_placeholder_preprocessed_public_data<Endianness, PreprocessedPublicDataType>(
+                    fill_placeholder_preprocessed_public_data<Endianness, PublicPreprocessedData>(
                         *public_preprocessed_data_
                     );
                 bool res = detail::encode_marshalling_to_file(
@@ -475,9 +474,8 @@ namespace nil {
 
                 using namespace nil::crypto3::marshalling::types;
 
-                using PreprocessedPublicDataType = typename PublicPreprocessedData::preprocessed_data_type;
                 using PublicPreprocessedDataMarshalling =
-                    placeholder_preprocessed_public_data<TTypeBase, PreprocessedPublicDataType>;
+                    placeholder_preprocessed_public_data<TTypeBase, PublicPreprocessedData>;
 
                 auto marshalled_value = detail::decode_marshalling_from_file<PublicPreprocessedDataMarshalling>(
                     preprocessed_data_file);
@@ -485,7 +483,7 @@ namespace nil {
                     return false;
                 }
                 public_preprocessed_data_.emplace(
-                    make_placeholder_preprocessed_public_data<Endianness, PreprocessedPublicDataType>(*marshalled_value)
+                    make_placeholder_preprocessed_public_data<Endianness, PublicPreprocessedData>(*marshalled_value)
                 );
                 return true;
             }
