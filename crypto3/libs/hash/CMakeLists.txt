@@ -152,7 +152,7 @@ set_target_properties(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_precompile
 add_library(${CMAKE_WORKSPACE_NAME}::${CURRENT_PROJECT_NAME}_precompiled ALIAS ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_precompiled)
 
 target_precompile_headers(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_precompiled
-    PUBLIC
+    PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/nil/crypto3/hash/detail/poseidon/poseidon_constants.hpp>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/nil/crypto3/hash/detail/poseidon/original_constants.hpp>"
     )
