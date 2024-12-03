@@ -53,14 +53,15 @@
 #include <nil/blueprint/zkevm_bbf/bytecode.hpp>
 #include <nil/blueprint/zkevm_bbf/keccak.hpp>
 
-#include "./opcode_test_fixture.hpp"
+#include "../test_l1_wrapper.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint::bbf;
 
 // Remember that in production sizes should be preset.
 // Here they are different for different tests just for fast and easy testing
-BOOST_FIXTURE_TEST_SUITE(zkevm_opcode_test_suite, zkEVMOpcodeTestFixture)
+BOOST_AUTO_TEST_SUITE(zkevm_opcode_test_suite)
+
 BOOST_AUTO_TEST_CASE(iszero) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     zkevm_opcode_tester opcode_tester;

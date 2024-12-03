@@ -57,9 +57,9 @@ namespace nil {
             constexpr static const value_type two_16 = 65536;
             constexpr static const value_type two_32 = 4294967296;
             constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_big_uint254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
+            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
+            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
+            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
 
             template<typename T, typename V = T>
             T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
@@ -368,8 +368,8 @@ namespace nil {
                 auto first_row_carries_non_shifted =
                     first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data;
                 auto first_row_carries =
-                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data.base() >> 128;
-                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
+                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data >> 128;
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
                 BOOST_ASSERT(first_row_carries_non_shifted - c_1 * two128 - c_2 * two192 == 0);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);

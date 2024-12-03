@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <antoine.cyr@nil.foundation>
 //
 // MIT License
 //
@@ -25,15 +24,15 @@
 
 #pragma once
 
+#include <numeric>
 #include <algorithm>
-#include <iostream>
+
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
-#include <numeric>
 
 namespace nil {
     namespace blueprint {
-        namespace bbf {
+        namespace bbf{
             template<typename FieldType>
             class opcode_abstract;
 
@@ -422,25 +421,19 @@ namespace nil {
 
             template<typename FieldType>
             class zkevm_shr_operation : public opcode_abstract<FieldType> {
-              public:
+            public:
                 virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type
-                        &context,
-                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
-                        &current_state)  override {
-                    zkevm_shr_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context,
-                                                                                  current_state);
-                }
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
+                ) {}
                 virtual void fill_context(
-                    typename generic_component<FieldType,
-                                               GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
-                        &current_state)  override {
-                    zkevm_shr_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context,
-                                                                                   current_state);
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
+                ) {}
+                virtual std::size_t rows_amount() override {
+                    return 4;
                 }
-                virtual std::size_t rows_amount() override { return 4; }
             };
-        }  // namespace bbf
-    }  // namespace blueprint
-}  // namespace nil
+        } // namespace bbf
+    }   // namespace blueprint
+}   // namespace nil

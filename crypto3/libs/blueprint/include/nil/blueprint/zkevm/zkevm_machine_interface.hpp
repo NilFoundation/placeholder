@@ -274,7 +274,7 @@ namespace nil {
                         }
                         case zkevm_opcode::ISZERO:{
                             word_type a = stack_pop();
-                            stack.push(a? 1u : 0u);
+                            stack.push(a? 1 : 0);
                             pc++; gas -=  3;
                             break;
                         }

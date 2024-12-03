@@ -92,12 +92,8 @@ set(COMMON_TEST_FILES
     "proxy"
     #"mock/mocked_components"
     "component_batch"
-    "bbf/tester"
+    "bbf/bbf_wrapper"
     "bbf/opcode_poc"
-    "bbf/row_seletor_test"
-    "bbf/gate_optimizer"
-    "bbf/poseidon"
-    "bbf/test_circuit_builder"
     )
 
 set(NON_NATIVE_TESTS_FILES
@@ -231,12 +227,12 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/bitwise"
     "zkevm/opcodes/err0"
     "zkevm/opcodes/err1"
-    #"zkevm/opcodes/workload"
+    "zkevm/opcodes/workload"
     "zkevm/opcodes/jumps"
 )
 
 set(ZKEVM_BBF_TESTS_FILES
-    "zkevm_bbf/hardhat"
+    "zkevm_bbf/l1_wrapper"
     "zkevm_bbf/rw"
     "zkevm_bbf/bytecode"
     "zkevm_bbf/copy"
@@ -245,13 +241,6 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/opcodes/mod_ops"
     "zkevm_bbf/opcodes/bitwise"
     "zkevm_bbf/opcodes/cmp"
-    "zkevm_bbf/opcodes/add_sub"
-    "zkevm_bbf/opcodes/byte_ops"
-    "zkevm_bbf/opcodes/mul"
-    "zkevm_bbf/opcodes/div"
-    "zkevm_bbf/opcodes/jumps"
-    "zkevm_bbf/opcodes/not"
-    "zkevm_bbf/opcodes/exp"
 )
 
 

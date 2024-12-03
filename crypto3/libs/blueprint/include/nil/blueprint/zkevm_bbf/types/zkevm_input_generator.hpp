@@ -44,7 +44,7 @@ namespace nil {
             public:
                 virtual zkevm_keccak_buffers keccaks() = 0;
                 virtual zkevm_keccak_buffers bytecodes() = 0;
-                virtual rw_operations_vector rw_operations() = 0;
+                virtual std::vector<rw_operation> rw_operations() = 0;
                 virtual std::vector<copy_event> copy_events() = 0;
                 virtual std::vector<zkevm_state> zkevm_states() = 0;
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations() = 0;
@@ -54,7 +54,7 @@ namespace nil {
             public:
                 zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
-                rw_operations_vector rw_operations() override {return _rw_operations;}
+                std::vector<rw_operation> rw_operations() override {return _rw_operations;}
                 std::vector<copy_event> copy_events() override { return _copy_events;}
                 std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
@@ -63,7 +63,7 @@ namespace nil {
             private:
                 zkevm_keccak_buffers                                     _keccaks;
                 zkevm_keccak_buffers                                     _bytecodes;
-                rw_operations_vector                                     _rw_operations;
+                std::vector<rw_operation>                                _rw_operations;
                 std::vector<copy_event>                                  _copy_events;
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;

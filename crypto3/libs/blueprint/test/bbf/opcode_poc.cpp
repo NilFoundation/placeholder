@@ -40,25 +40,24 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/circuit_builder.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/bbf/opcode_poc.hpp>
 
+#include "../zkevm_bbf/test_l1_wrapper.hpp"
+
 using namespace nil::crypto3;
-using namespace nil::blueprint::bbf;
+using namespace nil::blueprint;
 
 template <typename field_type>
 void test_opcode_poc(
     std::vector<std::uint8_t> blocks,
     std::size_t max_rows
 ){
-    typename opcode_poc<field_type, GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
-    raw_input.B = blocks;
+    typename nil::blueprint::bbf::opcode_poc<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type assignment_input = blocks;
+    typename nil::blueprint::bbf::opcode_poc<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type constraint_input;
 
     std::cout << "input_size = " <<  blocks.size() << std::endl;
-    auto B = circuit_builder<field_type,opcode_poc,std::size_t>(max_rows);
-    auto [at, A, desc] = B.assign(raw_input);
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+    test_l1_wrapper<field_type, nil::blueprint::bbf::opcode_poc>({}, assignment_input, constraint_input, max_rows); // Max_rw, Max_mpt
 }
 
 

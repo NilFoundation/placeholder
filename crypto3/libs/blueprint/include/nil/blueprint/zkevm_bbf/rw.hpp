@@ -49,7 +49,7 @@ namespace nil {
                 using rw_table_type = rw_table<FieldType, stage>;
                 using input_type = typename rw_table_type::input_type;
                 using value = typename FieldType::value_type;
-                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
+                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
             public:
                 static constexpr std::size_t op_bits_amount = 4;
                 static constexpr std::size_t diff_index_bits_amount = 5;
@@ -72,11 +72,7 @@ namespace nil {
                     integral_type mask = (1 << n);
                     for( std::size_t bit_ind = 0; bit_ind < n; bit_ind++ ){
                         mask >>= 1;
-                        TYPE bit_selector;
-                        if( (mask & k) == 0)
-                            bit_selector = (1 - bits[bit_ind]);
-                        else
-                            bit_selector = bits[bit_ind];
+                        TYPE bit_selector = (mask & k == 0) ? 0 - (bits[bit_ind] - 1) : bits[bit_ind];
                         if( bit_ind == 0)
                             result = bit_selector;
                         else
@@ -136,12 +132,11 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         auto rw_trace = input;
-                        std::cout << "RW trace.size = " << rw_trace.size() << std::endl;
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
                             integral_type mask = (1 << op_bits_amount);
                             for( std::size_t j = 0; j < op_bits_amount; j++){
                                 mask >>= 1;
-                                op_bits[i][j] = (((static_cast<unsigned>(rw_trace[i].op) & mask) == 0) ? 0 : 1);
+                                op_bits[i][j] = (((rw_trace[i].op & mask) == 0) ? 0 : 1);
                             }
                             std::size_t cur_chunk = 0;
                             // id
@@ -203,13 +198,6 @@ namespace nil {
                             }
                             diff[i] = sorted[diff_ind] - sorted_prev[diff_ind];
                             inv_diff[i] = diff[i] == 0? 0: diff[i].inversed();
-                        }
-                        for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
-                            integral_type mask = (1 << op_bits_amount);
-                            for( std::size_t j = 0; j < op_bits_amount; j++){
-                                mask >>= 1;
-                                op_bits[i][j] = (((PADDING_OP & mask) == 0) ? 0 : 1);
-                            }
                         }
                     }
                     for( std::size_t i = 0; i < max_rw_size; i++){
@@ -316,6 +304,16 @@ namespace nil {
                             }
                         }
 
+    //                    if( i != 0 ){
+                            for( std::size_t diff_ind = 0; diff_ind < sorted.size(); diff_ind++ ){
+                                TYPE diff_ind_selector = bit_tag_selector<diff_index_bits_amount>(diff_index_bits[1], diff_ind);
+                                for(std::size_t less_diff_ind = 0; less_diff_ind < diff_ind; less_diff_ind++){
+                                    non_first_row_constraints.push_back(context_object.relativize(diff_ind_selector * (sorted[less_diff_ind]-sorted_prev[less_diff_ind]),-1));
+                                }
+                                non_first_row_constraints.push_back(context_object.relativize(diff_ind_selector * (sorted[diff_ind] - sorted_prev[diff_ind] - diff[1]), -1));
+                            }
+    //                   }
+
                         TYPE start_selector = bit_tag_selector(op_bits[1], START_OP);
                         TYPE stack_selector = bit_tag_selector(op_bits[1], STACK_OP);
                         TYPE memory_selector = bit_tag_selector(op_bits[1], MEMORY_OP);
@@ -328,15 +326,7 @@ namespace nil {
                         TYPE tx_access_list_account_storage_selector = bit_tag_selector(op_bits[1], TX_ACCESS_LIST_ACCOUNT_STORAGE_OP);
                         TYPE tx_log_selector = bit_tag_selector(op_bits[1], TX_LOG_OP);
                         TYPE tx_receipt_selector = bit_tag_selector(op_bits[1], TX_RECEIPT_OP);
-                        TYPE padding_selector = bit_tag_selector(op_bits[1], PADDING_OP);
-
-                        for( std::size_t diff_ind = 0; diff_ind < sorted.size(); diff_ind++ ){
-                            TYPE diff_ind_selector = bit_tag_selector<diff_index_bits_amount>(diff_index_bits[1], diff_ind);
-                            for(std::size_t less_diff_ind = 0; less_diff_ind < diff_ind; less_diff_ind++){
-                                non_first_row_constraints.push_back(context_object.relativize((op[1] - PADDING_OP) * diff_ind_selector * (sorted[less_diff_ind]-sorted_prev[less_diff_ind]),-1));
-                            }
-                            non_first_row_constraints.push_back( context_object.relativize((op[1] - PADDING_OP) * diff_ind_selector * (sorted[diff_ind] - sorted_prev[diff_ind] - diff[1]), -1));
-                        }
+                        TYPE padding_selector = bit_tag_selector(op_bits[1], START_OP);
 
                         every_row_constraints.push_back(context_object.relativize(is_write[1] * (is_write[1]-1), -1));
                         every_row_constraints.push_back(context_object.relativize(is_first[1] * (is_first[1]-1), -1));
@@ -348,16 +338,16 @@ namespace nil {
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][1] - 1), -1));
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][2] - 1), -1));
                         every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (diff_index_bits[1][3] - 1), -1));
+    //                    if( i != 0 ){
+                            non_first_row_constraints.push_back(context_object.relativize((op[0] - START_OP) * (op[0] - PADDING_OP)
+                                * is_last[0] * diff_index_bits[1][0]
+                                * diff_index_bits[1][1] * diff_index_bits[1][2]
+                                * diff_index_bits[1][3], -1));
+                            every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (value_before_hi[1] - value_before_hi[0]), -1));
+                            every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (value_before_lo[1] - value_before_lo[0]), -1));
+    //                    }
 
-                        non_first_row_constraints.push_back(context_object.relativize((op[0] - START_OP) * (op[0] - PADDING_OP)
-                            * is_last[0] * diff_index_bits[1][0]
-                            * diff_index_bits[1][1] * diff_index_bits[1][2]
-                            * diff_index_bits[1][3], -1));
-                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (value_before_hi[1] - value_before_hi[0]), -1));
-                        every_row_constraints.push_back(context_object.relativize((op[1] - START_OP) * (op[1] - PADDING_OP) * (is_first[1] - 1) * (value_before_lo[1] - value_before_lo[0]), -1));
-
-
-    //                     // Specific constraints for START
+                        // Specific constraints for START
                         std::map<std::size_t, std::vector<TYPE>> special_constraints;
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector * storage_key_hi[1], -1));
                         special_constraints[START_OP].push_back(context_object.relativize(start_selector * storage_key_lo[1], -1));
@@ -377,7 +367,7 @@ namespace nil {
                         special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * is_first[1] * (1 - is_write[1]), -1));  // 4. First stack operation is obviously write
                         //if(i!=0) {
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (is_write[1] - 1), -1));                  // 5. First operation is always write
-                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (address[1] - address[0]) * (address[1] - address[0] - 1), -1));      // 6. Stack pointer always grows and only by one
+                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (address[1] - address[0] - 1), -1)); // 6. Stack pointer always grows and only by one
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[0]), -1));
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[0]), -1));
                         //}

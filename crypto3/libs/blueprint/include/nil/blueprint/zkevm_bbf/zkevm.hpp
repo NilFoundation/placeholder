@@ -39,10 +39,10 @@
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/rw_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/copy_table.hpp>
-#include <nil/blueprint/zkevm_bbf/subcomponents/exp_table.hpp>
 #include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
-#include <nil/blueprint/zkevm/zkevm_word.hpp>
+
+#include <nil/blueprint/zkevm_bbf/opcodes/zkevm_opcodes.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -57,20 +57,20 @@ namespace nil {
             public:
                 using state = state_vars<FieldType, stage>;
                 using typename generic_component<FieldType,stage>::TYPE;
+                using private_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::size_t, std::nullptr_t>::type;
                 struct input_type{
                     TYPE rlc_challenge;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type bytecodes;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type keccak_buffers;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type rw_operations;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<rw_operation>, std::nullptr_t>::type rw_operations;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type copy_events;
                     typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<zkevm_state>, std::nullptr_t>::type zkevm_states;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, std::vector<std::pair<zkevm_word_type,zkevm_word_type>>, std::nullptr_t>::type exponentiations;
                 };
             public:
                 using val = typename FieldType::value_type;
                 using BytecodeTable = bytecode_table<FieldType, stage>;
                 using RWTable = rw_table<FieldType, stage>;
-                using ExpTable = exp_table<FieldType, stage>;
+                using KeccakTable = keccak_table<FieldType, stage>;
                 using CopyTable = copy_table<FieldType, stage>;
 
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType> get_table_description(
@@ -85,7 +85,7 @@ namespace nil {
                     std::size_t witness_amount = state::get_items_amout() + std::ceil(float(implemented_opcodes_amount)/4) + max_opcode_height/2 + opcode_columns_amount;
                     witness_amount += BytecodeTable::get_witness_amount();
                     witness_amount += RWTable::get_witness_amount();
-                    witness_amount += ExpTable::get_witness_amount();
+                    witness_amount += KeccakTable::get_witness_amount();
                     witness_amount += CopyTable::get_witness_amount();
                     witness_amount += 10;
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 5, 20);
@@ -100,8 +100,7 @@ namespace nil {
                     std::size_t max_copy,
                     std::size_t max_rw,
                     std::size_t max_keccak_blocks,
-                    std::size_t max_bytecode,
-                    std::size_t max_exponentiations = 50 // TODO:remove it later
+                    std::size_t max_bytecode
                 ) :generic_component<FieldType,stage>(context_object), implemented_opcodes(get_implemented_opcodes_list()) {
                     std::size_t implemented_opcodes_amount = implemented_opcodes.size();
                     std::size_t opcode_selectors_amount = std::ceil(float(implemented_opcodes_amount)/4);
@@ -128,11 +127,11 @@ namespace nil {
                     }
                     std::cout << std::endl;
 
-                    std::vector<std::size_t> exp_lookup_area;
-                    std::cout << "Exponentiation_area: ";
-                    for( std::size_t i = 0; i < ExpTable::get_witness_amount(); i++){
+                    std::vector<std::size_t> keccak_lookup_area;
+                    std::cout << "Keccak_area: ";
+                    for( std::size_t i = 0; i < KeccakTable::get_witness_amount(); i++){
                         std::cout << current_column << " ";
-                        exp_lookup_area.push_back(current_column++);
+                        keccak_lookup_area.push_back(current_column++);
                     }
                     std::cout << std::endl;
 
@@ -154,12 +153,12 @@ namespace nil {
                     std::cout << std::endl;
 
                     context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,1,max_bytecode + 1);
-                    context_type exp_ct = context_object.subcontext( exp_lookup_area, 1, max_exponentiations + 1);
+                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 1, max_keccak_blocks + 1);
                     context_type rw_ct = context_object.subcontext(rw_lookup_area,1,max_rw + 1);
                     context_type copy_ct = context_object.subcontext( copy_lookup_area, 1, max_copy + 1);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
-                    ExpTable e_t = ExpTable(exp_ct, input.exponentiations, max_exponentiations);
+                    KeccakTable k_t = KeccakTable(keccak_ct, {input.rlc_challenge, input.keccak_buffers}, max_keccak_blocks);
                     RWTable rw_t = RWTable(rw_ct, input.rw_operations, max_rw, true);
                     CopyTable c_t = CopyTable(copy_ct, input.copy_events, max_copy, true);
 
@@ -425,7 +424,7 @@ namespace nil {
                             std::size_t max_opcode_row_constraints = 0;
                             for( std::size_t opcode_num = 0; opcode_num < implemented_opcodes.size(); opcode_num++ ){
                                 zkevm_opcode current_opcode = implemented_opcodes[opcode_num];
-                                //std::cout << "Build constraints for " << current_opcode << std::endl;
+                                std::cout << "Build constraints for " << current_opcode << std::endl;
                                 if( opcode_impls.find(current_opcode) == opcode_impls.end() ){
                                     std::cout << "\tImplementation for "<< current_opcode << " is not defined" << std::endl;
                                     continue;
@@ -527,10 +526,7 @@ namespace nil {
                         tmp[3] = context_object.relativize(evm_opcode_constraint, -1);
                         tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_hi, -1);
                         tmp[5] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_lo, -1);
-                        
-                        // TODO(oclaw): bytecode check is disabled since hash algorithm for circuits is not finalized yet
-                        // https://github.com/NilFoundation/placeholder/issues/205
-                        // context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
+                        context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
                    }
                 }
             protected:

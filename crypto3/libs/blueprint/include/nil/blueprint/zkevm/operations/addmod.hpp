@@ -52,9 +52,9 @@ namespace nil {
             constexpr static const value_type two_16 = 65536;
             constexpr static const value_type two_32 = 4294967296;
             constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_big_uint254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
+            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
+            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
+            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
 
             zkevm_addmod_operation(){
                 this->stack_input = 3;
@@ -371,14 +371,14 @@ namespace nil {
                 const std::size_t curr_row = zkevm_table.get_current_row();
                 // caluclate first row carries
                 auto first_row_carries =
-                    first_carryless_construct(s_64_chunks, N_64_chunks, r_64_chunks, q_64_chunks).data.base() >> 128;
-                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
+                    first_carryless_construct(s_64_chunks, N_64_chunks, r_64_chunks, q_64_chunks).data >> 128;
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);
                 // no need for c_2 chunks as there is only a single chunk
                 auto second_row_carries =
                     (second_carryless_construct(s_64_chunks, N_64_chunks, r_64_chunks, q_64_chunks)
-                     + c_1 + c_2 * two_64).data.base() >> 128;
+                     + c_1 + c_2 * two_64).data >> 128;
                 value_type c_3 = static_cast<value_type>(second_row_carries);
                 std::vector<value_type> c_3_chunks = chunk_64_to_16<BlueprintFieldType>(c_3);
                 value_type N_sum = std::accumulate(N_chunks.begin(), N_chunks.end(), value_type(0));

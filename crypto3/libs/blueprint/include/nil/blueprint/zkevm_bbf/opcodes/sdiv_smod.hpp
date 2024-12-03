@@ -1,5 +1,4 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
 //
 // MIT License
@@ -25,19 +24,18 @@
 
 #pragma once
 
+#include <numeric>
 #include <algorithm>
+
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
-#include <numeric>
 
 namespace nil {
     namespace blueprint {
-        namespace bbf {
-            template<typename FieldType>
-            class opcode_abstract;
-
+        namespace bbf{
             template<typename FieldType, GenerationStage stage>
             class zkevm_sdiv_smod_bbf : generic_component<FieldType, stage> {
+                using typename generic_component<FieldType, stage>::context_type;
                 using generic_component<FieldType, stage>::allocate;
                 using generic_component<FieldType, stage>::copy_constrain;
                 using generic_component<FieldType, stage>::constrain;
@@ -578,27 +576,24 @@ namespace nil {
 
             template<typename FieldType>
             class zkevm_sdiv_smod_operation : public opcode_abstract<FieldType> {
-              public:
+            public:
                 zkevm_sdiv_smod_operation(bool _is_div) : is_div(_is_div) {}
-                virtual std::size_t rows_amount() override { return 5; }
-                virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type
-                        &context,
-                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
-                        &current_state) override {
-                    zkevm_sdiv_smod_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(
-                        context, current_state, is_div);
+                virtual std::size_t rows_amount() override {
+                    return 6 + !is_div;
                 }
                 virtual void fill_context(
-                    typename generic_component<FieldType,
-                                               GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
-                        &current_state) override {
-                    zkevm_sdiv_smod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
-                        context, current_state, is_div);
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
+                ) {
+                    zkevm_sdiv_smod_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, is_div);
                 }
-
-              protected:
+                virtual void fill_context(
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
+                ) {
+                    zkevm_sdiv_smod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, is_div);
+                }
+            protected:
                 bool is_div;
             };
         }  // namespace bbf

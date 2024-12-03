@@ -31,8 +31,6 @@
 #include <boost/assert.hpp>
 #include <boost/bimap.hpp>
 
-#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
-
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pushx.hpp>
@@ -72,15 +70,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/eq.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/stop.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/exp.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/keccak.hpp>
-
-#include <nil/blueprint/zkevm_bbf/opcodes/mcopy.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/returndatasize.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/returndatacopy.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/call.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -616,7 +606,7 @@ namespace nil {
                 opcodes[zkevm_opcode::SMOD] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(false);
                 opcodes[zkevm_opcode::ADDMOD] = std::make_shared<zkevm_addmod_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MULMOD] = std::make_shared<zkevm_mulmod_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::EXP] = std::make_shared<zkevm_exp_operation<BlueprintFieldType>>();
+                // // EXP
                 opcodes[zkevm_opcode::SIGNEXTEND] = std::make_shared<zkevm_signextend_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::LT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_LT);
                 opcodes[zkevm_opcode::GT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_GT);
@@ -689,14 +679,6 @@ namespace nil {
 
                 opcodes[zkevm_opcode::POP] = std::make_shared<zkevm_pop_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::RETURN] = std::make_shared<zkevm_return_operation<BlueprintFieldType>>();
-
-                // not implemented yet opcodes
-                opcodes[zkevm_opcode::MCOPY] = std::make_shared<zkevm_mcopy_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::RETURNDATASIZE] = std::make_shared<zkevm_returndatasize_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::RETURNDATACOPY] = std::make_shared<zkevm_returndatacopy_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::CALL] = std::make_shared<zkevm_call_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::GAS] = std::make_shared<zkevm_gas_operation<BlueprintFieldType>>();
-                opcodes[zkevm_opcode::STATICCALL] = std::make_shared<zkevm_staticcall_operation<BlueprintFieldType>>();
 
                 // // DUP
                 opcodes[zkevm_opcode::DUP1] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(1);

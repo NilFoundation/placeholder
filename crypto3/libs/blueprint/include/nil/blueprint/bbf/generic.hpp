@@ -40,7 +40,6 @@
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
-#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 //#include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/gate_id.hpp>
@@ -482,6 +481,17 @@ namespace nil {
                 void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
                     for(const TYPE c_part : C) {
                         if (!c_part.is_relative()) {
+                            std::stringstream ss;
+                            ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
+                            throw std::logic_error(ss.str());
+                        }
+                    }
+                    add_lookup_constraint(table_name, C, start_row, end_row);
+                }
+
+                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
+                    for(const TYPE c_part : C) {
+                        if (!is_relative(c_part)) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
                             throw std::logic_error(ss.str());

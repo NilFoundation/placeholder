@@ -41,18 +41,14 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
+                using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
 
                 struct input_type{
                     TYPE rlc_challenge;
-
-                    template<typename T>
-                    using enable_for_assignment_t = typename std::conditional_t<stage == GenerationStage::ASSIGNMENT, T, std::nullptr_t>;
-
-                    enable_for_assignment_t<zkevm_keccak_buffers> bytecodes;
-                    enable_for_assignment_t<zkevm_keccak_buffers> keccak_buffers;
-                    enable_for_assignment_t<rw_operations_vector> rw_operations;
-                    enable_for_assignment_t<std::vector<copy_event>> copy_events;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type bytecodes;
+                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type keccak_buffers;
+                    typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<rw_operation>, std::nullptr_t>::type rw_operations;
+                    typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type copy_events;
                 };
             public:
                 using BytecodeTable = bytecode_table<FieldType, stage>;
@@ -74,7 +70,7 @@ namespace nil {
                     witness_amount += KeccakTable::get_witness_amount();
                     witness_amount += CopyTable::get_witness_amount();
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(witness_amount, 1, 3, 10);
-                    desc.usable_rows_amount = std::max(std::max(max_copy, max_rw + 1), std::max(max_keccak_blocks + 1, max_bytecode + 1));
+                    desc.usable_rows_amount = std::max(std::max(max_copy, max_rw), std::max(max_keccak_blocks, max_bytecode));
                     return desc;
                 }
                 copy(context_type &context_object,
@@ -111,11 +107,9 @@ namespace nil {
                         rw_lookup_area.push_back(current_column++);
                     }
 
-                    // Dynamic lookups shouldn't be placed on 0 row.
-                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,1,max_bytecode + 1);
-                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 1, max_keccak_blocks + 1);
-                    context_type rw_ct = context_object.subcontext(rw_lookup_area, 1, max_rw + 1);
-
+                    context_type bytecode_ct = context_object.subcontext(bytecode_lookup_area,0,max_bytecode);
+                    context_type keccak_ct = context_object.subcontext( keccak_lookup_area, 0, max_keccak_blocks);
+                    context_type rw_ct = context_object.subcontext(rw_lookup_area,0,max_rw);
                     context_type copy_ct = context_object.subcontext( copy_lookup_area, 0, max_copy);
 
                     BytecodeTable bc_t = BytecodeTable(bytecode_ct, input.bytecodes, max_bytecode);
@@ -144,8 +138,7 @@ namespace nil {
                             std::cout
                                 << "\tCopy event " << copy_op_to_num(cp.source_type)
                                 << " => " << copy_op_to_num(cp.destination_type)
-                                << " bytes size " << cp.bytes.size()
-                                << " rw_counter " << cp.initial_rw_counter
+                                << " bytes size" << cp.bytes.size()
                                 << std::endl;
                             for( std::size_t i = 0; i < cp.bytes.size(); i++ ){
                                 std::cout << std::hex << std::size_t(cp.bytes[i]) << " " << std::dec;

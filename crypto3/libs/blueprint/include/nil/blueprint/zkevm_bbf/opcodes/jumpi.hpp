@@ -126,9 +126,7 @@ namespace nil {
                             is_jump * current_state.bytecode_hash_hi(0),
                             is_jump * current_state.bytecode_hash_lo(0)
                         };
-                        // TODO(oclaw): bytecode check is disabled since hash algorithm for circuits is not finalized yet
-                        // https://github.com/NilFoundation/placeholder/issues/205
-                        // lookup(tmp, "zkevm_bytecode");
+                        lookup(tmp, "zkevm_bytecode");
                     }
                 }
             };
@@ -139,13 +137,13 @@ namespace nil {
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) override  {
+                ) {
                     zkevm_jumpi_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) override  {
+                ) {
                     zkevm_jumpi_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {

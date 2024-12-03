@@ -21,8 +21,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-#pragma once
 
+#pragma once
 #include <nil/blueprint/zkevm_bbf/types/hashed_buffers.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/bytecode_table.hpp>
 #include <nil/blueprint/zkevm_bbf/subcomponents/keccak_table.hpp>
@@ -134,7 +134,7 @@ namespace nil {
 //                    if (make_links) {
 //                        copy_constrain(input.rlc_challenge, rlc_challenge[0]);
 //                    }
-                    static const auto zerohash = zkevm_keccak_hash({});
+                    auto zerohash = zkevm_keccak_hash({});
                     for(std::size_t i = 0; i < max_bytecode_size; i++) {
                         constrain(tag[i] * (tag[i] - 1));    // 0. TAG is zeroes or ones -- maybe there will be third value for non-used rows
                         constrain((tag[i] - 1) * index[i]);     // 1. INDEX for HEADER and unused bytes is zero

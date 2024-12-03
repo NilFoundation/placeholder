@@ -49,6 +49,7 @@ namespace nil {
                     const zkevm_opcode_tester &tester
                 ): rw_counter(1), transactions_amount(0){
                     // It may be done for multiple transactions;
+                    _rw_operations.push_back(start_rw_operation());
                     apply_tester(tester);
                 }
 
@@ -67,8 +68,9 @@ namespace nil {
                     const std::map<std::size_t, std::uint8_t> memory;
                     const std::map<zkevm_word_type, zkevm_word_type> storage;
 
-                    while(true){
-                        auto [opcode,additional_input] = tester.get_opcode_by_pc(pc);
+                    for( std::size_t ind = 0; ind < tester.get_opcodes().size(); ind++ ){
+                        auto opcode = tester.get_opcodes()[ind].first;
+                        auto additional_input = tester.get_opcodes()[ind].second;
 
                         zkevm_state state;              // TODO:optimize
                         state.tx_hash = 0;              // * change it
@@ -79,7 +81,7 @@ namespace nil {
                         state.rw_counter = rw_counter;
                         state.bytecode_hash = _bytecodes.get_data()[current_buffer_id].second;
                         state.additional_input = additional_input;
-                        //state.tx_finish = (ind == tester.get_opcodes().size() - 1);
+                        state.tx_finish = (ind == tester.get_opcodes().size() - 1);
                         state.stack_size = stack.size();
                         state.memory_size = memory.size();
                         state.stack_slice = stack;
@@ -362,7 +364,7 @@ namespace nil {
                             pc++;
                             gas -= 3;
                         } else if (opcode == zkevm_opcode::ISZERO){
-                            // 0x15
+                            // 0x5f
                             zkevm_word_type a = stack.back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, a));
                             stack.pop_back();
@@ -682,6 +684,91 @@ namespace nil {
                             stack.push_back(additional_input);
                             gas -= 3;
                             pc += 33;
+                        } else if(opcode == zkevm_opcode::ADDMOD) {
+                            // 0x08
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type modulus = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, modulus));
+                            // This is how the result is calculated inside the circuit
+                            // It is suppose to avoid overflow of the type zkevm_word_type
+                            integral_type s_integral = integral_type(a) + integral_type(b);
+                            integral_type r_integral = modulus != 0u ? s_integral / integral_type(modulus) : 0u;
+                            zkevm_word_type q = zkevm_word_type(s_integral - r_integral * integral_type(modulus));
+                            zkevm_word_type result = modulus != 0u ? q : 0;
+                            //zkevm_word_type result = integral_type(modulus) == 0? 0 :(a + b) % modulus;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 8;
+                        } else if(opcode == zkevm_opcode::MULMOD) {
+                            // 0x09
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type modulus = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, modulus));
+                            a = modulus != 0u ? a : 0;
+                            extended_integral_type s_integral = extended_integral_type(integral_type(a)) * extended_integral_type(integral_type(b));
+                            zkevm_word_type sp = zkevm_word_type(s_integral % extended_integral_type(zkevm_modulus));
+                            zkevm_word_type spp = zkevm_word_type(s_integral / extended_integral_type(zkevm_modulus));
+                            extended_integral_type r_integral = modulus != 0u ? s_integral / extended_integral_type(integral_type(modulus)): 0u;
+                            zkevm_word_type rp = zkevm_word_type(r_integral % extended_integral_type(zkevm_modulus));
+                            zkevm_word_type rpp = zkevm_word_type(r_integral / extended_integral_type(zkevm_modulus));
+                            zkevm_word_type result = modulus != 0u ? zkevm_word_type(s_integral % extended_integral_type(integral_type(modulus))): 0u;
+                            //zkevm_word_type result = integral_type(modulus) == 0? 0 : (a * b) % modulus;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 8;
+                        } else if(opcode == zkevm_opcode::AND) {
+                            // 0x16
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a & b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::OR) {
+                            // 0x17
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a | b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
+                        } else if(opcode == zkevm_opcode::XOR) {
+                            // 0x18
+                            zkevm_word_type a = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
+                            zkevm_word_type b = stack.back();
+                            stack.pop_back();
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
+                            zkevm_word_type result = a ^ b;
+                            _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
+                            stack.push_back(result);
+                            pc++;
+                            gas -= 3;
                         } else {
                             std::cout << "Opcode tester machine doesn't contain " << opcode << " implementation" << std::endl;
                             BOOST_ASSERT(false);
@@ -695,7 +782,7 @@ namespace nil {
             public:
                 virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
-                virtual rw_operations_vector rw_operations() override {return _rw_operations;}
+                virtual std::vector<rw_operation> rw_operations() override {return _rw_operations;}
                 virtual std::vector<copy_event> copy_events() override { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
@@ -704,7 +791,7 @@ namespace nil {
                 std::size_t                                              rw_counter;
                 zkevm_keccak_buffers                                     _keccaks;
                 zkevm_keccak_buffers                                     _bytecodes;
-                rw_operations_vector                                     _rw_operations;
+                std::vector<rw_operation>                                _rw_operations;
                 std::vector<copy_event>                                  _copy_events;
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;

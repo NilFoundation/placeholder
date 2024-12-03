@@ -1,7 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
 // Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
-// Copyright (c) 2024 Antoine Cyr <a.yashunsky@nil.foundation>
 //
 // MIT License
 //
@@ -26,36 +25,35 @@
 
 #pragma once
 
+#include <numeric>
 #include <algorithm>
+
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
-#include <numeric>
 
 namespace nil {
     namespace blueprint {
-        namespace bbf {
+        namespace bbf{
             template<typename FieldType>
             class opcode_abstract;
 
             template<typename FieldType, GenerationStage stage>
             class zkevm_div_mod_bbf : generic_component<FieldType, stage> {
+                using typename generic_component<FieldType, stage>::context_type;
                 using generic_component<FieldType, stage>::allocate;
                 using generic_component<FieldType, stage>::copy_constrain;
                 using generic_component<FieldType, stage>::constrain;
                 using generic_component<FieldType, stage>::lookup;
                 using generic_component<FieldType, stage>::lookup_table;
-                using value_type = typename FieldType::value_type;
+            public:
+                using typename generic_component<FieldType,stage>::TYPE;
 
-                constexpr static const std::size_t chunk_amount = 16;
-                constexpr static const std::size_t carry_amount = 16 / 3 + 1;
-                constexpr static const value_type two_16 = 65536;
-                constexpr static const value_type two_32 = 4294967296;
-                constexpr static const value_type two_48 = 281474976710656;
-                constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
-                constexpr static const value_type two_128 =
-                    0x100000000000000000000000000000000_big_uint254;
-                constexpr static const value_type two_192 =
-                    0x1000000000000000000000000000000000000000000000000_big_uint254;
+                zkevm_div_mod_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state, bool is_div):
+                    generic_component<FieldType,stage>(context_object, false)
+                {
+                    std::vector<TYPE> A(16);
+                    std::vector<TYPE> B(16);
+                    std::vector<TYPE> C(16);
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
@@ -242,144 +240,72 @@ namespace nil {
                             res[i] = r_chunks[i];
                         }
                     }
-
-                    allocate(carry[0], 32, 0);
-                    for (std::size_t i = 0; i < carry_amount - 1; i++) {
-                        allocate(carry[i + 1], 33 + i, 0);
-                        constrain(carry_on_addition_constraint(
-                            b_chunks[3 * i], b_chunks[3 * i + 1], b_chunks[3 * i + 2],
-                            v_chunks[3 * i], v_chunks[3 * i + 1], v_chunks[3 * i + 2],
-                            q_chunks[3 * i], q_chunks[3 * i + 1], q_chunks[3 * i + 2], carry[i],
-                            carry[i + 1], i == 0));
-                        constrain(carry[i + 1] * (1 - carry[i + 1]));
+                    for( std::size_t i = 0; i < 16; i++){
+                        allocate(A[i], i, 0);
+                        allocate(B[i], i + 16, 0);
+                        allocate(C[i], i, 1);
                     }
-                    allocate(carry[carry_amount], 38, 0);
-                    constrain(last_carry_on_addition_constraint(
-                        b_chunks[3 * (carry_amount - 1)], v_chunks[3 * (carry_amount - 1)],
-                        q_chunks[3 * (carry_amount - 1)], carry[carry_amount - 1],
-                        carry[carry_amount]));
-
-                    // last carry is 0 or 1, but should be 1 if b_nonzero = 1
-                    constrain((b_nonzero +
-                              (1 - b_nonzero) * carry[carry_amount]) * (1 - carry[carry_amount]));
-
-                    allocate(first_carryless, 32, 1);
-                    allocate(c_1_64, 33, 1);
-                    allocate(c_2, 34, 1);
-
-                   constrain(first_carryless - c_1_64 * two_128 - c_2 * two_192);
-
-                    allocate(second_row_carries, 35, 1);
-                    constrain(second_row_carries + c_1_64 + c_2 * two_64);
-
-                    allocate(third_row_carries, 33, 3);
-                    constrain(third_row_carries);
-                    allocate(b_sum, 34, 2);
-                    allocate(b_sum_inverse, 35, 2);
-                    constrain(b_sum_inverse * (b_sum_inverse * b_sum - 1));
-                    constrain(b_sum * (b_sum_inverse * b_sum - 1));
-
-                    allocate(b_64_chunks[3], 0, 3);
-                    allocate(r_64_chunks[3], 1, 3);
-                    constrain(b_64_chunks[3] * r_64_chunks[3]);
-
-                    constrain(c_2 * (c_2 - 1));
-
-                    auto A_128 = chunks16_to_chunks128_reversed<TYPE>(a_chunks);
-                    auto B_128 = chunks16_to_chunks128_reversed<TYPE>(b_chunks);
-                    auto Res_128 = chunks16_to_chunks128_reversed<TYPE>(res);
-
-                    TYPE A0, A1, B0, B1, Res0, Res1;
-
-                    A0 = A_128.first;
-                    A1 = A_128.second;
-                    B0 = B_128.first;
-                    B1 = B_128.second;
-                    Res0 = Res_128.first;
-                    Res1 = Res_128.second;
-                    allocate(A0, 39, 0);
-                    allocate(A1, 40, 0);
-                    allocate(B0, 41, 0);
-                    allocate(B1, 42, 0);
-                    allocate(Res0, 39, 2);
-                    allocate(Res1, 40, 2);
-
-                    if constexpr (stage == GenerationStage::CONSTRAINTS) {
-
-                        constrain(current_state.pc_next() - current_state.pc(3) -
-                                  1);  // PC transition
-                        constrain(current_state.gas(3) - current_state.gas_next() -
-                                  5);  // GAS transition
-                        constrain(current_state.stack_size(3) - current_state.stack_size_next() -
-                                  1);  // stack_size transition
-                        constrain(current_state.memory_size(3) -
-                                  current_state.memory_size_next());  // memory_size transition
-                        constrain(current_state.rw_counter_next() - current_state.rw_counter(3) -
-                                  3);  // rw_counter transition
-                        std::vector<TYPE> tmp;
-
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(0),
-                               current_state.stack_size(0) - 1,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(0),
-                               TYPE(0),  // is_write
-                               A0,
-                               A1};
-                        lookup(tmp, "zkevm_rw");
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(0),
-                               current_state.stack_size(0) - 2,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(0) + 1,
-                               TYPE(0),  // is_write
-                               B0,
-                               B1};
-
-                        lookup(tmp, "zkevm_rw");
-                        tmp = {TYPE(rw_op_to_num(rw_operation_type::stack)),
-                               current_state.call_id(2),
-                               current_state.stack_size(2) - 2,
-                               TYPE(0),  // storage_key_hi
-                               TYPE(0),  // storage_key_lo
-                               TYPE(0),  // field
-                               current_state.rw_counter(2) + 2,
-                               TYPE(1),  // is_write
-                               Res0,
-                               Res1};
-                        lookup(tmp, "zkevm_rw");
+                    auto A_128 = chunks16_to_chunks128<TYPE>(A);
+                    auto B_128 = chunks16_to_chunks128<TYPE>(B);
+                    if constexpr( stage == GenerationStage::CONSTRAINTS ){
+                        // constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
+                        // constrain(current_state.gas(2) - current_state.gas_next() - 3);                 // GAS transition
+                        // constrain(current_state.stack_size(2) - current_state.stack_size_next() - 1);   // stack_size transition
+                        // constrain(current_state.memory_size(2) - current_state.memory_size_next());     // memory_size transition
+                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(2) - 3);   // rw_counter transition
+                        // std::vector<TYPE> tmp;
+                        // tmp = {
+                        //     TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        //     current_state.call_id(1),
+                        //     current_state.stack_size(1) - 1,
+                        //     TYPE(0),// storage_key_hi
+                        //     TYPE(0),// storage_key_lo
+                        //     TYPE(0),// field
+                        //     current_state.rw_counter(1),
+                        //     TYPE(0),// is_write
+                        //     A_128.first,
+                        //     A_128.second
+                        // };
+                        // lookup(tmp, "zkevm_rw");
+                        // tmp = {
+                        //     TYPE(rw_op_to_num(rw_operation_type::stack)),
+                        //     current_state.call_id(1),
+                        //     current_state.stack_size(1) - 2,
+                        //     TYPE(0),// storage_key_hi
+                        //     TYPE(0),// storage_key_lo
+                        //     TYPE(0),// field
+                        //     current_state.rw_counter(1) + 1,
+                        //     TYPE(0),// is_write
+                        //     B_128.first,
+                        //     B_128.second
+                        // };
+                        // lookup(tmp, "zkevm_rw");
                     }
-
                 }
             };
 
             template<typename FieldType>
             class zkevm_div_mod_operation : public opcode_abstract<FieldType> {
-              public:
+            public:
                 zkevm_div_mod_operation(bool _is_div) : is_div(_is_div) {}
-                virtual std::size_t rows_amount() override { return 4; }
+                virtual std::size_t rows_amount() override {
+                    return 4;
+                }
                 virtual void fill_context(
-                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type
-                        &context,
-                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
-                        &current_state)  override  {
+                    typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
+                    const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
+                ) {
                     zkevm_div_mod_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state, is_div);
                 }
                 virtual void fill_context(
-                    typename generic_component<FieldType,
-                                               GenerationStage::CONSTRAINTS>::context_type &context,
-                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
-                        &current_state) override  {
+                    typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
+                    const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
+                ) {
                     zkevm_div_mod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state, is_div);
                 }
-
-              protected:
+            protected:
                 bool is_div;
             };
-        }  // namespace bbf
-    }  // namespace blueprint
-}  // namespace nil
+        } // namespace bbf
+    }   // namespace blueprint
+}   // namespace nil
