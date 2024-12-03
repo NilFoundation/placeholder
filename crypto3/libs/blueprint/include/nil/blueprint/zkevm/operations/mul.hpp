@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Dmitrii Tabalin <d.tabalin@nil.foundation>
+// Copyright (c) 2024 Alexey Yashunsky <a.yashunsky@nil.foundation>
 //
 // MIT License
 //
@@ -32,6 +33,8 @@
 
 namespace nil {
     namespace blueprint {
+        template<typename BlueprintFieldType>
+        class zkevm_operation;
 
         template<typename BlueprintFieldType>
         class zkevm_mul_operation : public zkevm_operation<BlueprintFieldType> {
@@ -39,12 +42,18 @@ namespace nil {
             using op_type = zkevm_operation<BlueprintFieldType>;
             using gate_class = typename op_type::gate_class;
             using constraint_type = typename op_type::constraint_type;
+            using lookup_constraint_type = crypto3::zk::snark::plonk_lookup_constraint<BlueprintFieldType>;
             using zkevm_circuit_type = typename op_type::zkevm_circuit_type;
+            using zkevm_table_type = typename op_type::zkevm_table_type;
             using assignment_type = typename op_type::assignment_type;
             using value_type = typename BlueprintFieldType::value_type;
             using var = typename op_type::var;
 
-            zkevm_mul_operation() {}
+            zkevm_mul_operation() {
+                this->stack_input = 2;
+                this->stack_output = 1;
+                this->gas_cost = 5;
+            }
 
             constexpr static const value_type two_16 = 65536;
             constexpr static const value_type two_32 = 4294967296;
@@ -83,14 +92,21 @@ namespace nil {
                               a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[3] * b_64_chunks[0] - r_64_chunks[3]);
             }
 
-            std::map<gate_class, std::vector<constraint_type>> generate_gates(zkevm_circuit_type &zkevm_circuit) override {
-                std::vector<constraint_type> constraints;
+            std::map<gate_class, std::pair<
+                std::vector<std::pair<std::size_t, constraint_type>>,
+                std::vector<std::pair<std::size_t, lookup_constraint_type>>
+                >>
+                generate_gates(zkevm_circuit_type &zkevm_circuit) override {
+
+                std::vector<std::pair<std::size_t, constraint_type>> constraints;
+
                 constexpr const std::size_t chunk_amount = 16;
                 const std::vector<std::size_t> &witness_cols = zkevm_circuit.get_opcode_cols();
                 auto var_gen = [&witness_cols](std::size_t i, int32_t offset = 0) {
                     return zkevm_operation<BlueprintFieldType>::var_gen(witness_cols, i, offset);
                 };
-                constraint_type position = zkevm_circuit.get_opcode_row_constraint(1, this->rows_amount());
+
+                std::size_t position = 1;
                 std::vector<var> a_chunks;
                 std::vector<var> b_chunks;
                 std::vector<var> r_chunks;
@@ -129,23 +145,21 @@ namespace nil {
                 constraint_type c_3_64 = chunk_sum_64<constraint_type, var>(c_3_chunks, 0);
                 constraint_type first_carryless = first_carryless_consrtruct<constraint_type>(
                     a_64_chunks, b_64_chunks, r_64_chunks);
-                constraints.push_back(position * (first_carryless - c_1_64 * two128 - c_2 * two192));
+                constraints.push_back({position, (first_carryless - c_1_64 * two128 - c_2 * two192)});
                 constraint_type second_carryless = second_carryless_construct<constraint_type>(
                     a_64_chunks, b_64_chunks, r_64_chunks);
-                constraints.push_back(
-                    position * (second_carryless + c_1_64 + c_2 * two_64 - c_3_64 * two128 - c_4 * two192));
+                constraints.push_back({position, (second_carryless + c_1_64 + c_2 * two_64 - c_3_64 * two128 - c_4 * two192)});
                 // add constraints for c_2/c_4: c_2 is 0/1, c_4 is 0/1/2/3
-                constraints.push_back(position * c_2 * (c_2 - 1));
-                constraints.push_back(position * c_4 * (c_4 - 1) * (c_4 - 2) * (c_4 - 3));
+                constraints.push_back({position, c_2 * (c_2 - 1)});
+                constraints.push_back({position, c_4 * (c_4 - 1) * (c_4 - 2) * (c_4 - 3)});
 
-                return {{gate_class::MIDDLE_OP, constraints}};
+                return {{gate_class::MIDDLE_OP, {constraints, {}}}};
             }
 
-            void generate_assignments(zkevm_circuit_type &zkevm_circuit, zkevm_machine_interface &machine) override {
-                zkevm_stack &stack = machine.stack;
+            void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                word_type a = stack.pop();
-                word_type b = stack.pop();
+                word_type a = machine.stack_top();
+                word_type b = machine.stack_top(1);
                 word_type result = a * b;
                 const std::vector<value_type> a_chunks = zkevm_word_to_field_element<BlueprintFieldType>(a);
                 const std::vector<value_type> b_chunks = zkevm_word_to_field_element<BlueprintFieldType>(b);
@@ -159,9 +173,9 @@ namespace nil {
                     b_64_chunks.push_back(chunk_sum_64<value_type>(b_chunks, i));
                     r_64_chunks.push_back(chunk_sum_64<value_type>(r_chunks, i));
                 }
-                const std::vector<std::size_t> &witness_cols = zkevm_circuit.get_opcode_cols();
-                assignment_type &assignment = zkevm_circuit.get_assignment();
-                const std::size_t curr_row = zkevm_circuit.get_current_row();
+                const std::vector<std::size_t> &witness_cols = zkevm_table.get_opcode_cols();
+                assignment_type &assignment = zkevm_table.get_assignment();
+                const std::size_t curr_row = zkevm_table.get_current_row();
                 // caluclate first row carries
                 auto first_row_carries =
                     first_carryless_consrtruct(a_64_chunks, b_64_chunks, r_64_chunks).data >> 128;
@@ -195,9 +209,6 @@ namespace nil {
                 }
                 assignment.witness(witness_cols[chunk_amount], curr_row + 2) = c_2;
                 assignment.witness(witness_cols[1 + chunk_amount], curr_row + 2) = c_4;
-                // reset the machine state; hope that we won't have to do this manually
-                stack.push(b);
-                stack.push(a);
             }
 
             std::size_t rows_amount() override {

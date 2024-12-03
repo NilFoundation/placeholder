@@ -96,6 +96,54 @@ void test_sha256(std::vector<typename BlueprintFieldType::value_type> public_inp
     }
 }
 
+template<typename BlueprintFieldType, bool Stretched = false>
+void test_and_print(std::vector<typename BlueprintFieldType::value_type> public_input, std::array<typename BlueprintFieldType::value_type, 2> expected_res){
+    constexpr std::size_t WitnessColumns = 15;
+    constexpr std::size_t PublicInputColumns = 1;
+    constexpr std::size_t ConstantColumns = 35;
+    constexpr std::size_t SelectorColumns = 56;
+    using hash_type = nil::crypto3::hashes::keccak_1600<256>;
+    constexpr std::size_t Lambda = 1;
+
+    std::cout << "test_and_print" << std::endl;
+    zk::snark::plonk_table_description<BlueprintFieldType> desc(
+        WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns);
+    using ArithmetizationType = crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
+    using AssignmentType = blueprint::assignment<ArithmetizationType>;
+    using var = crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
+
+    using component_type = blueprint::components::sha256<ArithmetizationType>;
+
+    std::array<var, 4> input_state_var = {
+        var(0, 0, false, var::column_type::public_input), var(0, 1, false, var::column_type::public_input),
+        var(0, 2, false, var::column_type::public_input), var(0, 3, false, var::column_type::public_input)};
+
+    component_type component_instance({0, 1, 2, 3, 4, 5, 6, 7, 8},{0},{});
+
+    typename component_type::input_type instance_input = {input_state_var};
+    auto result_check = [expected_res](AssignmentType &assignment,
+        typename component_type::result_type &real_res) {
+            assert(var_value(assignment, real_res.output[0]) == expected_res[0] && var_value(assignment, real_res.output[1]) == expected_res[1]);
+    };
+
+    // check computation
+    auto output = component_type::calculate({public_input[0], public_input[1], public_input[2], public_input[3]});
+    for (std::size_t i = 0; i < 2; i++) {
+        assert(expected_res[i] == output[i]);
+    }
+
+    std::cout << "I am here!" << std::endl;
+    if constexpr (Stretched) {
+    } else {
+        std::cout << "Component not stretched" << std::endl;
+        crypto3::test_component_extended<component_type, BlueprintFieldType, hash_type, Lambda>(
+            component_instance, desc, public_input, result_check, instance_input,
+            true, nil::blueprint::connectedness_check_type::type::NONE,
+            "sha256", false
+        );
+    }
+}
+
 template<typename BlueprintFieldType>
 void test_sha256_with_stretching(std::vector<typename BlueprintFieldType::value_type> public_input,
                                  std::array<typename BlueprintFieldType::value_type, 2> expected_res) {
@@ -144,4 +192,12 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_sha256_test0) {
          {0x8e1caeb2418a07d7d88f710dccd882d5_cppui_modular255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_cppui_modular255});
 }
 
+
+BOOST_AUTO_TEST_CASE(sha256_test1) {
+    using BlueprintFieldType = typename crypto3::algebra::curves::pallas::base_field_type;
+
+    test_and_print<BlueprintFieldType>(
+        {1, 1, 1, 1},
+         {0x8e1caeb2418a07d7d88f710dccd882d5_cppui_modular255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_cppui_modular255});
+}
 BOOST_AUTO_TEST_SUITE_END()

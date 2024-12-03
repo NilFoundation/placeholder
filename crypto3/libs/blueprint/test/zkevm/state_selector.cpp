@@ -34,7 +34,7 @@
 
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
-#include <nil/blueprint/zkevm/state_selector.hpp>
+#include <nil/blueprint/zkevm/index_selector.hpp>
 
 #include "../test_plonk_component.hpp"
 
