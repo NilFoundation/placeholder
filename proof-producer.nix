@@ -13,7 +13,10 @@
   enableDebug ? false,
   runTests ? false,
   sanitize? false,
-  develop? false
+  crypto3_tests? false,
+  parallel_crypto3_tets? false,
+  crypto3_bechmarks? false,
+  parallel_crypto3_bechmarks? false,
   }:
 let
   inherit (lib) optional;
@@ -35,13 +38,13 @@ in stdenv.mkDerivation {
   cmakeFlags =
     [
       "-DCMAKE_INSTALL_PREFIX=${placeholder "out"}"
-      (if runTests || develop then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
+      (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
-      (if develop then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
-      (if develop then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
-      (if develop then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
-      (if develop then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
+      (if crypto3_tests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
+      (if parallel_crypto3_tets then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
+      (if parallel_crypto3_bechmarks then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
+      (if crypto3_bechmarks then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       "-G Ninja"
     ];
 
