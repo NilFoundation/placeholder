@@ -72,7 +72,7 @@ namespace nil {
                     integral_type mask = (1 << n);
                     for( std::size_t bit_ind = 0; bit_ind < n; bit_ind++ ){
                         mask >>= 1;
-                        TYPE bit_selector = (mask & k == 0) ? 0 - (bits[bit_ind] - 1) : bits[bit_ind];
+                        TYPE bit_selector = ((mask & k) == 0) ? 0 - (bits[bit_ind] - 1) : bits[bit_ind];
                         if( bit_ind == 0)
                             result = bit_selector;
                         else

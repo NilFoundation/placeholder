@@ -36,22 +36,20 @@
 namespace nil {
     namespace blueprint {
 
-        constexpr static const
-            boost::multiprecision::number<
+        constexpr inline boost::multiprecision::number<
                 boost::multiprecision::backends::cpp_int_modular_backend<257>> zkevm_modulus =
                         0x10000000000000000000000000000000000000000000000000000000000000000_cppui_modular257;
 
-        constexpr static const boost::multiprecision::backends::modular_params<
+        constexpr inline boost::multiprecision::backends::modular_params<
                 boost::multiprecision::backends::cpp_int_modular_backend<257>>
                     zkevm_modular_params = zkevm_modulus.backend();
 
-        typedef boost::multiprecision::number<
+        using zkevm_word_type = boost::multiprecision::number<
             boost::multiprecision::backends::modular_adaptor<
                 boost::multiprecision::backends::cpp_int_modular_backend<257>,
                 boost::multiprecision::backends::modular_params_ct<
                     boost::multiprecision::backends::cpp_int_modular_backend<257>,
-                    zkevm_modular_params>>>
-            zkevm_word_type;
+                    zkevm_modular_params>>>;
 
         template<typename T>
         constexpr zkevm_word_type zwordc(const T &value) {
