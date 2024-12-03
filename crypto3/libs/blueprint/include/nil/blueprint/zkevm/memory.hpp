@@ -1260,7 +1260,6 @@ namespace nil {
                     BOOST_ASSERT(false);
                 }
             }
-
         public:
             rw_trace(boost::property_tree::ptree const &pt, std::size_t rows_amount, std::size_t _call_id = 0){
                 call_id = _call_id;
