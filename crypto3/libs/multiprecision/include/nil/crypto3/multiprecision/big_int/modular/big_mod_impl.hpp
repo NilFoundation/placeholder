@@ -147,6 +147,10 @@ namespace nil::crypto3::multiprecision {
 
         using typename base_type::big_uint_t;
 
+        template<std::size_t Bits2>
+        constexpr big_mod_rt_impl(const big_uint<Bits2>& b, const big_uint_t& m)
+            : base_type(b, m) {}
+
         // A method for converting a signed integer to a modular adaptor.
         //
         // TODO: We are not supposed to have this, but in the code we already have conversions from
@@ -159,10 +163,6 @@ namespace nil::crypto3::multiprecision {
                 this->negate();
             }
         }
-
-        template<std::size_t Bits2>
-        constexpr big_mod_rt_impl(const big_uint<Bits2>& b, const big_uint_t& m)
-            : base_type(b, m) {}
 
         template<typename UI, typename std::enable_if_t<
                                   std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
