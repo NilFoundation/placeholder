@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_SUITE(blueprint_bytecode_input_test_suite)
 BOOST_AUTO_TEST_CASE(input_test){
     nil::blueprint::components::bytecode_input_type input;
     input.new_bytecode(hex_string_to_bytes(bytecode_for));
-    input.new_bytecode({hex_string_to_bytes(bytecode_addition), zkevm_word_type(0x1234ab000_cppui_modular257)});
+    input.new_bytecode({hex_string_to_bytes(bytecode_addition), zkevm_word_type(0x1234ab000_bigui257)});
     auto ind = input.new_bytecode();
     input.push_byte(ind, 0x60);
     input.push_byte(ind, 0x40);

@@ -198,6 +198,6 @@ BOOST_AUTO_TEST_CASE(sha256_test1) {
 
     test_and_print<BlueprintFieldType>(
         {1, 1, 1, 1},
-         {0x8e1caeb2418a07d7d88f710dccd882d5_cppui_modular255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_cppui_modular255});
+         {0x8e1caeb2418a07d7d88f710dccd882d5_bigui255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_bigui255});
 }
 BOOST_AUTO_TEST_SUITE_END()
