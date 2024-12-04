@@ -934,13 +934,13 @@ BOOST_AUTO_TEST_CASE(test27) {
     status_type status;
     field = pack<testing_type>(Buf, status);
     auto &mem1 = field.field_mem1();
-    BOOST_CHECK(mem1.value() == 0x1);
+    BOOST_CHECK_EQUAL(mem1.value(), 0x1);
 
     auto &mem2 = field.field_mem2();
-    BOOST_CHECK(mem2.value() == 0xfa);
+    BOOST_CHECK_EQUAL(mem2.value(), 0xfa);
 
     auto &mem3 = field.field_mem3();
-    BOOST_CHECK(mem3.value() == 0x4);
+    BOOST_CHECK_EQUAL(mem3.value(), 0x4);
 }
 
 BOOST_AUTO_TEST_CASE(test28) {
