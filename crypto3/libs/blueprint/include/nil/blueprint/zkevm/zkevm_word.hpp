@@ -109,7 +109,7 @@ namespace nil {
 
         template <typename BlueprintFieldType>
         typename BlueprintFieldType::value_type w_hi(const zkevm_word_type &val){
-            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
             integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_cppui_modular257;
             return (integral_type(val) & mask) >> 128;
@@ -117,14 +117,14 @@ namespace nil {
 
         template <typename BlueprintFieldType>
         typename BlueprintFieldType::value_type w_lo(const zkevm_word_type &val){
-            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
             integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257;
             return integral_type(val) & mask;
         }
 
         std::array<std::uint8_t, 32> w_to_8(const zkevm_word_type &val){
-            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
             std::array<std::uint8_t, 32> result;
             integral_type tmp(val);
@@ -135,7 +135,7 @@ namespace nil {
         }
 
         std::array<std::size_t, 16> w_to_16(const zkevm_word_type &val){
-            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
             std::array<std::size_t, 16> result;
             integral_type tmp(val);
@@ -155,7 +155,7 @@ namespace nil {
 
         // Return a/b, a%b
         std::pair<zkevm_word_type, zkevm_word_type> eth_div(const zkevm_word_type &a, const zkevm_word_type &b){
-            using integral_type = boost::multiprecision::number < boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
             zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
             zkevm_word_type q = b != 0u ? a % b : 0;
@@ -163,17 +163,17 @@ namespace nil {
         }
 
         bool is_negative(zkevm_word_type x){
-            using integral_type = boost::multiprecision::number < boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             return (integral_type(x) > zkevm_modulus/2 - 1);
         }
 
         zkevm_word_type negate_word(zkevm_word_type x){
-            using integral_type = boost::multiprecision::number < boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             return zkevm_word_type(zkevm_modulus - integral_type(x));
         }
 
         zkevm_word_type abs_word(zkevm_word_type x){
-            using integral_type = boost::multiprecision::number < boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             return is_negative(x)? negate_word(x) : x;
         }
 
@@ -187,7 +187,7 @@ namespace nil {
 
         // Return a/b, a%b
         std::pair<zkevm_word_type, zkevm_word_type> eth_signed_div(const zkevm_word_type &a, const zkevm_word_type &b_input){
-            using integral_type = boost::multiprecision::number < boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
             zkevm_word_type b = (integral_type(a) == zkevm_modulus - 1) && (integral_type(b_input) == zkevm_modulus/2) ? 1 : b_input;
             zkevm_word_type a_abs = abs_word(a),

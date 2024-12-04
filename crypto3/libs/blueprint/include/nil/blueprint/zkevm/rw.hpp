@@ -246,7 +246,7 @@ namespace nil {
                 using var = typename component_type::var;
                 using constraint_type = crypto3::zk::snark::plonk_constraint<BlueprintFieldType>;
                 using lookup_constraint_type = crypto3::zk::snark::plonk_lookup_constraint<BlueprintFieldType>;
-                using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
 
                 std::cout << "Generate assignments" << std::endl;
                 std::cout << "Start row index: " << start_row_index << std::endl;

@@ -78,8 +78,7 @@ namespace nil {
                 }
 
                 void run_opcode(){
-                    using integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                    using integral_type = nil::crypto3::multiprecision::big_uint<257>;
                     switch(opcode) {
                         case zkevm_opcode::PUSH0:
                             stack.push(0);
