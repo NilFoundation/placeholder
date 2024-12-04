@@ -158,7 +158,7 @@ namespace nil {
             using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
             zkevm_word_type r = r_integral;
-            zkevm_word_type q = b != 0u ? a % b : 0;
+            zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : 0u;
             return {r, q};
         }
 
@@ -195,7 +195,7 @@ namespace nil {
 
             integral_type r_integral = (b != 0u)? integral_type(a_abs) / integral_type(b_abs) : 0u;
             zkevm_word_type r_abs = r_integral,
-                        q_abs = b != 0u ? a_abs % b_abs : a_abs,
+                        q_abs = b != 0u ? integral_type(a_abs) % integral_type(b_abs) : a_abs,
                         r = (is_negative(a) == is_negative(b)) ? r_abs : negate_word(r_abs),
                         q = is_negative(a)? negate_word(q_abs) : q_abs;
 
