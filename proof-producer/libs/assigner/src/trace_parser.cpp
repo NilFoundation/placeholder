@@ -140,13 +140,15 @@ namespace nil {
             // Convert memory operations
             rw_traces.memory_ops.reserve(pb_traces->memory_ops_size());
             for (const auto& pb_mop : pb_traces->memory_ops()) {
-                rw_traces.memory_ops.push_back(blueprint::bbf::memory_rw_operation(
+                auto const value = string_to_bytes(pb_mop.value());
+                auto const op = blueprint::bbf::memory_rw_operation(
                     static_cast<uint64_t>(pb_mop.msg_id()),
                     blueprint::zkevm_word_type(static_cast<int>(pb_mop.index())),
                     static_cast<uint64_t>(pb_mop.rw_idx()),
                     !pb_mop.is_read(),
-                    blueprint::zkevm_word_from_string(static_cast<std::string>(pb_mop.value())))
+                    blueprint::zkevm_word_from_bytes(value)
                 );
+                rw_traces.memory_ops.push_back(op);
             }
 
             // Convert storage operations
