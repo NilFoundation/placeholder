@@ -150,7 +150,7 @@ namespace nil {
                 const std::map<zkevm_word_type, zkevm_word_type> &storage,// Storage state before operation
                 const std::map<zkevm_word_type, zkevm_word_type> &storage_next// Storage state before operation
             ){
-                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 // Opcode is not presented in RW lookup table. We just take it from json
                 // // std::cout << opcode << std::endl;

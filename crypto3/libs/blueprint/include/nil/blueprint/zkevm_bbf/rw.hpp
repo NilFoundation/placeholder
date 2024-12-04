@@ -49,7 +49,7 @@ namespace nil {
                 using rw_table_type = rw_table<FieldType, stage>;
                 using input_type = typename rw_table_type::input_type;
                 using value = typename FieldType::value_type;
-                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             public:
                 static constexpr std::size_t op_bits_amount = 4;
                 static constexpr std::size_t diff_index_bits_amount = 5;
