@@ -7,7 +7,9 @@
 #include <istream>
 
 #include "nil/proof-generator/preset/bytecode.hpp"
-#include "nil/proof-generator/preset/add.hpp"
+#include "nil/proof-generator/preset/rw.hpp"
+#include "nil/proof-generator/preset/zkevm.hpp"
+#include "nil/proof-generator/preset/copy.hpp"
 
 #include <optional>
 #include <string>
@@ -15,11 +17,21 @@
 
 namespace nil {
     namespace proof_generator {
+        namespace circuits {
+            using Name = std::string;
+
+            const Name BYTECODE = "bytecode";
+            const Name RW = "rw";
+            const Name ZKEVM = "zkevm";
+            const Name COPY = "copy";
+
+        } // namespace circuits
+
         template<typename BlueprintFieldType>
         class CircuitFactory {
-            static std::map<const std::string, std::function<std::optional<std::string>(
+            static const std::map<const std::string, std::function<std::optional<std::string>(
                     std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& circuit,
-                    std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> circuit_selector;
+                std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> circuit_selector;
         public:
             static std::optional<std::string> initialize_circuit(const std::string& circuit_name,
                 std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& circuit,
@@ -42,11 +54,13 @@ namespace nil {
         };
 
         template<typename BlueprintFieldType>
-        std::map<const std::string, std::function<std::optional<std::string>(
+        const std::map<const circuits::Name, std::function<std::optional<std::string>(
                     std::optional<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>& circuit,
                     std::optional<nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>>& assignment_table)>> CircuitFactory<BlueprintFieldType>::circuit_selector = {
-                {"add", initialize_add_circuit<BlueprintFieldType>},
-                {"bytecode", initialize_bytecode_circuit<BlueprintFieldType>}
+                {circuits::BYTECODE, initialize_bytecode_circuit<BlueprintFieldType>},
+                {circuits::RW, initialize_rw_circuit<BlueprintFieldType>},
+                {circuits::ZKEVM, initialize_zkevm_circuit<BlueprintFieldType>},
+                {circuits::COPY, initialize_copy_circuit<BlueprintFieldType>}
         };
     } // proof_generator
 } // nil

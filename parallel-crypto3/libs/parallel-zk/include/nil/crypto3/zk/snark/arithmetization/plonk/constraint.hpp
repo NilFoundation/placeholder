@@ -87,6 +87,23 @@ namespace nil {
                         }
                     }
 
+                    // Constructor for integral types.
+                    template<class NumericType>
+                    plonk_constraint(const NumericType& coeff,
+                            typename std::enable_if<std::is_integral<NumericType>::value, NumericType>::type* = nullptr)
+                        : math::expression<VariableType>(coeff) {
+                    }
+
+                    // Constructor for number<cpp_int_backend<...>>.
+                    template<class BackendType>
+                    plonk_constraint(const boost::multiprecision::number<BackendType> &coeff)
+                        : math::expression<VariableType>(coeff) {
+                    }
+
+                    plonk_constraint(const typename VariableType::assignment_type &coeff)
+                        : math::expression<VariableType>(coeff) {
+                    }
+
                     typename VariableType::assignment_type
                         evaluate(std::size_t row_index,
                                  const plonk_assignment_table<FieldType> &assignments) const {

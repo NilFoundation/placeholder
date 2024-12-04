@@ -1,36 +1,28 @@
 #ifndef PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 #define PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
 
-#include <optional>
-#include <string>
-#include <fstream>
-
 #include <boost/filesystem.hpp>
-#include <boost/log/trivial.hpp>
+
+#include <nil/blueprint/zkevm/zkevm_word.hpp>
+#include <nil/blueprint/zkevm_bbf/types/rw_operation.hpp>
+#include <nil/blueprint/zkevm_bbf/types/zkevm_state.hpp>
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
 
 namespace nil {
     namespace proof_generator {
-        class trace_parser {
-        public:
-            /// @brief Initialize file read iterators
-            trace_parser(const boost::filesystem::path& trace_file_path):
-                m_op_code_it(trace_file_path), m_stack_op_it(trace_file_path), m_mem_op_it(trace_file_path) {}
 
-            /// @brief Read next stack operation
-            std::optional<std::string> get_next_stack_op();
-
-            /// @brief Read next stack operation
-            std::optional<std::string> get_next_mem_op();
-
-            /// @brief Read list of operations
-            std::optional<std::string> get_op_codes();
-        private:
-            std::ifstream m_op_code_it;
-            std::ifstream m_stack_op_it;
-            std::ifstream m_mem_op_it;
+        struct RWOperations {
+            std::vector<blueprint::bbf::rw_operation> stack_ops;
+            std::vector<blueprint::bbf::rw_operation> memory_ops;
+            std::vector<blueprint::bbf::rw_operation> storage_ops;
         };
 
-    } // proof_generator
-} // nil
+        [[nodiscard]] std::optional<std::unordered_map<std::string, std::string>> deserialize_bytecodes_from_file(const boost::filesystem::path& filename);
+        [[nodiscard]] std::optional<RWOperations> deserialize_rw_traces_from_file(const boost::filesystem::path& filename);
+        [[nodiscard]] std::optional<std::vector<blueprint::bbf::zkevm_state>> deserialize_zkevm_state_traces_from_file(const boost::filesystem::path& filename);
+        [[nodiscard]] std::optional<std::vector<blueprint::bbf::copy_event>> deserialize_copy_events_from_file(const boost::filesystem::path& filename);
 
+        std::vector<std::uint8_t> string_to_bytes(const std::string& str);
+    } // namespace proof_generator
+} // namespace nil
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_

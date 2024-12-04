@@ -1,0 +1,283 @@
+//---------------------------------------------------------------------------//
+// Copyright (c) 2024 Elena Tatuzova   <e.tatuzova@nil.foundation>
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//---------------------------------------------------------------------------//
+
+#ifndef CRYPTO3_BLUEPRINT_COMPONENTS_KECCAK_TABLE_HPP
+#define CRYPTO3_BLUEPRINT_COMPONENTS_KECCAK_TABLE_HPP
+
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
+#include <nil/blueprint/blueprint/plonk/assignment.hpp>
+#include <nil/blueprint/component.hpp>
+#include <nil/blueprint/manifest.hpp>
+#include <nil/blueprint/lookup_library.hpp>
+
+#include <nil/blueprint/components/hashes/sha2/plonk/detail/split_functions.hpp>
+#include <nil/blueprint/components/hashes/keccak/util.hpp>
+#include <nil/blueprint/components/hashes/keccak/keccak_round.hpp>
+
+#include <nil/crypto3/hash/type_traits.hpp>
+#include <nil/crypto3/hash/algorithm/hash.hpp>
+
+namespace nil {
+    namespace blueprint {
+        namespace components {
+            template <typename BlueprintFieldType>
+            std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type> keccak_component_hash(const std::vector<uint8_t> &buffer){
+                using value_type = typename BlueprintFieldType::value_type;
+                nil::crypto3::hashes::keccak_1600<256>::digest_type d = nil::crypto3::hash<nil::crypto3::hashes::keccak_1600<256>>(buffer);
+                nil::crypto3::algebra::fields::field<256>::integral_type n(d);
+                std::pair<value_type, value_type> hash_value;
+
+                hash_value.first = (n & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_cppui_modular257) >> 128;
+                hash_value.second = n & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257;
+                return hash_value;
+            }
+
+            template<typename ArithmetizationType>
+            class keccak_table;
+
+            template<typename BlueprintFieldType>
+            class keccak_table<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>
+                : public plonk_component<BlueprintFieldType>
+            {
+            public:
+                using component_type = plonk_component<BlueprintFieldType>;
+                using var = typename component_type::var;
+                using manifest_type = plonk_component_manifest;
+                using value_type = typename BlueprintFieldType::value_type;
+
+                std::size_t max_blocks;
+
+                struct keccak_table_map {
+                    var is_last;
+                    var hash_hi;
+                    var hash_lo;
+                    var RLC;
+
+                    keccak_table_map(const std::vector<std::uint32_t> witnesses){
+                        is_last = var(witnesses[0], 0);
+                        RLC = var(witnesses[1], 0);
+                        hash_hi = var(witnesses[2], 0);
+                        hash_lo = var(witnesses[3], 0);
+                    }
+
+                    keccak_table_map(const keccak_table &component){
+                        is_last = var(component.W(0), 0);
+                        RLC = var(component.W(1), 0);
+                        hash_hi = var(component.W(2), 0);
+                        hash_lo = var(component.W(3), 0);
+                    }
+
+                    std::vector<std::uint32_t> witnesses(){
+                        return {
+                            std::uint32_t(is_last.index),
+                            std::uint32_t(RLC.index),
+                            std::uint32_t(hash_hi.index),
+                            std::uint32_t(hash_lo.index)
+                        };
+                    }
+
+                    std::size_t witness_amount() const {
+                        return 4;
+                    }
+                };
+
+                class gate_manifest_type : public component_gate_manifest {
+                public:
+                    std::uint32_t gates_amount() const override {
+                        return 0;
+                    }
+                };
+
+                static gate_manifest get_gate_manifest(std::size_t witness_amount, std::size_t max_blocks) {
+                    gate_manifest manifest = gate_manifest(gate_manifest_type());
+                    return manifest;
+                }
+
+                static manifest_type get_manifest() {
+                    static manifest_type manifest = manifest_type(
+                        std::shared_ptr<manifest_param>(new manifest_single_value_param(4)),
+                        false
+                    );
+                    return manifest;
+                }
+
+                constexpr static std::size_t get_rows_amount(std::size_t witness_amount, std::size_t max_blocks) {
+                    return max_blocks;
+                }
+
+                constexpr static const std::size_t gates_amount = 0;
+                constexpr static const std::size_t lookup_gates_amount = 0;
+                std::size_t rows_amount = max_blocks;
+
+                struct input_type {
+                    using data_item = std::pair<
+                        std::vector<std::uint8_t>,
+                        std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>
+                    >;
+                    using data_type = std::vector<data_item>;
+
+                    var rlc_challenge;
+
+                    input_type(){}
+
+                    input_type(var _rlc_challenge):rlc_challenge(_rlc_challenge){}
+
+                    std::vector<std::reference_wrapper<var>> all_vars() {
+                        std::vector<std::reference_wrapper<var>> res;
+                        res.push_back(rlc_challenge);
+                        return res;
+                    }
+
+                    void fill_data(const data_type& _input){
+                        input = _input;
+                    }
+
+                    void new_buffer(const data_item &_pair){
+                        input.push_back(_pair);
+                    }
+
+                    void new_buffer(const std::vector<std::uint8_t> buffer){
+                        input.push_back({buffer, keccak_component_hash<BlueprintFieldType>(buffer)});
+                    }
+
+                    data_type input;
+                };
+
+                struct result_type {
+                    result_type(const keccak_table &component, std::size_t start_row_index) {
+                    }
+
+                    std::vector<std::reference_wrapper<var>> all_vars() {
+                        std::vector<std::reference_wrapper<var>> result;
+                        return result;
+                    }
+                };
+
+                template<typename ContainerType>
+                explicit keccak_table(ContainerType witness, std::size_t _max_blocks) :
+                    component_type(witness, {}, {}, get_manifest()), max_blocks(_max_blocks)
+                    {};
+
+                template<typename WitnessContainerType, typename ConstantContainerType,
+                         typename PublicInputContainerType>
+                keccak_table(WitnessContainerType witness, ConstantContainerType constant,
+                    PublicInputContainerType public_input,
+                    std::size_t _max_blocks
+                ) : component_type(witness, constant, public_input, get_manifest()), max_blocks(_max_blocks) {};
+
+                keccak_table(
+                    std::initializer_list<typename component_type::witness_container_type::value_type> witnesses,
+                    std::initializer_list<typename component_type::constant_container_type::value_type>
+                        constants,
+                    std::initializer_list<typename component_type::public_input_container_type::value_type>
+                        public_inputs,
+                    std::size_t _max_blocks
+                ) : component_type(witnesses, constants, public_inputs, get_manifest()), max_blocks(_max_blocks){};
+            };
+
+            template<typename BlueprintFieldType>
+            using plonk_keccak_table =
+                keccak_table<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>;
+
+            template<typename BlueprintFieldType>
+            typename plonk_keccak_table<BlueprintFieldType>::result_type generate_assignments(
+                const plonk_keccak_table<BlueprintFieldType> &component,
+                assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>
+                    &assignment,
+                const typename plonk_keccak_table<BlueprintFieldType>::input_type
+                    &instance_input,
+                const std::uint32_t start_row_index
+            ) {
+                using component_type = plonk_keccak_table<BlueprintFieldType>;
+                using value_type = typename BlueprintFieldType::value_type;
+
+                value_type theta = var_value(assignment, instance_input.rlc_challenge);
+                std::size_t input_idx = 0;
+                std::size_t block_counter = 0;
+                std::vector<std::uint8_t> msg;
+                std::pair<value_type, value_type> hash;
+                typename component_type::keccak_table_map t(component);
+                while( block_counter < component.max_blocks ) {
+                    if( input_idx < instance_input.input.size() ){
+                        msg = std::get<0>(instance_input.input[input_idx]);
+                        hash = std::get<1>(instance_input.input[input_idx]);
+                        input_idx++;
+                    } else {
+                        msg = {};
+                        hash = keccak_component_hash<BlueprintFieldType>(msg);
+                    }
+                    value_type RLC = calculateRLC<BlueprintFieldType>(msg, theta);
+                    for( std::size_t block = 0; block < std::ceil(float(msg.size() + 1)/136); block++){
+                        if( block != std::ceil(float(msg.size() + 1)/136) - 1){
+                            assignment.witness(t.is_last.index, start_row_index + block_counter) = 0;
+                        } else {
+                            assignment.witness(t.is_last.index, start_row_index + block_counter) = 1;
+                        }
+                        assignment.witness(t.RLC.index, start_row_index + block_counter) = RLC;
+                        assignment.witness(t.hash_hi.index, start_row_index + block_counter) = hash.first;
+                        assignment.witness(t.hash_lo.index, start_row_index + block_counter) = hash.second;
+                        block_counter++;
+                    }
+                }
+                return typename component_type::result_type(component, start_row_index);
+	        }
+
+            template<typename BlueprintFieldType>
+            typename plonk_keccak_table<BlueprintFieldType>::result_type generate_circuit(
+                const plonk_keccak_table<BlueprintFieldType> &component,
+                circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> &bp,
+                assignment<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>>
+                    &assignment,
+                const typename plonk_keccak_table<BlueprintFieldType>::input_type
+                    &instance_input,
+                const std::size_t start_row_index
+            ) {
+                using component_type = plonk_keccak_table<BlueprintFieldType>;
+                using var = typename component_type::var;
+
+                bp.register_dynamic_table("keccak_table");
+                std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
+                assignment.enable_selector(selector_index, start_row_index, start_row_index + component.rows_amount - 1);
+
+                crypto3::zk::snark::plonk_lookup_table<BlueprintFieldType> keccak_table;
+                typename component_type::keccak_table_map t(component);
+
+                keccak_table.tag_index = selector_index;
+                keccak_table.columns_number =  4;//
+                keccak_table.lookup_options = {{
+                    t.is_last,
+                    t.RLC,
+                    t.hash_hi,
+                    t.hash_lo
+                }};
+                bp.define_dynamic_table("keccak_table", keccak_table);
+
+                return typename component_type::result_type(component, start_row_index);
+            }
+        }
+    }
+}
+#endif
