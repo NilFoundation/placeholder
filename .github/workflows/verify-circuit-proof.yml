@@ -34,7 +34,7 @@ jobs:
     needs:
       - produce-proofs
     if: needs.produce-proofs.result == 'success'
-    uses: NilFoundation/evm-placeholder-verification/.github/workflows/verify-proof.yml@e5a8dffd6b00d3c036c9b5c09c06b10515e4785c
+    uses: NilFoundation/evm-placeholder-verification/.github/workflows/verify-proof.yml@a68465f641680eccc43ebdae02810eeab0537954
     with:
-      evm-placeholder-verification-ref: e5a8dffd6b00d3c036c9b5c09c06b10515e4785c
+      evm-placeholder-verification-ref: a68465f641680eccc43ebdae02810eeab0537954
 

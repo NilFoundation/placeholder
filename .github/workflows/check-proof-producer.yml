@@ -233,8 +233,8 @@ jobs:
       always() && !cancelled() &&
       (needs.build-and-generate-proofs.result == 'success' || needs.build-and-generate-proofs.result == 'skipped') &&
       (needs.prepare-targets.result == 'success' || needs.prepare-targets.result == 'skipped')
-    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@2a0ef5fc67e97be8e3c7b59338cf9eecd030c57d
+    uses: NilFoundation/evm-placeholder-verification/.github/workflows/reusable-verify-proofs.yml@a68465f641680eccc43ebdae02810eeab0537954
     with:
       artifact-name: ${{ needs.build-and-generate-proofs.outputs.artifact-name }}
-      evm-placeholder-verification-ref: 2a0ef5fc67e97be8e3c7b59338cf9eecd030c57d
+      evm-placeholder-verification-ref: a68465f641680eccc43ebdae02810eeab0537954
       test-names: ${{ needs.prepare-targets.outputs.evm-targets }}
