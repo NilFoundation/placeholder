@@ -21,6 +21,7 @@
 
 #include "nil/crypto3/multiprecision/big_int/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/big_int/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/big_int/detail/constexpr_support.hpp"
 #include "nil/crypto3/multiprecision/big_int/integer_ops_base.hpp"
 #include "nil/crypto3/multiprecision/big_int/storage.hpp"
 
@@ -123,6 +124,27 @@ namespace nil::crypto3::multiprecision::detail {
             result = input;
         }
 
+        template<std::size_t Bits2>
+        constexpr void init_raw_base(big_uint_t &raw_base, const big_uint<Bits2> &b) const {
+            adjust_modular(raw_base, b);
+        }
+
+        template<typename SI,
+                 typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
+        constexpr void init_raw_base(big_uint_t &raw_base, SI b) const {
+            adjust_modular(raw_base,
+                           big_uint<sizeof(SI) * CHAR_BIT>(detail::constexpr_support::abs(b)));
+            if (b < 0) {
+                negate(raw_base);
+            }
+        }
+
+        template<typename UI, typename std::enable_if_t<
+                                  std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
+        constexpr void init_raw_base(big_uint_t &raw_base, UI b) const {
+            adjust_modular(raw_base, big_uint<sizeof(UI) * CHAR_BIT>(b));
+        }
+
         template<std::size_t Bits2, std::size_t Bits3,
                  // result should fit in the output parameter
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
@@ -139,6 +161,38 @@ namespace nil::crypto3::multiprecision::detail {
                 result.set_carry(false);
             } else if (result >= mod()) {
                 result -= mod();
+            }
+        }
+
+        constexpr void negate(big_uint_t &raw_base) const {
+            if (!raw_base.is_zero()) {
+                auto initial_raw_base = raw_base;
+                raw_base = mod();
+                raw_base -= initial_raw_base;
+            }
+        }
+
+        constexpr void subtract(big_uint_t &a, const big_uint_t &b) const {
+            if (a < b) {
+                auto v = mod();
+                v -= b;
+                a += v;
+            } else {
+                a -= b;
+            }
+        }
+
+        constexpr void increment(big_uint_t &a) const {
+            ++a;
+            if (a == mod()) {
+                a = 0u;
+            }
+        }
+
+        constexpr void decrement(big_uint_t &a) const {
+            ++a;
+            if (a == mod()) {
+                a = 0u;
             }
         }
 
@@ -240,7 +294,7 @@ namespace nil::crypto3::multiprecision::detail {
                 throw std::invalid_argument("module not usable with montgomery");
             }
 
-            m_montgomery_p_dash = this->monty_inverse(this->m_mod.limbs()[0]);
+            m_montgomery_p_dash = monty_inverse(this->m_mod.limbs()[0]);
 
             big_uint_doubled_padded_limbs r;
             r.bit_set(2 * this->m_mod.limbs_count() * limb_bits);
@@ -259,7 +313,7 @@ namespace nil::crypto3::multiprecision::detail {
          * is even. If input is odd, then input and 2^n are relatively prime
          * and an inverse exists.
          */
-        constexpr limb_type monty_inverse(const limb_type &a) {
+        constexpr static limb_type monty_inverse(const limb_type &a) {
             if (a % 2 == 0) {
                 throw std::invalid_argument("inverse does not exist");
             }
