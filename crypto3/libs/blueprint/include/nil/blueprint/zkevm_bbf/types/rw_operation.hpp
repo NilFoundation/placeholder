@@ -79,9 +79,9 @@ namespace nil {
                 bool operator< (const rw_operation &other) const {
                     if( op != other.op ) return op < other.op;
                     if( call_id != other.call_id ) return call_id < other.call_id;
-                    if( address != other.address ) return address < other.address;
+                    if( address != other.address ) return address.base() < other.address.base();
                     if( field != other.field ) return field < other.field;
-                    if( storage_key != other.storage_key ) return storage_key < other.storage_key;
+                    if( storage_key != other.storage_key ) return storage_key.base() < other.storage_key.base();
                     if( rw_counter != other.rw_counter) return rw_counter < other.rw_counter;
                     return false;
                 }
