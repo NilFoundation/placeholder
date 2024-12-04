@@ -84,66 +84,11 @@ namespace nil::crypto3::multiprecision::detail {
             m_mod_compliment = compliment;
         }
 
+        // Common public methods
+
         constexpr const auto &mod() const { return m_mod; }
 
-      protected:
-        constexpr const auto &mod_compliment() const { return m_mod_compliment; }
-
-      private:
-        constexpr const auto &mu() const { return m_barrett_mu; }
-
-      public:
-        template<std::size_t Bits2>
-        constexpr void barrett_reduce(big_uint<Bits2> &result) const {
-            barrett_reduce(result, result);
-        }
-
-        template<std::size_t Bits2, std::size_t Bits3,
-                 std::enable_if_t<
-                     /// result should fit in the output parameter
-                     Bits2 >= big_uint_t::Bits, int> = 0>
-        constexpr void barrett_reduce(big_uint<Bits2> &result, big_uint<Bits3> input) const {
-            if (!input.is_zero()) {
-                if (input.msb() < 2u * mod().msb() + 1u) {
-                    big_uint_quadruple_1 t1(input);
-
-                    t1 *= m_barrett_mu;
-                    std::size_t shift_size = 2u * (1u + mod().msb());
-                    t1 >>= shift_size;
-                    t1 *= mod();
-
-                    input -= t1;
-
-                    if (input >= mod()) {
-                        input -= mod();
-                    }
-                } else {
-                    input %= mod();
-                }
-            }
-            result = input;
-        }
-
-        template<std::size_t Bits2>
-        constexpr void init_raw_base(big_uint_t &raw_base, const big_uint<Bits2> &b) const {
-            adjust_modular(raw_base, b);
-        }
-
-        template<typename SI,
-                 typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-        constexpr void init_raw_base(big_uint_t &raw_base, SI b) const {
-            adjust_modular(raw_base,
-                           big_uint<sizeof(SI) * CHAR_BIT>(detail::constexpr_support::abs(b)));
-            if (b < 0) {
-                negate(raw_base);
-            }
-        }
-
-        template<typename UI, typename std::enable_if_t<
-                                  std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
-        constexpr void init_raw_base(big_uint_t &raw_base, UI b) const {
-            adjust_modular(raw_base, big_uint<sizeof(UI) * CHAR_BIT>(b));
-        }
+        constexpr bool compare_eq(const barrett_modular_ops &o) const { return mod() == o.mod(); }
 
         template<std::size_t Bits2, std::size_t Bits3,
                  // result should fit in the output parameter
@@ -196,6 +141,46 @@ namespace nil::crypto3::multiprecision::detail {
             }
         }
 
+      protected:
+        constexpr const auto &mod_compliment() const { return m_mod_compliment; }
+
+      private:
+        constexpr const auto &mu() const { return m_barrett_mu; }
+
+      public:
+        template<std::size_t Bits2>
+        constexpr void barrett_reduce(big_uint<Bits2> &result) const {
+            barrett_reduce(result, result);
+        }
+
+        template<std::size_t Bits2, std::size_t Bits3,
+                 std::enable_if_t<
+                     /// result should fit in the output parameter
+                     Bits2 >= big_uint_t::Bits, int> = 0>
+        constexpr void barrett_reduce(big_uint<Bits2> &result, big_uint<Bits3> input) const {
+            if (!input.is_zero()) {
+                if (input.msb() < 2u * mod().msb() + 1u) {
+                    big_uint_quadruple_1 t1(input);
+
+                    t1 *= m_barrett_mu;
+                    std::size_t shift_size = 2u * (1u + mod().msb());
+                    t1 >>= shift_size;
+                    t1 *= mod();
+
+                    input -= t1;
+
+                    if (input >= mod()) {
+                        input -= mod();
+                    }
+                } else {
+                    input %= mod();
+                }
+            }
+            result = input;
+        }
+
+        // Methods which are customized: mul and exp
+
         template<std::size_t Bits2, std::size_t Bits3,
                  /// result should fit in the output parameter
                  std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits, int> = 0>
@@ -246,25 +231,16 @@ namespace nil::crypto3::multiprecision::detail {
 
         template<std::size_t Bits2>
         constexpr void adjust_modular(big_uint_t &result, big_uint<Bits2> input) const {
-            big_uint_doubled_limbs tmp;
-            barrett_reduce(tmp, input);
-            result = tmp;
-        }
-
-        [[nodiscard]] constexpr big_uint_t adjusted_regular(const big_uint_t &a) const {
-            big_uint_t result;
-            adjust_regular(result, a);
-            return result;
+            barrett_reduce(result, input);
         }
 
         template<std::size_t Bits2, std::size_t Bits3,
                  /// input number should fit in result
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
         constexpr void adjust_regular(big_uint<Bits2> &result, const big_uint<Bits3> &input) const {
+            NIL_CO3_MP_ASSERT(input < mod());
             result = input;
         }
-
-        constexpr bool compare_eq(const barrett_modular_ops &o) const { return mod() == o.mod(); }
 
       protected:
         big_uint_t m_mod;
@@ -348,9 +324,7 @@ namespace nil::crypto3::multiprecision::detail {
 
             for (std::size_t i = 0; i < this->mod().limbs_count(); ++i) {
                 limb_type limb_accum = accum.limbs()[i];
-                double_limb_type mult_res = limb_accum *
-                                            /// to prevent overflow error in constexpr
-                                            static_cast<double_limb_type>(p_dash());
+                double_limb_type mult_res = limb_accum * static_cast<double_limb_type>(p_dash());
                 limb_type mult_res_limb = static_cast<limb_type>(mult_res);
 
                 prod = this->mod();
@@ -632,12 +606,6 @@ namespace nil::crypto3::multiprecision::detail {
             result = tmp;
         }
 
-        [[nodiscard]] constexpr big_uint_t adjusted_regular(const big_uint_t &a) const {
-            big_uint_t result;
-            adjust_regular(result, a);
-            return result;
-        }
-
         template<std::size_t Bits2, std::size_t Bits3,
                  /// input number should fit in result
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
@@ -654,4 +622,26 @@ namespace nil::crypto3::multiprecision::detail {
         // is_applicable_for_no_carry_montgomery_mul() after initialization.
         bool m_no_carry_montgomery_mul_allowed;
     };
+
+    template<std::size_t Bits, std::size_t Bits2, typename modular_ops_t>
+    constexpr void init_raw_base(big_uint<Bits> &raw_base, const big_uint<Bits2> &b,
+                                 const modular_ops_t &ops) {
+        ops.adjust_modular(raw_base, b);
+    }
+
+    template<std::size_t Bits, typename SI, typename modular_ops_t,
+             typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
+    constexpr void init_raw_base(big_uint<Bits> &raw_base, SI b, const modular_ops_t &ops) {
+        ops.adjust_modular(raw_base,
+                           big_uint<sizeof(SI) * CHAR_BIT>(detail::constexpr_support::abs(b)));
+        if (b < 0) {
+            ops.negate(raw_base);
+        }
+    }
+
+    template<std::size_t Bits, typename UI, typename modular_ops_t,
+             typename std::enable_if_t<std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
+    constexpr void init_raw_base(big_uint<Bits> &raw_base, UI b, const modular_ops_t &ops) {
+        ops.adjust_modular(raw_base, big_uint<sizeof(UI) * CHAR_BIT>(b));
+    }
 }  // namespace nil::crypto3::multiprecision::detail

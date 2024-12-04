@@ -206,15 +206,6 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        template<std::size_t Bits2>
-        constexpr big_uint& operator=(const big_uint<Bits2>& other) noexcept {
-            do_assign(other);
-            if constexpr (Bits2 > Bits) {
-                NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
-            }
-            return *this;
-        }
-
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         constexpr big_uint& operator=(T val) noexcept {
@@ -227,6 +218,15 @@ namespace nil::crypto3::multiprecision {
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
         constexpr big_uint& operator=(T val) noexcept {
             do_assign_integral(val);
+            return *this;
+        }
+
+        template<std::size_t Bits2>
+        constexpr big_uint& operator=(const big_uint<Bits2>& other) noexcept {
+            do_assign(other);
+            if constexpr (Bits2 > Bits) {
+                NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
+            }
             return *this;
         }
 
@@ -1616,28 +1616,28 @@ namespace nil::crypto3::multiprecision {
     // Common ops
 
     template<std::size_t Bits>
-    constexpr std::size_t msb(const big_uint<Bits> &a) {
+    constexpr std::size_t msb(const big_uint<Bits>& a) {
         return a.msb();
     }
 
     template<std::size_t Bits>
-    constexpr std::size_t lsb(const big_uint<Bits> &a) {
+    constexpr std::size_t lsb(const big_uint<Bits>& a) {
         return a.lsb();
     }
 
     template<std::size_t Bits>
-    constexpr bool bit_test(const big_uint<Bits> &a, std::size_t index) {
+    constexpr bool bit_test(const big_uint<Bits>& a, std::size_t index) {
         return a.bit_test(index);
     }
 
     template<std::size_t Bits>
-    constexpr bool is_zero(const big_uint<Bits> &a) {
+    constexpr bool is_zero(const big_uint<Bits>& a) {
         return a.is_zero();
     }
 
     template<std::size_t Bits1, std::size_t Bits2>
-    constexpr void divide_qr(big_uint<Bits1> a, big_uint<Bits2> b, big_uint<Bits1> &q,
-                             big_uint<Bits1> &r) {
+    constexpr void divide_qr(big_uint<Bits1> a, big_uint<Bits2> b, big_uint<Bits1>& q,
+                             big_uint<Bits1>& r) {
         // TODO(ioxid): make this efficient by using private `divide`
         q = a / b;
         r = a % b;
