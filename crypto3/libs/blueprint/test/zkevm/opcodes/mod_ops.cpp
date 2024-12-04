@@ -64,52 +64,52 @@ BOOST_AUTO_TEST_CASE(zkevm_mod_ops_test) {
 
     // incorrect test logic, but we have no memory operations so
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257)); // b
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257)); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2); // a
     opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257)); // b
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257)); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2); // a
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257)); // b
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257)); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2); // a
     opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257)); // b
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257)); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2); // a
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 3); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257)); // b
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257)); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2); // a
     opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 3); // N
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257)); // b
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257)); // b
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 2); // a
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184_bigui257));
     opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x12b8f010425938504d73ebc8801e2e0161b70726fb8d3a24da9ff9647225a184_bigui257));
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257));
     opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257));
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x6789012345_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x6789012345_bigui257));
     opcode_tester.push_opcode(zkevm_opcode::ADDMOD);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_cppui_modular257));
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x6789012345_cppui_modular257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x6789012345_bigui257));
     opcode_tester.push_opcode(zkevm_opcode::MULMOD);
 
     opcode_tester.push_opcode(zkevm_opcode::RETURN);

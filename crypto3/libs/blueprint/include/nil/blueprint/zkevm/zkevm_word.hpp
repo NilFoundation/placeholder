@@ -111,7 +111,7 @@ namespace nil {
         typename BlueprintFieldType::value_type w_hi(const zkevm_word_type &val){
             using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
-            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_cppui_modular257;
+            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_bigui257;
             return (integral_type(val) & mask) >> 128;
         }
 
@@ -119,7 +119,7 @@ namespace nil {
         typename BlueprintFieldType::value_type w_lo(const zkevm_word_type &val){
             using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
-            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257;
+            integral_type mask = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui257;
             return integral_type(val) & mask;
         }
 

@@ -57,9 +57,9 @@ namespace nil {
             constexpr static const value_type two_16 = 65536;
             constexpr static const value_type two_32 = 4294967296;
             constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+            constexpr static const value_type two_64 = 0x10000000000000000_bigui254;
+            constexpr static const value_type two128 = 0x100000000000000000000000000000000_bigui254;
+            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_bigui254;
 
             std::map<gate_class, std::pair<
                 std::vector<std::pair<std::size_t, constraint_type>>,
@@ -109,9 +109,9 @@ namespace nil {
             constexpr static const value_type two_16 = 65536;
             constexpr static const value_type two_32 = 4294967296;
             constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+            constexpr static const value_type two_64 = 0x10000000000000000_bigui254;
+            constexpr static const value_type two128 = 0x100000000000000000000000000000000_bigui254;
+            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_bigui254;
 
             std::map<gate_class, std::pair<
                 std::vector<std::pair<std::size_t, constraint_type>>,
