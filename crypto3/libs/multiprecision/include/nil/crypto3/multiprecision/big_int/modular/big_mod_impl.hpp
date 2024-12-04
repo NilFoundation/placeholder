@@ -42,13 +42,18 @@ namespace nil::crypto3::multiprecision {
             template<typename T>
             constexpr big_mod_impl(const T& b, const modular_ops_storage_t& modular_ops_storage)
                 : m_modular_ops_storage(modular_ops_storage) {
-                ops().init_raw_base(m_raw_base, b);
+                init_raw_base(m_raw_base, b, ops());
             }
 
           public:
             // Components
 
-            constexpr big_uint_t base() const { return ops().adjusted_regular(m_raw_base); }
+            constexpr big_uint_t base() const {
+                big_uint_t result;
+                ops().adjust_regular(result, m_raw_base);
+                return result;
+            }
+
             constexpr const big_uint_t& mod() const { return ops().mod(); }
 
             explicit constexpr operator big_uint_t() const { return base(); }
@@ -154,7 +159,7 @@ namespace nil::crypto3::multiprecision {
         typename modular_ops_t::big_uint_t convert_to_raw_base(const S& s,
                                                                const modular_ops_t& ops) {
             typename modular_ops_t::big_uint_t result;
-            ops.init_raw_base(result, s);
+            init_raw_base(result, s, ops);
             return result;
         }
 
