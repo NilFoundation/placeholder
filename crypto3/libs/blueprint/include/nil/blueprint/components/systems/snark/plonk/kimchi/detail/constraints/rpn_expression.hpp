@@ -305,7 +305,7 @@ namespace nil {
                                 std::size_t value_end_pos = token_str.find(";", value_start_pos);
                                 std::string value_str =
                                     token_str.substr(value_start_pos, value_end_pos - value_start_pos);
-                                token.value.first = multiprecision::cpp_int("0x" + value_str);
+                                token.value.first = "0x" + value_str;
                             } else if (token_str.find("Cell") != std::string::npos) {
                                 token.type = token_type::cell;
 
