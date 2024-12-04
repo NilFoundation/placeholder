@@ -22,6 +22,6 @@
 namespace nil::crypto3::multiprecision {
     template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
     constexpr big_mod_t ressol(const big_mod_t &b) {
-        return b.with_replaced_base(ressol(b.base(), b.mod()));
+        return big_mod_t(ressol(b.base(), b.mod()), b.ops_storage());
     }
 }  // namespace nil::crypto3::multiprecision
