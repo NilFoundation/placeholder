@@ -163,20 +163,20 @@ void test_round_trip_fixed_size_container_fixed_precision() {
 
 BOOST_AUTO_TEST_SUITE(integral_fixed_test_suite)
 
-BOOST_AUTO_TEST_CASE(integral_fixed_uint1024) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_1024) {
     test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint1024_t, 128, unsigned char>();
 }
 
-BOOST_AUTO_TEST_CASE(integral_fixed_cpp_uint512) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_512) {
     test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint512_t, 128, unsigned char>();
 }
 
-BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_64) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_64) {
     test_round_trip_fixed_size_container_fixed_precision<
         nil::crypto3::multiprecision::big_uint<64>, 128, unsigned char>();
 }
 
-BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_23) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_23) {
     test_round_trip_fixed_size_container_fixed_precision<
         nil::crypto3::multiprecision::big_uint<23>, 128, unsigned char>();
 }
@@ -186,20 +186,20 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(integral_fixed_test_suite_bits)
 
-BOOST_AUTO_TEST_CASE(integral_fixed_uint1024_bits) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_1024_bits) {
     test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint1024_t, 128, bool>();
 }
 
-BOOST_AUTO_TEST_CASE(integral_fixed_cpp_uint512_bits) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_512_bits) {
     test_round_trip_fixed_size_container_fixed_precision<nil::crypto3::multiprecision::uint512_t, 128, bool>();
 }
 
-BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_23_bits) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_23_bits) {
     test_round_trip_fixed_size_container_fixed_precision<
         nil::crypto3::multiprecision::big_uint<23>, 128, bool>();
 }
 
-BOOST_AUTO_TEST_CASE(integral_fixed_cpp_int_backend_64_bits) {
+BOOST_AUTO_TEST_CASE(integral_fixed_big_uint_64_bits) {
     test_round_trip_fixed_size_container_fixed_precision<
         nil::crypto3::multiprecision::big_uint<64>, 128, bool>();
 }

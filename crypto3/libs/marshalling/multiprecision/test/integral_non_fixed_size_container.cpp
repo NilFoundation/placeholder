@@ -106,52 +106,52 @@ void test_round_trip_non_fixed_size_container_fixed_precision() {
 
 BOOST_AUTO_TEST_SUITE(integral_non_fixed_test_suite)
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_checked_int1024_be) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_1024_be) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::uint1024_t,
                 128, unsigned char>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_checked_int1024_le) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_1024_le) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::uint1024_t,
                 128, unsigned char>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_uint512_be) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_512_be) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::uint512_t,
                 128, unsigned char>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_uint512_le) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_512_le) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::uint512_t,
                 128, unsigned char>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_64_be) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_64_be) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::big_uint<64>,
                 128, unsigned char>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_64_le) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_64_le) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::big_uint<64>,
                 128, unsigned char>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_23_be) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_23_be) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::big_uint<23>,
                 128, unsigned char>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_23_le) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_23_le) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::big_uint<23>,
@@ -163,52 +163,52 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(integral_non_fixed_test_suite_bits)
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_checked_int1024_be_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_1024_be_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::uint1024_t,
                 128, bool>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_checked_int1024_le_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_1024_le_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::uint1024_t,
                 128, bool>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_uint512_be_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_512_be_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::uint512_t,
                 128, bool>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_uint512_le_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_512_le_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::uint512_t,
                 128, bool>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_64_be_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_64_be_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::big_uint<64>,
                 128, bool>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_64_le_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_64_le_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::big_uint<64>,
                 128, bool>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_23_be_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_23_be_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::big_endian,
                 nil::crypto3::multiprecision::big_uint<23>,
                 128, bool>();
     }
 
-    BOOST_AUTO_TEST_CASE(integral_non_fixed_cpp_int_backend_23_le_bits) {
+    BOOST_AUTO_TEST_CASE(integral_non_fixed_big_uint_23_le_bits) {
         test_round_trip_non_fixed_size_container_fixed_precision<
                 nil::marshalling::option::little_endian,
                 nil::crypto3::multiprecision::big_uint<23>,
