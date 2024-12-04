@@ -339,7 +339,7 @@ namespace nil {
 
                 word_type b = word_type(integral_type(1) << shift);
 
-                word_type result = word_type::backend_type(r_integral.backend());
+                word_type result = r_integral;
                 word_type q = b != 0u ? a % b : a;
 
                 bool t_last = integral_type(q) < integral_type(b);

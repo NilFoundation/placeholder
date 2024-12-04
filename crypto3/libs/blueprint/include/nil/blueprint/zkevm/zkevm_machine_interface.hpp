@@ -330,7 +330,7 @@ namespace nil {
                             int shift = (integral_type(input_b) < 256) ? int(integral_type(input_b)) : 256;
                             integral_type r_integral = integral_type(a) << shift;
                             word_type b = word_type(integral_type(1) << shift);
-                            stack.push(word_type::backend_type(r_integral.backend()));
+                            stack.push(r_integral);
                             pc++; gas -= 3;
                             break;
                         }

@@ -338,7 +338,7 @@ namespace nil {
 
                 integral_type r_integral = N != 0u ? s_integral / integral_type(N) : 0u;
                 bool r_overflow = (r_integral >= zkevm_modulus);
-                word_type r = word_type::backend_type(r_integral.backend());
+                word_type r = r_integral;
 
                 // word_type q = N != 0u ? s % N : s;
                 word_type q = word_type(s_integral - r_integral*integral_type(N));
