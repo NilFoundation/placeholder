@@ -24,7 +24,6 @@ foreach(PROTO_FILE ${PROTO_FILES})
 endforeach()
 
 add_library(proof_generatorAssigner SHARED
-            src/trace_parser.cpp
             ${PROTO_SRC}
 )
 

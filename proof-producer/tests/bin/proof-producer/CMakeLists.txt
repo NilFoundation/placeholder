@@ -1,10 +1,7 @@
-add_custom_target(tests_prover)
+add_custom_target(tests_prover_single_thread)
+add_custom_target(tests_prover_multi_thread)
 
-# Add test for OutputArtifacts library
-# .cpp file must have the name of target
-function(add_prover_test target)
-    add_executable(${target} ${target}.cpp)
-
+function(set_properties target)
     target_link_libraries(${target} PRIVATE
         GTest::gtest GTest::gtest_main
         proof_generatorAssigner
@@ -33,7 +30,26 @@ function(add_prover_test target)
     target_compile_definitions(${target} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/traces/")
 
     gtest_discover_tests(${target})
-    add_dependencies(tests_prover ${target})
+endfunction()
+
+# Add test for OutputArtifacts library
+# .cpp file must have the name of target
+function(add_prover_test target)
+    add_executable(${target}_single_thread ${target}.cpp)
+    add_executable(${target}_multi_thread ${target}.cpp)
+
+    set_properties(${target}_single_thread)
+    set_properties(${target}_multi_thread)
+    target_link_libraries(${target}_single_thread PRIVATE
+        crypto3::all
+    )
+    target_link_libraries(${target}_multi_thread PRIVATE
+        parallel-crypto3::all
+        crypto3::common
+    )
+
+    add_dependencies(tests_prover_single_thread ${target}_single_thread)
+    add_dependencies(tests_prover_multi_thread ${target}_multi_thread)
 endfunction()
 
 add_prover_test(test_zkevm_bbf_circuits)
