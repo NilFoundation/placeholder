@@ -47,7 +47,7 @@
           });
           crypto3-clang-debug = (pkgs.callPackage ./crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
-            runTests = false;
+            runTests = true;
             enableDebug = true;
           });
           crypto3-clang-debug-tests = (pkgs.callPackage ./crypto3.nix {
