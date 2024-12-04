@@ -62,7 +62,7 @@ namespace nil {
                     return input.size() - 1;
                 }
 
-                std::size_t new_buffer(const std::vector<std::uint8_t> buffer){
+                std::size_t new_buffer(const std::vector<std::uint8_t>& buffer){
                     input.push_back({buffer, zkevm_keccak_hash(buffer)});
                     return input.size() - 1;
                 }

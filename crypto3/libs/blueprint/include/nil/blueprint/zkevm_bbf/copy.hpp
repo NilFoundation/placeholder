@@ -139,6 +139,7 @@ namespace nil {
                                 << "\tCopy event " << copy_op_to_num(cp.source_type)
                                 << " => " << copy_op_to_num(cp.destination_type)
                                 << " bytes size " << cp.bytes.size()
+                                << " rw_counter " << cp.initial_rw_counter
                                 << std::endl;
                             assert(cp.bytes.size() > 0);
                             for( std::size_t i = 0; i < cp.bytes.size(); i++ ){
