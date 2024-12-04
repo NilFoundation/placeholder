@@ -90,7 +90,7 @@ namespace nil {
                         : math::expression<VariableType>(coeff) {
                     }
 
-                    // Constructor for number<cpp_int_backend<...>>.
+                    // Constructor for big_uint.
                     template<std::size_t Bits>
                     plonk_constraint(const nil::crypto3::multiprecision::big_uint<Bits> &coeff)
                         : math::expression<VariableType>(coeff) {
