@@ -87,6 +87,7 @@ namespace nil {
                             }
                             TYPE RLC_value = calculateRLC<FieldType>(msg, theta);
                             for( std::size_t block = 0; block < std::ceil(float(msg.size() + 1)/136); block++){
+                                assert(block_counter < max_blocks);
                                 if( block != std::ceil(float(msg.size() + 1)/136) - 1){
                                     is_last[block_counter] = 0;
                                 } else {
