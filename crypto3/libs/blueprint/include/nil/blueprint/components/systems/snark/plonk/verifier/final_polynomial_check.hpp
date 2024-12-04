@@ -101,7 +101,7 @@ namespace nil {
                 ) {
                     std::size_t rows_amount = 0;
                     std::size_t poly_chunks = std::ceil(float(power) / 8);
-                    std::size_t points_per_row;
+                    std::size_t points_per_row = 0;
 
                     if( power < 8){
                         points_per_row = (witness_amount - power - 1) / 3;
