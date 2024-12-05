@@ -68,11 +68,11 @@ BOOST_AUTO_TEST_CASE(opcode_not) {
 
     l1_size_restrictions max_sizes;
 
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1234567890_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1234567890_bigui257);
     opcode_tester.push_opcode(zkevm_opcode::NOT);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257);
     opcode_tester.push_opcode(zkevm_opcode::NOT);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, zwordc(0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257));
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257);
     opcode_tester.push_opcode(zkevm_opcode::NOT);
     opcode_tester.push_opcode(zkevm_opcode::STOP);
 

@@ -43,11 +43,6 @@ namespace nil {
 
         using zkevm_word_integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
-        template<typename T>
-        constexpr zkevm_word_type zwordc(const T &value) {
-            return zkevm_word_type::backend_type(value.backend());
-        }
-
         template<typename BlueprintFieldType>
         std::vector<typename BlueprintFieldType::value_type> zkevm_word_to_field_element(const zkevm_word_type &word) {
             using value_type = typename BlueprintFieldType::value_type;

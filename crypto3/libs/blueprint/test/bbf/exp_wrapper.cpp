@@ -102,15 +102,15 @@ word_type random_word_type(nil::crypto3::random::algebraic_engine<FieldType> &g)
 
     integral_type hi = integral_type(g().data) % base128;
     integral_type lo = integral_type(g().data) % base128;
-    word_type w_hi = zwordc(hi);
-    word_type w_lo = zwordc(lo);
-    word_type result = w_hi * zwordc(base128) + w_lo;
+    word_type w_hi = hi;
+    word_type w_lo = lo;
+    word_type result = w_hi * base128 + w_lo;
     return result;
 }
 
 word_type exp_by_squaring(word_type a, word_type n) {
-    if (n == zwordc(0x00_bigui257)) return 1;
-    if (n == zwordc(0x01_bigui257)) return a;
+    if (n == 0x00_bigui257) return 1;
+    if (n == 0x01_bigui257) return a;
 
     word_type exp = exp_by_squaring(a, n >> 1);
     word_type exp2 = exp * exp;
@@ -129,14 +129,14 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_exp_wrapper_test) {
     std::vector<std::array<word_type, 3>> inputs;
 
     word_type a1 =
-        zwordc(0xa00e9bd49962d7b217963a3daed6f4591c2bdbd41562d5f1446dc932ac9e1975_bigui257);
+        0xa00e9bd49962d7b217963a3daed6f4591c2bdbd41562d5f1446dc932ac9e1975_bigui257;
     word_type d1 =
-        zwordc(0xacab9c07aa7d08b7652965f01307cf5a3ed09cbf08325c10af9d2029e918ac7d_bigui257);
+        0xacab9c07aa7d08b7652965f01307cf5a3ed09cbf08325c10af9d2029e918ac7d_bigui257;
     word_type A1 =
-        zwordc(0x22fcc8f007a53fb4d231a691075afd85980214380e16a5994ff90de783c28b85_bigui257);
-    word_type a2 = zwordc(0x2_bigui257);
-    word_type d2 = zwordc(0x100_bigui257);
-    word_type A2 = zwordc(0x0_bigui257);
+        0x22fcc8f007a53fb4d231a691075afd85980214380e16a5994ff90de783c28b85_bigui257;
+    word_type a2 = 0x2_bigui257;
+    word_type d2 = 0x100_bigui257;
+    word_type A2 = 0x0_bigui257;
 
     inputs.push_back({a1, d1, A1});
     inputs.push_back({a2, d2, A2});
