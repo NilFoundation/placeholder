@@ -255,7 +255,6 @@ namespace nil {
 
             return copy_events;
         }
-        std::vector<std::uint8_t> string_to_bytes(const std::string& str);
     } // namespace proof_generator
 } // namespace nil
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_TRACE_PARSER_HPP_
