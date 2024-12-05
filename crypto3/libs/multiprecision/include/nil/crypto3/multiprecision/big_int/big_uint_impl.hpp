@@ -10,8 +10,8 @@
 #include <charconv>
 #include <climits>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
-#include <exception>
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -194,6 +194,11 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        template<std::size_t N>
+        constexpr big_uint(const std::array<std::uint8_t, N>& bytes) noexcept {
+            *this = bytes;
+        }
+
         // Assignment
 
         constexpr big_uint& operator=(const char* str) {
@@ -227,6 +232,13 @@ namespace nil::crypto3::multiprecision {
             if constexpr (Bits2 > Bits) {
                 NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
             }
+            return *this;
+        }
+
+        template<std::size_t N>
+        constexpr big_uint& operator=(const std::array<std::uint8_t, N>& /*bytes*/) {
+            // TODO(ioxid): implement
+            throw std::runtime_error("not implemented");
             return *this;
         }
 
@@ -300,8 +312,9 @@ namespace nil::crypto3::multiprecision {
 
         // Cast to integral types
 
-        template<typename T,
-                 std::enable_if_t<!std::is_same_v<T, bool> && std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        template<typename T, std::enable_if_t<!std::is_same_v<T, bool> && std::is_integral_v<T> &&
+                                                  std::is_unsigned_v<T>,
+                                              int> = 0>
         explicit constexpr operator T() const {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 return static_cast<T>(this->limbs()[0]);
