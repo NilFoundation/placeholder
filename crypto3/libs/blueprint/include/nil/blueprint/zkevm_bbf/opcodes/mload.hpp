@@ -202,16 +202,16 @@ namespace nil {
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) override {
+                ) override  {
                     zkevm_mload_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) override {
+                )  override {
                     zkevm_mload_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
-                virtual std::size_t rows_amount() override {
+                virtual  std::size_t rows_amount() override {
                     return 2;
                 }
             };
