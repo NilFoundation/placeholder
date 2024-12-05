@@ -136,8 +136,7 @@ namespace nil {
                                     bool is_div)
                     : generic_component<FieldType, stage>(context_object, false),
                       res(chunk_amount) {
-                    using integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                    using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                     std::vector<TYPE> c_1_chunks(4);
                     TYPE c_2;
