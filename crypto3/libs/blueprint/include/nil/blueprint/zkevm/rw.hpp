@@ -270,7 +270,7 @@ namespace nil {
                     typename BlueprintFieldType::integral_type mask = (1 << component_type::OP_SELECTORS_AMOUNT);
                     for( std::size_t j = 0; j < component_type::OP_SELECTORS_AMOUNT; j++){
                         mask >>= 1;
-                        assignment.witness(component.W(component_type::OP_SELECTORS[j]), start_row_index + i) = (((rw_trace[i].op & mask) == 0) ? 0 : 1);
+                        assignment.witness(component.W(component_type::OP_SELECTORS[j]), start_row_index + i) = (((static_cast<unsigned>(rw_trace[i].op) & mask) == 0) ? 0 : 1);
                     }
 
                     // Fill chunks.
