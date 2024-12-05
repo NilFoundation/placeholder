@@ -1,17 +1,14 @@
 add_custom_target(tests_prover_single_thread)
 add_custom_target(tests_prover_multi_thread)
 
+# Set properties for build target (single or multi thread)
 function(set_properties target)
     target_link_libraries(${target} PRIVATE
         GTest::gtest GTest::gtest_main
+        proof-producer::include
         proof_generatorAssigner
         proof_generatorPreset
         proof_generatorOutputArtifacts
-    )
-
-    target_include_directories(${target} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../bin/proof-producer/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../bin/proof-producer/src
     )
 
     set_target_properties(${target} PROPERTIES
@@ -32,7 +29,7 @@ function(set_properties target)
     gtest_discover_tests(${target})
 endfunction()
 
-# Add test for OutputArtifacts library
+# Add test for Prover class
 # .cpp file must have the name of target
 function(add_prover_test target)
     add_executable(${target}_single_thread ${target}.cpp)
