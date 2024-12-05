@@ -316,6 +316,15 @@ namespace nil::crypto3::multiprecision {
         return os;
     }
 
+    // Common ops
+
+    template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
+    constexpr bool is_zero(const big_mod_t& a) {
+        return a.is_zero();
+    }
+
+    // Actual big integer modular types
+
     // Montgomery modular big integer type with compile-time modulus. Modulus should be a static
     // big_uint constant.
     template<const auto& modulus>
