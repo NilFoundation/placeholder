@@ -17,17 +17,18 @@ namespace nil {
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
         std::optional<std::string> fill_rw_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                                                            const boost::filesystem::path& trace_file_path) {
-            BOOST_LOG_TRIVIAL(debug) << "fill rw table from " << trace_file_path << "\n";
+                                                            const boost::filesystem::path& trace_base_path) {
+            BOOST_LOG_TRIVIAL(debug) << "fill rw table from " << trace_base_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
             nil::blueprint::bbf::rw_operations_vector input;
-            const auto rw_operations = deserialize_rw_traces_from_file(trace_file_path);
+            const auto rw_trace_path = get_rw_trace_path(trace_base_path);
+            const auto rw_operations = deserialize_rw_traces_from_file(rw_trace_path);
             if (!rw_operations) {
-                return "can't read rw from file";
+                return "can't read rw from file: " + rw_trace_path.string();
             }
             for (const auto& stack_op : rw_operations->stack_ops) {
                 input.push_back(stack_op);

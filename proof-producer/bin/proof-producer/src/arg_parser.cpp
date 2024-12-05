@@ -81,7 +81,7 @@ namespace nil {
                 ("preprocessed-data", make_defaulted_option(prover_options.preprocessed_public_data_path), "Preprocessed public data file")
                 ("commitment-state-file", make_defaulted_option(prover_options.commitment_scheme_state_path), "Commitment state data file")
                 ("updated-commitment-state-file", make_defaulted_option(prover_options.updated_commitment_scheme_state_path), "Updated commitment state data file")
-                ("trace", po::value(&prover_options.trace_file_path), "EVM trace input file")
+                ("trace", po::value(&prover_options.trace_base_path), "Base path for EVM trace files")
                 ("circuit", po::value(&prover_options.circuit_file_path), "Circuit input file")
                 ("circuit-name", po::value(&prover_options.circuit_name), "Target circuit name")
                 ("assignment-table,t", po::value(&prover_options.assignment_table_file_path), "Assignment table input file")
@@ -121,7 +121,7 @@ namespace nil {
                 ("proof-of-work-file", make_defaulted_option(prover_options.proof_of_work_output_file), "File with proof of work.");
 
             register_output_artifacts_cli_args(prover_options.output_artifacts, config);
-        
+
             // clang-format on
             po::options_description cmdline_options("nil; Proof Producer");
             cmdline_options.add(generic).add(config);

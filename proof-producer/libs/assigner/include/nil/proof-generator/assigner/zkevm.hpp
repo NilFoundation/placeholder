@@ -17,8 +17,8 @@ namespace nil {
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
         std::optional<std::string> fill_zkevm_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                                                             const boost::filesystem::path& trace_file_path) {
-            BOOST_LOG_TRIVIAL(debug) << "fill zkevm table from " << trace_file_path << "\n";
+                                                             const boost::filesystem::path& trace_base_path) {
+            BOOST_LOG_TRIVIAL(debug) << "fill zkevm table from " << trace_base_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::zkevm<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
@@ -27,9 +27,10 @@ namespace nil {
             typename ComponentType::input_type input;
 
             // bytecode
-            const auto contract_bytecodes = deserialize_bytecodes_from_file(trace_file_path);
+            const auto bytecode_trace_path = get_bytecode_trace_path(trace_base_path);
+            const auto contract_bytecodes = deserialize_bytecodes_from_file(bytecode_trace_path);
             if (!contract_bytecodes) {
-                return "can't read bytecode from file";
+                return "can't read bytecode from file: " + bytecode_trace_path.string();
             }
             for (const auto& bytecode_it : contract_bytecodes.value()) {
                 const auto raw_bytecode = string_to_bytes(bytecode_it.second);
@@ -38,9 +39,10 @@ namespace nil {
             }
 
             // rw
-            const auto rw_operations = deserialize_rw_traces_from_file(trace_file_path);
+            const auto rw_trace_path = get_rw_trace_path(trace_base_path);
+            const auto rw_operations = deserialize_rw_traces_from_file(rw_trace_path);
             if (!rw_operations) {
-                return "can't read rw from file";
+                return "can't read rw from file: " + rw_trace_path.string();
             }
             for (const auto& stack_op : rw_operations->stack_ops) {
                 input.rw_operations.push_back(stack_op);
@@ -52,28 +54,30 @@ namespace nil {
                 input.rw_operations.push_back(storage_op);
             }
 
-            
+
             // states
-            const auto zkevm_states = deserialize_zkevm_state_traces_from_file(trace_file_path);
+            const auto zkevm_trace_path = get_zkevm_trace_path(trace_base_path);
+            const auto zkevm_states = deserialize_zkevm_state_traces_from_file(zkevm_trace_path);
             if (!zkevm_states) {
-                return "can't read zkevm states from file";
+                return "can't read zkevm states from file: " + zkevm_trace_path.string();
             }
             input.zkevm_states = zkevm_states.value();
 
-            const auto copy_events = deserialize_copy_events_from_file(trace_file_path);
+            const auto copy_trace_path = get_copy_trace_path(trace_base_path);
+            const auto copy_events = deserialize_copy_events_from_file(copy_trace_path);
             if (!copy_events) {
-                return "can't read copy events from file";
+                return "can't read copy events from file: " + copy_trace_path.string();
             }
             input.copy_events = copy_events.value();
 
             auto start = std::chrono::high_resolution_clock::now();
             ComponentType instance(
-                context_object, 
-                input, 
-                limits::max_zkevm_rows, 
-                limits::max_copy, 
-                limits::max_rw_size, 
-                limits::max_keccak_blocks, 
+                context_object,
+                input,
+                limits::max_zkevm_rows,
+                limits::max_copy,
+                limits::max_rw_size,
+                limits::max_keccak_blocks,
                 limits::max_bytecode_size
             );
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
