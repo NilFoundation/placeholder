@@ -193,7 +193,7 @@ namespace nil {
                         // caluclate first row carries
                         first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
                                                                           r_64_chunks, q_64_chunks);
-                        auto first_row_carries = first_carryless.data >> 128;
+                        auto first_row_carries = first_carryless.data.base() >> 128;
                         value_type c_1 =
                             static_cast<value_type>(first_row_carries & (two_64 - 1).data);
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
@@ -203,14 +203,14 @@ namespace nil {
                             (second_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks,
                                                         q_64_chunks) +
                              c_1 + c_2 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
 
                         // value_type
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
                         auto third_row_carries =
-                            third_carryless_construct(b_64_chunks, r_64_chunks).data >> 128;
+                            third_carryless_construct(b_64_chunks, r_64_chunks).data.base() >> 128;
 
                         b_sum = std::accumulate(b_chunks.begin(), b_chunks.end(), value_type(0));
                         b_sum_inverse = b_sum == 0 ? 0 : b_sum.inversed();

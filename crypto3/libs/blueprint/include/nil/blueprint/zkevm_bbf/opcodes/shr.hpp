@@ -248,7 +248,7 @@ namespace nil {
                         // caluclate first row carries
                         first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
                                                                           r_64_chunks, q_64_chunks);
-                        auto first_row_carries = first_carryless.data >> 128;
+                        auto first_row_carries = first_carryless.data.base() >> 128;
 
                         c_1 = value_type(first_row_carries & (two_64 - 1).data);
                         c_2 = value_type(first_row_carries >> 64);
