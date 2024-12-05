@@ -19,8 +19,8 @@ namespace nil {
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
         std::optional<std::string> fill_copy_events_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                                                             const boost::filesystem::path& trace_file_path) {
-            BOOST_LOG_TRIVIAL(debug) << "fill copy table from " << trace_file_path << "\n";
+                                                             const boost::filesystem::path& trace_base_path) {
+            BOOST_LOG_TRIVIAL(debug) << "fill copy table from " << trace_base_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::copy<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
@@ -28,16 +28,18 @@ namespace nil {
 
             typename ComponentType::input_type input;
             input.rlc_challenge = limits::RLC_CHALLENGE;
-            
-            auto copy_events = deserialize_copy_events_from_file(trace_file_path);
+
+            const auto copy_trace_path = get_copy_trace_path(trace_base_path);
+            auto copy_events = deserialize_copy_events_from_file(copy_trace_path);
             if (!copy_events) {
-                return "can't read copy events from file";
+                return "can't read copy events from file: " + copy_trace_path.string();
             }
             input.copy_events = std::move(copy_events.value());
 
-            const auto contract_bytecodes = deserialize_bytecodes_from_file(trace_file_path);
+            const auto bytecode_trace_path = get_bytecode_trace_path(trace_base_path);
+            const auto contract_bytecodes = deserialize_bytecodes_from_file(bytecode_trace_path);
             if (!contract_bytecodes) {
-                return "can't read bytecode trace from file";
+                return "can't read bytecode trace from file: " + bytecode_trace_path.string();
             }
             for (const auto& bytecode_it : contract_bytecodes.value()) {
                 const auto raw_bytecode = string_to_bytes(bytecode_it.second);
@@ -45,9 +47,10 @@ namespace nil {
                 input.keccak_buffers.new_buffer(raw_bytecode);
             }
 
-            const auto rw_operations = deserialize_rw_traces_from_file(trace_file_path);
+            const auto rw_trace_path = get_rw_trace_path(trace_base_path);
+            const auto rw_operations = deserialize_rw_traces_from_file(rw_trace_path);
             if (!rw_operations) {
-                return "can't read rw operations trace from file";
+                return "can't read rw operations trace from file: " + rw_trace_path.string();
             }
             for (const auto& stack_op : rw_operations->stack_ops) {
                 input.rw_operations.push_back(stack_op);
@@ -62,11 +65,11 @@ namespace nil {
 
             auto start = std::chrono::high_resolution_clock::now();
             ComponentType instance(
-                context_object, 
-                input, 
-                limits::max_copy, 
-                limits::max_rw_size, 
-                limits::max_keccak_blocks, 
+                context_object,
+                input,
+                limits::max_copy,
+                limits::max_rw_size,
+                limits::max_keccak_blocks,
                 limits::max_bytecode_size
             );
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
@@ -78,4 +81,3 @@ namespace nil {
 } // nil
 
 #endif  // PROOF_GENERATOR_LIBS_ASSIGNER_COPY_HPP_
-

@@ -20,7 +20,7 @@ class ProverTests: public ::testing::Test {
 };
 
 TEST_F(ProverTests, Bytecode) {
-    std::string trace_file_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
+    std::string trace_base_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
     nil::proof_generator::Prover<CurveType, HashType> prover(
                         lambda,
                         expand_factor,
@@ -31,7 +31,7 @@ TEST_F(ProverTests, Bytecode) {
 
     ASSERT_TRUE(prover.setup_prover());
 
-    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_base_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
@@ -41,7 +41,7 @@ TEST_F(ProverTests, Bytecode) {
 }
 
 TEST_F(ProverTests, RW) {
-    std::string trace_file_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
+    std::string trace_base_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
     nil::proof_generator::Prover<CurveType, HashType> prover(
                         lambda,
                         expand_factor,
@@ -52,7 +52,7 @@ TEST_F(ProverTests, RW) {
 
     ASSERT_TRUE(prover.setup_prover());
 
-    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_base_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
@@ -62,7 +62,7 @@ TEST_F(ProverTests, RW) {
 }
 
 TEST_F(ProverTests, Copy) {
-    std::string trace_file_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
+    std::string trace_base_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
     nil::proof_generator::Prover<CurveType, HashType> prover(
                         lambda,
                         expand_factor,
@@ -73,7 +73,7 @@ TEST_F(ProverTests, Copy) {
 
     ASSERT_TRUE(prover.setup_prover());
 
-    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_base_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
@@ -82,7 +82,7 @@ TEST_F(ProverTests, Copy) {
 }
 
 TEST_F(ProverTests, Zkevm) {
-    std::string trace_file_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
+    std::string trace_base_path = std::string(TEST_DATA_DIR) + "increment_multi_tx.pb";
     nil::proof_generator::Prover<CurveType, HashType> prover(
                         lambda,
                         expand_factor,
@@ -93,7 +93,7 @@ TEST_F(ProverTests, Zkevm) {
 
     ASSERT_TRUE(prover.setup_prover());
 
-    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_base_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();

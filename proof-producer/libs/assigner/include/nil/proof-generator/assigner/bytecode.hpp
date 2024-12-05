@@ -16,17 +16,18 @@ namespace nil {
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
         std::optional<std::string> fill_bytecode_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                                                             const boost::filesystem::path& trace_file_path) {
-            BOOST_LOG_TRIVIAL(debug) << "fill bytecode table from " << trace_file_path << "\n";
+                                                             const boost::filesystem::path& trace_base_path) {
+            BOOST_LOG_TRIVIAL(debug) << "fill bytecode table from " << trace_base_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::bytecode<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
             typename ComponentType::input_type input;
-            const auto contract_bytecodes = deserialize_bytecodes_from_file(trace_file_path);
+            const auto bytecode_trace_path = get_bytecode_trace_path(trace_base_path);
+            const auto contract_bytecodes = deserialize_bytecodes_from_file(bytecode_trace_path);
             if (!contract_bytecodes) {
-                return "can't read bytecode trace from file";
+                return "can't read bytecode trace from file: " + bytecode_trace_path.string();
             }
 
             for (const auto& bytecode_it : contract_bytecodes.value()) {
