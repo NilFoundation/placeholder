@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE blueprint_plonk_bbf_wrapper_test
+#define BOOST_TEST_MODULE blueprint_plonk_circuit_builder_test
 
 #include <boost/test/unit_test.hpp>
 
@@ -40,64 +40,30 @@
 
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
-#include <nil/blueprint/bbf/bbf_wrapper.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
+#include <nil/blueprint/bbf/is_zero.hpp>
 
-#include "../test_plonk_component.hpp"
+//#include "../test_plonk_component.hpp"
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 
-template <typename BlueprintFieldType>
-void test_bbf_wrapper(std::vector<typename BlueprintFieldType::value_type> public_input) {
-    constexpr std::size_t WitnessColumns = 15;    // TODO
-    constexpr std::size_t PublicInputColumns = 1; // TODO
-    constexpr std::size_t ConstantColumns = 3;    // TODO
-    constexpr std::size_t SelectorColumns = 9;    // TODO
+template <typename FieldType, template<typename, bbf::GenerationStage stage> class Component, typename... ComponentStaticInfoArgs>
+void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input,
+                          ComponentStaticInfoArgs... args) {
 
-    // table configuration, TODO: We need 108 rows because test_plonk_component.hpp places the component at a random row 0..100.
-    // In practice it's placed at row 82.
-    zk::snark::plonk_table_description<BlueprintFieldType> desc(
-        WitnessColumns, PublicInputColumns, ConstantColumns, SelectorColumns, 108, 108);
+    auto B = bbf::circuit_builder<FieldType,Component,ComponentStaticInfoArgs...>(args...);
 
-    using ArithmetizationType = zk::snark::plonk_constraint_system<BlueprintFieldType>;
-    using AssignmentType = assignment<ArithmetizationType>;
-    using hash_type = nil::crypto3::hashes::keccak_1600<256>;
-    constexpr std::size_t Lambda = 40;
-
-    using var = zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
-
-    using component_type = components::bbf_wrapper<ArithmetizationType, BlueprintFieldType>;
-
-    typename BlueprintFieldType::value_type expected_res = 0; // TODO
-
-    typename component_type::input_type instance_input = {
-        var(0, 0, false, var::column_type::public_input),
-        var(0, 1, false, var::column_type::public_input),
-        var(0, 2, false, var::column_type::public_input),
-        var(0, 3, false, var::column_type::public_input),
-        var(0, 4, false, var::column_type::public_input),
-        var(0, 5, false, var::column_type::public_input),
-        var(0, 6, false, var::column_type::public_input),
-        var(0, 7, false, var::column_type::public_input) };
-
-//    std::vector<typename BlueprintFieldType::value_type> public_input = {input};
-
-    component_type component_instance({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, {0}, {0});
-
-    auto result_check = [&expected_res](AssignmentType &assignment, typename component_type::result_type &real_res) {
-        // assert(expected_res == var_value(assignment, real_res.output));
-    };
-
-    test_component<component_type, BlueprintFieldType, hash_type, Lambda>
-        (component_instance, desc, public_input, result_check, instance_input);
+    auto [at, A] = B.assign(raw_input);
+    std::cout << "Input = " << A.input << std::endl << "Result = " << A.res << std::endl;
+    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
 }
 
 static const std::size_t random_tests_amount = 10;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
-BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_wrapper_test) {
+BOOST_AUTO_TEST_CASE(blueprint_plonk_cicruit_builder_test) {
     using field_type = typename algebra::curves::pallas::base_field_type;
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
@@ -110,8 +76,11 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_bbf_wrapper_test) {
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
         auto random_input = value_type(integral_type(generate_random().data) % base16);
-        test_bbf_wrapper<field_type>({random_input,1,random_input,random_input,random_input,random_input,random_input,random_input});
+        bbf::is_zero<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {random_input};
+        test_circuit_builder<field_type,bbf::is_zero>(raw_input);
     }
+    bbf::is_zero<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {0};
+    test_circuit_builder<field_type,bbf::is_zero>(raw_input);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

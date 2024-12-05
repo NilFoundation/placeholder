@@ -86,6 +86,9 @@ set(COMMON_TEST_FILES
     "component_batch"
     "bbf/bbf_wrapper"
     "bbf/opcode_poc"
+    "bbf/gate_optimizer"
+    "bbf/poseidon"
+    "bbf/test_circuit_builder"
     )
 
 set(NON_NATIVE_TESTS_FILES
