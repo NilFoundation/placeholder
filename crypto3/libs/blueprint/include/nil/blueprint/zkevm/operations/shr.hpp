@@ -340,7 +340,7 @@ namespace nil {
                 word_type b = word_type(integral_type(1) << shift);
 
                 word_type result = r_integral;
-                word_type q = b != 0u ? a % b : a;
+                word_type q = b != 0u ? a.base() % b.base() : a;
 
                 bool t_last = integral_type(q) < integral_type(b);
                 word_type v = word_type(integral_type(q) + integral_type(t_last)*zkevm_modulus - integral_type(b));
