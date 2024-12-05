@@ -61,6 +61,7 @@ namespace nil {
 
             nil::blueprint::circuit<crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>> circuit;
             typename ComponentType::input_type input;
+            input.rlc_challenge = limits::RLC_CHALLENGE;
 
             blueprint::components::generate_circuit(
                 wrapper, 

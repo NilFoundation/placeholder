@@ -27,6 +27,7 @@ namespace nil {
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
             typename ComponentType::input_type input;
+            input.rlc_challenge = limits::RLC_CHALLENGE;
             
             auto copy_events = deserialize_copy_events_from_file(trace_file_path);
             if (!copy_events) {
