@@ -230,6 +230,8 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
+        // String conversion
+
         constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
                                                                   std::ios_base::showbase |
                                                                   std::ios_base::uppercase) const {
@@ -299,7 +301,7 @@ namespace nil::crypto3::multiprecision {
         // Cast to integral types
 
         template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+                 std::enable_if_t<!std::is_same_v<T, bool> && std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
         explicit constexpr operator T() const {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 return static_cast<T>(this->limbs()[0]);
@@ -320,6 +322,8 @@ namespace nil::crypto3::multiprecision {
         explicit constexpr operator T() const {
             return static_cast<T>(static_cast<std::make_unsigned_t<T>>(*this));
         }
+
+        explicit constexpr operator bool() const { return !is_zero(); }
 
         // Comparisions
 
