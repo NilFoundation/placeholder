@@ -185,7 +185,7 @@ namespace nil::crypto3::multiprecision {
             do_assign_integral(val);
         }
 
-        // This should be implicit even for Bits2 < Bits because it's used in boost random
+        // TODO(ioxid): make this explicit for the case when Bits2 > Bits
         template<std::size_t Bits2>
         constexpr big_uint(const big_uint<Bits2>& other) noexcept {
             do_assign(other);
@@ -1443,7 +1443,7 @@ namespace nil::crypto3::multiprecision {
 
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
     constexpr auto operator+(const T1& a, const T2& b) noexcept {
-        big_uint<largest_t::Bits + 1> result = a;
+        big_uint<largest_t::Bits> result = a;
         decltype(result)::add(result, result, b);
         return result;
     }
@@ -1469,12 +1469,12 @@ namespace nil::crypto3::multiprecision {
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
     constexpr auto operator-(const T1& a, const T2& b) noexcept {
         T1 result;
-        T1::subtract(result, a, b);
+        T1::subtract(result, a, static_cast<T1>(b));
         return result;
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
     constexpr auto& operator-=(big_uint_t& a, const T& b) {
-        big_uint_t::subtract(a, a, b);
+        big_uint_t::subtract(a, a, static_cast<big_uint_t>(b));
         return a;
     }
     NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
@@ -1499,14 +1499,13 @@ namespace nil::crypto3::multiprecision {
         big_uint<detail::get_bits<T1>() + detail::get_bits<T2>()> result;
         decltype(result)::multiply(result, big_uint<detail::get_bits<T1>()>(a),
                                    big_uint<detail::get_bits<T2>()>(b));
-        return result;
+        return result.template truncate<largest_t::Bits>();
     }
     NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
     constexpr auto& operator*=(big_uint_t& a, const T& b) noexcept {
         big_uint<detail::get_bits<big_uint_t>() + detail::get_bits<T>()> result;
         decltype(result)::multiply(result, a, static_cast<big_uint_t>(b));
-        // NB: this asserts on overflow, this is expected
-        a = result;
+        a = result.template truncate<big_uint_t::Bits>();
         return a;
     }
 
