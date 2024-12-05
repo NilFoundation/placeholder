@@ -47,32 +47,140 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
+                using integral_type = zkevm_word_integral_type;
+
+                constexpr static const typename FieldType::value_type two_64 = 0x10000000000000000_cppui_modular257;
+                constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_cppui_modular254;
+                constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+
+                TYPE chunk_sum_64(const std::vector<TYPE> &chunks, const unsigned char chunk_idx) const {
+                    BOOST_ASSERT(chunk_idx < 4);
+                    TYPE result;
+                    result =  chunks[4 * chunk_idx];     result *= 0x10000;
+                    result += chunks[4 * chunk_idx + 1]; result *= 0x10000;
+                    result += chunks[4 * chunk_idx + 2]; result *= 0x10000;
+                    result += chunks[4 * chunk_idx + 3];
+                    return result;
+                }
+
+                TYPE lo_carryless_construct(
+                    const std::vector<TYPE> &a_64_chunks,
+                    const std::vector<TYPE> &b_64_chunks,
+                    const std::vector<TYPE> &r_64_chunks
+                ) const {
+                    return
+                        a_64_chunks[3] * b_64_chunks[3] +
+                        two_64 * (a_64_chunks[3] * b_64_chunks[2] + a_64_chunks[2] * b_64_chunks[3]) - r_64_chunks[3] - two_64 * r_64_chunks[2];
+                }
+
+
+                TYPE hi_carryless_construct(
+                    const std::vector<TYPE> &a_64_chunks,
+                    const std::vector<TYPE> &b_64_chunks,
+                    const std::vector<TYPE> &r_64_chunks
+                ) {
+                    return
+                       (a_64_chunks[3] * b_64_chunks[1] + a_64_chunks[2] * b_64_chunks[2] +
+                        a_64_chunks[1] * b_64_chunks[3] - r_64_chunks[1]) +
+                        two_64 * (a_64_chunks[3] * b_64_chunks[0] + a_64_chunks[1] * b_64_chunks[2] +
+                            a_64_chunks[2] * b_64_chunks[1] + a_64_chunks[0] * b_64_chunks[3] - r_64_chunks[0]);
+                }
 
                 zkevm_mul_bbf(context_type &context_object, const opcode_input_type<FieldType, stage> &current_state):
                     generic_component<FieldType,stage>(context_object, false)
                 {
                     std::vector<TYPE> A(16);
                     std::vector<TYPE> B(16);
+                    std::vector<TYPE> R(16);
+                    std::vector<TYPE> A_64(4);
+                    std::vector<TYPE> B_64(4);
+                    std::vector<TYPE> R_64(4);
+                    TYPE C0;
+                    std::vector<TYPE> C1(4);
+                    TYPE C2;
+                    std::vector<TYPE> C3(4);
+
                     if constexpr( stage == GenerationStage::ASSIGNMENT ){
                         auto a = w_to_16(current_state.stack_top());
                         auto b = w_to_16(current_state.stack_top(1));
+                        auto r = w_to_16(current_state.stack_top() * current_state.stack_top(1));
+                        std::cout << "\ta = " << std::hex << current_state.stack_top() << std::dec << std::endl;
+                        std::cout << "\tb = " << std::hex << current_state.stack_top(1) << std::dec << std::endl;
+                        std::cout << "\tr = " << std::hex << current_state.stack_top() * current_state.stack_top(1) << std::dec << std::endl;
                         for( std::size_t i = 0; i < 16; i++){
                             A[i] = a[i];
                             B[i] = b[i];
+                            R[i] = r[i];
                         }
                     }
                     for( std::size_t i = 0; i < 16; i++){
                         allocate(A[i], i, 0);
                         allocate(B[i], i + 16, 0);
+                        allocate(R[i], i, 1);
                     }
+
+                    A_64[0] = chunk_sum_64(A, 0);
+                    A_64[1] = chunk_sum_64(A, 1);
+                    A_64[2] = chunk_sum_64(A, 2);
+                    A_64[3] = chunk_sum_64(A, 3);
+
+                    B_64[0] = chunk_sum_64(B, 0);
+                    B_64[1] = chunk_sum_64(B, 1);
+                    B_64[2] = chunk_sum_64(B, 2);
+                    B_64[3] = chunk_sum_64(B, 3);
+
+                    R_64[0] = chunk_sum_64(R, 0);
+                    R_64[1] = chunk_sum_64(R, 1);
+                    R_64[2] = chunk_sum_64(R, 2);
+                    R_64[3] = chunk_sum_64(R, 3);
+
+
+                    if constexpr( stage == GenerationStage::ASSIGNMENT ){
+                        TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
+                        TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
+
+                        integral_type c_first_i = typename FieldType::integral_type(lo_carries.data) >> 128;
+                        auto c_first = w_to_16(zwordc(c_first_i));
+                        integral_type c_second_i = (typename FieldType::integral_type(hi_carries.data) + c_first_i) >> 128;
+                        auto c_second = w_to_16(zwordc(c_second_i));
+                        C3[3] = c_first[15]; C3[2] = c_first[14]; C3[1] = c_first[13]; C3[0] = c_first[12];
+                        C2 = c_first[11];
+                        C1[3] = c_second[15]; C1[2] = c_second[14]; C1[1] = c_second[13]; C1[0] = c_second[12];
+                        C0 = c_second[11];
+                    }
+
+                    TYPE lo_carries = lo_carryless_construct(A_64, B_64, R_64);
+                    TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
+
+                    allocate(C3[0], 17, 1);
+                    allocate(C3[1], 18, 1);
+                    allocate(C3[2], 19, 1);
+                    allocate(C3[3], 20, 1);
+                    TYPE C3_64 = chunk_sum_64(C3, 0);
+                    allocate(C2, 21, 1);
+
+                    allocate(C1[0], 22, 1);
+                    allocate(C1[1], 23, 1);
+                    allocate(C1[2], 24, 1);
+                    allocate(C1[3], 25, 1);
+                    TYPE C1_64 = chunk_sum_64(C1, 0);
+                    allocate(C0, 26, 1);
+
+                    constrain(C2 * (C2 - 1));
+                    constrain(C0 * (C0 - 1) * (C0 - 2) * (C0 - 3));
+
+                    constrain(lo_carries - C3_64 * two_128 - C2 * two_192);
+                    constrain(hi_carries + C3_64 + C2 * two_64 - C1_64 * two_128 - C0 * two_192);
+
                     auto A_128 = chunks16_to_chunks128<TYPE>(A);
                     auto B_128 = chunks16_to_chunks128<TYPE>(B);
+                    auto R_128 = chunks16_to_chunks128<TYPE>(R);
                     if constexpr( stage == GenerationStage::CONSTRAINTS ){
-                        // constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
-                        // constrain(current_state.gas(2) - current_state.gas_next() - 3);                 // GAS transition
-                        // constrain(current_state.stack_size(2) - current_state.stack_size_next() - 1);   // stack_size transition
-                        // constrain(current_state.memory_size(2) - current_state.memory_size_next());     // memory_size transition
-                        // constrain(current_state.rw_counter_next() - current_state.rw_counter(2) - 3);   // rw_counter transition
+                        constrain(current_state.pc_next() - current_state.pc(2) - 1);                   // PC transition
+                        constrain(current_state.gas(1) - current_state.gas_next() - 5);                 // GAS transition
+                        constrain(current_state.stack_size(1) - current_state.stack_size_next() - 1);   // stack_size transition
+                        constrain(current_state.memory_size(1) - current_state.memory_size_next());     // memory_size transition
+                        constrain(current_state.rw_counter_next() - current_state.rw_counter(1) - 3);   // rw_counter transition
                         std::vector<TYPE> tmp;
                         tmp = {
                             TYPE(rw_op_to_num(rw_operation_type::stack)),
@@ -100,6 +208,21 @@ namespace nil {
                             B_128.second
                         };
                         lookup(tmp, "zkevm_rw");
+                        tmp = {
+                            TYPE(rw_op_to_num(rw_operation_type::stack)),
+                            current_state.call_id(1),
+                            current_state.stack_size(1) - 2,
+                            TYPE(0),// storage_key_hi
+                            TYPE(0),// storage_key_lo
+                            TYPE(0),// field
+                            current_state.rw_counter(1) + 2,
+                            TYPE(1),// is_write
+                            R_128.first,
+                            R_128.second
+                        };
+                        lookup(tmp, "zkevm_rw");
+                    } else {
+                        std::cout << "\tAssignment implemented" << std::endl;
                     }
                 }
             };
@@ -110,17 +233,17 @@ namespace nil {
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT> &current_state
-                ) override {
+                ) override  {
                     zkevm_mul_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context, current_state);
                 }
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) override {
+                ) override  {
                     zkevm_mul_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }
                 virtual std::size_t rows_amount() override {
-                    return 3;
+                    return 2;
                 }
             };
         } // namespace bbf
