@@ -58,6 +58,8 @@ namespace nil::crypto3::multiprecision {
 
             explicit constexpr operator big_uint_t() const { return base(); }
 
+            explicit constexpr operator bool() const { return !is_zero(); }
+
             // String conversion
 
             constexpr std::string str(
