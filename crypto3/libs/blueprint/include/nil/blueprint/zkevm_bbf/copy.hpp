@@ -45,10 +45,14 @@ namespace nil {
 
                 struct input_type{
                     TYPE rlc_challenge;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type bytecodes;
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT, zkevm_keccak_buffers, std::nullptr_t>::type keccak_buffers;
-                    typename std::conditional<stage==GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type rw_operations;
-                    typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<copy_event>, std::nullptr_t>::type copy_events;
+
+                    template<typename T>
+                    using enable_for_assignment_t = typename std::conditional_t<stage == GenerationStage::ASSIGNMENT, T, std::nullptr_t>;
+
+                    enable_for_assignment_t<zkevm_keccak_buffers> bytecodes;
+                    enable_for_assignment_t<zkevm_keccak_buffers> keccak_buffers;
+                    enable_for_assignment_t<rw_operations_vector> rw_operations;
+                    enable_for_assignment_t<std::vector<copy_event>> copy_events;
                 };
             public:
                 using BytecodeTable = bytecode_table<FieldType, stage>;

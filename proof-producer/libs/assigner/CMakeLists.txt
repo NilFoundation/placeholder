@@ -1,4 +1,6 @@
 find_package(Protobuf REQUIRED)
+find_package(absl REQUIRED)
+
 
 file(GLOB PROTO_FILES "proto/*.proto")
 
@@ -42,6 +44,8 @@ target_link_libraries(proof_generatorAssigner
                         crypto3::common
                         Boost::filesystem
                         Boost::log
+                        absl::strings
+                        absl::log_internal_check_op
                         ${PROTOBUF_LIBRARY}
 )
 
