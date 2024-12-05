@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE(construct_modular_ct_trivial_montgomery) {
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_trivial_montgomery) {
-    big_mod_rt<2> a{0x5_bigui, 0x3_bigui};
+    big_mod_rt<2> a(0x5_bigui, 0x3_bigui2);
     BOOST_CHECK_EQUAL(a.str(), "0x2");
 }
 
@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(construct_modular_ct_small_montgomery) {
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small_montgomery) {
-    big_mod_rt<7> a{0x1234_bigui, 0x79_bigui};
+    big_mod_rt<7> a(0x1234_bigui, 0x79_bigui7);
     BOOST_CHECK_EQUAL(a.str(), "0x3E");
 }
 
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(construct_modular_ct_small) {
 }
 
 BOOST_AUTO_TEST_CASE(construct_modular_rt_small) {
-    big_mod_rt<7> a{0x1234_bigui, 0x78_bigui};
+    big_mod_rt<7> a(0x1234_bigui, 0x78_bigui7);
     BOOST_CHECK_EQUAL(a.str(), "0x64");
 }
 

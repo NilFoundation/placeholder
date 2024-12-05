@@ -15,9 +15,12 @@
 #include <boost/test/unit_test.hpp>
 
 #include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
+#include "nil/crypto3/multiprecision/big_int/literals.hpp"
 #include "nil/crypto3/multiprecision/big_int/modular/big_mod.hpp"
 
 using namespace nil::crypto3::multiprecision;
+
+NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(6)
 
 template<typename T>
 void test_inverse_extended_euclidean_algorithm() {
@@ -262,7 +265,7 @@ BOOST_AUTO_TEST_CASE(inverse_tests) {
 }
 
 BOOST_AUTO_TEST_CASE(test_big_mod_6_bits) {
-    auto modular = big_mod_rt<6>(10u, 37u);
+    auto modular = big_mod_rt<6>(10_bigui6, 37_bigui6);
     BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(modular).base(), 26u);
 }
 
