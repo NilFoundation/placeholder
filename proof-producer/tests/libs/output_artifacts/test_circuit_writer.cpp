@@ -26,7 +26,8 @@ class CircuitWriterTest: public ::testing::Test {
         void SetUp() override {
 
             // open & stat file with circuit content
-            std::ifstream in(test_table_file_path, std::ios::binary | std::ios::in | std::ios::ate);
+            std::string test_circuit_file_path = std::string(TEST_DATA_DIR) + "circuit.crct";
+            std::ifstream in(test_circuit_file_path, std::ios::binary | std::ios::in | std::ios::ate);
             ASSERT_TRUE(in.is_open());
             const auto fsize = in.tellg();
             ASSERT_FALSE(fsize == 0);
@@ -48,7 +49,6 @@ class CircuitWriterTest: public ::testing::Test {
         }
 
     protected:
-        constexpr static auto test_table_file_path = "./resources/circuit.crct";
 
         std::vector<uint8_t> circuit_bytes_;
         Circuit circuit_;

@@ -1,12 +1,12 @@
-add_custom_target(tests_output_artifacts)
+add_custom_target(tests_output_artifacts_single_thread)
+add_custom_target(tests_output_artifacts_multi_thread)
 
-# Add test for OutputArtifacts library
-# .cpp file must have the name of target
-function(add_output_artifacts_test target)
-    add_executable(${target} ${target}.cpp)
-
-    target_link_libraries(${target} PRIVATE proof_generatorOutputArtifacts)
-    target_link_libraries(${target} PRIVATE GTest::gtest GTest::gtest_main)
+# Set properties for build target (single or multi thread)
+function(set_properties target)
+    target_link_libraries(${target} PRIVATE
+        GTest::gtest GTest::gtest_main
+        proof_generatorOutputArtifacts
+    )
 
     set_target_properties(${target} PROPERTIES
         LINKER_LANGUAGE CXX
@@ -15,8 +15,29 @@ function(add_output_artifacts_test target)
         CXX_STANDARD_REQUIRED TRUE
     )
 
+    target_compile_definitions(${target} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+
     gtest_discover_tests(${target})
-    add_dependencies(tests_output_artifacts ${target})
+endfunction()
+
+# Add test for OutputArtifacts library
+# .cpp file must have the name of target
+function(add_output_artifacts_test target)
+    add_executable(${target}_single_thread ${target}.cpp)
+    add_executable(${target}_multi_thread ${target}.cpp)
+
+    set_properties(${target}_single_thread)
+    set_properties(${target}_multi_thread)
+    target_link_libraries(${target}_single_thread PRIVATE
+        crypto3::all
+    )
+    target_link_libraries(${target}_multi_thread PRIVATE
+        parallel-crypto3::all
+        crypto3::common
+    )
+
+    add_dependencies(tests_output_artifacts_single_thread ${target}_single_thread)
+    add_dependencies(tests_output_artifacts_multi_thread ${target}_multi_thread)
 endfunction()
 
 add_output_artifacts_test(test_range)

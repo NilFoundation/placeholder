@@ -39,6 +39,7 @@ class AssignmentTableWriterTest: public ::testing::Test {
         void SetUp() override {
 
             // open & stat file with table content
+            std::string test_table_file_path = std::string(TEST_DATA_DIR) + "assignment.tbl";
             std::ifstream in(test_table_file_path, std::ios::binary | std::ios::in | std::ios::ate);
             ASSERT_TRUE(in.is_open());
             const auto fsize = in.tellg();
@@ -116,8 +117,6 @@ class AssignmentTableWriterTest: public ::testing::Test {
 
 
     protected:
-
-        constexpr static auto test_table_file_path = "./resources/assignment.tbl";
 
         std::vector<std::uint8_t> table_bytes_;
         AssignmentTable table_;
