@@ -141,7 +141,7 @@ namespace nil {
                             integral_type mask = (1 << op_bits_amount);
                             for( std::size_t j = 0; j < op_bits_amount; j++){
                                 mask >>= 1;
-                                op_bits[i][j] = (((rw_trace[i].op & mask) == 0) ? 0 : 1);
+                                op_bits[i][j] = (((static_cast<unsigned>(rw_trace[i].op) & mask) == 0) ? 0 : 1);
                             }
                             std::size_t cur_chunk = 0;
                             // id
