@@ -15,7 +15,7 @@ namespace nil {
         template<typename BlueprintFieldType>
         std::map<const std::string, std::function<std::optional<std::string>(
                     nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                    const boost::filesystem::path& trace_file_path)>> circuit_selector = {
+                    const boost::filesystem::path& trace_base_path)>> circuit_selector = {
                 {circuits::BYTECODE, fill_bytecode_assignment_table<BlueprintFieldType>},
                 {circuits::RW, fill_rw_assignment_table<BlueprintFieldType>},
                 {circuits::ZKEVM, fill_zkevm_assignment_table<BlueprintFieldType>},
@@ -63,12 +63,12 @@ namespace nil {
         std::optional<std::string> fill_assignment_table_single_thread(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
                                                                        nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>& desc,
                                                                        const std::string& circuit_name,
-                                                                       const boost::filesystem::path& trace_file_path) {
+                                                                       const boost::filesystem::path& trace_base_path) {
             auto find_it = circuit_selector<BlueprintFieldType>.find(circuit_name);
             if (find_it == circuit_selector<BlueprintFieldType>.end()) {
                 return "Unknown circuit name " + circuit_name;
             }
-            const auto err = find_it->second(assignment_table, trace_file_path);
+            const auto err = find_it->second(assignment_table, trace_base_path);
             if (err) {
                 return err;
             }
