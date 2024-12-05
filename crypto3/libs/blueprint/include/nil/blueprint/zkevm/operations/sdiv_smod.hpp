@@ -539,8 +539,8 @@ namespace nil {
                 const std::size_t curr_row = zkevm_table.get_current_row();
                 // caluclate first row carries
                 auto first_row_carries =
-                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data >> 128;
-                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data.base() >> 128;
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);
                 // no need for c_2 chunks as there is only a single chunk
