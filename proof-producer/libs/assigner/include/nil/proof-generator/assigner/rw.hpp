@@ -24,7 +24,7 @@ namespace nil {
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
-            std::vector<nil::blueprint::bbf::rw_operation> input;
+            nil::blueprint::bbf::rw_operations_vector input;
             const auto rw_operations = deserialize_rw_traces_from_file(trace_file_path);
             if (!rw_operations) {
                 return "can't read rw from file";
@@ -44,7 +44,7 @@ namespace nil {
              << "storage " << rw_operations->storage_ops.size() << "\n";
 
             auto start = std::chrono::high_resolution_clock::now();
-            ComponentType instance(context_object, input, limits::max_rw_size, limits::max_mpt_size);
+            ComponentType instance(context_object, std::move(input), limits::max_rw_size, limits::max_mpt_size);
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
             std::cout << "FILL ASSIGNMENT TABLE: " << duration.count() << "\n";
             return {};

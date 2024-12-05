@@ -51,6 +51,8 @@ namespace nil {
                     boost::multiprecision::backends::cpp_int_modular_backend<257>,
                     zkevm_modular_params>>>;
 
+        using zkevm_word_integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+
         template<typename T>
         constexpr zkevm_word_type zwordc(const T &value) {
             return zkevm_word_type::backend_type(value.backend());

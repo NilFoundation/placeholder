@@ -50,6 +50,7 @@ namespace nil {
                     desc.usable_rows_amount = 300;
                     return desc;
                 }
+
                 keccak(context_type &context_object, const input_type &input) :generic_component<FieldType,stage>(context_object) {
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         std::cout << "Keccak assign = " << input.private_input << std::endl;

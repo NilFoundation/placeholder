@@ -31,6 +31,8 @@
 #include <boost/assert.hpp>
 #include <boost/bimap.hpp>
 
+#include <nil/blueprint/zkevm_bbf/types/copy_event.hpp>
+
 #include <nil/blueprint/zkevm_bbf/util.hpp>
 #include <nil/blueprint/zkevm_bbf/types/opcode.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/pushx.hpp>
@@ -71,6 +73,7 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/stop.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/keccak.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/exp.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -606,7 +609,7 @@ namespace nil {
                 opcodes[zkevm_opcode::SMOD] = std::make_shared<zkevm_sdiv_smod_operation<BlueprintFieldType>>(false);
                 opcodes[zkevm_opcode::ADDMOD] = std::make_shared<zkevm_addmod_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::MULMOD] = std::make_shared<zkevm_mulmod_operation<BlueprintFieldType>>();
-                // // EXP
+                opcodes[zkevm_opcode::EXP] = std::make_shared<zkevm_exp_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::SIGNEXTEND] = std::make_shared<zkevm_signextend_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::LT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_LT);
                 opcodes[zkevm_opcode::GT] = std::make_shared<zkevm_cmp_operation<BlueprintFieldType>>(cmp_type::C_GT);

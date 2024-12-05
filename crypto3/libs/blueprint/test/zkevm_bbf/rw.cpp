@@ -43,7 +43,10 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/l1_wrapper.hpp>
 #include <nil/blueprint/zkevm_bbf/rw.hpp>
-
+#include <nil/blueprint/zkevm_bbf/copy.hpp>
+#include <nil/blueprint/zkevm_bbf/zkevm.hpp>
+#include <nil/blueprint/zkevm_bbf/bytecode.hpp>
+#include <nil/blueprint/zkevm_bbf/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/input_generators/hardhat_input_generator.hpp>
 
 #include "./test_l1_wrapper.hpp"
@@ -51,49 +54,51 @@
 using namespace nil::crypto3;
 using namespace nil::blueprint;
 
-template <typename field_type>
-void test_zkevm_rw(
-    std::string path,
-    std::size_t max_rw_size
-){
-    auto [bytecodes, traces] = load_hardhat_input(path);
+class zkEVMRWTestFixture: public BBFTestFixture {
+public:
+    zkEVMRWTestFixture():BBFTestFixture(){}
 
-    nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
+    template <typename field_type>
+    void test_zkevm_rw(
+        std::string path,
+        std::size_t max_rw_size
+    ){
+        auto [bytecodes, traces] = load_hardhat_input(path);
 
-    typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_trace = circuit_inputs.rw_operations();
-    typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
+        nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
 
-    std::cout << "rw_trace size = " <<  rw_trace.size() << std::endl;
-    bool result = test_l1_wrapper<field_type, nil::blueprint::bbf::rw>({}, rw_trace, null_input, max_rw_size, 0);
-    BOOST_ASSERT(result); // Max_rw, Max_mpt
-}
+        typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>::input_type rw_trace = circuit_inputs.rw_operations();
+        typename nil::blueprint::bbf::rw<field_type, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>::input_type null_input;
 
+        std::cout << "rw_trace size = " <<  rw_trace.size() << std::endl;
+        bool result = test_bbf_component<field_type, nil::blueprint::bbf::rw>(
+            "rw", {}, rw_trace, null_input, max_rw_size, 0
+        );
+        BOOST_ASSERT(result); // Max_rw, Max_mpt
+    }
+};
 
-BOOST_AUTO_TEST_SUITE(blueprint_bbf_rw)
+BOOST_FIXTURE_TEST_SUITE(blueprint_bbf_rw, zkEVMRWTestFixture)
     using field_type = typename algebra::curves::pallas::base_field_type;
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
-BOOST_AUTO_TEST_CASE(minimal_math_contract){
+BOOST_AUTO_TEST_CASE(minimal_math){
     test_zkevm_rw<field_type>("minimal_math/", 500);
 }
 
-BOOST_AUTO_TEST_CASE(small_storage_contract){
+BOOST_AUTO_TEST_CASE(small_storage){
     test_zkevm_rw<field_type>("small_stack_storage/", 500);
 }
 
-BOOST_AUTO_TEST_CASE(mstore8_contract){
+BOOST_AUTO_TEST_CASE(mstore8){
     test_zkevm_rw<field_type>("mstore8/", 5000);
 }
 
-BOOST_AUTO_TEST_CASE(meminit_contract){
+BOOST_AUTO_TEST_CASE(meminit){
     test_zkevm_rw<field_type>("mem_init/", 10000);
 }
 
-BOOST_AUTO_TEST_CASE(calldatacopy_contract){
+BOOST_AUTO_TEST_CASE(calldatacopy){
     test_zkevm_rw<field_type>("calldatacopy/", 10000);
 }
-// // Just for performance estimation
-// BOOST_AUTO_TEST_CASE(calldatacopy_contract_large){
-//     test_zkevm_rw<field_type>("calldatacopy/", 100000);
-// }
 BOOST_AUTO_TEST_SUITE_END()

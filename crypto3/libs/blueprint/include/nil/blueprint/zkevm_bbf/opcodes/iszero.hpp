@@ -65,7 +65,6 @@ namespace nil {
                         }
                         chunks_sum_inv = chunks_sum == 0? 0 : chunks_sum.inversed();
                         result = 1 - chunks_sum * chunks_sum_inv;
-                        std::cout << "\tiszero(" << A << ") = " << result << " chunks_sum = " << chunks_sum << std::endl;
                     }
                     TYPE chunks_sum_expr;
                     for( std::size_t i = 0; i < a_chunks.size(); i++ ){
@@ -130,7 +129,7 @@ namespace nil {
                 virtual void fill_context(
                     typename generic_component<FieldType, GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS> &current_state
-                ) override {
+                ) override  {
                     // std::cout << "\tBuild ISZERO constraints" << std::endl;
                     zkevm_iszero_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(context, current_state);
                 }

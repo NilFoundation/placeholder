@@ -141,8 +141,7 @@ namespace nil {
                                  const opcode_input_type<FieldType, stage> &current_state,
                                  bool make_links = true)
                     : generic_component<FieldType, stage>(context_object), res(chunk_amount) {
-                    using integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                    using integral_type = zkevm_word_integral_type;
                     using extended_integral_type = boost::multiprecision::number<
                         boost::multiprecision::backends::cpp_int_modular_backend<512>>;
                     // The central relation is a * b = s = Nr + q, q < N.
@@ -652,7 +651,7 @@ namespace nil {
                     typename generic_component<FieldType, GenerationStage::ASSIGNMENT>::context_type
                         &context,
                     const opcode_input_type<FieldType, GenerationStage::ASSIGNMENT>
-                        &current_state) override {
+                        &current_state)  override {
                     zkevm_mulmod_bbf<FieldType, GenerationStage::ASSIGNMENT> bbf_obj(context,
                                                                                      current_state);
                 }
@@ -660,7 +659,8 @@ namespace nil {
                     typename generic_component<FieldType,
                                                GenerationStage::CONSTRAINTS>::context_type &context,
                     const opcode_input_type<FieldType, GenerationStage::CONSTRAINTS>
-                        &current_state) override {
+                        &current_state
+                    ) override {
                     zkevm_mulmod_bbf<FieldType, GenerationStage::CONSTRAINTS> bbf_obj(
                         context, current_state);
                 }

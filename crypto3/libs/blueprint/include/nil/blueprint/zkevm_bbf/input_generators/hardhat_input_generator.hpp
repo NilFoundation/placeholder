@@ -54,7 +54,7 @@ namespace nil {
 
                     std::size_t call_id = 0;
                     std::size_t rw_counter = 0;
-                    _rw_operations.push_back(start_rw_operation());
+                    //_rw_operations.push_back(start_rw_operation());
                     for( auto &pt: pts){
                         boost::property_tree::ptree ptrace = pt.get_child("result.structLogs");
                         std::cout << "PT = " << ptrace.size() << std::endl;
@@ -152,6 +152,7 @@ namespace nil {
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-2, rw_counter++, false, stack[stack.size()-2]));
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack_next.size()-1, rw_counter++, true, stack_next[stack_next.size()-1]));
+                                _exponentiations.push_back({stack[stack.size() - 1], stack[stack.size() - 2]});
                             }   else if(opcode == "SIGEXTEND") {
                                 // 0x0b
                                 _rw_operations.push_back(stack_rw_operation(call_id,  stack.size()-1, rw_counter++, false, stack[stack.size()-1]));
@@ -976,14 +977,14 @@ namespace nil {
             public:
                 virtual zkevm_keccak_buffers keccaks() override {return _keccaks;}
                 virtual zkevm_keccak_buffers bytecodes() override { return _bytecodes;}
-                virtual std::vector<rw_operation> rw_operations() override {return _rw_operations;}
+                virtual rw_operations_vector rw_operations() override {return _rw_operations;}
                 virtual std::vector<copy_event> copy_events() override { return _copy_events;}
                 virtual std::vector<zkevm_state> zkevm_states() override{ return _zkevm_states;}
                 virtual std::vector<std::pair<zkevm_word_type, zkevm_word_type>> exponentiations()override{return _exponentiations;}
             protected:
                 zkevm_keccak_buffers                                     _keccaks;
                 zkevm_keccak_buffers                                     _bytecodes;
-                std::vector<rw_operation>                                _rw_operations;
+                rw_operations_vector                                     _rw_operations;
                 std::vector<copy_event>                                  _copy_events;
                 std::vector<zkevm_state>                                 _zkevm_states;
                 std::vector<std::pair<zkevm_word_type, zkevm_word_type>> _exponentiations;

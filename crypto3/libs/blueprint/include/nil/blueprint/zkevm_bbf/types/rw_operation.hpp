@@ -109,14 +109,21 @@ namespace nil {
                 bool is_write,
                 zkevm_word_type value,
                 zkevm_word_type value_prev,
-                zkevm_word_type address = zkevm_word_type(0)
+                zkevm_word_type root = zkevm_word_type(0)
             ){
-                return rw_operation({rw_operation_type::storage, id, address, 0, storage_key, rw_id, is_write, value, value_prev});
+                return rw_operation({rw_operation_type::storage, id, 0, 0, storage_key, rw_id, is_write, value, value_prev});
             }
 
             rw_operation padding_operation(){
                 return rw_operation({rw_operation_type::padding, 0, 0, 0, 0, 0, 0, 0});
             }
+
+            class rw_operations_vector: public std::vector<rw_operation>{
+            public:
+                rw_operations_vector(){
+                    this->push_back(start_rw_operation());
+                }
+            };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil
