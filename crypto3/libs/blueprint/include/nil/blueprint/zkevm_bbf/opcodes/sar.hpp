@@ -279,7 +279,7 @@ namespace nil {
                                                                           r_64_chunks, q_64_chunks);
                         auto first_row_carries = first_carryless_construct(a_64_chunks, b_64_chunks,
                                                                            r_64_chunks, q_64_chunks)
-                                                     .data >>
+                                                     .data.base() >>
                                                  128;
                         c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
