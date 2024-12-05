@@ -207,7 +207,7 @@ namespace nil {
                                                      .data.base() >>
                                                  128;
                         value_type c_1 =
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
