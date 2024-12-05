@@ -35,25 +35,14 @@ root
 ├── docs: documentation , tutorials and guides
 ├── libs: all directories added as submodules which are independent projects.
 │   ├── algebra: algebraic operations and structures being used for elliptic-curve cryptography
-│   ├── block: block ciphers
+│   ├── benchmark_tools: utilities to run benchmarks
 │   ├── blueprint: components and circuits for zk schemes
-│   ├── codec: encoding/decoding algorithms
 │   ├── containers: containers and generic commitment schemes for accumulating data, includes Merkle Tree
 │   ├── hash: hashing algorithms
-│   ├── kdf: key derivation functions 
-│   ├── mac: message authentication codes
 │   ├── marshalling: marshalling libraries for types in crypto3 library
 │   ├── math: set of Fast Fourier Transforms evaluation algorithms and Polynomial Arithmetics
-│   ├── modes: cipher modes
 │   ├── multiprecision: integer, rational, floating-point, complex and interval number types. 
-│   ├── passhash: password hashing operations 
-│   ├── pbkdf: password based key derivation functions
-│   ├── pkmodes: threshold, aggregation modes for public key schemes
-│   ├── pkpad: padding module for public key schemes
-│   ├── pubkey: pubkey signing APIs
 │   ├── random: randomisation primitives 
-│   ├── stream: stream ciphers
-│   ├── vdf: verifiable delay functions 
 │   ├── zk: zk cryptography schemes
 ```
 
@@ -120,24 +109,6 @@ project as a submodule and would not need to resolve dependencies. See [crypto3-
 The generic module can be added to your c++ project as follows
 
 ``` git submodule add https://github.com/NilFoundation/crypto3.git <dir>```
-
-### Selective
-Developer can select to include a one or more modules to reduce the sources of resulting project and dependencies tree height. This however
-does require the developer to manually resolve all required dependencies and stay upto date regarding
-compatibilities across modules.
-
-Example of such embedding is =nil; Foundation's [Actor Library](https://github.com/nilfoundation/actor). It uses only
-[hashes](https://github.com/nilfoundation/hash) so the dependency graph requires
-for the project to submodule [block ciphers library](https://github.com/nilfoundation/block) and optional
-[codec library](https://github.com/nilfoundation/codec) for testing purposes. So,
-the root Actor repository has only related libraries submoduled:
-[block](https://github.com/nilfoundation/mtl/libs/block),
-[codec](https://github.com/nilfoundation/mtl/libs/codec) and
-[hash](https://github.com/nilfoundation/mtl/hash).
-
-Selective modules can be added to your project as follows:
-
-``` git submodule add https://github.com/NilFoundation/crypto3-<lib>.git <dir>```
 
 
 ## Contributing

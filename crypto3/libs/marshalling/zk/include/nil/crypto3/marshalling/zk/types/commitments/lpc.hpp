@@ -92,20 +92,11 @@ namespace nil {
                     using type = nil::marshalling::types::bundle<
                         TTypeBase,
                         std::tuple<
-                            nil::marshalling::types::array_list<
+                            nil::marshalling::types::standard_size_t_array_list<TTypeBase>,
+                            nil::marshalling::types::standard_size_t_array_list<TTypeBase>,
+                            nil::marshalling::types::standard_array_list<
                                 TTypeBase,
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                            >,
-                            nil::marshalling::types::array_list<
-                                TTypeBase,
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                            >,
-                            nil::marshalling::types::array_list<
-                                TTypeBase,
-                                field_element<TTypeBase, typename LPCScheme::field_type::value_type>,
-                                nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                                field_element<TTypeBase, typename LPCScheme::field_type::value_type>
                             >
                         >
                     >;
@@ -123,20 +114,11 @@ namespace nil {
                     using result_type = typename commitment_preprocessed_data<
                         nil::marshalling::field_type<Endianness>, LPCScheme
                     >::type;
-                    nil::marshalling::types::array_list<
+                    nil::marshalling::types::standard_size_t_array_list<TTypeBase> filled_map_ids;
+                    nil::marshalling::types::standard_size_t_array_list<TTypeBase> filled_sizes;
+                    nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                    > filled_map_ids;
-                    nil::marshalling::types::array_list<
-                        TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                    > filled_sizes;
-                    nil::marshalling::types::array_list<
-                        TTypeBase,
-                        field_element<TTypeBase, typename LPCScheme::field_type::value_type>,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                        field_element<TTypeBase, typename LPCScheme::field_type::value_type>
                     > filled_values;
 
                     for (const auto&[k, v]: lpc_data) {
@@ -163,8 +145,6 @@ namespace nil {
                         std::enable_if_t<nil::crypto3::zk::is_lpc<LPCScheme>>
                     >::type const& filled_commitment_preprocessed_data
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
-
                     typename LPCScheme::preprocessed_data_type result;
                     for(std::size_t i = 0; i < std::get<0>(filled_commitment_preprocessed_data.value()).value().size(); i++){
                         std::size_t k = std::get<0>(filled_commitment_preprocessed_data.value()).value()[i].value();
@@ -264,17 +244,10 @@ namespace nil {
                         TTypeBase,
                         std::tuple<
                             // std::map<std::size_t, precommitment_type> _trees;
-                            nil::marshalling::types::array_list<
+                            nil::marshalling::types::standard_size_t_array_list< TTypeBase >,
+                            nil::marshalling::types::standard_array_list<
                                     TTypeBase,
-                                    nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                    nil::marshalling::option::sequence_size_field_prefix<
-                                        nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                                >,
-                            nil::marshalling::types::array_list<
-                                    TTypeBase,
-                                    typename precommitment_type<TTypeBase, LPCScheme>::type,
-                                    nil::marshalling::option::sequence_size_field_prefix<
-                                        nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                                    typename precommitment_type<TTypeBase, LPCScheme>::type
                                 >,
                             // typename fri_type::params_type _fri_params;
                             typename commitment_params<TTypeBase, LPCScheme>::type,
@@ -283,20 +256,10 @@ namespace nil {
                             field_element<TTypeBase, typename LPCScheme::value_type>,
 
                             //std::map<std::size_t, bool> _batch_fixed;
-                            nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                               >,
+                            nil::marshalling::types::standard_size_t_array_list<TTypeBase>,
                             // Next value was supposed to be a vector of bool, but our marshalling core
                             // does not allow us to create an array_list of bools.
-                            nil::marshalling::types::array_list<
-                                   TTypeBase,
-                                   nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                                   nil::marshalling::option::sequence_size_field_prefix<
-                                       nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                               >,
+                            nil::marshalling::types::standard_size_t_array_list<TTypeBase>,
                             // preprocessed_data_type _fixed_polys_values;
                             typename commitment_preprocessed_data<
                                 TTypeBase, LPCScheme,
@@ -316,18 +279,10 @@ namespace nil {
                     using result_type = typename commitment_scheme_state<nil::marshalling::field_type<Endianness>, LPCScheme>::type;
 
                     // std::map<std::size_t, precommitment_type> _trees;
-                    nil::marshalling::types::array_list<
+                    nil::marshalling::types::standard_size_t_array_list<TTypeBase> filled_trees_keys;
+                    nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                        > filled_trees_keys;
-                    nil::marshalling::types::array_list<
-                            TTypeBase,
-                            typename precommitment_type<TTypeBase, LPCScheme>::type,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                        > filled_trees_values;
+                            typename precommitment_type<TTypeBase, LPCScheme>::type> filled_trees_values;
                     for (const auto&[key, value]: scheme.get_trees()) {
                         filled_trees_keys.value().push_back(nil::marshalling::types::integral<TTypeBase, std::size_t>(key));
                         // Precommitment for LPC is a merkle tree. We may want to abstract away this part into a separate
@@ -337,18 +292,8 @@ namespace nil {
                     }
 
                     //std::map<std::size_t, bool> _batch_fixed;
-                    nil::marshalling::types::array_list<
-                           TTypeBase,
-                           nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                           nil::marshalling::option::sequence_size_field_prefix<
-                               nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                       > filled_batch_fixed_keys;
-                    nil::marshalling::types::array_list<
-                           TTypeBase,
-                           nil::marshalling::types::integral<TTypeBase, std::size_t>,
-                           nil::marshalling::option::sequence_size_field_prefix<
-                               nil::marshalling::types::integral<TTypeBase, std::size_t>>
-                       > filled_batch_fixed_values;
+                    nil::marshalling::types::standard_size_t_array_list<TTypeBase> filled_batch_fixed_keys;
+                    nil::marshalling::types::standard_size_t_array_list<TTypeBase> filled_batch_fixed_values;
                     for (const auto&[key, value]: scheme.get_batch_fixed()) {
                         filled_batch_fixed_keys.value().push_back(
                             nil::marshalling::types::integral<TTypeBase, std::size_t>(key));
@@ -377,8 +322,6 @@ namespace nil {
                         nil::marshalling::field_type<Endianness>, LPCScheme,
                         std::enable_if_t<nil::crypto3::zk::is_lpc<LPCScheme>>>::type& filled_commitment_scheme
                 ) {
-                    using TTypeBase = typename nil::marshalling::field_type<Endianness>;
-
                     std::map<std::size_t, typename LPCScheme::precommitment_type> trees;
                     const auto& filled_tree_keys = std::get<0>(filled_commitment_scheme.value()).value();
                     const auto& filled_tree_values = std::get<1>(filled_commitment_scheme.value()).value();
@@ -494,8 +437,6 @@ namespace nil {
                 fill_initial_eval_proof(
                     const typename LPCScheme::lpc_proof_type &intial_proof
                 ){
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
-
                     auto filled_z = fill_eval_storage<Endianness, typename LPCScheme::eval_storage_type>(
                         intial_proof.z);
 

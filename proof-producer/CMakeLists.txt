@@ -9,8 +9,9 @@
 #---------------------------------------------------------------------------#
 
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 
-if(DEFINED CMAKE_BUILD_TYPE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(DEFINED CMAKE_BUILD_TYPE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ZK_PLACEHOLDER_DEBUG_ENABLED TRUE)
 endif()
 

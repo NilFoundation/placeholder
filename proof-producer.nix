@@ -6,12 +6,17 @@
   boost,
   gdb,
   lldb,
+  protobuf,
   cmake_modules,
   enableDebugging,
   gtest,
   enableDebug ? false,
   runTests ? false,
   sanitize? false,
+  crypto3_tests? false,
+  parallel_crypto3_tets? false,
+  crypto3_bechmarks? false,
+  parallel_crypto3_bechmarks? false,
   }:
 let
   inherit (lib) optional;
@@ -21,7 +26,7 @@ in stdenv.mkDerivation {
   src = lib.sourceByRegex ./. ["^proof-producer(/.*)?$" "^crypto3(/.*)?$" "^parallel-crypto3(/.*)?$" "CMakeLists.txt"];
   hardeningDisable = [ "fortify" ];
 
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++
+  nativeBuildInputs = [ cmake ninja pkg-config protobuf ] ++
                        (lib.optional (!stdenv.isDarwin) gdb) ++
                        (lib.optional (stdenv.isDarwin) lldb);
 
@@ -36,6 +41,10 @@ in stdenv.mkDerivation {
       (if runTests then "-DENABLE_TESTS=ON" else "-DENABLE_TESTS=OFF")
       (if sanitize then "-DSANITIZE=ON" else "-DSANITIZE=OFF")
       "-DPROOF_PRODUCER_ENABLE=TRUE"
+      (if crypto3_tests then "-DBUILD_CRYPTO3_TESTS=TRUE" else "-DBUILD_CRYPTO3_TESTS=False")
+      (if parallel_crypto3_tets then "-DBUILD_PARALLEL_CRYPTO3_TESTS=TRUE" else "")
+      (if parallel_crypto3_bechmarks then "-DENABLE_BENCHMARKS=ON" else "-DENABLE_BENCHMARKS=OFF")
+      (if crypto3_bechmarks then "-DBUILD_CRYPTO3_BENCH_TESTS=ON" else "-DBUILD_CRYPTO3_BENCH_TESTS=OFF")
       "-G Ninja"
     ];
 
@@ -50,6 +59,7 @@ in stdenv.mkDerivation {
     cd ..
     mkdir -p ${placeholder "out"}/test-logs
     find .. -type f -name '*_test.xml' -exec cp {} ${placeholder "out"}/test-logs \;
+    find .. -type f -name '*_benchmark.xml' -exec cp {} ${placeholder "out"}/test-logs \;
   '';
 
   shellHook = ''

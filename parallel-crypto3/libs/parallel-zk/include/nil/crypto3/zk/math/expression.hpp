@@ -26,8 +26,12 @@
 // - an expression - stores any mathematical expression with -+* operatos and 'pow' in a form of a tree.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_MATH_EXPRESSION_HPP
-#define CRYPTO3_ZK_MATH_EXPRESSION_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_MATH_EXPRESSION_HPP
+#define PARALLEL_CRYPTO3_ZK_MATH_EXPRESSION_HPP
+
+#ifdef CRYPTO3_ZK_MATH_EXPRESSION_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <ostream>
 #include <vector>
@@ -105,12 +109,23 @@ namespace nil {
                     update_hash();
                 }
 
-                // Every number type will be accepted here,
-                // if it can be converted to 'assignment_type'.
-                // This will include integral types and number<cpp_int_backend<...>>
-                template<class NumberType>
-                expression(const NumberType &coeff)
+                // Constructor for integral types.
+                template<class NumericType>
+                expression(const NumericType& coeff,
+                        typename std::enable_if<std::is_integral<NumericType>::value, NumericType>::type* = nullptr)
                   : expr(term<VariableType>((assignment_type)coeff)) {
+                    update_hash();
+                }
+
+                // Constructor for number<cpp_int_backend<...>>.
+                template<class BackendType>
+                expression(const boost::multiprecision::number<BackendType>& coeff)
+                  : expr(term<VariableType>((assignment_type)coeff)) {
+                    update_hash();
+                }
+
+                expression(const assignment_type &coeff)
+                  : expr(term<VariableType>(coeff)) {
                     update_hash();
                 }
 

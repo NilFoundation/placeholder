@@ -400,22 +400,18 @@ namespace nil {
                 }
 
                 template<typename IntegralContainer, typename Endianness>
-                nil::marshalling::types::array_list<
+                nil::marshalling::types::standard_array_list<
                     nil::marshalling::field_type<Endianness>,
-                    integral<nil::marshalling::field_type<Endianness>, IntegralContainer>,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                    integral<nil::marshalling::field_type<Endianness>, IntegralContainer>>
                     fill_integral_vector(std::vector<IntegralContainer> integral_vector) {
 
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
 
                     using integral_type = integral<TTypeBase, IntegralContainer>;
 
-                    using integral_vector_type = nil::marshalling::types::array_list<
+                    using integral_vector_type = nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        integral_type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>;
+                        integral_type>;
 
                     integral_vector_type result;
 
@@ -428,11 +424,9 @@ namespace nil {
 
                 template<typename IntegralContainer, typename Endianness>
                 std::vector<IntegralContainer> make_integral_vector(
-                    nil::marshalling::types::array_list<
+                    nil::marshalling::types::standard_array_list<
                         nil::marshalling::field_type<Endianness>,
-                        integral<nil::marshalling::field_type<Endianness>, IntegralContainer>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                        integral<nil::marshalling::field_type<Endianness>, IntegralContainer>>
                         integral_vector) {
 
                     std::vector<IntegralContainer> result;

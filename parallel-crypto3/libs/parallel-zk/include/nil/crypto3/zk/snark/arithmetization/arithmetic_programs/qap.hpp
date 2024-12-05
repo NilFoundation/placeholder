@@ -35,8 +35,12 @@
 // <http://eprint.iacr.org/2012/215>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_QAP_HPP
-#define CRYPTO3_ZK_QAP_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_QAP_HPP
+#define PARALLEL_CRYPTO3_ZK_QAP_HPP
+
+#ifdef CRYPTO3_ZK_QAP_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <map>
 #include <vector>

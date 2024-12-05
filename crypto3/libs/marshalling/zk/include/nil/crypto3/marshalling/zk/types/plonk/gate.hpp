@@ -48,11 +48,9 @@ namespace nil {
                         // std::size_t selector_index
                         nil::marshalling::types::integral<TTypeBase, std::size_t>,
                         // std::vector<plonk_constraint<FieldType>> constraints
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            plonk_constraint<TTypeBase, typename PlonkGate::constraint_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::size_t>
-                            >
+                            plonk_constraint<TTypeBase, typename PlonkGate::constraint_type>
                         >
                     >
                 >;
@@ -64,9 +62,8 @@ namespace nil {
                     using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
 
                     using constraint_marshalling_type = plonk_constraint<TTypeBase, typename PlonkGate::constraint_type>;
-                    using constraint_vector_marshalling_type = nil::marshalling::types::array_list<
-                        TTypeBase, constraint_marshalling_type,
-                        nil::marshalling::option::sequence_size_field_prefix<size_t_marshalling_type>>;
+                    using constraint_vector_marshalling_type = nil::marshalling::types::standard_array_list<
+                        TTypeBase, constraint_marshalling_type>;
 
                     constraint_vector_marshalling_type filled_constraints;
                     for (const auto &constr : gate.constraints) {
@@ -95,18 +92,14 @@ namespace nil {
 
                 template<typename TTypeBase, typename PlonkGate>
                 using plonk_gates =
-                    nil::marshalling::types::array_list<TTypeBase, plonk_gate<TTypeBase, PlonkGate>,
-                                                        nil::marshalling::option::sequence_size_field_prefix<
-                                                            nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    nil::marshalling::types::standard_array_list<TTypeBase, plonk_gate<TTypeBase, PlonkGate>>;
 
                 template<typename Endianness, typename PlonkGate, typename InputRange>
                 plonk_gates<nil::marshalling::field_type<Endianness>, PlonkGate>
                     fill_plonk_gates(const InputRange &gates) {
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
-                    using result_type = nil::marshalling::types::array_list<
-                        TTypeBase, plonk_gate<TTypeBase, PlonkGate>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                    using result_type = nil::marshalling::types::standard_array_list<
+                        TTypeBase, plonk_gate<TTypeBase, PlonkGate>>;
 
                     result_type filled_gates;
                     for (const auto &gate : gates) {

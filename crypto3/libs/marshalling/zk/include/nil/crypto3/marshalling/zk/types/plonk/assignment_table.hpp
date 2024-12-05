@@ -110,42 +110,32 @@ namespace nil {
                         nil::marshalling::types::integral<TTypeBase, std::size_t>, // usable_rows
                         nil::marshalling::types::integral<TTypeBase, std::size_t>, // rows_amount
                         // witnesses
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >,
                         // public_inputs
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >,
                         // constants
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >,
                         // selectors
-                        nil::marshalling::types::array_list<
+                        nil::marshalling::types::standard_array_list<
                             TTypeBase,
-                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>,
-                            nil::marshalling::option::sequence_size_field_prefix<
-                                nil::marshalling::types::integral<TTypeBase, std::size_t>>
+                            field_element<TTypeBase, typename PlonkTable::field_type::value_type>
                         >
                     >
                 >;
 
                 template<typename FieldValueType, typename Endianness>
-                nil::marshalling::types::array_list<
+                nil::marshalling::types::standard_array_list<
                     nil::marshalling::field_type<Endianness>,
-                    field_element<nil::marshalling::field_type<Endianness>, FieldValueType>,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                    field_element<nil::marshalling::field_type<Endianness>, FieldValueType>>
                     fill_field_element_vector_from_columns_with_padding(
                         const std::vector<std::vector<FieldValueType>> &columns,
                         const std::size_t size,
@@ -153,11 +143,9 @@ namespace nil {
 
                     using TTypeBase = nil::marshalling::field_type<Endianness>;
                     using field_element_type = field_element<TTypeBase, FieldValueType>;
-                    using field_element_vector_type = nil::marshalling::types::array_list<
+                    using field_element_vector_type = nil::marshalling::types::standard_array_list<
                         TTypeBase,
-                        field_element_type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>>>;
+                        field_element_type>;
 
                     field_element_vector_type result;
                     result.value().reserve(size * columns.size());
@@ -174,11 +162,9 @@ namespace nil {
 
                 template<typename FieldValueType, typename Endianness>
                 std::vector<std::vector<FieldValueType>> make_field_element_columns_vector(
-                    const nil::marshalling::types::array_list<
+                    const nil::marshalling::types::standard_array_list<
                         nil::marshalling::field_type<Endianness>,
-                        field_element<nil::marshalling::field_type<Endianness>, FieldValueType>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                        field_element<nil::marshalling::field_type<Endianness>, FieldValueType>>
                         &field_elem_vector,
                     const std::size_t columns_amount,
                     const std::size_t rows_amount) {

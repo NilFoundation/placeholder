@@ -36,8 +36,12 @@
 // <https://eprint.iacr.org/2017/540>
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_SAP_HPP
-#define CRYPTO3_ZK_SAP_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_SAP_HPP
+#define PARALLEL_CRYPTO3_ZK_SAP_HPP
+
+#ifdef CRYPTO3_ZK_SAP_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <map>
 #include <vector>

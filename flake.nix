@@ -50,6 +50,12 @@
             runTests = false;
             enableDebug = true;
           });
+          crypto3-clang-debug-tests = (pkgs.callPackage ./crypto3.nix {
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = true;
+            enableDebug = true;
+          });
+
 
           parallel-crypto3 = (pkgs.callPackage ./parallel-crypto3.nix {
             runTests = false;
@@ -95,6 +101,15 @@
           debug-tools = (pkgs.callPackage ./debug-tools.nix {
           });
 
+          develop = (pkgs.callPackage ./proof-producer.nix {
+            enableDebug = true;
+            runTests = true;
+            sanitize = true;
+            crypto3_tests = true;
+            parallel_crypto3_tets = true;
+            crypto3_bechmarks = true;
+            parallel_crypto3_bechmarks = true;
+            });
           # The "all" package will build all packages. Convenient for CI,
           # so that "nix build" will check that all packages are correct.
           # The packages that have no changes will not be rebuilt, and instead
@@ -103,7 +118,7 @@
             name = "all";
             paths = [ crypto3 parallel-crypto3 proof-producer];
           };
-          default = all;
+          default = develop;
         };
 
         checks = rec {

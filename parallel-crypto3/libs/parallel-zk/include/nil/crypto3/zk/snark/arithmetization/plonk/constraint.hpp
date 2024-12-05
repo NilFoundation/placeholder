@@ -24,8 +24,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#ifndef CRYPTO3_ZK_PLONK_CONSTRAINT_HPP
-#define CRYPTO3_ZK_PLONK_CONSTRAINT_HPP
+#ifndef PARALLEL_CRYPTO3_ZK_PLONK_CONSTRAINT_HPP
+#define PARALLEL_CRYPTO3_ZK_PLONK_CONSTRAINT_HPP
+
+#ifdef CRYPTO3_ZK_PLONK_CONSTRAINT_HPP
+#error "You're mixing parallel and non-parallel crypto3 versions"
+#endif
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
@@ -81,6 +85,23 @@ namespace nil {
                         for (const auto& term : terms) {
                             (*this) += term;
                         }
+                    }
+
+                    // Constructor for integral types.
+                    template<class NumericType>
+                    plonk_constraint(const NumericType& coeff,
+                            typename std::enable_if<std::is_integral<NumericType>::value, NumericType>::type* = nullptr)
+                        : math::expression<VariableType>(coeff) {
+                    }
+
+                    // Constructor for number<cpp_int_backend<...>>.
+                    template<class BackendType>
+                    plonk_constraint(const boost::multiprecision::number<BackendType> &coeff)
+                        : math::expression<VariableType>(coeff) {
+                    }
+
+                    plonk_constraint(const typename VariableType::assignment_type &coeff)
+                        : math::expression<VariableType>(coeff) {
                     }
 
                     typename VariableType::assignment_type
