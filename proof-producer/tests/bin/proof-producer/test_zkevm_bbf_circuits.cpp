@@ -26,12 +26,12 @@ TEST_F(ProverTests, Bytecode) {
                         expand_factor,
                         max_quotient_chunks,
                         grind,
-                        "bytecode"
+                        nil::proof_generator::circuits::BYTECODE
     );
 
-    EXPECT_TRUE(prover.setup_prover());
+    ASSERT_TRUE(prover.setup_prover());
 
-    EXPECT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
@@ -46,12 +46,12 @@ TEST_F(ProverTests, RW) {
                         expand_factor,
                         max_quotient_chunks,
                         grind,
-                        "rw"
+                        nil::proof_generator::circuits::RW
     );
 
-    EXPECT_TRUE(prover.setup_prover());
+    ASSERT_TRUE(prover.setup_prover());
 
-    EXPECT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
@@ -66,12 +66,12 @@ TEST_F(ProverTests, Copy) {
                         expand_factor,
                         max_quotient_chunks,
                         grind,
-                        "copy"
+                        nil::proof_generator::circuits::COPY
     );
 
-    EXPECT_TRUE(prover.setup_prover());
+    ASSERT_TRUE(prover.setup_prover());
 
-    EXPECT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
@@ -86,12 +86,12 @@ TEST_F(ProverTests, Zkevm) {
                         expand_factor,
                         max_quotient_chunks,
                         grind,
-                        "zkevm"
+                        nil::proof_generator::circuits::ZKEVM
     );
 
-    EXPECT_TRUE(prover.setup_prover());
+    ASSERT_TRUE(prover.setup_prover());
 
-    EXPECT_TRUE(prover.fill_assignment_table(trace_file_path));
+    ASSERT_TRUE(prover.fill_assignment_table(trace_file_path));
 
     const auto& circuit = prover.get_constraint_system();
     const auto& assignment_table = prover.get_assignment_table();
