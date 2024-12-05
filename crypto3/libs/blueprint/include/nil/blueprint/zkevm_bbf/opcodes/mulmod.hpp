@@ -283,7 +283,7 @@ namespace nil {
                         s_first_carryless =
                             first_carryless_construct<TYPE>(s_64_chunks, b_64_chunks, a_64_chunks);
                         auto s_first_row_carries =
-                            first_carryless_construct(s_64_chunks, b_64_chunks, a_64_chunks).data >>
+                            first_carryless_construct(s_64_chunks, b_64_chunks, a_64_chunks).data.base() >>
                             128;
                         value_type s_c_1 =
                             static_cast<value_type>(s_first_row_carries & (two_64 - 1).data);
@@ -295,7 +295,7 @@ namespace nil {
                         auto s_second_row_carries =
                             (second_carryless_construct(s_64_chunks, b_64_chunks, a_64_chunks) +
                              s_c_1 + s_c_2 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
 
                         // computation of s = a*b product
@@ -308,7 +308,7 @@ namespace nil {
                             third_carryless_construct<TYPE>(s_64_chunks, b_64_chunks, a_64_chunks);
                         auto s_third_row_carries =
                             (third_carryless_construct(s_64_chunks, b_64_chunks, a_64_chunks))
-                                .data >>
+                                .data.base() >>
                             128;
 
                         value_type s_c_5 =
@@ -324,7 +324,7 @@ namespace nil {
                             first_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
                         auto first_row_carries =
                             first_carryless_construct(Nr_64_chunks, N_64_chunks, r_64_chunks)
-                                .data >>
+                                .data.base() >>
                             128;
                         value_type c_1 =
                             static_cast<value_type>(first_row_carries & (two_64 - 1).data);
@@ -336,7 +336,7 @@ namespace nil {
                         auto second_row_carries =
                             (second_carryless_construct(Nr_64_chunks, N_64_chunks, r_64_chunks) +
                              c_1 + c_2 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
                         value_type c_3 =
                             static_cast<value_type>(second_row_carries & (two_64 - 1).data);
@@ -347,11 +347,11 @@ namespace nil {
                         auto third_row_carries =
                             (third_carryless_construct(Nr_64_chunks, N_64_chunks, r_64_chunks) +
                              c_3 + c_4 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
                         value_type c_5 =
                             static_cast<value_type>(third_row_carries & (two_64 - 1).data);
-                        c_6 = static_cast<value_type>(third_carryless.data >> 64);
+                        c_6 = static_cast<value_type>(third_carryless.data.base() >> 64);
                         c_5_chunks = chunk_64_to_16<FieldType>(c_5);
                         forth_carryless =
                             forth_carryless_construct<TYPE>(Nr_64_chunks, N_64_chunks, r_64_chunks);
