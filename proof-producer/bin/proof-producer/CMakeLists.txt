@@ -87,6 +87,7 @@ set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
 setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
 set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
 setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all crypto3::common)
+target_precompile_headers(${MULTI_THREADED_TARGET} REUSE_FROM ${SINGLE_THREADED_TARGET})
 
 # Install
 
