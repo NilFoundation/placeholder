@@ -92,6 +92,7 @@ set(COMMON_TEST_FILES
     "component_batch"
     "bbf/bbf_wrapper"
     "bbf/opcode_poc"
+    "bbf/row_seletor_test"
     )
 
 set(NON_NATIVE_TESTS_FILES
