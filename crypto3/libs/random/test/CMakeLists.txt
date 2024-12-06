@@ -12,6 +12,7 @@ include(CMTest)
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
     ${CMAKE_WORKSPACE_NAME}::multiprecision
     Boost::unit_test_framework)
+target_precompile_headers(_cm_internal_tests-crypto3-random-test REUSE_FROM crypto3_precompiled_headers)
 
 macro(define_random_test test)
     get_filename_component(name ${test} NAME)
@@ -32,7 +33,7 @@ macro(define_random_test test)
     elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
-    target_precompile_headers(${full_test_name} REUSE_FROM _cm_internal_tests-crypto3-hash-test)
+    target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 # TODO(uncomment the failing tests once they pass)

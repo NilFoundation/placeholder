@@ -35,7 +35,7 @@ macro(define_bench_test name)
                                ${Boost_INCLUDE_DIRS})
 
     set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17)
-
+    target_precompile_headers(${test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 cm_test_link_libraries(
@@ -45,6 +45,7 @@ cm_test_link_libraries(
     crypto3::random
     ${Boost_LIBRARIES}
 )
+target_precompile_headers(_cm_internal_tests--parallel-crypto3-benchmarks REUSE_FROM crypto3_precompiled_headers)
 
 set(TESTS_NAMES
     "polynomial_dfs_benchmark"

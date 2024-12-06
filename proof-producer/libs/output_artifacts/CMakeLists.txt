@@ -25,6 +25,9 @@ set_target_properties(proof_generatorOutputArtifacts PROPERTIES
     CXX_STANDARD_REQUIRED TRUE
 )
 
+# TODO: reactivate, when it will be a static library
+# target_precompile_headers(proof_generatorOutputArtifacts REUSE_FROM crypto3_precompiled_headers_23)
+
 install(TARGETS proof_generatorOutputArtifacts
         DESTINATION ${CMAKE_INSTALL_LIBDIR})
         

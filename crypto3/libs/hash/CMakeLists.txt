@@ -147,6 +147,8 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       ${CMAKE_WORKSPACE_NAME}::algebra
 
                       Boost::container)
+target_link_libraries(crypto3_precompiled_headers    ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
+target_link_libraries(crypto3_precompiled_headers_23 ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 
 target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
