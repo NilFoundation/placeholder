@@ -236,9 +236,22 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t N>
-        constexpr big_uint& operator=(const std::array<std::uint8_t, N>& /*bytes*/) {
-            // TODO(ioxid): implement
-            throw std::runtime_error("not implemented");
+        constexpr big_uint& operator=(const std::array<std::uint8_t, N>& bytes) {
+            std::size_t bits = 0;
+            for (std::size_t i = 0; i < bytes.size(); ++i) {
+                *this <<= 8;
+                if (bits != 0) {
+                    bits += 8;
+                }
+                unsigned b = bytes[i];
+                *this += b;
+                if (bits == 0 && b != 0) {
+                    bits += std::bit_width(b);
+                }
+            }
+            if (bits > Bits) {
+                throw std::invalid_argument("not enough bits");
+            }
             return *this;
         }
 
