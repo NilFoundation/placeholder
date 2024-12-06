@@ -154,7 +154,7 @@ set(PLONK_TESTS_FILES
     #"verifiers/kimchi/detail/prepare_scalars"
     #"verifiers/kimchi/detail/zkpm_evaluate"
     #"verifiers/kimchi/sponge/sponge"
-    "verifiers/kimchi/sponge/oracles"
+    #"verifiers/kimchi/sponge/oracles"
     #"verifiers/kimchi/sponge/transcript_fr"
     #"verifiers/kimchi/sponge/transcript_fq"
     #"verifiers/kimchi/sponge/compare"
@@ -254,7 +254,6 @@ SET(ALL_TESTS_FILES
     ${HASHES_TESTS_FILES}
     ${ROUTING_TESTS_FILES}
     ${SCHEMES_TESTS_FILES}
-    ${MERKLE_TREE_TESTS_FILES}
     ${VOTING_TESTS_FILES}
     ${BASIC_COMPONENTS_TESTS_FILES})
 

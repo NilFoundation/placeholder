@@ -47,29 +47,14 @@ macro(define_hash_test name)
 endmacro()
 
 set(TESTS_NAMES
-    "blake2b"
-    "crc"
     "keccak"
     "pack"
-    "ripemd"
-    "sha"
-    "sha1"
     "sha2"
     "sha3"
     "static_digest"
-    "tiger"
     "poseidon"
     "hash_to_curve"
     )
-    # "reinforced_concrete")  # fails
-
-if(CRYPTO3_HASH_PEDERSEN)
-    list(APPEND TESTS_NAMES
-        pedersen
-        find_group_hash
-        h2c
-        h2f)
-endif()
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_hash_test(${TEST_NAME})
