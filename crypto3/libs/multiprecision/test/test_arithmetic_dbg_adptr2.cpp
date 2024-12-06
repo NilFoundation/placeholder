@@ -7,8 +7,8 @@
 #define _SCL_SECURE_NO_WARNINGS
 #endif
 
-#include <nil/crypto3/multiprecision/debug_adaptor.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/debug_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 #include "test_arithmetic.hpp"
 
 int main() {

@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#include "nil/crypto3/multiprecision/modular/modular_params.hpp"
+#include "nil/crypto3/multiprecision/boost_backends/modular/modular_params.hpp"
 #define BOOST_TEST_MODULE modular_fixed_multiprecision_test
 
 #define TEST_CPP_INT
@@ -30,14 +30,14 @@
 
 #include <iostream>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular/literals.hpp>
-#include <nil/crypto3/multiprecision/cpp_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular/literals.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_modular.hpp>
 
-#include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_params_fixed.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/modular/modular_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/modular/modular_params_fixed.hpp>
 
-#include <nil/crypto3/multiprecision/inverse.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/inverse.hpp>
 
 #include <nil/crypto3/bench/benchmark.hpp>
 

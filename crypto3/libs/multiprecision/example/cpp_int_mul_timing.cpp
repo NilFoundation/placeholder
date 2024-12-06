@@ -15,7 +15,7 @@
 #include <iterator>
 #include <vector>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 
 class random_pcg32_fast_base {
 protected:

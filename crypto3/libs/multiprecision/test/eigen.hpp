@@ -3,7 +3,7 @@
 //  Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#include <nil/crypto3/multiprecision/eigen.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/eigen.hpp>
 #include <iostream>
 #include <Eigen/Dense>
 #include "test.hpp"

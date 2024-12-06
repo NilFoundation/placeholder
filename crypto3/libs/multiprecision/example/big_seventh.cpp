@@ -37,7 +37,7 @@ constants], we need some includes:
 
 #include <boost/math/constants/constants.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
 // that includes some predefined typedefs like:
 // using nil::crypto3::multiprecision::cpp_bin_float_quad;
 // using nil::crypto3::multiprecision::cpp_bin_float_50;

@@ -12,7 +12,7 @@
  * https://github.com/boostorg/integer/pull/11
  */
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 #include <boost/optional/optional.hpp>
 #include <boost/core/lightweight_test.hpp>
 

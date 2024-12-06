@@ -37,25 +37,25 @@
 #endif
 
 #if defined(TEST_MPF_50)
-#include <nil/crypto3/multiprecision/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
 #endif
 #ifdef TEST_MPFR_50
-#include <nil/crypto3/multiprecision/mpfr.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfr.hpp>
 #endif
 #ifdef TEST_MPFI_50
-#include <nil/crypto3/multiprecision/mpfi.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfi.hpp>
 #endif
 #ifdef TEST_BACKEND
-#include <nil/crypto3/multiprecision/concepts/mp_number_archetypes.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/concepts/mp_number_archetypes.hpp>
 #endif
 #ifdef TEST_CPP_DEC_FLOAT
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
 #endif
 #ifdef TEST_FLOAT128
-#include <nil/crypto3/multiprecision/float128.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/float128.hpp>
 #endif
 #ifdef TEST_CPP_BIN_FLOAT
-#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
 #endif
 
 template<class T>
