@@ -27,7 +27,6 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_EXP_COMPONENT_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_EXP_COMPONENT_HPP
 
-#include <boost/multiprecision/cpp_int.hpp>
 #include <functional>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
