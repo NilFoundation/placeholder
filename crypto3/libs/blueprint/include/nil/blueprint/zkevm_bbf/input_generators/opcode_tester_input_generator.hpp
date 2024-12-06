@@ -181,7 +181,7 @@ namespace nil {
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, b));
                             integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
                             zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
-                            zkevm_word_type q = b != 0u ? a % b : a;
+                            zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
                             zkevm_word_type result = b != 0u ? q : 0; // according to EVM spec a % 0 = 0
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
