@@ -133,9 +133,8 @@ namespace nil {
 
                 template<typename Result, typename Endianness>
                 Result make_powers_of_tau_result(
-                    const powers_of_tau_result<nil::marshalling::field_type<Endianness>, Result>
-                        &filled_result) {
-
+                    const powers_of_tau_result<nil::marshalling::field_type<Endianness>, Result> &filled_result)
+                {
                     return Result(
                         std::move(
                             make_fast_curve_element<typename Result::curve_type::template g1_type<>, Endianness>(

@@ -63,7 +63,6 @@ set(TESTS_NAMES
         "plonk_gates"
         "plonk_constraint_system"
         "plonk_assignment_table"
-#        "eddsa"
         )
 
 foreach(TEST_NAME ${TESTS_NAMES})

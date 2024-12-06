@@ -112,9 +112,8 @@ namespace nil {
 
                 template<typename Accumulator, typename Endianness>
                 Accumulator make_powers_of_tau_accumulator(
-                    const powers_of_tau_accumulator<nil::marshalling::field_type<Endianness>, Accumulator>
-                        &filled_accumulator) {
-
+                    const powers_of_tau_accumulator<nil::marshalling::field_type<Endianness>, Accumulator> &filled_accumulator)
+                {
                     return Accumulator(
                         std::move(
                             make_fast_curve_element_vector<typename Accumulator::curve_type::template g1_type<>, Endianness>(

@@ -229,7 +229,12 @@ namespace nil {
                     typename FRI::round_proof_type round_proof;
                     // std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> y;
                     const std::size_t size = std::get<0>(filled.value()).value().size();
-                    BOOST_ASSERT(size % FRI::m == 0);
+                    if (size % FRI::m != 0) {
+                        throw std::invalid_argument(
+                                std::string("Number of elements should be multiple of m = ") +
+                                std::to_string(FRI::m) + " got: " +
+                                std::to_string(size));
+                    }
                     const std::size_t coset_size = size / FRI::m;
                     std::size_t cur = 0;
                     round_proof.y.resize(coset_size);
@@ -296,25 +301,33 @@ namespace nil {
                 make_fri_query_proof(
                     const fri_query_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled,
                     const batch_info_type &batch_info,
-                    const std::vector<std::uint8_t> &step_list
-                ) {
+                    const std::vector<std::uint8_t> &step_list)
+                {
                     typename FRI::query_proof_type query_proof;
                     // std::map<std::size_t, initial_proof_type> initial_proof;
                     std::size_t cur = 0;
                     std::size_t coset_size = 1 << (step_list[0] - 1);
+                    auto const& initial_proof = std::get<0>(filled.value()).value();
                     for (const auto &[batch_id, batch_size] : batch_info) {
+                        if (cur >= initial_proof.size()) {
+                            throw std::invalid_argument("Not enough initial_proof values");
+                        }
                         query_proof.initial_proof[batch_id] =
                             make_fri_initial_proof<Endianness, FRI>(
-                                std::get<0>(filled.value()).value()[cur++], batch_size, coset_size
+                                initial_proof[cur++], batch_size, coset_size
                             );
                     }
                     // std::vector<round_proof_type> round_proofs;
                     cur = 0;
+                    auto const& round_proofs = std::get<1>(filled.value()).value();
                     for (std::size_t r = 0; r < step_list.size(); r++) {
                         coset_size = r == step_list.size() - 1 ? 1 : (1 << (step_list[r+1]-1));
+                        if (cur >= round_proofs.size()) {
+                            throw std::invalid_argument("Not enough round_proofs values");
+                        }
                         query_proof.round_proofs.push_back(
                             make_fri_round_proof<Endianness, FRI>(
-                                std::get<1>(filled.value()).value()[cur++]
+                                round_proofs[cur++]
                             )
                         );
                     }
@@ -405,14 +418,24 @@ namespace nil {
                         auto &query_proof = proof.query_proofs[i];
                         for( const auto &it: query_proof.initial_proof){
                             auto &initial_proof = it.second;
-                            BOOST_ASSERT(initial_proof.values.size() == batch_info.at(it.first));
+                            if (initial_proof.values.size() != batch_info.at(it.first)) {
+                                throw std::invalid_argument(
+                                        std::string("Initial proof has wrong size. Expected: ") +
+                                        std::to_string(initial_proof.values.size()) + " got: " +
+                                        std::to_string(batch_info.at(it.first)));
+                            }
                             for( std::size_t j = 0; j < initial_proof.values.size(); j++ ){
                                 for(std::size_t k = 0; k < initial_proof.values[j].size(); k++ ){
                                     for( std::size_t l = 0; l < FRI::m; l++ ){
                                         initial_val.push_back(initial_proof.values[j][k][l]);
                                     }
                                 }
-                                BOOST_ASSERT(std::size_t(1 << (params.step_list[0] - 1)) == initial_proof.values[j].size());
+                                if (std::size_t(1 << (params.step_list[0] - 1)) != initial_proof.values[j].size()) {
+                                    throw std::invalid_argument(
+                                            std::string("Initial proof element has wrong size. Expected: ") +
+                                            std::to_string(std::size_t(1 << (params.step_list[0] - 1))) + " got: " +
+                                            std::to_string(initial_proof.values[j].size()));
+                                }
                             }
                         }
                     }
@@ -494,18 +517,19 @@ namespace nil {
                 template <typename Endianness, typename FRI>
                 typename FRI::proof_type
                 make_fri_proof(
-                    const typename fri_proof<nil::marshalling::field_type<Endianness>, FRI>::type &filled_proof, const batch_info_type &batch_info
-                ){
+                    const typename fri_proof<nil::marshalling::field_type<Endianness>, FRI>::type &filled_proof,
+                    const batch_info_type &batch_info)
+                {
                     typename FRI::proof_type proof;
                     // merkle roots
-                    for( std::size_t i = 0; i < std::get<0>(filled_proof.value()).value().size(); i++){
+                    for (std::size_t i = 0; i < std::get<0>(filled_proof.value()).value().size(); i++) {
                         proof.fri_roots.push_back(
                             make_merkle_node_value<typename FRI::commitment_type, Endianness>(std::get<0>(filled_proof.value()).value()[i])
                         );
                     }
                     // step_list
                     std::vector<std::uint8_t> step_list;
-                    for( std::size_t i = 0; i < std::get<1>(filled_proof.value()).value().size(); i++){
+                    for (std::size_t i = 0; i < std::get<1>(filled_proof.value()).value().size(); i++) {
                         auto c = std::get<1>(filled_proof.value()).value()[i].value();
                         step_list.push_back(c);
                     }
@@ -515,16 +539,21 @@ namespace nil {
                     // initial_polynomials values
                     std::size_t coset_size = 1 << (step_list[0] - 1);
                     std::size_t cur = 0;
-                    for( std::size_t i = 0; i < lambda; i++ ){
-                        for( const auto &it:batch_info){
+                    for (std::size_t i = 0; i < lambda; i++) {
+                        for (const auto &it: batch_info) {
                             proof.query_proofs[i].initial_proof[it.first] = typename FRI::initial_proof_type();
                             proof.query_proofs[i].initial_proof[it.first].values.resize(it.second);
-                            for( std::size_t j = 0; j < it.second; j++ ){
+                            for (std::size_t j = 0; j < it.second; j++) {
                                 proof.query_proofs[i].initial_proof[it.first].values[j].resize(coset_size);
-                                for( std::size_t k = 0; k < coset_size; k++){
-                                    for( std::size_t l = 0; l < FRI::m; l++, cur++ ){
-                                        BOOST_ASSERT(cur < std::get<2>(filled_proof.value()).value().size());
-                                        proof.query_proofs[i].initial_proof[it.first].values[j][k][l] = std::get<2>(filled_proof.value()).value()[cur].value();
+                                for (std::size_t k = 0; k < coset_size; k++) {
+                                    for (std::size_t l = 0; l < FRI::m; l++, cur++ ) {
+                                        if (cur >= std::get<2>(filled_proof.value()).value().size()) {
+                                            throw std::invalid_argument(
+                                                std::string("Too few elements provided for initial_polynomials values: ") +
+                                                std::to_string(std::get<2>(filled_proof.value()).value().size()));
+                                        }
+                                        proof.query_proofs[i].initial_proof[it.first].values[j][k][l] =
+                                            std::get<2>(filled_proof.value()).value()[cur].value();
                                     }
                                 }
                             }
@@ -533,35 +562,49 @@ namespace nil {
 
                     // round polynomials values
                     cur = 0;
-                    for(std::size_t i = 0; i < lambda; i++ ){
+                    for (std::size_t i = 0; i < lambda; i++) {
                         proof.query_proofs[i].round_proofs.resize(step_list.size());
-                        for(std::size_t r = 0; r < step_list.size(); r++ ){
+                        for (std::size_t r = 0; r < step_list.size(); r++ ) {
                             coset_size = r == step_list.size() - 1? 1: (1 << (step_list[r+1]-1));
                             proof.query_proofs[i].round_proofs[r].y.resize(coset_size);
-                            for( std::size_t j = 0; j < coset_size; j++){
-                                for( std::size_t k = 0; k < FRI::m; k++, cur++){
-                                    BOOST_ASSERT(cur < std::get<3>(filled_proof.value()).value().size());
+                            for (std::size_t j = 0; j < coset_size; j++) {
+                                for (std::size_t k = 0; k < FRI::m; k++, cur++) {
+                                    if (cur >= std::get<3>(filled_proof.value()).value().size()) {
+                                        throw std::invalid_argument(
+                                            std::string("Too few elements provided for round polynomials values: ") +
+                                            std::to_string(std::get<3>(filled_proof.value()).value().size()));
+                                    }
                                     proof.query_proofs[i].round_proofs[r].y[j][k] = std::get<3>(filled_proof.value()).value()[cur].value();
                                 }
                             }
                         }
                     }
                     // initial merkle proofs
+                    auto const& initial_merkle_proofs = std::get<4>(filled_proof.value()).value();
                     cur = 0;
-                    for( std::size_t i = 0; i < lambda; i++ ){
-                        for( const auto &it:batch_info){
-                            proof.query_proofs[i].initial_proof[it.first].p = make_merkle_proof<typename FRI::merkle_proof_type, Endianness>(
-                                std::get<4>(filled_proof.value()).value()[cur++]
+                    for (std::size_t i = 0; i < lambda; i++) {
+                        for (const auto &it: batch_info) {
+                            if (cur >= initial_merkle_proofs.size()) {
+                                throw std::invalid_argument("Not enough initial_merkle_proof values");
+                            }
+                            proof.query_proofs[i].initial_proof[it.first].p =
+                                make_merkle_proof<typename FRI::merkle_proof_type, Endianness>(
+                                    std::get<4>(filled_proof.value()).value()[cur++]
                             );
                         }
                     }
 
                     // round merkle proofs
+                    auto const& round_merkle_proofs = std::get<5>(filled_proof.value()).value();
                     cur = 0;
-                    for( std::size_t i = 0; i < lambda; i++ ){
-                        for( std::size_t r = 0; r < step_list.size(); r++, cur++ ){
-                            proof.query_proofs[i].round_proofs[r].p = make_merkle_proof<typename FRI::merkle_proof_type, Endianness>(
-                                std::get<5>(filled_proof.value()).value()[cur]
+                    for (std::size_t i = 0; i < lambda; i++ ) {
+                        for (std::size_t r = 0; r < step_list.size(); r++, cur++ ) {
+                            if (cur >= round_merkle_proofs.size()) {
+                                throw std::invalid_argument("Not enough round_merkle_proof values");
+                            }
+                            proof.query_proofs[i].round_proofs[r].p =
+                                make_merkle_proof<typename FRI::merkle_proof_type, Endianness>(
+                                    round_merkle_proofs[cur]
                             );
                         }
                     }
@@ -570,6 +613,7 @@ namespace nil {
                     proof.final_polynomial = make_polynomial<Endianness, typename FRI::polynomial_type>(
                         std::get<6>(filled_proof.value())
                     );
+
                     // proof_of_work
                     proof.proof_of_work = std::get<7>(filled_proof.value()).value();
                     return proof;
@@ -638,8 +682,8 @@ namespace nil {
 
                 template <typename Endianness, typename FRI>
                 typename FRI::initial_proofs_batch_type make_initial_proofs_batch(
-                    const initial_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled
-                ) {
+                    const initial_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled)
+                {
                     typename FRI::initial_proofs_batch_type initial_proofs_batch;
                     for (const auto &batch : filled.value()) {
                         std::map<std::size_t, typename FRI::initial_proof_type> batch_initial_proofs;
@@ -688,8 +732,8 @@ namespace nil {
 
                 template <typename Endianness, typename FRI>
                 typename FRI::round_proofs_batch_type make_round_proofs_batch(
-                    const round_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled
-                ) {
+                    const round_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled)
+                {
                     typename FRI::round_proofs_batch_type round_proofs_batch;
                     for (const auto &round_proof_vector : filled.value()) {
                         std::vector<typename FRI::round_proof_type> round_proofs;
