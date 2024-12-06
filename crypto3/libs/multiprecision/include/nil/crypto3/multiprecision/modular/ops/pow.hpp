@@ -11,7 +11,7 @@
 
 #pragma once
 
-// IWYU pragma: private; include "nil/crypto3/multiprecision/modular/big_mod.hpp"
+// IWYU pragma: private; include "nil/crypto3/multiprecision/big_mod.hpp"
 
 #include <cstddef>
 #include <limits>

@@ -18,7 +18,7 @@
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
 #include <nil/crypto3/multiprecision/literals.hpp>
-#include <nil/crypto3/multiprecision/modular/big_mod.hpp>
+#include <nil/crypto3/multiprecision/big_mod.hpp>
 
 #include <nil/crypto3/bench/benchmark.hpp>
 
