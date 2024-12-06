@@ -8,13 +8,13 @@
 
 include(CMTest)
 
-cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-                       Boost::random
-                       Boost::unit_test_framework
-                       )
+find_package(Boost REQUIRED COMPONENTS
+    timer
+    unit_test_framework
+)
 
-macro(define_math_test name)
-    set(test_name "actor_math_${name}_test")
+macro(define_bench_test name)
+    set(test_name "parallel_crypto3_${name}_bench")
 
     set(additional_args "")
     if(ENABLE_JUNIT_TEST_OUTPUT)
@@ -38,17 +38,18 @@ macro(define_math_test name)
 
 endmacro()
 
+cm_test_link_libraries(
+    crypto3::algebra
+    crypto3::math
+    crypto3::multiprecision
+    crypto3::random
+    ${Boost_LIBRARIES}
+)
+
 set(TESTS_NAMES
-    "evaluation_domain"
-    # "kronecker_substitution"  # FIXME: This fails. Disabled for passing CI
-    "polynomial_arithmetic"
-    "polynomial"
-    "polynomial_view"
-    "polynomial_dfs"
-    "polynomial_dfs_view"
-    "lagrange_interpolation"
-    "basic_radix2_domain")
+    "polynomial_dfs_benchmark"
+)
 
 foreach(TEST_NAME ${TESTS_NAMES})
-    define_math_test(${TEST_NAME})
+    define_bench_test(${TEST_NAME})
 endforeach()
