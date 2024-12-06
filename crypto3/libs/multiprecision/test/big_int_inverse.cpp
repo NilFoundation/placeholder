@@ -14,9 +14,9 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
-#include "nil/crypto3/multiprecision/big_int/literals.hpp"
-#include "nil/crypto3/multiprecision/big_int/modular/big_mod.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/literals.hpp"
+#include "nil/crypto3/multiprecision/modular/big_mod.hpp"
 
 using namespace nil::crypto3::multiprecision;
 

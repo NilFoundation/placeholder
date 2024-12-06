@@ -30,8 +30,8 @@
 #include <cstddef>
 #include <type_traits>
 
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
-#include <nil/crypto3/multiprecision/big_int/integer.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/integer.hpp>
 
 #include <nil/marshalling/endianness.hpp>
 

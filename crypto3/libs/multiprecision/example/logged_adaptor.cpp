@@ -5,8 +5,8 @@
 
 //[logged_adaptor
 
-#include <nil/crypto3/multiprecision/mpfi.hpp>
-#include <nil/crypto3/multiprecision/logged_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfi.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/logged_adaptor.hpp>
 #include <iostream>
 #include <iomanip>
 //

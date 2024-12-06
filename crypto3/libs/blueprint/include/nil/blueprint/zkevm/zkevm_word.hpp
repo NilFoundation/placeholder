@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <nil/crypto3/multiprecision/big_int/literals.hpp>
+#include <nil/crypto3/multiprecision/literals.hpp>
 
 #include <nil/crypto3/algebra/fields/goldilocks64/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>

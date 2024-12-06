@@ -39,7 +39,7 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
 
 #include <nil/marshalling/algorithms/pack.hpp>
 

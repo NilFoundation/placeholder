@@ -3,9 +3,9 @@
 //  Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 #if defined(HAVE_FLOAT128)
-#include <nil/crypto3/multiprecision/float128.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/float128.hpp>
 #endif
 
 #ifndef BOOST_NO_CXX11_CONSTEXPR

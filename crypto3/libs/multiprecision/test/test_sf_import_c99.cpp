@@ -36,24 +36,24 @@
 #endif
 
 #if defined(TEST_MPF_50)
-#include <nil/crypto3/multiprecision/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
 #endif
 #ifdef TEST_MPFR_50
-#include <nil/crypto3/multiprecision/mpfr.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfr.hpp>
 #endif
 #ifdef TEST_MPFI_50
-#include <nil/crypto3/multiprecision/mpfi.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfi.hpp>
 #endif
 #if defined(TEST_CPP_DEC_FLOAT) || defined(TEST_CPP_DEC_FLOAT_2) || defined(TEST_CPP_DEC_FLOAT_3) || \
     defined(TEST_CPP_DEC_FLOAT_4) || defined(TEST_CPP_DEC_FLOAT_5) || defined(TEST_CPP_DEC_FLOAT_6)
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
 #endif
 #if defined(TEST_CPP_BIN_FLOAT) || defined(TEST_CPP_BIN_FLOAT_2) || defined(TEST_CPP_BIN_FLOAT_3)
-#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
-#include <nil/crypto3/multiprecision/debug_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/debug_adaptor.hpp>
 #endif
 #ifdef TEST_FLOAT128
-#include <nil/crypto3/multiprecision/float128.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/float128.hpp>
 #endif
 
 #include <boost/math/constants/constants.hpp>

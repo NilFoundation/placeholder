@@ -10,8 +10,8 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include "nil/crypto3/multiprecision/big_int/literals.hpp"
-#include "nil/crypto3/multiprecision/big_int/miller_rabin.hpp"
+#include "nil/crypto3/multiprecision/literals.hpp"
+#include "nil/crypto3/multiprecision/miller_rabin.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;

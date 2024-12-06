@@ -6,7 +6,7 @@
 #include <boost/config.hpp>
 #undef BOOST_HAS_INT128
 #include "constexpr_arithmetric_test.hpp"
-#include "nil/crypto3/multiprecision/cpp_int_modular.hpp"
+#include "nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp"
 #include "test.hpp"
 
 #if !defined(BOOST_MP_NO_CONSTEXPR_DETECTION) && !defined(DISABLE_TESTS)

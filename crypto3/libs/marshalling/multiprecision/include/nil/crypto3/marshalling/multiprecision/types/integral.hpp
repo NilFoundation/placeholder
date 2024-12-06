@@ -31,7 +31,7 @@
 #include <limits>
 #include <type_traits>
 
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
 
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/types/integral.hpp>

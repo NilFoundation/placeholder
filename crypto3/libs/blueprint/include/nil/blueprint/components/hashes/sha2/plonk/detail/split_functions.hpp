@@ -36,7 +36,7 @@
 #include <array>
 #include <map>
 
-#include <nil/crypto3/multiprecision/big_int/integer.hpp>
+#include <nil/crypto3/multiprecision/integer.hpp>
 
 namespace nil {
     namespace blueprint {
