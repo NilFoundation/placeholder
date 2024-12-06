@@ -24,7 +24,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE lpc_test
+#define BOOST_TEST_MODULE lpc_benchmark
 
 // Do it manually for all performance tests
 #define PROFILING_ENABLED

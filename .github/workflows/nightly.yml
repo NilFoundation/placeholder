@@ -1,8 +1,14 @@
 name: Nightly Testing
 
+#on:
+#  schedule:
+#    - cron: '0 0 * * *'
 on:
-  schedule:
-    - cron: '0 0 * * *'
+  pull_request:
+  merge_group:
+  push:
+    branches:
+      - master
 
 jobs:
   test-linux-sanitizers:
@@ -12,11 +18,19 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
+  test-linux-benchmarks:
+    name: Linux placeholder benchmark testing with clang
+    uses: ./.github/workflows/clang-benchmarks-linux-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
   post-telemetry:
     name: Post test results in Open Telemetry format
     runs-on: [self-hosted, Linux, X64, aws_autoscaling]
     needs:
       - test-linux-sanitizers
+      - test-linux-benchmarks
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -27,7 +41,6 @@ jobs:
         run: |
           ls -l -a
           nix build -L .?#checks.x86_64-linux.all-clang-sanitize
-          cat ./result/test-logs/test_errors.txt
           export UndefinedBehaviorSanitizer=$(grep UndefinedBehaviorSanitizer result/test-logs/test_errors.txt | wc -l)
           export AddressSanitizer=$(grep AddressSanitizer result/test-logs/test_errors.txt | wc -l)
           export LeakSanitizer=$(grep LeakSanitizer result/test-logs/test_errors.txt | wc -l)
@@ -36,6 +49,14 @@ jobs:
           sudo yum update -y
           sudo yum install -y python3-pip
           pip3 install -r requirements.txt
+          /home/ec2-user/.local/bin/opentelemetry-instrument \
+            --traces_exporter console,otlp \
+            --metrics_exporter console,otlp \
+            --logs_exporter console,otlp \
+            --service_name nightly-build \
+            python3 ./parse_tests.py
+
+          nix build -L .?#checks.x86_64-linux.all-clang-benchmarks
           /home/ec2-user/.local/bin/opentelemetry-instrument \
             --traces_exporter console,otlp \
             --metrics_exporter console,otlp \

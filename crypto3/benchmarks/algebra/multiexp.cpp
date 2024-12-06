@@ -23,7 +23,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE multiexpr_test
+#define BOOST_TEST_MODULE multiexpr_benchmark
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>

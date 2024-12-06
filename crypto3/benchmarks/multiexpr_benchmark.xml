@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite tests="1" skipped="0" errors="0" failures="0" id="0" name="multiexpr_benchmark" time="179.731">
+<testcase assertions="0" classname="multiexp_test_suite" name="multiexp_test_case" time="179.731">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case multiexp_test_suite/multiexp_test_case did not check any assertions
+
+]]></system-out>
+</testcase>
+</testsuite>

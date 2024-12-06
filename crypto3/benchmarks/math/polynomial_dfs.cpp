@@ -22,7 +22,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE polynomial_dfs_benchmark_test
+#define BOOST_TEST_MODULE polynomial_dfs_benchmark_benchmark
 
 #include <algorithm>
 #include <cctype>

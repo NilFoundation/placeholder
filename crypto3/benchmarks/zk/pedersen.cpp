@@ -25,7 +25,7 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE pedersen_test
+#define BOOST_TEST_MODULE pedersen_benchmark
 
 #include <vector>
 #include <iostream>

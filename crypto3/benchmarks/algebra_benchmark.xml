@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite tests="6" skipped="0" errors="0" failures="0" id="0" name="algebra_benchmark" time="1268.28">
+<testcase assertions="0" classname="curves_benchmark" name="pallas" time="40.1403">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case curves_benchmark/pallas did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="curves_benchmark" name="vesta" time="40.2609">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case curves_benchmark/vesta did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="curves_benchmark" name="bls12_381" time="250.289">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case curves_benchmark/bls12_381 did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="curves_benchmark" name="bls12_377" time="224.689">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case curves_benchmark/bls12_377 did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="curves_benchmark" name="mnt4_298" time="248.203">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case curves_benchmark/mnt4_298 did not check any assertions
+
+]]></system-out>
+</testcase>
+<testcase assertions="0" classname="curves_benchmark" name="mnt6_298" time="464.699">
+<system-out><![CDATA[MESSAGE:
+- file   : boost.test framework
+- line   : 0
+- message: Test case curves_benchmark/mnt6_298 did not check any assertions
+
+]]></system-out>
+</testcase>
+</testsuite>

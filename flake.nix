@@ -41,7 +41,8 @@
             sanitize = true;
           });
           crypto3-clang-bench = (pkgs.callPackage ./crypto3.nix {
-            runTests = true;
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = false;
             enableDebug = false;
             benchmarkTests = true;
           });
@@ -66,7 +67,8 @@
             enableDebug = false;
           });
           parallel-crypto3-clang-bench = (pkgs.callPackage ./parallel-crypto3.nix {
-            runTests = true;
+            stdenv = pkgs.llvmPackages_19.stdenv;
+            runTests = false;
             enableDebug = false;
             benchmarkTests = true;
           });
@@ -127,7 +129,7 @@
             enableDebug = false;
           });
           crypto3-gcc-bench = (pkgs.callPackage ./crypto3.nix {
-            runTests = true;
+            runTests = false;
             enableDebug = false;
             benchmarkTests = true;
           });
@@ -144,7 +146,7 @@
           });
           crypto3-clang-bench = (pkgs.callPackage ./crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
-            runTests = true;
+            runTests = false;
             enableDebug = false;
             benchmarkTests = true;
           });
@@ -152,11 +154,11 @@
           parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3.nix {
             runTests = true;
             enableDebug = false;
-            benchmarkTests = true;
           });
           parallel-crypto3-gcc-bench = (pkgs.callPackage ./parallel-crypto3.nix {
-            runTests = true;
+            runTests = false;
             enableDebug = false;
+            benchmarkTests = true;
           });
           parallel-crypto3-clang = (pkgs.callPackage ./parallel-crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
@@ -170,7 +172,7 @@
           });
           parallel-crypto3-clang-bench = (pkgs.callPackage ./parallel-crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
-            runTests = true;
+            runTests = false;
             enableDebug = false;
             benchmarkTests = true;
           });
@@ -198,6 +200,10 @@
           all-clang-sanitize = pkgs.symlinkJoin {
             name = "all";
             paths = [ crypto3-clang-sanitize parallel-crypto3-clang-sanitize proof-producer-clang-sanitize ];
+          };
+          all-clang-benchmarks = pkgs.symlinkJoin {
+            name = "all";
+            paths = [ crypto3-clang-bench parallel-crypto3-clang-bench ];
           };
           all-gcc = pkgs.symlinkJoin {
             name = "all";
