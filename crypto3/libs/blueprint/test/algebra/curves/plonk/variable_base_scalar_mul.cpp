@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_variable_base_scalar_mul_random_scalar_pall
     random_scalar.seed(seed_seq2);
 
 	typename BlueprintScalarType::value_type two = 2;
-	typename BlueprintScalarType::value_type threefff = 0x3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui255;
+	typename BlueprintScalarType::value_type threefff = 0x3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint255;
 	typename BlueprintScalarType::value_type unshifted_threefff = 2*threefff + two.pow(255) + 1;
 
 	test_vbsm<curve_type>(random_point(), two + two.pow(255) + 1);
@@ -248,9 +248,9 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_variable_base_scalar_mul_random_scalar_pall
     random_scalar.seed(pallas_seed_seq);
 
 	typename pallas_curve_type::scalar_field_type::value_type pallas_two = 2;
-	typename pallas_curve_type::scalar_field_type::value_type pallas_threefff = 0x3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui255;
+	typename pallas_curve_type::scalar_field_type::value_type pallas_threefff = 0x3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint255;
 	typename pallas_curve_type::scalar_field_type::value_type pallas_unshifted_threefff = 2*pallas_threefff + pallas_two.pow(255) + 1;
-	typename pallas_curve_type::scalar_field_type::value_type pallas_p = 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_bigui255;
+	typename pallas_curve_type::scalar_field_type::value_type pallas_p = 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_big_uint255;
 
 	test_vbsm<pallas_curve_type>(pallas_random_point(), pallas_two + pallas_two.pow(255) + 1);
 	test_vbsm<pallas_curve_type>(pallas_random_point(), pallas_two - pallas_two + pallas_two.pow(255) + 1);

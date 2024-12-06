@@ -240,7 +240,7 @@ namespace nil {
                 const std::size_t gates_amount =
                     get_gates_amount(this->witness_amount(), xor_with_mes, last_round_call, limit_permutation_column);
 
-                const value_type sparse_3 = 0x6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB_bigui256;
+                const value_type sparse_3 = 0x6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB_big_uint256;
 
                 const integral_type sparse_x80 = calculate_sparse(integral_type(0x8000000000000000));
                 const integral_type sparse_x7f = calculate_sparse(integral_type(0x8000000000000000 - 1));

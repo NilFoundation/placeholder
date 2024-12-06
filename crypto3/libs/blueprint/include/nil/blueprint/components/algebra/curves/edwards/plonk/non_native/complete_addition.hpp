@@ -604,7 +604,7 @@ namespace nil {
 
                 typename Ed25519Type::base_field_type::integral_type d =
                     typename Ed25519Type::base_field_type::integral_type(
-                        0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3_bigui256);
+                        0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3_big_uint256);
                 assignment.constant(component.C(0), row + 4) = d & mask;
                 assignment.constant(component.C(0), row + 5) = (d >> 66) & mask;
                 assignment.constant(component.C(0), row + 6) = (d >> 132) & mask;

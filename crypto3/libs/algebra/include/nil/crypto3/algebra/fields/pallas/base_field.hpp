@@ -52,7 +52,7 @@ namespace nil {
 #else
 
                     constexpr static const integral_type modulus =
-                        0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_bigui255;
+                        0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_big_uint255;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1u) / 2 ;
 
