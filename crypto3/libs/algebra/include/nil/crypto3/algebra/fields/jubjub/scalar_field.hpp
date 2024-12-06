@@ -50,7 +50,7 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xE7DB4EA6533AFA906673B0101343B00A6682093CCC81082D0970E5ED6F72CB7_bigui252;
+                        0xE7DB4EA6533AFA906673B0101343B00A6682093CCC81082D0970E5ED6F72CB7_big_uint252;
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<jubjub_scalar_field>> value_type;

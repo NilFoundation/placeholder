@@ -49,7 +49,7 @@ namespace nil {
                         constexpr static const std::size_t integral_type_max_bits =
                             curve_type::base_field_type::modulus_bits;
 
-                        constexpr static const integral_type ate_loop_count = 0x19D797039BE763BA8_bigui254;
+                        constexpr static const integral_type ate_loop_count = 0x19D797039BE763BA8_big_uint254;
                         constexpr static const bool ate_is_loop_count_neg = false;
 
                         using g2_field_type = typename curve_type::g2_type<>::params_type::field_type;
@@ -57,14 +57,14 @@ namespace nil {
                         // g2_type::params_type::twist.pow((p-1)/3), twist = (9, 1)
                         constexpr static const typename g2_field_type::value_type
                             TWIST_MUL_BY_Q_X = typename g2_field_type::value_type(
-                                0x2FB347984F7911F74C0BEC3CF559B143B78CC310C2C3330C99E39557176F553D_bigui254,
-                                0x16C9E55061EBAE204BA4CC8BD75A079432AE2A1D0B7C9DCE1665D51C640FCBA2_bigui254);
+                                0x2FB347984F7911F74C0BEC3CF559B143B78CC310C2C3330C99E39557176F553D_big_uint254,
+                                0x16C9E55061EBAE204BA4CC8BD75A079432AE2A1D0B7C9DCE1665D51C640FCBA2_big_uint254);
 
                         // g2_type::params_type::twist.pow((p-1)/2), twist = (9, 1)
                         constexpr static const typename g2_field_type::value_type
                             TWIST_MUL_BY_Q_Y = typename g2_field_type::value_type(
-                                0x63CF305489AF5DCDC5EC698B6E2F9B9DBAAE0EDA9C95998DC54014671A0135A_bigui254,
-                                0x7C03CBCAC41049A0704B5A7EC796F2B21807DC98FA25BD282D37F632623B0E3_bigui254);
+                                0x63CF305489AF5DCDC5EC698B6E2F9B9DBAAE0EDA9C95998DC54014671A0135A_big_uint254,
+                                0x7C03CBCAC41049A0704B5A7EC796F2B21807DC98FA25BD282D37F632623B0E3_big_uint254);
 
                         /* python3:
                          * # Signed bit representation.

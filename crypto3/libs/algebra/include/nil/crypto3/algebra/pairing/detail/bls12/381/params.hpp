@@ -48,12 +48,12 @@ namespace nil {
                             curve_type::base_field_type::modulus_bits;
 
                         constexpr static const integral_type ate_loop_count =
-                            0xD201000000010000_bigui64;
+                            0xD201000000010000_big_uint64;
                         constexpr static const bool ate_is_loop_count_neg =
                             true;
 
                         constexpr static const integral_type final_exponent_z =
-                            0xD201000000010000_bigui64;
+                            0xD201000000010000_big_uint64;
                         constexpr static const bool final_exponent_is_z_neg =
                             true;
 

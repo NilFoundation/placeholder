@@ -49,9 +49,9 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
                 using integral_type = zkevm_word_integral_type;
 
-                constexpr static const typename FieldType::value_type two_64 = 0x10000000000000000_bigui257;
-                constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_bigui254;
-                constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_bigui254;
+                constexpr static const typename FieldType::value_type two_64 = 0x10000000000000000_big_uint257;
+                constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
+                constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
 
                 TYPE chunk_sum_64(const std::vector<TYPE> &chunks, const unsigned char chunk_idx) const {
                     BOOST_ASSERT(chunk_idx < 4);

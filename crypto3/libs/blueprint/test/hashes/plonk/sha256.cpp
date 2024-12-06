@@ -161,35 +161,35 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_sha256_test0) {
 
     test_sha256_with_stretching<BlueprintFieldType>(
         {s, s + 1, s + 2, s + 3},
-        {0xf5790a69d0a3f69cb85d0b5a233405fb_bigui255, 0xa47050b703fce590fd6585dd02b175f8_bigui255});
+        {0xf5790a69d0a3f69cb85d0b5a233405fb_big_uint255, 0xa47050b703fce590fd6585dd02b175f8_big_uint255});
 
     test_sha256_with_stretching<BlueprintFieldType>({
-        0xf5a5fd42d16a20302798ef6ed309979b_bigui255, 0x43003d2320d9f0e8ea9831a92759fb4b_bigui255,
-        0xdb56114e00fdd4c1f85c892bf35ac9a8_bigui255, 0x9289aaecb1ebd0a96cde606a748b5d71_bigui255},
-     {0x42b052541dce45557d83d34634a45a56_bigui255,  0xd216d4375e5a9584f6445ce4e63324af_bigui255});
+        0xf5a5fd42d16a20302798ef6ed309979b_big_uint255, 0x43003d2320d9f0e8ea9831a92759fb4b_big_uint255,
+        0xdb56114e00fdd4c1f85c892bf35ac9a8_big_uint255, 0x9289aaecb1ebd0a96cde606a748b5d71_big_uint255},
+     {0x42b052541dce45557d83d34634a45a56_big_uint255,  0xd216d4375e5a9584f6445ce4e63324af_big_uint255});
     test_sha256_with_stretching<BlueprintFieldType>({
-        0xc78009fdf07fc56a11f122370658a353_bigui255, 0xaaa542ed63e44c4bc15ff4cd105ab33c_bigui255,
-        0x536d98837f2dd165a55d5eeae9148595_bigui255, 0x4472d56f246df256bf3cae19352a123c_bigui255},
-     {0x69113382140943e8205d01244f562096_bigui255, 0x4d5b92a1cb78bf9fe35ab0bbd2f1f8c2_bigui255});
+        0xc78009fdf07fc56a11f122370658a353_big_uint255, 0xaaa542ed63e44c4bc15ff4cd105ab33c_big_uint255,
+        0x536d98837f2dd165a55d5eeae9148595_big_uint255, 0x4472d56f246df256bf3cae19352a123c_big_uint255},
+     {0x69113382140943e8205d01244f562096_big_uint255, 0x4d5b92a1cb78bf9fe35ab0bbd2f1f8c2_big_uint255});
     test_sha256_with_stretching<BlueprintFieldType>({
-        0x9efde052aa15429fae05bad4d0b1d7c6_bigui255, 0x4da64d03d7a1854a588c2cb8430c0d30_bigui255,
-        0xd88ddfeed400a8755596b21942c1497e_bigui255, 0x114c302e6118290f91e6772976041fa1_bigui255},
-     {0x60a7f836b0b42a41d74143c1ae465c25_bigui255, 0xed04376190677ef7d589bd69bc4d79c8_bigui255});
+        0x9efde052aa15429fae05bad4d0b1d7c6_big_uint255, 0x4da64d03d7a1854a588c2cb8430c0d30_big_uint255,
+        0xd88ddfeed400a8755596b21942c1497e_big_uint255, 0x114c302e6118290f91e6772976041fa1_big_uint255},
+     {0x60a7f836b0b42a41d74143c1ae465c25_big_uint255, 0xed04376190677ef7d589bd69bc4d79c8_big_uint255});
     test_sha256_with_stretching<BlueprintFieldType>({
-        0x87eb0ddba57e35f6d286673802a4af59_bigui255, 0x75e22506c7cf4c64bb6be5ee11527f2c_bigui255,
-        0x26846476fd5fc54a5d43385167c95144_bigui255, 0xf2643f533cc85bb9d16b782f8d7db193_bigui255},
-     {0x841510f2de07868d707940400d618c9e_bigui255, 0xeeb91d1bd77177f196a238e272cb9bc3_bigui255});
+        0x87eb0ddba57e35f6d286673802a4af59_big_uint255, 0x75e22506c7cf4c64bb6be5ee11527f2c_big_uint255,
+        0x26846476fd5fc54a5d43385167c95144_big_uint255, 0xf2643f533cc85bb9d16b782f8d7db193_big_uint255},
+     {0x841510f2de07868d707940400d618c9e_big_uint255, 0xeeb91d1bd77177f196a238e272cb9bc3_big_uint255});
     test_sha256_with_stretching<BlueprintFieldType>({
-        0x506d86582d252405b840018792cad2bf_bigui255, 0x1259f1ef5aa5f887e13cb2f0094f51e1_bigui255,
-        0xffff0ad7e659772f9534c195c815efc4_bigui255, 0x14ef1e1daed4404c06385d11192e92b_bigui255},
-     {0x88b8aa87277a142cbe3d58e7a85ced04_bigui255, 0x4fec5eb57f1828caf06b5fae9c8c67fd_bigui255});
+        0x506d86582d252405b840018792cad2bf_big_uint255, 0x1259f1ef5aa5f887e13cb2f0094f51e1_big_uint255,
+        0xffff0ad7e659772f9534c195c815efc4_big_uint255, 0x14ef1e1daed4404c06385d11192e92b_big_uint255},
+     {0x88b8aa87277a142cbe3d58e7a85ced04_big_uint255, 0x4fec5eb57f1828caf06b5fae9c8c67fd_big_uint255});
 
     test_sha256_with_stretching<BlueprintFieldType>(
-        {0xffffffffffffffff_bigui64, 0xffffffffffffffff_bigui64, 0xffffffffffffffff_bigui64, 0xffffffffffffffff_bigui64},
-        {0xf58ac0f0665e3f1886f2eae35542987b_bigui255, 0x9d61cc98e5d3ed2a5a9d8e3b9b7d9f2f_bigui255});
+        {0xffffffffffffffff_big_uint64, 0xffffffffffffffff_big_uint64, 0xffffffffffffffff_big_uint64, 0xffffffffffffffff_big_uint64},
+        {0xf58ac0f0665e3f1886f2eae35542987b_big_uint255, 0x9d61cc98e5d3ed2a5a9d8e3b9b7d9f2f_big_uint255});
     test_sha256_with_stretching<BlueprintFieldType>(
         {1, 1, 1, 1},
-         {0x8e1caeb2418a07d7d88f710dccd882d5_bigui255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_bigui255});
+         {0x8e1caeb2418a07d7d88f710dccd882d5_big_uint255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_big_uint255});
 }
 
 
@@ -198,6 +198,6 @@ BOOST_AUTO_TEST_CASE(sha256_test1) {
 
     test_and_print<BlueprintFieldType>(
         {1, 1, 1, 1},
-         {0x8e1caeb2418a07d7d88f710dccd882d5_bigui255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_bigui255});
+         {0x8e1caeb2418a07d7d88f710dccd882d5_big_uint255, 0xb5772c88ae5ca4442ccc46c4518a3d3b_big_uint255});
 }
 BOOST_AUTO_TEST_SUITE_END()

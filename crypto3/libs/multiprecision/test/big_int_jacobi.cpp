@@ -54,10 +54,10 @@ BOOST_AUTO_TEST_SUITE(jacobi_tests)
 BOOST_AUTO_TEST_CASE(jacobi_test) {
     test<big_uint<2048>>();
 
-    constexpr auto a = 0x4931a5f_bigui256;
-    constexpr auto b = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_bigui256;
+    constexpr auto a = 0x4931a5f_big_uint256;
+    constexpr auto b = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256;
     static_assert(jacobi(a, b) == -1, "jacobi error");
-    static_assert(jacobi(0x2_bigui4, 0xb_bigui4) == -1);
+    static_assert(jacobi(0x2_big_uint4, 0xb_big_uint4) == -1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

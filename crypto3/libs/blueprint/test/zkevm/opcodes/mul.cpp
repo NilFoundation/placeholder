@@ -63,16 +63,16 @@ BOOST_AUTO_TEST_CASE(zkevm_mul_test) {
 
     zkevm_table<field_type> zkevm_table(evm_circuit, assignment);
     zkevm_opcode_tester opcode_tester;
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui257);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint257);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint257);
     opcode_tester.push_opcode(zkevm_opcode::MUL);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1234567890);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint257);
     opcode_tester.push_opcode(zkevm_opcode::MUL);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint257);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0xFb70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint257);
     opcode_tester.push_opcode(zkevm_opcode::MUL);
-    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257);
+    opcode_tester.push_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint257);
     opcode_tester.push_opcode(zkevm_opcode::PUSH32, 1234567890);
     opcode_tester.push_opcode(zkevm_opcode::MUL);
     opcode_tester.push_opcode(zkevm_opcode::RETURN);

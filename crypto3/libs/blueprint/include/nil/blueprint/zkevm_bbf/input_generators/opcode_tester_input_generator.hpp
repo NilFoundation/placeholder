@@ -424,7 +424,7 @@ namespace nil {
                             zkevm_word_type a = stack.back();
                             stack.pop_back();
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, false, a));
-                            zkevm_word_type result = zkevm_word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui257) - a;;
+                            zkevm_word_type result = zkevm_word_type(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint257) - a;;
                             _rw_operations.push_back(stack_rw_operation(call_id,  stack.size(), rw_counter++, true, result));
                             stack.push_back(result);
                             pc++;

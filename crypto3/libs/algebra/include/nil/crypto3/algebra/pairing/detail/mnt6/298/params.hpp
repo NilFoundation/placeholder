@@ -48,11 +48,11 @@ namespace nil {
                             curve_type::base_field_type::modulus_bits;
 
                         constexpr static const integral_type ate_loop_count =
-                            0x1EEF5546609756BEC2A33F0DC9A1B671660000_bigui149;
+                            0x1EEF5546609756BEC2A33F0DC9A1B671660000_big_uint149;
                         constexpr static const bool ate_is_loop_count_neg = true;
 
                         constexpr static const integral_type final_exponent_last_chunk_abs_of_w0 =
-                            0x1EEF5546609756BEC2A33F0DC9A1B671660000_bigui149;    // same as ate_loop_count?
+                            0x1EEF5546609756BEC2A33F0DC9A1B671660000_big_uint149;    // same as ate_loop_count?
                         constexpr static const bool final_exponent_last_chunk_is_w0_neg = true;
                         constexpr static const integral_type final_exponent_last_chunk_w1 = integral_type(0x1);
 
