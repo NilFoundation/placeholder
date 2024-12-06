@@ -41,9 +41,8 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
-#include <nil/blueprint/bbf/is_zero.hpp>
-
-//#include "../test_plonk_component.hpp"
+// #include <nil/blueprint/bbf/is_zero.hpp>
+#include <nil/blueprint/bbf/micro_range_check.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
@@ -54,12 +53,18 @@ void test_circuit_builder(typename Component<FieldType,bbf::GenerationStage::ASS
 
     auto B = bbf::circuit_builder<FieldType,Component,ComponentStaticInfoArgs...>(args...);
 
-    auto [at, A] = B.assign(raw_input);
-    std::cout << "Input = " << A.input << std::endl << "Result = " << A.res << std::endl;
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
+    auto [at, A, desc] = B.assign(raw_input);
+    std::cout << "Input = " << A.input << std::endl;
+    bool pass = B.is_satisfied(at);
+    std::cout << "Is_satisfied = " << pass << std::endl;
+
+    if (pass) {
+        bool proof = B.check_proof(at, desc);
+        std::cout << "Is_proved = " << proof << std::endl;
+    }
 }
 
-static const std::size_t random_tests_amount = 10;
+static const std::size_t random_tests_amount = 5;
 
 BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 
@@ -73,14 +78,13 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_cicruit_builder_test) {
     generate_random.seed(seed_seq);
 
     integral_type base16 = integral_type(1) << 16;
+    integral_type base17 = integral_type(1) << 17;
 
     for (std::size_t i = 0; i < random_tests_amount; i++) {
-        auto random_input = value_type(integral_type(generate_random().data) % base16);
-        bbf::is_zero<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {random_input};
-        test_circuit_builder<field_type,bbf::is_zero>(raw_input);
+        auto random_input = value_type(integral_type(generate_random().data) % (i % 2 ? base16 : base17));
+        bbf::micro_range_check<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {random_input};
+        test_circuit_builder<field_type,bbf::micro_range_check>(raw_input);
     }
-    bbf::is_zero<field_type,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {0};
-    test_circuit_builder<field_type,bbf::is_zero>(raw_input);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
