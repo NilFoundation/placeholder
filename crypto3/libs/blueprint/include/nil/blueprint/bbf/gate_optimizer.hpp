@@ -61,7 +61,7 @@ namespace nil {
 
                 // We will map each selector to the corresponding id.
                 std::unordered_map<row_selector<>, size_t> selectors_;
- 
+
                 size_t add_selector(const row_selector<>& selector) {
                     auto iter = selectors_.find(selector);
                     size_t next_selector_id = selectors_.size();
@@ -137,11 +137,11 @@ namespace nil {
                         if (!shifted)
                             return std::nullopt;
                         shifted_constraints.push_back(*shifted);
-                    } 
+                    }
                     return shifted_constraints;
                 }
 
-                /** Tries to shift the lookup constraints to left or right. 
+                /** Tries to shift the lookup constraints to left or right.
                  *  \param[in] shift - Must be +-1, we cannot shift more than by 1.
                  */
                 std::optional<std::vector<typename context_type::lookup_constraint_type>> shift_lookup_constraints(
@@ -176,12 +176,13 @@ namespace nil {
                         result.constraint_list[id] = std::move(constraints);
                     }
                     for (auto& [name, area] : dynamic_lookup_tables) {
-                        const auto& selector = area.second; 
+                        const auto& selector = area.second;
                         size_t id = result.add_selector(selector);
                         result.dynamic_lookup_tables[name] = {std::move(area.first), id};
                     }
                     for (const auto& [row_list, lookup_list] : lookup_constraints) {
                         size_t id = result.add_selector(row_list);
+//std::cout << "Processing lookup constraint with row list " << row_list << ", got id = " << id << std::endl;
                         result.lookup_constraints[id] = std::move(lookup_list);
                     }
                     return result;
@@ -189,7 +190,9 @@ namespace nil {
 
                 optimized_gates<FieldType> optimize_gates() {
                     optimized_gates<FieldType> result = context_to_gates();
+                    // optimized_gates<FieldType> result = gates_storage_;
                     // std::cout << "Before: \n\n" << result << std::endl;
+                    // optimize_selectors_by_shifting(result);
                     optimize_selectors_by_shifting(result);
                     // std::cout << "After: \n\n" << result << std::endl;
                     return result;
@@ -208,7 +211,7 @@ namespace nil {
                     create_selector_shift_maps(gates, left_shifts, right_shifts);
                     std::vector<std::pair<size_t, int>> chosen_selectors = choose_selectors(
                         left_shifts, right_shifts);
-                    
+
 					//std::cout << "The following selector shifts were selected: \n";
 					//for (size_t i = 0; i < chosen_selectors.size(); ++i) {
 					//	std::cout << "#" << i << " -> " << "#" << chosen_selectors[i].first << " shifted " << chosen_selectors[i].second << std::endl;
@@ -228,9 +231,9 @@ namespace nil {
                         size_t replacement_id = chosen_selectors[id].first;
                         if (new_selector_mapping.find(replacement_id) == new_selector_mapping.end())
                             new_selector_mapping[replacement_id] = next_selector_id++;
- 
+
                         int shift = chosen_selectors[id].second;
-    
+
                         if (shift == 0) {
                             auto iter = gates.constraint_list.find(id);
                             if (iter != gates.constraint_list.end())
@@ -247,7 +250,7 @@ namespace nil {
                             if (iter != gates.constraint_list.end()) {
                                 std::vector<constraint_type> constraints = std::move(iter->second);
                                 gates.constraint_list.erase(id);
-                                // We need the minus on the next line, we need to shift the constraints in the 
+                                // We need the minus on the next line, we need to shift the constraints in the
                                 // opposite direction of the selector shift.
                                 std::optional<std::vector<constraint_type>> shifted_constraints =
                                     shift_constraints(std::move(constraints), -shift);
@@ -265,16 +268,16 @@ namespace nil {
                                     throw std::logic_error("Unable to shift constraints after the shift decisions are made.");
                                 result.add_constraints(new_selector_mapping[replacement_id], *shifted_constraints);
                             }
-                
+
                             // Move all lookup_constraints.
                             auto iter2 = gates.lookup_constraints.find(id);
                             if (iter2 != gates.lookup_constraints.end()) {
                                 std::vector<typename context_type::lookup_constraint_type> lookup_list = std::move(iter2->second);
                                 gates.lookup_constraints.erase(id);
 
-                                // We need the minus on the next line, we need to shift the constraints in the 
-                                // opposite direction of the selector shift. 
-                                std::optional<std::vector<typename context_type::lookup_constraint_type>> shifted_lookup_list = 
+                                // We need the minus on the next line, we need to shift the constraints in the
+                                // opposite direction of the selector shift.
+                                std::optional<std::vector<typename context_type::lookup_constraint_type>> shifted_lookup_list =
                                     shift_lookup_constraints(lookup_list, -shift);
                                 if (!shifted_lookup_list)
                                     throw std::logic_error("Unable to shift lookup constraints after the shift decisions are made.");
@@ -307,7 +310,7 @@ namespace nil {
                     // For each selector we will keep a pair, the id of selector that will substitute the current one, and the shift used.
                     // If shift is 0, then the selector is used.
                     std::vector<std::pair<size_t, int>> chosen_shifts(N, {-1, -1});
-                    
+
                     // Create the opposite mappings as well.
                     std::vector<size_t> reversed_left_shifts(N, -1);
                     std::vector<size_t> reversed_right_shifts(N, -1);
@@ -355,8 +358,8 @@ namespace nil {
                             // It's not optimal to insert into vector, but the vector is very short.
                             chain.insert(chain.begin(), current_node);
                         }
-                        
-                        // Now we have a chain of selectors, where chain[i] can be shifted right to create chain[i+1], 
+
+                        // Now we have a chain of selectors, where chain[i] can be shifted right to create chain[i+1],
                         // but the shift may or may not be permitted.
                         for (int j = chain.size() - 1; j >= 0; j--) {
                             if (chosen_shifts[chain[j]].first != -1)
@@ -364,7 +367,7 @@ namespace nil {
                             // We must either take node chain[j], or (chain[j-1] if chain[j] left shift to chain[j-1] is permitted.
                             // Check if we have the ability to NOT include chain[j].
                             if (j != 0) {
-                                // chain[j] if shifted left will result in chain[j - 1], so let's include chain[j - 1]. 
+                                // chain[j] if shifted left will result in chain[j - 1], so let's include chain[j - 1].
                                 if (left_shifts[chain[j]] == chain[j - 1]) {
                                     chosen_shifts[chain[j - 1]] = {chain[j - 1], 0};
                                     chosen_shifts[chain[j]] = {chain[j - 1], -1};
@@ -420,7 +423,7 @@ namespace nil {
                             if (iter != gates.selectors_.end()) {
                                 size_t right_id = iter->second;
                                 // We need to check shift -1, if the selecor is shifted left,
-                                // the constraint must be rotated right. 
+                                // the constraint must be rotated right.
                                 if (can_shift(gates, id, -1)) {
                                     right_shifts[id] = right_id;
                                 }
@@ -459,6 +462,7 @@ namespace nil {
                 }
 
                 std::unique_ptr<context<FieldType, GenerationStage::CONSTRAINTS>> context_;
+                //optimized_gates<FieldType> gates_storage_;
             };
 
         } // namespace bbf
