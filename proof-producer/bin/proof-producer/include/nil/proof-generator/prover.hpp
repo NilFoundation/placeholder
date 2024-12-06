@@ -67,6 +67,7 @@
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/file_operations.hpp>
 
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 
 namespace nil {
     namespace proof_generator {
@@ -168,7 +169,7 @@ namespace nil {
             using CommonData = typename PublicPreprocessedData::common_data_type;
             using PrivatePreprocessedData = typename nil::crypto3::zk::snark::
                 placeholder_private_preprocessor<BlueprintField, PlaceholderParams>::preprocessed_data_type;
-            using ConstraintSystem = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
+            using ConstraintSystem = nil::blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>>;
             using TableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
             using Endianness = nil::marshalling::option::big_endian;
             using FriType = typename Lpc::fri_type;
@@ -552,15 +553,16 @@ namespace nil {
             bool read_circuit(const boost::filesystem::path& circuit_file_) {
                 BOOST_LOG_TRIVIAL(info) << "Read circuit from " << circuit_file_;
 
+                using ZkConstraintSystem = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
                 using ConstraintMarshalling =
-                    nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, ConstraintSystem>;
+                    nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, ZkConstraintSystem>;
 
                 auto marshalled_value = detail::decode_marshalling_from_file<ConstraintMarshalling>(circuit_file_);
                 if (!marshalled_value) {
                     return false;
                 }
                 constraint_system_.emplace(
-                    nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, ConstraintSystem>(
+                    nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, ZkConstraintSystem>(
                         *marshalled_value
                     )
                 );
@@ -1127,6 +1129,16 @@ namespace nil {
                 auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
                 std::cout << "PRESET: " << duration.count() << "\n";
                 return true;
+            }
+
+            const ConstraintSystem& get_constraint_system() const {
+                BOOST_ASSERT(constraint_system_);
+                return constraint_system_.value();
+            }
+
+            const AssignmentTable& get_assignment_table() const {
+                BOOST_ASSERT(assignment_table_);
+                return assignment_table_.value();
             }
 
             bool fill_assignment_table(const boost::filesystem::path& trace_file_path) {

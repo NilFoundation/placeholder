@@ -72,12 +72,13 @@ namespace nil {
 
                 template<typename Endianness, typename IntegerType>
                 std::vector<IntegerType>
-                make_integer_vector(const nil::marshalling::types::standard_size_t_array_list<
-                    nil::marshalling::field_type<Endianness>
-                >& filled_vector) {
+                make_integer_vector(
+                    const nil::marshalling::types::standard_size_t_array_list<nil::marshalling::field_type<Endianness> >& filled_vector)
+                {
                     std::vector<IntegerType> result;
-                    for( std::size_t i = 0; i < filled_vector.value().size(); i++){
-                        result.push_back(filled_vector.value()[i].value());
+                    result.reserve(filled_vector.value().size());
+                    for (std::size_t i = 0; i < filled_vector.value().size(); i++) {
+                        result.emplace_back(filled_vector.value()[i].value());
                     }
                     return result;
                 }

@@ -81,8 +81,8 @@ namespace nil {
 
                 template<typename Endianness, typename Variable>
                 Variable make_variable(
-                    const typename variable<nil::marshalling::field_type<Endianness>, Variable>::type &filled_var
-                ) {
+                    const typename variable<nil::marshalling::field_type<Endianness>, Variable>::type &filled_var)
+                {
                     return Variable(std::get<0>(filled_var.value()).value(),
                                     std::get<1>(filled_var.value()).value(),
                                     std::get<2>(filled_var.value()).value(),
@@ -111,9 +111,11 @@ namespace nil {
                 }
 
                 template<typename Endianness, typename Variable>
-                std::vector<Variable>
-                make_variables(const variables<nil::marshalling::field_type<Endianness>, typename Variable::assignment_type> &filled_vars){
+                std::vector<Variable> make_variables(
+                    const variables<nil::marshalling::field_type<Endianness>, typename Variable::assignment_type> &filled_vars)
+                {
                     std::vector<Variable> vars;
+                    vars.reserve(filled_vars.value().size());
                     for (std::size_t i = 0; i < filled_vars.value().size(); i++) {
                         vars.emplace_back(make_variable<Endianness, Variable>(filled_vars.value().at(i)));
                     }

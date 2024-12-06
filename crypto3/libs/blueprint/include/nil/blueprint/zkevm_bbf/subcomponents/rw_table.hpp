@@ -38,7 +38,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<rw_operation>, std::nullptr_t>::type;
+                using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type;
                 using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
             public:
                 // For connection with upper-level circuits
@@ -78,6 +78,9 @@ namespace nil {
                             is_write[i] = rw_trace[i].is_write;
                             value_hi[i] = w_hi<FieldType>(rw_trace[i].value);
                             value_lo[i] = w_lo<FieldType>(rw_trace[i].value);
+                        }
+                        for( std::size_t i = rw_trace.size(); i < max_rw_size; i++ ){
+                            op[i] = rw_op_to_num(rw_operation_type::padding);
                         }
                     }
                     for( std::size_t i = 0; i < max_rw_size; i++ ){
