@@ -45,15 +45,15 @@ const size_t quotient_polys_amount = 10;
 const size_t lookup_sorted_polys_start = 50;
 const size_t D0_size = 512;
 const size_t D0_log = 9;
-const pallas::base_field_type::value_type D0_omega = pallas::base_field_type::value_type(0x0x32BFB543E409054906E3866AF24325A6F8E702511EF204C674BFA596A5C9B7E5 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255);
-const pallas::base_field_type::value_type omega = pallas::base_field_type::value_type(0x0x7FC67F0D2530E47F91F36DED523F7E7013069392919E4978ABC6E0F780C038C mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255);
+const pallas::base_field_type::value_type D0_omega = pallas::base_field_type::value_type(0x0x32BFB543E409054906E3866AF24325A6F8E702511EF204C674BFA596A5C9B7E5 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255);
+const pallas::base_field_type::value_type omega = pallas::base_field_type::value_type(0x0x7FC67F0D2530E47F91F36DED523F7E7013069392919E4978ABC6E0F780C038C mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255);
 const size_t fri_rounds = 4;
 const std::array<int, gates_amount> gates_sizes = {1};
 const size_t unique_points = 9;
 const size_t singles_amount = 9;
 const std::array<std::size_t, batches_num> batches_amount_list = {15, 2, 3, 10, 9};
-pallas::base_field_type::value_type vk0 = pallas::base_field_type::value_type(0x0x21718F7FBDA33C144EB86ABF6F540BC96DC9AFDC49C0C6A14D255C1377E1ACD2 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255);
-pallas::base_field_type::value_type vk1 = pallas::base_field_type::value_type(0x0x3F4216B1C0767D00C8701FEEE2847F9B73EC1D272E87B27245D3CBD72102FAAC mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255);
+pallas::base_field_type::value_type vk0 = pallas::base_field_type::value_type(0x0x21718F7FBDA33C144EB86ABF6F540BC96DC9AFDC49C0C6A14D255C1377E1ACD2 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255);
+pallas::base_field_type::value_type vk1 = pallas::base_field_type::value_type(0x0x3F4216B1C0767D00C8701FEEE2847F9B73EC1D272E87B27245D3CBD72102FAAC mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255);
 
 
 
@@ -723,21 +723,21 @@ typedef __attribute__((ext_vector_type(2)))
 	U[8] += theta_acc * proof.z[73]; theta_acc *= challenges.lpc_theta;
 	U[8] += theta_acc * proof.z[76]; theta_acc *= challenges.lpc_theta;
 
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x25028413607350C95CB2737B19762FEC8F0D2AD9265327959EA408C2AEBCE349 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x711DA9E192821D6C46F5F23D854015FA604641642E61D9FDCEA52BE1C69B44F mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x1CA940421574E9431A983C5FB47C13C598A5DBA06D0507D89A3DE45C2CB88680 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x9F93CEAA7A11C28019770B515887602EFBF1A3F906FD9CBFB6EA5465D19B905 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x2E830CE253A490984769A47B5AA6882B590BF2688BD1A7B96A522C77476780F6 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0xC50ED252B73A39F54A618EB2EB73D15E4698B14731C6E186DA54763E8B8B57A mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0xC795351F23FA0172FE3803278E89FC15282DA8F234A172B5CF5316E761620E9 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x2B6479BD1EA6A45030E8F06B4FDD743BF8BBA0C7180600D724F917B9CA72CD81 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x36C5BAAE2BB45D35E8FC11DB799E8882790732BB7B255ACF2D5FB4BA751A0F72 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x77970A6368DD6ED601494331B3CED4F5A333EFF0B31A246BAD88B5F39399AC7 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x6E529C0C5E28A672846D6FD3E53DA775E988248C4E1337AF62101BB9A2AA574 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x13EBA14E86648D5FDEDE2D610E35CEB3ED350A0CA013B3E61D9ED56C34D9686A mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x22825163D113EBD6930E5A066ACAD991ABD7728A085F9676171FDB65095A2769 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x36A1AC8128872B782B2DFEF4705518B1137C269D1E44B19C704142A4081AD96A mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
-	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x2BE0A4E2A88CC05E67E05B11FA75C0E0BAA1E4E8F367DDF5400BC9AE013F4E00 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x25028413607350C95CB2737B19762FEC8F0D2AD9265327959EA408C2AEBCE349 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x711DA9E192821D6C46F5F23D854015FA604641642E61D9FDCEA52BE1C69B44F mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x1CA940421574E9431A983C5FB47C13C598A5DBA06D0507D89A3DE45C2CB88680 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x9F93CEAA7A11C28019770B515887602EFBF1A3F906FD9CBFB6EA5465D19B905 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x2E830CE253A490984769A47B5AA6882B590BF2688BD1A7B96A522C77476780F6 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0xC50ED252B73A39F54A618EB2EB73D15E4698B14731C6E186DA54763E8B8B57A mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0xC795351F23FA0172FE3803278E89FC15282DA8F234A172B5CF5316E761620E9 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x2B6479BD1EA6A45030E8F06B4FDD743BF8BBA0C7180600D724F917B9CA72CD81 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x36C5BAAE2BB45D35E8FC11DB799E8882790732BB7B255ACF2D5FB4BA751A0F72 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x77970A6368DD6ED601494331B3CED4F5A333EFF0B31A246BAD88B5F39399AC7 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x6E529C0C5E28A672846D6FD3E53DA775E988248C4E1337AF62101BB9A2AA574 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x13EBA14E86648D5FDEDE2D610E35CEB3ED350A0CA013B3E61D9ED56C34D9686A mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x22825163D113EBD6930E5A066ACAD991ABD7728A085F9676171FDB65095A2769 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x36A1AC8128872B782B2DFEF4705518B1137C269D1E44B19C704142A4081AD96A mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
+	U[unique_points] += theta_acc * pallas::base_field_type::value_type(0x0x2BE0A4E2A88CC05E67E05B11FA75C0E0BAA1E4E8F367DDF5400BC9AE013F4E00 mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255); theta_acc *= challenges.lpc_theta;
 
 
 
@@ -786,7 +786,7 @@ typedef __attribute__((ext_vector_type(2)))
 		hash_state = __builtin_assigner_poseidon_pallas_base({0, pos * hash_state + npos * proof.initial_proof_hashes[i][6], npos * hash_state + pos * proof.initial_proof_hashes[i][6]})[2];
 		pos = pallas::base_field_type::value_type(proof.initial_proof_positions[i][7]); npos = pallas::base_field_type::value_type(1) - pos;
 		hash_state = __builtin_assigner_poseidon_pallas_base({0, pos * hash_state + npos * proof.initial_proof_hashes[i][7], npos * hash_state + pos * proof.initial_proof_hashes[i][7]})[2];
-		__builtin_assigner_exit_check(hash_state == pallas::base_field_type::value_type(0x0x3F4216B1C0767D00C8701FEEE2847F9B73EC1D272E87B27245D3CBD72102FAAC mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_bigui255));
+		__builtin_assigner_exit_check(hash_state == pallas::base_field_type::value_type(0x0x3F4216B1C0767D00C8701FEEE2847F9B73EC1D272E87B27245D3CBD72102FAAC mod 0x40000000000000000000000000000000224698FC094CF91B992D30ED00000001_big_uint255));
 
 		hash_state = calculate_leaf_hash<30,2>(proof.initial_proof_values[i]);
 		pos = pallas::base_field_type::value_type(proof.initial_proof_positions[i][0]); npos = pallas::base_field_type::value_type(1) - pos;

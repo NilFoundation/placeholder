@@ -55,10 +55,10 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0x3BCF7BCD473A266249DA7B0548ECAEEC9635CF44194FB494C07925D6AD3BB4334A400000001_bigui298;
+                        0x3BCF7BCD473A266249DA7B0548ECAEEC9635CF44194FB494C07925D6AD3BB4334A400000001_big_uint298;
 
                     constexpr static const integral_type group_order_minus_one_half =
-                        0x1DE7BDE6A39D133124ED3D82A47657764B1AE7A20CA7DA4A603C92EB569DDA19A5200000000_bigui298;
+                        0x1DE7BDE6A39D133124ED3D82A47657764B1AE7A20CA7DA4A603C92EB569DDA19A5200000000_big_uint298;
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<mnt6_base_field<298>>> value_type;

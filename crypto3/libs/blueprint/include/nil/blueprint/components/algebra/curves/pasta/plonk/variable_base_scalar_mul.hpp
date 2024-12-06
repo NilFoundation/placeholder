@@ -85,18 +85,18 @@ namespace nil {
             struct variable_base_scalar_mul_shifted_consts<typename nil::crypto3::algebra::curves::pallas> {
                 using FieldType = nil::crypto3::algebra::fields::pallas_base_field;
 
-                constexpr static const typename FieldType::value_type shifted_minus_one = 0x224698fc0994a8dd8c46eb2100000000_bigui255;
-                constexpr static const typename FieldType::value_type shifted_zero = 0x200000000000000000000000000000003369e57a0e5efd4c526a60b180000001_bigui255;
-                constexpr static const typename FieldType::value_type shifted_one = 0x224698fc0994a8dd8c46eb2100000001_bigui255;
+                constexpr static const typename FieldType::value_type shifted_minus_one = 0x224698fc0994a8dd8c46eb2100000000_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_zero = 0x200000000000000000000000000000003369e57a0e5efd4c526a60b180000001_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_one = 0x224698fc0994a8dd8c46eb2100000001_big_uint255;
             };
 
             template<>
             struct variable_base_scalar_mul_shifted_consts<typename nil::crypto3::algebra::curves::vesta> {
                 using FieldType = nil::crypto3::algebra::fields::vesta_base_field;
 
-                constexpr static const typename FieldType::value_type shifted_minus_one = 0x448d31f81299f237325a61da00000001_bigui255;
-                constexpr static const typename FieldType::value_type shifted_zero =      0x448d31f81299f237325a61da00000002_bigui255;
-                constexpr static const typename FieldType::value_type shifted_one =       0x448d31f81299f237325a61da00000003_bigui255;
+                constexpr static const typename FieldType::value_type shifted_minus_one = 0x448d31f81299f237325a61da00000001_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_zero =      0x448d31f81299f237325a61da00000002_big_uint255;
+                constexpr static const typename FieldType::value_type shifted_one =       0x448d31f81299f237325a61da00000003_big_uint255;
             };
             ////////////////////////////////
 
@@ -156,8 +156,8 @@ namespace nil {
                 constexpr static const typename BlueprintFieldType::value_type shifted_zero = variable_base_scalar_mul_shifted_consts<CurveType>::shifted_zero;
                 constexpr static const typename BlueprintFieldType::value_type shifted_one = variable_base_scalar_mul_shifted_consts<CurveType>::shifted_one;
 
-                constexpr static const typename BlueprintFieldType::value_type t_q = 0x224698fc0994a8dd8c46eb2100000001_bigui255; // q = 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001_bigui255 = 2**254 + t_q
-                constexpr static const typename BlueprintFieldType::value_type t_p = 0x224698fc094cf91b992d30ed00000001_bigui255; // p = 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_bigui255 = 2**254 + t_p (q > p)
+                constexpr static const typename BlueprintFieldType::value_type t_q = 0x224698fc0994a8dd8c46eb2100000001_big_uint255; // q = 0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000001_big_uint255 = 2**254 + t_q
+                constexpr static const typename BlueprintFieldType::value_type t_p = 0x224698fc094cf91b992d30ed00000001_big_uint255; // p = 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001_big_uint255 = 2**254 + t_p (q > p)
                 constexpr static const typename BlueprintFieldType::value_type two = 2;
 
                 struct input_type {
