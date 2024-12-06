@@ -25,6 +25,16 @@
 
 include(CMTest)
 
+cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+
+    ${CMAKE_WORKSPACE_NAME}::algebra
+    ${CMAKE_WORKSPACE_NAME}::hash
+
+    Boost::unit_test_framework
+    Boost::random
+)
+target_precompile_headers(_cm_internal_tests-crypto3-containers-test REUSE_FROM crypto3_precompiled_headers)
+
 macro(define_storage_test test)
     get_filename_component(test_name ${test} NAME)
     set(full_test_name ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}_${test_name}_test)
@@ -36,12 +46,6 @@ macro(define_storage_test test)
     endwhile()
 
     cm_test(NAME ${full_test_name} SOURCES ${test}.cpp)
-
-    target_include_directories(${full_test_name} PRIVATE
-                               "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-                               "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
-
-                               ${Boost_INCLUDE_DIRS})
 
     target_link_libraries(${full_test_name}
         ${CMAKE_WORKSPACE_NAME}::containers
@@ -59,6 +63,7 @@ macro(define_storage_test test)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295" "-ftemplate-backtrace-limit=0")
     endif()
+    target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(TESTS_NAMES
