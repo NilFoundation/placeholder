@@ -9,8 +9,8 @@
 
 #define MIXED_OPS_ONLY
 
-#include <nil/crypto3/multiprecision/debug_adaptor.hpp>
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/debug_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
 #include "test_arithmetic.hpp"
 
 int main() {

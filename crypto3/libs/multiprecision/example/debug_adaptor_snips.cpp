@@ -3,14 +3,14 @@
 //  Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
-#include <nil/crypto3/multiprecision/debug_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/debug_adaptor.hpp>
 #include <iostream>
 
 void t1() {
     //[debug_adaptor_eg
-    //=#include <nil/crypto3/multiprecision/debug_adaptor.hpp>
-    //=#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/debug_adaptor.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
 
     using namespace nil::crypto3::multiprecision;
 

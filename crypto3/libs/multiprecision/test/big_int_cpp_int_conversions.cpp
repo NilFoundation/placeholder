@@ -2,8 +2,8 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "nil/crypto3/multiprecision/big_int/cpp_int_conversions.hpp"
-#include "nil/crypto3/multiprecision/big_int/literals.hpp"
+#include "nil/crypto3/multiprecision/cpp_int_conversions.hpp"
+#include "nil/crypto3/multiprecision/literals.hpp"
 
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(60)
 BOOST_MP_DEFINE_SIZED_CPP_INT_LITERAL(60)

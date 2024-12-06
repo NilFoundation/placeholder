@@ -18,11 +18,11 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <nil/crypto3/multiprecision/cpp_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_modular.hpp>
 
-#include <nil/crypto3/multiprecision/ressol.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular/literals.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/ressol.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular/literals.hpp>
 
 using namespace boost::multiprecision;
 

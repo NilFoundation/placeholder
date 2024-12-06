@@ -17,8 +17,8 @@
 // We need cpp_int to compare to it.
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include "nil/crypto3/multiprecision/big_int/big_uint.hpp"
-#include "nil/crypto3/multiprecision/big_int/cpp_int_conversions.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/cpp_int_conversions.hpp"
 
 using namespace boost::multiprecision;
 
