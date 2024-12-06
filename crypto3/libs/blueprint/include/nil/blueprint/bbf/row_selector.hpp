@@ -69,16 +69,20 @@ namespace nil {
                     using pointer = value_type*;
                     using reference = value_type&;
                     using iterator_category = std::forward_iterator_tag;
-                
+
                     const_iterator(const BitSet& v, size_t pos)
-                        : bitset(v), index(bitset.find_next(pos)) {
+                        : bitset(v) {
+                        if (pos < bitset.size() && bitset[pos])
+                            index = pos;
+                        else
+                            index = bitset.find_next(pos);
                     }
-                
+
                     // Dereference operator returns the current index
                     size_t operator*() const {
                         return index;
                     }
-                
+
                     // Increment operator
                     const_iterator& operator++() {
                         index = bitset.find_next(index);
@@ -89,7 +93,7 @@ namespace nil {
                     bool operator==(const const_iterator& other) const {
                         return index == other.index;
                     }
-                
+
                     bool operator!=(const const_iterator& other) const {
                         return index != other.index;
                     }
@@ -98,12 +102,12 @@ namespace nil {
                     const BitSet& bitset;   // Reference to the underlying bitset.
                     size_t index;        // Current index
                 };
-                
+
                 // Begin and end functions returning custom const_iterators
                 const_iterator begin() const {
                     return const_iterator(used_rows_, 0);
                 }
-                
+
                 const_iterator end() const {
                     return const_iterator(used_rows_, used_rows_.size());
                 }
@@ -137,7 +141,7 @@ namespace nil {
                         this->used_rows_ |= other_copy.used_rows_;
                     } else {
                         this->used_rows_ |= other.used_rows_;
-                    } 
+                    }
                     return *this;
                 }*/
 
