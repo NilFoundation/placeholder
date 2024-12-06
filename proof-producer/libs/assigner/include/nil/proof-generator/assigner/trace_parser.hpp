@@ -84,7 +84,7 @@ namespace nil {
                     case copy_operand_type::calldata:
                     case copy_operand_type::returndata:
                     case copy_operand_type::log:
-                        id.assign(pb_participant.call_id());
+                        id = pb_participant.call_id();
                         break;
                     case copy_operand_type::bytecode:
                         id = blueprint::zkevm_word_from_string(pb_participant.bytecode_hash());
