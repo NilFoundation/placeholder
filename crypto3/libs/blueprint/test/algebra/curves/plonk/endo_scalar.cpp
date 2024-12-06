@@ -56,9 +56,9 @@ struct endo_scalar_params<nil::crypto3::algebra::curves::vesta> {
     using scalar_field_type = typename curve_type::scalar_field_type;
     using base_field_type = typename curve_type::base_field_type;
     constexpr static const typename scalar_field_type::value_type endo_r =
-        0x12CCCA834ACDBA712CAAD5DC57AAB1B01D1F8BD237AD31491DAD5EBDFDFE4AB9_bigui255;
+        0x12CCCA834ACDBA712CAAD5DC57AAB1B01D1F8BD237AD31491DAD5EBDFDFE4AB9_big_uint255;
     constexpr static const typename base_field_type::value_type endo_q =
-        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_bigui255;
+        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_big_uint255;
 };
 
 template<>
@@ -67,9 +67,9 @@ struct endo_scalar_params<nil::crypto3::algebra::curves::pallas> {
     using scalar_field_type = typename curve_type::scalar_field_type;
     using base_field_type = typename curve_type::base_field_type;
     constexpr static const typename scalar_field_type::value_type endo_r =
-        0x397E65A7D7C1AD71AEE24B27E308F0A61259527EC1D4752E619D1840AF55F1B1_bigui255;
+        0x397E65A7D7C1AD71AEE24B27E308F0A61259527EC1D4752E619D1840AF55F1B1_big_uint255;
     constexpr static const typename base_field_type::value_type endo_q =
-        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_bigui255;
+        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_big_uint255;
 };
 
 template<typename CurveType, std::size_t ScalarSize>
@@ -179,14 +179,14 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_vesta) {
     using curve_type = nil::crypto3::algebra::curves::vesta;
     using BlueprintFieldType = typename curve_type::scalar_field_type;
 
-    typename BlueprintFieldType::value_type challenge = 0x00000000000000000000000000000000FC93536CAE0C612C18FBE5F6D8E8EEF2_bigui255;
-    typename BlueprintFieldType::value_type result = 0x004638173549A4C55A118327904B54E5F6F6314225C8C862F5AFA2506C77AC65_bigui255;
+    typename BlueprintFieldType::value_type challenge = 0x00000000000000000000000000000000FC93536CAE0C612C18FBE5F6D8E8EEF2_big_uint255;
+    typename BlueprintFieldType::value_type result = 0x004638173549A4C55A118327904B54E5F6F6314225C8C862F5AFA2506C77AC65_big_uint255;
 
 	test_endo_scalar<curve_type>({challenge}, result);
 	test_endo_scalar<curve_type>({1}, calculate_endo_scalar<curve_type, 128>(1));
 	test_endo_scalar<curve_type>({0}, calculate_endo_scalar<curve_type, 128>(0));
-	test_endo_scalar<curve_type>({0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui255},
-        calculate_endo_scalar<curve_type, 128>(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui255));
+	test_endo_scalar<curve_type>({0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255},
+        calculate_endo_scalar<curve_type, 128>(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255));
 
     nil::crypto3::random::algebraic_engine<curve_type::scalar_field_type> generate_random;
     boost::random::mt19937 seed_seq;
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_vesta) {
     for (std::size_t i = 0; i < random_tests_amount; i++){
         typename curve_type::scalar_field_type::value_type input = generate_random();
     	typename curve_type::scalar_field_type::integral_type input_integral = typename curve_type::scalar_field_type::integral_type(input.data);
-        input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui255;
+        input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255;
     	typename curve_type::scalar_field_type::value_type input_scalar =  input_integral;
         test_endo_scalar<curve_type>({input_scalar}, calculate_endo_scalar<curve_type, 128>(input_scalar));
 	}
@@ -205,13 +205,13 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_pallas) {
     using curve_type = nil::crypto3::algebra::curves::pallas;
     using BlueprintFieldType = typename curve_type::scalar_field_type;
 
-    typename BlueprintFieldType::value_type challenge = 0x00000000000000000000000000000000FC93536CAE0C612C18FBE5F6D8E8EEF2_bigui255;
+    typename BlueprintFieldType::value_type challenge = 0x00000000000000000000000000000000FC93536CAE0C612C18FBE5F6D8E8EEF2_big_uint255;
 
 	test_endo_scalar<curve_type>({challenge}, calculate_endo_scalar<curve_type, 128>(challenge));
 	test_endo_scalar<curve_type>({1}, calculate_endo_scalar<curve_type, 128>(1));
 	test_endo_scalar<curve_type>({0}, calculate_endo_scalar<curve_type, 128>(0));
-	test_endo_scalar<curve_type>({0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui255},
-        calculate_endo_scalar<curve_type, 128>(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui255));
+	test_endo_scalar<curve_type>({0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255},
+        calculate_endo_scalar<curve_type, 128>(0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255));
 
     nil::crypto3::random::algebraic_engine<curve_type::scalar_field_type> generate_random;
     boost::random::mt19937 seed_seq;
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_endo_scalar_pallas) {
     for (std::size_t i = 0; i < random_tests_amount; i++){
         typename curve_type::scalar_field_type::value_type input = generate_random();
     	typename curve_type::scalar_field_type::integral_type input_integral = typename curve_type::scalar_field_type::integral_type(input.data);
-        input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_bigui255;
+        input_integral = input_integral & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255;
     	typename curve_type::scalar_field_type::value_type input_scalar =  input_integral;
         test_endo_scalar<curve_type>({input_scalar}, calculate_endo_scalar<curve_type, 128>(input_scalar));
 	}

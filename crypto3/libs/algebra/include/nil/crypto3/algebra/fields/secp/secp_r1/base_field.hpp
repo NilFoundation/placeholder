@@ -55,7 +55,7 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xffffffffffffffffffffffffffffffff7fffffff_bigui160;
+                        0xffffffffffffffffffffffffffffffff7fffffff_big_uint160;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
@@ -76,7 +76,7 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xfffffffffffffffffffffffffffffffeffffffffffffffff_bigui192;
+                        0xfffffffffffffffffffffffffffffffeffffffffffffffff_big_uint192;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
@@ -97,7 +97,7 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xffffffffffffffffffffffffffffffff000000000000000000000001_bigui224;
+                        0xffffffffffffffffffffffffffffffff000000000000000000000001_big_uint224;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
@@ -118,7 +118,7 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff_bigui256;
+                        0xffffffff00000001000000000000000000000000ffffffffffffffffffffffff_big_uint256;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
@@ -139,7 +139,7 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffff0000000000000000ffffffff_bigui384;
+                        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffff0000000000000000ffffffff_big_uint384;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
@@ -160,7 +160,7 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0x01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_bigui521;
+                        0x01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint521;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 

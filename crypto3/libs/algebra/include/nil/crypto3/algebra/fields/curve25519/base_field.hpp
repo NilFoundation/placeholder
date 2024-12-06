@@ -58,9 +58,9 @@ namespace nil {
                     typedef __zkllvm_field_curve25519_base value_type;
 #else
                     constexpr static const integral_type modulus =
-                        0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed_bigui255;
+                        0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed_big_uint255;
                     constexpr static const integral_type group_order_minus_one_half =
-                        0x3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6_bigui255;
+                        0x3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6_big_uint255;
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<curve25519_base_field>> value_type;

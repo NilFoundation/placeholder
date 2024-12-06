@@ -12,7 +12,7 @@
 
 namespace nil::crypto3::multiprecision::literals {
     template<char... C>
-    constexpr auto operator"" _bigui() {
+    constexpr auto operator"" _big_uint() {
         constexpr std::size_t N = sizeof...(C);
         static_assert(N > 2, "hex literal should start with 0x");
         constexpr std::array<char, N> str{C...};
@@ -25,7 +25,7 @@ namespace nil::crypto3::multiprecision::literals {
 #define NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(Bits)                                        \
     namespace nil::crypto3::multiprecision::literals {                                  \
         template<char... C>                                                             \
-        constexpr auto operator"" _bigui##Bits() {                                      \
+        constexpr auto operator"" _big_uint##Bits() {                                      \
             constexpr std::size_t N = sizeof...(C);                                     \
             constexpr std::array<char, N> str{C...};                                    \
             constexpr auto result =                                                     \

@@ -29,13 +29,13 @@ BOOST_AUTO_TEST_CASE(miller_rabin_builtin_test) {
 }
 
 BOOST_AUTO_TEST_CASE(miller_rabin_big_uint_test) {
-    BOOST_CHECK(miller_rabin_test(2_bigui128, 1000));
-    BOOST_CHECK(miller_rabin_test(3_bigui128, 1000));
-    BOOST_CHECK(!miller_rabin_test(4_bigui128, 1000));
-    BOOST_CHECK(miller_rabin_test(17_bigui128, 1000));
-    BOOST_CHECK(!miller_rabin_test(27_bigui128, 1000));
-    BOOST_CHECK(miller_rabin_test(101_bigui128, 1000));
-    BOOST_CHECK(!miller_rabin_test(207_bigui128, 1000));
+    BOOST_CHECK(miller_rabin_test(2_big_uint128, 1000));
+    BOOST_CHECK(miller_rabin_test(3_big_uint128, 1000));
+    BOOST_CHECK(!miller_rabin_test(4_big_uint128, 1000));
+    BOOST_CHECK(miller_rabin_test(17_big_uint128, 1000));
+    BOOST_CHECK(!miller_rabin_test(27_big_uint128, 1000));
+    BOOST_CHECK(miller_rabin_test(101_big_uint128, 1000));
+    BOOST_CHECK(!miller_rabin_test(207_big_uint128, 1000));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

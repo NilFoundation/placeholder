@@ -141,8 +141,8 @@ BOOST_AUTO_TEST_CASE(zkevm_err0_test_2) {
     zkevm_table<field_type> zkevm_table(zkevm_circuit, assignment);
     zkevm_machine_type machine = get_empty_machine(8);
 
-    machine.apply_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257); zkevm_table.assign_opcode(machine);
-    machine.apply_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_bigui257); zkevm_table.assign_opcode(machine);
+    machine.apply_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint257); zkevm_table.assign_opcode(machine);
+    machine.apply_opcode(zkevm_opcode::PUSH32, 0x1b70726fb8d3a24da9ff9647225a18412b8f010425938504d73ebc8801e2e016_big_uint257); zkevm_table.assign_opcode(machine);
     // produce an out-of-gas error
     zkevm_table.finalize_test();
 

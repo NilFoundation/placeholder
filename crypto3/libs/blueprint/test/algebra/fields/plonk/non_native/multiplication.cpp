@@ -183,8 +183,8 @@ void test_field_mul_all_cases() {
     }
 
     test_field_mul_useable<FieldType, NonNativeFieldType>(
-        glue_non_native<FieldType, NonNativeFieldType>({0, 0, 0x3ffffffffffffffff_bigui255, 0}),
-        glue_non_native<FieldType, NonNativeFieldType>({0, 0, 0x3ffffffffffffffff_bigui255, 0}));
+        glue_non_native<FieldType, NonNativeFieldType>({0, 0, 0x3ffffffffffffffff_big_uint255, 0}),
+        glue_non_native<FieldType, NonNativeFieldType>({0, 0, 0x3ffffffffffffffff_big_uint255, 0}));
 
     test_field_mul_useable<FieldType, NonNativeFieldType>(0, 0);
     test_field_mul_useable<FieldType, NonNativeFieldType>(1, 1);
@@ -203,16 +203,16 @@ void test_field_mul_all_cases() {
                                                           glue_non_native<FieldType, NonNativeFieldType>({1, 0, 0, 0}));
 
     test_field_mul_useable<FieldType, NonNativeFieldType>(
-        glue_non_native<FieldType, NonNativeFieldType>({0x2BCA8C5A0FDF3D53E_bigui253, 0x39840DDF4C421B2D5_bigui253,
-                                                        0x24FCE5728D26931CA_bigui253, 0xFBD6153B4CE63_bigui253}),
-        glue_non_native<FieldType, NonNativeFieldType>({0x3CD7BA9506A76AA1C_bigui253, 0x15C58810F101DDB2F_bigui253,
-                                                        0x1AA5750251F6DA658_bigui253, 0x1323F61B67242F_bigui253}));
+        glue_non_native<FieldType, NonNativeFieldType>({0x2BCA8C5A0FDF3D53E_big_uint253, 0x39840DDF4C421B2D5_big_uint253,
+                                                        0x24FCE5728D26931CA_big_uint253, 0xFBD6153B4CE63_big_uint253}),
+        glue_non_native<FieldType, NonNativeFieldType>({0x3CD7BA9506A76AA1C_big_uint253, 0x15C58810F101DDB2F_big_uint253,
+                                                        0x1AA5750251F6DA658_big_uint253, 0x1323F61B67242F_big_uint253}));
 
     test_field_mul_useable<FieldType, NonNativeFieldType>(
         glue_non_native<FieldType, NonNativeFieldType>(
-            {0xc801afd_bigui255, 0xc801afd_bigui255, 0xc801afd_bigui255, 0xc801afd_bigui255}),
+            {0xc801afd_big_uint255, 0xc801afd_big_uint255, 0xc801afd_big_uint255, 0xc801afd_big_uint255}),
         glue_non_native<FieldType, NonNativeFieldType>(
-            {0xc801afd_bigui255, 0xc801afd_bigui255, 0xc801afd_bigui255, 0xc801afd_bigui255}));
+            {0xc801afd_big_uint255, 0xc801afd_big_uint255, 0xc801afd_big_uint255, 0xc801afd_big_uint255}));
     for (std::size_t i = 0; i < 10; i++) {
         test_field_mul_useable<FieldType, NonNativeFieldType>(rand(), rand());
     }
