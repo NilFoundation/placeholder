@@ -7,9 +7,6 @@
 #include <cstdint>
 #include <algorithm>
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/hash/detail/poseidon/poseidon_sponge.hpp>
 
 #include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
@@ -34,7 +31,7 @@ namespace nil {
                 integral_type pack(std::vector<uint64_t> limbs_lsb) {
                     nil::marshalling::status_type status;
                     std::size_t byte_size =
-                            boost::multiprecision::backends::max_precision<typename integral_type::backend_type>::value /
+                            integral_type::Bits / // TODO(ioxid): should round up here
                             CHAR_BIT;
                     std::size_t size = byte_size / sizeof(uint64_t) + (byte_size % sizeof(uint64_t) ? 1 : 0);
                     limbs_lsb.resize(size);

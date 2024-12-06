@@ -59,127 +59,127 @@ namespace nil {
                 std::vector<uint8_t> additional_input;
                 switch( opcode ){
                     case zkevm_opcode::PUSH1:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 1, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH2:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*2) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*2) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 2, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH3:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*3) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*3) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 3, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH4:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*4) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*4) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 4, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH5:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*5) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*5) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 5, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH6:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*6) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*6) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 6, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH7:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*7) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*7) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 7, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH8:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*8) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*8) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 8, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH9:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*9 ) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*9 ) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 9, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH10:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*10) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*10) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 10, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH11:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*11) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*11) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 11, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH12:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*12) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*12) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 11, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH13:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*13) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*13) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 11, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH14:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*14) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*14) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 11, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH15:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*15) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*15) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 15, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH16:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*16) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*16) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 16, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH17:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*17) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*17) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 17, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH18:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*18) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*18) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 18, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH19:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*19) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*19) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 19, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH20:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*20) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*20) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 20, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH21:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*21) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*21) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 21, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH22:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*22) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*22) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 22, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH23:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*23) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*23) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 23, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH24:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*24) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*24) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 24, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH25:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*25) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*25) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 25, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH26:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*26) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*26) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 26, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH27:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*27) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*27) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 27, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH28:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*28) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*28) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 28, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH29:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*29) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*29) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 29, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH30:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*30) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*30) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 30, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH31:
-                        BOOST_ASSERT(additional_word < (zkevm_word_type(1) << 8*31) - 1);
+                        BOOST_ASSERT(additional_word < (zkevm_word_type(1).base() << 8*31) - 1);
                         additional_input.insert(additional_input.end(), additional_array.end() - 31, additional_array.end());
                         break;
                     case zkevm_opcode::PUSH32:

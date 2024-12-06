@@ -149,10 +149,10 @@ BOOST_AUTO_TEST_SUITE(blueprint_plonk_test_suite)
 template<typename FieldType>
 void test_from_limbs_specific_data(){
     test_from_limbs<FieldType>({0, 0}, 0);
-    test_from_limbs<FieldType>({5, 12}, 0xC0000000000000005_cppui_modular255);
-    test_from_limbs<FieldType>({0, 0xFFFFFFFFFFFFFFFF_cppui_modular255}, 0xFFFFFFFFFFFFFFFF0000000000000000_cppui_modular255);
-    test_from_limbs<FieldType>({0xFFFFFFFFFFFFFFFF_cppui_modular255, 0}, 0xFFFFFFFFFFFFFFFF_cppui_modular255);
-    test_from_limbs<FieldType>({0xFFFFFFFFFFFFFFFF_cppui_modular255, 0xFFFFFFFFFFFFFFFF_cppui_modular255}, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular255);
+    test_from_limbs<FieldType>({5, 12}, 0xC0000000000000005_big_uint255);
+    test_from_limbs<FieldType>({0, 0xFFFFFFFFFFFFFFFF_big_uint255}, 0xFFFFFFFFFFFFFFFF0000000000000000_big_uint255);
+    test_from_limbs<FieldType>({0xFFFFFFFFFFFFFFFF_big_uint255, 0}, 0xFFFFFFFFFFFFFFFF_big_uint255);
+    test_from_limbs<FieldType>({0xFFFFFFFFFFFFFFFF_big_uint255, 0xFFFFFFFFFFFFFFFF_big_uint255}, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint255);
 }
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_from_limbs_vesta) {
@@ -172,14 +172,14 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_from_limbs_pallas) {
 
 template<typename FieldType>
 void test_to_limbs_specific_data(){
-    test_to_limbs_with_stretching<FieldType>({0x1D42ED837696F2A777E7C1FF0436D46E96878B624ECDE039732E37AFCD409C88_cppui_modular256},
-    {0x732E37AFCD409C88_cppui_modular256, 0x96878B624ECDE039_cppui_modular256, 0x77E7C1FF0436D46E_cppui_modular256, 0x1D42ED837696F2A7_cppui_modular256});
+    test_to_limbs_with_stretching<FieldType>({0x1D42ED837696F2A777E7C1FF0436D46E96878B624ECDE039732E37AFCD409C88_big_uint256},
+    {0x732E37AFCD409C88_big_uint256, 0x96878B624ECDE039_big_uint256, 0x77E7C1FF0436D46E_big_uint256, 0x1D42ED837696F2A7_big_uint256});
 
-    test_to_limbs_with_stretching<FieldType>({0xE826DABA538B6DF0000000000000000FB812F513D0FCC04106CB4BD3F32FAD3_cppui_modular256},
-    {0x106CB4BD3F32FAD3_cppui_modular256, 0xFB812F513D0FCC04_cppui_modular256, 0x0_cppui_modular256, 0xE826DABA538B6DF_cppui_modular256});
+    test_to_limbs_with_stretching<FieldType>({0xE826DABA538B6DF0000000000000000FB812F513D0FCC04106CB4BD3F32FAD3_big_uint256},
+    {0x106CB4BD3F32FAD3_big_uint256, 0xFB812F513D0FCC04_big_uint256, 0x0_big_uint256, 0xE826DABA538B6DF_big_uint256});
 
-    test_to_limbs_with_stretching<FieldType>({0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular256},
-    {0xFFFFFFFFFFFFFFFF_cppui_modular256, 0xFFFFFFFFFFFFFFFF_cppui_modular256, 0xFFFFFFFFFFFFFFFF_cppui_modular256, 0x3FFFFFFFFFFFFFFF_cppui_modular256});
+    test_to_limbs_with_stretching<FieldType>({0x3FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint256},
+    {0xFFFFFFFFFFFFFFFF_big_uint256, 0xFFFFFFFFFFFFFFFF_big_uint256, 0xFFFFFFFFFFFFFFFF_big_uint256, 0x3FFFFFFFFFFFFFFF_big_uint256});
 
 }
 
@@ -187,24 +187,24 @@ BOOST_AUTO_TEST_CASE(blueprint_plonk_to_limbs_vesta) {
     using field_type = nil::crypto3::algebra::curves::vesta::scalar_field_type;
     test_to_limbs_specific_data<field_type>();
 
-    test_to_limbs_with_stretching<field_type>({0x40000000000000000000000000000000224698fc094cf91b992d30ed00000000_cppui_modular255}, //-1 vesta
-    {0x992d30ed00000000_cppui_modular256, 0x224698fc094cf91b_cppui_modular256, 0x0000000000000000_cppui_modular256, 0x4000000000000000_cppui_modular256});
+    test_to_limbs_with_stretching<field_type>({0x40000000000000000000000000000000224698fc094cf91b992d30ed00000000_big_uint255}, //-1 vesta
+    {0x992d30ed00000000_big_uint256, 0x224698fc094cf91b_big_uint256, 0x0000000000000000_big_uint256, 0x4000000000000000_big_uint256});
 }
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_to_limbs_pallas) {
     using field_type = nil::crypto3::algebra::curves::pallas::scalar_field_type;
     test_to_limbs_specific_data<field_type>();
 
-    test_to_limbs_with_stretching<field_type>({0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000000_cppui_modular256}, //-1 pallas
-    {0x8c46eb2100000000_cppui_modular256, 0x224698fc0994a8dd_cppui_modular256, 0x0000000000000000_cppui_modular256, 0x4000000000000000_cppui_modular256});
+    test_to_limbs_with_stretching<field_type>({0x40000000000000000000000000000000224698fc0994a8dd8c46eb2100000000_big_uint256}, //-1 pallas
+    {0x8c46eb2100000000_big_uint256, 0x224698fc0994a8dd_big_uint256, 0x0000000000000000_big_uint256, 0x4000000000000000_big_uint256});
 }
 
 BOOST_AUTO_TEST_CASE(blueprint_plonk_to_limbs_bls12) {
     using field_type = nil::crypto3::algebra::fields::bls12_fr<381>;
     test_to_limbs_specific_data<field_type>();
 
-    test_to_limbs_with_stretching<field_type>({0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000_cppui_modular256}, //-1 bls12<381>
-    {0xffffffff00000000_cppui_modular256, 0x53bda402fffe5bfe_cppui_modular256, 0x3339d80809a1d805_cppui_modular256, 0x73eda753299d7d48_cppui_modular256});
+    test_to_limbs_with_stretching<field_type>({0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000000_big_uint256}, //-1 bls12<381>
+    {0xffffffff00000000_big_uint256, 0x53bda402fffe5bfe_big_uint256, 0x3339d80809a1d805_big_uint256, 0x73eda753299d7d48_big_uint256});
 }
 
 BOOST_AUTO_TEST_SUITE_END()

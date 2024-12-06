@@ -9,7 +9,7 @@
 
 #include "test.hpp"
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 
 template<class Number>
 void test_specific(const std::integral_constant<int, boost::multiprecision::number_kind_integer>&) {

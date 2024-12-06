@@ -49,7 +49,7 @@ namespace nil {
                 using rw_table_type = rw_table<FieldType, stage>;
                 using input_type = typename rw_table_type::input_type;
                 using value = typename FieldType::value_type;
-                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             public:
                 static constexpr std::size_t op_bits_amount = 4;
                 static constexpr std::size_t diff_index_bits_amount = 5;
@@ -141,7 +141,7 @@ namespace nil {
                             integral_type mask = (1 << op_bits_amount);
                             for( std::size_t j = 0; j < op_bits_amount; j++){
                                 mask >>= 1;
-                                op_bits[i][j] = (((rw_trace[i].op & mask) == 0) ? 0 : 1);
+                                op_bits[i][j] = (((static_cast<unsigned>(rw_trace[i].op) & mask) == 0) ? 0 : 1);
                             }
                             std::size_t cur_chunk = 0;
                             // id

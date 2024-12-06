@@ -10,7 +10,7 @@
 #define BOOST_MP_GCD_DEBUG
 
 #include "test.hpp"
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 #include <boost/random.hpp>
 #include <map>
 #include <tuple>

@@ -29,7 +29,8 @@
 #include <cstddef>
 
 #include <nil/crypto3/detail/static_pow.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+
+#include <nil/crypto3/multiprecision/big_uint.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -39,8 +40,7 @@ namespace nil {
                 template<typename Field>
                 constexpr std::size_t chunks_per_base_point(std::size_t chunk_bits) {
 
-                    using extended_integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<2 * Field::policy_type::modulus_bits>>;
+                    using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * Field::policy_type::modulus_bits>;
 
                     extended_integral_type two(2);
                     std::size_t c = 1;

@@ -28,8 +28,6 @@
 
 #include <nil/crypto3/algebra/type_traits.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <boost/core/ignore_unused.hpp>
 
 #include <boost/random/independent_bits.hpp>

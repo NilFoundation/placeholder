@@ -25,8 +25,6 @@
 
 #ifndef CRYPTO3_HASH_REINFORCED_CONCRETE_LFSR_HPP
 #define CRYPTO3_HASH_REINFORCED_CONCRETE_LFSR_HPP
-
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/hash/detail/reinforced_concrete/reinforced_concrete_policy.hpp>
 
@@ -34,8 +32,6 @@ namespace nil {
     namespace crypto3 {
         namespace hashes {
             namespace detail {
-                using namespace boost::multiprecision;
-
                 // round constants generating is taken from poseidon_lsfr
                 template<typename FieldType>
                 struct reinforced_concrete_lfsr {
@@ -50,7 +46,7 @@ namespace nil {
                     constexpr static const integral_type modulus = FieldType::modulus;
 
                     constexpr static const std::size_t lfsr_state_bits = 80;
-                    typedef number<backends::cpp_int_modular_backend<lfsr_state_bits>> lfsr_state_type;
+                    typedef nil::crypto3::multiprecision::big_uint<lfsr_state_bits> lfsr_state_type;
 
                     constexpr static const std::size_t constants_number = full_rounds * state_words;
                     typedef algebra::vector<element_type, constants_number> round_constants_type;

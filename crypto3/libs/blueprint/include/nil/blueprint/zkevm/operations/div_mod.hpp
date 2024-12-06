@@ -61,9 +61,9 @@ namespace nil {
             constexpr static const value_type two_16 = 65536;
             constexpr static const value_type two_32 = 4294967296;
             constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+            constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
+            constexpr static const value_type two128 = 0x100000000000000000000000000000000_big_uint254;
+            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
 
             template<typename T, typename V = T>
             T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
@@ -278,11 +278,10 @@ namespace nil {
                 using word_type = typename zkevm_stack::word_type;
                 word_type a = machine.stack_top();
                 word_type b = machine.stack_top(1);
-                using integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
                 integral_type r_integral = b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                word_type r = word_type::backend_type(r_integral.backend());
-                word_type q = b != 0u ? a % b : a;
+                word_type r = r_integral;
+                word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
                 word_type q_out = b != 0u ? q : 0; // according to EVM spec a % 0 = 0
 
                 bool t_last = integral_type(q) < integral_type(b);
@@ -312,8 +311,8 @@ namespace nil {
                 const std::size_t curr_row = zkevm_table.get_current_row();
                 // caluclate first row carries
                 auto first_row_carries =
-                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data >> 128;
-                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data.base() >> 128;
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);
                 // no need for c_2 chunks as there is only a single chunk

@@ -7,8 +7,8 @@
 #define _SCL_SECURE_NO_WARNINGS
 #endif
 
-#include <nil/crypto3/multiprecision/gmp.hpp>
-#include <nil/crypto3/multiprecision/rational_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/rational_adaptor.hpp>
 
 #include "test_arithmetic.hpp"
 

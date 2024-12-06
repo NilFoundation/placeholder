@@ -27,7 +27,6 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_EXP_COMPONENT_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_EXP_COMPONENT_HPP
 
-#include <boost/multiprecision/cpp_int.hpp>
 #include <functional>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -64,12 +63,12 @@ namespace nil {
                 constexpr static const typename FieldType::value_type two_16 = 65536;
                 constexpr static const typename FieldType::value_type two_32 = 4294967296;
                 constexpr static const typename FieldType::value_type two_48 = 281474976710656;
-                constexpr static const typename FieldType::value_type two_64 = 0x10000000000000000_cppui_modular254;
-                constexpr static const typename FieldType::value_type two_80 = 0x100000000000000000000_cppui_modular254;
-                constexpr static const typename FieldType::value_type two_96 = 0x1000000000000000000000000_cppui_modular254;
-                constexpr static const typename FieldType::value_type two112 = 0x10000000000000000000000000000_cppui_modular254;
-                constexpr static const typename FieldType::value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
-                constexpr static const typename FieldType::value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+                constexpr static const typename FieldType::value_type two_64 = 0x10000000000000000_big_uint254;
+                constexpr static const typename FieldType::value_type two_80 = 0x100000000000000000000_big_uint254;
+                constexpr static const typename FieldType::value_type two_96 = 0x1000000000000000000000000_big_uint254;
+                constexpr static const typename FieldType::value_type two112 = 0x10000000000000000000000000000_big_uint254;
+                constexpr static const typename FieldType::value_type two128 = 0x100000000000000000000000000000000_big_uint254;
+                constexpr static const typename FieldType::value_type two192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
 
                 template<typename T, typename V = T>
                 T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
@@ -239,13 +238,13 @@ namespace nil {
                                         r_64_chunks.push_back(chunk_sum_64<TYPE>(r_chunks[cur], k));
                                     }
 
-                                    auto first_row_carries = first_carryless_consrtruct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks).data >> 128; 
-                                    TYPE c_1 = static_cast<TYPE>(first_row_carries & (two_64 - 1).data);
+                                    auto first_row_carries = first_carryless_consrtruct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks).data.base() >> 128; 
+                                    TYPE c_1 = static_cast<TYPE>(first_row_carries & (two_64 - 1).data.base());
                                     c_2[cur] = static_cast<TYPE>(first_row_carries >> 64);
                                     c_1_chunks[cur] = chunk_64_to_16<FieldType>(c_1);
                                     // no need for c_2 chunks as there is only a single chunk
-                                    auto second_row_carries = (second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks) + c_1 + c_2[cur] * two_64).data >> 128; 
-                                    TYPE c_3 = static_cast<TYPE>(second_row_carries & (two_64 - 1).data);
+                                    auto second_row_carries = (second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks) + c_1 + c_2[cur] * two_64).data.base() >> 128; 
+                                    TYPE c_3 = static_cast<TYPE>(second_row_carries & (two_64 - 1).data.base());
                                     c_4[cur] = static_cast<TYPE>(second_row_carries >> 64); 
                                     c_3_chunks[cur] = chunk_64_to_16<FieldType>(c_3);
 

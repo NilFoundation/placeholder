@@ -96,8 +96,8 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_scalar_range_test1) {
     using field_type = typename crypto3::algebra::curves::pallas::base_field_type;
 
     typename field_type::integral_type ed25519_scalar_modulus =
-        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular255;
-    typename field_type::value_type ones = 0x0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_cppui_modular255;
+        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint255;
+    typename field_type::value_type ones = 0x0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_big_uint255;
 
     test_scalar_non_native_range<field_type>({typename field_type::value_type(ed25519_scalar_modulus - 1)}, true);
 
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_scalar_range_test_must_fail) {
     rand.seed(seed_seq);
 
     typename field_type::integral_type ed25519_scalar_modulus =
-        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular255;
+        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint255;
     typename field_type::extended_integral_type pow_bits = 1u;
     pow_bits <<= field_type::modulus_bits;
     typename field_type::integral_type ed25519_scalar_overage = pow_bits - field_type::extended_integral_type(

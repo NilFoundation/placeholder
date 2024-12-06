@@ -69,7 +69,7 @@ namespace nil {
                         constexpr static std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(0x09u),
                             typename field_type::value_type(
-                                0x20ae19a1b8a086b4e01edd2c7748d14c923d4d7e6d7c61b229e9c5a27eced3d9_cppui_modular254)};
+                                0x20ae19a1b8a086b4e01edd2c7748d14c923d4d7e6d7c61b229e9c5a27eced3d9_big_uint254)};
 #endif
                     };
 
@@ -115,9 +115,9 @@ namespace nil {
 
                         constexpr static std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
-                                0x216936D3CD6E53FEC0A4E231FDD6DC5C692CC7609525A7B2C9562D608F25D51A_cppui_modular254),
+                                0x216936D3CD6E53FEC0A4E231FDD6DC5C692CC7609525A7B2C9562D608F25D51A_big_uint254),
                             typename field_type::value_type(
-                                0x6666666666666666666666666666666666666666666666666666666666666658_cppui_modular255)};
+                                0x6666666666666666666666666666666666666666666666666666666666666658_big_uint255)};
 #endif
                     };
 #ifdef __ZKLLVM__
