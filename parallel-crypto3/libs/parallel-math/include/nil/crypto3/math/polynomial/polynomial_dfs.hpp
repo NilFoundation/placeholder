@@ -61,6 +61,8 @@ namespace nil {
                 size_t _d;
 
             public:
+                std::shared_ptr<sycl::buffer<FieldValueType, 1>> val_buf;
+
                 typedef typename container_type::value_type value_type;
                 typedef typename container_type::allocator_type allocator_type;
                 typedef typename container_type::reference reference;
@@ -81,23 +83,28 @@ namespace nil {
                 polynomial_dfs(const polynomial_dfs& x) {
                     val = x.val;
                     _d = x._d;
+                    init_val_buf();
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n) : val(n, FieldValueType::zero()), _d(d) {
                     BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
+                    init_val_buf();
                 }
 
                 explicit polynomial_dfs(size_t d, size_type n, const allocator_type& a) : val(n, FieldValueType::zero(), a), _d(d) {
                     BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
+                    init_val_buf();
                 }
 
                 polynomial_dfs(size_t d, size_type n, const value_type& x) : val(n, x), _d(d) {
                     BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
+                    init_val_buf();
                 }
 
                 polynomial_dfs(size_t d, size_type n, const value_type& x, const allocator_type& a) :
                     val(n, x, a), _d(d) {
                     BOOST_ASSERT_MSG(n == detail::power_of_two(n), "DFS optimal polynomial size must be a power of two");
+                    init_val_buf();
                 }
 
                 template<typename InputIterator>
@@ -105,6 +112,7 @@ namespace nil {
                     BOOST_ASSERT_MSG(
                         std::size_t(std::distance(first, last)) == detail::power_of_two(std::distance(first, last)),
                         "DFS optimal polynomial size must be a power of two");
+                    init_val_buf();
                 }
 
                 template<typename InputIterator>
@@ -113,19 +121,24 @@ namespace nil {
                     BOOST_ASSERT_MSG(
                         std::size_t(std::distance(first, last)) == detail::power_of_two(std::distance(first, last)),
                         "DFS optimal polynomial size must be a power of two");
+                    init_val_buf();
                 }
 
                 ~polynomial_dfs() = default;
 
                 template<typename A = Allocator>
                 polynomial_dfs(const polynomial_dfs& x, const allocator_type& a = Allocator())
-                    : val(x.val, a), _d(x._d) {}
+                    : val(x.val, a), _d(x._d) {
+
+                    init_val_buf();
+                }
 
                 template<typename A = Allocator>
                 polynomial_dfs(size_t d, std::initializer_list<value_type> il, const allocator_type& a = Allocator()) :
                     val(il, a), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
                                      "DFS optimal polynomial size must be a power of two");
+                    init_val_buf();
                 }
                 // TODO: add constructor with omega
 
@@ -133,27 +146,35 @@ namespace nil {
                 polynomial_dfs(polynomial_dfs&& x, const allocator_type& a = Allocator())
                     : val(std::move(x.val), a)
                     , _d(x._d) {
+
+                    init_val_buf();
                 }
 
                 polynomial_dfs(size_t d, const container_type& c) : val(c), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
                                      "DFS optimal polynomial size must be a power of two");
+
+                    init_val_buf();
                 }
 
                 polynomial_dfs(size_t d, container_type&& c) : val(c), _d(d) {
                     BOOST_ASSERT_MSG(val.size() == detail::power_of_two(val.size()),
                                      "DFS optimal polynomial size must be a power of two");
+
+                    init_val_buf();
                 }
 
                 polynomial_dfs& operator=(const polynomial_dfs& x) {
                     val = x.val;
                     _d = x._d;
+                    init_val_buf(true);
                     return *this;
                 }
 
                 polynomial_dfs& operator=(polynomial_dfs&& x) {
                     val = std::move(x.val);
                     _d = x._d;
+                    init_val_buf(true);
                     return *this;
                 }
 
@@ -347,6 +368,7 @@ namespace nil {
                         // Here we cannot write this->val.resize(_sz, this->val[0]), it will segfault.
                         auto value = this->val[0];
                         this->val.resize(_sz, value);
+                        this->init_val_buf(true);
                     } else {
                         typedef typename value_type::field_type FieldType;
                         if (old_domain == nullptr) {
@@ -354,14 +376,15 @@ namespace nil {
                         } else {
                             BOOST_ASSERT_MSG(old_domain->size() == this->size(), "Old domain size is not equal to the polynomial size");
                         }
-                        old_domain->inverse_fft(this->val);
+                        old_domain->inverse_fft(*this);
                         this->val.resize(_sz, FieldValueType::zero());
+                        this->init_val_buf(true);
                         if (new_domain == nullptr) {
                             new_domain = make_evaluation_domain<FieldType, value_type, Allocator>(_sz);
                         } else {
                             BOOST_ASSERT_MSG(new_domain->size() == _sz, "New domain size is not equal to the polynomial size");
                         }
-                        new_domain->fft(this->val);
+                        new_domain->fft(*this);
                     }
                 }
 
@@ -421,6 +444,18 @@ namespace nil {
                     this->resize(n);
                 }
 
+                void init_val_buf(bool force_reset = false) {
+                    if (force_reset || this->val_buf == nullptr) {
+                        this->val_buf = std::make_shared<sycl::buffer<FieldValueType, 1>>(
+                            this->val.data(), sycl::range<1>(this->val.size()), sycl::property::buffer::use_host_ptr()
+                        );
+                    }
+                }
+
+                void delete_val_buf() {
+                    this->val_buf = nullptr;
+                }
+
                 /**
                  * Computes the standard polynomial addition, polynomial A + polynomial B,
                  * and stores result in polynomial C.
@@ -440,18 +475,36 @@ namespace nil {
                         this->resize(other.size());
                     }
                     this->_d = std::max(this->_d, other._d);
+                    const std::size_t& n = std::min(this->size(), other.size());
 
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
+                        tmp.val_buf->set_write_back(false);
                         tmp.resize(this->size());
 
-                        in_place_parallel_transform(this->begin(), this->end(), tmp.begin(),
-                            [](FieldValueType& v1, const FieldValueType& v2){v1+=v2;});
+                        auto tmp_ptr = &tmp;
+                        GLOBAL_QUEUE.submit(
+                            [this, tmp_ptr, n](sycl::handler& cgh) {
+                                auto this_acc = this->val_buf->template get_access<sycl::access::mode::read_write>(cgh);
+                                auto tmp_acc = tmp_ptr->val_buf->template get_access<sycl::access::mode::read>(cgh);
+                                cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> index) {
+                                    this_acc[index] += tmp_acc[index];
+                                });
+                            });
+                        GLOBAL_QUEUE.wait();
                         return *this;
                     }
 
-                    in_place_parallel_transform(this->begin(), this->end(), other.begin(),
-                            [](FieldValueType& v1, const FieldValueType& v2){v1+=v2;});
+                    auto other_ptr = &other;
+                    GLOBAL_QUEUE.submit(
+                        [this, other_ptr, n](sycl::handler& cgh) {
+                            auto this_acc = this->val_buf->template get_access<sycl::access::mode::read_write>(cgh);
+                            auto other_acc = other_ptr->val_buf->template get_access<sycl::access::mode::read>(cgh);
+                            cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> index) {
+                                this_acc[index] += other_acc[index];
+                            });
+                        });
+                    GLOBAL_QUEUE.wait();
 
                     return *this;
                 }
@@ -541,34 +594,53 @@ namespace nil {
                  * Performs multiplication of two polynomials, but with domain caches
                  */
                 polynomial_dfs& cached_multiplication(
-                        const polynomial_dfs& other,
-                        std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> domain = nullptr,
-                        std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> other_domain = nullptr,
-                        std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> new_domain = nullptr) {
+                    const polynomial_dfs& other,
+                    std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> domain = nullptr,
+                    std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> other_domain = nullptr,
+                    std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> new_domain = nullptr
+                ) {
 
                     const size_t polynomial_s =
                         detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
 
+                    writeback_scope<value_type> writeback_scope(this->val_buf);
                     if (this->size() < polynomial_s) {
                         this->resize(polynomial_s, domain, new_domain);
                     }
-
 
                     // Change the degree only here, after a possible resize, otherwise we have a polynomial
                     // with a high degree but small size, which sometimes segfaults.
                     this->_d += other._d;
 
+                    const std::size_t& n = std::min(this->size(), other.size());
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
+                        tmp.val_buf->set_write_back(false);
                         tmp.resize(polynomial_s, other_domain, new_domain);
 
-                        in_place_parallel_transform(this->begin(), this->end(), tmp.begin(),
-                            [](FieldValueType& v1, const FieldValueType& v2){v1*=v2;});
+                        auto tmp_ptr = &tmp;
+                        GLOBAL_QUEUE.submit(
+                            [this, tmp_ptr, n](sycl::handler& cgh) {
+                                auto this_acc = this->val_buf->template get_access<sycl::access::mode::read_write>(cgh);
+                                auto other_acc = tmp_ptr->val_buf->template get_access<sycl::access::mode::read>(cgh);
+                                cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> index) {
+                                    this_acc[index] *= other_acc[index];
+                                });
+                            });
+                        GLOBAL_QUEUE.wait();
                         return *this;
                     }
 
-                    in_place_parallel_transform(this->begin(), this->end(), other.begin(),
-                            [](FieldValueType& v1, const FieldValueType& v2){v1*=v2;});
+                    auto other_ptr = &other;
+                    GLOBAL_QUEUE.submit(
+                        [this, other_ptr, n](sycl::handler& cgh) {
+                            auto this_acc = this->val_buf->template get_access<sycl::access::mode::read_write>(cgh);
+                            auto other_acc = other_ptr->val_buf->template get_access<sycl::access::mode::read>(cgh);
+                            cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> index) {
+                                this_acc[index] *= other_acc[index];
+                            });
+                        });
+                    GLOBAL_QUEUE.wait();
 
                     return *this;
                 }
@@ -598,8 +670,9 @@ namespace nil {
                     size_t n = this->size();
                     value_type omega = unity_root<FieldType>(n);
                     q.resize(n);
-                    detail::basic_radix2_fft<FieldType>(q, omega);
-                    return polynomial_dfs(new_s - 1, q);
+                    polynomial_dfs result(new_s - 1, q);
+                    detail::basic_radix2_fft<FieldType>(result, omega);
+                    return result;
                 }
 
                 /**
@@ -618,8 +691,9 @@ namespace nil {
                     size_t n = this->size();
                     value_type omega = unity_root<FieldType>(n);
                     r.resize(n);
-                    detail::basic_radix2_fft<FieldType>(r, omega);
-                    return polynomial_dfs(new_s - 1, r);
+                    polynomial_dfs result(new_s - 1, r);
+                    detail::basic_radix2_fft<FieldType>(result, omega);
+                    return result;
                 }
 
                 template<typename ContainerType>
@@ -637,13 +711,20 @@ namespace nil {
                         std::shared_ptr<evaluation_domain<typename value_type::field_type, value_type, Allocator>> domain = nullptr) const {
                     typedef typename value_type::field_type FieldType;
                     value_type omega = unity_root<FieldType>(this->size());
-                    std::vector<FieldValueType> tmp(this->begin(), this->end());
+                    polynomial_dfs tmp = *this;
 
                     if (domain == nullptr) {
                         detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
                         const value_type sconst = value_type(this->size()).inversed();
-                        parallel_transform(tmp.begin(), tmp.end(),tmp.begin(),
-                            std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
+                        //parallel_transform(tmp.begin(), tmp.end(),tmp.begin(),
+                        //    std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
+                        GLOBAL_QUEUE.submit(
+                            [tmp_ptr = &tmp.val_buf, sconst, n = tmp.size()](sycl::handler& cgh) {
+                                auto tmp_acc = tmp_ptr->template get_access<sycl::access::mode::read_write>(cgh);
+                                cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> index) {
+                                    tmp_acc[index] *= sconst;
+                                });
+                            });
                     } else {
                         domain->inverse_fft(tmp);
                     }
@@ -653,7 +734,7 @@ namespace nil {
                         --r_size;
                     }
                     tmp.resize(r_size);
-                    return tmp;
+                    return tmp.val;
                 }
 
                 polynomial_dfs pow(size_t power) const {
@@ -861,13 +942,13 @@ namespace nil {
 
             template<typename FieldType, typename Allocator = std::allocator<typename FieldType::value_type>>
             static inline polynomial_dfs<typename FieldType::value_type, Allocator> polynomial_product(
-                    std::vector<math::polynomial_dfs<typename FieldType::value_type, Allocator>> multipliers) {
+                    std::vector<math::polynomial_dfs<typename FieldType::value_type, Allocator>> multipliers
+            ) {
                 // Pre-create all the domains. We could do this on-the-go, but we want this function to be more
                 // parallelization-friendly. This single-threaded version may look a bit complicated,
                 // but it's now very similar to what we have in parallel code.
                 using value_type = typename FieldType::value_type;
                 std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType, value_type, Allocator>>> domain_cache;
-
                 std::size_t min_domain_size = std::numeric_limits<std::size_t>::max();
                 std::size_t max_domain_size = 0;
                 std::size_t total_degree = 0;
@@ -911,16 +992,22 @@ namespace nil {
                                     next_domain_size,
                                     multipliers[index1].degree() + multipliers[index2].degree() + 1}));
 
+                        multipliers[index2].val_buf->set_write_back(false);
+                        multipliers[index1].val_buf->set_write_back(false);
                         multipliers[index1].cached_multiplication(
                             multipliers[index2],
                             domain_cache[current_domain_size],
                             domain_cache[next_domain_size],
-                            domain_cache[new_domain_size]);
+                            domain_cache[new_domain_size]
+                        );
 
                         // Free the memory we are not going to use anymore.
-                        multipliers[index2] = polynomial_dfs<value_type, Allocator>();
+                        multipliers[index2].val_buf = nullptr;
+                        multipliers[index2].clear();
+                        multipliers[index2].shrink_to_fit();
                     }
                 }
+                multipliers[0].val_buf->set_write_back(true);
                 return multipliers[0];
             }
 

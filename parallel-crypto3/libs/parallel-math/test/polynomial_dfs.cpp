@@ -1471,7 +1471,8 @@ polynomial_dfs<typename Field::value_type, Allocator>
 BOOST_AUTO_TEST_CASE(polynomial_product_test) {
     using field_type = nil::crypto3::algebra::fields::bls12_fr<381>;
     using value_type = typename field_type::value_type;
-    using allocator_type = global_usm_allocator<value_type>;
+    using allocator_type = std::allocator<value_type>;
+    //global_usm_allocator<value_type>;
     using polynomial_dfs_type = polynomial_dfs<value_type, allocator_type>;
 
     nil::crypto3::random::algebraic_engine<FieldType> alg_rnd_engine;

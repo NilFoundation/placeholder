@@ -22,9 +22,12 @@
 // SOFTWARE.
 //---------------------------------------------------------------------------//
 
+#pragma once
+
 #include <sycl/sycl.hpp>
 
-#pragma once
+#include <memory>
+
 
 sycl::queue GLOBAL_QUEUE(sycl::gpu_selector{});
 
@@ -58,5 +61,25 @@ public:
 
     const bool operator!=(const global_usm_allocator<T>&) const {
         return false;
+    }
+};
+
+template<typename T>
+struct writeback_scope {
+    typedef sycl::buffer<T, 1> buffer_type;
+    std::shared_ptr<buffer_type> tracked_buffer;
+    bool write_back_val;
+    bool no_write_back;
+
+    writeback_scope(std::shared_ptr<buffer_type> buffer, bool _no_write_back = false)
+        : tracked_buffer(buffer),
+          no_write_back(_no_write_back)
+    {
+        write_back_val = tracked_buffer->_impl->writes_back;
+        tracked_buffer->set_write_back(false);
+    }
+
+    ~writeback_scope() {
+        tracked_buffer->set_write_back(!no_write_back && write_back_val);
     }
 };

@@ -46,6 +46,10 @@
 namespace nil {
     namespace crypto3 {
         namespace math {
+
+            template<typename FieldValueType, typename Allocator>
+            class polynomial_dfs;
+
             namespace detail {
 
                 /*
@@ -73,7 +77,10 @@ namespace nil {
                  * Also, note that it's the caller's responsibility to multiply by 1/N.
                  */
                 template<typename FieldType, typename Range, typename Allocator = std::allocator<typename FieldType::value_type>>
-                void basic_radix2_fft_cached(Range &a, const std::vector<typename FieldType::value_type, Allocator> &omega_cache) {
+                void basic_radix2_fft_cached(
+                    Range &a,
+                    sycl::buffer<typename FieldType::value_type, 1> &omega_cache
+                ) {
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;
                     BOOST_STATIC_ASSERT(algebra::is_field<FieldType>::value);
@@ -85,16 +92,24 @@ namespace nil {
                     if (n != (1u << logn))
                         throw std::invalid_argument("expected n == (1u << logn)");
 
+                    std::shared_ptr<sycl::buffer<value_type, 1>> val_buf;
+                    if constexpr (std::is_same_v<Range, polynomial_dfs<value_type, Allocator>>) {
+                        val_buf = a.val_buf;
+                    } else {
+                        val_buf = std::make_shared<sycl::buffer<value_type, 1>>(
+                            a.data(), sycl::range<1>(n), sycl::property::buffer::use_host_ptr{}
+                        );
+                    }
+                    writeback_scope<value_type> writeback_scope(val_buf);
 
-                    value_type* a_ptr = a.data();
-                    const value_type* omega_cache_ptr = omega_cache.data();
                     // swapping in place (from Storer's book)
                     // We can parallelize this look, since k and rk are pairs, they will never intersect.
                     GLOBAL_QUEUE.submit([&](sycl::handler &cgh) {
-                        cgh.parallel_for(sycl::range<1>(n), [a_ptr, logn](sycl::id<1> idx) {
+                        auto a_acc = val_buf->template get_access<sycl::access::mode::read_write>(cgh);
+                        cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> idx) {
                             const std::size_t ridx = crypto3::math::detail::bitreverse(idx, logn);
                             if (idx < ridx) {
-                                std::swap(a_ptr[idx], a_ptr[ridx]);
+                                std::swap(a_acc[idx], a_acc[ridx]);
                             }
                         });
                     });
@@ -103,14 +118,15 @@ namespace nil {
                     for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
                         const size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
                         GLOBAL_QUEUE.submit([&](sycl::handler &cgh) {
-                            cgh.parallel_for(sycl::range<1>(count_k * m), [a_ptr, omega_cache_ptr, m, inc](sycl::id<1> index) {
+                            auto a_acc = val_buf->template get_access<sycl::access::mode::read_write>(cgh);
+                            auto omega_cache_acc = omega_cache.template get_access<sycl::access::mode::read>(cgh);
+                            cgh.parallel_for(sycl::range<1>(count_k * m), [=](sycl::id<1> index) {
                                 const std::size_t k = (index / m) * m * 2;
                                 const std::size_t j = index % m;
                                 const std::size_t idx = j * inc;
-                                const value_type t = a_ptr[k + j + m] * omega_cache_ptr[idx];
-                                a_ptr[k + j + m] = a_ptr[k + j];
-                                a_ptr[k + j + m] -= t;
-                                a_ptr[k + j] += t;
+                                const value_type t = a_acc[k + j + m] * omega_cache_acc[idx];
+                                a_acc[k + j + m] = a_acc[k + j] - t;
+                                a_acc[k + j] += t;
                             });
                         });
                         GLOBAL_QUEUE.wait();

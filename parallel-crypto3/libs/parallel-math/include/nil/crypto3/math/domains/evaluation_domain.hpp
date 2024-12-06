@@ -48,6 +48,7 @@ namespace nil {
 
             public:
                 typedef FieldType field_type;
+                typedef polynomial_dfs<field_value_type, Allocator> polynomial_dfs_type;
 
                 std::size_t m;
                 std::size_t log2_size;
@@ -81,12 +82,12 @@ namespace nil {
                 /**
                  * Compute the FFT, over the domain S, of the vector a.
                  */
-                virtual void fft(container_type &a) = 0;
+                virtual void fft(polynomial_dfs_type &a) = 0;
 
                 /**
                  * Compute the inverse FFT, over the domain S, of the vector a.
                  */
-                virtual void inverse_fft(container_type &a) = 0;
+                virtual void inverse_fft(polynomial_dfs_type &a) = 0;
 
                 /**
                  * Evaluate all Lagrange polynomials.
@@ -131,6 +132,12 @@ namespace nil {
                  * Multiply by the evaluation, on a coset of S, of the inverse of the vanishing polynomial of S.
                  */
                 virtual void divide_by_z_on_coset(container_type &P) = 0;
+
+                /**
+                 * Prefetch fft cache data to the device.
+                 */
+
+                //virtual const void prefetch_fft_cache() = 0;
 
                 bool operator==(const evaluation_domain &rhs) const {
                     return m == rhs.m && log2_size == rhs.log2_size;

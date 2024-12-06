@@ -11,7 +11,8 @@ find_package(CM REQUIRED)
 # find_package(AdaptiveCpp CONFIG REQUIRED)
 include(CMConfig)
 
-# set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # add_compile_options(-v)
 # #add_compile_options(--hipsycl-platform=cuda --hipsycl-gpu-arch=sm_75 --hipsycl-targets=cuda:sm_75 --hipsycl-cuda-path=/var/empty/local/cuda/ --hipsycl-nvcxx=/var/empty/nvidia/hpc_sdk/Linux_x86_64/24.9/compilers/bin/nvc++)
 # #add_compile_options(-I/nix/store/wkpm1n7q62pbs8ck6ad5i7zklr1k9il0-OpenSYCL-0.9.4/include/)

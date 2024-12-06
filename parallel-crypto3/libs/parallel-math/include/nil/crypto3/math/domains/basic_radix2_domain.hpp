@@ -52,13 +52,20 @@ namespace nil {
                 typedef ValueType value_type;
                 typedef std::vector<field_value_type, Allocator> container_type;
                 typedef std::pair<container_type, container_type> cache_type;
+                typedef typename evaluation_domain<FieldType, ValueType, Allocator>::polynomial_dfs_type polynomial_dfs_type;
                 std::shared_ptr<cache_type> fft_cache;
+                typedef sycl::buffer<value_type, 1> buffer_type;
+                typedef std::pair<buffer_type, buffer_type> cache_buffer_type;
+                std::shared_ptr<cache_buffer_type> fft_cache_buffer;
 
                 void create_fft_cache() {
                     fft_cache = std::make_shared<cache_type>(container_type(),
                                                              container_type());
                     detail::create_fft_cache<FieldType, Allocator>(this->m, omega, fft_cache->first);
                     detail::create_fft_cache<FieldType, Allocator>(this->m, omega.inversed(), fft_cache->second);
+                    fft_cache_buffer = std::make_shared<cache_buffer_type>(
+                        buffer_type(fft_cache->first.data(), sycl::range<1>(this->m), sycl::property::buffer::use_host_ptr()),
+                        buffer_type(fft_cache->second.data(), sycl::range<1>(this->m), sycl::property::buffer::use_host_ptr()));
                 }
 
             public:
@@ -85,36 +92,36 @@ namespace nil {
                     create_fft_cache();
                 }
 
-                void fft(container_type &a) override {
+                void fft(polynomial_dfs_type &a) override {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
-                            a.resize(this->m, value_type::zero());
+                            a.get_storage().resize(this->m, value_type::zero());
                         } else {
                             throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
                         }
                     }
 
-                    detail::basic_radix2_fft_cached<FieldType, container_type, Allocator>(a, fft_cache->first);
+                    detail::basic_radix2_fft_cached<FieldType, polynomial_dfs_type, Allocator>(a, fft_cache_buffer->first);
                 }
 
-                void inverse_fft(container_type &a) override {
+                void inverse_fft(polynomial_dfs_type &a) override {
                     if (a.size() != this->m) {
                         if (a.size() < this->m) {
-                            a.resize(this->m, value_type::zero());
+                            a.get_storage().resize(this->m, value_type::zero());
                         } else {
                             throw std::invalid_argument("basic_radix2: expected a.size() == this->m");
                         }
                     }
 
-                    detail::basic_radix2_fft_cached<FieldType, container_type, Allocator>(a, fft_cache->second);
+                    detail::basic_radix2_fft_cached<FieldType, polynomial_dfs_type, Allocator>(a, fft_cache_buffer->second);
 
-                    field_value_type* a_ptr = a.data();
                     const std::size_t n = a.size();
                     const field_value_type& sconst = this->sconst;
                     GLOBAL_QUEUE.submit(
-                        [a_ptr, sconst, n](sycl::handler& cgh) {
-                            cgh.parallel_for(sycl::range<1>(n), [a_ptr, sconst](sycl::id<1> index) {
-                                a_ptr[index] *= sconst;
+                        [&](sycl::handler& cgh) {
+                            auto a_acc = a.val_buf->template get_access<sycl::access::mode::read_write>(cgh);
+                            cgh.parallel_for(sycl::range<1>(n), [=](sycl::id<1> index) {
+                                a_acc[index] *= sconst;
                             });
                         });
                     GLOBAL_QUEUE.wait();
@@ -132,7 +139,7 @@ namespace nil {
                                 "basic_radix2: expected std::distance(t_powers_begin, t_powers_end) >= this->m");
                     }
                     container_type tmp(t_powers_begin, t_powers_begin + this->m);
-                    this->inverse_fft(tmp);
+                    //this->inverse_fft(tmp);
                     return tmp;
                 }
 
@@ -168,6 +175,10 @@ namespace nil {
                     const field_value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
                     nil::crypto3::parallel_foreach(P.begin(), P.end(), [&Z_inverse_at_coset](field_value_type& v){v *= Z_inverse_at_coset;});
                 }
+
+                //const void prefetch_fft_cache() override {
+                //    GLOBAL_QUEUE.prefetch(fft_cache->first.data(), sizeof(value_type) * this->m);
+                //}
 
                 bool operator==(const basic_radix2_domain &rhs) const {
                     return isEqual(rhs) && omega == rhs.omega;
