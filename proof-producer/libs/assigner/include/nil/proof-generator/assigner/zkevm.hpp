@@ -40,20 +40,11 @@ namespace nil {
 
             // rw
             const auto rw_trace_path = get_rw_trace_path(trace_base_path);
-            const auto rw_operations = deserialize_rw_traces_from_file(rw_trace_path);
+            auto rw_operations = deserialize_rw_traces_from_file(rw_trace_path);
             if (!rw_operations) {
                 return "can't read rw from file: " + rw_trace_path.string();
             }
-            for (const auto& stack_op : rw_operations->stack_ops) {
-                input.rw_operations.push_back(stack_op);
-            }
-            for (const auto& memory_op : rw_operations->memory_ops) {
-                input.rw_operations.push_back(memory_op);
-            }
-            for (const auto& storage_op : rw_operations->storage_ops) {
-                input.rw_operations.push_back(storage_op);
-            }
-
+            input.rw_operations = std::move(rw_operations.value());
 
             // states
             const auto zkevm_trace_path = get_zkevm_trace_path(trace_base_path);
