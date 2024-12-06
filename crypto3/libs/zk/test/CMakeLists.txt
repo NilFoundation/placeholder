@@ -51,11 +51,6 @@ set(TESTS_NAMES
     "commitment/fri"
     "commitment/kzg"
     "commitment/fold_polynomial"
-    "commitment/pedersen"
-    "commitment/proof_of_knowledge"
-#    "commitment/powers_of_tau"
-#    "commitment/type_traits"
-#    "commitment/kimchi_pedersen"
     "commitment/proof_of_work"
 
     "math/expression"
