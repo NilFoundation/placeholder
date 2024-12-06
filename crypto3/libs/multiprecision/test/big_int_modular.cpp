@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "nil/crypto3/multiprecision/literals.hpp"
-#include "nil/crypto3/multiprecision/modular/big_mod.hpp"
+#include "nil/crypto3/multiprecision/big_mod.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
