@@ -54,6 +54,7 @@ macro(define_blueprint_test test)
         crypto3::algebra
         crypto3::zk
         crypto3::random
+        crypto3::hash
     )
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
@@ -71,6 +72,10 @@ macro(define_blueprint_test test)
         target_compile_definitions(${full_test_name} PRIVATE BOOST_TEST_DYN_LINK)
     elseif(target_type STREQUAL "STATIC_LIB")
 
+    endif()
+
+    if(NOT ${full_test_name} STREQUAL "blueprint_test_plonk_component_test")
+      target_precompile_headers(${full_test_name} REUSE_FROM blueprint_test_plonk_component_test)
     endif()
 endmacro()
 
