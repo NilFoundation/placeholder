@@ -54,7 +54,6 @@ namespace nil {
 
                     std::size_t call_id = 0;
                     std::size_t rw_counter = 0;
-                    //_rw_operations.push_back(start_rw_operation());
                     for( auto &pt: pts){
                         boost::property_tree::ptree ptrace = pt.get_child("result.structLogs");
                         std::cout << "PT = " << ptrace.size() << std::endl;

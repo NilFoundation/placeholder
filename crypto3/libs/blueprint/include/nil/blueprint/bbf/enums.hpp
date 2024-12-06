@@ -27,6 +27,9 @@
 #ifndef CRYPTO3_BLUEPRINT_PLONK_BBF_ENUMS_HPP
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_ENUMS_HPP
 
+#include <ostream>
+#include <map>
+
 namespace nil {
     namespace blueprint {
         namespace bbf {
@@ -35,7 +38,7 @@ namespace nil {
             enum column_type { witness = 0, public_input = 1, constant = 2, COLUMN_TYPES_COUNT = 3};
 
             std::ostream &operator<<(std::ostream &os, const column_type &t) {
-                std::map<column_type, std::string> type_map = {
+                static std::map<column_type, std::string> type_map = {
                     {column_type::witness, "witness"},
                     {column_type::public_input, "public input"},
                     {column_type::constant, "constant"},
