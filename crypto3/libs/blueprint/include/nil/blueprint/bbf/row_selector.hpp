@@ -84,10 +84,10 @@ namespace nil {
 
                     const_iterator(const BitSet& v, size_t pos)
                         : bitset(v) {
-						if (pos < bitset.size() && bitset[pos])
-							index = pos;
-						else
-							index = bitset.find_next(pos);
+                        if (pos < bitset.size() && bitset[pos])
+                            index = pos;
+                        else
+                            index = bitset.find_next(pos);
                     }
 
                     // Dereference operator returns the current index

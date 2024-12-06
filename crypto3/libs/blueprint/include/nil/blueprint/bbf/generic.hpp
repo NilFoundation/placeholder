@@ -438,7 +438,7 @@ namespace nil {
                             if (max_row - min_row <= 1) {
                                 current_base_rows.insert(row+1);
                             }
-                            if (max_row == min_row) {
+                            if ((max_row == min_row) && (row > 0)) {
                                 current_base_rows.insert(row-1);
                             }
                             if (base_rows.empty()) {
@@ -456,7 +456,6 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(error) << "Lookup constraint expressions have no variables or have incompatible spans!\n";
                     }
                     BOOST_ASSERT(!base_rows.empty());
-
                     std::size_t row = (base_rows.size() == 3) ? *(std::next(base_rows.begin())) : *(base_rows.begin());
                     add_lookup_constraint(table_name, relativize(C, -row), row);
                 }
