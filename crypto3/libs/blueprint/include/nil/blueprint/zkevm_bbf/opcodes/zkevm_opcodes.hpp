@@ -72,8 +72,15 @@
 #include <nil/blueprint/zkevm_bbf/opcodes/eq.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/calldatacopy.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/stop.hpp>
-#include <nil/blueprint/zkevm_bbf/opcodes/keccak.hpp>
 #include <nil/blueprint/zkevm_bbf/opcodes/exp.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/keccak.hpp>
+
+#include <nil/blueprint/zkevm_bbf/opcodes/mcopy.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/returndatasize.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/returndatacopy.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/call.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/staticcall.hpp>
+#include <nil/blueprint/zkevm_bbf/opcodes/gas.hpp>
 
 namespace nil {
     namespace blueprint {
@@ -682,6 +689,14 @@ namespace nil {
 
                 opcodes[zkevm_opcode::POP] = std::make_shared<zkevm_pop_operation<BlueprintFieldType>>();
                 opcodes[zkevm_opcode::RETURN] = std::make_shared<zkevm_return_operation<BlueprintFieldType>>();
+
+                // not implemented yet opcodes
+                opcodes[zkevm_opcode::MCOPY] = std::make_shared<zkevm_mcopy_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::RETURNDATASIZE] = std::make_shared<zkevm_returndatasize_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::RETURNDATACOPY] = std::make_shared<zkevm_returndatacopy_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::CALL] = std::make_shared<zkevm_call_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::GAS] = std::make_shared<zkevm_gas_operation<BlueprintFieldType>>();
+                opcodes[zkevm_opcode::STATICCALL] = std::make_shared<zkevm_staticcall_operation<BlueprintFieldType>>();
 
                 // // DUP
                 opcodes[zkevm_opcode::DUP1] = std::make_shared<zkevm_dupx_operation<BlueprintFieldType>>(1);

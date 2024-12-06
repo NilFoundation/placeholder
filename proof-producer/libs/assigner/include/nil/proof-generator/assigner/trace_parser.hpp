@@ -19,12 +19,7 @@
 namespace nil {
     namespace proof_generator {
 
-        struct RWOperations {
-            std::vector<blueprint::bbf::rw_operation> stack_ops;
-            std::vector<blueprint::bbf::rw_operation> memory_ops;
-            std::vector<blueprint::bbf::rw_operation> storage_ops;
-        };
-
+ 
         const char BYTECODE_EXTENSION[] = ".bc";
         const char RW_EXTENSION[] = ".rw";
         const char ZKEVM_EXTENSION[] = ".zkevm";
@@ -149,18 +144,18 @@ namespace nil {
             return contract_bytecodes;
         }
 
-        [[nodiscard]] std::optional<RWOperations> deserialize_rw_traces_from_file(const boost::filesystem::path& rw_traces_path) {
+        [[nodiscard]] std::optional<blueprint::bbf::rw_operations_vector> deserialize_rw_traces_from_file(const boost::filesystem::path& rw_traces_path) {
             const auto pb_traces = read_pb_traces_from_file<executionproofs::RWTraces>(rw_traces_path);
             if (!pb_traces) {
                 return std::nullopt;
             }
 
-            RWOperations rw_traces;
+            blueprint::bbf::rw_operations_vector rw_traces;
+            rw_traces.reserve(pb_traces->stack_ops_size() + pb_traces->memory_ops_size() + pb_traces->storage_ops_size() + 1); // +1 slot for start op
 
             // Convert stack operations
-            rw_traces.stack_ops.reserve(pb_traces->stack_ops_size());
             for (const auto& pb_sop : pb_traces->stack_ops()) {
-                rw_traces.stack_ops.push_back(blueprint::bbf::stack_rw_operation(
+                rw_traces.push_back(blueprint::bbf::stack_rw_operation(
                     static_cast<uint64_t>(pb_sop.msg_id()),
                     static_cast<int32_t>(pb_sop.index()),
                     static_cast<uint64_t>(pb_sop.rw_idx()),
@@ -170,7 +165,6 @@ namespace nil {
             }
 
             // Convert memory operations
-            rw_traces.memory_ops.reserve(pb_traces->memory_ops_size());
             for (const auto& pb_mop : pb_traces->memory_ops()) {
                 auto const value = string_to_bytes(pb_mop.value());
                 auto const op = blueprint::bbf::memory_rw_operation(
@@ -180,11 +174,10 @@ namespace nil {
                     !pb_mop.is_read(),
                     blueprint::zkevm_word_from_bytes(value)
                 );
-                rw_traces.memory_ops.push_back(op);
+                rw_traces.push_back(op);
             }
 
             // Convert storage operations
-            rw_traces.storage_ops.reserve(pb_traces->storage_ops_size());
             for (const auto& pb_sop : pb_traces->storage_ops()) {
                 const auto& op = blueprint::bbf::storage_rw_operation(
                     static_cast<uint64_t>(pb_sop.msg_id()),
@@ -196,8 +189,19 @@ namespace nil {
                     blueprint::zkevm_word_from_string(pb_sop.address().address_bytes())
                 );
                 //TODO root and initial_root?
-                rw_traces.storage_ops.push_back(std::move(op));
+                rw_traces.push_back(std::move(op));
             }
+
+            using nil::blueprint::bbf::rw_operation;
+            std::sort(rw_traces.begin(), rw_traces.end(), [](rw_operation a, rw_operation b){
+                return a < b;
+            });
+
+            BOOST_LOG_TRIVIAL(debug) << "number RW operations " << rw_traces.size() << ":\n"
+                                     << "stack   " << pb_traces->stack_ops_size() << "\n"
+                                     << "memory  " << pb_traces->memory_ops_size() << "\n"
+                                     << "storage " << pb_traces->storage_ops_size() << "\n";
+
 
             return rw_traces;
         }
