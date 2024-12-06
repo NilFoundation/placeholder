@@ -83,7 +83,11 @@ namespace nil {
                     using iterator_category = std::forward_iterator_tag;
 
                     const_iterator(const BitSet& v, size_t pos)
-                        : bitset(v), index(bitset.find_next(pos)) {
+                        : bitset(v) {
+                        if (pos < bitset.size() && bitset[pos])
+                            index = pos;
+                        else
+                            index = bitset.find_next(pos);
                     }
 
                     // Dereference operator returns the current index
