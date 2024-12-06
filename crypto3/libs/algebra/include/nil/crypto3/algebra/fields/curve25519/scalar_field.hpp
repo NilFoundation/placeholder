@@ -59,7 +59,7 @@ namespace nil {
 #else
 
                     constexpr static const integral_type modulus =
-                        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_bigui253;
+                        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint253;
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<curve25519_scalar_field>> value_type;

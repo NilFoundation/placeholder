@@ -53,7 +53,7 @@ namespace nil {
 #else
                     // 2^64 - 2^32 + 1
                     constexpr static const integral_type modulus =
-                        0xFFFFFFFF00000001_bigui64;
+                        0xFFFFFFFF00000001_big_uint64;
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1u) / 2;
 
                     typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;

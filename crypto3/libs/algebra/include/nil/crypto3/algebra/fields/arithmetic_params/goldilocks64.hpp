@@ -48,7 +48,7 @@ namespace nil {
                     constexpr static const integral_type geometric_generator = 0x02;
                     constexpr static const integral_type multiplicative_generator = 0x07;
                     constexpr static const integral_type root_of_unity =
-                        0x185629DCDA58878C_bigui64;
+                        0x185629DCDA58878C_big_uint64;
                 };
 
                 constexpr std::size_t const arithmetic_params<goldilocks64_base_field>::s;
