@@ -191,7 +191,7 @@ namespace nil {
                         zkevm_word_type b = zkevm_word_type(integral_type(1) << shift);
 
                         zkevm_word_type result =
-                            zkevm_word_type::backend_type(r_integral.backend());
+                            r_integral;
                         zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
 
                         bool t_last = integral_type(q) < integral_type(b);

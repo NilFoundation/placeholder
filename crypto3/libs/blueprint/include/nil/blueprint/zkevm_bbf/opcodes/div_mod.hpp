@@ -163,8 +163,8 @@ namespace nil {
 
                         integral_type r_integral =
                             b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                        zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
-                        zkevm_word_type q = b != 0u ? a % b : a;
+                        zkevm_word_type r = r_integral;
+                        zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
                         zkevm_word_type q_out = b != 0u ? q : 0;  // according to EVM spec a % 0 = 0
 
                         bool t_last = integral_type(q) < integral_type(b);
