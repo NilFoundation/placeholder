@@ -28,10 +28,10 @@
 // We need cpp_int to compare to it.
 #include <boost/multiprecision/cpp_int.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular/literals.hpp>
-#include <nil/crypto3/multiprecision/cpp_modular.hpp>
-#include <nil/crypto3/multiprecision/inverse.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular/literals.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/inverse.hpp>
 
 using namespace boost::multiprecision;
 

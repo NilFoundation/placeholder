@@ -32,7 +32,7 @@
 
 #include <nil/marshalling/status_type.hpp>
 
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
 
 #include <nil/crypto3/marshalling/multiprecision/processing/integral.hpp>
 

@@ -7,7 +7,7 @@
 #define _SCL_SECURE_NO_WARNINGS
 #endif
 
-#include <nil/crypto3/multiprecision/concepts/mp_number_archetypes.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/concepts/mp_number_archetypes.hpp>
 
 #include "test_arithmetic.hpp"
 

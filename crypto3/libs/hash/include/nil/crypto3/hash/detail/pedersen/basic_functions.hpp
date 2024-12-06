@@ -30,7 +30,7 @@
 
 #include <nil/crypto3/detail/static_pow.hpp>
 
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
 
 namespace nil {
     namespace crypto3 {

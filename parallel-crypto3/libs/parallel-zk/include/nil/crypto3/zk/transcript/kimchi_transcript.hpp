@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <algorithm>
 
-#include <nil/crypto3/multiprecision/big_int/literals.hpp>
+#include <nil/crypto3/multiprecision/literals.hpp>
 
 #include <nil/crypto3/hash/detail/poseidon/poseidon_sponge.hpp>
 

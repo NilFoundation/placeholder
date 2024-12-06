@@ -29,9 +29,9 @@
 
 #include <set>
 
-#include <nil/crypto3/multiprecision/big_int/modular/big_mod.hpp>
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
-#include <nil/crypto3/multiprecision/big_int/miller_rabin.hpp>
+#include <nil/crypto3/multiprecision/modular/big_mod.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/miller_rabin.hpp>
 
 #include "random_element.hpp"
 

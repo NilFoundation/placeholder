@@ -58,7 +58,7 @@
 #include <nil/crypto3/algebra/fields/fp2.hpp>
 #include <nil/crypto3/algebra/fields/fp3.hpp>
 
-#include <nil/crypto3/multiprecision/big_int/literals.hpp>
+#include <nil/crypto3/multiprecision/literals.hpp>
 
 using namespace nil::crypto3::algebra;
 

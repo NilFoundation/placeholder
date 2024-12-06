@@ -3,8 +3,8 @@
 //  Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
 #include <boost/random.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <iostream>
@@ -12,7 +12,7 @@
 
 void t1() {
     //[random_eg1
-    //=#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
     //=#include <boost/random.hpp>
     //=
     //=int main()
@@ -83,7 +83,7 @@ void t1() {
 void t2() {
     std::cout << std::dec;
     //[random_eg2
-    //=#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
     //=#include <boost/random.hpp>
     //=
     //=int main()
@@ -129,7 +129,7 @@ Program output is
 
 void t3() {
     //[random_eg3
-    //=#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
     //=#include <boost/random.hpp>
     //=
     //=int main()
@@ -182,8 +182,8 @@ Which produces the following output:
 void t4() {
     std::cout << std::endl;
     //[random_eg4
-    //=#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
-    //=#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
     //=#include <boost/random.hpp>
     //=
     //=int main()
@@ -260,7 +260,7 @@ Which produces the following output:
 
 void t5() {
     //[random_eg5
-    //=#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
+    //=#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
     //=#include <boost/random.hpp>
     //=#include <boost/scoped_ptr.hpp>
     //=

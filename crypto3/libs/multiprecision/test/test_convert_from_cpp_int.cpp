@@ -7,7 +7,7 @@
 #define _SCL_SECURE_NO_WARNINGS
 #endif
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include "test.hpp"
 

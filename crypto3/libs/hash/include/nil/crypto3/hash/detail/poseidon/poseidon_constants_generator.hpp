@@ -12,7 +12,7 @@
 #include <nil/crypto3/algebra/vector/vector.hpp>
 #include <nil/crypto3/algebra/random_element.hpp>
 
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
 
 namespace nil {
     namespace crypto3 {

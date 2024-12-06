@@ -3,8 +3,8 @@
 #include <array>
 #include <bitset>
 
-#include <nil/crypto3/multiprecision/big_int/big_uint.hpp>
-#include <nil/crypto3/multiprecision/big_int/literals.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/literals.hpp>
 
 using std::cout;
 

@@ -5,7 +5,7 @@
 
 #define TEST_CHECKED_INT
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 
 #include "test_arithmetic.hpp"
 

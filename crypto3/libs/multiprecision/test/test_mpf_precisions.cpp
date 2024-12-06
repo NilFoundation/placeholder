@@ -15,7 +15,7 @@
 #include <boost/detail/lightweight_test.hpp>
 #include "test.hpp"
 
-#include <nil/crypto3/multiprecision/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
 
 template<class T>
 T make_rvalue_copy(const T a) {
