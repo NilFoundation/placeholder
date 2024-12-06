@@ -31,7 +31,7 @@
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/data/monomorphic.hpp>
 
-#include <nil/crypto3/multiprecision/big_int/literals.hpp>
+#include <nil/crypto3/multiprecision/literals.hpp>
 
 #include <nil/crypto3/algebra/curves/vesta.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>

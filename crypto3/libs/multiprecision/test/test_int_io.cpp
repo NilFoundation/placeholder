@@ -24,13 +24,13 @@
 #endif
 
 #if defined(TEST_MPZ)
-#include <nil/crypto3/multiprecision/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
 #endif
 #if defined(TEST_TOMMATH)
-#include <nil/crypto3/multiprecision/tommath.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/tommath.hpp>
 #endif
 #ifdef TEST_CPP_INT
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 #endif
 
 #include <boost/algorithm/string/case_conv.hpp>
