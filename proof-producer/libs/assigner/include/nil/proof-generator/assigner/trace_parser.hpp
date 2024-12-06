@@ -25,6 +25,11 @@ namespace nil {
             std::vector<blueprint::bbf::rw_operation> storage_ops;
         };
 
+        const char BYTECODE_EXTENSION[] = ".bc";
+        const char RW_EXTENSION[] = ".rw";
+        const char ZKEVM_EXTENSION[] = ".zkevm";
+        const char COPY_EXTENSION[] = ".copy";
+
         namespace {
 
             // Convert protobuf Uint256 to zkevm_word_type
@@ -36,20 +41,62 @@ namespace nil {
                 return result;
             }
 
-            [[nodiscard]] std::optional<executionproofs::ExecutionTraces> read_pb_traces_from_file(const boost::filesystem::path& filename) {
+            boost::filesystem::path extend_base_path(boost::filesystem::path base,
+                                                     const char* extension) {
+                std::string current_extension = base.has_extension() ? base.extension().string() : "";
+                auto new_extension = base.extension().string() + extension;
+                return base.replace_extension(new_extension);
+            }
+
+            [[nodiscard]] std::optional<executionproofs::RWTraces> read_rw_traces_from_file(const boost::filesystem::path& filename) {
                 std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
                 if (!file.is_open()) {
                     return std::nullopt;
                 }
-                if (!file) {
-                    return std::nullopt;
-                }
 
-                executionproofs::ExecutionTraces pb_traces;
+                executionproofs::RWTraces pb_traces;
                 if (!pb_traces.ParseFromIstream(&file)) {
                     return std::nullopt;
                 }
+                return pb_traces;
+            }
 
+            [[nodiscard]] std::optional<executionproofs::ZKEVMTraces> read_zkevm_traces_from_file(const boost::filesystem::path& filename) {
+                std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
+                if (!file.is_open()) {
+                    return std::nullopt;
+                }
+
+                executionproofs::ZKEVMTraces pb_traces;
+                if (!pb_traces.ParseFromIstream(&file)) {
+                    return std::nullopt;
+                }
+                return pb_traces;
+            }
+
+            [[nodiscard]] std::optional<executionproofs::CopyTraces> read_copy_traces_from_file(const boost::filesystem::path& filename) {
+                std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
+                if (!file.is_open()) {
+                    return std::nullopt;
+                }
+
+                executionproofs::CopyTraces pb_traces;
+                if (!pb_traces.ParseFromIstream(&file)) {
+                    return std::nullopt;
+                }
+                return pb_traces;
+            }
+
+            [[nodiscard]] std::optional<executionproofs::BytecodeTraces> read_bytecode_traces_from_file(const boost::filesystem::path& filename) {
+                std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary);
+                if (!file.is_open()) {
+                    return std::nullopt;
+                }
+
+                executionproofs::BytecodeTraces pb_traces;
+                if (!pb_traces.ParseFromIstream(&file)) {
+                    return std::nullopt;
+                }
                 return pb_traces;
             }
 
@@ -101,6 +148,22 @@ namespace nil {
             }
         } // namespace
 
+        boost::filesystem::path get_bytecode_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, BYTECODE_EXTENSION);
+        }
+
+        boost::filesystem::path get_rw_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, RW_EXTENSION);
+        }
+
+        boost::filesystem::path get_zkevm_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, ZKEVM_EXTENSION);
+        }
+
+        boost::filesystem::path get_copy_trace_path(const boost::filesystem::path& trace_base_path) {
+            return extend_base_path(trace_base_path, COPY_EXTENSION);
+        }
+
         std::vector<std::uint8_t> string_to_bytes(const std::string& str) {
             std::vector<std::uint8_t> res(str.size());
             for (std::size_t i = 0; i < str.size(); i++) {
@@ -109,8 +172,8 @@ namespace nil {
             return res;
         }
 
-        [[nodiscard]] std::optional<std::unordered_map<std::string, std::string>> deserialize_bytecodes_from_file(const boost::filesystem::path& filename) {
-            const auto pb_traces = read_pb_traces_from_file(filename);
+        [[nodiscard]] std::optional<std::unordered_map<std::string, std::string>> deserialize_bytecodes_from_file(const boost::filesystem::path& bytecode_trace_path) {
+            const auto pb_traces = read_bytecode_traces_from_file(bytecode_trace_path);
             if (!pb_traces) {
                 return std::nullopt;
             }
@@ -125,8 +188,8 @@ namespace nil {
             return contract_bytecodes;
         }
 
-        [[nodiscard]] std::optional<RWOperations> deserialize_rw_traces_from_file(const boost::filesystem::path& filename) {
-            const auto pb_traces = read_pb_traces_from_file(filename);
+        [[nodiscard]] std::optional<RWOperations> deserialize_rw_traces_from_file(const boost::filesystem::path& rw_traces_path) {
+            const auto pb_traces = read_rw_traces_from_file(rw_traces_path);
             if (!pb_traces) {
                 return std::nullopt;
             }
@@ -178,8 +241,8 @@ namespace nil {
             return rw_traces;
         }
 
-        [[nodiscard]] std::optional<std::vector<blueprint::bbf::zkevm_state>> deserialize_zkevm_state_traces_from_file(const boost::filesystem::path& filename) {
-            const auto pb_traces = read_pb_traces_from_file(filename);
+        [[nodiscard]] std::optional<std::vector<blueprint::bbf::zkevm_state>> deserialize_zkevm_state_traces_from_file(const boost::filesystem::path& zkevm_traces_path) {
+            const auto pb_traces = read_zkevm_traces_from_file(zkevm_traces_path);
             if (!pb_traces) {
                 return std::nullopt;
             }
@@ -217,8 +280,8 @@ namespace nil {
             return zkevm_states;
         }
 
-        [[nodiscard]] std::optional<std::vector<blueprint::bbf::copy_event>> deserialize_copy_events_from_file(const boost::filesystem::path& filename) {
-            const auto pb_traces = read_pb_traces_from_file(filename);
+        [[nodiscard]] std::optional<std::vector<blueprint::bbf::copy_event>> deserialize_copy_events_from_file(const boost::filesystem::path& copy_traces_file) {
+            const auto pb_traces = read_copy_traces_from_file(copy_traces_file);
             if (!pb_traces) {
                 return std::nullopt;
             }
