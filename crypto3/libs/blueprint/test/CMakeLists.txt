@@ -221,6 +221,8 @@ set(ZKEVM_TESTS_FILES
     "zkevm/opcodes/err1"
     #"zkevm/opcodes/workload"
     "zkevm/opcodes/jumps"
+    "zkevm/mpt/toy_example"
+    "zkevm/mpt/mpt_nonce_changed"
 )
 
 set(ZKEVM_BBF_TESTS_FILES
@@ -241,6 +243,7 @@ set(ZKEVM_BBF_TESTS_FILES
     "zkevm_bbf/opcodes/not"
     "zkevm_bbf/opcodes/exp"
     "zkevm_bbf/mpt/mpt_nonce_changed"
+    "zkevm_bbf/mpt/toy_example"
 )
 
 
