@@ -30,12 +30,13 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <iostream>
-#include <iomanip>
-#include <type_traits>
+//#include <type_traits>
+
+#include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/types/array_list.hpp>
-#include <nil/marshalling/container/static_vector.hpp>
+//#include <nil/marshalling/container/static_vector.hpp>
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
@@ -43,7 +44,6 @@
 
 #include <nil/marshalling/algorithms/pack.hpp>
 
-#include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
 
 template<class T>
 T generate_random() {
@@ -69,7 +69,9 @@ void print_byteblob(TIter iter_begin, TIter iter_end) {
 template<class T, std::size_t TSize, typename OutputType>
 void test_round_trip_fixed_size_container_fixed_precision_big_endian(
     std::array<T, TSize> val_container) {
+
     using namespace nil::crypto3::marshalling;
+
     std::size_t units_bits = std::is_same_v<OutputType, bool> ? 1 : sizeof(OutputType) * 8;
     using unit_type = OutputType;
     using integral_type = types::integral<nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>, T>;

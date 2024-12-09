@@ -28,13 +28,10 @@
 #ifndef CRYPTO3_MARSHALLING_FIELD_ELEMENT_HPP
 #define CRYPTO3_MARSHALLING_FIELD_ELEMENT_HPP
 
-#include <ratio>
-#include <limits>
 #include <type_traits>
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/options.hpp>
-#include <nil/marshalling/types/integral.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 #include <nil/marshalling/types/tag.hpp>
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
@@ -268,75 +265,9 @@ namespace nil {
                     using base_impl_type::write_data;
 
                 private:
-                    // because such an adapter uses pure byte reading,
-                    // incompatible with crypto3::field_element
-                    static_assert(!parsed_options_type::has_fixed_length_limit,
-                                  "nil::crypto3::marshalling::option::fixed_length option is not applicable to "
-                                  "crypto3::field_element type");
-
-                    // because such an adapter uses pure byte reading,
-                    // incompatible with crypto3::field_element
-                    static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                                  "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to "
-                                  "crypto3::field_element type");
-
-                    static_assert(!parsed_options_type::has_scaling_ratio,
-                                  "nil::crypto3::marshalling::option::scaling_ratio option is not applicable to "
-                                  "crypto3::field_element type");
-
-                    static_assert(
-                        !parsed_options_type::has_sequence_elem_length_forcing,
-                        "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_sequence_size_forcing,
-                                  "nil::crypto3::marshalling::option::SequenceSizeForcingEnabled option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_sequence_length_forcing,
-                                  "nil::crypto3::marshalling::option::SequenceLengthForcingEnabled option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_sequence_fixed_size,
-                                  "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                        "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
-                        "crypto3::field_element type");
                     static_assert(!parsed_options_type::has_sequence_size_field_prefix,
                                   "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to "
                                   "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_ser_length_field_prefix,
-                        "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                        "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                        "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_trailing_field_suffix,
-                        "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_termination_field_suffix,
-                        "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_fixed_size_storage,
-                                  "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_custom_storage_type,
-                                  "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_orig_data_view,
-                                  "nil::crypto3::marshalling::option::orig_data_view option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_versions_range,
-                        "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
-                        "crypto3::field_element type");
                 };
 
                 template<typename TTypeBase,
@@ -520,75 +451,9 @@ namespace nil {
                     using base_impl_type::write_data;
 
                 private:
-                    // because such an adapter uses pure byte reading,
-                    // incompatible with crypto3::field_element
-                    static_assert(!parsed_options_type::has_fixed_length_limit,
-                                  "nil::crypto3::marshalling::option::fixed_length option is not applicable to "
-                                  "crypto3::field_element type");
-
-                    // because such an adapter uses pure byte reading,
-                    // incompatible with crypto3::field_element
-                    static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                                  "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to "
-                                  "crypto3::field_element type");
-
-                    static_assert(!parsed_options_type::has_scaling_ratio,
-                                  "nil::crypto3::marshalling::option::scaling_ratio option is not applicable to "
-                                  "crypto3::field_element type");
-
-                    static_assert(
-                        !parsed_options_type::has_sequence_elem_length_forcing,
-                        "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_sequence_size_forcing,
-                                  "nil::crypto3::marshalling::option::SequenceSizeForcingEnabled option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_sequence_length_forcing,
-                                  "nil::crypto3::marshalling::option::SequenceLengthForcingEnabled option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_sequence_fixed_size,
-                                  "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                        "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
-                        "crypto3::field_element type");
                     static_assert(!parsed_options_type::has_sequence_size_field_prefix,
                                   "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to "
                                   "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_ser_length_field_prefix,
-                        "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                        "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                        "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_trailing_field_suffix,
-                        "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_sequence_termination_field_suffix,
-                        "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
-                        "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_fixed_size_storage,
-                                  "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_custom_storage_type,
-                                  "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(!parsed_options_type::has_orig_data_view,
-                                  "nil::crypto3::marshalling::option::orig_data_view option is not applicable to "
-                                  "crypto3::field_element type");
-                    static_assert(
-                        !parsed_options_type::has_versions_range,
-                        "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
-                        "crypto3::field_element type");
                 };
 
                 template<typename TTypeBase,

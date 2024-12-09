@@ -51,17 +51,6 @@ void print_byteblob(TIter iter_begin, TIter iter_end) {
     }
 }
 
-template<typename FpCurveGroupElement>
-void print_fp_curve_group_element(FpCurveGroupElement e) {
-    std::cout << std::hex << e.X.data << " " << e.Y.data << " " << e.Z.data << std::endl;
-}
-
-template<typename Fp2CurveGroupElement>
-void print_fp2_curve_group_element(Fp2CurveGroupElement e) {
-    std::cout << std::hex << "(" << e.X.data[0].data << " " << e.X.data[1].data << ") (" << e.Y.data[0].data << " "
-              << e.Y.data[1].data << ") (" << e.Z.data[0].data << " " << e.Z.data[1].data << ")" << std::endl;
-}
-
 template<class T, std::size_t TSize>
 void test_curve_element_fixed_size_container_big_endian(std::array<T, TSize> val_container) {
     using namespace nil::crypto3::marshalling;
