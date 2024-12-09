@@ -23,6 +23,7 @@
 
 #include "nil/crypto3/multiprecision/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
 #include "nil/crypto3/multiprecision/modular/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/modular/modular_ops_storage.hpp"
 
@@ -42,11 +43,15 @@ namespace nil::crypto3::multiprecision {
             template<typename T>
             constexpr big_mod_impl(const T& b, const modular_ops_storage_t& modular_ops_storage)
                 : m_modular_ops_storage(modular_ops_storage) {
-                init_raw_base(m_raw_base, b, ops());
+                if (!nil::crypto3::multiprecision::is_zero(b)) {
+                    init_raw_base(m_raw_base, b, ops());
+                }
             }
 
             constexpr big_mod_impl(const modular_ops_storage_t& modular_ops_storage)
-                : m_modular_ops_storage(modular_ops_storage) {}
+                : m_modular_ops_storage(modular_ops_storage) {
+                // NB: m_raw_base is initialized to zero, this is correct for Montgomery form too
+            }
 
           public:
             // Components
@@ -174,6 +179,9 @@ namespace nil::crypto3::multiprecision {
                  std::enable_if_t<detail::is_integral_v<S>, int> = 0>
         typename modular_ops_t::big_uint_t convert_to_raw_base(const S& s,
                                                                const modular_ops_t& ops) {
+            if (nil::crypto3::multiprecision::is_zero(s)) {
+                return typename modular_ops_t::big_uint_t{};
+            }
             typename modular_ops_t::big_uint_t result;
             init_raw_base(result, s, ops);
             return result;
