@@ -111,12 +111,6 @@ namespace nil {
             template<typename Params, typename Hash, typename Group>
             struct find_group_hash;
 
-            template<typename Params, typename BasePointGeneratorHash, typename Group>
-            struct pedersen_to_point;
-
-            template<typename Params, typename BasePointGeneratorHash, typename Group>
-            struct pedersen;
-
             template<typename Field, typename Hash, typename Params>
             struct h2f;
 
@@ -128,17 +122,6 @@ namespace nil {
 
             template<typename Params, typename Hash, typename Group>
             struct is_find_group_hash<find_group_hash<Params, Hash, Group>> : std::integral_constant<bool, true> { };
-
-            template<typename Hash>
-            struct is_pedersen : std::integral_constant<bool, false> { };
-
-            template<typename Params, typename BasePointGeneratorHash, typename Group>
-            struct is_pedersen<pedersen_to_point<Params, BasePointGeneratorHash, Group>>
-                : std::integral_constant<bool, true> { };
-
-            template<typename Params, typename BasePointGeneratorHash, typename Group>
-            struct is_pedersen<pedersen<Params, BasePointGeneratorHash, Group>> : std::integral_constant<bool, true> {
-            };
 
             template<typename Hash>
             struct is_h2f : std::integral_constant<bool, false> { };

@@ -45,43 +45,6 @@
 using namespace nil::crypto3;
 using namespace nil::crypto3::algebra;
 
-template<typename FieldParams>
-void print_field_element(std::ostream &os, const typename fields::detail::element_fp<FieldParams> &e) {
-    std::cout << e.data << std::endl;
-}
-
-template<typename FieldParams>
-void print_field_element(std::ostream &os, const typename fields::detail::element_fp2<FieldParams> &e) {
-    std::cout << e.data[0].data << ", " << e.data[1].data << std::endl;
-}
-
-namespace boost {
-    namespace test_tools {
-        namespace tt_detail {
-            template<typename FieldParams>
-            struct print_log_value<typename fields::detail::element_fp<FieldParams>> {
-                void operator()(std::ostream &os, typename fields::detail::element_fp<FieldParams> const &e) {
-                    print_field_element(os, e);
-                }
-            };
-
-            template<typename FieldParams>
-            struct print_log_value<typename fields::detail::element_fp2<FieldParams>> {
-                void operator()(std::ostream &os, typename fields::detail::element_fp2<FieldParams> const &e) {
-                    print_field_element(os, e);
-                }
-            };
-
-            template<template<typename, typename> class P, typename K, typename V>
-            struct print_log_value<P<K, V>> {
-                void operator()(std::ostream &, P<K, V> const &) {
-                }
-            };
-
-        }    // namespace tt_detail
-    }        // namespace test_tools
-}    // namespace boost
-
 template<typename Hash>
 typename std::enable_if<hashes::is_h2f<Hash>::value>::type
     check_hash_to_field_ro(const std::string &msg_str, const typename Hash::digest_type &result) {
