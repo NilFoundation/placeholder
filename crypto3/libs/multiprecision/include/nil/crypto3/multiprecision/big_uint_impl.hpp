@@ -1216,8 +1216,8 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits2, std::size_t Bits3>
         static constexpr void multiply(big_uint& result, const big_uint<Bits2>& a,
                                        const big_uint<Bits3>& b) noexcept {
-            std::size_t as = a.limbs_count();
-            std::size_t bs = b.limbs_count();
+            std::size_t as = a.used_limbs();
+            std::size_t bs = b.used_limbs();
             const_limb_pointer pa = a.limbs();
             const_limb_pointer pb = b.limbs();
             limb_pointer pr = result.limbs();
