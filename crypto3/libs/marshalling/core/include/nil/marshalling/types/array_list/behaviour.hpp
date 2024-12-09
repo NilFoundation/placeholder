@@ -90,25 +90,9 @@ namespace nil {
                         TOpt::has_sequence_fixed_size_use_fixed_size_storage>::template type<TElement, TOpt>;
                 };
 
-                template<bool THasCustomStorage>
-                struct array_list_custom_array_list_storage_type;
-
-                template<>
-                struct array_list_custom_array_list_storage_type<true> {
-                    template<typename TElement, typename TOpt>
-                    using type = typename TOpt::custom_storage_type;
-                };
-
-                template<>
-                struct array_list_custom_array_list_storage_type<false> {
-                    template<typename TElement, typename TOpt>
-                    using type = typename array_list_fixed_size_storage_type<
-                        TOpt::has_fixed_size_storage>::template type<TElement, TOpt>;
-                };
-
                 template<typename TElement, typename TOpt>
-                using array_list_storage_type_type = typename array_list_custom_array_list_storage_type<
-                    TOpt::has_custom_storage_type>::template type<TElement, TOpt>;
+                using array_list_storage_type_type = typename array_list_fixed_size_storage_type<
+                    TOpt::has_fixed_size_storage>::template type<TElement, TOpt>;
 
                 template<typename TFieldBase, typename TElement, typename... TOptions>
                 using array_list_base_type = adapt_basic_field_type<
