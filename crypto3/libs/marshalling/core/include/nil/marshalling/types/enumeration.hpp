@@ -275,8 +275,6 @@ namespace nil {
                 static_assert(
                     !parsed_options_type::has_scaling_ratio,
                     "nil::marshalling::option::scaling_ratio_type option is not applicable to enumeration field");
-                static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to enumeration field");
                 static_assert(!parsed_options_type::has_orig_data_view,
                               "nil::marshalling::option::orig_data_view option is not applicable to enumeration field");
                 static_assert(

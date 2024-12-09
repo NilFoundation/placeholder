@@ -32,7 +32,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include <nil/marshalling/types/integral.hpp>
+#include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
+
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>

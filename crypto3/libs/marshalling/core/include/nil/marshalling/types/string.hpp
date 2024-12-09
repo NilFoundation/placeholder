@@ -334,8 +334,6 @@ namespace nil {
                               "nil::marshalling::option::var_length option is not applicable to string field");
                 static_assert(!parsed_options_type::has_scaling_ratio,
                               "nil::marshalling::option::scaling_ratio_type option is not applicable to string field");
-                static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to string field");
                 static_assert(!parsed_options_type::has_multi_range_validation,
                               "nil::marshalling::option::valid_num_value_range (or similar) option is not applicable "
                               "to string field");

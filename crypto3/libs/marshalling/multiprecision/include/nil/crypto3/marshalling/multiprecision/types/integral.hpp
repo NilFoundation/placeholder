@@ -32,9 +32,10 @@
 #include <type_traits>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <boost/type_traits/is_integral.hpp>
+#include <boost/multiprecision/number.hpp>
 
 #include <nil/marshalling/field_type.hpp>
-#include <nil/marshalling/types/integral.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 #include <nil/marshalling/types/tag.hpp>
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
@@ -245,6 +246,7 @@ namespace nil {
                     using base_impl_type::write_data;
 
                 private:
+#if 0
                     // because such an adapter uses pure byte reading,
                     // incompatible with crypto3::multiprecision
                     static_assert(!parsed_options_type::has_fixed_length_limit,
@@ -278,9 +280,11 @@ namespace nil {
                         !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
                         "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
                         "crypto3::integral type");
+#endif
                     static_assert(!parsed_options_type::has_sequence_size_field_prefix,
                                   "nil::marshalling::option::sequence_size_field_prefix option is not applicable to "
                                   "crypto3::integral type");
+#if 0
                     static_assert(
                         !parsed_options_type::has_sequence_ser_length_field_prefix,
                         "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
@@ -314,6 +318,7 @@ namespace nil {
                         !parsed_options_type::has_versions_range,
                         "nil::marshalling::option::exists_between_versions (or similar) option is not applicable to "
                         "crypto3::integral type");
+#endif
                 };
 
                 /// @brief Equality comparison operator.

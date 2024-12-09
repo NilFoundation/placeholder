@@ -76,8 +76,6 @@ void test_field_element_vector() {
     using namespace nil::crypto3::marshalling;
 
     using unit_type = unsigned char;
-    using field_element_type = types::field_element<nil::marshalling::field_type<Endianness>,
-        T>;
 
     std::vector<typename T::value_type> vec(16);
 

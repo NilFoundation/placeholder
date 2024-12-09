@@ -322,6 +322,7 @@ namespace nil {
                 using base_impl_type::write_data;
 
             private:
+#if 0
                 static_assert(
                     !parsed_options_type::has_ser_offset,
                     "nil::marshalling::option::num_value_ser_offset option is not applicable to array_list field");
@@ -335,8 +336,6 @@ namespace nil {
                 static_assert(
                     !parsed_options_type::has_scaling_ratio,
                     "nil::marshalling::option::scaling_ratio_type option is not applicable to array_list field");
-                static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to array_list field");
                 static_assert(!parsed_options_type::has_multi_range_validation,
                               "nil::marshalling::option::valid_num_value_range (or similar) option is not applicable "
                               "to array_list field");
@@ -352,6 +351,7 @@ namespace nil {
                 static_assert(
                     !parsed_options_type::has_invalid_by_default,
                     "nil::marshalling::option::invalid_by_default option is not applicable to array_list field");
+#endif
             };
 
             /// @brief Equivalence comparison operator.

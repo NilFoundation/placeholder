@@ -27,16 +27,21 @@
 #define CRYPTO3_MARSHALLING_MULTIPRECISION_INFERENCE_TYPE_TRAITS_HPP
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <boost/multiprecision/number.hpp>
+#include <nil/marshalling/options.hpp>
+#include <nil/marshalling/field_type.hpp>
 
 namespace nil {
+#if 1
     namespace crypto3 {
         namespace marshalling {
             namespace types {
-                template<typename TTypeBase, typename IntegralContainer, typename... TOptions>
+                template<typename TTypeBase, typename T, typename... TOptions>
                 class integral;
             }        // namespace types
         }        // namespace marshalling
     }        // namespace crypto3
+#endif
     namespace marshalling {
 
         template<typename T, typename Enabled>

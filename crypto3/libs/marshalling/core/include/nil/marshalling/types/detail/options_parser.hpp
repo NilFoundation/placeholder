@@ -42,6 +42,14 @@ namespace nil {
                 template<>
                 class options_parser<> {
                 public:
+                    static const bool has_sequence_size_field_prefix = false;
+                    static const bool has_orig_data_view = false;
+                    static const bool has_custom_storage_type = false;
+                    static const bool has_fixed_size_storage = false;
+                    static const bool has_sequence_fixed_size_use_fixed_size_storage = false;
+                    static const bool has_custom_version_update = false;
+
+#if 0
                     static const bool has_custom_value_reader = false;
                     static const bool has_custom_read = false;
                     static const bool has_ser_offset = false;
@@ -52,8 +60,6 @@ namespace nil {
                     static const bool has_sequence_size_forcing = false;
                     static const bool has_sequence_length_forcing = false;
                     static const bool has_sequence_fixed_size = false;
-                    static const bool has_sequence_fixed_size_use_fixed_size_storage = false;
-                    static const bool has_sequence_size_field_prefix = false;
                     static const bool has_sequence_ser_length_field_prefix = false;
                     static const bool has_sequence_elem_ser_length_field_prefix = false;
                     static const bool has_sequence_elem_fixed_ser_length_field_prefix = false;
@@ -66,18 +72,15 @@ namespace nil {
                     static const bool has_fail_on_invalid = false;
                     static const bool has_ignore_invalid = false;
                     static const bool has_invalid_by_default = false;
-                    static const bool has_fixed_size_storage = false;
-                    static const bool has_custom_storage_type = false;
                     static const bool has_scaling_ratio = false;
-                    static const bool has_units = false;
-                    static const bool has_orig_data_view = false;
                     static const bool has_empty_serialization = false;
                     static const bool has_multi_range_validation = false;
-                    static const bool has_custom_version_update = false;
                     static const bool has_versions_range = false;
                     static const bool has_version_storage = false;
+#endif
                 };
 
+#if 0
                 template<typename T, typename... TOptions>
                 class options_parser<nil::marshalling::option::custom_value_reader<T>, TOptions...>
                     : public options_parser<TOptions...> {
@@ -156,13 +159,7 @@ namespace nil {
                     static const auto sequence_fixed_size = TSize;
                 };
 
-                template<typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_fixed_size_use_fixed_size_storage, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_sequence_fixed_size_use_fixed_size_storage = true;
-                };
-
+#endif
                 template<typename TSizeField, typename... TOptions>
                 class options_parser<nil::marshalling::option::sequence_size_field_prefix<TSizeField>, TOptions...>
                     : public options_parser<TOptions...> {
@@ -171,6 +168,43 @@ namespace nil {
                     using sequence_size_field_prefix = TSizeField;
                 };
 
+                template<typename... TOptions>
+                class options_parser<nil::marshalling::option::orig_data_view, TOptions...>
+                    : public options_parser<TOptions...> {
+                public:
+                    static const bool has_orig_data_view = true;
+                };
+
+                template<typename TType, typename... TOptions>
+                class options_parser<nil::marshalling::option::custom_storage_type<TType>, TOptions...>
+                    : public options_parser<TOptions...> {
+                public:
+                    static const bool has_custom_storage_type = true;
+                    using custom_storage_type = TType;
+                };
+                template<std::size_t TSize, typename... TOptions>
+                class options_parser<nil::marshalling::option::fixed_size_storage<TSize>, TOptions...>
+                    : public options_parser<TOptions...> {
+                public:
+                    static const bool has_fixed_size_storage = true;
+                    static const std::size_t fixed_size_storage = TSize;
+                };
+                template<typename... TOptions>
+                class options_parser<nil::marshalling::option::sequence_fixed_size_use_fixed_size_storage, TOptions...>
+                    : public options_parser<TOptions...> {
+                public:
+                    static const bool has_sequence_fixed_size_use_fixed_size_storage = true;
+                };
+
+                template<typename... TOptions>
+                class options_parser<nil::marshalling::option::has_custom_version_update, TOptions...>
+                    : public options_parser<TOptions...> {
+                public:
+                    static const bool has_custom_version_update = true;
+                };
+
+
+#if 0
                 template<typename TField, status_type TReadErrorStatus, typename... TOptions>
                 class options_parser<
                     nil::marshalling::option::sequence_ser_length_field_prefix<TField, TReadErrorStatus>,
@@ -273,22 +307,6 @@ namespace nil {
                     static const bool has_invalid_by_default = true;
                 };
 
-                template<std::size_t TSize, typename... TOptions>
-                class options_parser<nil::marshalling::option::fixed_size_storage<TSize>, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_fixed_size_storage = true;
-                    static const std::size_t fixed_size_storage = TSize;
-                };
-
-                template<typename TType, typename... TOptions>
-                class options_parser<nil::marshalling::option::custom_storage_type<TType>, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_custom_storage_type = true;
-                    using custom_storage_type = TType;
-                };
-
                 template<std::intmax_t TNum, std::intmax_t TDenom, typename... TOptions>
                 class options_parser<nil::marshalling::option::scaling_ratio<TNum, TDenom>, TOptions...>
                     : public options_parser<TOptions...> {
@@ -297,23 +315,7 @@ namespace nil {
                     using scaling_ratio_type = std::ratio<TNum, TDenom>;
                 };
 
-                template<typename TType, typename TRatio, typename... TOptions>
-                class options_parser<nil::marshalling::option::units<TType, TRatio>, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_units = true;
-                    using units_type = TType;
-                    using units_ratio = TRatio;
-                };
-
-                template<typename... TOptions>
-                class options_parser<nil::marshalling::option::orig_data_view, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_orig_data_view = true;
-                };
-
-                template<typename... TOptions>
+               template<typename... TOptions>
                 class options_parser<nil::marshalling::option::empty_serialization, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
@@ -391,13 +393,6 @@ namespace nil {
                     static const bool has_multi_range_validation = true;
                 };
 
-                template<typename... TOptions>
-                class options_parser<nil::marshalling::option::has_custom_version_update, TOptions...>
-                    : public options_parser<TOptions...> {
-                public:
-                    static const bool has_custom_version_update = true;
-                };
-
                 template<std::uintmax_t TFrom, std::uintmax_t TUntil, typename... TOptions>
                 class options_parser<nil::marshalling::option::exists_between_versions<TFrom, TUntil>, TOptions...>
                     : public options_parser<TOptions...> {
@@ -417,7 +412,7 @@ namespace nil {
                 template<typename... TOptions>
                 class options_parser<nil::marshalling::option::empty_option, TOptions...>
                     : public options_parser<TOptions...> { };
-
+#endif
                 template<typename... TTupleOptions, typename... TOptions>
                 class options_parser<std::tuple<TTupleOptions...>, TOptions...>
                     : public options_parser<TTupleOptions..., TOptions...> { };
