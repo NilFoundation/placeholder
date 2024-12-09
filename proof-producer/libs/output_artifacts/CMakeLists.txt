@@ -24,7 +24,6 @@ set_target_properties(proof_generatorOutputArtifacts PROPERTIES
     CXX_STANDARD 23
     CXX_STANDARD_REQUIRED TRUE
 )
-target_precompile_headers(proof_generatorOutputArtifacts REUSE_FROM proof_generatorAssigner)
 
 install(TARGETS proof_generatorOutputArtifacts
         DESTINATION ${CMAKE_INSTALL_LIBDIR})
