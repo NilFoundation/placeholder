@@ -322,32 +322,6 @@ namespace nil::crypto3 {
                 void eval_resize(std::size_t count, has_remove_suffix_tag) {
                     base_impl_type::value().remove_suffix(base_impl_type::value().size() - count);
                 }
-
-                static_assert(
-                    !parsed_options_type::has_ser_offset,
-                    "nil::crypto3::marshalling::option::num_value_ser_offset option is not applicable to string field");
-                static_assert(!parsed_options_type::has_fixed_length_limit,
-                              "nil::crypto3::marshalling::option::fixed_length option is not applicable to string field");
-                static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                              "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to string field");
-                static_assert(!parsed_options_type::has_var_length_limits,
-                              "nil::crypto3::marshalling::option::var_length option is not applicable to string field");
-                static_assert(!parsed_options_type::has_scaling_ratio,
-                              "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to string field");
-                static_assert(!parsed_options_type::has_units,
-                              "nil::crypto3::marshalling::option::Units option is not applicable to string field");
-                static_assert(!parsed_options_type::has_multi_range_validation,
-                              "nil::crypto3::marshalling::option::valid_num_value_range (or similar) option is not applicable "
-                              "to string field");
-                static_assert(!parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                              "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
-                              "applicable to string field");
-                static_assert(!parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                              "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not "
-                              "applicable to string field");
-                static_assert(!parsed_options_type::has_versions_range,
-                              "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable "
-                              "to string field");
             };
 
             /// @brief Equality comparison operator.

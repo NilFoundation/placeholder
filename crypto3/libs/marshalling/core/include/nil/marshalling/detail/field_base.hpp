@@ -58,9 +58,6 @@ namespace nil::crypto3 {
                 using version_type = T;
             };
 
-            template<typename... TOptions>
-            class field_base<nil::crypto3::marshalling::option::empty_option, TOptions...> : public field_base<TOptions...> { };
-
             template<typename... TTuple, typename... TOptions>
             class field_base<std::tuple<TTuple...>, TOptions...> : public field_base<TTuple..., TOptions...> { };
 

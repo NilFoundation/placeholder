@@ -34,40 +34,10 @@
 #include <nil/detail/type_traits.hpp>
 
 #include <nil/marshalling/assert_type.hpp>
-#include <nil/marshalling/processing/aligned_union.hpp>
 
 namespace nil::crypto3 {
     namespace marshalling {
         namespace processing {
-
-            /// @brief Calculated "aligned union" storage type for all the types in
-            ///     provided tuple.
-            /// @tparam TTuple Tuple
-            /// @pre @code IsTuple<TTuple>::value == true @endcode
-            template<typename TTuple>
-            struct tuple_as_aligned_union {
-                /// @cond DOCUMENT_STATIC_ASSERT
-                static_assert(marshalling::detail::is_tuple<TTuple>::value, "TTuple must be std::tuple");
-                /// @endcond
-
-                /// @brief Type definition is invalid for any type that is not
-                ///     <a href="http://en.cppreference.com/w/cpp/utility/tuple">std::tuple</a>,
-                ///     will be specialised to proper value.
-                using type = void;
-            };
-
-            /// @cond SKIP_DOC
-            template<typename... TTypes>
-            struct tuple_as_aligned_union<std::tuple<TTypes...>> {
-                using type = typename aligned_union<TTypes...>::type;
-            };
-            /// @endcond
-
-            /// @brief Alias to @ref tuple_as_aligned_union::type
-            template<typename TTuple>
-            using tuple_as_aligned_union_type = typename tuple_as_aligned_union<TTuple>::type;
-
-            //----------------------------------------
 
             /// @brief Check whether tuple is unique, i.e. doesn't have contain types.
             template<typename TTuple>

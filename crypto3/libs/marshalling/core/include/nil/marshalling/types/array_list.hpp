@@ -250,56 +250,6 @@ namespace nil::crypto3 {
                     return base_impl_type::max_length();
                 }
 
-                /// @brief Force number of elements that must be read in the next read()
-                ///     invocation.
-                /// @details Exists only if nil::crypto3::marshalling::option::sequence_size_forcing_enabled option has been
-                ///     used.
-                /// @param[in] count Number of elements to read during following read operation.
-                void force_read_elem_count(std::size_t count) {
-                    return base_impl_type::force_read_elem_count(count);
-                }
-
-                /// @brief Clear forcing of the number of elements that must be read in the next read()
-                ///     invocation.
-                /// @details Exists only if nil::crypto3::marshalling::option::sequence_size_forcing_enabled option has been
-                ///     used.
-                void clear_read_elem_count() {
-                    return base_impl_type::clear_read_elem_count();
-                }
-
-                /// @brief Force available length for the next read() invocation.
-                /// @details Exists only if @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled option has been
-                ///     used.
-                /// @param[in] count Number of elements to read during following read operation.
-                void force_read_length(std::size_t count) {
-                    return base_impl_type::force_read_length(count);
-                }
-
-                /// @brief Clear forcing of the available length in the next read()
-                ///     invocation.
-                /// @details Exists only if @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled option has been
-                ///     used.
-                void clear_read_length_forcing() {
-                    return base_impl_type::clear_read_length_forcing();
-                }
-
-                /// @brief Force serialization length of a single element.
-                /// @details The function can be used to force a serialization length of a
-                ///     single element within the array_list.
-                ///     Exists only if @ref nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option has been
-                ///     used.
-                /// @param[in] count Number of elements to read during following read operation.
-                void force_read_elem_length(std::size_t count) {
-                    return base_impl_type::force_read_elem_length(count);
-                }
-
-                /// @brief Clear forcing the serialization length of the single element.
-                /// @details Exists only if nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option has been
-                ///     used.
-                void clear_read_elem_length_forcing() {
-                    return base_impl_type::clear_read_elem_length_forcing();
-                }
-
                 /// @brief Compile time check if this class is version dependent
                 static constexpr bool is_version_dependent() {
                     return parsed_options_type::has_custom_version_update || base_impl_type::is_version_dependent();
@@ -323,35 +273,10 @@ namespace nil::crypto3 {
 
             private:
                 static_assert(
-                    !parsed_options_type::has_ser_offset,
-                    "nil::crypto3::marshalling::option::num_value_ser_offset option is not applicable to array_list field");
-                static_assert(!parsed_options_type::has_fixed_length_limit,
-                              "nil::crypto3::marshalling::option::fixed_length option is not applicable to array_list field");
-                static_assert(
-                    !parsed_options_type::has_fixed_bit_length_limit,
-                    "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to array_list field");
-                static_assert(!parsed_options_type::has_var_length_limits,
-                              "nil::crypto3::marshalling::option::var_length option is not applicable to array_list field");
-                static_assert(
-                    !parsed_options_type::has_scaling_ratio,
-                    "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to array_list field");
-                static_assert(!parsed_options_type::has_units,
-                              "nil::crypto3::marshalling::option::Units option is not applicable to array_list field");
-                static_assert(!parsed_options_type::has_multi_range_validation,
-                              "nil::crypto3::marshalling::option::valid_num_value_range (or similar) option is not applicable "
-                              "to array_list field");
-                static_assert(
                     (!parsed_options_type::has_orig_data_view)
                         || (std::is_integral<TElement>::value && (sizeof(TElement) == sizeof(std::uint8_t))),
                     "Usage of nil::crypto3::marshalling::option::orig_data_view option is allowed only for raw binary data "
                     "(std::uint8_t) types.");
-                static_assert(
-                    !parsed_options_type::has_versions_range,
-                    "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
-                    "array_list field");
-                static_assert(
-                    !parsed_options_type::has_invalid_by_default,
-                    "nil::crypto3::marshalling::option::invalid_by_default option is not applicable to array_list field");
             };
 
             /// @brief Equivalence comparison operator.

@@ -45,7 +45,6 @@ namespace nil::crypto3 {
                     using value_type = T;
 
                     using serialized_type = value_type;
-                    using scaling_ratio_type = std::ratio<1, 1>;
 
                     basic_integral() = default;
 

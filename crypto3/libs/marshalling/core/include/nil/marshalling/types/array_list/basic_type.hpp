@@ -291,7 +291,7 @@ namespace nil::crypto3 {
                                 return sum + e.length();
                             });
                     }
-                    
+
                     constexpr std::size_t bit_length_internal(field_elem_tag) const {
                         return bit_field_length(field_elem_tag());
                     }

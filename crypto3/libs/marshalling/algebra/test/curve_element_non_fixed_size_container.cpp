@@ -75,6 +75,7 @@ void test_curve_element_non_fixed_size_container(std::vector<T> val_container) {
 
 template<typename Endianness, class CurveGroup, std::size_t TSize>
 void test_curve_element_non_fixed_size_container() {
+    using namespace nil::crypto3::marshalling;
     std::cout << std::hex;
     std::cerr << std::hex;
     for (unsigned i = 0; i < 128; ++i) {

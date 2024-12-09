@@ -35,25 +35,11 @@ namespace nil::crypto3 {
 
                 struct array_list { };
 
-                struct bitfield { };
-
-                struct bitmask { };
-
                 struct bundle { };
-
-                struct enumeration { };
-
-                struct floating_point { };
 
                 struct integral { };
 
-                struct no_value { };
-
-                struct optional { };
-
                 struct string { };
-
-                struct variant { };
 
             }    // namespace tag
         }        // namespace types
