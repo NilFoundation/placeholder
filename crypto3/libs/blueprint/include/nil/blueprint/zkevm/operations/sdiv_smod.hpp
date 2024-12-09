@@ -60,9 +60,9 @@ namespace nil {
             constexpr static const value_type two_16 = 65536;
             constexpr static const value_type two_32 = 4294967296;
             constexpr static const value_type two_48 = 281474976710656;
-            constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
-            constexpr static const value_type two128 = 0x100000000000000000000000000000000_cppui_modular254;
-            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+            constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
+            constexpr static const value_type two128 = 0x100000000000000000000000000000000_big_uint254;
+            constexpr static const value_type two192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
 
             template<typename T, typename V = T>
             T chunk_sum_64(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
@@ -479,8 +479,7 @@ namespace nil {
 
             void generate_assignments(zkevm_table_type &zkevm_table, const zkevm_machine_interface &machine) override {
                 using word_type = typename zkevm_stack::word_type;
-                using integral_type = boost::multiprecision::number<
-                    boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 word_type a = machine.stack_top();
                 word_type b_input = machine.stack_top(1);
@@ -504,8 +503,8 @@ namespace nil {
                           b_abs = abs_word(b);
 
                 integral_type r_integral = (b != 0u)? integral_type(a_abs) / integral_type(b_abs) : 0u;
-                word_type r_abs = word_type::backend_type(r_integral.backend()),
-                          q_abs = b != 0u ? a_abs % b_abs : a_abs,
+                word_type r_abs = r_integral,
+                          q_abs = b != 0u ? integral_type(a_abs) % integral_type(b_abs) : integral_type(a_abs),
                           r = (is_negative(a) == is_negative(b)) ? r_abs : negate_word(r_abs),
                           q = is_negative(a)? negate_word(q_abs) : q_abs;
 
@@ -540,8 +539,8 @@ namespace nil {
                 const std::size_t curr_row = zkevm_table.get_current_row();
                 // caluclate first row carries
                 auto first_row_carries =
-                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data >> 128;
-                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                    first_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks, q_64_chunks).data.base() >> 128;
+                value_type c_1 = static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                 value_type c_2 = static_cast<value_type>(first_row_carries >> 64);
                 std::vector<value_type> c_1_chunks = chunk_64_to_16<BlueprintFieldType>(c_1);
                 // no need for c_2 chunks as there is only a single chunk

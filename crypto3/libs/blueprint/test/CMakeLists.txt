@@ -56,7 +56,7 @@ macro(define_blueprint_test test)
         crypto3::random
     )
 
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
     target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/zkevm/data/")
 

@@ -41,7 +41,7 @@ namespace nil {
                 using generic_component<FieldType, stage>::lookup_table;
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
-                using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
 
                 struct input_type{
                     TYPE rlc_challenge;

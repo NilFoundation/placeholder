@@ -46,30 +46,29 @@ namespace nil {
 
                 public:
                     typedef typename policy_type::modular_type modular_type;
-                    typedef typename policy_type::modular_backend modular_backend;
                     typedef typename policy_type::integral_type integral_type;
 
                     constexpr static const std::size_t s = 0x22;
                     constexpr static const integral_type t =
-                        0xEF3DEF351CE899892769EC1523B2BBB258D73D10653ED25301E4975AB4EED0CD29_cppui_modular264;
+                        0xEF3DEF351CE899892769EC1523B2BBB258D73D10653ED25301E4975AB4EED0CD29_big_uint264;
                     constexpr static const integral_type t_minus_1_over_2 =
-                        0x779EF79A8E744CC493B4F60A91D95DD92C6B9E88329F692980F24BAD5A77686694_cppui_modular263;
+                        0x779EF79A8E744CC493B4F60A91D95DD92C6B9E88329F692980F24BAD5A77686694_big_uint263;
                     constexpr static const integral_type arithmetic_generator = 0x01;
                     constexpr static const integral_type geometric_generator = 0x02;
                     constexpr static const integral_type multiplicative_generator = 0x0A;
                     constexpr static const integral_type root_of_unity =
-                        0xF29386B6F08DFECE98F8AA2954E2CF8650D75AE5D90488A8934C1AA0BB321B07D3B48F8379_cppui_modular296;
+                        0xF29386B6F08DFECE98F8AA2954E2CF8650D75AE5D90488A8934C1AA0BB321B07D3B48F8379_big_uint296;
                     constexpr static const integral_type nqr = 0x05;
                     constexpr static const integral_type nqr_to_t =
-                        0x330D0653B5BA46A85FC6D3958E16DA566E30E50010AAC4A990E4047A12E2043EE3EF848E190_cppui_modular298;
+                        0x330D0653B5BA46A85FC6D3958E16DA566E30E50010AAC4A990E4047A12E2043EE3EF848E190_big_uint298;
                     constexpr static const integral_type Rsquared =
-                        0x149BB44A34202FF00DCED8E4B6D4BBD6DCF1E3A8386034F9102ADB68371465A743C68E0596B_cppui_modular297;
+                        0x149BB44A34202FF00DCED8E4B6D4BBD6DCF1E3A8386034F9102ADB68371465A743C68E0596B_big_uint297;
                     constexpr static const integral_type Rcubed =
-                        0x1A0B411C083B440F6A9ED2947CEAC13907BAB5D43C2F687B031B7F0B2B9B6DE2F1B99BD9C4B_cppui_modular297;
+                        0x1A0B411C083B440F6A9ED2947CEAC13907BAB5D43C2F687B031B7F0B2B9B6DE2F1B99BD9C4B_big_uint297;
 
                     constexpr static const integral_type modulus = policy_type::modulus;
                     constexpr static const integral_type group_order =
-                        0x1DE7BDE6A39D133124ED3D82A47657764B1AE7A20CA7DA4A603C92EB569DDA19A5200000000_cppui_modular297;
+                        0x1DE7BDE6A39D133124ED3D82A47657764B1AE7A20CA7DA4A603C92EB569DDA19A5200000000_big_uint297;
                 };
 
                 template<>
@@ -79,24 +78,22 @@ namespace nil {
 
                 public:
                     typedef typename policy_type::modular_type modular_type;
-                    typedef typename policy_type::modular_backend modular_backend;
                     typedef typename policy_type::integral_type integral_type;
-                    using extended_integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<3 * policy_type::modulus_bits>>;
+                    using extended_integral_type = nil::crypto3::multiprecision::big_uint<3 * policy_type::modulus_bits>;
 
                     constexpr static const std::size_t s = 0x22;
                     constexpr static const extended_integral_type t =
-                        0xD0F1EB0C5D321E87BF885ACDEBEDB4C0D6B30E63AB6E7BF6417A7990679AA640A7D58FB90CC708D572D32DFD6443366D2F92F48FF1A02FDB0CC11573BAB71F8E5E05B07DEA208A7E11F3E61C9968CC65F379EFCEF9472C7FC6DEE40194CA1DF9F801DC0D24656EACC72677B_cppui_modular860;
+                        0xD0F1EB0C5D321E87BF885ACDEBEDB4C0D6B30E63AB6E7BF6417A7990679AA640A7D58FB90CC708D572D32DFD6443366D2F92F48FF1A02FDB0CC11573BAB71F8E5E05B07DEA208A7E11F3E61C9968CC65F379EFCEF9472C7FC6DEE40194CA1DF9F801DC0D24656EACC72677B_big_uint860;
                     constexpr static const extended_integral_type t_minus_1_over_2 =
-                        0x6878F5862E990F43DFC42D66F5F6DA606B598731D5B73DFB20BD3CC833CD532053EAC7DC8663846AB96996FEB2219B3697C97A47F8D017ED86608AB9DD5B8FC72F02D83EF510453F08F9F30E4CB46632F9BCF7E77CA3963FE36F7200CA650EFCFC00EE069232B75663933BD_cppui_modular859;
+                        0x6878F5862E990F43DFC42D66F5F6DA606B598731D5B73DFB20BD3CC833CD532053EAC7DC8663846AB96996FEB2219B3697C97A47F8D017ED86608AB9DD5B8FC72F02D83EF510453F08F9F30E4CB46632F9BCF7E77CA3963FE36F7200CA650EFCFC00EE069232B75663933BD_big_uint859;
                     constexpr static const std::array<integral_type, 3> nqr = {0x05, 0x00, 0x00};
                     constexpr static const std::array<integral_type, 3> nqr_to_t = {
-                        0x1366271F76AB41CEEEE8C1E5E972F3CEC14A25F18B3F4B93642FAD4972356D977470E0FA674_cppui_modular297, 0x00,
+                        0x1366271F76AB41CEEEE8C1E5E972F3CEC14A25F18B3F4B93642FAD4972356D977470E0FA674_big_uint297, 0x00,
                         0x00};
 
                     constexpr static const integral_type modulus = policy_type::modulus;
                     constexpr static const extended_integral_type group_order =
-                        0x1A1E3D618BA643D0F7F10B59BD7DB6981AD661CC756DCF7EC82F4F320CF354C814FAB1F72198E11AAE5A65BFAC8866CDA5F25E91FE3405FB619822AE7756E3F1CBC0B60FBD44114FC23E7CC3932D198CBE6F3DF9DF28E58FF8DBDC80329943BF3F003B81A48CADD598E4CEF600000000_cppui_modular893;
+                        0x1A1E3D618BA643D0F7F10B59BD7DB6981AD661CC756DCF7EC82F4F320CF354C814FAB1F72198E11AAE5A65BFAC8866CDA5F25E91FE3405FB619822AE7756E3F1CBC0B60FBD44114FC23E7CC3932D198CBE6F3DF9DF28E58FF8DBDC80329943BF3F003B81A48CADD598E4CEF600000000_big_uint893;
                 };
 
                 constexpr std::size_t const arithmetic_params<mnt6_base_field<298>>::s;

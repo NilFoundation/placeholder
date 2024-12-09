@@ -56,18 +56,11 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0x0100000000000000000001b8fa16dfab9aca16b6b3_cppui_modular161;
+                        0x0100000000000000000001b8fa16dfab9aca16b6b3_big_uint161;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<secp_k1_scalar_field<160>>> value_type;
 
                     constexpr static const std::size_t value_bits = modulus_bits;
@@ -84,18 +77,11 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xfffffffffffffffffffffffe26f2fc170f69466a74defd8d_cppui_modular192;
+                        0xfffffffffffffffffffffffe26f2fc170f69466a74defd8d_big_uint192;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<secp_k1_scalar_field<192>>> value_type;
 
                     constexpr static const std::size_t value_bits = modulus_bits;
@@ -113,18 +99,11 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0x010000000000000000000000000001dce8d2ec6184caf0a971769fb1f7_cppui_modular225;
+                        0x010000000000000000000000000001dce8d2ec6184caf0a971769fb1f7_big_uint225;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<secp_k1_scalar_field<224>>> value_type;
 
                     constexpr static const std::size_t value_bits = modulus_bits;
@@ -141,18 +120,11 @@ namespace nil {
                     constexpr static const std::size_t number_bits = policy_type::number_bits;
 
                     constexpr static const integral_type modulus =
-                        0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141_cppui_modular256;
+                        0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141_big_uint256;
 
                     constexpr static const integral_type group_order_minus_one_half = (modulus - 1) / 2;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<secp_k1_scalar_field<256>>> value_type;
 
                     constexpr static const std::size_t value_bits = modulus_bits;
@@ -167,28 +139,24 @@ namespace nil {
                 constexpr typename std::size_t const secp_k1_fr<160>::value_bits;
                 constexpr typename secp_k1_fr<160>::integral_type const secp_k1_fr<160>::modulus;
                 constexpr typename secp_k1_fr<160>::integral_type const secp_k1_fr<160>::group_order_minus_one_half;
-                constexpr typename secp_k1_fr<160>::modular_params_type const secp_k1_fr<160>::modulus_params;
 
                 constexpr typename std::size_t const secp_k1_fr<192>::modulus_bits;
                 constexpr typename std::size_t const secp_k1_fr<192>::number_bits;
                 constexpr typename std::size_t const secp_k1_fr<192>::value_bits;
                 constexpr typename secp_k1_fr<192>::integral_type const secp_k1_fr<192>::modulus;
                 constexpr typename secp_k1_fr<192>::integral_type const secp_k1_fr<192>::group_order_minus_one_half;
-                constexpr typename secp_k1_fr<192>::modular_params_type const secp_k1_fr<192>::modulus_params;
 
                 constexpr typename std::size_t const secp_k1_fr<224>::modulus_bits;
                 constexpr typename std::size_t const secp_k1_fr<224>::number_bits;
                 constexpr typename std::size_t const secp_k1_fr<224>::value_bits;
                 constexpr typename secp_k1_fr<224>::integral_type const secp_k1_fr<224>::modulus;
                 constexpr typename secp_k1_fr<224>::integral_type const secp_k1_fr<224>::group_order_minus_one_half;
-                constexpr typename secp_k1_fr<224>::modular_params_type const secp_k1_fr<224>::modulus_params;
 
                 constexpr typename std::size_t const secp_k1_fr<256>::modulus_bits;
                 constexpr typename std::size_t const secp_k1_fr<256>::number_bits;
                 constexpr typename std::size_t const secp_k1_fr<256>::value_bits;
                 constexpr typename secp_k1_fr<256>::integral_type const secp_k1_fr<256>::modulus;
                 constexpr typename secp_k1_fr<256>::integral_type const secp_k1_fr<256>::group_order_minus_one_half;
-                constexpr typename secp_k1_fr<256>::modular_params_type const secp_k1_fr<256>::modulus_params;
             }    // namespace fields
         }        // namespace algebra
     }            // namespace crypto3

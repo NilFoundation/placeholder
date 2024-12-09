@@ -20,8 +20,8 @@
 #include <boost/math/special_functions/next.hpp>
 #include <boost/math/tools/precision.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>    // is decimal.
-#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>    // is binary.
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>    // is decimal.
+#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>    // is binary.
 
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>    // Boost.Test

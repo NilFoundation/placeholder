@@ -26,9 +26,6 @@
 #ifndef CRYPTO3_ALGEBRA_PAIRING_SHORT_WEIERSTRASS_JACOBIAN_WITH_A4_0_ATE_DOUBLE_MILLER_LOOP_HPP
 #define CRYPTO3_ALGEBRA_PAIRING_SHORT_WEIERSTRASS_JACOBIAN_WITH_A4_0_ATE_DOUBLE_MILLER_LOOP_HPP
 
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/jacobian_with_a4_0/types.hpp>
 
 namespace nil {
@@ -60,7 +57,7 @@ namespace nil {
                         const typename policy_type::integral_type &loop_count = params_type::ate_loop_count;
 
                         for (long i = params_type::integral_type_max_bits; i >= 0; --i) {
-                            const bool bit = boost::multiprecision::bit_test(loop_count, i);
+                            const bool bit = loop_count.bit_test(i);
                             if (!found_one) {
                                 /* this skips the MSB itself */
                                 found_one |= bit;

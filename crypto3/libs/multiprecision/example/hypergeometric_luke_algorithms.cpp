@@ -39,13 +39,13 @@
 #endif
 
 #if defined(USE_CPP_BIN_FLOAT)
-#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
 typedef nil::crypto3::multiprecision::number<nil::crypto3::multiprecision::cpp_bin_float<DIGIT_COUNT + 10>> mp_type;
 #elif defined(USE_CPP_DEC_FLOAT)
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
 typedef nil::crypto3::multiprecision::number<nil::crypto3::multiprecision::cpp_dec_float<DIGIT_COUNT + 10>> mp_type;
 #elif defined(USE_MPFR)
-#include <nil/crypto3/multiprecision/mpfr.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfr.hpp>
 typedef nil::crypto3::multiprecision::number<nil::crypto3::multiprecision::mpfr_float_backend<DIGIT_COUNT + 10>>
     mp_type;
 #else

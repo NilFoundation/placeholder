@@ -2,7 +2,7 @@
 # Copyright 2019 Pawel Bylica.
 # Licensed under the Apache License, Version 2.0.
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS OFF)
 

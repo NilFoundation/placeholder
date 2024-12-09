@@ -53,23 +53,15 @@ namespace nil {
                     constexpr static const std::size_t arity = 1;
 
                     typedef typename policy_type::integral_type integral_type;
-                    using extended_integral_type = boost::multiprecision::number<
-                        boost::multiprecision::backends::cpp_int_modular_backend<2 * policy_type::modulus_bits>>;
+                    using extended_integral_type = nil::crypto3::multiprecision::big_uint<2 * policy_type::modulus_bits>;
 #ifdef __ZKLLVM__
                     typedef __zkllvm_field_curve25519_scalar value_type;
 #else
 
                     constexpr static const integral_type modulus =
-                        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular253;
+                        0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint253;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<curve25519_scalar_field>> value_type;
 #endif
                 };
@@ -80,8 +72,6 @@ namespace nil {
 #ifdef __ZKLLVM__
 #else
                 constexpr typename curve25519_scalar_field::integral_type const curve25519_scalar_field::modulus;
-                constexpr
-                    typename curve25519_scalar_field::modular_params_type const curve25519_scalar_field::modulus_params;
 #endif
                 using curve25519_fr = curve25519_scalar_field;
             }    // namespace fields

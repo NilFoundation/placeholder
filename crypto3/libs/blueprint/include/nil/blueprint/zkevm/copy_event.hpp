@@ -207,7 +207,7 @@ namespace nil {
                 std::size_t transaction_id = 0,
                 std::size_t initial_rw_counter = 0
             ){
-                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                 boost::property_tree::ptree ptrace = pt.get_child("result.structLogs");
                 boost::property_tree::ptree pstack;

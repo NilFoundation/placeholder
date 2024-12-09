@@ -50,8 +50,8 @@ namespace nil {
                 nil::crypto3::algebra::fields::field<256>::integral_type n(d);
                 std::pair<value_type, value_type> hash_value;
 
-                hash_value.first = (n & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_cppui_modular257) >> 128;
-                hash_value.second = n & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_cppui_modular257;
+                hash_value.first = (n & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000000000000000000000000000_big_uint257) >> 128;
+                hash_value.second = n & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_big_uint257;
                 return hash_value;
             }
 
