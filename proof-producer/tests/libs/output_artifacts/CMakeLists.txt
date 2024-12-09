@@ -36,8 +36,7 @@ function(add_output_artifacts_test target)
     add_dependencies(tests_output_artifacts_single_thread ${target}_single_thread)
     add_dependencies(tests_output_artifacts_multi_thread ${target}_multi_thread)
 
-    target_precompile_headers(${target}_single_thread  REUSE_FROM crypto3_precompiled_headers_23)
-    target_precompile_headers(${target}_multi_thread  REUSE_FROM crypto3_precompiled_headers_23)
+    target_precompile_headers(${target}_single_thread  REUSE_FROM ${target}_multi_thread)
 endfunction()
 
 add_output_artifacts_test(test_range)
