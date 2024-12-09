@@ -23,6 +23,7 @@
 
 #include "nil/crypto3/multiprecision/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
 #include "nil/crypto3/multiprecision/modular/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/modular/modular_ops_storage.hpp"
 
@@ -42,7 +43,14 @@ namespace nil::crypto3::multiprecision {
             template<typename T>
             constexpr big_mod_impl(const T& b, const modular_ops_storage_t& modular_ops_storage)
                 : m_modular_ops_storage(modular_ops_storage) {
-                init_raw_base(m_raw_base, b, ops());
+                if (!nil::crypto3::multiprecision::is_zero(b)) {
+                    init_raw_base(m_raw_base, b, ops());
+                }
+            }
+
+            constexpr big_mod_impl(const modular_ops_storage_t& modular_ops_storage)
+                : m_modular_ops_storage(modular_ops_storage) {
+                // NB: m_raw_base is initialized to zero, this is correct for Montgomery form too
             }
 
           public:
@@ -105,12 +113,16 @@ namespace nil::crypto3::multiprecision {
         using typename base_type::modular_ops_storage_t;
         using typename base_type::modular_ops_t;
 
-        constexpr big_mod_ct_impl() : base_type(big_uint_t{}, {}) {}
+        constexpr big_mod_ct_impl() : base_type({}) {}
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         constexpr big_mod_ct_impl(const T& b) : base_type(b, {}) {}
 
         // For generic code
+
+        constexpr big_mod_ct_impl(const modular_ops_storage_t& ops_storage)
+            : base_type(ops_storage) {}
+
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         constexpr big_mod_ct_impl(const T& b, const modular_ops_storage_t& ops_storage)
             : base_type(b, ops_storage) {}
@@ -127,11 +139,18 @@ namespace nil::crypto3::multiprecision {
         using typename base_type::modular_ops_storage_t;
         using typename base_type::modular_ops_t;
 
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr big_mod_rt_impl(const T& m) : base_type(m) {}
+
         template<typename T1, typename T2,
-                 std::enable_if_t<detail::is_integral_v<T1> && detail::is_integral_v<T1>, int> = 0>
+                 std::enable_if_t<detail::is_integral_v<T1> && detail::is_integral_v<T2>, int> = 0>
         constexpr big_mod_rt_impl(const T1& b, const T2& m) : base_type(b, m) {}
 
         // For generic code
+
+        constexpr big_mod_rt_impl(const modular_ops_storage_t& ops_storage)
+            : base_type(ops_storage) {}
+
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
         constexpr big_mod_rt_impl(const T& b, const modular_ops_storage_t& ops_storage)
             : base_type(b, ops_storage) {}
@@ -160,6 +179,9 @@ namespace nil::crypto3::multiprecision {
                  std::enable_if_t<detail::is_integral_v<S>, int> = 0>
         typename modular_ops_t::big_uint_t convert_to_raw_base(const S& s,
                                                                const modular_ops_t& ops) {
+            if (nil::crypto3::multiprecision::is_zero(s)) {
+                return typename modular_ops_t::big_uint_t{};
+            }
             typename modular_ops_t::big_uint_t result;
             init_raw_base(result, s, ops);
             return result;
@@ -229,7 +251,7 @@ namespace nil::crypto3::multiprecision {
              typename big_mod_t = std::conditional_t<detail::is_big_mod_v<T1>, T1, T2>>       \
     constexpr auto operator OP_(const T1& a, const T2& b) noexcept {                          \
         const auto& ops_storage = detail::get_ops_storage_from_operands(a, b);                \
-        big_mod_t result(0u, ops_storage);                                                    \
+        big_mod_t result(ops_storage);                                                        \
         result.raw_base() = detail::convert_to_raw_base(a, ops_storage.ops());                \
         ops_storage.ops().METHOD_(result.raw_base(),                                          \
                                   detail::convert_to_raw_base(b, ops_storage.ops()));         \
