@@ -274,7 +274,7 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Proof verification failed";
                     return false;
                 }
-                
+
                 BOOST_LOG_TRIVIAL(info) << "Writing proof to " << proof_file_;
                 auto filled_placeholder_proof =
                     nil::crypto3::marshalling::types::fill_placeholder_proof<Endianness, Proof>(proof, lpc_scheme_->get_fri_params());
@@ -585,7 +585,7 @@ namespace nil {
                     return false;
                 }
 
-                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());            
+                writer::write_binary_circuit(out, *constraint_system_, constraint_system_->public_input_sizes());
                 return true;
             }
 
@@ -604,7 +604,7 @@ namespace nil {
                 if (!marshalled_table) {
                     return false;
                 }
-            
+
                 auto [table_description, assignment_table] =
                     nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTable>(
                         *marshalled_table
@@ -634,7 +634,7 @@ namespace nil {
                 using writer = assignment_table_writer<Endianness, BlueprintField>;
 
                 BOOST_LOG_TRIVIAL(info) << "Writing binary assignment table to " << output_filename;
-                
+
                 if (!assignment_table_.has_value() || !table_description_.has_value()) {
                     BOOST_LOG_TRIVIAL(error) << "No assignment table is currently loaded";
                     return false;
@@ -677,8 +677,8 @@ namespace nil {
 
                 const auto write = [&](std::ostream& out) -> bool {
                     return assignment_table_writer<Endianness, BlueprintField>::write_text_assignment(
-                        out, 
-                        assignment_table_.value(), 
+                        out,
+                        assignment_table_.value(),
                         table_description_.value(),
                         opts
                     );
@@ -1141,7 +1141,7 @@ namespace nil {
                 return assignment_table_.value();
             }
 
-            bool fill_assignment_table(const boost::filesystem::path& trace_file_path) {
+            bool fill_assignment_table(const boost::filesystem::path& trace_base_path) {
                 if (!constraint_system_.has_value()) {
                     BOOST_LOG_TRIVIAL(error) << "Circuit is not initialized";
                     return false;
@@ -1150,9 +1150,9 @@ namespace nil {
                     BOOST_LOG_TRIVIAL(error) << "Assignment table is not initialized";
                     return false;
                 }
-                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_file_path);
+                const auto err = fill_assignment_table_single_thread(*assignment_table_, *table_description_, circuit_name_, trace_base_path);
                 if (err) {
-                    BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table rom trace " << trace_file_path << ": " << err.value();
+                    BOOST_LOG_TRIVIAL(error) << "Can't fill assignment table from trace " << trace_base_path << ": " << err.value();
                     return false;
                 }
                 return true;
