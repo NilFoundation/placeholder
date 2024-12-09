@@ -231,6 +231,7 @@ namespace nil::crypto3::multiprecision::detail {
 
         template<std::size_t Bits2>
         constexpr void adjust_modular(big_uint_t &result, big_uint<Bits2> input) const {
+            // TODO(ioxid): optimize for cases where input is 1
             barrett_reduce(result, input);
         }
 
@@ -599,6 +600,7 @@ namespace nil::crypto3::multiprecision::detail {
 
         template<std::size_t Bits2>
         constexpr void adjust_modular(big_uint_t &result, const big_uint<Bits2> &input) const {
+            // TODO(ioxid): optimize for cases where input is 0 or 1
             big_uint_doubled_limbs tmp;
             this->barrett_reduce(tmp, input);
             tmp *= r2();
