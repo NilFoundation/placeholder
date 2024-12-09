@@ -38,6 +38,12 @@ namespace nil {
             for (const auto& storage_op : rw_operations->storage_ops) {
                 input.push_back(storage_op);
             }
+
+            using nil::blueprint::bbf::rw_operation;
+            std::sort(input.begin(), input.end(), [](rw_operation a, rw_operation b){
+                return a < b;
+            });
+
             BOOST_LOG_TRIVIAL(debug) << "number RW operations " << input.size() << ":\n"
              << "stack   " << rw_operations->stack_ops.size() << "\n"
              << "memory  " << rw_operations->memory_ops.size() << "\n"
