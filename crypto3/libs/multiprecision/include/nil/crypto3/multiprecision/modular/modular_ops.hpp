@@ -282,6 +282,9 @@ namespace nil::crypto3::multiprecision::detail {
             m_montgomery_r2 = static_cast<big_uint_t>(r);
 
             m_no_carry_montgomery_mul_allowed = is_applicable_for_no_carry_montgomery_mul();
+
+            m_one = 1u;
+            adjust_modular(m_one);
         }
 
       private:
@@ -290,7 +293,7 @@ namespace nil::crypto3::multiprecision::detail {
          * is even. If input is odd, then input and 2^n are relatively prime
          * and an inverse exists.
          */
-        constexpr static limb_type monty_inverse(const limb_type &a) {
+        static constexpr limb_type monty_inverse(const limb_type &a) {
             if (a % 2 == 0) {
                 throw std::invalid_argument("inverse does not exist");
             }
@@ -565,14 +568,12 @@ namespace nil::crypto3::multiprecision::detail {
             /// input parameter should be less than modulus
             NIL_CO3_MP_ASSERT(a < this->mod());
 
-            big_uint_t R_mod_m(1u);
-            adjust_modular(R_mod_m);
+            big_uint_t R_mod_m = m_one;
 
             big_uint_t base(a);
 
             if (is_zero(exp)) {
-                result = 1u;
-                adjust_modular(result);
+                result = m_one;
                 return;
             }
             if (this->mod() == 1u) {
@@ -619,6 +620,7 @@ namespace nil::crypto3::multiprecision::detail {
       protected:
         big_uint_t m_montgomery_r2;
         limb_type m_montgomery_p_dash;
+        big_uint_t m_one;
 
         // If set, no-carry optimization is allowed. Is set to
         // is_applicable_for_no_carry_montgomery_mul() after initialization.
