@@ -14,9 +14,6 @@ function(set_properties target)
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED TRUE
     )
-
-    target_compile_definitions(${target} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
-
     gtest_discover_tests(${target})
 endfunction()
 
@@ -38,6 +35,9 @@ function(add_output_artifacts_test target)
 
     add_dependencies(tests_output_artifacts_single_thread ${target}_single_thread)
     add_dependencies(tests_output_artifacts_multi_thread ${target}_multi_thread)
+
+    target_precompile_headers(${target}_single_thread REUSE_FROM proof_generatorAssigner)
+    target_precompile_headers(${target}_multi_thread  REUSE_FROM proof_generatorAssigner)
 endfunction()
 
 add_output_artifacts_test(test_range)

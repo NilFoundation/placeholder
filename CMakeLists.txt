@@ -21,6 +21,10 @@ if(${SANITIZE})
   add_link_options(-fsanitize=undefined,address,leak)
 endif()
 
+# Add dummy target for the more efficient reusing of precompiled headers
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
+add_library(crypto3_precompiled_headers STATIC ${CMAKE_CURRENT_BINARY_DIR}/generated-dummy.cpp)
+# End of precompiled headers
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/crypto3")
 if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))

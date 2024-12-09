@@ -26,11 +26,10 @@
 include(CMTest)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-
                        crypto3::algebra
                        crypto3::hash
-
                        Boost::random)
+target_precompile_headers(_cm_internal_tests-actor-containers-test REUSE_FROM crypto3_precompiled_headers)
 
 macro(define_storage_test test)
     get_filename_component(test_name ${test} NAME)
@@ -74,7 +73,7 @@ macro(define_storage_test test)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${target_name} PRIVATE "-fconstexpr-ops-limit=4294967295" "-ftemplate-backtrace-limit=0")
     endif()
-    target_precompile_headers(${target_name} REUSE_FROM _cm_internal_tests-actor-containers-test)
+    target_precompile_headers(${target_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(TESTS_NAMES
