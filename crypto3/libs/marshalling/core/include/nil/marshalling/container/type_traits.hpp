@@ -61,7 +61,7 @@ namespace nil::crypto3 {
             template<typename T>
             static constexpr bool is_static_string() {
                 return detail::is_static_string<T>::value;
-            }            
+            }
 
             /// @brief Compile time check whether the provided type is a variant of
             ///     @ref nil::crypto3::marshalling::container::static_vector

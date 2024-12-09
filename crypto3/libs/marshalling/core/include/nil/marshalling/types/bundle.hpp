@@ -505,65 +505,18 @@ namespace nil::crypto3 {
                 using base_impl_type::write_data;
 
             private:
-                static_assert(
-                    !parsed_options_type::has_ser_offset,
-                    "nil::crypto3::marshalling::option::num_value_ser_offset option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_fixed_length_limit,
-                              "nil::crypto3::marshalling::option::fixed_length option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                              "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_var_length_limits,
-                              "nil::crypto3::marshalling::option::var_length option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_sequence_elem_length_forcing,
-                              "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
-                              "bundle field");
-                static_assert(
-                    !parsed_options_type::has_sequence_size_forcing,
-                    "nil::crypto3::marshalling::option::sequence_size_forcing_enabled option is not applicable to bundle field");
-                static_assert(
-                    !parsed_options_type::has_sequence_length_forcing,
-                    "nil::crypto3::marshalling::option::sequence_length_forcing_enabled option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_sequence_fixed_size,
-                              "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
                               "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable "
                               "to bundle field");
                 static_assert(
                     !parsed_options_type::has_sequence_size_field_prefix,
                     "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_sequence_ser_length_field_prefix,
-                              "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
-                              "bundle field");
-                static_assert(!parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                              "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
-                              "applicable to bundle field");
-                static_assert(!parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                              "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not "
-                              "applicable to bundle field");
-                static_assert(!parsed_options_type::has_sequence_trailing_field_suffix,
-                              "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
-                              "bundle field");
-                static_assert(!parsed_options_type::has_sequence_termination_field_suffix,
-                              "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
-                              "bundle field");
                 static_assert(!parsed_options_type::has_fixed_size_storage,
                               "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_custom_storage_type,
                               "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_scaling_ratio,
-                              "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_units,
-                              "nil::crypto3::marshalling::option::Units option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_orig_data_view,
                               "nil::crypto3::marshalling::option::orig_data_view option is not applicable to bundle field");
-                static_assert(!parsed_options_type::has_multi_range_validation,
-                              "nil::crypto3::marshalling::option::valid_num_value_range (or similar) option is not applicable "
-                              "to bundle field");
-                static_assert(!parsed_options_type::has_versions_range,
-                              "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable "
-                              "to bundle field");
-                static_assert(!parsed_options_type::has_invalid_by_default,
-                              "nil::crypto3::marshalling::option::invalid_by_default option is not applicable to bundle field");
             };
 
             /// @brief Equality comparison operator.

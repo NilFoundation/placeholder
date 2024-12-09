@@ -28,7 +28,6 @@
 #include <type_traits>
 
 #include <nil/marshalling/types/bundle.hpp>
-#include <nil/marshalling/types/variant.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 #include <nil/marshalling/types/integral.hpp>
 #include <nil/marshalling/status_type.hpp>
