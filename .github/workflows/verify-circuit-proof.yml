@@ -14,10 +14,10 @@ jobs:
         run: cd crypto3 && eval "$configurePhase"
         shell: nix develop --command bash -e {0}
       - name: Build
-        run: cd crypto3/build && ninja transpiler_evm_test
+        run: pwd && cd build && ninja transpiler_evm_test
         shell: nix develop --command bash -e {0}
       - name: Execute
-        run: cd crypto3/build && ./libs/transpiler/test/transpiler_evm_test -- --save-proof-data
+        run: cd build && ./libs/transpiler/test/transpiler_evm_test -- --save-proof-data
         shell: nix develop --command bash -e {0}
           cd crypto3 && eval "$configurePhase"
           nix develop -c ninja transpiler_evm_test
