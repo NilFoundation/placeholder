@@ -28,7 +28,16 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
-            // Component for keccak table
+            template<typename FieldType>
+            struct keccak_round_raw_input {
+                using TYPE = typename FieldType::value_type;
+
+                std::array<TYPE, 25> inner_state;
+                std::array<TYPE, 17> padded_message_chunk;
+                TYPE round_constant;
+            };
+            
+            // Component for keccak round
             template<typename FieldType, GenerationStage stage>
             class keccak_round : public generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
@@ -40,7 +49,11 @@ namespace nil {
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
+                using typename generic_component<FieldType,stage>::table_params;
+                using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, keccak_round_raw_input<FieldType>,std::tuple<>>::type;
                 using integral_type = typename FieldType::integral_type;
+                // constexpr static const std::size_t state_size = 25;
+
                 struct input_type {
                     std::array<TYPE, 25> inner_state;
                     std::array<TYPE, 17> padded_message_chunk;
@@ -141,9 +154,34 @@ namespace nil {
                 //     return desc;
                 // }
 
+                static table_params get_minimal_requirements(bool xor_with_mes) {
+                    constexpr std::size_t witness = 15;
+                    constexpr std::size_t public_inputs = 1;
+                    constexpr std::size_t constants = 1;
+                    std::size_t rows = (xor_with_mes) ? 291 : 257;
+                    return {witness, public_inputs, constants, rows};
+                }
+
+                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
+                    
+                    input_type input;
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        for(std::size_t i = 0; i < 25; i++) {
+                            input.inner_state[i] = raw_input.inner_state[i];
+                            context_object.allocate(input.inner_state[i], 0, i, column_type::public_input);
+                        }
+                        for(std::size_t i = 0; i < 17; i++) {
+                            input.padded_message_chunk[i] = raw_input.padded_message_chunk[i];
+                            context_object.allocate(input.padded_message_chunk[i], 0, 25 + i, column_type::public_input);
+                        }
+                        input.round_constant = raw_input.round_constant;
+                        context_object.allocate(input.round_constant, 0, 42, column_type::public_input);
+                    }
+                    return std::make_tuple(input);
+                }
+
                 keccak_round(context_type &context_object, input_type input,
-                             bool xor_with_mes = false, bool last_round_call = false,
-                             bool make_links = true)
+                             bool xor_with_mes = false, bool make_links = true)
                     : generic_component<FieldType, stage>(context_object) {
                     using integral_type = typename FieldType::integral_type;
                     using value_type = typename FieldType::value_type;
@@ -151,13 +189,9 @@ namespace nil {
                     TYPE message[17], state[17], A0[17], A0_sum[17];
                     TYPE A1[25], A1_copy[25];  // inner_state ^ padded_message_chunk
                     std::vector<std::vector<TYPE>> A0_chunks = std::vector<std::vector<TYPE>>(
-                        17 - (last_round_call ? 1 : 0), std::vector<TYPE>(normalize3_num_chunks));
+                        17, std::vector<TYPE>(normalize3_num_chunks));
                     std::vector<std::vector<TYPE>> A0_normalized_chunks =
-                        std::vector<std::vector<TYPE>>(17 - (last_round_call ? 1 : 0),
-                                                       std::vector<TYPE>(normalize3_num_chunks));
-                    std::vector<TYPE> last_round_chunks = std::vector<TYPE>(normalize4_num_chunks);
-                    std::vector<TYPE> last_round_normalized_chunks =
-                        std::vector<TYPE>(normalize4_num_chunks);
+                        std::vector<std::vector<TYPE>>(17, std::vector<TYPE>(normalize3_num_chunks));
                     // theta
                     TYPE C[5], C_sum[5], C_copy[5], C_second_copy[5][5];
                     std::vector<std::vector<TYPE>> C_chunks =
@@ -222,7 +256,7 @@ namespace nil {
 
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         if (xor_with_mes) {
-                            int upper_bound = 17 - (last_round_call ? 1 : 0);
+                            int upper_bound = 17;
                             for (int index = 0; index < upper_bound; ++index) {
                                 state[index] = input.inner_state[index];
                                 message[index] = input.padded_message_chunk[index];
@@ -248,33 +282,6 @@ namespace nil {
                                 for (std::size_t j = 0; j < normalize3_num_chunks; ++j) {
                                     A0_chunks[index][j] = integral_chunks[j];
                                     A0_normalized_chunks[index][j] = integral_normalized_chunks[j];
-                                }
-                            }
-                            if (last_round_call) {
-                                state[16] = input.inner_state[16];
-                                message[16] = input.padded_message_chunk[16];
-                                TYPE sum = state[16] + message[16] + TYPE(sparse_x80);
-                                integral_type integral_sum = integral_type(sum.data);
-                                std::vector<integral_type> integral_chunks;
-                                std::vector<integral_type> integral_normalized_chunks;
-                                integral_type mask =
-                                    (integral_type(1) << normalize4_chunk_size) - 1;
-                                integral_type power = 1;
-                                integral_type integral_normalized_sum = 0;
-                                for (std::size_t j = 0; j < normalize4_num_chunks; ++j) {
-                                    integral_chunks.push_back(integral_sum & mask);
-                                    integral_sum >>= normalize4_chunk_size;
-                                    integral_normalized_chunks.push_back(
-                                        normalize(integral_chunks.back()));
-                                    integral_normalized_sum +=
-                                        integral_normalized_chunks.back() * power;
-                                    power <<= normalize4_chunk_size;
-                                }
-                                A0[16] = TYPE(integral_normalized_sum);
-                                A0_sum[16] = sum;
-                                for (std::size_t j = 0; j < normalize4_num_chunks; ++j) {
-                                    last_round_chunks[j] = integral_chunks[j];
-                                    last_round_normalized_chunks[j] = integral_normalized_chunks[j];
                                 }
                             }
 
@@ -534,7 +541,7 @@ namespace nil {
 
                     std::size_t row_offset = 0;
                     if (xor_with_mes) {
-                        for (int index = 0; index < 17 - int(last_round_call); ++index) {
+                        for (int index = 0; index < 17; ++index) {
                             allocate(message[index], 0, row_offset + 2 * index);
                             allocate(state[index], 1, row_offset + 2 * index);
                             allocate(A0_sum[index], 2, row_offset + 2 * index);
@@ -545,19 +552,7 @@ namespace nil {
                                          row_offset + 2 * index + 1);
                             }
                         }
-                        row_offset += 2 * (17 - int(last_round_call));
-                        if (last_round_call) {
-                            allocate(message[16], 0, row_offset);
-                            allocate(state[16], 1, row_offset);
-                            allocate(A0_sum[16], 3, row_offset);
-                            allocate(x80_const, 0, row_offset, column_type::constant);
-                            allocate(A0[16], 0, row_offset + 1);
-                            for (std::size_t j = 0; j < normalize4_num_chunks; j++) {
-                                allocate(last_round_chunks[j], 4 + j, row_offset);
-                                allocate(last_round_normalized_chunks[j], 1 + j, row_offset + 1);
-                            }
-                            row_offset += 2;
-                        }
+                        row_offset += 2 * 17;
                     }
 
                     // theta allocations
@@ -700,7 +695,7 @@ namespace nil {
                     }
 
                     if (xor_with_mes) {
-                        for (int index = 0; index < 17 - (last_round_call ? 1 : 0); index++) {
+                        for (int index = 0; index < 17; index++) {
                             copy_constrain(A0[index], A1[index]);
                             constrain(A0_sum[index] - message[index] - state[index]);
                             TYPE constraint_chunk = A0_sum[index];
@@ -714,24 +709,6 @@ namespace nil {
                                     (integral_type(1) << (k * normalize3_chunk_size));
                                 lookup({A0_chunks[index][k], A0_normalized_chunks[index][k]},
                                        "keccak_normalize3_table/full");
-                            }
-                            constrain(constraint_chunk);
-                            constrain(constraint_normalized_chunk);
-                        }
-                        if (last_round_call) {
-                            copy_constrain(A0[16], A1[16]);
-                            constrain(A0_sum[16] - message[16] - state[16] - x80_const);
-                            TYPE constraint_chunk = A0_sum[16];
-                            TYPE constraint_normalized_chunk = A0[16];
-                            for (std::size_t k = 0; k < normalize4_num_chunks; ++k) {
-                                constraint_chunk -=
-                                    last_round_chunks[k] *
-                                    (integral_type(1) << (k * normalize4_chunk_size));
-                                constraint_normalized_chunk -=
-                                    last_round_normalized_chunks[k] *
-                                    (integral_type(1) << (k * normalize4_chunk_size));
-                                lookup({last_round_chunks[k], last_round_normalized_chunks[k]},
-                                       "keccak_normalize4_table/full");
                             }
                             constrain(constraint_chunk);
                             constrain(constraint_normalized_chunk);
