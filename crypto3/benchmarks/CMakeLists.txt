@@ -49,6 +49,7 @@ macro(define_benchmark benchmark)
         target_compile_options(${full_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
+    target_precompile_headers(${full_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(BENCHMARK_NAMES

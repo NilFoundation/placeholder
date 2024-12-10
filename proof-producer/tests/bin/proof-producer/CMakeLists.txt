@@ -39,6 +39,7 @@ function(add_prover_test target)
     set_properties(${target}_multi_thread)
     target_link_libraries(${target}_single_thread PRIVATE
         crypto3::all
+
     )
     target_link_libraries(${target}_multi_thread PRIVATE
         parallel-crypto3::all
@@ -47,6 +48,9 @@ function(add_prover_test target)
 
     add_dependencies(tests_prover_single_thread ${target}_single_thread)
     add_dependencies(tests_prover_multi_thread ${target}_multi_thread)
+
+    target_precompile_headers(${target}_single_thread REUSE_FROM crypto3_precompiled_headers_23)
+    target_precompile_headers(${target}_multi_thread REUSE_FROM crypto3_precompiled_headers_23)
 endfunction()
 
 add_prover_test(test_zkevm_bbf_circuits)

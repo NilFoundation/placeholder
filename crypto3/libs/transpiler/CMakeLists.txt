@@ -6,8 +6,6 @@
 # http://www.boost.org/LICENSE_1_0.txt
 #---------------------------------------------------------------------------#
 
-cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
-
 find_package(CM REQUIRED)
 include(CMConfig)
 include(CMSetupVersion)
