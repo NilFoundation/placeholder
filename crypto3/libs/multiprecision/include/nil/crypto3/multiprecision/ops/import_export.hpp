@@ -125,6 +125,7 @@ namespace nil::crypto3::multiprecision {
             size_type bits = limbs * chunk_size;
 
             // TODO(ioxid): this breaks marshalling tests
+            // We should throw an exception here. And check that excess bits are zero.
             // NIL_CO3_MP_ASSERT(bits <= Bits);
 
             difference_type bit_location = msv_first ? bits - chunk_size : 0;
