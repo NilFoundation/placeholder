@@ -15,13 +15,12 @@
 
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/modular/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/ops/gcd_inverse.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/big_mod_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/ops/ressol.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
-    constexpr big_mod_t inverse_extended_euclidean_algorithm(const big_mod_t &modular) {
-        return big_mod_t(inverse_extended_euclidean_algorithm(modular.base(), modular.mod()), modular.ops_storage());
+    constexpr big_mod_t ressol(const big_mod_t &b) {
+        return big_mod_t(ressol(b.base(), b.mod()), b.ops_storage());
     }
 }  // namespace nil::crypto3::multiprecision

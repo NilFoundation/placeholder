@@ -19,11 +19,11 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/constexpr_support.hpp"
-#include "nil/crypto3/multiprecision/integer_ops_base.hpp"
-#include "nil/crypto3/multiprecision/storage.hpp"
+#include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>

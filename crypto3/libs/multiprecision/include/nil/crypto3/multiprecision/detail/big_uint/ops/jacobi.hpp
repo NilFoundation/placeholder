@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 
 namespace nil::crypto3::multiprecision {
 

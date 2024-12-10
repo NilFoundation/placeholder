@@ -18,7 +18,7 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/cpp_int_conversions.hpp"
+#include "nil/crypto3/multiprecision/detail/cpp_int_conversions.hpp"
 
 using namespace boost::multiprecision;
 

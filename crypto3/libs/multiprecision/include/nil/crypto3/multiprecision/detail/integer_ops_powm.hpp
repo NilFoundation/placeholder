@@ -3,8 +3,8 @@
 #include <limits>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
-#include "nil/crypto3/multiprecision/ops/powm.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/ops/powm.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename T1, typename T2, typename T3,

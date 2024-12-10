@@ -21,11 +21,11 @@
 #include <string>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
-#include "nil/crypto3/multiprecision/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
-#include "nil/crypto3/multiprecision/modular/modular_ops.hpp"
-#include "nil/crypto3/multiprecision/modular/modular_ops_storage.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
