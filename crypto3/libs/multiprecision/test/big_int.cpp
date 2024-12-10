@@ -113,12 +113,12 @@ BOOST_AUTO_TEST_SUITE(addition)
 
 BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x2_big_uint60 + 0x3_big_uint60, 0x5_big_uint60); }
 
-BOOST_AUTO_TEST_CASE(does_not_wrap) {
-    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint32 + 0x2_big_uint32, 0x100000001_big_uint33);
+BOOST_AUTO_TEST_CASE(wraps) {
+    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint32 + 0x2_big_uint32, 0x00000001_big_uint32);
 }
 
-BOOST_AUTO_TEST_CASE(does_not_wrap_rev) {
-    BOOST_CHECK_EQUAL(0x2_big_uint32 + 0xFFFFFFFF_big_uint32, 0x100000001_big_uint33);
+BOOST_AUTO_TEST_CASE(wraps_rev) {
+    BOOST_CHECK_EQUAL(0x2_big_uint32 + 0xFFFFFFFF_big_uint32, 0x00000001_big_uint32);
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
@@ -136,11 +136,11 @@ BOOST_AUTO_TEST_SUITE(multiplication)
 BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x2_big_uint60 * 0x3_big_uint60, 0x6_big_uint60); }
 
 BOOST_AUTO_TEST_CASE(wraps) {
-    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint32 * 0x2_big_uint32, 0x1FFFFFFFE_big_uint33);
+    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint32 * 0x2_big_uint32, 0xFFFFFFFE_big_uint32);
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
-    BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_uint36 * 0x2_big_uint36, 0x15FFFFFFFE_big_uint37);
+    BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_uint36 * 0x2_big_uint36, 0x5FFFFFFFE_big_uint36);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
