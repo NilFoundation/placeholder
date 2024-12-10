@@ -26,7 +26,8 @@ class CircuitWriterTest: public ::testing::Test {
         void SetUp() override {
 
             // open & stat file with circuit content
-            std::string test_circuit_file_path = std::string(TEST_DATA_DIR) + "circuit.crct";
+            std::string test_circuit_file_path(TEST_DATA_DIR);
+            test_circuit_file_path += "circuit.crct";
             std::ifstream in(test_circuit_file_path, std::ios::binary | std::ios::in | std::ios::ate);
             ASSERT_TRUE(in.is_open());
             const auto fsize = in.tellg();
