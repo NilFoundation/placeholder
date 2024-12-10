@@ -26,7 +26,6 @@
 #define BOOST_TEST_MODULE bbf_range_check_multi_test
 
 #include <boost/test/unit_test.hpp>
-#include <nil/blueprint/bbf/components/hashes/poseidon/plonk/poseidon.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
@@ -37,9 +36,7 @@
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/random/algebraic_engine.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
-//#include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
-//#include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
 
 using namespace nil;
 using namespace nil::blueprint;
@@ -49,15 +46,19 @@ template <typename BlueprintFieldType, std::size_t num_chunks, std::size_t bit_s
 void test_range_check(const std::vector<typename BlueprintFieldType::value_type> &public_input){
 
     using FieldType = BlueprintFieldType;
-    typename bbf::components::range_check_multi<FieldType,bbf::GenerationStage::ASSIGNMENT,num_chunks,bit_size_chunk>::raw_input_type raw_input;
+    typename bbf::components::range_check_multi<FieldType,bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input;
     raw_input.state = public_input;
-   auto B = bbf::circuit_builder<FieldType, bbf::components::range_check_multi>();
+    auto B = bbf::circuit_builder<FieldType,bbf::components::range_check_multi, std::size_t, std::size_t>(num_chunks,bit_size_chunk);
+    auto [at, A, desc] = B.assign(raw_input);
+    bool pass = B.is_satisfied(at);
+    std::cout << "Is_satisfied = " << pass << std::endl;
 
-    auto [at, A] = B.assign(raw_input);
-    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
 
     if (to_pass) {
         assert(B.is_satisfied(at) == true);
+        bool proof = B.check_proof(at, desc);
+        std::cout << "Is_proved = " << proof << std::endl;
+         assert(proof == true);
     } else {
         assert(B.is_satisfied(at) == false);
     }
