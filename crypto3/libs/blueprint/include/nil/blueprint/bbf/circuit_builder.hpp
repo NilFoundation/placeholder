@@ -77,8 +77,8 @@ namespace nil {
                 // query component for minimal requirements
                 circuit_builder(ComponentStaticInfoArgs... component_static_info_args) {
                     using generator = Component<FieldType,GenerationStage::CONSTRAINTS>;
-                    typename generator::table_params min_params = generator::get_minimal_requirements();
                     static_info_args_storage = {component_static_info_args...};
+                    typename generator::table_params min_params = std::apply(generator::get_minimal_requirements, static_info_args_storage);
                     prepare_circuit_parameters(min_params.witnesses,
                                                std::max(min_params.public_inputs,std::size_t(1)), // assure at least 1 PI column is present
                                                min_params.constants,
@@ -143,9 +143,9 @@ namespace nil {
                             std::pow(2, std::ceil(std::log2(rows_amount)))),
                             rows_amount, 0 // use all rows, start from 0
                         );
-
                     raw_input_type raw_input = {};
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
+                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
+                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
                     std::make_from_tuple<generator>(v);
 
                     // constants
@@ -430,7 +430,8 @@ namespace nil {
 
                     context_type ct = context_type(at, rows_amount, 0); // use all rows, start from 0
 
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
+                    auto a = std::apply(generator::form_input, std::tuple_cat(std::make_tuple(std::ref(ct)),std::make_tuple(raw_input),static_info_args_storage));
+                    auto v = std::tuple_cat(std::make_tuple(std::ref(ct)), a,static_info_args_storage);
                     auto o = std::make_from_tuple<generator>(v);
 
                     zk::snark::plonk_table_description<FieldType> desc = at.get_description();

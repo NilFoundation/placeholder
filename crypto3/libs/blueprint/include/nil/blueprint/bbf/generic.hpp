@@ -37,7 +37,6 @@
 #include <nil/crypto3/zk/math/expression.hpp>
 #include <nil/crypto3/zk/math/expression_visitors.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
 // #include <nil/blueprint/blueprint/plonk/assignment.hpp>
@@ -296,6 +295,8 @@ namespace nil {
                 using basic_context<FieldType>::add_rows_to_description;
 
                 using assignment_type = crypto3::zk::snark::plonk_assignment_table<FieldType>;
+                using assignment_description_type = nil::crypto3::zk::snark::plonk_table_description<FieldType>;
+
                 using basic_context<FieldType>::row_shift;
                 using TYPE = constraint_type;
                 using basic_context<FieldType>::get_col;
@@ -409,7 +410,7 @@ namespace nil {
                     add_constraint(C_rel, get_row(row));
                 }
 
-                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
+                                void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
                     if (!is_relative(C_rel)) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
@@ -470,7 +471,7 @@ namespace nil {
                     add_lookup_constraint(table_name, C, row);
                 }
 
-                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
+                                void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
                     for(const TYPE c_part : C) {
                         if (!is_relative(c_part)) {
                             std::stringstream ss;
@@ -531,11 +532,11 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<lookup_constraint_type>> res;
                     for(const auto& [id, data] : *lookup_constraints) {
                         auto it = res.find(data.second);
-		        if (it == res.end()) {
-		            res[data.second] = {{id.first, data.first}};
-		        } else {
-		            it->second.push_back({id.first, data.first});
-		        }
+                if (it == res.end()) {
+                    res[data.second] = {{id.first, data.first}};
+                } else {
+                    it->second.push_back({id.first, data.first});
+                }
                     }
 
                     /*
@@ -620,7 +621,7 @@ namespace nil {
                     lookup_constraints->at(key).second.set_row(stored_row);
                 }
 
-                void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t start_row, std::size_t end_row) {
+                                void add_lookup_constraint(std::string table_name, std::vector<TYPE> &C_rel, std::size_t start_row, std::size_t end_row) {
                     std::size_t stored_start_row = start_row - (is_fresh ? row_shift : 0);
                     std::size_t stored_end_row = end_row - (is_fresh ? row_shift : 0);
                     constraint_id_type C_id = constraint_id_type(C_rel);
