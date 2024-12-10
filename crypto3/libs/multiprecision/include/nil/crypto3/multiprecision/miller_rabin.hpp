@@ -13,8 +13,8 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/integer.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/integer.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {

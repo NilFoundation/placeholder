@@ -8,8 +8,8 @@
 #include <string>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 
 namespace nil::crypto3::multiprecision {
@@ -218,9 +218,7 @@ namespace nil::crypto3::multiprecision {
 
         // Misc ops
 
-        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
-            return abs().is_zero();
-        }
+        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept { return abs().is_zero(); }
 
       private:
         constexpr void normalize() noexcept {

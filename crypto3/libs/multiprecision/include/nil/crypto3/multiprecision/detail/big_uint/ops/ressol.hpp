@@ -15,12 +15,12 @@
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
-#include "nil/crypto3/multiprecision/modular/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/modular/ops/pow.hpp"
-#include "nil/crypto3/multiprecision/ops/jacobi.hpp"
-#include "nil/crypto3/multiprecision/storage.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/big_mod_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/ops/pow.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/ops/jacobi.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>

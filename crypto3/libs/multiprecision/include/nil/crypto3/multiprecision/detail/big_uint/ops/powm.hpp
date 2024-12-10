@@ -17,9 +17,9 @@
 #include <limits>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
-#include "nil/crypto3/multiprecision/modular/big_mod_impl.hpp"
-#include "nil/crypto3/multiprecision/modular/ops/pow.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/big_mod_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/ops/pow.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename T1, std::size_t Bits, typename T2,

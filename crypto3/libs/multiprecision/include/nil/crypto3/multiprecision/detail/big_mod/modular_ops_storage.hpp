@@ -16,7 +16,7 @@
 #include <cstddef>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     // Compile-time storage for modular arithmetic operations. Stores them in a constexpr variable.

@@ -22,10 +22,10 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 #include "nil/crypto3/multiprecision/detail/endian.hpp"
 #include "nil/crypto3/multiprecision/detail/intel_intrinsics.hpp"
-#include "nil/crypto3/multiprecision/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>

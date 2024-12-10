@@ -16,10 +16,10 @@
 #include <limits>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/endian.hpp"
-#include "nil/crypto3/multiprecision/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -98,8 +98,7 @@ namespace nil::crypto3::multiprecision {
                                       ? ~static_cast<std::uintmax_t>(0)
                                       : (static_cast<std::uintmax_t>(1u) << count) - 1;
             if (count > (limb_bits - shift)) {
-                result = extract_bits(val, location + limb_bits - shift,
-                                      count - limb_bits + shift);
+                result = extract_bits(val, location + limb_bits - shift, count - limb_bits + shift);
                 result <<= limb_bits - shift;
             }
             if (limb < val.limbs_count()) {
@@ -147,7 +146,7 @@ namespace nil::crypto3::multiprecision {
 
         template<std::size_t Bits, typename T>
         inline big_uint<Bits>& import_bits_fast(big_uint<Bits>& result, T* i, T* j,
-                                               std::size_t chunk_size = 0) {
+                                                std::size_t chunk_size = 0) {
             std::size_t byte_len = (j - i) * (chunk_size ? chunk_size / CHAR_BIT : sizeof(*i));
             std::size_t limb_len = byte_len / sizeof(limb_type);
             if (byte_len % sizeof(limb_type)) {

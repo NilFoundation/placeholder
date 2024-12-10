@@ -4,9 +4,9 @@
 #include <cstddef>
 #include <ranges>
 
-#include "nil/crypto3/multiprecision/big_int.hpp"
-#include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/storage.hpp"
+#include "nil/crypto3/multiprecision/detail/big_int.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 
 // Converting to and from cpp_int. Should be used only in tests.
 
