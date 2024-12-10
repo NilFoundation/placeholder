@@ -29,12 +29,16 @@
 #define CRYPTO3_BLUEPRINT_PLONK_KECCAK_ROUND_keccak_round_bbf_wrapper_HPP
 
 #include <functional>
-#include <nil/blueprint/bbf/hashes/keccak/keccak_round.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 #include <nil/blueprint/manifest.hpp>
-#include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
+
+#include <nil/blueprint/bbf/hashes/keccak/keccak_round.hpp>
+#include <nil/blueprint/bbf/generic.hpp> 
+#include <nil/blueprint/bbf/enums.hpp>
+#include <nil/blueprint/bbf/gate_optimizer.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_table_definition.hpp>
 
 namespace nil {
@@ -58,26 +62,23 @@ namespace nil {
                   public:
                     std::size_t witness_amount;
                     bool xor_with_mes;
-                    bool last_round_call;
 
                     static constexpr const std::size_t clamp = 15;
 
-                    gate_manifest_type(std::size_t witness_amount_, bool xor_with_mes_,
-                                       bool last_round_call_)
+                    gate_manifest_type(std::size_t witness_amount_, bool xor_with_mes_)
                         : witness_amount(std::min(witness_amount_, clamp)),
-                          xor_with_mes(xor_with_mes_),
-                          last_round_call(last_round_call_) {}
+                          xor_with_mes(xor_with_mes_) {}
 
                     std::uint32_t gates_amount() const override {
                         return keccak_round_bbf_wrapper::get_gates_amount(
-                            witness_amount, xor_with_mes, last_round_call);
+                            witness_amount, xor_with_mes);
                     }
                 };
 
                 static gate_manifest get_gate_manifest(std::size_t witness_amount,
-                                                       bool xor_with_mes, bool last_round_call) {
+                                                       bool xor_with_mes) {
                     gate_manifest manifest = gate_manifest(
-                        gate_manifest_type(witness_amount, xor_with_mes, last_round_call));
+                        gate_manifest_type(witness_amount, xor_with_mes));
                     return manifest;
                 }
 
@@ -91,7 +92,7 @@ namespace nil {
                 }
 
                 static nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>
-                get_table_description(const bool xor_with_mes, const bool last_round_call) {
+                get_table_description(const bool xor_with_mes) {
                     nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType> desc(
                         15, 1, 30, 50);
                     desc.usable_rows_amount = (xor_with_mes) ? 291 : 257;
@@ -100,23 +101,20 @@ namespace nil {
                 }
 
                 constexpr static std::size_t get_gates_amount(std::size_t witness_amount,
-                                                              bool xor_with_mes,
-                                                              bool last_round_call) {
-                    return 19 + 2 * int(xor_with_mes && last_round_call);
+                                                              bool xor_with_mes) {
+                    return 13;
                 }
                 constexpr static std::size_t get_rows_amount(std::size_t witness_amount,
-                                                             bool xor_with_mes,
-                                                             bool last_round_call) {
-                    return 257 + 34 * int(xor_with_mes);
+                                                             bool xor_with_mes) {
+                    return (xor_with_mes) ? 291 : 257;
                 }
                 constexpr static std::size_t get_empty_rows_amount() { return 0; }
 
                 const bool xor_with_mes;
-                const bool last_round_call;
                 const std::size_t rows_amount =
-                    get_rows_amount(this->witness_amount(), xor_with_mes, last_round_call);
+                    get_rows_amount(this->witness_amount(), xor_with_mes);
                 const std::size_t gates_amount =
-                    get_gates_amount(this->witness_amount(), xor_with_mes, last_round_call);
+                    get_gates_amount(this->witness_amount(), xor_with_mes);
                 const std::size_t empty_rows_amount = get_empty_rows_amount();
                 const std::string component_name = "wrapper of keccak round BBF-component";
 
@@ -156,21 +154,18 @@ namespace nil {
                 };
 
                 template<typename ContainerType>
-                explicit keccak_round_bbf_wrapper(ContainerType witness, bool xor_with_mes_ = false,
-                                                  bool last_round_call_ = false)
+                explicit keccak_round_bbf_wrapper(ContainerType witness, bool xor_with_mes_ = false)
                     : component_type(witness, {}, {}, get_manifest()),
-                      xor_with_mes(xor_with_mes_),
-                      last_round_call(last_round_call_){};
+                      xor_with_mes(xor_with_mes_){};
 
                 template<typename WitnessContainerType, typename ConstantContainerType,
                          typename PublicInputContainerType>
                 keccak_round_bbf_wrapper(WitnessContainerType witness,
                                          ConstantContainerType constant,
                                          PublicInputContainerType public_input,
-                                         bool xor_with_mes_ = false, bool last_round_call_ = false)
+                                         bool xor_with_mes_ = false)
                     : component_type(witness, constant, public_input, get_manifest()),
-                      xor_with_mes(xor_with_mes_),
-                      last_round_call(last_round_call_){};
+                      xor_with_mes(xor_with_mes_) {};
 
                 keccak_round_bbf_wrapper(
                     std::initializer_list<
@@ -182,10 +177,9 @@ namespace nil {
                     std::initializer_list<
                         typename component_type::public_input_container_type::value_type>
                         public_inputs,
-                    bool xor_with_mes_ = false, bool last_round_call_ = false)
+                    bool xor_with_mes_ = false)
                     : component_type(witnesses, constants, public_inputs, get_manifest()),
-                      xor_with_mes(xor_with_mes_),
-                      last_round_call(last_round_call_) {};
+                      xor_with_mes(xor_with_mes_) {};
 
                 std::map<std::string, std::size_t> component_lookup_tables() const {
                     std::map<std::string, std::size_t> lookup_tables;
@@ -222,6 +216,7 @@ namespace nil {
                 using TYPE = typename context_type::TYPE;
 
                 context_type ct = context_type(assignment, component.rows_amount, start_row_index);
+                //ct.print_witness_allocation_log(bbf::column_type::constant);
 
                 typename KECCAK_ROUND::input_type input;
                 input.round_constant = var_value(assignment, instance_input.round_constant);
@@ -234,7 +229,7 @@ namespace nil {
                 }
 
                 auto keccak_round =
-                    KECCAK_ROUND(ct, input, component.xor_with_mes, component.last_round_call);
+                    KECCAK_ROUND(ct, input, component.xor_with_mes);
                 std::array<value_type, 25> result;
                 for (std::size_t i = 0; i < 25; i++) {
                     result[i] = keccak_round.inner_state[i];
@@ -279,19 +274,33 @@ namespace nil {
                 for (std::size_t i = 0; i < 25; i++) {
                     input.inner_state[i] = instance_input.inner_state[i];
                 }
-                auto result =
-                    KECCAK_ROUND(ct, input, component.xor_with_mes, component.last_round_call);
+                auto result = KECCAK_ROUND(ct, input, component.xor_with_mes);
                 for (std::size_t i = 0; i < 25; i++) {
                     // std::cout << result[i] << std::endl;
                 }
+                
+                auto c_list = ct.get_constants();
+                // std::cout << "const list size = " << c_list.size() << "\n";
+                for(std::size_t i = 0; i < c_list.size(); i++) { // columns
+                    // std::cout << "column size = " << c_list[i].size() << "\n";
+                    for(std::size_t j = 0; j < c_list[i].size(); j++) { // rows
+                        // std::cout << i << ", " << j << ": " << c_list[i][j] << "\n";
+                        assignment.constant(component.C(i), j) = c_list[i][j];
+                    }
+                }
 
-                ct.optimize_gates();
+                //////////////////////////  Don't use 'ct' below this line, we just moved it!!! /////////////////////////////
+                nil::blueprint::bbf::gates_optimizer<BlueprintFieldType> optimizer(std::move(ct));
+                nil::blueprint::bbf::optimized_gates<BlueprintFieldType> gates = optimizer.optimize_gates();
 
-                // compatibility layer: constraint list => gates & selectors
-                std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list =
-                    ct.get_constraints();
+                // Register all the selectors.
+                for (const auto& [row_list, selector_id]: gates.selectors_) {
+                    for(std::size_t row_index : row_list) {
+                        assignment.enable_selector(selector_id, row_index);
+                    }
+                }
 
-                for (const auto &[row_list, constraints] : constraint_list) {
+                for (const auto& [selector_id, constraints] : gates.constraint_list) {
                     /*
                     std::cout << "GATE:\n";
                     for(const auto& c : constraints) {
@@ -299,37 +308,23 @@ namespace nil {
                     }
                     std::cout << "Rows: ";
                     */
-                    std::size_t selector_index = bp.add_gate(constraints);
-                    for (const std::size_t &row_index : row_list) {
-                        // std::cout << row_index << " ";
-                        assignment.enable_selector(selector_index, row_index);
-                    }
-                    // std::cout << "\n";
+                    bp.add_gate(selector_id, constraints);
+
+                    //std::cout << "\n";
                 }
 
                 // compatibility layer: copy constraint list
-                std::vector<plonk_copy_constraint> copy_constraints = ct.get_copy_constraints();
-                for (const auto &cc : copy_constraints) {
+                for(const auto& cc : gates.copy_constraints) {
                     bp.add_copy_constraint(cc);
                 }
 
-                // compatibility layer: dynamic lookup tables
-                std::map<std::string, std::pair<std::vector<std::size_t>, row_selector<>>>
-                    dynamic_lookup_tables = ct.get_dynamic_lookup_tables();
-
-                // compatibility layer: lookup constraint list
-                std::unordered_map<
-                    row_selector<>,
-                    std::vector<std::pair<std::string, std::vector<constraint_type>>>>
-                    lookup_constraints = ct.get_lookup_constraints();
                 std::set<std::string> lookup_tables;
-                for (const auto &[row_list, lookup_list] : lookup_constraints) {
+                for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                     std::vector<lookup_constraint_type> lookup_gate;
-                    for (const auto &single_lookup_constraint : lookup_list) {
+                    for(const auto& single_lookup_constraint : lookup_list) {
                         std::string table_name = single_lookup_constraint.first;
                         if (lookup_tables.find(table_name) == lookup_tables.end()) {
-                            if (dynamic_lookup_tables.find(table_name) !=
-                                dynamic_lookup_tables.end()) {
+                            if (gates.dynamic_lookup_tables.find(table_name) != gates.dynamic_lookup_tables.end()) {
                                 bp.reserve_dynamic_table(table_name);
                             } else {
                                 bp.reserve_table(table_name);
@@ -339,41 +334,27 @@ namespace nil {
                         std::size_t table_index = bp.get_reserved_indices().at(table_name);
                         lookup_gate.push_back({table_index, single_lookup_constraint.second});
                     }
-                    std::size_t selector_index = bp.add_lookup_gate(lookup_gate);
-                    for (std::size_t row_index : row_list) {
-                        assignment.enable_selector(selector_index, row_index);
-                    }
+
+                    bp.add_lookup_gate(selector_id, lookup_gate);
                 }
 
                 // compatibility layer: dynamic lookup tables - continued
-                for (const auto &[name, area] : dynamic_lookup_tables) {
+                for(const auto& [name, area] : gates.dynamic_lookup_tables) {
                     bp.register_dynamic_table(name);
-                    std::size_t selector_index = bp.get_dynamic_lookup_table_selector();
-                    for (std::size_t row_index : area.second) {
-                        assignment.enable_selector(selector_index, row_index);
-                    }
+
+                    std::size_t selector_index = area.second;
+                    
                     crypto3::zk::snark::plonk_lookup_table<BlueprintFieldType> table_specs;
                     table_specs.tag_index = selector_index;
                     table_specs.columns_number = area.first.size();
                     std::vector<var> dynamic_lookup_cols;
-                    for (const auto &c : area.first) {
+                    for(const auto& c : area.first) {
+                        // TODO: does this make sense?!
                         dynamic_lookup_cols.push_back(
-                            var(c, 0, false,
-                                var::column_type::witness));  // TODO: does this make sense?!
+                            var(c, 0, false, var::column_type::witness));
                     }
                     table_specs.lookup_options = {dynamic_lookup_cols};
-                    bp.define_dynamic_table(name, table_specs);
-                }
-
-                // compatibility layer: constants
-                auto c_list = ct.get_constants();
-                // std::cout << "const list size = " << c_list.size() << "\n";
-                for (std::size_t i = 0; i < c_list.size(); i++) {  // columns
-                    // std::cout << "column size = " << c_list[i].size() << "\n";
-                    for (std::size_t j = 0; j < c_list[i].size(); j++) {  // rows
-                        // std::cout << i << ", " << j << ": " << c_list[i][j] << "\n";
-                        assignment.constant(component.C(i), j) = c_list[i][j];
-                    }
+                    bp.define_dynamic_table(name,table_specs);
                 }
 
                 std::cout << "Gates amount = " << bp.num_gates() << "\n";
