@@ -11,10 +11,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Configure
-        run: cd crypto3 && eval "$configurePhase"
+        run: eval "$configurePhase"
         shell: nix develop --command bash -e {0}
       - name: Build
-        run: pwd && cd build && ninja transpiler_evm_test
+        run: ls -l -a && pwd && cd build && ninja transpiler_evm_test
         shell: nix develop --command bash -e {0}
       - name: Execute
         run: cd build && ./libs/transpiler/test/transpiler_evm_test -- --save-proof-data
