@@ -49,9 +49,9 @@ namespace nil {
                 using typename generic_component<FieldType,stage>::TYPE;
                 using integral_type = zkevm_word_integral_type;
 
-                constexpr static const typename FieldType::value_type two_64 = 0x10000000000000000_cppui_modular257;
-                constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_cppui_modular254;
-                constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+                constexpr static const typename FieldType::value_type two_64 = 0x10000000000000000_big_uint257;
+                constexpr static const typename FieldType::value_type two_128 = 0x100000000000000000000000000000000_big_uint254;
+                constexpr static const typename FieldType::value_type two_192 = 0x1000000000000000000000000000000000000000000000000_big_uint254;
 
                 TYPE chunk_sum_64(const std::vector<TYPE> &chunks, const unsigned char chunk_idx) const {
                     BOOST_ASSERT(chunk_idx < 4);
@@ -140,9 +140,9 @@ namespace nil {
                         TYPE hi_carries = hi_carryless_construct(A_64, B_64, R_64);
 
                         integral_type c_first_i = typename FieldType::integral_type(lo_carries.data) >> 128;
-                        auto c_first = w_to_16(zwordc(c_first_i));
+                        auto c_first = w_to_16(c_first_i);
                         integral_type c_second_i = (typename FieldType::integral_type(hi_carries.data) + c_first_i) >> 128;
-                        auto c_second = w_to_16(zwordc(c_second_i));
+                        auto c_second = w_to_16(c_second_i);
                         C3[3] = c_first[15]; C3[2] = c_first[14]; C3[1] = c_first[13]; C3[0] = c_first[12];
                         C2 = c_first[11];
                         C1[3] = c_second[15]; C1[2] = c_second[14]; C1[1] = c_second[13]; C1[0] = c_second[12];

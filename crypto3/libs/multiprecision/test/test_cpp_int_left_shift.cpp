@@ -12,8 +12,8 @@
 #define _SCL_SECURE_NO_WARNINGS
 #endif
 
-#include <nil/crypto3/multiprecision/gmp.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
 #include "test.hpp"

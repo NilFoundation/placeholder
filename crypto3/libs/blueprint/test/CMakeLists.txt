@@ -36,6 +36,17 @@ if(BLUEPRINT_PLACEHOLDER_PROOF_GEN)
     add_definitions(-DBLUEPRINT_PLACEHOLDER_PROOF_GEN_ENABLED)
 endif()
 
+cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
+        ${${CURRENT_PROJECT_NAME}_INTERFACE_LIBRARIES}
+        crypto3::blueprint
+        crypto3::algebra
+        crypto3::zk
+        crypto3::random
+        crypto3::hash
+)
+set_target_properties(_cm_internal_tests-crypto3-blueprint-test PROPERTIES CXX_STANDARD 20)
+target_precompile_headers(_cm_internal_tests-crypto3-blueprint-test REUSE_FROM crypto3_precompiled_headers)
+
 macro(define_blueprint_test test)
     string(REPLACE "/" "_" full_test_name blueprint_${test}_test)
 
@@ -49,14 +60,7 @@ macro(define_blueprint_test test)
     target_include_directories(${full_test_name} PRIVATE
                                ${Boost_INCLUDE_DIRS})
 
-    target_link_libraries(${full_test_name}
-        crypto3::blueprint
-        crypto3::algebra
-        crypto3::zk
-        crypto3::random
-    )
-
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
     target_compile_definitions(${full_test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/zkevm/data/")
 
@@ -72,6 +76,8 @@ macro(define_blueprint_test test)
     elseif(target_type STREQUAL "STATIC_LIB")
 
     endif()
+
+    target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(COMMON_TEST_FILES

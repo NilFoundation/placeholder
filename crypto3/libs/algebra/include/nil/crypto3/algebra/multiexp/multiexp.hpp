@@ -29,9 +29,6 @@
 
 #include <vector>
 
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/multiexp/policies.hpp>
 #include <nil/crypto3/algebra/curves/params.hpp>
 
@@ -188,7 +185,7 @@ namespace nil {
                 for (std::size_t outer = 0; outer < outerc; ++outer) {
                     std::size_t inner = 0;
                     for (std::size_t i = 0; i < window; ++i) {
-                        if (boost::multiprecision::bit_test(pow_val, outer * window + i)) {
+                        if (pow_val.bit_test(outer * window + i)) {
                             inner |= 1u << i;
                         }
                     }

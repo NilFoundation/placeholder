@@ -28,12 +28,11 @@
 
 #include <iterator>
 #include <cstddef>
-#include <cstdint>
 #include <type_traits>
-#include <limits>
-#include <iterator>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/crypto3/multiprecision/integer.hpp>
+
 #include <nil/marshalling/endianness.hpp>
 
 namespace nil {
@@ -77,8 +76,8 @@ namespace nil {
 
                     if (value > 0) {
                         std::size_t begin_index =
-                            chunks_count - ((boost::multiprecision::msb(value) + 1) / chunk_bits +
-                                            (((boost::multiprecision::msb(value) + 1) % chunk_bits) ? 1 : 0));
+                            chunks_count - ((nil::crypto3::multiprecision::msb(value) + 1) / chunk_bits +
+                                            (((nil::crypto3::multiprecision::msb(value) + 1) % chunk_bits) ? 1 : 0));
 
                         std::fill(iter, iter + begin_index, 0);
 
@@ -106,7 +105,7 @@ namespace nil {
                     std::size_t chunk_bits = sizeof(typename std::iterator_traits<TIter>::value_type) * units_bits;
                     std::size_t chunks_count = (value_size / chunk_bits) + ((value_size % chunk_bits) ? 1 : 0);
 
-                    boost::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, true);
+                    nil::crypto3::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, true);
                     return serializedValue;
                 }
 
@@ -128,7 +127,7 @@ namespace nil {
                     std::size_t chunk_bits = sizeof(typename std::iterator_traits<TIter>::value_type) * units_bits;
                     std::size_t chunks_count = (TSize / chunk_bits) + ((TSize % chunk_bits) ? 1 : 0);
 
-                    boost::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, true);
+                    nil::crypto3::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, true);
                     return serializedValue;
                 }
 
@@ -163,8 +162,8 @@ namespace nil {
                     std::size_t chunks_count = (TSize / chunk_bits) + ((TSize % chunk_bits) ? 1 : 0);
 
                     if (value > 0) {
-                        std::size_t begin_index = ((boost::multiprecision::msb(value) + 1) / chunk_bits +
-                                            (((boost::multiprecision::msb(value) + 1) % chunk_bits) ? 1 : 0));
+                        std::size_t begin_index = ((nil::crypto3::multiprecision::msb(value) + 1) / chunk_bits +
+                                            (((nil::crypto3::multiprecision::msb(value) + 1) % chunk_bits) ? 1 : 0));
 
                         if (begin_index < chunks_count) {
                             std::fill(iter + begin_index, iter + chunks_count, 0x00);
@@ -192,7 +191,7 @@ namespace nil {
                     std::size_t chunk_bits = sizeof(typename std::iterator_traits<TIter>::value_type) * units_bits;
                     std::size_t chunks_count = (value_size / chunk_bits) + ((value_size % chunk_bits) ? 1 : 0);
 
-                    boost::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, false);
+                    nil::crypto3::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, false);
                     return serializedValue;
                 }
 
@@ -212,7 +211,7 @@ namespace nil {
                     std::size_t chunk_bits = sizeof(typename std::iterator_traits<TIter>::value_type) * units_bits;
                     std::size_t chunks_count = (TSize / chunk_bits) + ((TSize % chunk_bits) ? 1 : 0);
 
-                    boost::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, false);
+                    nil::crypto3::multiprecision::import_bits(serializedValue, iter, iter + chunks_count, chunk_bits, false);
                     return serializedValue;
                 }
 

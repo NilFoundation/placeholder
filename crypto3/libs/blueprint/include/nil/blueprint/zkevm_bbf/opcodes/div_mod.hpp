@@ -51,11 +51,11 @@ namespace nil {
                 constexpr static const value_type two_16 = 65536;
                 constexpr static const value_type two_32 = 4294967296;
                 constexpr static const value_type two_48 = 281474976710656;
-                constexpr static const value_type two_64 = 0x10000000000000000_cppui_modular254;
+                constexpr static const value_type two_64 = 0x10000000000000000_big_uint254;
                 constexpr static const value_type two_128 =
-                    0x100000000000000000000000000000000_cppui_modular254;
+                    0x100000000000000000000000000000000_big_uint254;
                 constexpr static const value_type two_192 =
-                    0x1000000000000000000000000000000000000000000000000_cppui_modular254;
+                    0x1000000000000000000000000000000000000000000000000_big_uint254;
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
@@ -163,8 +163,8 @@ namespace nil {
 
                         integral_type r_integral =
                             b != 0u ? integral_type(a) / integral_type(b) : 0u;
-                        zkevm_word_type r = zkevm_word_type::backend_type(r_integral.backend());
-                        zkevm_word_type q = b != 0u ? a % b : a;
+                        zkevm_word_type r = r_integral;
+                        zkevm_word_type q = b != 0u ? integral_type(a) % integral_type(b) : a;
                         zkevm_word_type q_out = b != 0u ? q : 0;  // according to EVM spec a % 0 = 0
 
                         bool t_last = integral_type(q) < integral_type(b);
@@ -193,9 +193,9 @@ namespace nil {
                         // caluclate first row carries
                         first_carryless = first_carryless_construct<TYPE>(a_64_chunks, b_64_chunks,
                                                                           r_64_chunks, q_64_chunks);
-                        auto first_row_carries = first_carryless.data >> 128;
+                        auto first_row_carries = first_carryless.data.base() >> 128;
                         value_type c_1 =
-                            static_cast<value_type>(first_row_carries & (two_64 - 1).data);
+                            static_cast<value_type>(first_row_carries & (two_64 - 1).data.base());
                         c_2 = static_cast<value_type>(first_row_carries >> 64);
                         c_1_chunks = chunk_64_to_16<FieldType>(c_1);
                         // no need for c_2 chunks as there is only a single chunk
@@ -203,14 +203,14 @@ namespace nil {
                             (second_carryless_construct(a_64_chunks, b_64_chunks, r_64_chunks,
                                                         q_64_chunks) +
                              c_1 + c_2 * two_64)
-                                .data >>
+                                .data.base() >>
                             128;
 
                         // value_type
                         c_1_64 = chunk_sum_64<TYPE>(c_1_chunks, 0);
 
                         auto third_row_carries =
-                            third_carryless_construct(b_64_chunks, r_64_chunks).data >> 128;
+                            third_carryless_construct(b_64_chunks, r_64_chunks).data.base() >> 128;
 
                         b_sum = std::accumulate(b_chunks.begin(), b_chunks.end(), value_type(0));
                         b_sum_inverse = b_sum == 0 ? 0 : b_sum.inversed();

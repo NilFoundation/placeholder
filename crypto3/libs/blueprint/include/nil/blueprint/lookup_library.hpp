@@ -233,7 +233,7 @@ namespace nil {
                     ) {
                         std::vector<bool> value(14);
                         for (std::size_t j = 0; j < 14; j++) {
-                            value[14 - j - 1] = boost::multiprecision::bit_test(i, j);
+                            value[14 - j - 1] = i.bit_test(j);
                         }
                         std::array<std::vector<typename BlueprintFieldType::integral_type>, 2> value_chunks =
                             components::detail::split_and_sparse<BlueprintFieldType>(value, value_sizes, 4);
@@ -281,7 +281,7 @@ namespace nil {
                         i++) {
                         std::vector<bool> value(14);
                         for (std::size_t j = 0; j < 14; j++) {
-                            value[14 - j - 1] = boost::multiprecision::bit_test(i, j);
+                            value[14 - j - 1] = i.bit_test(j);
                         }
                         std::array<std::vector<typename BlueprintFieldType::integral_type>, 2> value_chunks =
                             components::detail::split_and_sparse<BlueprintFieldType>(value, value_sizes, 7);

@@ -5,7 +5,7 @@
 
 #define BOOST_MP_NOT_TESTING_NUMBER
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 
 #include "test_arithmetic.hpp"
 

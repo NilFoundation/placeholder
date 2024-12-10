@@ -11,22 +11,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Configure
-        run: cd crypto3 && mkdir build && cd build && cmake ../ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=TRUE -DBUILD_CRYPTO3_TESTS=TRUE -G Ninja
+        run: mkdir build && cd build && cmake ../ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=TRUE -DBUILD_CRYPTO3_TESTS=TRUE -G Ninja
         shell: nix develop .#crypto3-tests --command bash -e {0}
       - name: Build
-        run: cd crypto3/build && ninja transpiler_evm_test
+        run: cd build && ninja transpiler_evm_test
         shell: nix develop .#crypto3-tests --command bash -e {0}
       - name: Execute
-        run: cd crypto3/build && ./libs/transpiler/test/transpiler_evm_test -- --save-proof-data
+        run: cd build && ./crypto3/libs/transpiler/test/transpiler_evm_test -- --save-proof-data
         shell: nix develop .#crypto3-tests --command bash -e {0}
-          cd crypto3 && eval "$configurePhase"
-          nix develop -c ninja transpiler_evm_test
-          nix develop -c ./libs/transpiler/test/transpiler_evm_test -- --save-proof-data
       - name: Publish Proofs
         uses: actions/upload-artifact@v4
         with:
           name: proofs
-          path: crypto3/build/circuit*
+          path: build/circuit*
           if-no-files-found: error
 
   verify-proofs:

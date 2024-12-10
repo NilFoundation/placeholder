@@ -14,7 +14,7 @@
 
 #ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 
 #include "test.hpp"
 

@@ -26,9 +26,6 @@
 #ifndef CRYPTO3_ALGEBRA_PAIRING_MNT4_298_ATE_MILLER_LOOP_HPP
 #define CRYPTO3_ALGEBRA_PAIRING_MNT4_298_ATE_MILLER_LOOP_HPP
 
-#include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/pairing/detail/mnt4/298/params.hpp>
 #include <nil/crypto3/algebra/pairing/detail/forms/short_weierstrass/projective/types.hpp>
@@ -71,7 +68,7 @@ namespace nil {
                         std::size_t add_idx = 0;
 
                         for (long i = params_type::integral_type_max_bits - 1; i >= 0; --i) {
-                            const bool bit = boost::multiprecision::bit_test(params_type::ate_loop_count, i);
+                            const bool bit = params_type::ate_loop_count.bit_test(i);
 
                             if (!found_one) {
                                 /* this skips the MSB itself */

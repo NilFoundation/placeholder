@@ -39,7 +39,7 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
                 using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type;
-                using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
             public:
                 // For connection with upper-level circuits
                 std::vector<TYPE> op;

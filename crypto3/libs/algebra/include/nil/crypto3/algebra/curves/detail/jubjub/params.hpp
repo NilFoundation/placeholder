@@ -66,9 +66,9 @@ namespace nil {
                         // A = 2 (a + d) / (a - d)
                         // B = 4 / (a - d)
                         constexpr static const typename jubjub_types::base_field_type::value_type
-                            A = 0xA002_cppui_modular255;
+                            A = 0xA002_big_uint255;
                         constexpr static const typename jubjub_types::base_field_type::value_type
-                            B = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffff5ffd_cppui_modular255;
+                            B = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfefffffffeffff5ffd_big_uint255;
                         static constexpr std::size_t cofactor = 8;
                     };
 
@@ -89,9 +89,9 @@ namespace nil {
                         // according to https://neuromancer.sk/std/other/JubJub
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
-                                0x11dafe5d23e1218086a365b99fbf3d3be72f6afd7d1f72623e6b071492d1122b_cppui_modular253),
+                                0x11dafe5d23e1218086a365b99fbf3d3be72f6afd7d1f72623e6b071492d1122b_big_uint253),
                             typename field_type::value_type(
-                                0x1d523cf1ddab1a1793132e78c866c0c33e26ba5cc220fed7cc3f870e59d292aa_cppui_modular253)};
+                                0x1d523cf1ddab1a1793132e78c866c0c33e26ba5cc220fed7cc3f870e59d292aa_big_uint253)};
                     };
 
                     constexpr std::array<typename jubjub_g1_params<forms::twisted_edwards>::base_field_type::value_type,
@@ -118,9 +118,9 @@ namespace nil {
                          */
                         constexpr static const std::array<typename field_type::value_type, 2> one_fill = {
                             typename field_type::value_type(
-                                0x52a47af6ec47deb77d663b6a45b148d1ccdaa4e2299ecfbd5504c409b3ea62c0_cppui_modular255),
+                                0x52a47af6ec47deb77d663b6a45b148d1ccdaa4e2299ecfbd5504c409b3ea62c0_big_uint255),
                             typename field_type::value_type(
-                                0x20bc4f2e8cff38006618840fd0f9b6d6e8ddec99c37916874e2fd6d5c6558938_cppui_modular254)};
+                                0x20bc4f2e8cff38006618840fd0f9b6d6e8ddec99c37916874e2fd6d5c6558938_big_uint254)};
                     };
 
                     constexpr std::array<typename jubjub_g1_params<forms::montgomery>::base_field_type::value_type,

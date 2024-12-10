@@ -18,6 +18,7 @@
 #define PROOF_GENERATOR_FILE_OPERATIONS_HPP
 
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <optional>
