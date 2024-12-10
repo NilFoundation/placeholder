@@ -74,7 +74,6 @@ function(setup_proof_generator_target)
         EXPORT_NAME ${ARG_TARGET_NAME}
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED TRUE)
-    target_precompile_headers(${ARG_TARGET_NAME} REUSE_FROM crypto3_precompiled_headers_23)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${ARG_TARGET_NAME} PRIVATE "-fconstexpr-steps=2147483647")
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
