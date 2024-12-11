@@ -26,8 +26,8 @@ namespace nil::crypto3::multiprecision {
              std::enable_if_t<detail::is_big_mod_v<big_mod_t> && detail::is_unsigned_integer_v<T>,
                               int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
-        auto result = b;
-        result.ops().exp(result.raw_base(), b.raw_base(), e);
+        big_mod_t result(b.ops_storage());
+        result.ops().pow(result.raw_base(), b.raw_base(), e);
         return result;
     }
 
