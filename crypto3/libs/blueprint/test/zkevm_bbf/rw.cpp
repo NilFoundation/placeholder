@@ -60,10 +60,15 @@ public:
 
     template <typename field_type>
     void test_zkevm_rw(
-        std::string path,
+        std::vector<std::string> paths,
         std::size_t max_rw_size
     ){
-        auto [bytecodes, traces] = load_hardhat_input(path);
+        auto [bytecodes, traces] = load_hardhat_input(paths[0]);
+        for( std::size_t i = 1; i < paths.size(); i++ ){
+            auto [bytecodes_next, traces_next] = load_hardhat_input(paths[i]);
+            bytecodes.insert(bytecodes.end(), bytecodes_next.begin(), bytecodes_next.end());
+            traces.insert(traces.end(), traces_next.begin(), traces_next.end());
+        }
 
         nil::blueprint::bbf::zkevm_hardhat_input_generator circuit_inputs(bytecodes, traces);
 
@@ -83,22 +88,26 @@ BOOST_FIXTURE_TEST_SUITE(blueprint_bbf_rw, zkEVMRWTestFixture)
     using integral_type = typename field_type::integral_type;
     using value_type = typename field_type::value_type;
 BOOST_AUTO_TEST_CASE(minimal_math){
-    test_zkevm_rw<field_type>("minimal_math/", 500);
+    test_zkevm_rw<field_type>({"minimal_math/"}, 500);
 }
 
 BOOST_AUTO_TEST_CASE(small_storage){
-    test_zkevm_rw<field_type>("small_stack_storage/", 500);
+    test_zkevm_rw<field_type>({"small_stack_storage/"}, 500);
 }
 
 BOOST_AUTO_TEST_CASE(mstore8){
-    test_zkevm_rw<field_type>("mstore8/", 5000);
+    test_zkevm_rw<field_type>({"mstore8/"}, 5000);
 }
 
 BOOST_AUTO_TEST_CASE(meminit){
-    test_zkevm_rw<field_type>("mem_init/", 10000);
+    test_zkevm_rw<field_type>({"mem_init/"}, 10000);
 }
 
 BOOST_AUTO_TEST_CASE(calldatacopy){
-    test_zkevm_rw<field_type>("calldatacopy/", 10000);
+    test_zkevm_rw<field_type>({"calldatacopy/"}, 10000);
+}
+
+BOOST_AUTO_TEST_CASE(multiple_traces){
+    test_zkevm_rw<field_type>({"minimal_math/", "keccak/", "exp/"} , 3000);
 }
 BOOST_AUTO_TEST_SUITE_END()

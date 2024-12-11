@@ -377,7 +377,7 @@ namespace nil {
                         special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * is_first[1] * (1 - is_write[1]), -1));  // 4. First stack operation is obviously write
                         //if(i!=0) {
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (is_write[1] - 1), -1));                  // 5. First operation is always write
-                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (address[1] - address[0] - 1), -1)); // 6. Stack pointer always grows and only by one
+                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (address[1] - address[0]) * (address[1] - address[0] - 1), -1));      // 6. Stack pointer always grows and only by one
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[0]), -1));
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[0]), -1));
                         //}
