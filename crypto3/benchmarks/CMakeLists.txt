@@ -63,7 +63,6 @@ set(BENCHMARK_NAMES
     "multiprecision/big_int"
 
     "zk/lpc"
-    "zk/pedersen"
 )
 
 foreach(BENCHMARK_NAME ${BENCHMARK_NAMES})
