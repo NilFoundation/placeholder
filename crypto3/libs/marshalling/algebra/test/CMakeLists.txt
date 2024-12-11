@@ -16,8 +16,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        ${CMAKE_WORKSPACE_NAME}::marshalling-multiprecision
                        ${CMAKE_WORKSPACE_NAME}::marshalling-core
 
-                       Boost::unit_test_framework
-                       Boost::random
+                       ${Boost_LIBRARIES}
                    )
 
 macro(define_marshalling_test name)

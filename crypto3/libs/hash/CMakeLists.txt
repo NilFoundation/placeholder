@@ -146,7 +146,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       ${CMAKE_WORKSPACE_NAME}::multiprecision
                       ${CMAKE_WORKSPACE_NAME}::algebra
 
-                      Boost::container)
+                      ${Boost_LIBRARIES})
 target_link_libraries(crypto3_precompiled_headers    ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 target_link_libraries(crypto3_precompiled_headers_23 ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME})
 

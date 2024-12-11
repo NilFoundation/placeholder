@@ -33,12 +33,6 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-# TODO: move thread to actor-core
-find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread)
-if(ENABLE_TESTS)
-    find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-endif()
-
 # Read version from VERSION file
 set(VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/VERSION")
 file(READ ${VERSION_FILE} PROOF_PRODUCER_VERSION)

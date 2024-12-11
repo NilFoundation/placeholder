@@ -29,8 +29,6 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(Boost REQUIRED COMPONENTS filesystem log program_options)
-
 # Read version from VERSION file
 set(VERSION_FILE "${CMAKE_CURRENT_LIST_DIR}/VERSION")
 file(READ ${VERSION_FILE} DEBUG_TOOLS_VERSION)

@@ -39,7 +39,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       crypto3::algebra
                       crypto3::multiprecision
 
-                      Boost::random
+                      ${Boost_LIBRARIES}
                   )
 
 add_tests(test)

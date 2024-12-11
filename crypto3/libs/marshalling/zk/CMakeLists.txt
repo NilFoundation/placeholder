@@ -25,7 +25,7 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-                      Boost::container
+                      ${Boost_LIBRARIES}
 
                       crypto3::multiprecision
                       crypto3::algebra

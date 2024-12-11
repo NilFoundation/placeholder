@@ -28,9 +28,7 @@ endif ()
 
 target_link_libraries(circgen
     crypto3::all
-    Boost::filesystem
-    Boost::log
-    Boost::program_options
+    ${Boost_LIBRARIES}
 )
 
 # Install circgen

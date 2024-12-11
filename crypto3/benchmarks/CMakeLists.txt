@@ -34,9 +34,7 @@ macro(define_benchmark benchmark)
         ${CMAKE_WORKSPACE_NAME}::zk
         ${CMAKE_WORKSPACE_NAME}::benchmark_tools
 
-        Boost::unit_test_framework
-        Boost::timer
-        Boost::random)
+        ${Boost_LIBRARIES})
 
     set_target_properties(${full_name}
         PROPERTIES

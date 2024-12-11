@@ -16,8 +16,7 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
     ${CMAKE_WORKSPACE_NAME}::random
     crypto3::marshalling-zk
-    Boost::unit_test_framework
-    Boost::log
+    ${Boost_LIBRARIES}
     )
 set_target_properties(_cm_internal_tests-crypto3-zk-test PROPERTIES CXX_STANDARD 20)
 target_precompile_headers(_cm_internal_tests-crypto3-zk-test REUSE_FROM crypto3_precompiled_headers)

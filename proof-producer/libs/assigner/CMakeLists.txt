@@ -34,17 +34,11 @@ target_include_directories(proof_generatorAssigner
                             PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${PROTOBUF_INCLUDE_DIR}
 )
 
-find_package(Boost REQUIRED COMPONENTS filesystem log)
-if(ENABLE_TESTS)
-    find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-endif()
-
 target_link_libraries(proof_generatorAssigner
                         PUBLIC
                         proof_generatorPreset
                         crypto3::common
-                        Boost::filesystem
-                        Boost::log
+                        ${Boost_LIBRARIES}
                         absl::strings
                         absl::log_internal_check_op
                         ${PROTOBUF_LIBRARY}

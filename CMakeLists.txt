@@ -2,6 +2,21 @@ cmake_minimum_required(VERSION 3.27)
 
 project(placeholder)
 
+set(Boost_DEBUG ON)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+
+find_package(Boost REQUIRED COMPONENTS ALL)
+message("${Boost_FOUND}")
+
+message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
+message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
+message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
+
+
+
+message("\n\n\n\nBoost_LIBRARIES: ${Boost_LIBRARIES}")
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   add_compile_options (-fdiagnostics-color=always)
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

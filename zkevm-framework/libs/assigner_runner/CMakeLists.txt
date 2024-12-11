@@ -15,7 +15,6 @@ target_include_directories(zkEVMAssignerRunner
                             PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include
 )
 
-find_package(Boost COMPONENTS REQUIRED log)
 target_link_libraries(zkEVMAssignerRunner
                         PUBLIC
                         evm-assigner
@@ -24,7 +23,7 @@ target_link_libraries(zkEVMAssignerRunner
                         zkEVMOutputArtifacts
                         zkEVMRpc
                         crypto3::common
-                        Boost::log
+                        ${Boost_LIBRARIES}
 )
 
 install(TARGETS zkEVMAssignerRunner

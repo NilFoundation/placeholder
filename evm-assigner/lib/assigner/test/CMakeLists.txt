@@ -19,7 +19,7 @@ target_link_libraries(
         PRIVATE
         ${PROJECT_NAME}
         GTest::gtest_main
-        Boost::log
+        ${Boost_LIBRARIES}
 )
 gtest_discover_tests(assigner_tests PROPERTIES LABELS ASSIGNER)
 

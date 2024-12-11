@@ -30,10 +30,6 @@ cm_workspace(actor)
 
 include(CMSetupVersion)
 
-if (NOT Boost_FOUND AND NOT CMAKE_CROSSCOMPILING)
-    find_package(Boost COMPONENTS REQUIRED filesystem)
-endif ()
-
 cm_project(containers WORKSPACE_NAME ${CMAKE_WORKSPACE_NAME})
 
 option(BUILD_DOXYGEN_DOCS "Build with configuring Doxygen documentation compiler" TRUE)

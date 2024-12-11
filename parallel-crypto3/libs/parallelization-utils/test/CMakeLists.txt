@@ -8,10 +8,6 @@
 
 include(CMTest)
 
-if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND)
-    cm_find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-endif()
-
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                        ${Boost_LIBRARIES})
 
@@ -37,14 +33,6 @@ macro(define_actor_core_test name)
                                ${Boost_INCLUDE_DIRS})
 
     set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20)
-
-    get_target_property(target_type Boost::unit_test_framework TYPE)
-    if(target_type STREQUAL "SHARED_LIBRARY")
-        message(FATAL_ERROR "Boost::unit_test_framework is shared!")
-        target_compile_definitions(${test_name} PRIVATE BOOST_TEST_DYN_LINK)
-    elseif(target_type STREQUAL "STATIC_LIB")
-
-    endif()
 endmacro()
 
 set(TESTS_NAMES

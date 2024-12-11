@@ -12,7 +12,7 @@ macro(define_algebra_example name)
                           ${CMAKE_WORKSPACE_NAME}_algebra
 
                           crypto3::multiprecision
-                          Boost::random
+                          ${Boost_LIBRARIES}
                       )
 
     set_target_properties(algebra_${name}_example PROPERTIES CXX_STANDARD 20)

@@ -70,14 +70,6 @@ macro(define_blueprint_test test)
         target_compile_options(${full_test_name} PRIVATE "${ARGV2}" "-fconstexpr-ops-limit=4294967295" "-ftemplate-backtrace-limit=0")
     endif()
 
-    get_target_property(target_type Boost::unit_test_framework TYPE)
-    if(target_type STREQUAL "SHARED_LIBRARY")
-        message(FATAL_ERROR "Boost::unit_test_framework is shared!")
-        target_compile_definitions(${full_test_name} PRIVATE BOOST_TEST_DYN_LINK)
-    elseif(target_type STREQUAL "STATIC_LIB")
-
-    endif()
-
     target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 

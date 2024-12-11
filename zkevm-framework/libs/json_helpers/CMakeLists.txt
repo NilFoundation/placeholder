@@ -1,5 +1,4 @@
 find_package(valijson REQUIRED)
-find_package(Boost COMPONENTS REQUIRED json)
 
 add_library(zkEVMJsonHelpers SHARED json_helpers.cpp)
 target_link_libraries(zkEVMJsonHelpers PUBLIC ${Boost_LIBRARIES} PRIVATE valijson)

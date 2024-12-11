@@ -14,7 +14,7 @@ macro(define_marshalling_example name)
     add_executable(marshalling_${name}_example ${name}.cpp)
 
     target_link_libraries(marshalling_${name}_example PRIVATE
-            Boost::container)
+            ${Boost_LIBRARIES})
 
     target_include_directories(marshalling_${name}_example PRIVATE
             "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"

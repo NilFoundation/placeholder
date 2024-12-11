@@ -8,11 +8,6 @@
 
 include(CMTest)
 
-find_package(Boost REQUIRED COMPONENTS
-    timer
-    unit_test_framework
-)
-
 macro(define_bench_test name)
     set(test_name "parallel_crypto3_${name}_bench")
 

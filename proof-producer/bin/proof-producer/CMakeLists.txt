@@ -49,9 +49,7 @@ function(setup_proof_generator_target)
     )
 
     set(INTERFACE_LIBS
-        Boost::filesystem
-        Boost::log
-        Boost::thread
+        ${Boost_LIBRARIES}
         proof_generatorPreset
         ${PROOF_PRODUCER_INCLUDES}
     )
@@ -65,7 +63,7 @@ function(setup_proof_generator_target)
 
     target_link_libraries(${ARG_TARGET_NAME} PRIVATE
         ${INTERFACE_LIBS}
-        Boost::program_options
+        ${Boost_LIBRARIES}
         proof_generatorAssigner
         proof_generatorOutputArtifacts)
 

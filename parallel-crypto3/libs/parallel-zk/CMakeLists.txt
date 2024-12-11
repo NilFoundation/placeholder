@@ -35,21 +35,19 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            $<$<BOOL:${Boost_FOUND}>:${Boost_INCLUDE_DIRS}>)
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
+    ${Boost_LIBRARIES}
 
-                      Boost::container
-                      Boost::log
+    # Containers and math implementation could be replaced with namespace change
+    ${CMAKE_WORKSPACE_NAME}::containers
+    ${CMAKE_WORKSPACE_NAME}::math
+    ${CMAKE_WORKSPACE_NAME}::core
 
-                      # Containers and math implementation could be replaced with namespace change
-                      ${CMAKE_WORKSPACE_NAME}::containers
-                      ${CMAKE_WORKSPACE_NAME}::math
-                      ${CMAKE_WORKSPACE_NAME}::core
+    crypto3::algebra
+    crypto3::hash
+    crypto3::multiprecision
+    # crypto3::marshalling-zk
 
-                      crypto3::algebra
-                      crypto3::hash
-                      crypto3::multiprecision
-                      # crypto3::marshalling-zk
-
-                      # crypto3::benchmark_tools
+    # crypto3::benchmark_tools
 )
 
 include(CMTest)

@@ -18,9 +18,6 @@ endif()
 # TODO: check what is actually required here
 include(CMSetupVersion)
 
-# TODO: beutify entire cmake tree of parallel crypto3 modules the same way we did in origin crypto3
-find_package(Boost REQUIRED COMPONENTS filesystem log program_options thread random unit_test_framework container)
-
 function(add_tests)
     if (${BUILD_PARALLEL_CRYPTO3_TESTS})
         add_subdirectory(test)

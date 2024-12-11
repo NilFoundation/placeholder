@@ -7,9 +7,8 @@
 #---------------------------------------------------------------------------#
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-
-    Boost::unit_test_framework
-    Boost::random)
+${Boost_LIBRARIES}
+)
 
 add_custom_target(algebra_runtime_tests)
 

@@ -12,7 +12,7 @@ add_custom_target(${CURRENT_PROJECT_NAME}_test_suite_big_int_tests)
 
 cm_test_link_libraries(
     ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-    Boost::unit_test_framework
+    ${Boost_LIBRARIES}
 )
 
 macro(define_runtime_multiprecision_test name)

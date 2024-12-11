@@ -35,9 +35,7 @@ target_include_directories(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTER
                            $<$<BOOL:${Boost_FOUND}>:${Boost_INCLUDE_DIRS}>)
 
 target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
-
-                      Boost::container
-                      Boost::log
+                      ${Boost_LIBRARIES}
 
                       # Containers and math implementation could be replaced with namespace change
                       ${CMAKE_WORKSPACE_NAME}::containers

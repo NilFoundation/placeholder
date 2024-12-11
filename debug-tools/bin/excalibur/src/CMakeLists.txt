@@ -18,7 +18,6 @@ endif()
 # list cpp files excluding platform-dependent files
 list(APPEND ${CMAKE_PROJECT_NAME}_SOURCES main.cpp)
 
-find_package(Boost COMPONENTS random)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(GTK REQUIRED gtk4)

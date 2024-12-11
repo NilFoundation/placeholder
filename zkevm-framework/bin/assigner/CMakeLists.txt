@@ -20,9 +20,7 @@ target_link_libraries(${TARGET_NAME}
     zkEVMJsonHelpers
     zkEVMOutputArtifacts
     proof-producer-multi-threaded-lib
-    Boost::program_options
-    Boost::log
-    Boost::random
+    ${Boost_LIBRARIES}
 )
 
 install(TARGETS ${TARGET_NAME})

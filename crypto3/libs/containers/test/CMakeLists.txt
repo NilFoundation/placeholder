@@ -30,8 +30,7 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
     ${CMAKE_WORKSPACE_NAME}::algebra
     ${CMAKE_WORKSPACE_NAME}::hash
 
-    Boost::unit_test_framework
-    Boost::random
+    ${Boost_LIBRARIES}
 )
 set_target_properties(_cm_internal_tests-crypto3-containers-test PROPERTIES CXX_STANDARD 20)
 target_precompile_headers(_cm_internal_tests-crypto3-containers-test REUSE_FROM crypto3_precompiled_headers)
@@ -53,9 +52,10 @@ macro(define_storage_test test)
         ${CMAKE_WORKSPACE_NAME}::algebra
         ${CMAKE_WORKSPACE_NAME}::hash
 
-        Boost::unit_test_framework
-        Boost::random
+        ${Boost_LIBRARIES}
     )
+
+message("\n\n\n\nBoost_LIBRARIES: ${Boost_LIBRARIES}")
 
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 

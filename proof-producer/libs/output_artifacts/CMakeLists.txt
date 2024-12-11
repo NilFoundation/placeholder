@@ -7,15 +7,10 @@ target_include_directories(proof_generatorOutputArtifacts
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-find_package(Boost REQUIRED COMPONENTS filesystem log)
-if(ENABLE_TESTS)
-    find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-endif()
-
 target_link_libraries(proof_generatorOutputArtifacts
                       PUBLIC
                       crypto3::common
-                      Boost::log
+                      ${Boost_LIBRARIES}
 )
 
 set_target_properties(proof_generatorOutputArtifacts PROPERTIES

@@ -9,8 +9,7 @@
 include(CMTest)
 
 cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
-                       Boost::random
-                       Boost::unit_test_framework
+                       ${Boost_LIBRARIES}
                        )
 
 macro(define_math_test name)
