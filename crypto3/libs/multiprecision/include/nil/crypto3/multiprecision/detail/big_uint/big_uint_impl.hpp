@@ -353,15 +353,50 @@ namespace nil::crypto3::multiprecision {
 
         // Comparisions
 
-        constexpr int compare(const big_uint& b) const noexcept {
+        template<std::size_t Bits2>
+        constexpr int compare(const big_uint<Bits2>& b) const noexcept {
+            std::size_t as = used_limbs();
+            std::size_t bs = b.used_limbs();
+            if (as != bs) {
+                return as > bs ? 1 : -1;
+            }
             auto pa = limbs();
             auto pb = b.limbs();
-            for (int i = limbs_count() - 1; i >= 0; --i) {
+            for (auto i = static_cast<std::ptrdiff_t>(as) - 1; i >= 0; --i) {
                 if (pa[i] != pb[i]) {
                     return pa[i] > pb[i] ? 1 : -1;
                 }
             }
             return 0;
+        }
+
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+        constexpr int compare(const T& b) const noexcept {
+            if (b < 0) {
+                return 1;
+            }
+            return compare(static_cast<std::make_unsigned_t<T>>(b));
+        }
+
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        constexpr int compare(const T& b) const noexcept {
+            static_assert(sizeof(T) <= sizeof(double_limb_type));
+            std::size_t s = used_limbs();
+            if constexpr (sizeof(T) <= sizeof(limb_type)) {
+                if (s > 1) {
+                    return 1;
+                }
+                auto lmb = this->limbs()[0];
+                return lmb == b ? 0 : lmb > b ? 1 : -1;
+            } else {
+                if (s > 2) {
+                    return 1;
+                }
+                auto dbl = static_cast<double_limb_type>(*this);
+                return dbl == b ? 0 : dbl > b ? 1 : -1;
+            }
         }
 
         // Arithmetic operations
@@ -1435,12 +1470,14 @@ namespace nil::crypto3::multiprecision {
 
     // Comparison
 
-#define NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(op)                       \
+#define NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(OP_)                       \
     NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                           \
-    constexpr bool operator op(const T1& a, const T2& b) noexcept { \
-        largest_t ap = a;                                           \
-        largest_t bp = b;                                           \
-        return ap.compare(bp) op 0;                                 \
+    constexpr bool operator OP_(const T1& a, const T2& b) noexcept { \
+        if constexpr (detail::is_big_uint_v<T1>) {                  \
+            return a.compare(b) OP_ 0;                               \
+        } else {                                                    \
+            return (-(b.compare(a)))OP_ 0;                           \
+        }                                                           \
     }
 
     NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(<)
