@@ -57,7 +57,7 @@ macro(define_big_int_test name)
     # target_link_libraries(${test_name} no_eh_support)
     add_dependencies(${CURRENT_PROJECT_NAME}_test_suite_big_int_tests ${test_name})
 
-endmacro(define_big_uint_test)
+endmacro(define_big_int_test)
 
 set(RUNTIME_TESTS_NAMES
     "inverse"
