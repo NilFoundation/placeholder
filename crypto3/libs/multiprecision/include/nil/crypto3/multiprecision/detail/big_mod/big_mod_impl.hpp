@@ -228,9 +228,13 @@ namespace nil::crypto3::multiprecision {
     template<typename T1, typename T2,                                             \
              std::enable_if_t<detail::are_valid_operand_types<T1, T2>(), int> = 0> \
     constexpr bool operator OP_(const T1& a, const T2& b) noexcept {               \
-        const auto& ops_storage = detail::get_ops_storage_from_operands(a, b);     \
-        return detail::convert_to_raw_base(a, ops_storage.ops())                   \
-            OP_ detail::convert_to_raw_base(b, ops_storage.ops());                 \
+        if constexpr (detail::is_big_mod_v<T1> && detail::is_big_mod_v<T2>) {      \
+            return a.raw_base() OP_ b.raw_base();                                  \
+        } else if constexpr (detail::is_big_mod_v<T1>) {                           \
+            return a.base() OP_ b;                                                 \
+        } else {                                                                   \
+            return a OP_ b.base();                                                 \
+        }                                                                          \
     }
 
     NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(==)
