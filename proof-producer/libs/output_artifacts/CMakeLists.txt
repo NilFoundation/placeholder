@@ -1,5 +1,5 @@
 add_library(proof_generatorOutputArtifacts 
-    SHARED
+    STATIC
     src/output_artifacts.cpp
 )
 
