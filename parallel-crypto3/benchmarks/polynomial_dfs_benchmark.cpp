@@ -153,7 +153,7 @@ BENCHMARK_AUTO_TEST_CASE(dummy_test, 100) {
     STOP_TIMER("dummy")
 }
 
-BENCHMARK_AUTO_TEST_CASE(polynomial_product_test, 20) {
+BENCHMARK_AUTO_TEST_CASE(polynomial_product_test, 10) {
     using Field = nil::crypto3::algebra::fields::bls12_fr<381>;
 
     std::vector<polynomial_dfs<typename Field::value_type>> random_polynomials;
@@ -174,7 +174,7 @@ BENCHMARK_AUTO_TEST_CASE(polynomial_product_test, 20) {
     STOP_TIMER("polynomial_product")
 }
 
-BENCHMARK_AUTO_TEST_CASE(polynomial_sum_real_test, 20) {
+BENCHMARK_AUTO_TEST_CASE(polynomial_sum_real_test, 10) {
     using Field = nil::crypto3::algebra::fields::bls12_fr<381>;
 
     std::vector<polynomial_dfs<typename Field::value_type>> random_polynomials;
