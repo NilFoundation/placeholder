@@ -77,7 +77,7 @@ namespace nil {
                 // query component for minimal requirements
                 circuit_builder(ComponentStaticInfoArgs... component_static_info_args) {
                     using generator = Component<FieldType,GenerationStage::CONSTRAINTS>;
-                    typename generator::table_params min_params = generator::get_minimal_requirements();
+                    typename generator::table_params min_params = std::apply(generator::get_minimal_requirements, static_info_args_storage);
                     static_info_args_storage = {component_static_info_args...};
                     prepare_circuit_parameters(min_params.witnesses,
                                                std::max(min_params.public_inputs,std::size_t(1)), // assure at least 1 PI column is present
@@ -644,6 +644,10 @@ namespace nil {
                     bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<FieldType, lpc_placeholder_params_type>::process(
                             lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
                     return verifier_res;
+                }
+
+                circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
+                    return bp;
                 }
 
                 private:
