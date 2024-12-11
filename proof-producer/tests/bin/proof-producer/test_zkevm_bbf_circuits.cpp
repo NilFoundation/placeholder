@@ -4,7 +4,7 @@
 
 #include <nil/blueprint/utils/satisfiability_check.hpp>
 #include <nil/proof-generator/prover.hpp>
-#include "nil/proof-generator/preset/preset.hpp"
+#include <nil/proof-generator/preset/preset.hpp>
 
 
 namespace {
@@ -15,7 +15,7 @@ namespace {
         bool skip_check{false};      // skip satisfiability check while running the test
     };
 
-}
+} // namespace
 
 
 class ProverTests: public ::testing::TestWithParam<Input> {
@@ -70,7 +70,7 @@ INSTANTIATE_TEST_SUITE_P(SimpleZkevm, ProverTests, ::testing::Values(Input{Simpl
 
 // Multiple calls of Counter contract increment function (several transactions)
 const std::string MultiTxIncrement = "increment_multi_tx.pb"; 
-INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW, true}));  // https://github.com/NilFoundation/placeholder/issues/187
+INSTANTIATE_TEST_SUITE_P(MultiTxRw, ProverTests, ::testing::Values(Input{MultiTxIncrement,  RW})); 
 INSTANTIATE_TEST_SUITE_P(MultiTxBytecode, ProverTests, ::testing::Values(Input{MultiTxIncrement,  BYTECODE, true}));  // TODO
 INSTANTIATE_TEST_SUITE_P(MultiTxCopy, ProverTests, ::testing::Values(Input{MultiTxIncrement,  COPY}));
 INSTANTIATE_TEST_SUITE_P(MultiTxZkevm, ProverTests, ::testing::Values(Input{MultiTxIncrement,  ZKEVM, true})); // TODO
