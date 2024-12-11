@@ -2,8 +2,6 @@
 # Copyright 2023 Pawel Bylica.
 # Licensed under the Apache License, Version 2.0. See the LICENSE file.
 
-set(RISCV /usr/local/riscv)
-
 set(CMAKE_SYSTEM_PROCESSOR riscv32)
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_C_COMPILER ${RISCV}/bin/clang)
