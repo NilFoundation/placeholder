@@ -196,7 +196,7 @@ namespace nil::crypto3::multiprecision::detail {
             /// result should fit in the output parameter
             std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
                              int> = 0>
-        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
+        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             NIL_CO3_MP_ASSERT(a < mod());
 
             if (is_zero(exp)) {
@@ -565,7 +565,7 @@ namespace nil::crypto3::multiprecision::detail {
             /// result should fit in the output parameter
             std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
                              int> = 0>
-        constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
+        constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             /// input parameter should be less than modulus
             NIL_CO3_MP_ASSERT(a < this->mod());
 
