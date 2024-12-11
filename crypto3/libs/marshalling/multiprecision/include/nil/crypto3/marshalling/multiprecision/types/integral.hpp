@@ -27,15 +27,13 @@
 #define CRYPTO3_MARSHALLING_INTEGRAL_HPP
 
 #include <cstddef>
-#include <ratio>
-#include <limits>
-#include <type_traits>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/multiprecision/number.hpp>
 
 #include <nil/marshalling/field_type.hpp>
+#include <nil/marshalling/types/integral.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 #include <nil/marshalling/types/tag.hpp>
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
@@ -44,7 +42,6 @@
 
 #include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_type.hpp>
 #include <nil/crypto3/marshalling/multiprecision/inference.hpp>
-#include <vector>
 
 namespace nil {
     namespace crypto3 {
@@ -97,13 +94,14 @@ namespace nil {
                          std::size_t Bits,
                          typename... TOptions>
                 class integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
-                    : public ::nil::crypto3::marshalling::types::detail::adapt_basic_field_type<
-                          crypto3::marshalling::types::detail::basic_integral<TTypeBase, Bits>,
-                          TOptions...> {
+                    : public detail::adapt_basic_field_type<
+                          detail::basic_integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>>,
+                          TOptions...>
+                {
+                    using T = detail::basic_integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>>;
 
-                    using base_impl_type = ::nil::crypto3::marshalling::types::detail::adapt_basic_field_type<
-                        crypto3::marshalling::types::detail::basic_integral<TTypeBase, Bits>,
-                        TOptions...>;
+
+                    using base_impl_type = detail::adapt_basic_field_type<T, TOptions...>;
 
                 public:
                     /// @brief endian_type used for serialization.

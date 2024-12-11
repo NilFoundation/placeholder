@@ -37,7 +37,7 @@
 
 namespace nil {
     namespace crypto3 {
-        namespace marshalling {
+        namespace marshalling::multiprecision {
             namespace processing {
 
                 /// @brief Write part of integral value into the output area using big

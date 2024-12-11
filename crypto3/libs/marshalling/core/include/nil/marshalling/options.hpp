@@ -42,13 +42,12 @@
 
 namespace nil::crypto3 {
     namespace marshalling {
-        /*
+
         namespace types {
             // We cannot include integral.hpp, it includes this file. So just declare the class.
             template<typename TFieldBase, typename T, typename... TOptions>
             class integral;
         }
-        */
 
         namespace option {
             namespace detail {

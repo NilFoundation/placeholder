@@ -115,14 +115,14 @@ namespace nil {
                          typename FieldValueType,
                          typename... TOptions>
                 class pure_field_element
-                    : private ::types::detail::adapt_basic_field_type<
+                    : private detail::adapt_basic_field_type<
                           integral<TTypeBase, typename FieldValueType::field_type::integral_type>,
                           TOptions...> {
 
                     static_assert(algebra::is_field_element<FieldValueType>::value);
                     static_assert(!algebra::is_extended_field_element<FieldValueType>::value);
 
-                    using base_impl_type = ::types::detail::adapt_basic_field_type<
+                    using base_impl_type = detail::adapt_basic_field_type<
                         integral<TTypeBase, typename FieldValueType::field_type::integral_type>,
                         TOptions...>;
 
@@ -134,7 +134,7 @@ namespace nil {
                     using version_type = typename base_impl_type::version_type;
 
                     /// @brief All the options provided to this class bundled into struct.
-                    using parsed_options_type = ::types::detail::options_parser<TOptions...>;
+                    using parsed_options_type = detail::options_parser<TOptions...>;
 
                     /// @brief Type of underlying field_element value.
                     /// @details Same as template parameter T to this class.
@@ -344,7 +344,7 @@ namespace nil {
                          typename FieldValueType,
                          typename... TOptions>
                 class extended_field_element
-                    : private ::types::detail::adapt_basic_field_type<
+                    : private detail::adapt_basic_field_type<
                             types::array_list<
                                 field_type<option::little_endian>,
                                 integral<TTypeBase, typename FieldValueType::field_type::integral_type>,
@@ -355,7 +355,7 @@ namespace nil {
                     static_assert(algebra::is_field_element<FieldValueType>::value);
                     static_assert(algebra::is_extended_field_element<FieldValueType>::value);
 
-                    using base_impl_type = ::types::detail::adapt_basic_field_type<
+                    using base_impl_type = detail::adapt_basic_field_type<
                         typename types::array_list<
                                                   field_type<option::little_endian>,
                                                   integral<TTypeBase, typename FieldValueType::field_type::integral_type>,
@@ -371,7 +371,7 @@ namespace nil {
                     using version_type = typename base_impl_type::version_type;
 
                     /// @brief All the options provided to this class bundled into struct.
-                    using parsed_options_type = ::types::detail::options_parser<TOptions...>;
+                    using parsed_options_type = detail::options_parser<TOptions...>;
 
                     /// @brief Type of underlying field_element value.
                     /// @details Same as template parameter T to this class.

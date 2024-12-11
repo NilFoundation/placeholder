@@ -31,17 +31,15 @@
 #include <nil/marshalling/options.hpp>
 #include <nil/marshalling/field_type.hpp>
 
-namespace nil {
-#if 1
-    namespace crypto3 {
-        namespace marshalling {
-            namespace types {
-                template<typename TTypeBase, typename T, typename... TOptions>
+namespace nil::crypto3 {
+
+    namespace marshalling {
+        namespace types {
+            template<typename TTypeBase, typename T, typename... TOptions>
                 class integral;
-            }        // namespace types
-        }        // namespace marshalling
-    }        // namespace crypto3
-#endif
+        }        // namespace types
+    }        // namespace marshalling
+
     namespace marshalling {
 
         template<typename T, typename Enabled>
