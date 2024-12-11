@@ -24,6 +24,7 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/constexpr_support.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
+#include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
@@ -190,11 +191,11 @@ namespace nil::crypto3::multiprecision::detail {
             barrett_reduce(result, tmp);
         }
 
-        template<std::size_t Bits2, std::size_t Bits3, typename T,
-                 /// result should fit in the output parameter
-                 std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
-                                      std::numeric_limits<T>::is_integer,
-                                  int> = 0>
+        template<
+            std::size_t Bits2, std::size_t Bits3, typename T,
+            /// result should fit in the output parameter
+            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
+                             int> = 0>
         constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             NIL_CO3_MP_ASSERT(a < mod());
 
@@ -559,11 +560,11 @@ namespace nil::crypto3::multiprecision::detail {
         }
 #undef NIL_CO3_MP_MONTGOMERY_MUL_CIOS_LOOP_BODY
 
-        template<std::size_t Bits2, std::size_t Bits3, typename T,
-                 /// result should fit in the output parameter
-                 std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
-                                      std::numeric_limits<T>::is_integer,
-                                  int> = 0>
+        template<
+            std::size_t Bits2, std::size_t Bits3, typename T,
+            /// result should fit in the output parameter
+            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
+                             int> = 0>
         constexpr void exp(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             /// input parameter should be less than modulus
             NIL_CO3_MP_ASSERT(a < this->mod());
