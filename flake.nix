@@ -19,6 +19,7 @@
         pkgs = import nixpkgs {
           inherit system;
           overlays = [ nix-3rdparty.overlays.${system}.default ];
+          boost = pkgs.boost.override { enableShared = false; enabledStatic = true; };
         };
       in rec {
         packages = rec {

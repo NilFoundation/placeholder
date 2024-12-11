@@ -41,7 +41,8 @@ macro(define_transpiler_test name)
     set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
-    if(target_type STREQUAL "SHARED_LIB")
+    if(target_type STREQUAL "SHARED_LIBRARY")
+        message(FATAL_ERROR "Boost::unit_test_framework is shared!")
         target_compile_definitions(${full_test_name} PRIVATE BOOST_TEST_DYN_LINK)
     elseif(target_type STREQUAL "STATIC_LIB")
 
