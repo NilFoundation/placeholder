@@ -1471,13 +1471,13 @@ namespace nil::crypto3::multiprecision {
     // Comparison
 
 #define NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(OP_)                       \
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                           \
+    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                            \
     constexpr bool operator OP_(const T1& a, const T2& b) noexcept { \
-        if constexpr (detail::is_big_uint_v<T1>) {                  \
+        if constexpr (detail::is_big_uint_v<T1>) {                   \
             return a.compare(b) OP_ 0;                               \
-        } else {                                                    \
+        } else {                                                     \
             return (-(b.compare(a)))OP_ 0;                           \
-        }                                                           \
+        }                                                            \
     }
 
     NIL_CO3_MP_BIG_UINT_IMPL_OPERATOR(<)
