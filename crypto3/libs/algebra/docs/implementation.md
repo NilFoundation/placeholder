@@ -162,7 +162,7 @@ It also contains `pairing_policy` type, needed for comfortable usage of curve pa
 
 ### Curve Element Algorithms ### {#curve_element_algorithms}
 
-Curve element corresponds an point of the curve and has all the needed methods and overloaded arithmetic operators. The corresponding algorithms 
+Curve element corresponds a point of the curve and has all the needed methods and overloaded arithmetic operators. The corresponding algorithms 
 are based on the underlying field algorithms are also defined here.
 
 ### Basic Curve Policies ### {#basic_curve_policies}

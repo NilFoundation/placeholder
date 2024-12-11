@@ -59,7 +59,7 @@ In EVM there are simple rules to identify basic instruction block boundaries:
    - `REVERT`,
    - `SELFDESTRUCT`.
 
-A basic instruction block is a shortest sequence of instructions such that 
+A basic instruction block is the shortest sequence of instructions such that 
 a basic block starts before the first instruction and ends after the last.
 
 In some cases multiple of the above rules can apply to single basic instruction 
