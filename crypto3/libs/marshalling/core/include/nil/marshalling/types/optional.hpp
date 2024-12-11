@@ -34,7 +34,7 @@
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
@@ -45,16 +45,16 @@ namespace nil {
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field.@n
             ///     Supported options are:
-            ///     @li @ref nil::marshalling::option::default_value_initializer, @ref
-            ///     nil::marshalling::option::default_optional_mode,
-            ///         @ref nil::marshalling::option::optional_missing_by_default, or @ref
-            ///         nil::marshalling::option::optional_exists_by_default.
-            ///     @li @ref nil::marshalling::option::contents_validator.
-            ///     @li @ref nil::marshalling::option::contents_refresher
-            ///     @li @ref nil::marshalling::option::has_custom_read
-            ///     @li @ref nil::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::marshalling::option::version_storage
-            /// @extends nil::marshalling::field_type
+            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer, @ref
+            ///     nil::crypto3::marshalling::option::default_optional_mode,
+            ///         @ref nil::crypto3::marshalling::option::optional_missing_by_default, or @ref
+            ///         nil::crypto3::marshalling::option::optional_exists_by_default.
+            ///     @li @ref nil::crypto3::marshalling::option::contents_validator.
+            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+            ///     @li @ref nil::crypto3::marshalling::option::version_storage
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/optional.hpp
             template<typename TField, typename... TOptions>
             class optional : private detail::adapt_basic_field_type<detail::basic_optional<TField>, TOptions...> {
@@ -224,7 +224,7 @@ namespace nil {
 
                 /// @brief Read field value from input data sequence
                 /// @details If field is marked as missing (mode is optional_mode::missing),
-                ///     function returns nil::marshalling::ErrorStatus::Success without advancing iterator.@n
+                ///     function returns nil::crypto3::marshalling::ErrorStatus::Success without advancing iterator.@n
                 ///     If field is marked as existing (mode is optional_mode::exists) the
                 ///     read() member function of the wrapped field object is invoked.@n
                 ///     If field is marked to be tentative (mode is optional_mode::tentative),
@@ -232,7 +232,7 @@ namespace nil {
                 ///     value of the "len" parameter is greater than 0, i.e. there are
                 ///     still bytes available for reading, and field itself is marked as
                 ///     existing.@n Otherwise, field is marked as missing and
-                ///     nil::marshalling::ErrorStatus::Success is returned.
+                ///     nil::crypto3::marshalling::ErrorStatus::Success is returned.
                 /// @param[in, out] iter Iterator to read the data.
                 /// @param[in] len Number of bytes available for reading.
                 /// @return Status of read operation.
@@ -254,13 +254,13 @@ namespace nil {
 
                 /// @brief Write current field value to output data sequence
                 /// @details If field is marked as missing (mode is optional_mode::missing),
-                ///     function returns nil::marshalling::ErrorStatus::Success without advancing iterator.@n
+                ///     function returns nil::crypto3::marshalling::ErrorStatus::Success without advancing iterator.@n
                 ///     If field is marked as existing (mode is optional_mode::exists) the
                 ///     write() member function of the wrapped field object is invoked.@n
                 ///     If field is marked to be tentative (mode is optional_mode::tentative),
                 ///     the call redirected to wrapped field's write() member function if
                 ///     value of the "len" parameter is greater than 0, i.e. there is
-                ///     space available for writing.@n Otherwise, nil::marshalling::ErrorStatus::Success
+                ///     space available for writing.@n Otherwise, nil::crypto3::marshalling::ErrorStatus::Success
                 ///     is returned.
                 /// @param[in, out] iter Iterator to write the data.
                 /// @param[in] len Maximal number of bytes that can be written.
@@ -287,7 +287,7 @@ namespace nil {
                 }
 
                 /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                 version_type get_version() const {
                     return base_impl_type::get_version();
                 }
@@ -305,7 +305,7 @@ namespace nil {
             private:
                 static_assert(
                     !parsed_options_type::has_invalid_by_default,
-                    "nil::marshalling::option::invalid_by_default option is not applicable to optional field");
+                    "nil::crypto3::marshalling::option::invalid_by_default option is not applicable to optional field");
             };
 
             /// @brief Equality comparison operator.
@@ -384,17 +384,17 @@ namespace nil {
                 return field2 <= field1;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::optional type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::optional type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::optional
+            /// @related nil::crypto3::marshalling::types::optional
             template<typename TField, typename... TOptions>
             inline optional<TField, TOptions...> &to_field_base(optional<TField, TOptions...> &field) {
                 return field;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::optional type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::optional type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::optional
+            /// @related nil::crypto3::marshalling::types::optional
             template<typename TField, typename... TOptions>
             inline const optional<TField, TOptions...> &to_field_base(const optional<TField, TOptions...> &field) {
                 return field;

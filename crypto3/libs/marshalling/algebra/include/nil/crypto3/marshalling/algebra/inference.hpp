@@ -79,7 +79,7 @@ namespace nil {
         public:
             template <typename TEndian = default_endianness>
             using type = nil::crypto3::marshalling::types::field_element<
-                nil::marshalling::field_type<TEndian>,
+                field_type<TEndian>,
                 T>;
             static const bool value = true;
             static const bool fixed_size = true;

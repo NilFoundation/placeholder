@@ -46,18 +46,18 @@ namespace nil {
                 // For example selector algorithms may be completely different.
                 // *********************** Lookup constraint **************************** //
                 template<typename TTypeBase, typename Constraint>
-                using plonk_lookup_constraint = nil::marshalling::types::bundle<TTypeBase, std::tuple<
-                    nil::marshalling::types::integral<TTypeBase, std::size_t>, // table_id
+                using plonk_lookup_constraint = nil::crypto3::marshalling::types::bundle<TTypeBase, std::tuple<
+                    nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>, // table_id
                     plonk_constraints<TTypeBase, typename Constraint::constraint_type>                   // constraint
                 >>;
 
                 template<typename Endianness, typename Constraint>
-                plonk_lookup_constraint<nil::marshalling::field_type<Endianness>, Constraint>
+                plonk_lookup_constraint<nil::crypto3::marshalling::field_type<Endianness>, Constraint>
                 fill_plonk_lookup_constraint(const Constraint &constraint){
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     return plonk_lookup_constraint<TTypeBase, Constraint>(
                         std::tuple(
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>(constraint.table_id),
+                            nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(constraint.table_id),
                             fill_plonk_constraints<Endianness, typename Constraint::constraint_type>(constraint.lookup_input)
                         )
                     );
@@ -65,7 +65,7 @@ namespace nil {
 
                 template<typename Endianness, typename Constraint>
                 Constraint make_plonk_lookup_constraint(
-                    const plonk_lookup_constraint<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraint)
+                    const plonk_lookup_constraint<nil::crypto3::marshalling::field_type<Endianness>, Constraint> &filled_constraint)
                 {
                     return Constraint({
                         std::get<0>(filled_constraint.value()).value(),
@@ -75,15 +75,15 @@ namespace nil {
 
                 // *********************** Vector of lookup constraints for a lookup gate **************************** //
                 template<typename TTypeBase, typename Constraint>
-                using plonk_lookup_constraints = nil::marshalling::types::standard_array_list<
+                using plonk_lookup_constraints = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase,
                     plonk_lookup_constraint<TTypeBase, Constraint>
                 >;
 
                 template<typename Endianness, typename Constraint>
-                plonk_lookup_constraints<nil::marshalling::field_type<Endianness>, Constraint>
+                plonk_lookup_constraints<nil::crypto3::marshalling::field_type<Endianness>, Constraint>
                 fill_plonk_lookup_constraints(const std::vector<Constraint> &constraints) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     plonk_lookup_constraints<TTypeBase, Constraint> filled_constraints;
                     for (const auto &constraint : constraints) {
@@ -95,7 +95,7 @@ namespace nil {
 
                 template<typename Endianness, typename Constraint>
                 std::vector<Constraint> make_plonk_lookup_constraints(
-                    const plonk_lookup_constraints<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraints)
+                    const plonk_lookup_constraints<nil::crypto3::marshalling::field_type<Endianness>, Constraint> &filled_constraints)
                 {
                     std::vector<Constraint> constraints;
                     constraints.reserve(filled_constraints.value().size());

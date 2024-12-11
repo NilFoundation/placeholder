@@ -90,7 +90,7 @@ namespace nil {
                  * */
                 template<std::size_t Version>
                 struct curve_element_writer<
-                    nil::marshalling::endian::big_endian,
+                    endian::big_endian,
                     typename algebra::curves::detail::secp_r1_g1<
                         Version,
                         algebra::curves::forms::short_weierstrass,
@@ -99,18 +99,18 @@ namespace nil {
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
 
                     template<typename TIter>
                     static typename std::enable_if<
                         std::is_same<std::uint8_t, typename std::iterator_traits<TIter>::value_type>::value,
-                        nil::marshalling::status_type>::type
+                        status_type>::type
                     process(const group_value_type &point, TIter &iter)
                     {
                         if (point.is_zero()) {
                             *iter++ = 0x00;
-                            return nil::marshalling::status_type::success;
+                            return status_type::success;
                         }
                         typename group_type::curve_type::template g1_type<typename algebra::curves::coordinates::affine, form>::value_type
                             point_affine = point.to_affine();
@@ -120,20 +120,20 @@ namespace nil {
                                 static_cast<typename group_value_type::field_type::integral_type>(point_affine.X.data),
                                 iter);
 
-                        return nil::marshalling::status_type::success;
+                        return status_type::success;
                     }
                 };
 
                 template<typename Coordinates, std::size_t Version>
                 struct curve_element_reader<
-                    nil::marshalling::endian::big_endian,
+                    endian::big_endian,
                     typename algebra::curves::detail::secp_r1_g1<Version, algebra::curves::forms::short_weierstrass, Coordinates >> {
 
                     using group_type = typename algebra::curves::secp_r1<Version>::template g1_type<>;
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
                     using curve_params = typename group_type::params_type;
                     using integral_type = typename group_value_type::field_type::integral_type;
@@ -143,7 +143,7 @@ namespace nil {
                     template<typename TIter>
                     static typename std::enable_if<
                         std::is_same<std::uint8_t, typename std::iterator_traits<TIter>::value_type>::value,
-                        nil::marshalling::status_type>::type
+                        status_type>::type
                     process(group_value_type &point, TIter &iter)
                     {
                         using chunk_type = typename TIter::value_type;
@@ -152,11 +152,11 @@ namespace nil {
 
                         if (0x00 == prefix) {
                             point = group_value_type::zero();
-                            return nil::marshalling::status_type::success;
+                            return status_type::success;
                         }
 
                         if (prefix != 0x02 && prefix != 0x03) {
-                            return nil::marshalling::status_type::invalid_msg_data;
+                            return status_type::invalid_msg_data;
                         }
 
                         constexpr static const std::size_t sizeof_field_element =
@@ -166,7 +166,7 @@ namespace nil {
                         g1_field_value_type x_mod(x);
                         g1_field_value_type y2_mod = x_mod * x_mod * x_mod + curve_params::a * x_mod + curve_params::b;
                         if (!y2_mod.is_square()) {
-                            return nil::marshalling::status_type::invalid_msg_data;
+                            return status_type::invalid_msg_data;
                         }
 
                         g1_field_value_type y_mod = y2_mod.sqrt();
@@ -179,7 +179,7 @@ namespace nil {
                             point = group_value_type(x_mod, -y_mod);
                         }
 
-                        return nil::marshalling::status_type::success;
+                        return status_type::success;
                     }
                 };
 

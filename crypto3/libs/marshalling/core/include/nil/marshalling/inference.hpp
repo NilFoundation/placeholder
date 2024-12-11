@@ -30,15 +30,16 @@
 #include <boost/type_traits/is_same.hpp>
 
 #include <nil/marshalling/field_type.hpp>
-#include <nil/marshalling/types/integral.hpp>
+//#include <nil/marshalling/types/integral.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
 
         template<typename T, typename Enabled = void>
         class is_compatible;
 
+/*        
         template<typename T>
         class is_compatible <T, typename std::enable_if<std::is_integral<T>::value>::type> {
             using default_endianness = option::big_endian;
@@ -49,6 +50,7 @@ namespace nil {
             static const bool fixed_size = true;
         };
 
+    
         template<typename Backend,
                  boost::multiprecision::expression_template_option ExpressionTemplates>
         class is_compatible <boost::multiprecision::number<Backend, ExpressionTemplates>, void> {
@@ -60,7 +62,7 @@ namespace nil {
             static const bool value = true;
             static const bool fixed_size = true;
         };
-
+*/
         template<typename T>
         class is_compatible <std::vector<T>, typename std::enable_if<is_compatible<T>::value
                                                                     && is_compatible<T>::fixed_size>::type> {

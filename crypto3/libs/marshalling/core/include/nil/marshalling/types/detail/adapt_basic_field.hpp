@@ -29,7 +29,7 @@
 #include <nil/marshalling/types/adapter/sequence_size_field_prefix.hpp>
 #include <nil/marshalling/types/detail/options_parser.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {

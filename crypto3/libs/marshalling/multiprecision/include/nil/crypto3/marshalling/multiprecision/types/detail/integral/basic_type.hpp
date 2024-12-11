@@ -109,17 +109,17 @@ namespace nil {
                         }
 
                         template<typename TIter>
-                        nil::marshalling::status_type read(TIter &iter, std::size_t size) {
+                        nil::crypto3::marshalling::status_type read(TIter &iter, std::size_t size) {
                             
                             if (size < (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             bit_length() : length())) {
-                                return nil::marshalling::status_type::not_enough_data;
+                                return nil::crypto3::marshalling::status_type::not_enough_data;
                             }
 
                             read_no_status(iter);
                             iter += (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             max_bit_length() : max_length());
-                            return nil::marshalling::status_type::success;
+                            return nil::crypto3::marshalling::status_type::success;
                         }
 
                         template<typename TIter>
@@ -129,17 +129,17 @@ namespace nil {
                         }
 
                         template<typename TIter>
-                        nil::marshalling::status_type write(TIter &iter, std::size_t size) const {
+                        nil::crypto3::marshalling::status_type write(TIter &iter, std::size_t size) const {
                             if (size < (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             bit_length() : length())) {
-                                return nil::marshalling::status_type::buffer_overflow;
+                                return nil::crypto3::marshalling::status_type::buffer_overflow;
                             }
 
                             write_no_status(iter);
 
                             iter += (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             max_bit_length() : max_length());
-                            return nil::marshalling::status_type::success;
+                            return nil::crypto3::marshalling::status_type::success;
                         }
 
                         template<typename TIter>

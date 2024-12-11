@@ -39,7 +39,7 @@
 
 #include <nil/marshalling/types/detail/common_funcs.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -50,7 +50,7 @@ namespace nil {
                 };
 
                 template<std::size_t TSize>
-                struct string_max_length_retrieve_helper<nil::marshalling::container::static_string<TSize>> {
+                struct string_max_length_retrieve_helper<nil::crypto3::marshalling::container::static_string<TSize>> {
                     static const std::size_t value = TSize - 1;
                 };
 

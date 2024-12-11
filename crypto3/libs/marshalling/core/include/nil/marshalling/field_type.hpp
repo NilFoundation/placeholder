@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------//
 
 /// @file
-/// @brief Contains definition of @ref nil::marshalling::field_type class.
+/// @brief Contains definition of @ref nil::crypto3::marshalling::field_type class.
 
 #ifndef MARSHALLING_FIELD_TYPE_HPP
 #define MARSHALLING_FIELD_TYPE_HPP
@@ -32,13 +32,13 @@
 #include <nil/marshalling/processing/access.hpp>
 #include <nil/marshalling/detail/field_base.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
 
         /// @brief Base class to all the field classes.
         /// @details Every custom "field" class should inherit from this one.
         /// @tparam TOptions Zero or more options. The supported options are:
-        ///     @li nil::marshalling::option::big_endian or nil::marshalling::option::little_endian - Option to
+        ///     @li nil::crypto3::marshalling::option::big_endian or nil::crypto3::marshalling::option::little_endian - Option to
         ///         specify serialization endian. If none is provided big endian is
         ///         assumed.
         /// @headerfile nil/marshalling/field_type.hpp
@@ -48,8 +48,8 @@ namespace nil {
 
         public:
             /// @brief endian_type type
-            /// @details Equal to either @ref nil::marshalling::endian::big_endian or
-            ///     @ref nil::marshalling::endian::little_endian
+            /// @details Equal to either @ref nil::crypto3::marshalling::endian::big_endian or
+            ///     @ref nil::crypto3::marshalling::endian::little_endian
             using endian_type = typename base_impl_type::endian_type;
 
             /// @brief Version type

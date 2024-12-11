@@ -35,7 +35,7 @@
 
 #include <nil/marshalling/assert_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace processing {
 

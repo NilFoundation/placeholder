@@ -31,7 +31,7 @@
 #include <nil/marshalling/options.hpp>
 #include <nil/marshalling/compile_control.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -82,7 +82,7 @@ namespace nil {
 
 #if 0
                 template<typename T, typename... TOptions>
-                class options_parser<nil::marshalling::option::custom_value_reader<T>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::custom_value_reader<T>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_custom_value_reader = true;
@@ -90,14 +90,14 @@ namespace nil {
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::has_custom_read, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::has_custom_read, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_custom_read = true;
                 };
 
                 template<std::intmax_t TOffset, typename... TOptions>
-                class options_parser<nil::marshalling::option::num_value_ser_offset<TOffset>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::num_value_ser_offset<TOffset>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_ser_offset = true;
@@ -105,7 +105,7 @@ namespace nil {
                 };
 
                 template<std::size_t TLen, bool TSignExtend, typename... TOptions>
-                class options_parser<nil::marshalling::option::fixed_length<TLen, TSignExtend>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::fixed_length<TLen, TSignExtend>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_fixed_length_limit = true;
@@ -114,7 +114,7 @@ namespace nil {
                 };
 
                 template<std::size_t TLen, typename... TOptions>
-                class options_parser<nil::marshalling::option::fixed_bit_length<TLen>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::fixed_bit_length<TLen>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_fixed_bit_length_limit = true;
@@ -122,7 +122,7 @@ namespace nil {
                 };
 
                 template<std::size_t TMinLen, std::size_t TMaxLen, typename... TOptions>
-                class options_parser<nil::marshalling::option::var_length<TMinLen, TMaxLen>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::var_length<TMinLen, TMaxLen>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_var_length_limits = true;
@@ -131,28 +131,28 @@ namespace nil {
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_size_forcing_enabled, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::sequence_size_forcing_enabled, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_size_forcing = true;
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_length_forcing_enabled, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::sequence_length_forcing_enabled, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_length_forcing = true;
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_elem_length_forcing_enabled, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::sequence_elem_length_forcing_enabled, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_elem_length_forcing = true;
                 };
 
                 template<std::size_t TSize, typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_fixed_size<TSize>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::sequence_fixed_size<TSize>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_fixed_size = true;
@@ -161,7 +161,7 @@ namespace nil {
 
 #endif
                 template<typename TSizeField, typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_size_field_prefix<TSizeField>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::sequence_size_field_prefix<TSizeField>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_size_field_prefix = true;
@@ -169,35 +169,35 @@ namespace nil {
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::orig_data_view, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::orig_data_view, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_orig_data_view = true;
                 };
 
                 template<typename TType, typename... TOptions>
-                class options_parser<nil::marshalling::option::custom_storage_type<TType>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::custom_storage_type<TType>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_custom_storage_type = true;
                     using custom_storage_type = TType;
                 };
                 template<std::size_t TSize, typename... TOptions>
-                class options_parser<nil::marshalling::option::fixed_size_storage<TSize>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::fixed_size_storage<TSize>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_fixed_size_storage = true;
                     static const std::size_t fixed_size_storage = TSize;
                 };
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_fixed_size_use_fixed_size_storage, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::sequence_fixed_size_use_fixed_size_storage, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_fixed_size_use_fixed_size_storage = true;
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::has_custom_version_update, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::has_custom_version_update, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_custom_version_update = true;
@@ -207,7 +207,7 @@ namespace nil {
 #if 0
                 template<typename TField, status_type TReadErrorStatus, typename... TOptions>
                 class options_parser<
-                    nil::marshalling::option::sequence_ser_length_field_prefix<TField, TReadErrorStatus>,
+                    nil::crypto3::marshalling::option::sequence_ser_length_field_prefix<TField, TReadErrorStatus>,
                     TOptions...> : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_ser_length_field_prefix = true;
@@ -218,7 +218,7 @@ namespace nil {
 
                 template<typename TField, status_type TReadErrorStatus, typename... TOptions>
                 class options_parser<
-                    nil::marshalling::option::sequence_elem_ser_length_field_prefix<TField, TReadErrorStatus>,
+                    nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix<TField, TReadErrorStatus>,
                     TOptions...> : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_elem_ser_length_field_prefix = true;
@@ -229,7 +229,7 @@ namespace nil {
 
                 template<typename TField, status_type TReadErrorStatus, typename... TOptions>
                 class options_parser<
-                    nil::marshalling::option::sequence_elem_fixed_ser_length_field_prefix<TField, TReadErrorStatus>,
+                    nil::crypto3::marshalling::option::sequence_elem_fixed_ser_length_field_prefix<TField, TReadErrorStatus>,
                     TOptions...> : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_elem_fixed_ser_length_field_prefix = true;
@@ -239,7 +239,7 @@ namespace nil {
                 };
 
                 template<typename TTrailField, typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_trailing_field_suffix<TTrailField>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::sequence_trailing_field_suffix<TTrailField>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_trailing_field_suffix = true;
@@ -247,7 +247,7 @@ namespace nil {
                 };
 
                 template<typename TTermField, typename... TOptions>
-                class options_parser<nil::marshalling::option::sequence_termination_field_suffix<TTermField>,
+                class options_parser<nil::crypto3::marshalling::option::sequence_termination_field_suffix<TTermField>,
                                      TOptions...> : public options_parser<TOptions...> {
                 public:
                     static const bool has_sequence_termination_field_suffix = true;
@@ -255,7 +255,7 @@ namespace nil {
                 };
 
                 template<typename TInitialiser, typename... TOptions>
-                class options_parser<nil::marshalling::option::default_value_initializer<TInitialiser>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::default_value_initializer<TInitialiser>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_default_value_initializer = true;
@@ -263,7 +263,7 @@ namespace nil {
                 };
 
                 template<typename TValidator, typename... TOptions>
-                class options_parser<nil::marshalling::option::contents_validator<TValidator>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::contents_validator<TValidator>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_custom_validator = true;
@@ -271,7 +271,7 @@ namespace nil {
                 };
 
                 template<typename TRefresher, typename... TOptions>
-                class options_parser<nil::marshalling::option::contents_refresher<TRefresher>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::contents_refresher<TRefresher>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_contents_refresher = true;
@@ -279,14 +279,14 @@ namespace nil {
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::has_custom_refresh, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::has_custom_refresh, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_custom_refresh = true;
                 };
 
                 template<status_type TStatus, typename... TOptions>
-                class options_parser<nil::marshalling::option::fail_on_invalid<TStatus>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::fail_on_invalid<TStatus>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_fail_on_invalid = true;
@@ -294,29 +294,29 @@ namespace nil {
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::ignore_invalid, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::ignore_invalid, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_ignore_invalid = true;
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::invalid_by_default, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::invalid_by_default, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_invalid_by_default = true;
                 };
 
                 template<std::intmax_t TNum, std::intmax_t TDenom, typename... TOptions>
-                class options_parser<nil::marshalling::option::scaling_ratio<TNum, TDenom>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::scaling_ratio<TNum, TDenom>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_scaling_ratio = true;
                     using scaling_ratio_type = std::ratio<TNum, TDenom>;
                 };
 
-               template<typename... TOptions>
-                class options_parser<nil::marshalling::option::empty_serialization, TOptions...>
+                template<typename... TOptions>
+                class options_parser<nil::crypto3::marshalling::option::empty_serialization, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_empty_serialization = true;
@@ -348,7 +348,7 @@ namespace nil {
                     TBase::has_multi_range_validation>::template type<TBase, T, TMinValue, TMaxValue>;
 
                 template<std::intmax_t TMinValue, std::intmax_t TMaxValue, typename... TOptions>
-                class options_parser<nil::marshalling::option::valid_num_value_range<TMinValue, TMaxValue>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::valid_num_value_range<TMinValue, TMaxValue>, TOptions...>
                     : public options_parser<TOptions...> {
                     using base_impl_type = options_parser<TOptions...>;
 
@@ -357,7 +357,7 @@ namespace nil {
                     static_assert(
                         !base_impl_type::has_multi_range_validation,
                         "Sorry gcc-4.7 fails to compile valid C++11 code that allows multiple usage"
-                        "of nil::marshalling::option::valid_num_value_range options. Either use it only once or"
+                        "of nil::crypto3::marshalling::option::valid_num_value_range options. Either use it only once or"
                         "upgrade your compiler.");
 #endif
                     using multi_range_validation_ranges
@@ -366,7 +366,7 @@ namespace nil {
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::valid_ranges_clear, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::valid_ranges_clear, TOptions...>
                     : public options_parser<TOptions...> {
                     using base_impl_type = options_parser<TOptions...>;
 
@@ -376,7 +376,7 @@ namespace nil {
                 };
 
                 template<std::uintmax_t TMinValue, std::uintmax_t TMaxValue, typename... TOptions>
-                class options_parser<nil::marshalling::option::valid_big_unsigned_num_value_range<TMinValue, TMaxValue>,
+                class options_parser<nil::crypto3::marshalling::option::valid_big_unsigned_num_value_range<TMinValue, TMaxValue>,
                                      TOptions...> : public options_parser<TOptions...> {
                     using base_impl_type = options_parser<TOptions...>;
 
@@ -385,7 +385,7 @@ namespace nil {
                     static_assert(
                         !base_impl_type::has_multi_range_validation,
                         "Sorry gcc-4.7 fails to compile valid C++11 code that allows multiple usage"
-                        "of nil::marshalling::option::valid_num_value_range options. Either use it only once or"
+                        "of nil::crypto3::marshalling::option::valid_num_value_range options. Either use it only once or"
                         "upgrade your compiler.");
 #endif
                     using multi_range_validation_ranges
@@ -394,7 +394,7 @@ namespace nil {
                 };
 
                 template<std::uintmax_t TFrom, std::uintmax_t TUntil, typename... TOptions>
-                class options_parser<nil::marshalling::option::exists_between_versions<TFrom, TUntil>, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::exists_between_versions<TFrom, TUntil>, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_versions_range = true;
@@ -403,14 +403,14 @@ namespace nil {
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::version_storage, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::version_storage, TOptions...>
                     : public options_parser<TOptions...> {
                 public:
                     static const bool has_version_storage = true;
                 };
 
                 template<typename... TOptions>
-                class options_parser<nil::marshalling::option::empty_option, TOptions...>
+                class options_parser<nil::crypto3::marshalling::option::empty_option, TOptions...>
                     : public options_parser<TOptions...> { };
 #endif
                 template<typename... TTupleOptions, typename... TOptions>
@@ -420,5 +420,5 @@ namespace nil {
             }    // namespace detail
         }        // namespace types
     }            // namespace marshalling
-}    // namespace nil
+}    // namespace nil::crypto3
 #endif    // MARSHALLING_OPTIONS_PARSER_HPP
