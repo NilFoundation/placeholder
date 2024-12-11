@@ -152,11 +152,11 @@
           parallel-crypto3-gcc = (pkgs.callPackage ./parallel-crypto3.nix {
             runTests = true;
             enableDebug = false;
-            benchmarkTests = true;
           });
           parallel-crypto3-gcc-bench = (pkgs.callPackage ./parallel-crypto3.nix {
             runTests = true;
             enableDebug = false;
+            benchmarkTests = true;
           });
           parallel-crypto3-clang = (pkgs.callPackage ./parallel-crypto3.nix {
             stdenv = pkgs.llvmPackages_19.stdenv;
