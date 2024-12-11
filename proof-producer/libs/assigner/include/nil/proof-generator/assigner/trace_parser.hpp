@@ -166,7 +166,7 @@ namespace nil {
 
             // Convert memory operations
             for (const auto& pb_mop : pb_traces->memory_ops()) {
-                auto const value = string_to_bytes(pb_mop.value());
+                auto value = string_to_bytes(pb_mop.value());
                 auto const op = blueprint::bbf::memory_rw_operation(
                     static_cast<uint64_t>(pb_mop.msg_id()),
                     blueprint::zkevm_word_type(static_cast<int>(pb_mop.index())),
@@ -174,12 +174,12 @@ namespace nil {
                     !pb_mop.is_read(),
                     blueprint::zkevm_word_from_bytes(value)
                 );
-                rw_traces.push_back(op);
+                rw_traces.push_back(std::move(op));
             }
 
             // Convert storage operations
             for (const auto& pb_sop : pb_traces->storage_ops()) {
-                const auto& op = blueprint::bbf::storage_rw_operation(
+                auto op = blueprint::bbf::storage_rw_operation(
                     static_cast<uint64_t>(pb_sop.msg_id()),
                     blueprint::zkevm_word_from_string(static_cast<std::string>(pb_sop.key())),
                     static_cast<uint64_t>(pb_sop.rw_idx()),
@@ -192,16 +192,12 @@ namespace nil {
                 rw_traces.push_back(std::move(op));
             }
 
-            using nil::blueprint::bbf::rw_operation;
-            std::sort(rw_traces.begin(), rw_traces.end(), [](rw_operation a, rw_operation b){
-                return a < b;
-            });
+            std::sort(rw_traces.begin(), rw_traces.end(), std::less());
 
             BOOST_LOG_TRIVIAL(debug) << "number RW operations " << rw_traces.size() << ":\n"
                                      << "stack   " << pb_traces->stack_ops_size() << "\n"
                                      << "memory  " << pb_traces->memory_ops_size() << "\n"
                                      << "storage " << pb_traces->storage_ops_size() << "\n";
-
 
             return rw_traces;
         }
