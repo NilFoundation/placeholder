@@ -1672,3 +1672,10 @@ namespace nil::crypto3::multiprecision {
         r = a % b;
     }
 }  // namespace nil::crypto3::multiprecision
+
+template<std::size_t Bits>
+struct std::hash<nil::crypto3::multiprecision::big_uint<Bits>> {
+    std::size_t operator()(const nil::crypto3::multiprecision::big_uint<Bits>& a) const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::big_uint<Bits>>{}(a);
+    }
+};
