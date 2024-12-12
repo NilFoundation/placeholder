@@ -242,8 +242,6 @@ namespace nil {
                                                             integral_type(t_last) * zkevm_modulus -
                                                             integral_type(N));
 
-                        zkevm_word_type result = q;
-
                         v_chunks = zkevm_word_to_field_element<FieldType>(v);
                         N_chunks = zkevm_word_to_field_element<FieldType>(N);
                         q_chunks = zkevm_word_to_field_element<FieldType>(q);

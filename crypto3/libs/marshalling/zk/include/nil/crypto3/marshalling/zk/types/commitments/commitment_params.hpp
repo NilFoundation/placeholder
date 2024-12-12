@@ -189,7 +189,7 @@ namespace nil {
 
                     auto step_list = make_integer_vector<Endianness, std::size_t>(std::get<5>(filled_params.value()));
                     std::size_t expand_factor = std::get<6>(filled_params.value()).value();
-                    std::size_t r = std::accumulate(step_list.begin(), step_list.end(), 0);
+                    std::accumulate(step_list.begin(), step_list.end(), 0);
 
                     return CommitmentParamsType(
                         step_list,
