@@ -43,7 +43,8 @@ cm_test_link_libraries(
     crypto3::math
     crypto3::multiprecision
     crypto3::random
-    ${Boost_LIBRARIES}
+    Boost::unit_test_framework
+    Boost::timer
 )
 set_target_properties(_cm_internal_tests--parallel-crypto3-benchmarks PROPERTIES CXX_STANDARD 20)
 target_precompile_headers(_cm_internal_tests--parallel-crypto3-benchmarks REUSE_FROM crypto3_precompiled_headers)
