@@ -115,8 +115,8 @@ namespace nil {
                         , _fixed_polys_values(fixed_polys_values)
                     {
                     }
- 
-      
+
+
                     lpc_commitment_scheme(const typename fri_type::params_type &fri_params)
                         : _fri_params(fri_params), _etha(0u) {
                     }
@@ -172,6 +172,7 @@ namespace nil {
 
                         BOOST_ASSERT(this->_points.size() == this->_polys.size());
                         BOOST_ASSERT(this->_points.size() == this->_z.get_batches_num());
+
                         // For each batch we have a merkle tree.
                         for (auto const& it: this->_trees) {
                             transcript(it.second.root());

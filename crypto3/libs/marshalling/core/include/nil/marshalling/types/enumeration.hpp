@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------//
 
 /// @file
-/// Contains definition of nil::marshalling::types::enumeration
+/// Contains definition of nil::crypto3::marshalling::types::enumeration
 
 #ifndef MARSHALLING_ENUM_VALUE_HPP
 #define MARSHALLING_ENUM_VALUE_HPP
@@ -37,17 +37,17 @@
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
             /// @brief Enumerator value field.
             /// @details Sometimes dealing with enum values is much more convenient that
-            ///     using integral values. nil::marshalling::types::enumeration is very similar to
-            ///     nil::marshalling::types::integral, but receives underlying enum type in its
+            ///     using integral values. nil::crypto3::marshalling::types::enumeration is very similar to
+            ///     nil::crypto3::marshalling::types::integral, but receives underlying enum type in its
             ///     template parameters instead of integral one.
             /// @tparam TFieldBase Base class for this field, expected to be a variant of
-            ///     nil::marshalling::field_type.
+            ///     nil::crypto3::marshalling::field_type.
             /// @tparam TEnum Enderlying enum type, can be either unscoped or scoped (enum class).
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field. If no option is provided, the field's value is serialized as is,
@@ -60,34 +60,34 @@ namespace nil {
             ///             Value2,
             ///             Value3
             ///         }
-            ///         using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
-            ///         using MyField =nil::marshalling::types::enumeration<MyFieldBase, MyEnum>;
+            ///         using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
+            ///         using MyField =nil::crypto3::marshalling::types::enumeration<MyFieldBase, MyEnum>;
             ///     @endcode
             ///     The serialized value of the field in the example above will consume
             ///     2 bytes, because the underlying type of MyEnum is
             ///     defined to be std::uint16_t. The value is serialized using big endian
-            ///     notation because base field class receives nil::marshalling::option::BigEndian option.@n
+            ///     notation because base field class receives nil::crypto3::marshalling::option::BigEndian option.@n
             ///     Supported options are:
-            ///     @li @ref nil::marshalling::option::fixed_length
-            ///     @li @ref nil::marshalling::option::fixed_bit_length
-            ///     @li @ref nil::marshalling::option::var_length
-            ///     @li @ref nil::marshalling::num_value_ser_offset
-            ///     @li @ref nil::marshalling::option::default_value_initializer or
-            ///     nil::marshalling::option::default_num_value.
-            ///     @li @ref nil::marshalling::option::contents_validator
-            ///     @li @ref nil::marshalling::option::valid_num_value_range, @ref nil::marshalling::option::valid_num_value,
-            ///         @ref nil::marshalling::option::valid_big_unsigned_num_value_range, @ref
-            ///         nil::marshalling::option::valid_big_unsigned_num_value_range
-            ///     @li @ref nil::marshalling::option::valid_ranges_clear
-            ///     @li @ref nil::marshalling::option::contents_refresher
-            ///     @li @ref nil::marshalling::option::has_custom_read
-            ///     @li @ref nil::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::marshalling::option::fail_on_invalid
-            ///     @li @ref nil::marshalling::option::ignore_invalid
-            ///     @li @ref nil::marshalling::option::empty_serialization
-            ///     @li @ref nil::marshalling::option::invalid_by_default
-            ///     @li @ref nil::marshalling::option::version_storage
-            /// @extends nil::marshalling::field_type
+            ///     @li @ref nil::crypto3::marshalling::option::fixed_length
+            ///     @li @ref nil::crypto3::marshalling::option::fixed_bit_length
+            ///     @li @ref nil::crypto3::marshalling::option::var_length
+            ///     @li @ref nil::crypto3::marshalling::num_value_ser_offset
+            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer or
+            ///     nil::crypto3::marshalling::option::default_num_value.
+            ///     @li @ref nil::crypto3::marshalling::option::contents_validator
+            ///     @li @ref nil::crypto3::marshalling::option::valid_num_value_range, @ref nil::crypto3::marshalling::option::valid_num_value,
+            ///         @ref nil::crypto3::marshalling::option::valid_big_unsigned_num_value_range, @ref
+            ///         nil::crypto3::marshalling::option::valid_big_unsigned_num_value_range
+            ///     @li @ref nil::crypto3::marshalling::option::valid_ranges_clear
+            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+            ///     @li @ref nil::crypto3::marshalling::option::fail_on_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::ignore_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
+            ///     @li @ref nil::crypto3::marshalling::option::invalid_by_default
+            ///     @li @ref nil::crypto3::marshalling::option::version_storage
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/enumeration.hpp
             template<typename TFieldBase, typename TEnum, typename... TOptions>
             class enumeration
@@ -214,7 +214,7 @@ namespace nil {
                 }
 
                 /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                 version_type get_version() const {
                     return base_impl_type::get_version();
                 }
@@ -231,57 +231,57 @@ namespace nil {
 
             private:
                 static_assert(!parsed_options_type::has_sequence_elem_length_forcing,
-                              "nil::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
                               "enumeration field");
                 static_assert(!parsed_options_type::has_sequence_size_forcing,
-                              "nil::marshalling::option::sequence_size_forcing_enabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_size_forcing_enabled option is not applicable to "
                               "enumeration field");
                 static_assert(!parsed_options_type::has_sequence_length_forcing,
-                              "nil::marshalling::option::sequence_length_forcing_enabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_length_forcing_enabled option is not applicable to "
                               "enumeration field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size,
-                    "nil::marshalling::option::sequence_fixed_size option is not applicable to enumeration field");
+                    "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to enumeration field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                    "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
+                    "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
                     "enumeration field");
                 static_assert(!parsed_options_type::has_sequence_size_field_prefix,
-                              "nil::marshalling::option::sequence_size_field_prefix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to "
                               "enumeration field");
                 static_assert(!parsed_options_type::has_sequence_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
                               "enumeration field");
                 static_assert(
                     !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                    "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
+                    "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
                     "enumeration field");
                 static_assert(
                     !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                    "nil::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
+                    "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
                     "enumeration field");
                 static_assert(!parsed_options_type::has_sequence_trailing_field_suffix,
-                              "nil::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
                               "enumeration field");
                 static_assert(!parsed_options_type::has_sequence_termination_field_suffix,
-                              "nil::marshalling::option::sequence_termination_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
                               "enumeration field");
                 static_assert(
                     !parsed_options_type::has_fixed_size_storage,
-                    "nil::marshalling::option::fixed_size_storage option is not applicable to enumeration field");
+                    "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to enumeration field");
                 static_assert(
                     !parsed_options_type::has_custom_storage_type,
-                    "nil::marshalling::option::custom_storage_type option is not applicable to enumeration field");
+                    "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to enumeration field");
                 static_assert(
                     !parsed_options_type::has_scaling_ratio,
-                    "nil::marshalling::option::scaling_ratio_type option is not applicable to enumeration field");
+                    "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to enumeration field");
                 static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to enumeration field");
+                              "nil::crypto3::marshalling::option::Units option is not applicable to enumeration field");
                 static_assert(!parsed_options_type::has_orig_data_view,
-                              "nil::marshalling::option::orig_data_view option is not applicable to enumeration field");
+                              "nil::crypto3::marshalling::option::orig_data_view option is not applicable to enumeration field");
                 static_assert(
                     !parsed_options_type::has_versions_range,
-                    "nil::marshalling::option::exists_between_versions (or similar) option is not applicable to "
+                    "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
                     "enumeration field");
             };
 
@@ -320,18 +320,18 @@ namespace nil {
                 return field1.value() < field2.value();
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::enumeration type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::enumeration type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::enumeration
+            /// @related nil::crypto3::marshalling::types::enumeration
             template<typename TFieldBase, typename TEnum, typename... TOptions>
             inline enumeration<TFieldBase, TEnum, TOptions...> &
                 to_field_base(enumeration<TFieldBase, TEnum, TOptions...> &field) {
                 return field;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::enumeration type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::enumeration type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::enumeration
+            /// @related nil::crypto3::marshalling::types::enumeration
             template<typename TFieldBase, typename TEnum, typename... TOptions>
             inline const enumeration<TFieldBase, TEnum, TOptions...> &
                 to_field_base(const enumeration<TFieldBase, TEnum, TOptions...> &field) {

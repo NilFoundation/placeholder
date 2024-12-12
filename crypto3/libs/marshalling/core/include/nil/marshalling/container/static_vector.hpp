@@ -34,7 +34,7 @@
 
 #include <nil/marshalling/assert_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace container {
             namespace detail {
@@ -1270,10 +1270,10 @@ namespace std {
 
     /// @brief Specializes the std::swap algorithm.
     /// @see <a href="http://en.cppreference.com/w/cpp/container/vector/swap2">Reference</a>
-    /// @related nil::marshalling::container::static_vector
+    /// @related nil::crypto3::marshalling::container::static_vector
     template<typename T, std::size_t TSize1, std::size_t TSize2>
-    void swap(nil::marshalling::container::static_vector<T, TSize1> &v1,
-              nil::marshalling::container::static_vector<T, TSize2> &v2) {
+    void swap(nil::crypto3::marshalling::container::static_vector<T, TSize1> &v1,
+              nil::crypto3::marshalling::container::static_vector<T, TSize2> &v2) {
         v1.swap(v2);
     }
 

@@ -38,7 +38,7 @@
 
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -48,7 +48,7 @@ namespace nil {
 
                 template<>
                 struct string_orig_data_view_storage_type<true> {
-                    using type = nil::marshalling::container::string_view;
+                    using type = nil::crypto3::marshalling::container::string_view;
                 };
 
                 template<>
@@ -62,7 +62,7 @@ namespace nil {
                 template<>
                 struct string_fixed_size_use_fixed_size_storage_type<true> {
                     template<typename TOpt>
-                    using type = nil::marshalling::container::static_string<TOpt::sequence_fixed_size>;
+                    using type = nil::crypto3::marshalling::container::static_string<TOpt::sequence_fixed_size>;
                 };
 
                 template<>
@@ -77,7 +77,7 @@ namespace nil {
                 template<>
                 struct string_fixed_size_storage_type<true> {
                     template<typename TOpt>
-                    using type = nil::marshalling::container::static_string<TOpt::fixed_size_storage>;
+                    using type = nil::crypto3::marshalling::container::static_string<TOpt::fixed_size_storage>;
                 };
 
                 template<>

@@ -49,15 +49,15 @@ namespace nil {
         namespace marshalling {
             namespace types {
                 template<typename TTypeBase, typename Proof>
-                using placeholder_partial_evaluation_proof = nil::marshalling::types::bundle<
+                using placeholder_partial_evaluation_proof = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // batch size integers
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::integral<TTypeBase, uint8_t>
+                            nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                         >,
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             typename commitment<TTypeBase, typename Proof::commitment_scheme_type>::type
                         >
@@ -65,25 +65,25 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename Proof>
-                placeholder_partial_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof>
+                placeholder_partial_evaluation_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof>
                     fill_placeholder_partial_evaluation_proof(
                         const typename Proof::partial_proof_type &partial_proof) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     // batch size integers
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, uint8_t>
+                        nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                     > filled_batch_size;
                     // batch commitments
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         typename commitment<TTypeBase, typename Proof::commitment_scheme_type>::type
                     > filled_commitments;
                     for (const auto &[batch_index, commitment] : partial_proof.commitments) {
                         filled_batch_size.value().push_back(
-                            nil::marshalling::types::integral<TTypeBase, uint8_t>(batch_index));
+                            nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>(batch_index));
                         filled_commitments.value().push_back(
                             fill_commitment<Endianness, typename Proof::commitment_scheme_type>(commitment));
                     }
@@ -96,7 +96,7 @@ namespace nil {
 
                 template<typename Endianness, typename Proof>
                 typename Proof::partial_proof_type make_placeholder_partial_evaluation_proof(
-                    const placeholder_partial_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                    const placeholder_partial_evaluation_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof> &filled_proof)
                 {
                     typename Proof::partial_proof_type partial_proof;
 
@@ -115,7 +115,7 @@ namespace nil {
 
                 // This should be different for different commitment schemes!
                 template<typename TTypeBase, typename Proof>
-                using placeholder_evaluation_proof = nil::marshalling::types::bundle<
+                using placeholder_evaluation_proof = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // typename FieldType::value_type challenge
@@ -128,10 +128,10 @@ namespace nil {
 
 
                 template<typename Endianness, typename Proof, typename CommitmentParamsType>
-                placeholder_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof>
+                placeholder_evaluation_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof>
                     fill_placeholder_evaluation_proof(const typename Proof::evaluation_proof &proof, const CommitmentParamsType& commitment_params) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     using field_marshalling_type = field_element<TTypeBase, typename Proof::field_type::value_type>;
 
@@ -150,7 +150,7 @@ namespace nil {
 
                 template<typename Endianness, typename Proof>
                 typename Proof::evaluation_proof make_placeholder_evaluation_proof(
-                    const placeholder_evaluation_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                    const placeholder_evaluation_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof> &filled_proof)
                 {
                     typename Proof::evaluation_proof proof;
 
@@ -165,16 +165,16 @@ namespace nil {
                 }
 
                 template<typename TTypeBase, typename Proof>
-                using placeholder_proof = nil::marshalling::types::bundle<
+                using placeholder_proof = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // typename commitment_scheme_type::commitment_type commitments
-                        // All of them are similar size. So no nil::marshalling::option needed
+                        // All of them are similar size. So no nil::crypto3::marshalling::option needed
                         // There won't be too many commitments. So uint8_t is enough for length
-                        nil::marshalling::types::array_list<
+                        nil::crypto3::marshalling::types::array_list<
                             TTypeBase,
                             typename commitment<TTypeBase, typename Proof::commitment_scheme_type>::type,
-                            nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::uint8_t>>
+                            nil::crypto3::marshalling::option::sequence_size_field_prefix<nil::crypto3::marshalling::types::integral<TTypeBase, std::uint8_t>>
                         >,
 
                         // evaluation_proof eval_proof
@@ -183,15 +183,15 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename Proof, typename CommitmentParamsType>
-                placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>
+                placeholder_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof>
                     fill_placeholder_proof(const Proof &proof, const CommitmentParamsType& commitment_params) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
-                    nil::marshalling::types::array_list<
+                    nil::crypto3::marshalling::types::array_list<
                         TTypeBase,
                         typename commitment<TTypeBase, typename Proof::commitment_scheme_type>::type,
-                        nil::marshalling::option::sequence_size_field_prefix<nil::marshalling::types::integral<TTypeBase, std::uint8_t>>
+                        nil::crypto3::marshalling::option::sequence_size_field_prefix<nil::crypto3::marshalling::types::integral<TTypeBase, std::uint8_t>>
                     > filled_commitments;
                     for( const auto &it:proof.commitments){
                         filled_commitments.value().push_back(
@@ -207,7 +207,7 @@ namespace nil {
 
                 template<typename Endianness, typename Proof>
                 Proof make_placeholder_proof(
-                    const placeholder_proof<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                    const placeholder_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof> &filled_proof)
                 {
                     Proof proof;
 
@@ -235,10 +235,10 @@ namespace nil {
                 }
 
                 template<typename TTypeBase, typename Proof>
-                using placeholder_aggregated_proof_type = nil::marshalling::types::bundle<
+                using placeholder_aggregated_proof_type = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             placeholder_partial_evaluation_proof<TTypeBase, Proof>
                         >,
@@ -247,15 +247,15 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename AggregatedProof, typename Proof>
-                placeholder_aggregated_proof_type<nil::marshalling::field_type<Endianness>, Proof>
+                placeholder_aggregated_proof_type<nil::crypto3::marshalling::field_type<Endianness>, Proof>
                     fill_placeholder_aggregated_proof(
                         const AggregatedProof &proof,
                         const typename Proof::commitment_scheme_type::fri_type::params_type &fri_params
                     ) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         placeholder_partial_evaluation_proof<TTypeBase, Proof>
                     > filled_partial_proofs;
@@ -274,7 +274,7 @@ namespace nil {
 
                 template<typename Endianness, typename AggregatedProof, typename Proof>
                 AggregatedProof make_placeholder_aggregated_proof(
-                    const placeholder_aggregated_proof_type<nil::marshalling::field_type<Endianness>, Proof> &filled_proof)
+                    const placeholder_aggregated_proof_type<nil::crypto3::marshalling::field_type<Endianness>, Proof> &filled_proof)
                 {
                     AggregatedProof proof;
 

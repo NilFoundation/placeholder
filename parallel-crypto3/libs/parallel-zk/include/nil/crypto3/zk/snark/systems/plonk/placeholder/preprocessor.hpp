@@ -269,7 +269,7 @@ namespace nil {
                         };
 
                         bool operator==(const preprocessed_data_type &rhs) const {
-                            return shared_ptr_equal(public_polynomial_table, rhs.public_polynomial_table) && 
+                            return shared_ptr_equal(public_polynomial_table, rhs.public_polynomial_table) &&
                                 permutation_polynomials == rhs.permutation_polynomials &&
                                 identity_polynomials == rhs.identity_polynomials &&
                                 q_last == rhs.q_last &&

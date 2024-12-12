@@ -13,8 +13,8 @@
 
 #include <nil/proof-generator/output_artifacts/circuit_writer.hpp>
 
-using Endianness = nil::marshalling::option::big_endian;
-using TTypeBase = nil::marshalling::field_type<Endianness>;
+using Endianness = nil::crypto3::marshalling::option::big_endian;
+using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
 using BlueprintField = typename nil::crypto3::algebra::curves::pallas::base_field_type;
 
@@ -44,7 +44,7 @@ class CircuitWriterTest: public ::testing::Test {
             CircuitMarshalling marshalled_circuit;
             auto read_iter = circuit_bytes_.begin();
             auto const status = marshalled_circuit.read(read_iter, circuit_bytes_.size());
-            ASSERT_TRUE(status == nil::marshalling::status_type::success);
+            ASSERT_TRUE(status == nil::crypto3::marshalling::status_type::success);
 
             circuit_ = nil::crypto3::marshalling::types::make_plonk_constraint_system<Endianness, Circuit>(marshalled_circuit);
         }

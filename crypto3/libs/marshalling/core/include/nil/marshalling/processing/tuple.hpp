@@ -36,7 +36,7 @@
 #include <nil/marshalling/assert_type.hpp>
 #include <nil/marshalling/processing/aligned_union.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace processing {
 
@@ -47,7 +47,7 @@ namespace nil {
             template<typename TTuple>
             struct tuple_as_aligned_union {
                 /// @cond DOCUMENT_STATIC_ASSERT
-                static_assert(nil::detail::is_tuple<TTuple>::value, "TTuple must be std::tuple");
+                static_assert(marshalling::detail::is_tuple<TTuple>::value, "TTuple must be std::tuple");
                 /// @endcond
 
                 /// @brief Type definition is invalid for any type that is not
@@ -72,7 +72,7 @@ namespace nil {
             /// @brief Check whether tuple is unique, i.e. doesn't have contain types.
             template<typename TTuple>
             struct tuple_is_unique {
-                static_assert(nil::detail::is_tuple<TTuple>::value, "TTuple must be std::tuple");
+                static_assert(marshalling::detail::is_tuple<TTuple>::value, "TTuple must be std::tuple");
 
                 /// @brief Value is set to true when tuple is discovered to be unique.
                 static const bool value = false;
@@ -81,7 +81,7 @@ namespace nil {
             /// @cond SKIP_DOC
             template<typename TFirst, typename... TRest>
             struct tuple_is_unique<std::tuple<TFirst, TRest...>> {
-                static const bool value = (!nil::detail::is_in_tuple<TFirst, std::tuple<TRest...>>::value)
+                static const bool value = (!marshalling::detail::is_in_tuple<TFirst, std::tuple<TRest...>>::value)
                                           && tuple_is_unique<std::tuple<TRest...>>::value;
             };
 
@@ -103,7 +103,7 @@ namespace nil {
                     template<typename TTuple, typename TFunc>
                     static void exec(TTuple &&tuple, TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static const std::size_t TupleSize = std::tuple_size<Tuple>::value;
                         static const std::size_t OffsetedRem = TRem + TOff;
                         static_assert(OffsetedRem <= TupleSize, "Incorrect parameters");
@@ -220,7 +220,7 @@ namespace nil {
                     template<typename TTuple, typename TFunc>
                     static void exec(TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static const std::size_t TupleSize = std::tuple_size<Tuple>::value;
                         static_assert(TRem <= TupleSize, "Incorrect TRem");
 
@@ -276,7 +276,7 @@ namespace nil {
                     template<typename TTuple, typename TFunc>
                     static void exec(TTuple &&tuple, TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static const std::size_t TupleSize = std::tuple_size<Tuple>::value;
                         static_assert(TRem <= TupleSize, "Incorrect TRem");
 
@@ -332,7 +332,7 @@ namespace nil {
                     template<typename TTuple, typename TFunc>
                     static void exec(TTuple &&tuple, TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static const std::size_t TupleSize = std::tuple_size<Tuple>::value;
                         static_assert(TRem <= TupleSize, "Incorrect TRem");
 
@@ -397,7 +397,7 @@ namespace nil {
                     template<typename TTuple, typename TValue, typename TFunc>
                     static constexpr TValue exec(TTuple &&tuple, const TValue &value, TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static_assert((TOff + TRem) <= std::tuple_size<Tuple>::value, "Incorrect params");
 
                         return tuple_accumulate_helper<TOff + 1, TRem - 1>::exec(
@@ -482,7 +482,7 @@ namespace nil {
                     template<typename TTuple, typename TValue, typename TFunc>
                     static constexpr TValue exec(const TValue &value, TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static_assert((TOff + TRem) <= std::tuple_size<Tuple>::value, "Incorrect TRem");
 
                         return tuple_type_accumulate_helper<TOff + 1, TRem - 1>::template exec<Tuple>(
@@ -562,8 +562,8 @@ namespace nil {
             /// @tparam TSecond Type of the second tuple.
             template<typename TFirst, typename TSecond>
             struct tuple_cat {
-                static_assert(nil::detail::is_tuple<TFirst>::value, "TFirst must be tuple");
-                static_assert(nil::detail::is_tuple<TSecond>::value, "TSecond must be tuple");
+                static_assert(marshalling::detail::is_tuple<TFirst>::value, "TFirst must be tuple");
+                static_assert(marshalling::detail::is_tuple<TSecond>::value, "TSecond must be tuple");
 
                 /// @brief Result type of tuples concatenation.
                 using type = typename std::decay<decltype(std::tuple_cat(std::declval<TFirst>(),
@@ -588,7 +588,7 @@ namespace nil {
                     template<typename TTuple, typename TFunc>
                     static void exec(std::size_t idx, TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static const std::size_t TupleSize = std::tuple_size<Tuple>::value;
                         static_assert(TCount <= TupleSize, "Incorrect TCount");
                         static_assert(0U < TCount, "Incorrect instantiation");
@@ -653,7 +653,7 @@ namespace nil {
             template<typename TTuple, typename TFunc>
             void tuple_for_selected_type(std::size_t idx, TFunc &&func) {
                 using Tuple = typename std::decay<TTuple>::type;
-                static_assert(nil::detail::is_tuple<Tuple>::value, "Provided tupe must be std::tuple");
+                static_assert(marshalling::detail::is_tuple<Tuple>::value, "Provided tupe must be std::tuple");
                 static const std::size_t TupleSize = std::tuple_size<Tuple>::value;
                 static_assert(0U < TupleSize, "Empty tuples are not supported");
 
@@ -694,8 +694,8 @@ namespace nil {
             /// @tparam TTuple Containing tuple
             template<typename TTail, typename TTuple>
             constexpr bool tuple_is_tail_of() {
-                static_assert(nil::detail::is_tuple<TTail>::value, "TTail param must be tuple");
-                static_assert(nil::detail::is_tuple<TTuple>::value, "TTuple param must be tuple");
+                static_assert(marshalling::detail::is_tuple<TTail>::value, "TTail param must be tuple");
+                static_assert(marshalling::detail::is_tuple<TTuple>::value, "TTuple param must be tuple");
                 return std::tuple_size<TTail>::value <= std::tuple_size<TTuple>::value
                        && detail::tuple_tail_check_helpler<
                            TTail, TTuple, std::tuple_size<TTuple>::value - std::tuple_size<TTail>::value>::value;
@@ -712,7 +712,7 @@ namespace nil {
                     template<typename TTuple, typename TFunc>
                     static constexpr bool check(TFunc &&func) {
                         using Tuple = typename std::decay<TTuple>::type;
-                        static_assert(nil::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
+                        static_assert(marshalling::detail::is_tuple<Tuple>::value, "TTuple must be std::tuple");
                         static_assert(TRem <= std::tuple_size<Tuple>::value, "Incorrect TRem");
                         using ElemType = typename std::tuple_element<std::tuple_size<Tuple>::value - TRem, Tuple>::type;
                         return
@@ -740,7 +740,7 @@ namespace nil {
 
             template<typename TTuple, typename TFunc>
             constexpr bool tuple_type_is_any_of(TFunc &&func) {
-                static_assert(nil::detail::is_tuple<TTuple>::value, "Tuple as argument is expected");
+                static_assert(marshalling::detail::is_tuple<TTuple>::value, "Tuple as argument is expected");
                 return detail::tuple_type_is_any_of_helper<std::tuple_size<TTuple>::value>::template check<TTuple>(
                     std::forward<TFunc>(func));
             }

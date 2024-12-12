@@ -264,9 +264,9 @@ namespace nil {
                 std::vector<bool> bits(component.bits_amount + component.padding_bits);
                 std::fill(bits.begin(), bits.end(), false);
                 {
-                    nil::marshalling::status_type status;
+                    nil::crypto3::marshalling::status_type status;
                     std::array<bool, BlueprintFieldType::modulus_bits> bytes_all =
-                        nil::marshalling::pack<nil::marshalling::option::big_endian>(x_integral, status);
+                        nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(x_integral, status);
                     THROW_IF_ERROR_STATUS(status, "range_check::generate_assignments");
                     std::copy(bytes_all.end() - component.bits_amount, bytes_all.end(),
                                 bits.begin() + component.padding_bits);

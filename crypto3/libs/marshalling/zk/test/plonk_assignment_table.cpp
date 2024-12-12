@@ -83,7 +83,7 @@ struct plonk_assignment_table_test_runner {
     bool test_assignment_table_description()
     {
         plonk_table_description<field_type> const& val = desc;
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
         using value_marshalling_type = nil::crypto3::marshalling::types::plonk_assignment_table_description<TTypeBase>;
 
         auto filled_val = types::fill_assignment_table_description<Endianness, FieldType>(val);
@@ -94,11 +94,11 @@ struct plonk_assignment_table_test_runner {
         cv.resize(filled_val.length(), 0x00);
 
         auto write_iter = cv.begin();
-        nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
+        nil::crypto3::marshalling::status_type status = filled_val.write(write_iter, cv.size());
         value_marshalling_type test_val_read;
         auto read_iter = cv.begin();
         status = test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         table_desc = types::make_assignment_table_description<Endianness, FieldType>(test_val_read);
 
         BOOST_CHECK(val == table_desc);
@@ -109,7 +109,7 @@ struct plonk_assignment_table_test_runner {
     template<typename Endianness>
     bool test_assignment_table()
     {
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
         using plonk_table = plonk_assignment_table<field_type>;
         using value_marshalling_type = nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, plonk_table>;
 
@@ -125,11 +125,11 @@ struct plonk_assignment_table_test_runner {
         cv.resize(filled_val.length(), 0x00);
 
         auto write_iter = cv.begin();
-        nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
+        nil::crypto3::marshalling::status_type status = filled_val.write(write_iter, cv.size());
         value_marshalling_type test_val_read;
         auto read_iter = cv.begin();
         status = test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         table_desc_pair = types::make_assignment_table<Endianness, plonk_table>(test_val_read);
 
         BOOST_CHECK(val == table_desc_pair.second);
@@ -140,7 +140,7 @@ struct plonk_assignment_table_test_runner {
 
     bool run_test()
     {
-        using Endianness = nil::marshalling::option::big_endian;
+        using Endianness = nil::crypto3::marshalling::option::big_endian;
         BOOST_CHECK(test_assignment_table_description<Endianness>());
         BOOST_CHECK(test_assignment_table<Endianness>());
         return true;

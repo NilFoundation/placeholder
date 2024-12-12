@@ -34,7 +34,7 @@
 #include <nil/marshalling/assert_type.hpp>
 #include <nil/marshalling/types/optional_mode.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace adapter {

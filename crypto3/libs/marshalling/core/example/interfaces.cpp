@@ -49,7 +49,7 @@
 #include <variant>
 #include <iostream>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 using T = std::vector<uint32_t>;
 const std::vector<uint16_t> in = {{0x1234, 0x5678}};

@@ -48,29 +48,29 @@ namespace nil {
                 using plonk_constraint = typename expression<TTypeBase, typename PlonkConstraint::base_type>::type;
 
                 template<typename Endianness, typename PlonkConstraint>
-                plonk_constraint<nil::marshalling::field_type<Endianness>, PlonkConstraint>
+                plonk_constraint<nil::crypto3::marshalling::field_type<Endianness>, PlonkConstraint>
                 fill_plonk_constraint(const PlonkConstraint &constr) {
                     return fill_expression<typename PlonkConstraint::base_type, Endianness>(constr);
                 }
 
                 template<typename Endianness, typename PlonkConstraint>
                 PlonkConstraint make_plonk_constraint(
-                    const plonk_constraint<nil::marshalling::field_type<Endianness>, PlonkConstraint> &filled_constr)
+                    const plonk_constraint<nil::crypto3::marshalling::field_type<Endianness>, PlonkConstraint> &filled_constr)
                 {
                     return make_expression<typename PlonkConstraint::base_type, Endianness>(filled_constr);
                 }
 
                 /*********************** Vector of plonk constraints as an input to gate ****************************/
                 template<typename TTypeBase, typename Constraint>
-                using plonk_constraints = nil::marshalling::types::standard_array_list<
+                using plonk_constraints = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase,
                     plonk_constraint<TTypeBase, Constraint>
                 >;
 
                 template<typename Endianness, typename Constraint>
-                plonk_constraints<nil::marshalling::field_type<Endianness>, Constraint>
+                plonk_constraints<nil::crypto3::marshalling::field_type<Endianness>, Constraint>
                 fill_plonk_constraints(const std::vector<Constraint> &constraints) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     plonk_constraints<TTypeBase, Constraint> filled_constraints;
                     for (const auto &constraint : constraints) {
@@ -82,7 +82,7 @@ namespace nil {
 
                 template<typename Endianness, typename Constraint>
                 std::vector<Constraint>
-                make_plonk_constraints(const plonk_constraints<nil::marshalling::field_type<Endianness>, Constraint> &filled_constraints)
+                make_plonk_constraints(const plonk_constraints<nil::crypto3::marshalling::field_type<Endianness>, Constraint> &filled_constraints)
                 {
                     std::vector<Constraint> constraints;
                     for (std::size_t i = 0; i < filled_constraints.value().size(); i++) {

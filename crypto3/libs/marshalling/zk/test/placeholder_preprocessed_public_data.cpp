@@ -102,8 +102,8 @@ struct placeholder_preprocessed_public_data_test_runner {
 
     void test_placeholder_preprocessed_public_data(public_data_type const& data)
     {
-        using Endianness = nil::marshalling::option::big_endian;
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using Endianness = nil::crypto3::marshalling::option::big_endian;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
         auto filled_public_data = nil::crypto3::marshalling::types::
             fill_placeholder_preprocessed_public_data<Endianness, public_data_type>(data);
@@ -115,12 +115,12 @@ struct placeholder_preprocessed_public_data_test_runner {
         cv.resize(filled_public_data.length(), 0x00);
         auto write_iter = cv.begin();
         auto status = filled_public_data.write(write_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
         nil::crypto3::marshalling::types::placeholder_preprocessed_public_data<TTypeBase, public_data_type> test_val_read;
         auto read_iter = cv.begin();
         test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = nil::crypto3::marshalling::types::
             make_placeholder_preprocessed_public_data<Endianness, public_data_type>(test_val_read);
         BOOST_CHECK(data == constructed_val_read);

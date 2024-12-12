@@ -176,7 +176,7 @@ namespace nil {
                             if (constraint_system.public_input_sizes_num() != 0)
                                 max_size = std::min(max_size, constraint_system.public_input_size(i));
                             auto omega_pow = FieldType::value_type::one();
-                            for( std::size_t j = 0; j < public_input[i].size(); ++j ){
+                            for( std::size_t j = 0; j < max_size; ++j ){
                                 value += (public_input[i][j] * omega_pow) * (challenge - omega_pow).inversed();
                                 omega_pow = omega_pow * omega;
                             }

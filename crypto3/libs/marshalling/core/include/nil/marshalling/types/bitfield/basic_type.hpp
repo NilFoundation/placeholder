@@ -41,7 +41,7 @@
 #include <nil/marshalling/types/integral.hpp>
 #include <nil/marshalling/types/detail/common_funcs.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -50,7 +50,7 @@ namespace nil {
                 class basic_bitfield : public TFieldBase {
                     using base_impl_type = TFieldBase;
 
-                    static_assert(::nil::detail::is_tuple<TMembers>::value,
+                    static_assert(marshalling::detail::is_tuple<TMembers>::value,
                                   "TMembers is expected to be a tuple of BitfieldMember<...>");
 
                     static_assert(1U < std::tuple_size<TMembers>::value,

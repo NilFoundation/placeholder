@@ -38,7 +38,7 @@
 namespace nil {
     namespace crypto3 {
         namespace marshalling {
-            namespace processing {
+            namespace multiprecision::processing {
 
                 /// @brief Write part of integral value into the output area using big
                 ///     endian notation.
@@ -217,7 +217,7 @@ namespace nil {
 
                 /// @brief Same as write_big_endian<T, TIter>()
                 template<typename Endianness, typename T, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::big_endian>::value,
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::big_endian>::value,
                                         void>::type
                     write_data(T value, TIter &iter) {
 
@@ -226,7 +226,7 @@ namespace nil {
 
                 /// @brief Same as write_big_endian<TSize, T, TIter>()
                 template<std::size_t TSize, typename Endianness, typename T, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::big_endian>::value,
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::big_endian>::value,
                                         void>::type
                     write_data(T value, TIter &iter) {
 
@@ -235,7 +235,7 @@ namespace nil {
 
                 /// @brief Same as write_little_endian<T, TIter>()
                 template<typename Endianness, typename T, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::little_endian>::value,
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::little_endian>::value,
                                         void>::type
                     write_data(T value, TIter &iter) {
 
@@ -244,7 +244,7 @@ namespace nil {
 
                 /// @brief Same as write_little_endian<TSize, T, TIter>()
                 template<std::size_t TSize, typename Endianness, typename T, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::little_endian>::value,
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::little_endian>::value,
                                         void>::type
                     write_data(T value, TIter &iter) {
 
@@ -253,7 +253,7 @@ namespace nil {
 
                 /// @brief Same as read_big_endian<T, TIter>()
                 template<typename T, typename Endianness, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::big_endian>::value, T>::type
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::big_endian>::value, T>::type
                     read_data(TIter &iter, std::size_t value_size) {
 
                     return read_big_endian<T>(iter, value_size);
@@ -261,7 +261,7 @@ namespace nil {
 
                 /// @brief Same as read_little_endian<T, TIter>()
                 template<typename T, typename Endianness, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::little_endian>::value,
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::little_endian>::value,
                                         T>::type
                     read_data(TIter &iter, std::size_t value_size) {
 
@@ -270,7 +270,7 @@ namespace nil {
 
                 /// @brief Same as read_big_endian<TSize, T, TIter>()
                 template<std::size_t TSize, typename T, typename Endianness, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::big_endian>::value, T>::type
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::big_endian>::value, T>::type
                     read_data(TIter &iter) {
 
                     return read_big_endian<TSize, T>(iter);
@@ -278,7 +278,7 @@ namespace nil {
 
                 /// @brief Same as read_little_endian<TSize, T, TIter>()
                 template<std::size_t TSize, typename T, typename Endianness, typename TIter>
-                typename std::enable_if<std::is_same<Endianness, nil::marshalling::endian::little_endian>::value,
+                typename std::enable_if<std::is_same<Endianness, nil::crypto3::marshalling::endian::little_endian>::value,
                                         T>::type
                     read_data(TIter &iter) {
 

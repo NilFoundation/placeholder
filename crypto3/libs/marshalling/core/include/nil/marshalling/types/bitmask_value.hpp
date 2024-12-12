@@ -35,50 +35,50 @@
 #include <nil/marshalling/types/tag.hpp>
 #include <nil/marshalling/types/bitmask_value/behaviour.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
             /// @brief Bitmask value field.
             /// @details Quite often communication protocols specify bitmask values, where
             ///     any bit has a specific meaning. Although such masks are can be handled
-            ///     as unsigned integer values using nil::marshalling::types::integral field type,
-            ///     using nil::marshalling::types::Bitmask may be a bit more convenient.
+            ///     as unsigned integer values using nil::crypto3::marshalling::types::integral field type,
+            ///     using nil::crypto3::marshalling::types::Bitmask may be a bit more convenient.
             /// @tparam TFieldBase Base class for this field, expected to be a variant of
-            ///     nil::marshalling::field_type.
+            ///     nil::crypto3::marshalling::field_type.
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field. If no option is provided, the underlying type is assumed
             ///     to be "unsigned", which is usually 4 bytes long. To redefined the length
-            ///     of the bitmask field, use nil::marshalling::option::fixed_length option.
+            ///     of the bitmask field, use nil::crypto3::marshalling::option::fixed_length option.
             ///     For example:
             ///     @code
-            ///         using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
-            ///         using MyField =nil::marshalling::types::enumeration<MyFieldBase>;
+            ///         using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
+            ///         using MyField =nil::crypto3::marshalling::types::enumeration<MyFieldBase>;
             ///     @endcode
             ///     The serialized value of the field in the example above will consume
             ///     sizeof(unsigned) bytes, because the underlying type chosen to be "unsigned"
             ///     by default. Example below specifies simple bitmask value field with
             ///     2 bytes serialization length:
             ///     @code
-            ///         using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
-            ///         using MyField =nil::marshalling::types::enumeration<MyFieldBase,
-            ///         nil::marshalling::option::fixed_length<2> >;
+            ///         using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
+            ///         using MyField =nil::crypto3::marshalling::types::enumeration<MyFieldBase,
+            ///         nil::crypto3::marshalling::option::fixed_length<2> >;
             ///     @endcode
             ///     Supported options are:
-            ///     @li @ref nil::marshalling::option::fixed_length
-            ///     @li @ref nil::marshalling::option::fixed_bit_length
-            ///     @li @ref nil::marshalling::option::default_value_initializer or
-            ///     nil::marshalling::option::default_num_value.
-            ///     @li @ref nil::marshalling::option::contents_validator or
-            ///     nil::marshalling::option::bitmask_reserved_bits.
-            ///     @li @ref nil::marshalling::option::contents_refresher
-            ///     @li @ref nil::marshalling::option::has_custom_read
-            ///     @li @ref nil::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::marshalling::option::fail_on_invalid
-            ///     @li @ref nil::marshalling::option::ignore_invalid
-            ///     @li @ref nil::marshalling::option::empty_serialization
-            ///     @li @ref nil::marshalling::option::version_storage
-            /// @extends nil::marshalling::field_type
+            ///     @li @ref nil::crypto3::marshalling::option::fixed_length
+            ///     @li @ref nil::crypto3::marshalling::option::fixed_bit_length
+            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer or
+            ///     nil::crypto3::marshalling::option::default_num_value.
+            ///     @li @ref nil::crypto3::marshalling::option::contents_validator or
+            ///     nil::crypto3::marshalling::option::bitmask_reserved_bits.
+            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+            ///     @li @ref nil::crypto3::marshalling::option::fail_on_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::ignore_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
+            ///     @li @ref nil::crypto3::marshalling::option::version_storage
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/bitmask_value.hpp
             /// @see MARSHALLING_BITMASK_BITS()
             /// @see MARSHALLING_BITMASK_BITS_ACCESS()
@@ -113,7 +113,7 @@ namespace nil {
 
                 /// @brief Type of underlying integral value.
                 /// @details Unsigned integral type, which depends on the length of the
-                ///     mask determined by the nil::marshalling::option::fixed_length option.
+                ///     mask determined by the nil::crypto3::marshalling::option::fixed_length option.
                 using value_type = typename integral_type::value_type;
 
                 /// @brief Default constructor.
@@ -264,7 +264,7 @@ namespace nil {
                 }
 
                 /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                 version_type get_version() const {
                     return intValue_.get_version();
                 }
@@ -282,70 +282,70 @@ namespace nil {
             private:
                 static_assert(
                     !parsed_options_type::has_ser_offset,
-                    "nil::marshalling::option::num_value_ser_offset option is not applicable to bitmask_value field");
+                    "nil::crypto3::marshalling::option::num_value_ser_offset option is not applicable to bitmask_value field");
                 static_assert(!parsed_options_type::has_var_length_limits,
-                              "nil::marshalling::option::var_length option is not applicable to bitmask_value field");
+                              "nil::crypto3::marshalling::option::var_length option is not applicable to bitmask_value field");
                 static_assert(!parsed_options_type::has_sequence_elem_length_forcing,
-                              "nil::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
                               "bitmask_value field");
                 static_assert(!parsed_options_type::has_sequence_size_forcing,
-                              "nil::marshalling::option::sequence_size_forcing_enabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_size_forcing_enabled option is not applicable to "
                               "bitmask_value field");
                 static_assert(!parsed_options_type::has_sequence_length_forcing,
-                              "nil::marshalling::option::sequence_length_forcing_enabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_length_forcing_enabled option is not applicable to "
                               "bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size,
-                    "nil::marshalling::option::sequence_fixed_size option is not applicable to bitmask_value field");
+                    "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                    "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
+                    "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
                     "bitmask_value field");
                 static_assert(!parsed_options_type::has_sequence_size_field_prefix,
-                              "nil::marshalling::option::sequence_size_field_prefix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to "
                               "bitmask_value field");
                 static_assert(!parsed_options_type::has_sequence_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
                               "bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                    "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
+                    "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
                     "bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                    "nil::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
+                    "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
                     "bitmask_value field");
                 static_assert(!parsed_options_type::has_sequence_trailing_field_suffix,
-                              "nil::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
                               "bitmask_value field");
                 static_assert(!parsed_options_type::has_sequence_termination_field_suffix,
-                              "nil::marshalling::option::sequence_termination_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
                               "bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_fixed_size_storage,
-                    "nil::marshalling::option::fixed_size_storage option is not applicable to bitmask_value field");
+                    "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_custom_storage_type,
-                    "nil::marshalling::option::custom_storage_type option is not applicable to bitmask_value field");
+                    "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_scaling_ratio,
-                    "nil::marshalling::option::scaling_ratio_type option is not applicable to bitmask_value field");
+                    "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to bitmask_value field");
                 static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to bitmask_value field");
+                              "nil::crypto3::marshalling::option::Units option is not applicable to bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_orig_data_view,
-                    "nil::marshalling::option::orig_data_view option is not applicable to bitmask_value field");
+                    "nil::crypto3::marshalling::option::orig_data_view option is not applicable to bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_multi_range_validation,
-                    "nil::marshalling::option::valid_num_value_range (or similar) option is not applicable to "
+                    "nil::crypto3::marshalling::option::valid_num_value_range (or similar) option is not applicable to "
                     "bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_versions_range,
-                    "nil::marshalling::option::exists_between_versions (or similar) option is not applicable to "
+                    "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
                     "bitmask_value field");
                 static_assert(
                     !parsed_options_type::has_invalid_by_default,
-                    "nil::marshalling::option::invalid_by_default option is not applicable to bitmask_value field");
+                    "nil::crypto3::marshalling::option::invalid_by_default option is not applicable to bitmask_value field");
 
                 integral_type intValue_;
             };
@@ -385,25 +385,25 @@ namespace nil {
                 return field1.value() < field2.value();
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::bitmask_value type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::bitmask_value type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::bitmask_value
+            /// @related nil::crypto3::marshalling::types::bitmask_value
             template<typename TFieldBase, typename... TOptions>
             inline bitmask_value<TFieldBase, TOptions...> &
                 to_field_base(bitmask_value<TFieldBase, TOptions...> &field) {
                 return field;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::bitmask_value type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::bitmask_value type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::bitmask_value
+            /// @related nil::crypto3::marshalling::types::bitmask_value
             template<typename TFieldBase, typename... TOptions>
             inline const bitmask_value<TFieldBase, TOptions...> &
                 to_field_base(const bitmask_value<TFieldBase, TOptions...> &field) {
                 return field;
             }
 
-/// @brief Provide names for bits in nil::marshalling::types::bitmask_value field.
+/// @brief Provide names for bits in nil::crypto3::marshalling::types::bitmask_value field.
 /// @details Defines BitIdx enum with all the provided values prefixed with
 ///     "BitIdx_". For example usage of
 ///     @code
@@ -444,15 +444,15 @@ namespace nil {
 ///     The macro MARSHALLING_BITMASK_BITS() should be used inside definition of the
 ///     bitmask field to provide names for the bits for external use:
 ///     @code
-///     struct MyField : public nil::marshalling::types::bitmask_value<...>
+///     struct MyField : public nil::crypto3::marshalling::types::bitmask_value<...>
 ///     {
 ///         MARSHALLING_BITMASK_BITS(first, second, third, fourth);
 ///     }
 ///     @endcode
-/// @related nil::marshalling::types::bitmask_value
+/// @related nil::crypto3::marshalling::types::bitmask_value
 #define MARSHALLING_BITMASK_BITS(...) MARSHALLING_DEFINE_ENUM(BitIdx, __VA_ARGS__)
 
-/// @brief Generate access functions for bits in nil::marshalling::types::bitmask_value field.
+/// @brief Generate access functions for bits in nil::crypto3::marshalling::types::bitmask_value field.
 /// @details The @ref MARSHALLING_BITMASK_BITS() macro defines @b BitIdx enum to
 ///     be able to access internal bits. However, an ability to provide
 ///     values to the enumeration values using @b =val suffixes doesn't
@@ -461,7 +461,7 @@ namespace nil {
 ///     listed in the parameters list, @b getBitValue_*() and @b set_bit_value_*()
 ///     functions will be generated. For example, having the following definition
 ///     @code
-///     struct MyField : public nil::marshalling::types::bitmask_value<...>
+///     struct MyField : public nil::crypto3::marshalling::types::bitmask_value<...>
 ///     {
 ///         ...
 ///         MARSHALLING_BITMASK_BITS_ACCESS(first, third, fourth);
@@ -469,7 +469,7 @@ namespace nil {
 ///     @endcode
 ///     is equivalent to having following functions defined:
 ///     @code
-///     struct MyField : public nil::marshalling::types::bitmask_value<...>
+///     struct MyField : public nil::crypto3::marshalling::types::bitmask_value<...>
 ///     {
 ///         ...
 ///         bool getBitValue_first() const {
@@ -502,14 +502,14 @@ namespace nil {
 ///     @ref MARSHALLING_BITMASK_BITS(). It means that MARSHALLING_BITMASK_BITS_ACCESS()
 ///     macro can NOT be used without @ref MARSHALLING_BITMASK_BITS().
 ///     @code
-///     struct MyField : public nil::marshalling::types::bitmask_value<...>
+///     struct MyField : public nil::crypto3::marshalling::types::bitmask_value<...>
 ///     {
 ///         MARSHALLING_BITMASK_BITS(first, third=2, fourth);
 ///         MARSHALLING_BITMASK_BITS_ACCESS(first, third, fourth);
 ///     }
 ///     @endcode
 /// @pre Must be used together with @ref MARSHALLING_BITMASK_BITS()
-/// @related nil::marshalling::types::bitmask_value
+/// @related nil::crypto3::marshalling::types::bitmask_value
 /// @warning Some compilers, such as @b clang or early versions of @b g++
 ///     may have problems compiling code generated by this macro even
 ///     though it uses valid C++11 constructs in attempt to automatically identify the
@@ -518,23 +518,23 @@ namespace nil {
 ///     @ref MARSHALLING_BITMASK_BITS_ACCESS_NOTEMPLATE() macro instead. In
 ///     case this macro needs to reside inside a @b template class, then
 ///     there is a need to define inner @b Base type, which specifies
-///     exact type of the @ref nil::marshalling::types::bitmask_value class. For example:
+///     exact type of the @ref nil::crypto3::marshalling::types::bitmask_value class. For example:
 ///     @code
-///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
 ///     template <typename... TExtraOptions>
 ///     class MyField : public
-///         nil::marshalling::types::bitmask_value<
+///         nil::crypto3::marshalling::types::bitmask_value<
 ///             MyFieldBase,
-///             nil::marshalling::types::fixed_length<1>,
-///             nil::marshalling::types::bitmask_reserved_bits<0xf2, 0>,
+///             nil::crypto3::marshalling::types::fixed_length<1>,
+///             nil::crypto3::marshalling::types::bitmask_reserved_bits<0xf2, 0>,
 ///             TExtraOptions...
 ///         >
 ///     {
 ///         // Duplicate definition of the base class
 ///         using Base =
-///             nil::marshalling::types::bitmask_value<
+///             nil::crypto3::marshalling::types::bitmask_value<
 ///                 MyFieldBase,
-///                 nil::marshalling::types::fixed_length<1>,
+///                 nil::crypto3::marshalling::types::fixed_length<1>,
 ///                 smarshalling::types::bitmask_reserved_bits<0xf2, 0>,
 ///                 TExtraOptions...
 ///             >;
@@ -545,10 +545,10 @@ namespace nil {
 ///     @endcode
 #define MARSHALLING_BITMASK_BITS_ACCESS(...)                  \
     MARSHALLING_AS_BITMASK_FUNC {                             \
-        return nil::marshalling::types::to_field_base(*this); \
+        return nil::crypto3::marshalling::types::to_field_base(*this); \
     }                                                         \
     MARSHALLING_AS_BITMASK_CONST_FUNC {                       \
-        return nil::marshalling::types::to_field_base(*this); \
+        return nil::crypto3::marshalling::types::to_field_base(*this); \
     }                                                         \
     MARSHALLING_DO_BIT_ACC_FUNC(asBitmask(), __VA_ARGS__)
 
@@ -561,7 +561,7 @@ namespace nil {
 ///     compilation fails and the class it is being used in is @b NOT a
 ///     template one, please use @ref MARSHALLING_BITMASK_BITS_ACCESS_NOTEMPLATE()
 ///     instead.
-/// @related nil::marshalling::types::bitmask_value
+/// @related nil::crypto3::marshalling::types::bitmask_value
 #define MARSHALLING_BITMASK_BITS_ACCESS_NOTEMPLATE(...) MARSHALLING_DO_BIT_ACC_FUNC((*this), __VA_ARGS__)
 
 /// @brief Combine usage of @ref MARSHALLING_BITMASK_BITS() and @ref MARSHALLING_BITMASK_BITS_ACCESS().
@@ -571,14 +571,14 @@ namespace nil {
 ///     @ref MARSHALLING_BITMASK_BITS() and @ref MARSHALLING_BITMASK_BITS_ACCESS() with the
 ///     same bit names. For example
 ///     @code
-///     struct MyField : public nil::marshalling::types::bitmask_value<...>
+///     struct MyField : public nil::crypto3::marshalling::types::bitmask_value<...>
 ///     {
 ///         MARSHALLING_BITMASK_BITS_SEQ(first, second, third, fourth);
 ///     }
 ///     @endcode
 ///     is equivalent to having
 ///     @code
-///     struct MyField : public nil::marshalling::types::bitmask_value<...>
+///     struct MyField : public nil::crypto3::marshalling::types::bitmask_value<...>
 ///     {
 ///         enum BitIdx
 ///         {
@@ -599,7 +599,7 @@ namespace nil {
 ///         void set_bit_value_fourth(bool value) {...}
 ///     };
 ///     @endcode
-/// @related nil::marshalling::types::bitmask_value
+/// @related nil::crypto3::marshalling::types::bitmask_value
 /// @warning Some compilers, such as @b clang or early versions of @b g++
 ///     may have problems compiling code generated by this macro even
 ///     though it uses valid C++11 constructs in attempt to automatically identify the
@@ -608,23 +608,23 @@ namespace nil {
 ///     @ref MARSHALLING_BITMASK_BITS_SEQ_NOTEMPLATE() macro instead. In
 ///     case this macro needs to reside inside a @b template class, then
 ///     there is a need to define inner @b Base type, which specifies
-///     exact type of the @ref nil::marshalling::types::bitmask_value class. For example:
+///     exact type of the @ref nil::crypto3::marshalling::types::bitmask_value class. For example:
 ///     @code
-///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
 ///     template <typename... TExtraOptions>
 ///     class MyField : public
-///         nil::marshalling::types::bitmask_value<
+///         nil::crypto3::marshalling::types::bitmask_value<
 ///             MyFieldBase,
-///             nil::marshalling::types::fixed_length<1>,
-///             nil::marshalling::types::bitmask_reserved_bits<0xf0, 0>,
+///             nil::crypto3::marshalling::types::fixed_length<1>,
+///             nil::crypto3::marshalling::types::bitmask_reserved_bits<0xf0, 0>,
 ///             TExtraOptions...
 ///         >
 ///     {
 ///         // Duplicate definition of the base class
 ///         using Base =
-///             nil::marshalling::types::bitmask_value<
+///             nil::crypto3::marshalling::types::bitmask_value<
 ///                 MyFieldBase,
-///                 nil::marshalling::types::fixed_length<1>,
+///                 nil::crypto3::marshalling::types::fixed_length<1>,
 ///                 scomms::types::bitmask_reserved_bits<0xf0, 0>,
 ///                 TExtraOptions...
 ///             >;
@@ -645,7 +645,7 @@ namespace nil {
 ///     compilation fails and the class it is being used in is @b NOT a
 ///     template one, please use @ref MARSHALLING_BITMASK_BITS_SEQ_NOTEMPLATE()
 ///     instead.
-/// @related nil::marshalling::types::bitmask_value
+/// @related nil::crypto3::marshalling::types::bitmask_value
 #define MARSHALLING_BITMASK_BITS_SEQ_NOTEMPLATE(...) \
     MARSHALLING_BITMASK_BITS(__VA_ARGS__)            \
     MARSHALLING_BITMASK_BITS_ACCESS_NOTEMPLATE(__VA_ARGS__)

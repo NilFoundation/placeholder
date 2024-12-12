@@ -34,6 +34,7 @@
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
 
+#include <nil/marshalling/types/integral.hpp>
 #include <nil/crypto3/marshalling/multiprecision/processing/integral.hpp>
 
 namespace nil {
@@ -41,16 +42,14 @@ namespace nil {
         namespace marshalling {
             namespace types {
                 namespace detail {
-                    template<typename TTypeBase,
-                             std::size_t Bits>
-                    class basic_integral : public TTypeBase {
 
-                        using T = nil::crypto3::multiprecision::big_uint<Bits>;
+                    template<typename TTypeBase, std::size_t Bits>
+                    class basic_integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>> : public TTypeBase {
 
                         using base_impl_type = TTypeBase;
 
                     public:
-                        using value_type = T;
+                        using value_type = nil::crypto3::multiprecision::big_uint<Bits>;
                         using serialized_type = value_type;
 
                         basic_integral() = default;
@@ -93,11 +92,11 @@ namespace nil {
                         }
 
                         static constexpr std::size_t min_bit_length() {
-                            return T::Bits;
+                            return value_type::Bits;
                         }
 
                         static constexpr std::size_t max_bit_length() {
-                            return T::Bits;
+                            return value_type::Bits;
                         }
 
                         static constexpr serialized_type to_serialized(value_type val) {
@@ -109,44 +108,43 @@ namespace nil {
                         }
 
                         template<typename TIter>
-                        nil::marshalling::status_type read(TIter &iter, std::size_t size) {
+                        nil::crypto3::marshalling::status_type read(TIter &iter, std::size_t size) {
                             
                             if (size < (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             bit_length() : length())) {
-                                return nil::marshalling::status_type::not_enough_data;
+                                return nil::crypto3::marshalling::status_type::not_enough_data;
                             }
 
                             read_no_status(iter);
                             iter += (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             max_bit_length() : max_length());
-                            return nil::marshalling::status_type::success;
+                            return nil::crypto3::marshalling::status_type::success;
                         }
 
                         template<typename TIter>
                         void read_no_status(TIter &iter) {
-                            value_ = crypto3::marshalling::processing::
+                            value_ = multiprecision::processing::
                                 read_data<bit_length(), value_type, typename base_impl_type::endian_type>(iter);
                         }
 
                         template<typename TIter>
-                        nil::marshalling::status_type write(TIter &iter, std::size_t size) const {
+                        nil::crypto3::marshalling::status_type write(TIter &iter, std::size_t size) const {
                             if (size < (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             bit_length() : length())) {
-                                return nil::marshalling::status_type::buffer_overflow;
+                                return nil::crypto3::marshalling::status_type::buffer_overflow;
                             }
 
                             write_no_status(iter);
 
                             iter += (std::is_same<typename std::iterator_traits<TIter>::value_type, bool>::value ?
                                             max_bit_length() : max_length());
-                            return nil::marshalling::status_type::success;
+                            return nil::crypto3::marshalling::status_type::success;
                         }
 
                         template<typename TIter>
                         void write_no_status(TIter &iter) const {
-                            crypto3::marshalling::processing::write_data<bit_length(),
-                                                                         typename base_impl_type::endian_type>(value_,
-                                                                                                               iter);
+                            multiprecision::processing::
+                                write_data<bit_length(), typename base_impl_type::endian_type>(value_, iter);
                         }
 
                     private:

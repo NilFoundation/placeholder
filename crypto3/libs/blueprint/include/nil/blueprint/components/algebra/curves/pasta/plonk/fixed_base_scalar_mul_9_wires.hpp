@@ -249,7 +249,7 @@ namespace nil {
                         std::size_t component_start_row) {
 
                         std::array<bool, CurveType::scalar_field_type::modulus_bits> b =
-                            nil::marshalling::pack<nil::marshalling::option::big_endian>(params.s);
+                            nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(params.s);
 
                         private_assignment.witness(W1)[j] = b[0];
                         private_assignment.witness(W2)[j] = b[1];

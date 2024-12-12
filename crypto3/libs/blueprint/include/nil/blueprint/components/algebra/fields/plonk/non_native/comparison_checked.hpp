@@ -494,9 +494,9 @@ namespace nil {
                     bits[i].resize(component.bits_amount + component.padding_bits);
                     std::fill(bits[i].begin(), bits[i].end(), false);
 
-                    nil::marshalling::status_type status;
+                    nil::crypto3::marshalling::status_type status;
                     std::array<bool, BlueprintFieldType::modulus_bits> bytes_all =
-                        nil::marshalling::pack<nil::marshalling::option::big_endian>(integrals[i], status);
+                        nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integrals[i], status);
                     THROW_IF_ERROR_STATUS(status, "comparison_checked::generate_assignments");
                     std::copy(bytes_all.end() - component.bits_amount, bytes_all.end(),
                               bits[i].begin() + component.padding_bits);
