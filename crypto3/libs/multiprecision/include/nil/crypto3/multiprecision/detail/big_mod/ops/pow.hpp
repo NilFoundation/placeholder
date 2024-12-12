@@ -18,7 +18,7 @@
 
 #include "nil/crypto3/multiprecision/detail/big_mod/big_mod_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/ops/inverse.hpp"
-#include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
+#include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
 #include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
@@ -37,7 +37,7 @@ namespace nil::crypto3::multiprecision {
                               int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
         if (e < 0) {
-            return pow(inverse_extended_euclidean_algorithm(b), unsigned_abs(e));
+            return pow(inverse_extended_euclidean_algorithm(b), detail::unsigned_abs(e));
         }
         return pow(b, static_cast<std::make_unsigned_t<T>>(e));
     }

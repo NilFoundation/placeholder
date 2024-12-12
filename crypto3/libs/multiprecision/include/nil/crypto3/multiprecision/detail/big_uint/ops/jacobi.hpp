@@ -22,7 +22,7 @@ namespace nil::crypto3::multiprecision {
     constexpr int jacobi(const big_uint<Bits> &a, const big_uint<Bits> &n) {
         using big_uint_t = big_uint<Bits>;
 
-        if (n % 2 == 0 || n <= 1) {
+        if (n % 2u == 0 || n <= 1) {
             throw std::invalid_argument("jacobi: second argument must be odd and > 1");
         }
 
@@ -39,7 +39,7 @@ namespace nil::crypto3::multiprecision {
                 big_uint_t tmp(y);
                 tmp -= x;
                 x = tmp;
-                if (y % 4 == 3) {
+                if (y % 4u == 3) {
                     J = -J;
                 }
             }
@@ -50,13 +50,13 @@ namespace nil::crypto3::multiprecision {
             std::size_t shifts = x.lsb();
             x >>= shifts;
             if (shifts & 1) {
-                std::size_t y_mod_8 = static_cast<std::size_t>(y % 8);
+                std::size_t y_mod_8 = static_cast<std::size_t>(y % 8u);
                 if (y_mod_8 == 3 || y_mod_8 == 5) {
                     J = -J;
                 }
             }
 
-            if (x % 4 == 3 && y % 4 == 3) {
+            if (x % 4u == 3 && y % 4u == 3) {
                 J = -J;
             }
 

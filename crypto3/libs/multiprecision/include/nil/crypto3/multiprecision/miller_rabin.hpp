@@ -111,7 +111,7 @@ namespace nil::crypto3::multiprecision {
 
         if (!detail::check_small_factors(n)) return false;
 
-        number_type nm1 = n - 1;
+        number_type nm1 = n - 1u;
         //
         // Begin with a single Fermat test - it excludes a lot of candidates:
         //
@@ -120,12 +120,12 @@ namespace nil::crypto3::multiprecision {
         x = powm(q, nm1, n);
         if (x != 1u) return false;
 
-        q = n - 1;
+        q = n - 1u;
         std::size_t k = lsb(q);
         q >>= k;
 
         // Declare our random number generator:
-        boost::random::uniform_int_distribution<number_type> dist(2, n - 2);
+        boost::random::uniform_int_distribution<number_type> dist(2u, n - 2u);
 
         //
         // Execute the trials:
