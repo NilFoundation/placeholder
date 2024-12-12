@@ -24,16 +24,16 @@
 //---------------------------------------------------------------------------//
 
 /// @file nil/marshalling/types/optional_mode.hpp
-/// Contains definition of the mode used for nil::marshalling::types::optional fields.
+/// Contains definition of the mode used for nil::crypto3::marshalling::types::optional fields.
 
 #ifndef MARSHALLING_OPTIONAL_MODE_HPP
 #define MARSHALLING_OPTIONAL_MODE_HPP
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
-            /// @brief Mode to be used by nil::marshalling::types::optional
+            /// @brief Mode to be used by nil::crypto3::marshalling::types::optional
             /// @headerfile nil/marshalling/types/optional_mode.hpp
             enum class optional_mode {
                 tentative,      ///< The field existence is tentative, i.e. If there is enough bytes

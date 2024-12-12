@@ -724,7 +724,7 @@ namespace nil {
                 auto fixed_poly_values = _common_data.commitment_scheme_data;
                 using eta_hash = crypto3::hashes::keccak_1600<256>;
                 using field_element_type = nil::crypto3::marshalling::types::field_element<
-                                nil::marshalling::field_type<nil::marshalling::option::big_endian>,
+                                nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>,
                                 typename PlaceholderParams::field_type::value_type>;
 
                 if (fixed_poly_values.size() == 0)

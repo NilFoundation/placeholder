@@ -26,7 +26,7 @@
 #ifndef MARSHALLING_CUSTOM_VALIDATOR_HPP
 #define MARSHALLING_CUSTOM_VALIDATOR_HPP
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace adapter {

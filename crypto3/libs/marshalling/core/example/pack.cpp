@@ -50,7 +50,7 @@
 #include <iostream>
 #include <array>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 template<typename T>
 void to_big_vector(T input) {
@@ -59,7 +59,7 @@ void to_big_vector(T input) {
     const TOut out = {0x12345678};
     TOut result = pack(input, status);
 
-    if (status == nil::marshalling::status_type::success && equal(result.begin(), result.end(), out.begin())) {
+    if (status == nil::crypto3::marshalling::status_type::success && equal(result.begin(), result.end(), out.begin())) {
         std::cout << "success" << std::endl;
     } else {
         std::cout << "fail" << std::endl;
@@ -73,7 +73,7 @@ void to_small_vector(T input) {
     const TOut out = {0x12, 0x34, 0x56, 0x78};
     TOut result = pack(input, status);
 
-    if (status == nil::marshalling::status_type::success && std::equal(result.begin(), result.end(), out.begin())) {
+    if (status == nil::crypto3::marshalling::status_type::success && std::equal(result.begin(), result.end(), out.begin())) {
         std::cout << "success" << std::endl;
     } else {
         std::cout << "fail" << std::endl;
@@ -87,7 +87,7 @@ void to_big_array(T input) {
     const TOut out = {0x12345678};
     TOut result = pack(input, status);
 
-    if (status == nil::marshalling::status_type::success && std::equal(result.begin(), result.end(), out.begin())) {
+    if (status == nil::crypto3::marshalling::status_type::success && std::equal(result.begin(), result.end(), out.begin())) {
         std::cout << "success" << std::endl;
     } else {
         std::cout << "fail" << std::endl;
@@ -101,7 +101,7 @@ void to_small_array(T input) {
     TOut out = {0x12, 0x34, 0x56, 0x78};
     TOut result = pack(input, status);
 
-    if (status == nil::marshalling::status_type::success && std::equal(result.begin(), result.end(), out.begin())) {
+    if (status == nil::crypto3::marshalling::status_type::success && std::equal(result.begin(), result.end(), out.begin())) {
         std::cout << "success" << std::endl;
     } else {
         std::cout << "fail" << std::endl;
@@ -115,7 +115,7 @@ void to_type(T input) {
     TOut out = 0x12345678;
     TOut result = pack(input, status);
 
-    if (status == nil::marshalling::status_type::success && result == out) {
+    if (status == nil::crypto3::marshalling::status_type::success && result == out) {
         std::cout << "success" << std::endl;
     } else {
         std::cout << "fail" << std::endl;
@@ -129,7 +129,7 @@ void to_marshalling_type(T input) {
     std::uint16_t out = 0x1234;
     TOut result = pack(input, status);
 
-    if (status == nil::marshalling::status_type::success && result.value() == out) {
+    if (status == nil::crypto3::marshalling::status_type::success && result.value() == out) {
         std::cout << "success" << std::endl;
     } else {
         std::cout << "fail" << std::endl;

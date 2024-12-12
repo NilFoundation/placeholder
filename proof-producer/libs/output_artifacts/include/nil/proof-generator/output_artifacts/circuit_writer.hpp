@@ -31,7 +31,7 @@ namespace nil {
         template <typename Endianness, typename BlueprintField> 
         class circuit_writer {
                 public:
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using Circuit = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
 
                     circuit_writer() = delete;
@@ -69,7 +69,7 @@ namespace nil {
                         std::vector<std::uint8_t> cv(filled_val.length(), 0x00);
                         auto iter = cv.begin();
                         auto const status = filled_val.write(iter, cv.size());
-                        assert(status == nil::marshalling::status_type::success);
+                        assert(status == nil::crypto3::marshalling::status_type::success);
                         out.write(reinterpret_cast<char*>(cv.data()), cv.size());
                     }
         };        

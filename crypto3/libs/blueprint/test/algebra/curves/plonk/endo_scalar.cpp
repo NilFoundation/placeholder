@@ -89,11 +89,11 @@ typename CurveType::scalar_field_type::value_type calculate_endo_scalar(typename
         typename BlueprintFieldType::integral_type(scalar.data);
     std::array<bool, ScalarSize> bits_msb;
     {
-        nil::marshalling::status_type status;
+        nil::crypto3::marshalling::status_type status;
         BOOST_CHECK(ScalarSize <= 255);
         std::array<bool, 255> bits_msb_all =
-            nil::marshalling::pack<nil::marshalling::option::big_endian>(integral_scalar, status);
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+            nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integral_scalar, status);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         std::copy(bits_msb_all.end() - ScalarSize, bits_msb_all.end(), bits_msb.begin());
 
         for(std::size_t i = 0; i < 255 - ScalarSize; ++i) {

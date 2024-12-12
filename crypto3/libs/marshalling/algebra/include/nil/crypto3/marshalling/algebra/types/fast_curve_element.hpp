@@ -49,7 +49,7 @@ namespace nil {
             namespace types {
 
                 template<typename TTypeBase, typename CurveGroupType>
-                using fast_curve_element = nil::marshalling::types::bundle<
+                using fast_curve_element = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // X
@@ -57,31 +57,31 @@ namespace nil {
                         // Y
                         field_element<TTypeBase, typename CurveGroupType::value_type::field_type::value_type>,
                         // is_infinity
-                        nil::marshalling::types::integral<TTypeBase, std::uint8_t>
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::uint8_t>
                     >>;
 
                 template<typename CurveGroupType, typename Endianness>
-                fast_curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>
+                fast_curve_element<nil::crypto3::marshalling::field_type<Endianness>, CurveGroupType>
                     fill_fast_curve_element(const typename CurveGroupType::value_type &point) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     using field_element_type =
                         field_element<TTypeBase, typename CurveGroupType::value_type::field_type::value_type>;
                     std::uint8_t is_infinity = point.is_zero();
                     auto affine_point = point.to_affine();
 
-                    return fast_curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>(
+                    return fast_curve_element<nil::crypto3::marshalling::field_type<Endianness>, CurveGroupType>(
                         std::make_tuple(
                                         field_element_type(affine_point.X),
                                         field_element_type(affine_point.Y),
-                                        nil::marshalling::types::integral<TTypeBase, std::uint8_t>(is_infinity)
+                                        nil::crypto3::marshalling::types::integral<TTypeBase, std::uint8_t>(is_infinity)
                                         ));
                 }
 
                 template<typename CurveGroupType, typename Endianness>
                 typename CurveGroupType::value_type make_fast_curve_element(
-                    const fast_curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>
+                    const fast_curve_element<nil::crypto3::marshalling::field_type<Endianness>, CurveGroupType>
                         &filled_curve_element) {
                     std::uint8_t is_infinity = std::get<2>(filled_curve_element.value()).value();
                     if(is_infinity) {
@@ -93,23 +93,23 @@ namespace nil {
                 }
 
                 template<typename CurveGroupType, typename Endianness>
-                nil::marshalling::types::array_list<
-                    nil::marshalling::field_type<Endianness>,
-                    fast_curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>,
-                    nil::marshalling::option::sequence_size_field_prefix<
-                        nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                nil::crypto3::marshalling::types::array_list<
+                    nil::crypto3::marshalling::field_type<Endianness>,
+                    fast_curve_element<nil::crypto3::marshalling::field_type<Endianness>, CurveGroupType>,
+                    nil::crypto3::marshalling::option::sequence_size_field_prefix<
+                        nil::crypto3::marshalling::types::integral<nil::crypto3::marshalling::field_type<Endianness>, std::size_t>>>
                     fill_fast_curve_element_vector(
                         const std::vector<typename CurveGroupType::value_type> &curve_elem_vector) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     using fast_curve_element_type = fast_curve_element<TTypeBase, CurveGroupType>;
 
-                    using fast_curve_element_vector_type = nil::marshalling::types::array_list<
+                    using fast_curve_element_vector_type = nil::crypto3::marshalling::types::array_list<
                         TTypeBase,
                         fast_curve_element_type,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>;
+                        nil::crypto3::marshalling::option::sequence_size_field_prefix<
+                            nil::crypto3::marshalling::types::integral<nil::crypto3::marshalling::field_type<Endianness>, std::size_t>>>;
 
                     fast_curve_element_vector_type result;
 
@@ -122,15 +122,15 @@ namespace nil {
 
                 template<typename CurveGroupType, typename Endianness>
                 std::vector<typename CurveGroupType::value_type> make_fast_curve_element_vector(
-                    const nil::marshalling::types::array_list<
-                        nil::marshalling::field_type<Endianness>,
-                        fast_curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>,
-                        nil::marshalling::option::sequence_size_field_prefix<
-                            nil::marshalling::types::integral<nil::marshalling::field_type<Endianness>, std::size_t>>>
+                    const nil::crypto3::marshalling::types::array_list<
+                        nil::crypto3::marshalling::field_type<Endianness>,
+                        fast_curve_element<nil::crypto3::marshalling::field_type<Endianness>, CurveGroupType>,
+                        nil::crypto3::marshalling::option::sequence_size_field_prefix<
+                            nil::crypto3::marshalling::types::integral<nil::crypto3::marshalling::field_type<Endianness>, std::size_t>>>
                         &curve_elem_vector) {
 
                     std::vector<typename CurveGroupType::value_type> result;
-                    const std::vector<fast_curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>> &values =
+                    const std::vector<fast_curve_element<nil::crypto3::marshalling::field_type<Endianness>, CurveGroupType>> &values =
                         curve_elem_vector.value();
                     std::size_t size = values.size();
 

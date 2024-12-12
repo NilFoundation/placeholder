@@ -34,7 +34,7 @@
 
 #include <boost/static_assert.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace endian {
 

@@ -30,7 +30,7 @@
 
 #include <nil/marshalling/processing/tuple.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace adapter {
@@ -39,7 +39,7 @@ namespace nil {
                 class num_value_multi_range_validator : public TBase {
                     using base_impl_type = TBase;
 
-                    static_assert(nil::detail::is_tuple<TRanges>::value, "TRanges must be a tuple");
+                    static_assert(marshalling::detail::is_tuple<TRanges>::value, "TRanges must be a tuple");
 
                 public:
                     using value_type = typename base_impl_type::value_type;
@@ -79,7 +79,7 @@ namespace nil {
                         template<typename TRange>
                         bool operator()(bool val) const {
                             static_cast<void>(val);
-                            static_assert(nil::detail::is_tuple<TRange>::value,
+                            static_assert(marshalling::detail::is_tuple<TRange>::value,
                                           "TRange must be a tuple");
                             static_assert(std::tuple_size<TRange>::value == 2, "Tuple with 2 elements is expected");
                             using MinVal = typename std::tuple_element<0, TRange>::type;

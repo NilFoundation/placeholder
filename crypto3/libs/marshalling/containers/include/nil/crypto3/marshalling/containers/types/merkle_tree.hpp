@@ -49,15 +49,15 @@ namespace nil {
         namespace marshalling {
             namespace types {
                 template<typename TTypeBase, typename MerkleTree>
-                using merkle_tree = nil::marshalling::types::standard_array_list<
+                using merkle_tree = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase,
                     typename merkle_node_value<TTypeBase, MerkleTree>::type>;
 
                 template<typename MerkleTree, typename Endianness>
-                merkle_tree<nil::marshalling::field_type<Endianness>, MerkleTree>
+                merkle_tree<nil::crypto3::marshalling::field_type<Endianness>, MerkleTree>
                     fill_merkle_tree(const MerkleTree& tree) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     merkle_tree<TTypeBase, MerkleTree> filled_tree;
                     for (const auto &hash_value : tree) {
@@ -69,7 +69,7 @@ namespace nil {
 
                 template<typename MerkleTree, typename Endianness>
                 MerkleTree make_merkle_tree(
-                    const merkle_tree<nil::marshalling::field_type<Endianness>, MerkleTree> &filled_merkle_tree)
+                    const merkle_tree<nil::crypto3::marshalling::field_type<Endianness>, MerkleTree> &filled_merkle_tree)
                 {
                     typename MerkleTree::container_type hashes;
                     for (std::size_t i = 0; i < filled_merkle_tree.value().size(); ++i) {

@@ -47,9 +47,9 @@
 
 #else    // #ifdef MARSHALLING_MUST_DEFINE_BASE
 #define MARSHALLING_FIELD_VALUE_ACCESS_FUNC \
-    FUNC_AUTO_REF_RETURN(value, decltype(nil::marshalling::types::to_field_base(*this).value()))
+    FUNC_AUTO_REF_RETURN(value, decltype(nil::crypto3::marshalling::types::to_field_base(*this).value()))
 #define MARSHALLING_FIELD_VALUE_ACCESS_CONST_FUNC \
-    FUNC_AUTO_REF_RETURN_CONST(value, decltype(nil::marshalling::types::to_field_base(*this).value()))
+    FUNC_AUTO_REF_RETURN_CONST(value, decltype(nil::crypto3::marshalling::types::to_field_base(*this).value()))
 #define MARSHALLING_ACCESS_MEMBER_FIELD_FUNC(T_, t_, n_)      \
     FUNC_AUTO_REF_RETURN(MARSHALLING_CONCATENATE(field_, n_), \
                          decltype(std::get<MARSHALLING_CONCATENATE(FieldIdx_, n_)>(t_)))
@@ -57,9 +57,9 @@
     FUNC_AUTO_REF_RETURN_CONST(MARSHALLING_CONCATENATE(field_, n_), \
                                decltype(std::get<MARSHALLING_CONCATENATE(FieldIdx_, n_)>(t_)))
 #define MARSHALLING_MSG_FIELDS_ACCESS_FUNC \
-    FUNC_AUTO_REF_RETURN(fields, decltype(nil::marshalling::to_message_base(*this).fields()))
+    FUNC_AUTO_REF_RETURN(fields, decltype(nil::crypto3::marshalling::to_message_base(*this).fields()))
 #define MARSHALLING_MSG_FIELDS_ACCESS_CONST_FUNC \
-    FUNC_AUTO_REF_RETURN_CONST(fields, decltype(nil::marshalling::to_message_base(*this).fields()))
+    FUNC_AUTO_REF_RETURN_CONST(fields, decltype(nil::crypto3::marshalling::to_message_base(*this).fields()))
 #endif    // #ifdef MARSHALLING_MUST_DEFINE_BASE
 
 #define MARSHALLING_FIELD_ACC_FUNC(T_, t_, n_)                       \

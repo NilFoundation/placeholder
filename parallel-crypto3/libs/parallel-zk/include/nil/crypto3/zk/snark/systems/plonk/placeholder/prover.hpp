@@ -107,7 +107,7 @@ namespace nil {
                     ) {
                         auto prover = placeholder_prover<FieldType, ParamsType>(
                             preprocessed_public_data, std::move(preprocessed_private_data), table_description,
-                            constraint_system, commitment_scheme, skip_commitment_scheme_eval_proofs);
+                            constraint_system, std::move(commitment_scheme), skip_commitment_scheme_eval_proofs);
                         return prover.process();
                     }
 
@@ -217,6 +217,7 @@ namespace nil {
                         // 8. Run evaluation proofs
                         _proof.eval_proof.challenge = transcript.template challenge<FieldType>();
                         generate_evaluation_points();
+
                         if (!_skip_commitment_scheme_eval_proofs) {
                             _proof.eval_proof.eval_proof = _commitment_scheme.proof_eval(transcript);
                         } else {
@@ -361,7 +362,7 @@ namespace nil {
                             for (std::size_t j = 0; j < gates[i].constraints.size(); j++) {
                                 polynomial_dfs_type constraint_result =
                                     gates[i].constraints[j].evaluate(
-                                        *_polynomial_table, preprocessed_public_data.common_data.basic_domain) *
+                                        _polynomial_table, preprocessed_public_data.common_data.basic_domain) *
                                     _polynomial_table.selector(gates[i].selector_index);
                                 // for (std::size_t k = 0; k < table_description.rows_amount; k++) {
                                 if (constraint_result.evaluate(

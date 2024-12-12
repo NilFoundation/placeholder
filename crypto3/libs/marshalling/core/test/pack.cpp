@@ -50,7 +50,7 @@
 
 #include <cstdio>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 BOOST_AUTO_TEST_SUITE(pack_imploder_test_suite)
 

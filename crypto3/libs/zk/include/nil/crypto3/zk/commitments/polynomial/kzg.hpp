@@ -658,7 +658,7 @@ namespace nil {
                     using transcript_hash_type = typename CommitmentSchemeType::transcript_hash_type;
                     using polynomial_type = typename CommitmentSchemeType::polynomial_type;
                     using proof_type = typename CommitmentSchemeType::proof_type;
-                    using endianness = nil::marshalling::option::big_endian;
+                    using endianness = nil::crypto3::marshalling::option::big_endian;
                 private:
                     params_type _params;
                     std::map<std::size_t, commitment_type> _commitments;
@@ -752,9 +752,9 @@ namespace nil {
                                     _params,
                                     this->_polys[index][i]);
                             this->_ind_commitments[index].push_back(single_commitment);
-                            nil::marshalling::status_type status;
+                            nil::crypto3::marshalling::status_type status;
                             std::vector<uint8_t> single_commitment_bytes =
-                                    nil::marshalling::pack<endianness>(single_commitment, status);
+                                    nil::crypto3::marshalling::pack<endianness>(single_commitment, status);
                             THROW_IF_ERROR_STATUS(status, "kzg::commit");
                             result.insert(result.end(), single_commitment_bytes.begin(), single_commitment_bytes.end());
                         }
@@ -839,9 +839,9 @@ namespace nil {
                                 for (std::size_t j = 0; j < blob_size; j++) {
                                     byteblob[j] = this->_commitments.at(k)[i * blob_size + j];
                                 }
-                                nil::marshalling::status_type status;
+                                nil::crypto3::marshalling::status_type status;
                                 typename curve_type::template g1_type<>::value_type
-                                        i_th_commitment = nil::marshalling::pack(byteblob, status);
+                                        i_th_commitment = nil::crypto3::marshalling::pack(byteblob, status);
                                 THROW_IF_ERROR_STATUS(status, "kzg::verify_eval");
                                 auto U_commit = nil::crypto3::zk::algorithms::commit_one<CommitmentSchemeType>
                                     (_params, this->get_U(k, i));

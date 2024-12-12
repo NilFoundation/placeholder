@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------//
 
 /// @file
-/// @brief Contains nil::marshalling::container::array_view class.
+/// @brief Contains nil::crypto3::marshalling::container::array_view class.
 
 #ifndef MARSHALLING_ARRAY_VIEW_HPP
 #define MARSHALLING_ARRAY_VIEW_HPP
@@ -34,7 +34,7 @@
 
 #include <nil/marshalling/assert_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace container {
 
@@ -271,9 +271,9 @@ namespace nil {
 namespace std {
 
     /// @brief Specializes the std::swap algorithm.
-    /// @related nil::marshalling::container::ArrayView
+    /// @related nil::crypto3::marshalling::container::ArrayView
     template<typename T>
-    void swap(nil::marshalling::container::array_view<T> &view1, nil::marshalling::container::array_view<T> &view2) {
+    void swap(nil::crypto3::marshalling::container::array_view<T> &view1, nil::crypto3::marshalling::container::array_view<T> &view2) {
         view1.swap(view2);
     }
 

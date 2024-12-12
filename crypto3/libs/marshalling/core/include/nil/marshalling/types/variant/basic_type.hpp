@@ -35,7 +35,7 @@
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/processing/tuple.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -577,7 +577,7 @@ namespace nil {
                     std::size_t memIdx_ = members_count;
 
                     static const std::size_t members_count = std::tuple_size<members_type>::value;
-                    static_assert(nil::detail::is_tuple<members_type>::value,
+                    static_assert(marshalling::detail::is_tuple<members_type>::value,
                                   "value_type must be tuple");
                     static_assert(0U < members_count, "value_type must be non-empty tuple");
                 };

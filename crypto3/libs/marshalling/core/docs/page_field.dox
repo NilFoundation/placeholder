@@ -2,14 +2,14 @@
 /// @tableofcontents
 /// fields_type are abstractions around value storage primitives and/or objects,
 /// such as integral values, floating point values, strings, arrays, etc..
-/// Every @b field class is defined in @ref nil::marshalling::field namespace and
+/// Every @b field class is defined in @ref nil::crypto3::marshalling::field namespace and
 /// exposes predefined interface in order to
 /// make template meta-programming as easy as possible. As an example let's
-/// take a look at @ref nil::marshalling::types::IntValue class which is used to
+/// take a look at @ref nil::crypto3::marshalling::types::IntValue class which is used to
 /// define integral value field.
 /// @code
 /// template <typename TBase, typename T, typename... TOptions>
-/// class nil::marshalling::types::IntValue : public TBase
+/// class nil::crypto3::marshalling::types::IntValue : public TBase
 /// {
 /// public:
 ///     // Define inner storage type
@@ -24,11 +24,11 @@
 ///
 ///     // Read
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus read(TIter& iter, std::size_t len) {...}
+///     nil::crypto3::marshalling::ErrorStatus read(TIter& iter, std::size_t len) {...}
 ///
 ///     // Write
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus write(TIter& iter, std::size_t len) const {...}
+///     nil::crypto3::marshalling::ErrorStatus write(TIter& iter, std::size_t len) const {...}
 ///
 ///     // Serialisation length
 ///     std::size_t length() const {...}
@@ -53,10 +53,10 @@
 /// The main things to note are that every field definition class:
 /// @li receives its base class as the first 
 ///     template parameter. It is expected to be a variant of @ref
-///     nil::marshalling::field_type with @ref nil::marshalling::option::big_endian or @ref
-///     nil::marshalling::option::little_endian option to specify the serialization endian.
+///     nil::crypto3::marshalling::field_type with @ref nil::crypto3::marshalling::option::big_endian or @ref
+///     nil::crypto3::marshalling::option::little_endian option to specify the serialization endian.
 /// @li exhibits some default behaviour which can be modified by
-///     passing various options from @ref nil::marshalling::option namespace as additional template
+///     passing various options from @ref nil::crypto3::marshalling::option namespace as additional template
 ///     parameters. All the available options are described below in this tutorial.
 /// @li defines @b value_type inner value storage
 ///     type and provides @b value() member functions to access the stored value.
@@ -76,28 +76,28 @@
 /// abstractions do not have polymorphic behaviour.
 ///
 /// The available fields abstractions are:
-/// @li @ref nil::marshalling::types::IntValue - used to define @ref sec_field_tutorial_int_value
-/// @li @ref nil::marshalling::types::EnumValue - used to define @ref sec_field_tutorial_enum_value
-/// @li @ref nil::marshalling::types::BitmaskValue - used to define @ref sec_field_tutorial_bitmask_value
-/// @li @ref nil::marshalling::types::Bitfield - used to define @ref sec_field_tutorial_bitfield
-/// @li @ref nil::marshalling::types::Bundle - used to define @ref sec_field_tutorial_bundle
-/// @li @ref nil::marshalling::types::array_list - used to define @ref sec_field_tutorial_array_list
-/// @li @ref nil::marshalling::types::String - used to define @ref sec_field_tutorial_string
-/// @li @ref nil::marshalling::types::FloatValue - used to define @ref sec_field_tutorial_fp_value
-/// @li @ref nil::marshalling::types::Optional - used to define @ref sec_field_tutorial_optional
-/// @li @ref nil::marshalling::types::Variant - used to define @ref sec_field_tutorial_variant
+/// @li @ref nil::crypto3::marshalling::types::IntValue - used to define @ref sec_field_tutorial_int_value
+/// @li @ref nil::crypto3::marshalling::types::EnumValue - used to define @ref sec_field_tutorial_enum_value
+/// @li @ref nil::crypto3::marshalling::types::BitmaskValue - used to define @ref sec_field_tutorial_bitmask_value
+/// @li @ref nil::crypto3::marshalling::types::Bitfield - used to define @ref sec_field_tutorial_bitfield
+/// @li @ref nil::crypto3::marshalling::types::Bundle - used to define @ref sec_field_tutorial_bundle
+/// @li @ref nil::crypto3::marshalling::types::array_list - used to define @ref sec_field_tutorial_array_list
+/// @li @ref nil::crypto3::marshalling::types::String - used to define @ref sec_field_tutorial_string
+/// @li @ref nil::crypto3::marshalling::types::FloatValue - used to define @ref sec_field_tutorial_fp_value
+/// @li @ref nil::crypto3::marshalling::types::Optional - used to define @ref sec_field_tutorial_optional
+/// @li @ref nil::crypto3::marshalling::types::Variant - used to define @ref sec_field_tutorial_variant
 ///
 /// @section sec_field_tutorial_int_value Integral value fields_type
-/// Integral values are abstracted by nil::marshalling::types::IntValue class, which
+/// Integral values are abstracted by nil::crypto3::marshalling::types::IntValue class, which
 /// receives at least two template parameters. The first one is a base
-/// class, from which the nil::marshalling::types::IntValue will inherit. It must be
-/// a variant of nil::marshalling::field_type, with the option specifying endian used for
+/// class, from which the nil::crypto3::marshalling::types::IntValue will inherit. It must be
+/// a variant of nil::crypto3::marshalling::field_type, with the option specifying endian used for
 /// data serialization. The second template parameter is a basic integral type
 /// that is used to store the field's value.@n
 /// For example:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using MyIntField = nil::marshalling::types::IntValue<MyFieldBase, std::int16_t>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using MyIntField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::int16_t>;
 /// @endcode
 /// The example above defines a field that uses @b std::int16_t type to store
 /// its value. The value can be accessed using @b value() member function:
@@ -109,7 +109,7 @@
 /// @endcode 
 /// When such field is serialized, 2 bytes (<b>sizeof(std::int16_t)</b>) are written
 /// to the output buffer, most significant first and less significant second
-/// (because @b MyFieldBase base class was defined using nil::marshalling::option::big_endian
+/// (because @b MyFieldBase base class was defined using nil::crypto3::marshalling::option::big_endian
 /// option).
 /// 
 /// @subsection sec_field_tutorial_int_value_fixed_length Modifying Serialisation length
@@ -121,9 +121,9 @@
 /// may be encoded using only 3 bytes, and that's what the protocol specifies.
 /// The storage type for such value is going to be @b std::uint32_t, but there is
 /// a need to limit serialization length for it. The Marshalling library provides
-/// nil::marshalling::option::fixed_length option, that can be used for this purpose.
+/// nil::crypto3::marshalling::option::fixed_length option, that can be used for this purpose.
 /// @code
-/// using MyIntField = nil::marshalling::types::IntValue<MyFieldBase, std::uint32_t, nil::marshalling::option::fixed_length<3> >;
+/// using MyIntField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint32_t, nil::crypto3::marshalling::option::fixed_length<3> >;
 /// @endcode
 ///
 /// @subsection sec_field_tutorial_int_value_var_length Variable Serialisation length
@@ -132,13 +132,13 @@
 /// <a href="https://en.wikipedia.org/wiki/Variable-length_quantity">Base-128</a>
 /// encoding, where the most significant bit in the byte indicates whether
 /// it is the last byte in the numeric encoding or the next one also needs to
-/// be taken into account. The Marshalling library provides nil::marshalling::option::var_length
-/// option that can be used with nil::marshalling::types::IntValue and modifies the
+/// be taken into account. The Marshalling library provides nil::crypto3::marshalling::option::var_length
+/// option that can be used with nil::crypto3::marshalling::types::IntValue and modifies the
 /// behaviour of the latter to expose the required read()/write()/length() 
 /// behaviour:
 /// @code
 /// // Variable length encoding, encoding takes at least 1 byte and at most 4 bytes. 
-/// using MyIntField = nil::marshalling::types::IntValue<MyFieldBase, std::uint32_t, nil::marshalling::option::var_length<1, 4> >;
+/// using MyIntField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint32_t, nil::crypto3::marshalling::option::var_length<1, 4> >;
 /// @endcode
 /// The field's base class (@b MyFieldBase) contains endian information which is
 /// used to determine which part of the value is serialized first.
@@ -151,14 +151,14 @@
 /// serialized as a single byte, i.e. to specify year 2015 is to write value 15.
 /// However it may be inconvenient to manually adjust serialized/deserialized
 /// value by predefined offset 2000. To help with such case option 
-/// nil::marshalling::option::num_value_ser_offset can be used. For example:
+/// nil::crypto3::marshalling::option::num_value_ser_offset can be used. For example:
 /// @code
 /// using YearField = 
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase, 
 ///         std::int16_t, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::num_value_ser_offset<-2000>
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::num_value_ser_offset<-2000>
 ///     >;
 ///
 /// static const std::uint8_t SerData[] = { 15 }; // Pretend serialization data
@@ -167,7 +167,7 @@
 /// YearField year;
 /// auto* readIter = &SerData[0];
 /// auto es = year.read(readIter, SerDataLen); // Read year information
-/// assert(es == nil::marshalling::ErrorStatus::success); // No failure is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No failure is expected
 ///
 /// std::cout << year.value() << std::endl; // Prints 2015;
 ///
@@ -177,10 +177,10 @@
 /// std::vector<std::uint8_t> outData; // Pretend output buffer
 /// auto writeIter = std::back_inserter(outData);
 /// es = year.write(writeIter, outData.max_size());
-/// assert(es == nil::marshalling::ErrorStatus::success); // No failure is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No failure is expected
 ///
 /// assert(outData.size() == 1U); // Only 1 byte is expected to be pushed to outData,
-///                               // due to using nil::marshalling::option::fixed_length<1> option.
+///                               // due to using nil::crypto3::marshalling::option::fixed_length<1> option.
 /// assert(outData[0] == 16); // The value equal to "year.value() - 2000" is expected to be written.  
 /// @endcode
 ///
@@ -193,13 +193,13 @@
 /// The definition of such field may look like:
 /// @code
 /// using DistanceField =
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase, 
 ///         std::uint16_t, 
-///         nil::marshalling::option::scaling_ratio<1, 1000>
+///         nil::crypto3::marshalling::option::scaling_ratio<1, 1000>
 ///     >;
 /// @endcode
-/// The nil::marshalling::option::scaling_ratio option allows scaling of serialized value
+/// The nil::crypto3::marshalling::option::scaling_ratio option allows scaling of serialized value
 /// (distance in mm) to handling value (distance in m) and vice versa:
 /// @code
 /// static const std::uint8_t InData[] = {0x3, 0xe8}; // Pretend input buffer, encoded 1000
@@ -208,7 +208,7 @@
 /// DistanceField dist;
 /// const auto* readIter = &InData[0];;
 /// auto es = dist.read(readIter, InDataSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 ///
 /// std::cout << "distance in mm: " << dist.value() << '\n'; // Prints 1000
 /// std::cout << "distance in m: "  << dist.get_scaled<float>() << std::endl; // Prints 1.0
@@ -223,13 +223,13 @@
 /// As the result the field can be defined as:
 /// @code
 /// using OtherDistanceField = 
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase, 
 ///         std::uint16_t, 
-///         nil::marshalling::option::scaling_ratio<10, 1>
+///         nil::crypto3::marshalling::option::scaling_ratio<10, 1>
 ///     >;
 /// @endcode
-/// The nil::marshalling::option::scaling_ratio option allows scaling of serialized value
+/// The nil::crypto3::marshalling::option::scaling_ratio option allows scaling of serialized value
 /// (distance in tens of mm) to handling value (distance in mm) and vice verse:
 /// @code
 /// static const std::uint8_t InData[] = {0x0, 0xf}; // Pretend input buffer, encoded 15
@@ -238,7 +238,7 @@
 /// OtherDistanceField dist;
 /// const auto* readIter = &InData[0];;
 /// auto es = dist.read(readIter, InDataSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 ///
 /// std::cout << "distance in tens of mm: " << dist.value() << '\n'; // Prints 15
 /// std::cout << "distance in mm: "  << dist.get_scaled<unisnged>() << std::endl; // Prints 150
@@ -247,10 +247,10 @@
 /// std::cout << "New distance in tens of mm: " << dist.value() << std::endl; // Prints 50
 /// @endcode
 ///
-/// Methods nil::marshalling::types::IntValue::get_scaled and nil::marshalling::types::IntValue::set_scaled
-/// take into account scaling ratio provided (with nil::marshalling::option::scaling_ratio option)
-/// to the nil::marshalling::types::IntValue field. If such option wasn't used
-/// @b nil::marshalling::option::scaling_ratio<1, 1> is assumed.
+/// Methods nil::crypto3::marshalling::types::IntValue::get_scaled and nil::crypto3::marshalling::types::IntValue::set_scaled
+/// take into account scaling ratio provided (with nil::crypto3::marshalling::option::scaling_ratio option)
+/// to the nil::crypto3::marshalling::types::IntValue field. If such option wasn't used
+/// @b nil::crypto3::marshalling::option::scaling_ratio<1, 1> is assumed.
 ///
 /// @subsection sec_field_tutorial_int_value_units value units
 /// In addition to @ref sec_field_tutorial_int_value_scaling, the @b Marshalling library
@@ -260,13 +260,13 @@
 /// the type of the units is specified.
 /// @code
 /// using DistanceField =
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase, 
 ///         std::uint16_t, 
-///         nil::marshalling::option::units_millimeters
+///         nil::crypto3::marshalling::option::units_millimeters
 ///     >;
 /// @endcode
-/// The nil::marshalling::option::units_millimeters option specifies that field contains
+/// The nil::crypto3::marshalling::option::units_millimeters option specifies that field contains
 /// distance in millimeters, which allows @b Marshalling library provide proper
 /// conversion to other distance units when necessary:
 /// @code
@@ -276,18 +276,18 @@
 /// DistanceField dist;
 /// const auto* readIter = &InData[0];;
 /// auto es = dist.read(readIter, InDataSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 ///
 /// std::cout << "Original value: " << dist.value() << '\n'; // Prints 1000
-/// std::cout << "distance in mm: "  << nil::marshalling::units::get_millimeters<unsigned>(dist) << std::endl; // Prints 1000
-/// std::cout << "distance in cm: "  << nil::marshalling::units::get_centimeters<float>(dist) << std::endl; // Prints 100.0
-/// std::cout << "distance in m: "  << nil::marshalling::units::getMeters<float>(dist) << std::endl; // Prints 1.0
+/// std::cout << "distance in mm: "  << nil::crypto3::marshalling::units::get_millimeters<unsigned>(dist) << std::endl; // Prints 1000
+/// std::cout << "distance in cm: "  << nil::crypto3::marshalling::units::get_centimeters<float>(dist) << std::endl; // Prints 100.0
+/// std::cout << "distance in m: "  << nil::crypto3::marshalling::units::getMeters<float>(dist) << std::endl; // Prints 1.0
 ///
-/// nil::marshalling::units::setCentimeters(dist, 5.5f);
+/// nil::crypto3::marshalling::units::setCentimeters(dist, 5.5f);
 /// std::cout << "New value: " << dist.value() << '\n'; // Prints 55
-/// std::cout << "New distance in mm: "  << nil::marshalling::units::get_millimeters<unsigned>(dist) << std::endl; // Prints 55
-/// std::cout << "New distance in cm: "  << nil::marshalling::units::get_centimeters<float>(dist) << std::endl; // Prints 5.5
-/// std::cout << "New distance in m: "  << nil::marshalling::units::getMeters<float>(dist) << std::endl; // Prints 0.055
+/// std::cout << "New distance in mm: "  << nil::crypto3::marshalling::units::get_millimeters<unsigned>(dist) << std::endl; // Prints 55
+/// std::cout << "New distance in cm: "  << nil::crypto3::marshalling::units::get_centimeters<float>(dist) << std::endl; // Prints 5.5
+/// std::cout << "New distance in m: "  << nil::crypto3::marshalling::units::getMeters<float>(dist) << std::endl; // Prints 0.055
 /// @endcode
 ///
 /// In the examples above the "units" specification may replace the "scaling" 
@@ -296,11 +296,11 @@
 /// multiplied by 10'000'000 to make integral value out of floating point.
 /// @code
 /// using LatField =
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase, 
 ///         std::int32_t,
-///         nil::marshalling::option::scaling_ratio<1, 10000000>,
-///         nil::marshalling::option::units_degrees
+///         nil::crypto3::marshalling::option::scaling_ratio<1, 10000000>,
+///         nil::crypto3::marshalling::option::units_degrees
 ///     >;
 /// @endcode
 /// The @b Marshalling library uses the scaling ratio as well as units information to
@@ -308,66 +308,66 @@
 /// @code
 /// LatField lat(123456789); // Encoded latitude of 12.3456789
 /// std::cout << "Raw value: " << lat.value() << std::endl; // Prints 123456789
-/// std::cout << "Lat in degrees: " << nil::marshalling::units::getDegrees<double>(lat) << std::endl; // Prints 12.3456789
-/// std::cout << "Lat in radians: " << nil::marshalling::units::getRadians<float>(lat) << std::endl; // 0.21547274519
+/// std::cout << "Lat in degrees: " << nil::crypto3::marshalling::units::getDegrees<double>(lat) << std::endl; // Prints 12.3456789
+/// std::cout << "Lat in radians: " << nil::crypto3::marshalling::units::getRadians<float>(lat) << std::endl; // 0.21547274519
 ///
-/// nil::marshalling::units::setDegrees(lat, 22.33);
+/// nil::crypto3::marshalling::units::setDegrees(lat, 22.33);
 /// std::cout << "New raw value: " << lat.value() << std::endl; // Prints 223300000
-/// std::cout << "New degrees value: " << nil::marshalling::units::getDegrees<double>(lat) << std::endl; // Prints 22.33
-/// std::cout << "New radians value: " << nil::marshalling::units::getRadians<double>(lat) << std::endl; // Prints 0.38973202
+/// std::cout << "New degrees value: " << nil::crypto3::marshalling::units::getDegrees<double>(lat) << std::endl; // Prints 22.33
+/// std::cout << "New radians value: " << nil::crypto3::marshalling::units::getRadians<double>(lat) << std::endl; // Prints 0.38973202
 ///
-/// nil::marshalling::units::setRadians(lat, 1.04719);
+/// nil::crypto3::marshalling::units::setRadians(lat, 1.04719);
 /// std::cout << "Updated raw value: " << lat.value() << std::endl; // Prints 600000000
-/// std::cout << "Updated degrees value: " << nil::marshalling::units::getDegrees<double>(lat) << std::endl; // Prints 60
-/// std::cout << "Updated radians value: " << nil::marshalling::units::getRadians<double>(lat) << std::endl; // Prints 1.04719
+/// std::cout << "Updated degrees value: " << nil::crypto3::marshalling::units::getDegrees<double>(lat) << std::endl; // Prints 60
+/// std::cout << "Updated radians value: " << nil::crypto3::marshalling::units::getRadians<double>(lat) << std::endl; // Prints 1.04719
 /// @endcode
 /// The @b Marshalling library provides mulitple @b options to specify the units of
 /// the field's value:
 /// @li @b Time:
-///     - nil::marshalling::option::units_nanoseconds
-///     - nil::marshalling::option::units_microseconds
-///     - nil::marshalling::option::units_milliseconds
-///     - nil::marshalling::option::units_seconds
-///     - nil::marshalling::option::units_minutes
-///     - nil::marshalling::option::units_days
-///     - nil::marshalling::option::units_weeks
+///     - nil::crypto3::marshalling::option::units_nanoseconds
+///     - nil::crypto3::marshalling::option::units_microseconds
+///     - nil::crypto3::marshalling::option::units_milliseconds
+///     - nil::crypto3::marshalling::option::units_seconds
+///     - nil::crypto3::marshalling::option::units_minutes
+///     - nil::crypto3::marshalling::option::units_days
+///     - nil::crypto3::marshalling::option::units_weeks
 /// @li @b distance:
-///     - nil::marshalling::option::units_nanometers
-///     - nil::marshalling::option::units_micrometers
-///     - nil::marshalling::option::units_millimeters
-///     - nil::marshalling::option::units_centimeters
-///     - nil::marshalling::option::units_meters
-///     - nil::marshalling::option::units_kilometers
+///     - nil::crypto3::marshalling::option::units_nanometers
+///     - nil::crypto3::marshalling::option::units_micrometers
+///     - nil::crypto3::marshalling::option::units_millimeters
+///     - nil::crypto3::marshalling::option::units_centimeters
+///     - nil::crypto3::marshalling::option::units_meters
+///     - nil::crypto3::marshalling::option::units_kilometers
 /// @li @b speed:
-///     - nil::marshalling::option::units_nanometers_per_second
-///     - nil::marshalling::option::units_micrometers_per_second
-///     - nil::marshalling::option::units_millimeters_per_second
-///     - nil::marshalling::option::units_centimeters_per_second
-///     - nil::marshalling::option::units_meters_per_second
-///     - nil::marshalling::option::units_kilometers_per_second
-///     - nil::marshalling::option::units_kilometers_per_hour
+///     - nil::crypto3::marshalling::option::units_nanometers_per_second
+///     - nil::crypto3::marshalling::option::units_micrometers_per_second
+///     - nil::crypto3::marshalling::option::units_millimeters_per_second
+///     - nil::crypto3::marshalling::option::units_centimeters_per_second
+///     - nil::crypto3::marshalling::option::units_meters_per_second
+///     - nil::crypto3::marshalling::option::units_kilometers_per_second
+///     - nil::crypto3::marshalling::option::units_kilometers_per_hour
 /// @li @b frequency:
-///     - nil::marshalling::option::units_hertz
-///     - nil::marshalling::option::units_kilohertz
-///     - nil::marshalling::option::units_megahertz
-///     - nil::marshalling::option::units_gigahertz
+///     - nil::crypto3::marshalling::option::units_hertz
+///     - nil::crypto3::marshalling::option::units_kilohertz
+///     - nil::crypto3::marshalling::option::units_megahertz
+///     - nil::crypto3::marshalling::option::units_gigahertz
 /// @li @b angle:
-///     - nil::marshalling::option::units_degrees
-///     - nil::marshalling::option::units_radians
+///     - nil::crypto3::marshalling::option::units_degrees
+///     - nil::crypto3::marshalling::option::units_radians
 /// @li @b Electrical @b current:
-///     - nil::marshalling::option::units_nanoamps
-///     - nil::marshalling::option::units_microamps
-///     - nil::marshalling::option::units_milliamps
-///     - nil::marshalling::option::units_amps
-///     - nil::marshalling::option::units_kiloamps
+///     - nil::crypto3::marshalling::option::units_nanoamps
+///     - nil::crypto3::marshalling::option::units_microamps
+///     - nil::crypto3::marshalling::option::units_milliamps
+///     - nil::crypto3::marshalling::option::units_amps
+///     - nil::crypto3::marshalling::option::units_kiloamps
 /// @li @b Electrical @b voltage:
-///     - nil::marshalling::option::units_nanovolts
-///     - nil::marshalling::option::units_microvolts
-///     - nil::marshalling::option::units_millivolts
-///     - nil::marshalling::option::units_volts
-///     - nil::marshalling::option::units_kilovolts
+///     - nil::crypto3::marshalling::option::units_nanovolts
+///     - nil::crypto3::marshalling::option::units_microvolts
+///     - nil::crypto3::marshalling::option::units_millivolts
+///     - nil::crypto3::marshalling::option::units_volts
+///     - nil::crypto3::marshalling::option::units_kilovolts
 ///
-/// All the units conversion functions reside in nil::marshalling::units namespace. @b NOTE,
+/// All the units conversion functions reside in nil::crypto3::marshalling::units namespace. @b NOTE,
 /// that conversion can be applied only between the units of the same type. The
 /// units compitability check is performed at compile time and the compilation 
 /// will fail on attempt to set/get incompatible value, such as
@@ -381,7 +381,7 @@
 ///
 /// @subsection sec_field_tutorial_int_value_other Other options_type
 /// There multiple common options that are applicable to all the fields,
-/// nil::marshalling::types::IntValue included. Please refer to
+/// nil::crypto3::marshalling::types::IntValue included. Please refer to
 /// @ref sec_field_tutorial_common_options for more detail.
 ///
 /// @section sec_field_tutorial_enum_value Enum value fields_type
@@ -415,8 +415,8 @@
 ///     Baud_115200
 /// };
 ///
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using BaudField = nil::marshalling::types::EnumValue<MyFieldBase, Baud>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using BaudField = nil::crypto3::marshalling::types::EnumValue<MyFieldBase, Baud>;
 ///
 /// BaudField baud;
 /// ...
@@ -425,34 +425,34 @@
 /// std::vector<std::uint8_t> outData; // Pretend output buffer
 /// auto writeIter = std::back_inserter(outData);
 /// auto es = baud.write(writeIter, outData.max_size());
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 /// assert(outData.size() == 1); // Single byte output is expected
 /// assert(outData[0] == 6U); // value 6 is expected to be written
 /// @endcode
-/// nil::marshalling::types::EnumValue is very similar to nil::marshalling::types::IntValue. The main
+/// nil::crypto3::marshalling::types::EnumValue is very similar to nil::crypto3::marshalling::types::IntValue. The main
 /// difference is using enum instead of integral type as a second template
 /// parameter. The default serialization length is determined by the underlying
 /// type of the enum. That't why it is important to explicitly specify the
 /// underlying type of the enum when defining it, and not leave this to the
 /// compiler.
 ///
-/// The nil::marshalling::types::EnumValue field supports almost all the options that
-/// can be used with nil::marshalling::types::IntValue: @ref sec_field_tutorial_int_value_fixed_length,
+/// The nil::crypto3::marshalling::types::EnumValue field supports almost all the options that
+/// can be used with nil::crypto3::marshalling::types::IntValue: @ref sec_field_tutorial_int_value_fixed_length,
 /// @ref sec_field_tutorial_int_value_var_length, @ref sec_field_tutorial_int_value_ser_offset,
 /// as well as @ref sec_field_tutorial_common_options.
 ///
 /// @section sec_field_tutorial_bitmask_value Bitmask value fields_type
 /// Quite often messages in communication protocol use some kind of flags, where
 /// single bit has a independent meaning. It is more convenient to treat
-/// such flags as bitmasks rather than integral values. nil::marshalling::types::BitmaskValue
+/// such flags as bitmasks rather than integral values. nil::crypto3::marshalling::types::BitmaskValue
 /// provides a convenient interface to handle such bitmasks.
 /// @code
-/// using BitmaskField = nil::marshalling::types::BitmaskValue<MyFieldBase>;
+/// using BitmaskField = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase>;
 /// @endcode
-/// By default the underlying storage type of the nil::marshalling::types::BitmaskValue is
+/// By default the underlying storage type of the nil::crypto3::marshalling::types::BitmaskValue is
 /// @b unsigned, which makes the default serialization length to be
 /// @b sizeof(unsigned). The modification of the underlying storage type as
-/// well as serialization length can be done using nil::marshalling::option::fixed_length
+/// well as serialization length can be done using nil::crypto3::marshalling::option::fixed_length
 /// option (see @ref sec_field_tutorial_int_value_fixed_length). The underlying
 /// type will always be some unsigned integral type. If the serialization length
 /// is specified to be 1 byte, the underlying storage type is @b std::uint8_t, 
@@ -460,53 +460,53 @@
 /// if the serialization length is 3 or 4 bytes, the underlying storage type is
 /// @b std::uin32_t, etc...
 /// @code
-/// using BitmaskField_1byte = nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<1> >;
+/// using BitmaskField_1byte = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<1> >;
 /// static_assert(std::is_same<BitmaskField_1byte::value_type, std::uint8_t>::value, "std::uint8_t type is expected");
 /// assert(BitmaskField_1byte().length() == 1U);
 ///
-/// using BitmaskField_2bytes = nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<2> >;
+/// using BitmaskField_2bytes = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<2> >;
 /// static_assert(std::is_same<BitmaskField_2bytes::value_type, std::uint16_t>::value, "std::uint16_t type is expected");
 /// assert(BitmaskField_2bytes().length() == 2U);
 ///
-/// using BitmaskField_3bytes = nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<3> >;
+/// using BitmaskField_3bytes = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<3> >;
 /// static_assert(std::is_same<BitmaskField_3bytes::value_type, std::uint32_t>::value, "std::uint32_t type is expected");
 /// assert(BitmaskField_2bytes().length() == 3U);
 ///
-/// using BitmaskField_4bytes = nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<4> >;
+/// using BitmaskField_4bytes = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<4> >;
 /// static_assert(std::is_same<BitmaskField_4bytes::value_type, std::uint32_t>::value, "std::uint32_t type is expected");
 /// assert(BitmaskField_2bytes().length() == 4U);
 /// @endcode
 /// All the @ref sec_field_tutorial_common_options can also be used with 
-/// nil::marshalling::types::BitmaskValue.
+/// nil::crypto3::marshalling::types::BitmaskValue.
 ///
 /// @subsection sec_field_tutorial_bitmask_value_reserved Reserved Bits
 /// Quite often the bitmask fields contain reserved bits, which must preserve
-/// some values (usually 0). The nil::marshalling::types::BitmaskValue fields support
-/// usage of nil::marshalling::option::bitmask_reserved_bits alias option. The template
+/// some values (usually 0). The nil::crypto3::marshalling::types::BitmaskValue fields support
+/// usage of nil::crypto3::marshalling::option::bitmask_reserved_bits alias option. The template
 /// parameters of the option specify mask for reserved bits as well as their
 /// expected values. The check for the reserved bits values is performed inside
-/// @b nil::marshalling::types::BitmaskValue::valid() member function.
+/// @b nil::crypto3::marshalling::types::BitmaskValue::valid() member function.
 /// @code
 /// using MyBitmask = 
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0x2, 0> // Second bit is reserved and must be 0
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0x2, 0> // Second bit is reserved and must be 0
 ///     >;
 /// @endcode
 ///
 /// @subsection sec_field_tutorial_bitmask_value_names Bit Names
 /// Quite often there is a need to provide names for the bits in the 
-/// nil::marshalling::types::BitmaskValue field. It is possible to define it as external
+/// nil::crypto3::marshalling::types::BitmaskValue field. It is possible to define it as external
 /// independent enum. However, it may be convenient to define it as internal
-/// type. It is possible to do by inheriting from appropriate nil::marshalling::types::BitmaskValue
+/// type. It is possible to do by inheriting from appropriate nil::crypto3::marshalling::types::BitmaskValue
 /// type and use MARSHALLING_BITMASK_BITS() macro to define names for bits. For example
 /// @code
 /// struct MyBitmask : public
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0x2, 0> // Second bit is reserved and must be 0
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0x2, 0> // Second bit is reserved and must be 0
 ///     >
 /// {
 ///     MARSHALLING_BITMASK_BITS(first, third=2, fourth, fifth, sixth, seventh, eighth);
@@ -515,10 +515,10 @@
 /// is equivalent to defining:
 /// @code
 /// struct MyBitmask : public
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0x2, 0>
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0x2, 0>
 ///     >
 /// {
 ///     enum BitIdx
@@ -536,7 +536,7 @@
 /// @endcode
 /// @b NOTE, that provided names have found their way to @b BitIdx enum type, and
 /// got prefixed with @b BitIdx_. This indices may be used with 
-/// nil::marshalling::types::BitmaskValue::get_bit_value() and nil::marshalling::types::BitmaskValue::set_bit_value()
+/// nil::crypto3::marshalling::types::BitmaskValue::get_bit_value() and nil::crypto3::marshalling::types::BitmaskValue::set_bit_value()
 /// member functions.
 ///
 /// Also note, that there is automatically generated @b BitIdx_numOfValues 
@@ -549,10 +549,10 @@
 /// generate the convenience functions. For example:
 /// @code
 /// struct MyBitmask : public
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0x2, 0> // Second bit is reserved and must be 0
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0x2, 0> // Second bit is reserved and must be 0
 ///     >
 /// {
 ///     MARSHALLING_BITMASK_BITS(first, third=2, fourth, fifth, sixth, seventh, eighth);
@@ -562,10 +562,10 @@
 /// is equivalent to defining:
 /// @code
 /// struct MyBitmask : public
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0x2, 0>
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0x2, 0>
 ///     >
 /// {
 ///     enum BitIdx {...}
@@ -585,10 +585,10 @@
 /// can be unified into one @ref MARSHALLING_BITMASK_BITS_SEQ():
 /// @code
 /// struct MyBitmask : public
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0xf0, 0> // 4 MSBs are reserved
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0xf0, 0> // 4 MSBs are reserved
 ///     >
 /// {
 ///     MARSHALLING_BITMASK_BITS_SEQ(first, second, third, fourth);
@@ -604,10 +604,10 @@
 /// respectively. For example:
 /// @code
 /// struct MyBitmask : public
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0xf0, 0> // 4 MSBs are reserved
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0xf0, 0> // 4 MSBs are reserved
 ///     >
 /// {
 ///     MARSHALLING_BITMASK_BITS_SEQ_NOTEMPLATE(first, second, third, fourth);
@@ -619,19 +619,19 @@
 /// @code
 /// template <typename... TExtraOptions>
 /// class MyBitmask : public
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0xf0, 0>, // 4 MSBs are reserved
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0xf0, 0>, // 4 MSBs are reserved
 ///         TExtraOptions...
 ///     >
 /// {
 ///     // Duplicate base class type
 ///     using Base = 
-///         nil::marshalling::types::BitmaskValue<
+///         nil::crypto3::marshalling::types::BitmaskValue<
 ///             MyFieldBase, 
-///             nil::marshalling::option::fixed_length<1>,
-///             nil::marshalling::option::bitmask_reserved_bits<0xf0, 0>, // 4 MSBs are reserved
+///             nil::crypto3::marshalling::option::fixed_length<1>,
+///             nil::crypto3::marshalling::option::bitmask_reserved_bits<0xf0, 0>, // 4 MSBs are reserved
 ///             TExtraOptions...
 ///         >;
 /// public:
@@ -647,7 +647,7 @@
 /// the defined symbol to add / remove the definition of the @b Base member type.
 /// @code
 /// template <typename... TExtraOptions>
-/// class MyBitmask : public nil::marshalling::types::BitmaskValue<...>
+/// class MyBitmask : public nil::crypto3::marshalling::types::BitmaskValue<...>
 /// {
 /// #ifdef MARSHALLING_MUST_DEFINE_BASE
 ///     using Base = ...;
@@ -690,16 +690,16 @@
 ///
 /// These value must be accessed and treated as independent values. However, they
 /// must be bundled into a single byte when serialization happens. The
-/// Marshalling library provides nil::marshalling::types::Bitfield field for this purpose.
+/// Marshalling library provides nil::crypto3::marshalling::types::Bitfield field for this purpose.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using SerialConfigField = 
-///     nil::marshalling::types::Bitfield<
+///     nil::crypto3::marshalling::types::Bitfield<
 ///         MyFieldBase, 
 ///         std::tuple<
-///             nil::marshalling::types::EnumValue<MyFieldBase, Baud, nil::marshalling::option::fixed_bit_length<3> >,
-///             nil::marshalling::types::EnumValue<MyFieldBase, Parity, nil::marshalling::option::fixed_bit_length<2> >,
-///             nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_bit_length<3> >
+///             nil::crypto3::marshalling::types::EnumValue<MyFieldBase, Baud, nil::crypto3::marshalling::option::fixed_bit_length<3> >,
+///             nil::crypto3::marshalling::types::EnumValue<MyFieldBase, Parity, nil::crypto3::marshalling::option::fixed_bit_length<2> >,
+///             nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_bit_length<3> >
 ///         >
 ///     >;
 /// @endcode
@@ -708,17 +708,17 @@
 ///     <a href="http://en.cppreference.com/w/cpp/utility/tuple">std::tuple</a>
 ///     and passed as the second template parameter.
 /// @li The serialization length of every bitfield member is specified in bits using
-///     nil::marshalling::option::fixed_bit_length (note difference to nil::marshalling::option::fixed_length
+///     nil::crypto3::marshalling::option::fixed_bit_length (note difference to nil::crypto3::marshalling::option::fixed_length
 ///     that specifies length in bytes).
 /// @li The summary of all the "bit" lengths of all the members must be divisible
 ///     by 8, i.e. to be packed in any number of bytes without leaving a single
 ///     bit undefined.
-/// @li The member of the bitfield may be any numeric field (nil::marshalling::types::IntValue,
-///     nil::marshalling::types::EnumValue, and nil::marshalling::types::BitmaskValue), that support
-///     nil::marshalling::option::fixed_bit_length option.
+/// @li The member of the bitfield may be any numeric field (nil::crypto3::marshalling::types::IntValue,
+///     nil::crypto3::marshalling::types::EnumValue, and nil::crypto3::marshalling::types::BitmaskValue), that support
+///     nil::crypto3::marshalling::option::fixed_bit_length option.
 /// 
 /// Every member of the bitfield may use all the supported options. The 
-/// nil::marshalling::types::Bitfield itself may receive only options listed in its class
+/// nil::crypto3::marshalling::types::Bitfield itself may receive only options listed in its class
 /// description.
 ///
 /// To get an access to the member fields use @b value() member function:
@@ -737,7 +737,7 @@
 /// std::vector<std::uint8_t> outData; // Pretend output buffer
 /// auto writeIter = std::back_inserter(outData);
 /// auto es = baud.write(writeIter, outData.max_size());
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 /// assert(outData.size() == 1); // Single byte output is expected
 /// assert(outData[0] == 0x56); // Binary value split to 3-2-3 bits: 010|10|110
 /// @endcode
@@ -747,7 +747,7 @@
 /// It can be achieved by using
 /// MARSHALLING_FIELD_MEMBERS_ACCESS() macro inside field definition class.
 /// @code
-/// class SerialConfigField : public nil::marshalling::types::Bitfield<...>
+/// class SerialConfigField : public nil::crypto3::marshalling::types::Bitfield<...>
 /// {
 /// public:
 ///     MARSHALLING_FIELD_MEMBERS_ACCESS(baud, parity, flags);
@@ -755,7 +755,7 @@
 /// @endcode
 /// It is equivalent to having the following enum, types and functions defined:
 /// @code
-/// class SerialConfigField : public nil::marshalling::types::Bitfield<...>
+/// class SerialConfigField : public nil::crypto3::marshalling::types::Bitfield<...>
 /// {
 /// public:
 ///     // Access indices for member fields
@@ -837,7 +837,7 @@
 /// in the example above), then try to substitute the used macro with
 /// @ref MARSHALLING_FIELD_MEMBERS_ACCESS_NOTEMPLATE(). For example:
 /// @code
-/// class SerialConfigField : public nil::marshalling::types::Bitfield<...>
+/// class SerialConfigField : public nil::crypto3::marshalling::types::Bitfield<...>
 /// {
 /// public:
 ///     MARSHALLING_FIELD_MEMBERS_ACCESS_NOTEMPLATE(baud, parity, flags);
@@ -849,7 +849,7 @@
 /// @code
 /// template <typename... TExtraOptions>
 /// class MyBitfieldField : public 
-///     nil::marshalling::types::Bitfield<
+///     nil::crypto3::marshalling::types::Bitfield<
 ///         MyFieldBase, 
 ///         std::tuple<SomeField1, SomeField2, SomeField3>,
 ///         TExtraOptions...
@@ -857,7 +857,7 @@
 /// {
 ///     // Duplicate the base class type
 ///     using Base = 
-///         nil::marshalling::types::Bitfield<
+///         nil::crypto3::marshalling::types::Bitfield<
 ///             MyFieldBase, 
 ///             std::tuple<SomeField1, SomeField2, SomeField3>,
 ///             TExtraOptions...
@@ -873,7 +873,7 @@
 /// the defined symbol to add / remove the definition of the @b Base member type.
 /// @code
 /// template <typename... TExtraOptions>
-/// class MyBitfieldField : public nil::marshalling::types::Bitfield<...>
+/// class MyBitfieldField : public nil::crypto3::marshalling::types::Bitfield<...>
 /// {
 /// #ifdef MARSHALLING_MUST_DEFINE_BASE
 ///     using Base = ...;
@@ -889,12 +889,12 @@
 /// calculating length, checking field's contents validity, and bringing field's
 /// value into a consistent state. It may be required
 /// when a message contains sequence (see @ref sec_field_tutorial_array_list) 
-/// of such bundles/structs. The Marshalling library provides nil::marshalling::types::Bundle
-/// field for this purpose. It is quite similar to nil::marshalling::types::Bitfield described
+/// of such bundles/structs. The Marshalling library provides nil::crypto3::marshalling::types::Bundle
+/// field for this purpose. It is quite similar to nil::crypto3::marshalling::types::Bitfield described
 /// earlier. The difference is that every member field
 /// doesn't specify any length in bits, just bytes. For example:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 ///
 /// enum SomeEnum : std::uint8_t
 /// {
@@ -905,12 +905,12 @@
 /// }
 ///
 /// using MyBundle =
-///     nil::marshalling::types::Bundle<
+///     nil::crypto3::marshalling::types::Bundle<
 ///         MyFieldBase,
 ///         std::tuple<
-///             nil::marshalling::types::IntValue<MyFieldBase, std::int16_t> // 2 bytes int value
-///             nil::marshalling::types::EnumValue<MyFieldBase, SomeEnum>, // 1 byte enum value
-///             nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<1> > // 1 byte bitmask
+///             nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::int16_t> // 2 bytes int value
+///             nil::crypto3::marshalling::types::EnumValue<MyFieldBase, SomeEnum>, // 1 byte enum value
+///             nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<1> > // 1 byte bitmask
 ///         >
 ///     >;
 ///
@@ -928,16 +928,16 @@
 /// std::vector<std::uint8_t> outData; // Pretend output buffer
 /// auto writeIter = std::back_inserter(outData);
 /// auto es = baud.write(writeIter, outData.max_size());
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 /// assert(outData.size() == 4); // Expected 2 bytes for IntValue, 1 byte for EnumValue and 1 byte for BitmaskValue
 /// @endcode 
-/// The default behaviour of nil::marshalling::types::Bundle may be extended with options.
+/// The default behaviour of nil::crypto3::marshalling::types::Bundle may be extended with options.
 /// Please refer to the class documentation for the list of supported options.
 ///
 /// Just like with the @ref sec_field_tutorial_bitfield, the names to the
 /// member fields can be provided by using MARSHALLING_FIELD_MEMBERS_ACCESS() macro.
 /// @code
-/// class MyBundle : public nil::marshalling::types::Bundle<...>
+/// class MyBundle : public nil::crypto3::marshalling::types::Bundle<...>
 /// {
 /// public:
 ///     MARSHALLING_FIELD_MEMBERS_ACCESS(member1, member2, member3);
@@ -951,12 +951,12 @@
 /// the @ref sec_field_tutorial_bitfield, the same warning applies.
 /// If compilation fails on the attempt to compile MARSHALLING_FIELD_MEMBERS_ACCESS(),
 /// use either MARSHALLING_FIELD_MEMBERS_ACCESS_NOTEMPLATE() alternative or define
-/// inner @b Base type to specify actual type of @ref nil::marshalling::types::Bundle
+/// inner @b Base type to specify actual type of @ref nil::crypto3::marshalling::types::Bundle
 /// type. For example:
 /// @code
 /// template <typename... TExtraOptions>
 /// class MyBundle : public
-///     nil::marshalling::types::Bundle<
+///     nil::crypto3::marshalling::types::Bundle<
 ///         MyFieldBase,
 ///         std::tuple<SomeField1, SomeField2, SomeField3>,
 ///         TExtraOptions...
@@ -964,7 +964,7 @@
 /// {
 ///     // Duplicate base type definition
 ///     using Base =
-///         nil::marshalling::types::Bundle<
+///         nil::crypto3::marshalling::types::Bundle<
 ///             MyFieldBase,
 ///             std::tuple<SomeField1, SomeField2, SomeField3>,
 ///             TExtraOptions...
@@ -980,7 +980,7 @@
 /// the defined symbol to add / remove the definition of the @b Base member type.
 /// @code
 /// template <typename... TExtraOptions>
-/// class MyBundle : public nil::marshalling::types::Bundle<...>
+/// class MyBundle : public nil::crypto3::marshalling::types::Bundle<...>
 /// {
 /// #ifdef MARSHALLING_MUST_DEFINE_BASE
 ///     using Base = ...;
@@ -993,27 +993,27 @@
 /// @section sec_field_tutorial_array_list Array List fields_type
 /// Some communication protocols may define messages that transmit sequence
 /// of similar fields and/or raw data buffers. To make it easier to handle, the
-/// Marshalling library provides nil::marshalling::types::array_list field which provide a required
+/// Marshalling library provides nil::crypto3::marshalling::types::array_list field which provide a required
 /// interface to properly handle such sequences of data. It supports a
 /// sequence of raw bytes
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MySimpleList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
 ///         std::uint8_t
 ///     >;
 /// @endcode
-/// as well as using sequence of any fields defined in nil::marshalling::field namespace
+/// as well as using sequence of any fields defined in nil::crypto3::marshalling::field namespace
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MyComplexList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
 ///         MyBundle<> // Complex bundle field, defined in previous section 
 ///     >;
 /// @endcode
-/// By default the read operation on nil::marshalling::types::array_list continues as
+/// By default the read operation on nil::crypto3::marshalling::types::array_list continues as
 /// long as there is data left in input buffer, and write operation serialises
 /// all the data stored in internal vector. These default behaviours can be 
 /// changed using options described below.
@@ -1021,25 +1021,25 @@
 /// @subsection sec_field_tutorial_array_list_size_prefix Prefixing with Size Information
 /// Very often variable size sequences of raw bytes or other fields get
 /// prefixed with size information. The default behaviour of the 
-/// nil::marshalling::types::array_list is to read until the end of the buffer. Having
+/// nil::crypto3::marshalling::types::array_list is to read until the end of the buffer. Having
 /// sequence prefixed with number of elements to follow, allows earlier
 /// termination of the read operation, and allows having other independent
-/// fields to be appended after the sequence. The nil::marshalling::types::array_list
-/// class supports nil::marshalling::option::sequence_size_field_prefix option that allows
-/// to specify type of the size field (usually a variant of nil::marshalling::types::IntValue)
-/// to be serialized before the contents of nil::marshalling::types::array_list being
+/// fields to be appended after the sequence. The nil::crypto3::marshalling::types::array_list
+/// class supports nil::crypto3::marshalling::option::sequence_size_field_prefix option that allows
+/// to specify type of the size field (usually a variant of nil::crypto3::marshalling::types::IntValue)
+/// to be serialized before the contents of nil::crypto3::marshalling::types::array_list being
 /// serialized. For example, the serialized raw bytes sequence is prefixed with
 /// 2 bytes of size information: 
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 ///
-/// using SizePrefixField = nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
+/// using SizePrefixField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
 ///
 /// using MyList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
 ///         std::uint8_t,
-///         nil::marshalling::option::sequence_size_field_prefix<SizePrefixField>
+///         nil::crypto3::marshalling::option::sequence_size_field_prefix<SizePrefixField>
 ///     >;
 ///
 /// static const std::uint8_t InputBuffer[] = {
@@ -1050,7 +1050,7 @@
 /// MyList myList;
 /// const auto* readIter = &InputBuffer[0];
 /// auto es = myList.read(readIter, InputBufferSize); 
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(myList.value().size() == 3U); // Reading only 3 elements
 /// assert((myList.value())[0] == 0xa); // First element
 /// assert((myList.value())[1] == 0xb); // Second element 
@@ -1062,69 +1062,69 @@
 /// std::vector<std::uint8_t> outputBuffer;
 /// auto writeIter = std::back_inserter(outputBuffer);
 /// es = myList.write(writeIter, outputBuffer.max_size());
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(outputBuffer.size() == 5U); // Expected to write 5 bytes, 2 bytes for size, and 3 for elements.
 /// assert(std::equal(outputBuffer.begin(), outputBuffer.end(), std::begin(InputBuffer)); // The output must be equal to
 /// @endcode
 /// 
 /// Some protocols prefix the sequence with <b>serialization length</b> rather
 /// than <b>number of elements to follow</b>. In this case the 
-/// @ref nil::marshalling::option::sequence_ser_length_field_prefix option needs to be used
-/// instead of @ref nil::marshalling::option::sequence_size_field_prefix.
+/// @ref nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option needs to be used
+/// instead of @ref nil::crypto3::marshalling::option::sequence_size_field_prefix.
 ///
 /// @subsection sec_field_tutorial_array_list_elem_length_prefix Element Serialisation length Prefix
 /// Also some protocols, for easier exchange of lists between nodes that use 
 /// different versions of the same protocol, may require prefixing <b>every
 /// element</b> of the list with its serialization length. In this case
-/// @ref nil::marshalling::option::sequence_elem_ser_length_field_prefix option may be used.
+/// @ref nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option may be used.
 /// For example, the list of bundles prefixed with 2 bytes specifying number of
 /// elements to follow, and with every element prefixed with its serialization length using
 /// variable length base-128 encoding may look like this:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 ///
-/// using SizePrefixField = nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
+/// using SizePrefixField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
 /// using ElemLengthPrefixField = 
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase, 
 ///         std::uint32_t,
-///         nil::marshalling::option::var_length<1, 4> // variable length encoding up to 4 bytes
+///         nil::crypto3::marshalling::option::var_length<1, 4> // variable length encoding up to 4 bytes
 ///     >;
 ///
 /// using MyList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
 ///         MyBundle, // some bundle of fields
-///         nil::marshalling::option::sequence_size_field_prefix<SizePrefixField>,
-///         nil::marshalling::option::sequence_elem_ser_length_field_prefix<ElemLengthPrefixField>
+///         nil::crypto3::marshalling::option::sequence_size_field_prefix<SizePrefixField>,
+///         nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix<ElemLengthPrefixField>
 ///     >;
 /// @endcode
 /// When every element of the list is of fixed size, i.e. has the same serialization
 /// length, it becomes redundant to prefix @b every element with its length.
 /// Instead, only first element can be prefixed with one, and all others may 
 /// reuse the same information. To achieve such behaviour 
-/// @ref nil::marshalling::option::sequence_elem_fixed_ser_length_field_prefix should be used instead.
+/// @ref nil::crypto3::marshalling::option::sequence_elem_fixed_ser_length_field_prefix should be used instead.
 /// For example, the list of <b>fixed length</b> bundles prefixed with 1 byte specifying number of
 /// elements to follow, and with first element prefixed with 1 byte containing its serialization length
 /// may look like this:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 ///
-/// using SizePrefixField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
-/// using ElemLengthPrefixField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
+/// using SizePrefixField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
+/// using ElemLengthPrefixField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
 ///
 /// using MyList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
-///         nil::marshalling::types::Bundle<
+///         nil::crypto3::marshalling::types::Bundle<
 ///             MyFieldBase,
 ///             std::tuple<
-///                 nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
-///                 nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>
+///                 nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
+///                 nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>
 ///             >
 ///         >,
-///         nil::marshalling::option::sequence_size_field_prefix<SizePrefixField>,
-///         nil::marshalling::option::sequence_elem_fixed_ser_length_field_prefix<ElemLengthPrefixField>
+///         nil::crypto3::marshalling::option::sequence_size_field_prefix<SizePrefixField>,
+///         nil::crypto3::marshalling::option::sequence_elem_fixed_ser_length_field_prefix<ElemLengthPrefixField>
 ///     >;
 /// @endcode
 ///
@@ -1138,23 +1138,23 @@
 /// | 1           | 1      | Some flags bitmask | 
 /// | 2           | 2 * N  | Sequence of 2 byte integral values |
 ///
-/// In this case the option nil::marshalling::option::sequence_size_field_prefix can NOT
+/// In this case the option nil::crypto3::marshalling::option::sequence_size_field_prefix can NOT
 /// be used. In fact the size information is not a part of the sequence any
 /// more, it must be a separate independent field. When this field
 /// is successfully read, its value must be forced upon the sequence somehow
 /// before the read operation of the sequence takes place. To help with such
-/// forcing, nil::marshalling::option::sequence_size_forcing_enabled option was introduced.
-/// When this option used, the nil::marshalling::types::array_list::force_read_elem_count member
+/// forcing, nil::crypto3::marshalling::option::sequence_size_forcing_enabled option was introduced.
+/// When this option used, the nil::crypto3::marshalling::types::array_list::force_read_elem_count member
 /// function of the field may be used to force number of elements that follow.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using SeqSizeField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
-/// using BitmaskField = nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<1> >;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using SeqSizeField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
+/// using BitmaskField = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<1> >;
 /// using MyList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
-///         nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
-///         nil::marshalling::option::sequence_size_forcing_enabled
+///         nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
+///         nil::crypto3::marshalling::option::sequence_size_forcing_enabled
 ///     >;
 ///
 /// static const std::uint8_t InputBuffer[] = {
@@ -1167,20 +1167,20 @@
 ///
 /// SeqSizeField sizeField;
 /// auto es = sizeField.read(readIter, remSize); 
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(sizeField.value() == 3U); // First byte should be read;
 /// 
 /// remSize -= sizeField.length();
 /// BitmaskField bitmask;
 /// es = bitmask.read(readIter, remSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(bitmask.value() == 0xff); // Second byte should be read;
 ///
 /// remSize -= bitmask.length();
 /// MyList myList;
 /// myList.force_read_elem_count(sizeField.value()); // Force number of elements to read
 /// es = myList.read(readIter, remSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(myList.value().size() == 3U); // Reading only 3 elements
 /// assert((myList.value())[0] == 0xa); // First element
 /// assert((myList.value())[1] == 0xb); // Second element 
@@ -1196,29 +1196,29 @@
 /// library allows forcing the serialization length of a single element when
 /// such information becomes available. It is similar to 
 /// @ref sec_field_tutorial_array_list_detached_size_prefix. The option
-/// @ref nil::marshalling::option::sequence_elem_length_forcing_enabled needs to be used when
-/// defining the field type, and @ref nil::marshalling::types::array_list::force_read_elem_length()
-/// and @ref nil::marshalling::types::array_list::clear_read_elem_length_forcing() functions to
+/// @ref nil::crypto3::marshalling::option::sequence_elem_length_forcing_enabled needs to be used when
+/// defining the field type, and @ref nil::crypto3::marshalling::types::array_list::force_read_elem_length()
+/// and @ref nil::crypto3::marshalling::types::array_list::clear_read_elem_length_forcing() functions to
 /// set/clear the forcing information.
 /// @code
 /// // Common base class for all the fields
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 ///
 /// // field_type used to serialise serialization length of a single element in the list
-/// using ElemLengthPrefixField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
+/// using ElemLengthPrefixField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
 /// 
 /// // field_type used to serialise number of elements in the list
-/// using SizePrefixField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
+/// using SizePrefixField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
 ///
 /// using MyList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
-///         nil::marshalling::types::IntValue< // 3 bytes integers
+///         nil::crypto3::marshalling::types::IntValue< // 3 bytes integers
 ///             MyFieldBas, 
 ///             std::uint32_t, 
-///             nil::marshalling::option::fixed_length<3> >,
-///         nil::marshalling::option::sequence_size_field_prefix<SizePrefixField>, // 1 byte prefix
-///         nil::marshalling::option::sequence_elem_length_forcing_enabled // enable forcing of the element length
+///             nil::crypto3::marshalling::option::fixed_length<3> >,
+///         nil::crypto3::marshalling::option::sequence_size_field_prefix<SizePrefixField>, // 1 byte prefix
+///         nil::crypto3::marshalling::option::sequence_elem_length_forcing_enabled // enable forcing of the element length
 ///     >;
 ///
 /// static const std::uint8_t InputBuffer[] = {
@@ -1233,12 +1233,12 @@
 /// MyList myList;
 /// const auto* readIter = &InputBuffer[0];
 /// auto es = lengthPrefix(readIter, InputBufferSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(lengthPrefix.value() == 4U);
 ///
 /// myList.force_read_elem_length(lengthPrefix.value()); // force serialization length of the single element
 /// auto es = myList.read(readIter, InputBufferSize - lengthPrefix.length()); 
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(myList.value().size() == 2U); // Reading only 2 elements
 /// assert((myList.value())[0] == 0x0a0a0a); // First element
 /// assert((myList.value())[1] == 0x0b0b0b); // Second element 
@@ -1249,15 +1249,15 @@
 /// Sometimes there is no information about size of the sequence up front. It
 /// may be terminating using some kind of special value. For example, the
 /// sequence of raw bytes is terminated by the value of 0. Such termination
-/// is achieved by using nil::marshalling::option::sequence_termination_field_suffix option.
+/// is achieved by using nil::crypto3::marshalling::option::sequence_termination_field_suffix option.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using TermField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>; // Default value is 0.
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using TermField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>; // Default value is 0.
 /// using MyList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
-///         nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>,
-///         nil::marshalling::option::sequence_termination_field_suffix<TermField>
+///         nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>,
+///         nil::crypto3::marshalling::option::sequence_termination_field_suffix<TermField>
 ///     >;
 ///
 /// static const std::uint8_t InputBuffer[] = {
@@ -1269,7 +1269,7 @@
 ///
 /// MyList myList;
 /// es = myList.read(readIter, InputBufferSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(myList.value().size() == 4U); // Reading only 4 elements, terminating 0 is not included
 /// assert((myList.value())[0] == 0x1); // First element
 /// assert((myList.value())[1] == 0x2); // Second element 
@@ -1281,16 +1281,16 @@
 /// @subsection sec_field_tutorial_array_list_fixed_size Fixed Size Sequences
 /// In many cases the size of the sequence is defined in the protocol without
 /// any prefix or suffix to define the length of the sequence. To define
-/// such sequence nil::marshalling::option::sequence_fixed_size option should be used.
+/// such sequence nil::crypto3::marshalling::option::sequence_fixed_size option should be used.
 /// Below is example of how to define sequence of four unsigned 16 bit integer
 /// values.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MyList = 
-///     nil::marshalling::types::array_list<
+///     nil::crypto3::marshalling::types::array_list<
 ///         MyFieldBase,
-///         nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
-///         nil::marshalling::option::sequence_fixed_size<4>
+///         nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
+///         nil::crypto3::marshalling::option::sequence_fixed_size<4>
 ///     >;
 ///
 /// static const std::uint8_t InputBuffer[] = {
@@ -1302,7 +1302,7 @@
 ///
 /// MyList myList;
 /// es = myList.read(readIter, InputBufferSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// assert(myList.value().size() == 4U); // Reading only 4 elements
 /// assert((myList.value())[0] == 0x1); // First element
 /// assert((myList.value())[1] == 0x2); // Second element 
@@ -1310,7 +1310,7 @@
 /// assert((myList.value())[4] == 0x4); // Fourth element
 /// assert(std::distance(&InputBuffer[0], readIter) == 8); // Consumed only 4 element (2 bytes each) 
 /// @endcode
-/// @b NOTE, that nil::marshalling::option::sequence_fixed_size option insures existence of
+/// @b NOTE, that nil::crypto3::marshalling::option::sequence_fixed_size option insures existence of
 /// the right number of elements "on the wire", but doesn't influence number
 /// of elements in the newly created list field:
 /// @code
@@ -1339,8 +1339,8 @@
 /// auto& complexListStorage = complexList.value(); // reference to std::vector<MyBundle>;
 /// @endcode
 /// This behaviour can be modified using extra options such as @ref
-/// nil::marshalling::option::custom_storage_type, @ref nil::marshalling::option::fixed_size_storage,
-/// @ref nil::marshalling::option::orig_data_view, or @ref nil::marshalling::option::sequence_fixed_size_use_fixed_size_storage.
+/// nil::crypto3::marshalling::option::custom_storage_type, @ref nil::crypto3::marshalling::option::fixed_size_storage,
+/// @ref nil::crypto3::marshalling::option::orig_data_view, or @ref nil::crypto3::marshalling::option::sequence_fixed_size_use_fixed_size_storage.
 /// @b HOWEVER, these options do not influence the way how list fields are being
 /// serialized, they influence the way how list value has been stored. As the result,
 /// they should @b NOT be used in protocol definition. Instead, provide a way to
@@ -1348,20 +1348,20 @@
 /// options. For example:
 /// @code
 /// template <typename... TExtraOptions>
-/// using MyList = nil::marshalling::types::array_list<..., TExtraOptions...>;
+/// using MyList = nil::crypto3::marshalling::types::array_list<..., TExtraOptions...>;
 /// @endcode
 /// 
 /// All the @ref sec_field_tutorial_common_options are also applicable to
-/// nil::marshalling::types::array_list field.
+/// nil::crypto3::marshalling::types::array_list field.
 ///
 /// @section sec_field_tutorial_string String fields_type
 /// Many protocols have to transfer strings. They are defined using
-/// @ref nil::marshalling::types::String field.
+/// @ref nil::crypto3::marshalling::types::String field.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using MyString = nil::marshalling::types::String<MyFieldBase>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using MyString = nil::crypto3::marshalling::types::String<MyFieldBase>;
 /// @endcode
-/// It is very similar to nil::marshalling::types::array_list
+/// It is very similar to nil::crypto3::marshalling::types::array_list
 /// it terms of value storage, read/write operations, and supported options.
 /// By default the value is stored as 
 /// <a href="http://en.cppreference.com/w/cpp/string/basic_string">std::string</a>.
@@ -1371,21 +1371,21 @@
 /// @endcode
 /// Just like described in @ref sec_field_tutorial_array_list_storage section
 /// above the same options can be used to modify the storage type of the 
-/// nil::marshalling::types::String field, but should @b NOT be used in protocol definition, but
+/// nil::crypto3::marshalling::types::String field, but should @b NOT be used in protocol definition, but
 /// instead there should be an ability to provide extra options.
 /// @code
 /// template <typename... TExtraOptions>
-/// using MyString = nil::marshalling::types::String<MyFieldBase, TExtraOptions...>;
+/// using MyString = nil::crypto3::marshalling::types::String<MyFieldBase, TExtraOptions...>;
 /// @endcode
 ///
 /// Prefixing string with single byte of the size information will look like this:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using SizePrefixField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using SizePrefixField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
 /// using MyString = 
-///     nil::marshalling::types::String<
+///     nil::crypto3::marshalling::types::String<
 ///         MyFieldBase, 
-///         nil::marshalling::option::sequence_size_field_prefix<SizePrefixField>
+///         nil::crypto3::marshalling::option::sequence_size_field_prefix<SizePrefixField>
 ///     >;
 ///
 /// MyString myStr;
@@ -1394,7 +1394,7 @@
 /// std::vector<std::uint8_t> outputBuf;
 /// auto writeIter = std::back_inserter(outputBuf);
 /// auto es = myStr.write(writeIter, outputBuf.max_size());
-/// assert(es = nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es = nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 /// assert(outputBuf.size() == 6U); // 1 byte of size, followed by 5 characters of "hello" string
 /// assert(outputBuf[0] == 5U); // size info
 /// assert(outputBuf[1] == 'h');
@@ -1408,12 +1408,12 @@
 /// Encoding of zero termination strings without size prefix can be defined like
 /// this:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using ZeroTermField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>; // default value is 0
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using ZeroTermField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>; // default value is 0
 /// using MyString = 
-///     nil::marshalling::types::String<
+///     nil::crypto3::marshalling::types::String<
 ///         MyFieldBase, 
-///         nil::marshalling::option::sequence_termination_field_suffix<ZeroTermField>
+///         nil::crypto3::marshalling::option::sequence_termination_field_suffix<ZeroTermField>
 ///     >;
 ///
 /// MyString myStr;
@@ -1422,7 +1422,7 @@
 /// std::vector<std::uint8_t> outputBuf;
 /// auto writeIter = std::back_inserter(outputBuf);
 /// auto es = myStr.write(writeIter, outputBuf.max_size());
-/// assert(es = nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es = nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 /// assert(outputBuf.size() == 6U); // 5 characters of "hello" string followed by zero termination suffix
 /// assert(outputBuf[0] == 'h');
 /// assert(outputBuf[1] == 'e');
@@ -1438,13 +1438,13 @@
 /// characters. If string is too short, the serialization data is padded by
 /// zeros until full length of 32 characters is produced.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using ZeroTermField = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>; // default value is 0
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using ZeroTermField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>; // default value is 0
 /// using MyString = 
-///     nil::marshalling::types::String<
+///     nil::crypto3::marshalling::types::String<
 ///         MyFieldBase, 
-///         nil::marshalling::option::sequence_fixed_size<31>,
-///         nil::marshalling::option::sequence_trailing_field_suffix<ZeroTermField>
+///         nil::crypto3::marshalling::option::sequence_fixed_size<31>,
+///         nil::crypto3::marshalling::option::sequence_trailing_field_suffix<ZeroTermField>
 ///     >;
 ///
 /// MyString myStr;
@@ -1453,7 +1453,7 @@
 /// std::vector<std::uint8_t> outputBuf;
 /// auto writeIter = std::back_inserter(outputBuf);
 /// auto es = myStr.write(writeIter, outputBuf.max_size());
-/// assert(es = nil::marshalling::ErrorStatus::success); // No error is expected
+/// assert(es = nil::crypto3::marshalling::ErrorStatus::success); // No error is expected
 /// assert(outputBuf.size() == 32); // 5 characters of "hello" string followed by zero padding
 /// assert(outputBuf[0] == 'h');
 /// assert(outputBuf[1] == 'e');
@@ -1464,42 +1464,42 @@
 /// ...
 /// assert(outputBuf[31] == 0U);  
 /// @endcode
-/// @b NOTE, that the example above uses nil::marshalling::option::sequence_trailing_field_suffix
-/// option, rather than nil::marshalling::option::sequence_termination_field_suffix.
+/// @b NOTE, that the example above uses nil::crypto3::marshalling::option::sequence_trailing_field_suffix
+/// option, rather than nil::crypto3::marshalling::option::sequence_termination_field_suffix.
 /// The options slightly differ. The "termination" one 
-/// (nil::marshalling::option::sequence_termination_field_suffix) forces the field to
+/// (nil::crypto3::marshalling::option::sequence_termination_field_suffix) forces the field to
 /// stop reading when termination value is encountered, while "trailing" one
-/// (nil::marshalling::option::sequence_trailing_field_suffix) doesn't check what it reads,
-/// the reading size must be limited by other means (nil::marshalling::option::sequence_fixed_size
+/// (nil::crypto3::marshalling::option::sequence_trailing_field_suffix) doesn't check what it reads,
+/// the reading size must be limited by other means (nil::crypto3::marshalling::option::sequence_fixed_size
 /// in the example above). When the read is complete, it just consumes the
 /// termination character. Both options, however, force the termination
 /// character to be appended at the end during write operation. @n
-/// <b>Also note</b>, that size limit is specified (using nil::marshalling::option::sequence_fixed_size)
+/// <b>Also note</b>, that size limit is specified (using nil::crypto3::marshalling::option::sequence_fixed_size)
 /// to be 31. One more byte is added by the "trailing" suffix to complete to 32
 /// bytes.
 ///
-/// Just like with @ref nil::marshalling::types::array_list, it is possible to use static
+/// Just like with @ref nil::crypto3::marshalling::types::array_list, it is possible to use static
 /// storage for fixed size strings:
 /// @code
 /// using MyString = 
-///     nil::marshalling::types::String<
+///     nil::crypto3::marshalling::types::String<
 ///         ..., 
-///         nil::marshalling::option::sequence_fixed_size<16>,
-///         nil::marshalling::option::sequence_fixed_size_use_fixed_size_storage
+///         nil::crypto3::marshalling::option::sequence_fixed_size<16>,
+///         nil::crypto3::marshalling::option::sequence_fixed_size_use_fixed_size_storage
 ///     >;
 /// @endcode
 /// or 
 /// @code
 /// using MyString = 
-///     nil::marshalling::types::String<
+///     nil::crypto3::marshalling::types::String<
 ///         ..., 
-///         nil::marshalling::option::sequence_fixed_size<16>,
-///         nil::marshalling::option::fixed_size_storage<16>
+///         nil::crypto3::marshalling::option::sequence_fixed_size<16>,
+///         nil::crypto3::marshalling::option::fixed_size_storage<16>
 ///     >;
 /// @endcode
 ///
 /// @section sec_field_tutorial_fp_value Floating Point value fields_type
-/// Floating point value fields (nil::marshalling::types::FloatValue) are very similar to
+/// Floating point value fields (nil::crypto3::marshalling::types::FloatValue) are very similar to
 /// @ref sec_field_tutorial_int_value, but use @b float or @b double as its 
 /// internal storage type. They abstract the IEEE 754 floating point 
 /// values, which are serialized "as is" with either big or little endian
@@ -1512,15 +1512,15 @@
 /// "flags" bitmask field which specifies whether the following field exists or
 /// missing. The optional field may also be tentative, i.e. if there is enough
 /// data in the input buffer it exists, and missing otherwise. The Marshalling
-/// library provides nil::marshalling::types::Optional which is a mere wrapper around
+/// library provides nil::crypto3::marshalling::types::Optional which is a mere wrapper around
 /// other fields and provides an ability to set the optional state of the field.
 /// Let's do the example of the int32 field existence based on bit 0 in processing bitmask: 
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using FlagsField = nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<1> >;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using FlagsField = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<1> >;
 /// using OptField = 
-///     nil::marshalling::types::Optional<
-///         nil::marshalling::types::IntValue<MyFieldBase, std::int32_t>
+///     nil::crypto3::marshalling::types::Optional<
+///         nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::int32_t>
 ///     >;
 ///
 /// FlagsField flags;
@@ -1531,7 +1531,7 @@
 ///     [&flags, &optField](const std::uint8_t*& iter, std::size_t len)
 ///     {
 ///         auto es = flags.read(iter, len);
-///         assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+///         assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 /// 
 ///         optField.set_missing();
 ///         if ((flags.value() & 0x1) != 0) {
@@ -1539,7 +1539,7 @@
 ///         }
 ///
 ///         es = optField.read(iter, len - flags.length());
-///         assert(es == nil::marshalling::ErrorStatus::success); // No error is expected;
+///         assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No error is expected;
 ///     };
 ///         
 ///
@@ -1574,7 +1574,7 @@
 /// updated after read operation:
 /// @code
 /// OptField optField1;
-/// assert(optField1.get_mode() == nil::marshalling::types::OptionalMode::tentative); // Default mode is tentative
+/// assert(optField1.get_mode() == nil::crypto3::marshalling::types::OptionalMode::tentative); // Default mode is tentative
 /// 
 /// static const std::uint8_t InputBuffer[] = {
 ///     0x11, 0x22, 0x33, 0x44
@@ -1583,46 +1583,46 @@
 ///
 /// auto* readIter = &InputBuffer[0];
 /// auto es = optField1.read(readIter, InputBufferSize);
-/// assert(es = nil::marshalling::ErrorStatus::success);
+/// assert(es = nil::crypto3::marshalling::ErrorStatus::success);
 /// assert(std::distance(&InputBuffer[0], readIter) == 4); // Expected to read 4 bytes of int32_t int value
-/// assert(optField1.get_mode() == nil::marshalling::types::OptionalMode::exists); // mode_type is changed
+/// assert(optField1.get_mode() == nil::crypto3::marshalling::types::OptionalMode::exists); // mode_type is changed
 ///
 /// OptField optField2;
-/// assert(optField2.get_mode() == nil::marshalling::types::OptionalMode::tentative); // Default mode is tentative
+/// assert(optField2.get_mode() == nil::crypto3::marshalling::types::OptionalMode::tentative); // Default mode is tentative
 /// readIter = &InputBuffer[0];
 /// es = optField2.read(readIter, 0); // Note 0 as a buffer size
-/// assert(es = nil::marshalling::ErrorStatus::success);
+/// assert(es = nil::crypto3::marshalling::ErrorStatus::success);
 /// assert(std::distance(&InputBuffer[0], readIter) == 0); // Expected not to read anything
-/// assert(optField2.get_mode() == nil::marshalling::types::OptionalMode::missing); // mode_type is changed
+/// assert(optField2.get_mode() == nil::crypto3::marshalling::types::OptionalMode::missing); // mode_type is changed
 /// @endcode
-/// It is easy to change the default mode of the nil::marshalling::types::Optional field by
-/// providing nil::marshalling::option::default_optional_mode option with selected default mode
-/// or @ref nil::marshalling::option::missing_by_default / @ref nil::marshalling::option::exists_by_default aliases.
+/// It is easy to change the default mode of the nil::crypto3::marshalling::types::Optional field by
+/// providing nil::crypto3::marshalling::option::default_optional_mode option with selected default mode
+/// or @ref nil::crypto3::marshalling::option::missing_by_default / @ref nil::crypto3::marshalling::option::exists_by_default aliases.
 /// @code
 /// using OptField = 
-///     nil::marshalling::types::Optional<
-///         nil::marshalling::types::IntValue<MyFieldBase, std::int32_t>,
-///         nil::marshalling::option::missing_by_default // Set default mode to be "missing"
+///     nil::crypto3::marshalling::types::Optional<
+///         nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::int32_t>,
+///         nil::crypto3::marshalling::option::missing_by_default // Set default mode to be "missing"
 ///     >;
 /// @endcode
 /// Some protocols may include version information either in transport framing or
 /// in one of the messages. Such info may specify whether a specific field exists
-/// or not. Such fields need to be wrapped in @ref nil::marshalling::types::Optional field, which
-/// receives @ref nil::marshalling::option::exists_between_versions option to specify the
+/// or not. Such fields need to be wrapped in @ref nil::crypto3::marshalling::types::Optional field, which
+/// receives @ref nil::crypto3::marshalling::option::exists_between_versions option to specify the
 /// numeric versions of the protocol between which the field exists.
 /// @code
 /// using OptField = 
-///     nil::marshalling::types::Optional<
-///         nil::marshalling::types::IntValue<MyFieldBase, std::int32_t>,
-///         nil::marshalling::option::missing_by_default, // Set default mode to be "missing"
-///         nil::marshalling::option::exists_between_versions<1, 5>
+///     nil::crypto3::marshalling::types::Optional<
+///         nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::int32_t>,
+///         nil::crypto3::marshalling::option::missing_by_default, // Set default mode to be "missing"
+///         nil::crypto3::marshalling::option::exists_between_versions<1, 5>
 ///     >;
 /// @endcode
 /// If the field has been introduced in one of the version, but hasn't been
-/// removed yet, it is possible to use @ref nil::marshalling::option::exists_since_version alias
-/// to @ref nil::marshalling::option::exists_between_versions. Or the opposite, if the field
+/// removed yet, it is possible to use @ref nil::crypto3::marshalling::option::exists_since_version alias
+/// to @ref nil::crypto3::marshalling::option::exists_between_versions. Or the opposite, if the field
 /// has been introduced in the first version, but deprecated and removed in the 
-/// later one, use @ref nil::marshalling::option::exists_until_version alias.
+/// later one, use @ref nil::crypto3::marshalling::option::exists_until_version alias.
 ///
 /// Usage of such version control option will automatically mark the optional
 /// field as @b existing or @b missing based on the provided version info in
@@ -1638,18 +1638,18 @@
 /// @li Unsigned integer with length of 4 bytes (@b Value2)
 /// @li String field with 1 byte size prefix (@b Value3)
 ///
-/// The @b Marshalling library provides nil::marshalling::types::Variant field to allow such
+/// The @b Marshalling library provides nil::crypto3::marshalling::types::Variant field to allow such
 /// heterogeneous fields. Let's implement the described example.
 ///
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using Value1 = nil::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
-/// using Value2 = nil::marshalling::types::IntValue<MyFieldBase, std::uint32_t>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using Value1 = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint8_t>;
+/// using Value2 = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint32_t>;
 /// using Value3 = 
-///     nil::marshalling::types::String<
+///     nil::crypto3::marshalling::types::String<
 ///         MyFieldBase, 
-///         nil::marshalling::option::sequence_size_field_prefix<
-///             nil::marshalling::types::IntValue<
+///         nil::crypto3::marshalling::option::sequence_size_field_prefix<
+///             nil::crypto3::marshalling::types::IntValue<
 ///                 MyFieldBase,
 ///                 std::uint8_t
 ///             >
@@ -1666,17 +1666,17 @@
 ///     NumOfValues
 /// };
 /// @endcode
-/// And the relevant key fields as a variant of nil::marshalling::types::EnumValue with
+/// And the relevant key fields as a variant of nil::crypto3::marshalling::types::EnumValue with
 /// only single acceptable value.
 /// @code
 /// template <KeyId TId>
 /// using KeyField =
-///     nil::marshalling::types::EnumValue<
+///     nil::crypto3::marshalling::types::EnumValue<
 ///         MyFieldBase,
 ///         KeyId,
-///         nil::marshalling::option::default_num_value<(int)TId>,
-///         nil::marshalling::option::valid_num_value_range<(int)TId, (int)TId>,
-///         nil::marshalling::option::fail_on_invalid<>
+///         nil::crypto3::marshalling::option::default_num_value<(int)TId>,
+///         nil::crypto3::marshalling::option::valid_num_value_range<(int)TId, (int)TId>,
+///         nil::crypto3::marshalling::option::fail_on_invalid<>
 ///     >;
 /// 
 /// using Key1 = KeyField<KeyId::Key1>;
@@ -1686,30 +1686,30 @@
 /// Then the @b KeyX and its corresponding @b ValueX need to be bundled together
 /// as a single @b PropertyX field.
 /// @code
-/// using Property1 = nil::marshalling::types::Bundle<MyFieldBase, std::tuple<Key1, Value1> >;
-/// using Property2 = nil::marshalling::types::Bundle<MyFieldBase, std::tuple<Key2, Value2> >;
-/// using Property3 = nil::marshalling::types::Bundle<MyFieldBase, std::tuple<Key3, Value3> >;
+/// using Property1 = nil::crypto3::marshalling::types::Bundle<MyFieldBase, std::tuple<Key1, Value1> >;
+/// using Property2 = nil::crypto3::marshalling::types::Bundle<MyFieldBase, std::tuple<Key2, Value2> >;
+/// using Property3 = nil::crypto3::marshalling::types::Bundle<MyFieldBase, std::tuple<Key3, Value3> >;
 /// @endcode
 /// Now we need a single @b field abstraction, which can be any of the specified
-/// above forms. The nil::marshalling::types::Variant field class provides such an ability.
+/// above forms. The nil::crypto3::marshalling::types::Variant field class provides such an ability.
 /// As its second parameter it receives a tuple of supported types.
 /// @code
 /// using MyVariant = 
-///     nil::marshalling::types::Variant<
+///     nil::crypto3::marshalling::types::Variant<
 ///         MyFieldBase,
 ///         std::tuple<Property1, Property1, Property3>
 ///     >;
 /// @endcode 
 /// Now it is easy to put such field type into the list:
 /// @code
-/// using PropertiesList = nil::marshalling::types::array_list<MyFieldBase, MyVariant>;
+/// using PropertiesList = nil::crypto3::marshalling::types::array_list<MyFieldBase, MyVariant>;
 /// @endcode
 /// In this scenario, read operation on the list will invoke read operation of
 /// every @b MyVariant field, which in turn will try to perform read operation
 /// on @b Property1, @b Property2, and @b Property3 in the order of their 
 /// definition inside the provided tuple. The read operation of the
-/// nil::marshalling::types::Variant field type will stop when read operation of any
-/// of the contained types reports nil::marshalling::ErrorStatus::success as its status.
+/// nil::crypto3::marshalling::types::Variant field type will stop when read operation of any
+/// of the contained types reports nil::crypto3::marshalling::ErrorStatus::success as its status.
 ///
 /// Accessing the currently held field can be tricky though. There is a need
 /// to differentiate between @b compile-time and @b run-time knowledge of the
@@ -1717,7 +1717,7 @@
 ///
 /// When preparing a variant field to be sent out, usually the inner 
 /// field type and its value are known at compile time. The initialisation of the
-/// field can be performed using nil::marshalling::types::Variant::init_field() member
+/// field can be performed using nil::crypto3::marshalling::types::Variant::init_field() member
 /// function:
 /// @code
 /// MyVariant var; // Created in "invalid" state
@@ -1727,7 +1727,7 @@
 /// @endcode
 /// If the variant field has been initialised before, but there is a need to
 /// to access the real type (also known at compile time), use
-/// nil::marshalling::types::Variant::access_field() member function
+/// nil::crypto3::marshalling::types::Variant::access_field() member function
 /// @code
 /// void updateProp1(MyVariant& var)
 /// {
@@ -1739,17 +1739,17 @@
 /// Just like with @ref sec_field_tutorial_bitfield and @ref sec_field_tutorial_bundle
 /// it would be convenient to operate with internal type names, rather than hard coded
 /// indices. In order to provide names for the available inner types, please
-/// inherit from proper nil::marshalling::types::Variant field definition and
+/// inherit from proper nil::crypto3::marshalling::types::Variant field definition and
 /// use MARSHALLING_VARIANT_MEMBERS_ACCESS() macro inside.
 /// @code
-/// struct MyVariant : public nil::marshalling::types::Variant<...>
+/// struct MyVariant : public nil::crypto3::marshalling::types::Variant<...>
 /// {
 ///     MARSHALLING_VARIANT_MEMBERS_ACCESS(prop1, prop2, prop3);
 /// };
 /// @endcode
 /// It would be equivalent to having the following types and functions defined
 /// @code
-/// struct MyVariant : public nil::marshalling::types::Variant<...>
+/// struct MyVariant : public nil::crypto3::marshalling::types::Variant<...>
 /// {
 ///     enum FieldIdx {
 ///         FieldIdx_prop1,
@@ -1812,11 +1812,11 @@
 ///
 /// There are cases (such as after "read" operation), when actual type of the
 /// @b Variant field is known at run-time. The most straightforward way of
-/// inquiring the actual type index using nil::marshalling::types::Variant::current_field()
+/// inquiring the actual type index using nil::crypto3::marshalling::types::Variant::current_field()
 /// function and then using a `switch` statement and handle every case accordingly
 /// may work but is not very efficient. There is a way to perform more efficient
 /// way of dispatching the actual field to its appropriate handling function by
-/// using nil::marshalling::types::Variant::current_field_exec() member function. It expects
+/// using nil::crypto3::marshalling::types::Variant::current_field_exec() member function. It expects
 /// to receive a handling object which can handle all of the available inner types:
 /// @code
 /// struct MyVariantHandler
@@ -1850,16 +1850,16 @@
 ///     void operator()(TField& prop) {...}
 /// }
 /// @endcode
-/// The default constructed nil::marshalling::types::Variant object from the examples above
+/// The default constructed nil::crypto3::marshalling::types::Variant object from the examples above
 /// has an "invalid" state, i.e. hasn't been initialised and doesn't contain any
-/// valid field. It can be changed by providing nil::marshalling::option::default_variant_index
+/// valid field. It can be changed by providing nil::crypto3::marshalling::option::default_variant_index
 /// option.
 /// @code
 /// struct MyVariant : public 
-///     nil::marshalling::types::Variant<
+///     nil::crypto3::marshalling::types::Variant<
 ///         MyFieldBase,
 ///         std::tuple<Property1, Property1, Property3>,
-///         nil::marshalling::option::default_variant_index<0> // Initialise as Prop1
+///         nil::crypto3::marshalling::option::default_variant_index<0> // Initialise as Prop1
 ///     >
 /// {
 ///     MARSHALLING_VARIANT_MEMBERS_ACCESS(prop1, prop2, prop3);
@@ -1884,10 +1884,10 @@
 /// @ref MARSHALLING_VARIANT_MEMBERS_ACCESS_NOTEMPLATE(). For example:
 /// @code
 /// struct MyVariant : public 
-///     nil::marshalling::types::Variant<
+///     nil::crypto3::marshalling::types::Variant<
 ///         MyFieldBase,
 ///         std::tuple<Property1, Property1, Property3>,
-///         nil::marshalling::option::default_variant_index<0> // Initialise as Prop1
+///         nil::crypto3::marshalling::option::default_variant_index<0> // Initialise as Prop1
 ///     >
 /// {
 ///     MARSHALLING_VARIANT_MEMBERS_ACCESS_NOTEMPLATE(prop1, prop2, prop3);
@@ -1899,19 +1899,19 @@
 /// @code
 /// template <typename... TExtraOptions>
 /// class MyVariant : public 
-///     nil::marshalling::types::Variant<
+///     nil::crypto3::marshalling::types::Variant<
 ///         MyFieldBase,
 ///         std::tuple<Property1, Property1, Property3>,
-///         nil::marshalling::option::default_variant_index<0>, // Initialise as Prop1
+///         nil::crypto3::marshalling::option::default_variant_index<0>, // Initialise as Prop1
 ///         TExtraOptions...
 ///     >
 /// {
 ///     // Duplicate base class definition
 ///     using Base =
-///         nil::marshalling::types::Variant<
+///         nil::crypto3::marshalling::types::Variant<
 ///             MyFieldBase,
 ///             std::tuple<Property1, Property1, Property3>,
-///             nil::marshalling::option::default_variant_index<0>, // Initialise as Prop1
+///             nil::crypto3::marshalling::option::default_variant_index<0>, // Initialise as Prop1
 ///             TExtraOptions...
 ///         >;
 /// public:
@@ -1925,7 +1925,7 @@
 /// the defined symbol to add / remove the definition of the @b Base member type.
 /// @code
 /// template <typename... TExtraOptions>
-/// class MyVariant : public nil::marshalling::types::Variant<...>
+/// class MyVariant : public nil::crypto3::marshalling::types::Variant<...>
 /// {
 /// #ifdef MARSHALLING_MUST_DEFINE_BASE
 ///     using Base = ...;
@@ -1937,9 +1937,9 @@
 /// 
 /// @section sec_field_tutorial_common_options Common options_type or Modifications for the fields_type
 /// There are options that suitable only to numeric fields, such as 
-/// nil::marshalling::types::IntValue, nil::marshalling::types::EnumValue, nil::marshalling::types::BitmaskValue. @n
+/// nil::crypto3::marshalling::types::IntValue, nil::crypto3::marshalling::types::EnumValue, nil::crypto3::marshalling::types::BitmaskValue. @n
 /// There are options that suitable only for collection fields, such as
-/// nil::marshalling::types::array_list, and nil::marshalling::types::String.@n
+/// nil::crypto3::marshalling::types::array_list, and nil::crypto3::marshalling::types::String.@n
 /// There are also @b common options that can be used with all the fields that support
 /// options.
 ///
@@ -1951,8 +1951,8 @@
 /// One of the possible ways is to extend the defined field class and 
 /// set the required value in the constructor.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// struct MyString : public nil::marshalling::types::String<MyFieldBase>
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// struct MyString : public nil::crypto3::marshalling::types::String<MyFieldBase>
 /// {
 ///     MyString()
 ///     {
@@ -1960,7 +1960,7 @@
 ///     }
 /// };
 /// @endcode
-/// Another way is to use nil::marshalling::option::default_value_initialiser option.
+/// Another way is to use nil::crypto3::marshalling::option::default_value_initialiser option.
 /// It receives a template parameter, which has to be a type of initialisation
 /// class. It must provide @b operator() which is responsible to assign a custom
 /// value to the field. It is going to be invoked from the default constructor
@@ -1986,11 +1986,11 @@
 ///     }
 /// };
 ///
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MyString = 
-///     nil::marshalling::types::String<
+///     nil::crypto3::marshalling::types::String<
 ///         MyFieldBase, 
-///         nil::marshalling::option::default_value_initialiser<CustomStringInitaliser>
+///         nil::crypto3::marshalling::option::default_value_initialiser<CustomStringInitaliser>
 ///     >;
 ///
 /// MyString myStr; // Default construction
@@ -2001,15 +2001,15 @@
 /// defined field's base classes, which is implementation dependent. Just use
 /// the provided @b value() member function to access the value.
 ///
-/// The Marshalling library also provides a simpler alias for nil::marshalling::option::default_value_initialiser
-/// to set default value for numeric fields. It is nil::marshalling::option::default_num_value.
+/// The Marshalling library also provides a simpler alias for nil::crypto3::marshalling::option::default_value_initialiser
+/// to set default value for numeric fields. It is nil::crypto3::marshalling::option::default_num_value.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MyInt = 
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase, 
 ///         std::uint16_t,
-///         nil::marshalling::option::default_num_value<10>
+///         nil::crypto3::marshalling::option::default_num_value<10>
 ///     >;
 /// 
 /// MyInt myInt;
@@ -2030,26 +2030,26 @@
 /// One way to implement custom read functionality is to extend the field
 /// definition and override the @b read() member function:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// struct MyBundle : public 
-///     nil::marshalling::types::Bundle<
+///     nil::crypto3::marshalling::types::Bundle<
 ///         MyFieldBase,
 ///         std::tuple<
-///             nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<1> >,
-///             nil::marshalling::types::Optional<MyFieldBase, std::uint16_t>
+///             nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<1> >,
+///             nil::crypto3::marshalling::types::Optional<MyFieldBase, std::uint16_t>
 ///         >,
-///         nil::marshalling::option::has_custom_read
+///         nil::crypto3::marshalling::option::has_custom_read
 ///     >
 /// {
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus read(TIter& iter, std::size_t len)
+///     nil::crypto3::marshalling::ErrorStatus read(TIter& iter, std::size_t len)
 ///     {
 ///         auto& members = value();
 ///         auto& bitmask = std::get<0>(members);
 ///         auto& optInt = std::get<1>(members);
 ///         
 ///         auto es = bitmask.read(iter, len);
-///         if (es != nil::marshalling::ErrorStatus::success) {
+///         if (es != nil::crypto3::marshalling::ErrorStatus::success) {
 ///             return es;
 ///         }
 ///
@@ -2064,13 +2064,13 @@
 ///     }
 /// };
 /// @endcode
-/// @b NOTE the usage of @ref nil::marshalling::option::has_custom_read option. It notifies
+/// @b NOTE the usage of @ref nil::crypto3::marshalling::option::has_custom_read option. It notifies
 /// other classes about existence of custom @b read functionality 
 /// (instead of default one). Other classes may contain some inner logic to
 /// perform various optimisations if there is no custom @b read.
 /// Failure to specify this option may result in incorrect behaviour.
 ///
-/// Another way is to use nil::marshalling::option::custom_value_reader option. It
+/// Another way is to use nil::crypto3::marshalling::option::custom_value_reader option. It
 /// receives one template parameter, which has to be a type of a custom
 /// reader class. Such class must implement @b operator() with the following
 /// signature:
@@ -2078,7 +2078,7 @@
 /// struct MyReader
 /// {
 ///     template <typename TField, typename TIter>
-///     nil::marshalling::ErrorStatus operator()(TField& field, TIter& iter, std::size_t len) const
+///     nil::crypto3::marshalling::ErrorStatus operator()(TField& field, TIter& iter, std::size_t len) const
 ///     {
 ///         ... // Do proper read of the field's value.
 ///     }
@@ -2097,8 +2097,8 @@
 /// One of the ways to provide custom validation logic is to extend the field
 /// definition and implement @b valid() member function:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// struct MyString : public nil::marshalling::types::String<MyFieldBase>
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// struct MyString : public nil::crypto3::marshalling::types::String<MyFieldBase>
 /// {
 ///     bool valid() const
 ///     {
@@ -2108,7 +2108,7 @@
 /// };
 /// @endcode
 /// 
-/// Another way is to use nil::marshalling::option::contents_validator option. It
+/// Another way is to use nil::crypto3::marshalling::option::contents_validator option. It
 /// receives one template parameter, which has to be a type of a custom
 /// validator class. Such class must implement @b operator() with the following
 /// signature:
@@ -2136,10 +2136,10 @@
 ///     }
 /// };
 ///
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using MyString = nil::marshalling::types::String<
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using MyString = nil::crypto3::marshalling::types::String<
 ///     MyFieldBase, 
-///     nil::marshalling::option::contents_validator<CustomStringValidator>
+///     nil::crypto3::marshalling::option::contents_validator<CustomStringValidator>
 ///  >;
 ///
 /// MyString myStr; 
@@ -2155,11 +2155,11 @@
 ///
 /// Quite often the valid values of the numeric fields can be expressed in limited
 /// number of ranges: [minValid - maxValid]. The Marshalling library provides
-/// @ref nil::marshalling::option::valid_num_value_range option (and @ref nil::marshalling::option::ValidNumValue alias),
+/// @ref nil::crypto3::marshalling::option::valid_num_value_range option (and @ref nil::crypto3::marshalling::option::ValidNumValue alias),
 /// which can be used multiple times. The field's value is considered to be valid if
 /// <b>at least one</b> of the provided ranges contains it. The range validation option
-/// can be used only with numeric value fields, such as nil::marshalling::types::IntValue,
-/// or nil::marshalling::types::EnumValue. For example:
+/// can be used only with numeric value fields, such as nil::crypto3::marshalling::types::IntValue,
+/// or nil::crypto3::marshalling::types::EnumValue. For example:
 /// @code
 /// enum SomeEnum : std::uint8_t
 /// {
@@ -2168,13 +2168,13 @@
 ///     SomeEnum_Value3
 /// };
 ///
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MyEnum = 
-///     nil::marshalling::types::EnumValue<
+///     nil::crypto3::marshalling::types::EnumValue<
 ///         MyFieldBase, 
 ///         SomeEnum,
-///         nil::marshalling::option::default_num_value<SomeEnum_Value1>, // Construct with valid value
-///         nil::marshalling::option::valid_num_value_range<SomeEnum_Value1, SomeEnum_Value3>
+///         nil::crypto3::marshalling::option::default_num_value<SomeEnum_Value1>, // Construct with valid value
+///         nil::crypto3::marshalling::option::valid_num_value_range<SomeEnum_Value1, SomeEnum_Value3>
 ///     >;
 ///
 /// MyEnum myEnum;
@@ -2189,32 +2189,32 @@
 /// range of [0x20 - 0x7e], as well as value 0. Such field can be defined as:
 /// @code
 /// using MyChar = 
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase,
 ///         char,
-///         nil::marshalling::option::valid_num_value_range<0x20, 0x7e>,
-///         nil::marshalling::option::ValidNumValue<0>
+///         nil::crypto3::marshalling::option::valid_num_value_range<0x20, 0x7e>,
+///         nil::crypto3::marshalling::option::ValidNumValue<0>
 ///     >;
 /// @endcode
 /// @b WARNING: Some older compilers (@b gcc-4.7) fail to compile valid C++11 code
-/// that allows usage of multiple @ref nil::marshalling::option::valid_num_value_range options. If this is
-/// the case, please don't pass more than one @ref nil::marshalling::option::valid_num_value_range option.
+/// that allows usage of multiple @ref nil::crypto3::marshalling::option::valid_num_value_range options. If this is
+/// the case, please don't pass more than one @ref nil::crypto3::marshalling::option::valid_num_value_range option.
 ///
-/// There is a also a convenience alias to nil::marshalling::option::contents_validator intended
-/// for use with bitmasks (nil::marshalling::types::BitmaskValue). Many bitmask fields
+/// There is a also a convenience alias to nil::crypto3::marshalling::option::contents_validator intended
+/// for use with bitmasks (nil::crypto3::marshalling::types::BitmaskValue). Many bitmask fields
 /// may have one or several reserved bits with predefined values they must contain.
-/// The alias option is nil::marshalling::option::bitmask_reserved_bits. It receives two
+/// The alias option is nil::crypto3::marshalling::option::bitmask_reserved_bits. It receives two
 /// template parameters: one for the mask indicating the reserved bits and another
 /// for the expected values of these bits.@n
 /// For example, below is a definition of the 1 byte bitmask field that has
 /// two reserved bits, most and least significant. Both of them must be 0.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MyFlags = 
-///     nil::marshalling::types::BitmaskValue<
+///     nil::crypto3::marshalling::types::BitmaskValue<
 ///         MyFieldBase, 
-///         nil::marshalling::option::fixed_length<1>,
-///         nil::marshalling::option::bitmask_reserved_bits<0x81, 0>
+///         nil::crypto3::marshalling::option::fixed_length<1>,
+///         nil::crypto3::marshalling::option::bitmask_reserved_bits<0x81, 0>
 ///     >;
 ///
 /// MyFlags flags;
@@ -2227,7 +2227,7 @@
 /// Every field provides @b refresh() member function used to bring the field's 
 /// value into a consistent state. By default this function does nothing and
 /// returns @b false, meaning the field has @b NOT been updated. For complex fields, such
-/// as nil::marshalling::types::Bitfield or nil::marshalling::types::Bundle, the default behaviour is
+/// as nil::crypto3::marshalling::types::Bitfield or nil::crypto3::marshalling::types::Bundle, the default behaviour is
 /// to invoke @b refresh() member function of each member field and return @b true
 /// if @b any of the calls returned true.
 ///
@@ -2242,16 +2242,16 @@
 /// There is a need to provide the custom "refresh" logic that brings the field's
 /// contents into a consistent state.
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// struct MyBundle : public 
-///     nil::marshalling::types::Bundle<
+///     nil::crypto3::marshalling::types::Bundle<
 ///         MyFieldBase,
 ///         std::tuple<
-///             nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<1> >,
-///             nil::marshalling::types::Optional<MyFieldBase, std::uint16_t>
+///             nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<1> >,
+///             nil::crypto3::marshalling::types::Optional<MyFieldBase, std::uint16_t>
 ///         >,
-///         nil::marshalling::option::has_custom_read,
-///         nil::marshalling::option::has_custom_refresh
+///         nil::crypto3::marshalling::option::has_custom_read,
+///         nil::crypto3::marshalling::option::has_custom_refresh
 ///     >
 /// {
 ///     ... 
@@ -2261,9 +2261,9 @@
 ///         auto& members = value();
 ///         auto& bitmask = std::get<0>(members);
 ///         auto& optInt = std::get<1>(members);
-///         auto expectedMode = nil::marshalling::types::OptionalMode::missing;
+///         auto expectedMode = nil::crypto3::marshalling::types::OptionalMode::missing;
 ///         if (bitmask.get_bit_value(0)) {
-///             expectedMode = nil::marshalling::types::OptionalMode::exists;
+///             expectedMode = nil::crypto3::marshalling::types::OptionalMode::exists;
 ///         }
 ///
 ///         if (optInt.get_mode() == expectedMode) {
@@ -2275,13 +2275,13 @@
 ///     }
 /// };
 /// @endcode
-/// @b NOTE the usage of @ref nil::marshalling::option::has_custom_refresh option. It notifies
+/// @b NOTE the usage of @ref nil::crypto3::marshalling::option::has_custom_refresh option. It notifies
 /// other classes about existence of custom @b refresh functionality 
 /// (instead of default one). Other classes may contain some inner logic to
 /// perform various optimisations if there is no custom @b refresh.
 /// Failure to specify this option may result in incorrect behaviour.
 /// 
-/// Another way is to use nil::marshalling::option::contents_refresher option. It
+/// Another way is to use nil::crypto3::marshalling::option::contents_refresher option. It
 /// receives one template parameter, which has to be a type of a custom
 /// refresher class. Such class must implement @b operator() with the following
 /// signature:
@@ -2312,9 +2312,9 @@
 /// For most fields @b set_version() function does nothing and
 /// returns @b false, meaning the field has @b NOT been updated (similar to
 /// @ref sec_field_tutorial_common_options_refresh). For complex fields, such
-/// as nil::marshalling::types::Bitfield or nil::marshalling::types::Bundle, the default behaviour is
+/// as nil::crypto3::marshalling::types::Bitfield or nil::crypto3::marshalling::types::Bundle, the default behaviour is
 /// to invoke @b set_version() member function of each member field and return @b true
-/// if @b any of the calls returned @b true. For @ref nil::marshalling::types::array_list
+/// if @b any of the calls returned @b true. For @ref nil::crypto3::marshalling::types::array_list
 /// fields, the version information may be stored inside (only if the element's
 /// @b is_version_dependent() member function returns @b true) and used to notify
 /// every new field that is being read during @b read operation.
@@ -2327,13 +2327,13 @@
 /// version @b 6 the range is extended to [0, 10]. It can be defined as following:
 /// @code
 /// class MyInt : public
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase,
 ///         std::uint8_t,
-///         nil::marshalling::option::valid_num_value_range<0, 5>,
-///         nil::marshalling::option::has_custom_version_update
+///         nil::crypto3::marshalling::option::valid_num_value_range<0, 5>,
+///         nil::crypto3::marshalling::option::has_custom_version_update
 /// {
-///     using Base = nil::marshalling::types::IntValue<...>; // Repeat base class definition
+///     using Base = nil::crypto3::marshalling::types::IntValue<...>; // Repeat base class definition
 /// public:
 ///     // Updated validity check
 ///     bool valid() const
@@ -2361,19 +2361,19 @@
 ///     version_type m_version = 0;
 /// };
 /// @endcode
-/// @b NOTE, the usage of @ref nil::marshalling::option::has_custom_version_update option. It
+/// @b NOTE, the usage of @ref nil::crypto3::marshalling::option::has_custom_version_update option. It
 /// marks the defined field as "version dependent" and as the result its @b
 /// is_version_dependent() member function will return @b true.
 ///
 /// Also @b NOTE, that by default the @b version_type inner type is defined to
 /// be @b unsigned. If there is a need to change that, the @ref
-/// nil::marshalling::option::version_type needs to be passed to the definition of the
+/// nil::crypto3::marshalling::option::version_type needs to be passed to the definition of the
 /// common base class of all the fields:
 /// @code
 /// using MyFieldBase = 
-///     nil::marshalling::field_type<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::version_type<unsigned long long>
+///     nil::crypto3::marshalling::field_type<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::version_type<unsigned long long>
 ///     >;
 /// @endcode
 ///
@@ -2382,16 +2382,16 @@
 /// invalid values, such as the message must be dropped when some field has
 /// an invalid value. It is easy to implement by forcing @b read() operation on
 /// such field to fail when reading an invalid value is recognised. The Marshalling
-/// library provides nil::marshalling::option::fail_on_invalid option to help with such task.
+/// library provides nil::crypto3::marshalling::option::fail_on_invalid option to help with such task.
 /// For example:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 /// using MyField = 
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase,
 ///         std::uint8_t,
-///         nil::marshalling::option::valid_num_value_range<0, 5>,
-///         nil::marshalling::option::fail_on_invalid
+///         nil::crypto3::marshalling::option::valid_num_value_range<0, 5>,
+///         nil::crypto3::marshalling::option::fail_on_invalid
 ///     >;
 ///
 /// static const std::uint8_t InvalidBuf[] = { 0x6 };
@@ -2400,29 +2400,29 @@
 /// MyField myField;
 /// auto* readIter = &InvalidBuf[0];
 /// auto es = myField.read(readIter, InvalidBufSize);
-/// assert(es != nil::marshalling::ErrorStatus::success); // Read failure is expected
+/// assert(es != nil::crypto3::marshalling::ErrorStatus::success); // Read failure is expected
 ///
 /// static const std::uint8_t ValidBuf[] = { 0x1 };
 /// static const auto ValidBufSize = std::extent<decltype(ValidBuf)>::value;
 ///
 /// readIter = &ValidBuf[0];
 /// es = myField.read(readIter, ValidBufSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // Read operation is expected to be successful now
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // Read operation is expected to be successful now
 /// @endcode
 ///
 /// @subsection sec_field_tutorial_common_options_ignore_invalid Ignore Invalid value
-/// The Marshalling library also provides nil::marshalling::option::ignore_invalid option. It DOESN'T
+/// The Marshalling library also provides nil::crypto3::marshalling::option::ignore_invalid option. It DOESN'T
 /// report failure on read operation when the invalid value is discovered 
-/// (like nil::marshalling::option::fail_on_invalid does). Instead the field's internal value
+/// (like nil::crypto3::marshalling::option::fail_on_invalid does). Instead the field's internal value
 /// remains unchanged, although the read iterator is advanced as if the value
 /// is read. For example:
 /// @code
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
-/// using MyField = nil::marshalling::types::IntValue<
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
+/// using MyField = nil::crypto3::marshalling::types::IntValue<
 ///     MyFieldBase,
 ///     std::uint8_t,
-///     nil::marshalling::option::valid_num_value_range<0, 5>,
-///     nil::marshalling::option::ignore_invalid
+///     nil::crypto3::marshalling::option::valid_num_value_range<0, 5>,
+///     nil::crypto3::marshalling::option::ignore_invalid
 /// >;
 ///
 /// static const std::uint8_t InvalidBuf[] = { 0x6 };
@@ -2434,7 +2434,7 @@
 ///
 /// auto* readIter = &InvalidBuf[0];
 /// auto es = myField.read(readIter, InvalidBufSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No failure is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No failure is expected
 /// assert(myField.value() == 0U); // value mustn't be changed
 ///
 /// static const std::uint8_t ValidBuf[] = { 0x1 };
@@ -2442,23 +2442,23 @@
 ///
 /// readIter = &ValidBuf[0];
 /// es = myField.read(readIter, ValidBufSize);
-/// assert(es == nil::marshalling::ErrorStatus::success); // No failure is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No failure is expected
 /// assert(myField.value() == 1U); // value is expected to be updated
 /// @endcode
 ///
 /// @subsection sec_field_tutorial_common_options_empty_ser Empty Serialisation
 /// Some protocols may define some constants which are NOT being sent over I/O
 /// link. Sometimes it may be useful to still treat these values as message fields.
-/// Usage of @ref nil::marshalling::option::empty_serialization (or @ref
-/// nil::marshalling::option::EmptySerialisation for those who prefer British spelling) can
+/// Usage of @ref nil::crypto3::marshalling::option::empty_serialization (or @ref
+/// nil::crypto3::marshalling::option::EmptySerialisation for those who prefer British spelling) can
 /// be used to achieve such effect.
 /// @code
-/// using MyField = nil::marshalling::types::IntValue<
+/// using MyField = nil::crypto3::marshalling::types::IntValue<
 ///     MyFieldBase,
 ///     std::uint8_t,
-///     nil::marshalling::option::valid_num_value_range<5, 5>,
-///     nil::marshalling::option::default_num_value<5>,
-///     nil::marshalling::option::empty_serialization
+///     nil::crypto3::marshalling::option::valid_num_value_range<5, 5>,
+///     nil::crypto3::marshalling::option::default_num_value<5>,
+///     nil::crypto3::marshalling::option::empty_serialization
 /// >;
 /// 
 /// MyField field;
@@ -2468,7 +2468,7 @@
 /// std::vector<std::uint8_t> outBuf;
 /// auto writeIter = std::back_inserter(outBuf);
 /// auto es == field.write(writeIter, outBuf.max_size());
-/// assert(es == nil::marshalling::ErrorStatus::success); // No failure is expected
+/// assert(es == nil::crypto3::marshalling::ErrorStatus::success); // No failure is expected
 /// assert(outBuf.empty()); // No data has been written
 /// @endcode
 ///
@@ -2483,24 +2483,24 @@
 /// @code
 /// template <typename... TExtraOpts>
 /// using MyField = 
-///     nil::marshalling::types::IntValue<
-///         nil::marshalling::field_type<nil::marshalling::option::big_endian>, // base class of the field
+///     nil::crypto3::marshalling::types::IntValue<
+///         nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>, // base class of the field
 ///         std::uint16_t,
 ///         TExtraOpts...,
-///         nil::marshalling::option::default_num_value<5>,
-///         nil::marshalling::option::valid_num_value_range<5, 1000>
+///         nil::crypto3::marshalling::option::default_num_value<5>,
+///         nil::crypto3::marshalling::option::valid_num_value_range<5, 1000>
 /// @endcode
 /// Please @b note, that current implementation gives preference to the options
 /// defined @b earlier. That's why @b TExtraOpts... should be listed before any
 /// other options. It will allow setting other default value needed by the application,
-/// and/or override the valid values ranges (using @ref nil::marshalling::option::valid_ranges_clear).
+/// and/or override the valid values ranges (using @ref nil::crypto3::marshalling::option::valid_ranges_clear).
 /// For example:
 /// @code
 /// using MyUpdatedField = 
 ///     MyField<
-///         nil::marshalling::option::default_num_value<10>,
-///         nil::marshalling::option::valid_num_value_range<10, 500>,
-///         nil::marshalling::option::valid_ranges_clear
+///         nil::crypto3::marshalling::option::default_num_value<10>,
+///         nil::crypto3::marshalling::option::valid_num_value_range<10, 500>,
+///         nil::crypto3::marshalling::option::valid_ranges_clear
 ///     >
 /// @endcode
 ///
@@ -2533,26 +2533,26 @@
 ///
 ///     // Read field value from input data sequence, using any type of input iterator
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus read(TIter& iter, std::size_t size);
+///     nil::crypto3::marshalling::ErrorStatus read(TIter& iter, std::size_t size);
 ///
 ///     // Write field value to output data sequence, using any type of output iterator
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus write(TIter& iter, std::size_t size) const;
+///     nil::crypto3::marshalling::ErrorStatus write(TIter& iter, std::size_t size) const;
 /// };
 /// @endcode
-/// The nil::marshalling::field_type class provides @b read_data() and @b write_data() protected
+/// The nil::crypto3::marshalling::field_type class provides @b read_data() and @b write_data() protected
 /// member functions that serialise data using endian provided as an option
-/// to the class. It makes sense to inherit from nil::marshalling::field_type with right
+/// to the class. It makes sense to inherit from nil::crypto3::marshalling::field_type with right
 /// option and reuse these functions inside:
 /// @code
-/// class MyField : public nil::marshalling::field_type<nil::marshalling::option::big_endian>
+/// class MyField : public nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>
 /// {
 /// public:
 ///     
 ///     ...
 /// 
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus read(TIter& iter, std::size_t size)
+///     nil::crypto3::marshalling::ErrorStatus read(TIter& iter, std::size_t size)
 ///     {
 ///         ...
 ///         auto val = read_data<InternalType>(iter);
@@ -2560,7 +2560,7 @@
 ///     }
 ///
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus write(TIter& iter, std::size_t size) const
+///     nil::crypto3::marshalling::ErrorStatus write(TIter& iter, std::size_t size) const
 ///     {
 ///         ...
 ///         write_data(..., iter);
@@ -2572,7 +2572,7 @@
 /// in the Marshalling library it is recommended to provide an accessor functions
 /// @b value() for internal data storage:
 /// @code
-/// class MyField : public nil::marshalling::field_type<nil::marshalling::option::big_endian>
+/// class MyField : public nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>
 /// {
 /// public:
 ///     using value_type = ...;
