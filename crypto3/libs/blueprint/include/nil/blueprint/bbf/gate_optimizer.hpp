@@ -192,8 +192,8 @@ namespace nil {
                     optimized_gates<FieldType> result = context_to_gates();
                     // optimized_gates<FieldType> result = gates_storage_;
                     // std::cout << "Before: \n\n" << result << std::endl;
-                    // optimize_selectors_by_shifting(result);
                     optimize_selectors_by_shifting(result);
+                    optimize_lookups_by_grouping(result);
                     // std::cout << "After: \n\n" << result << std::endl;
                     return result;
                 }
@@ -201,6 +201,81 @@ namespace nil {
 
             private:
 
+				/** Brooks' algorithm for graph coloring.
+				 *	\param[in] adj - Adjacency list of the graph.
+				 */
+    			std::unordered_map<size_t, size_t> colorGraph(const std::vector<std::vector<size_t>>& adj) const {
+					size_t V = adj.size();	
+    			    std::unordered_map<size_t, size_t> color;
+
+    			    // Sort vertices by degree in descending order
+    			    std::vector<size_t> vertices(V);
+    			    for (size_t i = 0; i < V; ++i)
+						vertices[i] = i;
+
+    			    std::sort(vertices.begin(), vertices.end(), 
+    			        [&adj](size_t a, size_t b) { return adj[a].size() > adj[b].size(); });
+
+    			    // Color vertices
+    			    for (size_t u : vertices) {
+    			        // Collect colors of adjacent vertices
+    			        std::unordered_set<size_t> usedColors;
+    			        for (size_t v : adj[u]) {
+    			            if (color.count(v)) {
+    			                usedColors.insert(color[v]);
+    			            }
+    			        }
+
+    			        // Find first available color
+    			        size_t currColor = 0;
+    			        while (usedColors.count(currColor)) {
+    			            currColor++;
+    			        }
+    			    }
+
+    			    return color;
+    			}
+
+                /** This function tries to reduce the number of lookups by grouping them. If 2 lookups use non-intersecting 
+				 *	selectors, they can be merged into 1 like.
+				 *  Imagine lookup inputs {L0 ... Lm} with selector s1, and {l0 ... lm} with selector s2, then we can merge them into
+				 *	lookup inputs { s1 * L0 + s2 * l0, ...  , s1 * Lm + s2 * lm } with selector that selects all the rows.
+				 * 	We cannot optimally group the selectors into the minimal number of groups, that's an NP-complete problem
+				 *  called graph coloring problem. We will use Brooks' algorithm, it's some simple heuristic thing.
+                 */
+                void optimize_lookups_by_grouping(optimized_gates<FieldType>& gates) {
+					std::vector<std::vector<size_t>> adj; // Adjacency list
+					std::map<size_t, size_t> selector_id_to_index;
+					std::vector<size_t> used_selectors;
+
+					for (const auto& [row_list, selector_id]: gates.selectors_) {
+						if (gates.lookup_constraints.find(selector_id) != gates.lookup_constraints.end()) {
+							used_selectors.push_back(selector_id);
+							selector_id_to_index[selector_id] = used_selectors.size() - 1;
+						}
+					}
+
+					// Create the graph.
+					adj.resize(used_selectors.size());
+					for (const auto& [row_list1, selector_id1]: gates.selectors_) {
+						if (selector_id_to_index.find(selector_id1) == selector_id_to_index.end())
+							continue;
+						for (const auto& [row_list2, selector_id2]: gates.selectors_) {
+							if (selector_id2 >= selector_id1 || selector_id_to_index.find(selector_id2) == selector_id_to_index.end())
+								continue;
+							if (row_list1.intersects(row_list2))	{
+								// Add an edge.
+								adj[selector_id_to_index[selector_id1]].push_back(selector_id_to_index[selector_id2]);
+								adj[selector_id_to_index[selector_id2]].push_back(selector_id_to_index[selector_id1]);
+							}
+						}
+					}
+
+
+    				std::unordered_map<size_t, size_t> selector_groups = colorGraph(adj);
+
+				}
+ 
                 /** This function tries to reduce the number of selectors required by rotating the constraints by +-1.
                  */
                 void optimize_selectors_by_shifting(optimized_gates<FieldType>& gates) {
