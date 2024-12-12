@@ -23,10 +23,9 @@ jobs:
           nix build -L .?#checks.x86_64-linux.all-clang-sanitize
           mkdir results
           cp result/test-logs/*_test.xml results/
-        continue-on-error: true
         env:
           NIX_CONFIG: |
-            cores = 4
+            cores = 16
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
