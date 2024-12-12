@@ -15,13 +15,13 @@
 /// If the protocol grows and the compilation takes a significant amount of time,
 /// more fine-grained include statements may be used:
 /// @code
-/// #include <nil/marshalling/fields.hpp> // Provides all definitions from nil::marshalling::field namespace
-/// #include <nil/marshalling/protocols.hpp> // Provides all definitions from nil::marshalling::protocol namespace
-/// #include <nil/marshalling/units.hpp> // Provides all definitions from nil::marshalling::units namespace
-/// #include <nil/marshalling/Message.hpp> // Definition of nil::marshalling::Message class to define interface
-/// #include <nil/marshalling/message_base.hpp> // Definition of nil::marshalling::MessageBase class to define message impl
-/// #include <nil/marshalling/generic_handler.hpp> // Definition of nil::marshalling::generic_handler class
-/// #include <nil/marshalling/MsgFactory.hpp> // Definition of nil::marshalling::MessageFactory class
+/// #include <nil/marshalling/fields.hpp> // Provides all definitions from nil::crypto3::marshalling::field namespace
+/// #include <nil/marshalling/protocols.hpp> // Provides all definitions from nil::crypto3::marshalling::protocol namespace
+/// #include <nil/marshalling/units.hpp> // Provides all definitions from nil::crypto3::marshalling::units namespace
+/// #include <nil/marshalling/Message.hpp> // Definition of nil::crypto3::marshalling::Message class to define interface
+/// #include <nil/marshalling/message_base.hpp> // Definition of nil::crypto3::marshalling::MessageBase class to define message impl
+/// #include <nil/marshalling/generic_handler.hpp> // Definition of nil::crypto3::marshalling::generic_handler class
+/// #include <nil/marshalling/MsgFactory.hpp> // Definition of nil::crypto3::marshalling::MessageFactory class
 /// @endcode
 ///
 /// @section page_define_prot_conditions Checking pre- and post- Conditions
@@ -57,11 +57,11 @@
 /// see @ref sec_field_tutorial_enum_value for more detail).
 ///
 /// After the numeric IDs are specified, there is a need to define common
-/// message interface class by extending @ref nil::marshalling::Message.
+/// message interface class by extending @ref nil::crypto3::marshalling::Message.
 /// The defined class / type needs to pin the type used for message IDs 
-/// with @ref nil::marshalling::option::msg_id_type and defined
+/// with @ref nil::crypto3::marshalling::option::msg_id_type and defined
 /// earlier enum. It also should specify the serialization endian with either
-/// @ref nil::marshalling::option::big_endian or @ref nil::marshalling::option::little_endian options.
+/// @ref nil::crypto3::marshalling::option::big_endian or @ref nil::crypto3::marshalling::option::little_endian options.
 /// However it must also
 /// allow extension with other options by the application. 
 /// @code
@@ -72,9 +72,9 @@
 /// 
 /// template <typename... TOptions>
 /// using Message = 
-///     nil::marshalling::Message<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::msg_id_type<msg_id>,
+///     nil::crypto3::marshalling::Message<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::msg_id_type<msg_id>,
 ///         TOptions...
 ///     >;
 ///
@@ -101,9 +101,9 @@
 /// 
 /// template <typename... TOptions>
 /// class MyMessage : public 
-///     nil::marshalling::Message<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::msg_id_type<msg_id>,
+///     nil::crypto3::marshalling::Message<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::msg_id_type<msg_id>,
 ///         TOptions...
 ///     >
 /// {
@@ -125,7 +125,7 @@
 /// Marshalling library has a built-in way to automate such assignments (see
 /// @ref page_prot_stack_tutorial_transport_value section in @ref page_prot_stack_tutorial). 
 /// In order to support usage
-/// of @ref nil::marshalling::protocol::TransportValueLayer the message interface class must
+/// of @ref nil::crypto3::marshalling::protocol::TransportValueLayer the message interface class must
 /// define "extra transport fields".
 ///
 /// First, such extra transport field(s) must be defined using a field abstraction
@@ -135,13 +135,13 @@
 /// {
 /// 
 /// // Base class of all the fields
-/// using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::big_endian>;
+/// using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
 ///
 /// // field_type describing protocol version.
-/// using MyVersionField = nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
+/// using MyVersionField = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
 ///
 /// // field_type describing protocol version.
-/// using MyFlagsField = nil::marshalling::types::BitmaskValue<MyFieldBase, nil::marshalling::option::fixed_length<1> >;
+/// using MyFlagsField = nil::crypto3::marshalling::types::BitmaskValue<MyFieldBase, nil::crypto3::marshalling::option::fixed_length<1> >;
 ///
 /// // Relevant extra transport fields, bundled in std::tuple
 /// using MyExtraTransportFields =
@@ -153,17 +153,17 @@
 /// } // namespace my_protocol
 /// @endcode
 /// Second, provide the defined tuple to message interface class using 
-/// @ref nil::marshalling::option::extra_transport_fields option.
+/// @ref nil::crypto3::marshalling::option::extra_transport_fields option.
 /// @code
 /// namespace my_protocol
 /// {
 /// 
 /// template <typename... TOptions>
 /// class Message : public
-///     nil::marshalling::Message<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::msg_id_type<msg_id>,
-///         nil::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
+///     nil::crypto3::marshalling::Message<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::msg_id_type<msg_id>,
+///         nil::crypto3::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
 ///         TOptions...
 ///     >
 /// {
@@ -178,9 +178,9 @@
 /// 
 /// template <typename... TOptions>
 /// class MyMessage : public 
-///     nil::marshalling::Message<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::msg_id_type<msg_id>,
+///     nil::crypto3::marshalling::Message<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::msg_id_type<msg_id>,
 ///         TOptions...
 ///     >
 /// {
@@ -228,10 +228,10 @@
 /// @code
 /// template <typename... TOptions>
 /// class Message : public
-///     nil::marshalling::Message<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::msg_id_type<msg_id>,
-///         nil::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
+///     nil::crypto3::marshalling::Message<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::msg_id_type<msg_id>,
+///         nil::crypto3::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
 ///         TOptions...
 ///     >
 /// {
@@ -244,10 +244,10 @@
 /// @code
 /// template <typename... TOptions>
 /// class Message : public
-///     nil::marshalling::Message<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::msg_id_type<msg_id>,
-///         nil::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
+///     nil::crypto3::marshalling::Message<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::msg_id_type<msg_id>,
+///         nil::crypto3::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
 ///         TOptions...
 ///     >
 /// {
@@ -290,16 +290,16 @@
 /// protocol version information. The Marshalling library contains extra functionality
 /// to help with protocol versioning. If extra transport values contain version,
 /// then it is recommended to let the library know which field in the provided
-/// ones is the version. To do so @ref nil::marshalling::option::version_in_extra_transport_fields,
+/// ones is the version. To do so @ref nil::crypto3::marshalling::option::version_in_extra_transport_fields,
 /// with index of the field as a template argument needs to be used.
 /// @code
 /// template <typename... TOptions>
 /// class Message : public
-///     nil::marshalling::Message<
-///         nil::marshalling::option::big_endian,
-///         nil::marshalling::option::msg_id_type<msg_id>,
-///         nil::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
-///         nil::marshalling::option::version_in_extra_transport_fields<0>,
+///     nil::crypto3::marshalling::Message<
+///         nil::crypto3::marshalling::option::big_endian,
+///         nil::crypto3::marshalling::option::msg_id_type<msg_id>,
+///         nil::crypto3::marshalling::option::extra_transport_fields<MyExtraTransportFields>,
+///         nil::crypto3::marshalling::option::version_in_extra_transport_fields<0>,
 ///         TOptions...
 ///     >
 /// {
@@ -311,7 +311,7 @@
 /// @code
 /// template <typename... TOptions>
 /// class Message : public
-///     nil::marshalling::Message<...>
+///     nil::crypto3::marshalling::Message<...>
 /// {
 /// public:
 ///     ...
@@ -356,7 +356,7 @@
 ///
 /// struct Message1Fields
 /// {
-///     using field1 = nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
+///     using field1 = nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>;
 ///     using field2 = ...
 ///     using field3 = ...
 ///
@@ -371,7 +371,7 @@
 ///
 /// // Definition of the message itself, described and explained later
 /// template <typename TBase>
-/// class Message1 : public nil::marshalling::MessageBase<TBase, ...>
+/// class Message1 : public nil::crypto3::marshalling::MessageBase<TBase, ...>
 /// {
 ///     ...
 /// };
@@ -381,11 +381,11 @@
 /// } // namespace my_protocol
 /// @endcode
 ///
-/// The message definition class has to extend @ref nil::marshalling::MessageBase and receive
-/// at least one template parameter, that is passed as first one to @ref nil::marshalling::MessageBase.
+/// The message definition class has to extend @ref nil::crypto3::marshalling::MessageBase and receive
+/// at least one template parameter, that is passed as first one to @ref nil::crypto3::marshalling::MessageBase.
 /// @code
 /// template <typename TBase>
-/// class Message1 : nil::marshalling::MessageBase<TBase, ...>
+/// class Message1 : nil::crypto3::marshalling::MessageBase<TBase, ...>
 /// {
 ///     ...
 /// };
@@ -393,18 +393,18 @@
 /// The @b TBase template parameter is chosen by the application being developed. 
 /// It is expected to be a variant of @ref page_define_prot_interface (@b my_protocol::Message),
 /// which specifies polymorphic interface that needs to be implemented. 
-/// The @ref nil::marshalling::MessageBase class in turn will publicly inherit
+/// The @ref nil::crypto3::marshalling::MessageBase class in turn will publicly inherit
 /// from the provided common interface class. As the result the full class inheritance graph may look
 /// like this:
 /// @diafile message_class_hierarchy.dia
 /// @n
 ///
 /// There are <b>at least</b> 3 additional options that should be passed to
-/// @ref nil::marshalling::MessageBase.
-/// @li @ref nil::marshalling::option::static_num_id_impl with numeric ID of the message.
-/// @li @ref nil::marshalling::option::fields_impl with @b std::tuple of message fields (
+/// @ref nil::crypto3::marshalling::MessageBase.
+/// @li @ref nil::crypto3::marshalling::option::static_num_id_impl with numeric ID of the message.
+/// @li @ref nil::crypto3::marshalling::option::fields_impl with @b std::tuple of message fields (
 ///     defined earlier @b my_protocol::Message1Fields::All)
-/// @li @ref nil::marshalling::option::msg_type with actual message type (@b Message1).
+/// @li @ref nil::crypto3::marshalling::option::msg_type with actual message type (@b Message1).
 ///
 /// For example
 /// @code
@@ -412,11 +412,11 @@
 ///
 /// template <typename TBase>
 /// class Message1 : public 
-///     nil::marshalling::MessageBase<
+///     nil::crypto3::marshalling::MessageBase<
 ///         TBase, 
-///         nil::marshalling::option::static_num_id_impl<MsgId_Message1>,
-///         nil::marshalling::option::fields_impl<Message1Fields::All>,
-///         nil::marshalling::option::msg_type<Message1<TBase> > // type of the message being defined
+///         nil::crypto3::marshalling::option::static_num_id_impl<MsgId_Message1>,
+///         nil::crypto3::marshalling::option::fields_impl<Message1Fields::All>,
+///         nil::crypto3::marshalling::option::msg_type<Message1<TBase> > // type of the message being defined
 /// {
 ///     ...
 /// };
@@ -449,7 +449,7 @@
 ///
 ///     // Default implementation of read functionality
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
+///     nil::crypto3::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
 ///     {
 ///         // Read all the fields one by one by invoking
 ///         // read() member function of all the fields.
@@ -457,7 +457,7 @@
 ///
 ///     // Default implementation of write functionality
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus do_write(TIter& iter, std::size_t len) const
+///     nil::crypto3::marshalling::ErrorStatus do_write(TIter& iter, std::size_t len) const
 ///     {
 ///         // Write all the fields one by one by invoking
 ///         // write() member function of all the fields.
@@ -489,16 +489,16 @@
 /// };
 /// @endcode
 /// See also relevant API documentation:
-/// @li @ref nil::marshalling::MessageBase::fields()
-/// @li @ref nil::marshalling::MessageBase::do_read()
-/// @li @ref nil::marshalling::MessageBase::do_write()
-/// @li @ref nil::marshalling::MessageBase::do_length()
-/// @li @ref nil::marshalling::MessageBase::do_valid()
-/// @li @ref nil::marshalling::MessageBase::do_refresh()
+/// @li @ref nil::crypto3::marshalling::MessageBase::fields()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_read()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_write()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_length()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_valid()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_refresh()
 ///
 /// In case the passed message interface class as template parameter (@b TBase)
 /// defines some polymorphic interface functions, their implementation is automatically
-/// generated by the @ref nil::marshalling::MessageBase. For example if passed interface
+/// generated by the @ref nil::crypto3::marshalling::MessageBase. For example if passed interface
 /// class required polymorphic read operation, the following member function will
 /// also be automatically implemented:
 /// @code
@@ -507,7 +507,7 @@
 /// {
 ///     ...
 /// protected:
-///     virtual nil::marshalling::ErrorStatus readImpl(read_iterator& iter, std::size_t len)
+///     virtual nil::crypto3::marshalling::ErrorStatus readImpl(read_iterator& iter, std::size_t len)
 ///     {
 ///         return do_read(iter, len);
 ///     }
@@ -518,7 +518,7 @@
 /// When preparing message object to send or when handling received message, the
 /// fields it contains need to be accessed to set or get their values. The default
 /// (build-in) way of achieving that is to get access to the fields tuple 
-/// using inherited nil::marshalling::MessageBase::fields() member function and then using
+/// using inherited nil::crypto3::marshalling::MessageBase::fields() member function and then using
 /// @b std::get() function to access the fields inside the tuple.
 /// @code
 /// Message1<SomeInterface> msg;
@@ -536,7 +536,7 @@
 /// @code
 /// template <typename TMessage>
 /// class Message1 : public
-///     nil::marshalling::MessageBase<...>
+///     nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     // Provide names for the fields
@@ -548,7 +548,7 @@
 /// @code
 /// template <typename TMessage>
 /// class Message1 : public
-///     nil::marshalling::MessageBase<...>
+///     nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     enum FieldIdx
@@ -613,10 +613,10 @@
 /// @code
 /// template <typename TMessage>
 /// class Message1 : public
-///     nil::marshalling::MessageBase<...>
+///     nil::crypto3::marshalling::MessageBase<...>
 /// {
 ///     // Duplicate the base class definition
-///     using Base = nil::marshalling::MessageBase<...>;
+///     using Base = nil::crypto3::marshalling::MessageBase<...>;
 /// public:
 ///     // Provide names for the fields
 ///     MARSHALLING_MSG_FIELDS_ACCESS(value1, value2, value3);
@@ -629,10 +629,10 @@
 /// the defined symbol to add / remove the definition of the @b Base member type.
 /// @code
 /// template <typename TMessage>
-/// class Message1 : public nil::marshalling::MessageBase<...>
+/// class Message1 : public nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// #ifdef MARSHALLING_MUST_DEFINE_BASE
-///     using Base = nil::marshalling::MessageBase<...>;
+///     using Base = nil::crypto3::marshalling::MessageBase<...>;
 /// #endif
 /// public:
 ///     // Provide names for the fields
@@ -641,14 +641,14 @@
 /// @endcode
 ///
 /// @subsection page_define_prot_message_base_custom_read Custom Read Functionality
-/// The default read functionality implemented by @ref nil::marshalling::MessageBase::do_read()
+/// The default read functionality implemented by @ref nil::crypto3::marshalling::MessageBase::do_read()
 /// is to invoke @b read() member function of every field and return @b success
 /// if all the invocations returned @b success.
 /// Sometimes such default implementation may be incomplete or incorrect and may require
 /// additional or different implementation. It is very easy to fix by defining
 /// new @b do_read() public member function with updated functionality. The
-/// @ref nil::marshalling::MessageBase class contains inner "magic" to call the provided @b do_read()
-/// instead of default one when implementing virtual @ref nil::marshalling::MessageBase::readImpl().
+/// @ref nil::crypto3::marshalling::MessageBase class contains inner "magic" to call the provided @b do_read()
+/// instead of default one when implementing virtual @ref nil::crypto3::marshalling::MessageBase::readImpl().
 /// As an example let's define new message
 /// type (@b Message2), which has two fields. The first one is a 1 byte bitmask,
 /// the least significant bit of which defines whether the second field exists.
@@ -669,16 +669,16 @@
 /// class Message2Fields
 /// {
 ///     using field1 =     
-///         nil::marshalling::types::BitmaskValue<
+///         nil::crypto3::marshalling::types::BitmaskValue<
 ///             MyFieldBase, 
-///             nil::marshalling::option::fixed_length<1>,
-///             nil::marshalling::option::bitmask_reserved_bits<0xfe, 0>
+///             nil::crypto3::marshalling::option::fixed_length<1>,
+///             nil::crypto3::marshalling::option::bitmask_reserved_bits<0xfe, 0>
 ///         >;
 ///
 ///     using field2 = 
-///         nil::marshalling::types::Optional<
-///             nil::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
-///             nil::marshalling::option::missing_by_default
+///         nil::crypto3::marshalling::types::Optional<
+///             nil::crypto3::marshalling::types::IntValue<MyFieldBase, std::uint16_t>,
+///             nil::crypto3::marshalling::option::missing_by_default
 ///         >;
 ///
 ///     // bundle all the fields
@@ -690,25 +690,25 @@
 ///
 /// template <typename TBase>
 /// class Message2 : public
-///     nil::marshalling::MessageBase<
+///     nil::crypto3::marshalling::MessageBase<
 ///         TBase, 
-///         nil::marshalling::option::static_num_id_impl<MsgId_Message2>,
-///         nil::marshalling::option::fields_impl<Message2Fields::All>,
-///         nil::marshalling::option::msg_type<Message2<TBase> >
+///         nil::crypto3::marshalling::option::static_num_id_impl<MsgId_Message2>,
+///         nil::crypto3::marshalling::option::fields_impl<Message2Fields::All>,
+///         nil::crypto3::marshalling::option::msg_type<Message2<TBase> >
 ///     >
 /// {
 /// public:
 ///     MARSHALLING_MSG_FIELDS_ACCESS(flags, data);
 ///     
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
+///     nil::crypto3::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
 ///     {
 ///         // Get type of the base class
-///         using Base = typename std::decay<decltype(nil::marshalling::to_message_base(*this))>::type;
+///         using Base = typename std::decay<decltype(nil::crypto3::marshalling::to_message_base(*this))>::type;
 ///
 ///         // Read only the flags value
 ///         auto es = Base::template do_read_fields_until<FieldIdx_data>(iter, len);
-///         if (es != nil::marshalling::ErrorStatus::success) {
+///         if (es != nil::crypto3::marshalling::ErrorStatus::success) {
 ///             return es;
 ///         }
 ///
@@ -725,23 +725,23 @@
 /// };
 /// @endcode
 /// Please @b note, that due to the fact that defined message class is a template one, the member
-/// functions defined in @ref nil::marshalling::MessageBase are not accessible directly, there
+/// functions defined in @ref nil::crypto3::marshalling::MessageBase are not accessible directly, there
 /// is a need to specify the base class scope. If there is no inner @b Base
 /// type defined in the class scope (required to support clang and earlier versions of gcc), 
-/// it is possible to use @ref nil::marshalling::to_message_base()
+/// it is possible to use @ref nil::crypto3::marshalling::to_message_base()
 /// function to detect it.
 ///
-/// Also @b note, that nil::marshalling::MessageBase provides the following member functions
+/// Also @b note, that nil::crypto3::marshalling::MessageBase provides the following member functions
 /// in order to allow read / write of the selected fields.
-/// @li @ref nil::marshalling::MessageBase::do_read_fields_from()
-/// @li @ref nil::marshalling::MessageBase::do_read_fields_until()
-/// @li @ref nil::marshalling::MessageBase::do_read_fields_from_until()
-/// @li @ref nil::marshalling::MessageBase::do_write_fields_from()
-/// @li @ref nil::marshalling::MessageBase::do_write_fields_until()
-/// @li @ref nil::marshalling::MessageBase::do_write_fields_from_until()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_read_fields_from()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_read_fields_until()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_read_fields_from_until()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_write_fields_from()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_write_fields_until()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_write_fields_from_until()
 ///
 /// @subsection page_define_prot_message_base_custom_refresh Custom Refresh Functionality
-/// The default refresh functionality implemented by @ref nil::marshalling::MessageBase::do_refresh()
+/// The default refresh functionality implemented by @ref nil::crypto3::marshalling::MessageBase::do_refresh()
 /// is to invoke @b refresh() member function of every field. The function will
 /// return @b true (indicating that at message contents have been updated) if
 /// at least one of the fields returns @b true. 
@@ -768,16 +768,16 @@
 /// intact.
 /// @code
 /// template <typename TBase>
-/// class Message2 : public nil::marshalling::MessageBase<...>
+/// class Message2 : public nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     MARSHALLING_MSG_FIELDS_ACCESS(flags, data);
 ///     
 ///     bool do_refresh()
 ///     {
-///         auto expectedDataMode = nil::marshalling::types::OptionalMode::missing;
+///         auto expectedDataMode = nil::crypto3::marshalling::types::OptionalMode::missing;
 ///         if ((field_flags().value() & 0x1) != 0U) {
-///             expectedDataMode = nil::marshalling::types::OptionalMode::exists;
+///             expectedDataMode = nil::crypto3::marshalling::types::OptionalMode::exists;
 ///         }
 ///
 ///         if (field_data().get_mode() == expectedDataMode) {
@@ -800,29 +800,29 @@
 /// @endcode
 /// In order to support polymorphic refresh functionality when required (see
 /// @ref page_use_prot_interface_refresh), the actual message class
-/// implementation must also pass @ref nil::marshalling::option::has_custom_refresh option to
-/// @ref nil::marshalling::MessageBase class. Failure to do so @b may result in missing
-/// implementation of @ref nil::marshalling::MessageBase::refresh_impl(). In this case,
-/// the default implementation of @ref nil::marshalling::Message::refresh_impl() will be
+/// implementation must also pass @ref nil::crypto3::marshalling::option::has_custom_refresh option to
+/// @ref nil::crypto3::marshalling::MessageBase class. Failure to do so @b may result in missing
+/// implementation of @ref nil::crypto3::marshalling::MessageBase::refresh_impl(). In this case,
+/// the default implementation of @ref nil::crypto3::marshalling::Message::refresh_impl() will be
 /// used instead, always
 /// returning @b false (reporting that message fields weren't updated) without proper execution
 /// of refresh functionality.
 /// @code
 /// template <typename TBase>
 /// class Message2 : public
-///     nil::marshalling::MessageBase<
+///     nil::crypto3::marshalling::MessageBase<
 ///         TBase, 
-///         nil::marshalling::option::static_num_id_impl<MyMsgId_Message2>,
-///         nil::marshalling::option::msg_type<Message2<TMessage> >,
-///         nil::marshalling::option::fields_impl<Message2Fields> ,
-///         nil::marshalling::option::has_custom_refresh // Support polymorphic refresh when needed
+///         nil::crypto3::marshalling::option::static_num_id_impl<MyMsgId_Message2>,
+///         nil::crypto3::marshalling::option::msg_type<Message2<TMessage> >,
+///         nil::crypto3::marshalling::option::fields_impl<Message2Fields> ,
+///         nil::crypto3::marshalling::option::has_custom_refresh // Support polymorphic refresh when needed
 ///     >
 /// {
 /// public:
 ///     MARSHALLING_MSG_FIELDS_ACCESS(flags, data);
 ///     
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
+///     nil::crypto3::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
 ///     {
 ///         ... // see implementation above
 ///     }
@@ -837,19 +837,19 @@
 /// @subsection page_define_prot_message_base_custom_write Custom Write Functionality
 /// Usually there is no need to provide custom write functionality for the messages
 /// in consistent state (see @ref page_define_prot_message_base_custom_refresh).
-/// The default one implemented by @ref nil::marshalling::MessageBase::do_write(), which invokes
+/// The default one implemented by @ref nil::crypto3::marshalling::MessageBase::do_write(), which invokes
 /// @b write() member function of every field, is correct. However, if 
 /// the need arises it is enough just to provide custom @b do_write() member
 /// function.
 /// @code
 /// template <typename TBase>
-/// class SomeMessage : public nil::marshalling::MessageBase<...>
+/// class SomeMessage : public nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     MARSHALLING_MSG_FIELDS_ACCESS(...);
 ///     
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus do_write(TIter& iter, std::size_t len) const
+///     nil::crypto3::marshalling::ErrorStatus do_write(TIter& iter, std::size_t len) const
 ///     {
 ///         ... 
 ///     }
@@ -862,7 +862,7 @@
 /// provide your own variant of @b do_length() member function.
 /// @code
 /// template <typename TBase>
-/// class SomeMessage : public nil::marshalling::MessageBase<...>
+/// class SomeMessage : public nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     std::size_t do_length() const
@@ -873,7 +873,7 @@
 /// @endcode
 ///
 /// @subsection page_define_prot_message_base_custom_valid Custom Validity Check
-/// The default implementation of @ref nil::marshalling::MessageBase::do_valid() calls
+/// The default implementation of @ref nil::crypto3::marshalling::MessageBase::do_valid() calls
 /// @b valid() member function of every message field and returns @b true if
 /// all the calls returned @b true. However, there may be a need to provide extra
 /// checks in case specific value of one field may require tighter constrains on
@@ -881,13 +881,13 @@
 /// custom @b do_valid() member function.
 /// @code
 /// template <typename TBase>
-/// class SomeMessage : public nil::marshalling::MessageBase<...>
+/// class SomeMessage : public nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     bool do_valid() const
 ///     {
 ///         // Get type of the base class
-///         using Base = typename std::decay<decltype(nil::marshalling::to_message_base(*this))>::type;
+///         using Base = typename std::decay<decltype(nil::crypto3::marshalling::to_message_base(*this))>::type;
 ///         
 ///         // Check that all fields are valid by themselves
 ///         if (!Base::do_valid()) {
@@ -902,12 +902,12 @@
 ///
 /// @subsection page_define_prot_message_base_name Reporting Message Name
 /// Some application may require printing (or reporting by other means) human
-/// readable name of the message. The @ref nil::marshalling::MessageBase cannot automatically
+/// readable name of the message. The @ref nil::crypto3::marshalling::MessageBase cannot automatically
 /// generate appropriate function. As the result, the message definition class is
 /// expected to define @b do_name() member function with the following signature.
 /// @code
 /// template <typename TBase>
-/// class SomeMessage : public nil::marshalling::MessageBase<...>
+/// class SomeMessage : public nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     static const char* do_name()
@@ -917,14 +917,14 @@
 /// };
 /// @endcode
 /// In order to support @ref page_use_prot_interface_name there is a need
-/// to pass @ref nil::marshalling::option::has_name option to @ref nil::marshalling::MessageBase to notify
+/// to pass @ref nil::crypto3::marshalling::option::has_name option to @ref nil::crypto3::marshalling::MessageBase to notify
 /// the latter about existence of @b do_name() member function.
 /// @code
 /// template <typename TBase>
 /// class SomeMessage : public 
-///     nil::marshalling::MessageBase<
+///     nil::crypto3::marshalling::MessageBase<
 ///         ...,
-///         nil::marshalling::option::has_name
+///         nil::crypto3::marshalling::option::has_name
 ///     >
 /// {
 /// public:
@@ -934,8 +934,8 @@
 ///     }
 /// };
 /// @endcode
-/// When @ref nil::marshalling::option::has_name is used, the @b nil::marshalling::MessageBase
-/// creates overriding @b name_impl() (see @ref nil::marshalling::MessageBase::name_impl()), which
+/// When @ref nil::crypto3::marshalling::option::has_name is used, the @b nil::crypto3::marshalling::MessageBase
+/// creates overriding @b name_impl() (see @ref nil::crypto3::marshalling::MessageBase::name_impl()), which
 /// invokes provided @b do_name() member function.
 ///
 /// @subsection page_define_prot_message_version Protocol Version Support
@@ -943,27 +943,27 @@
 /// protocols may include version information in either message transport framing
 /// or in one of the messages used to establish a connection. Every field
 /// defines @b set_version() member function in its public interface. The
-/// nil::marshalling::MessageBase class will automatically call this function for every
-/// field before performing its @b read operation (inside @ref nil::marshalling::MessageBase::do_read()).
+/// nil::crypto3::marshalling::MessageBase class will automatically call this function for every
+/// field before performing its @b read operation (inside @ref nil::crypto3::marshalling::MessageBase::do_read()).
 /// However, if @ref page_define_prot_message_base_custom_read is implemented,
-/// the latter is expected to call provided @ref nil::marshalling::MessageBase::do_fields_version_update()
+/// the latter is expected to call provided @ref nil::crypto3::marshalling::MessageBase::do_fields_version_update()
 /// member function explicitly before attempting actual read operations. 
-/// @b NOTE, that the @ref nil::marshalling::MessageBase::do_fields_version_update() function
-/// exists only if @ref nil::marshalling::option::version_in_extra_transport_fields has been
+/// @b NOTE, that the @ref nil::crypto3::marshalling::MessageBase::do_fields_version_update() function
+/// exists only if @ref nil::crypto3::marshalling::option::version_in_extra_transport_fields has been
 /// provided to message interface.
 /// @code
 /// template <typename TBase>
 /// class Message2 : public
-///     nil::marshalling::MessageBase<...>
+///     nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     ...
 ///     
 ///     template <typename TIter>
-///     nil::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
+///     nil::crypto3::marshalling::ErrorStatus do_read(TIter& iter, std::size_t len)
 ///     {
 ///         // Get type of the base class
-///         using Base = typename std::decay<decltype(nil::marshalling::to_message_base(*this))>::type;
+///         using Base = typename std::decay<decltype(nil::crypto3::marshalling::to_message_base(*this))>::type;
 ///         
 ///         // Update version of the fields
 ///         Base::do_fields_version_update();
@@ -978,7 +978,7 @@
 /// @code
 /// template <typename TBase>
 /// class Message2 : public
-///     nil::marshalling::MessageBase<...>
+///     nil::crypto3::marshalling::MessageBase<...>
 /// {
 /// public:
 ///     ...
@@ -986,7 +986,7 @@
 ///     bool do_refresh()
 ///     {
 ///         // Get type of the base class
-///         using Base = typename std::decay<decltype(nil::marshalling::to_message_base(*this))>::type;
+///         using Base = typename std::decay<decltype(nil::crypto3::marshalling::to_message_base(*this))>::type;
 ///
 ///         // Update version of the fields
 ///         bool updated = Base::do_fields_version_update();
@@ -1004,12 +1004,12 @@
 /// variable length fields, such as @b string or @b list, then maximum serialization
 /// length is also known. It would be wise to slip in compile time checks in
 /// message definition as well. There are several static constexpr member functions 
-/// inherited from @b nil::marshalling::MessageBase that can be used:
+/// inherited from @b nil::crypto3::marshalling::MessageBase that can be used:
 /// 
-/// @li @ref nil::marshalling::MessageBase::do_min_length()
-/// @li @ref nil::marshalling::MessageBase::do_max_length()
-/// @li @ref nil::marshalling::MessageBase::do_min_length_from_until()
-/// @li @ref nil::marshalling::MessageBase::do_max_length_from_until()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_min_length()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_max_length()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_min_length_from_until()
+/// @li @ref nil::crypto3::marshalling::MessageBase::do_max_length_from_until()
 ///
 /// For example, the implementation of @b Message2 may be updated as below:
 /// @code
@@ -1026,10 +1026,10 @@
 /// {
 ///
 /// template <typename TBase>
-/// class Message2 : public nil::marshalling::MessageBase<...>
+/// class Message2 : public nil::crypto3::marshalling::MessageBase<...>
 ///     >
 /// {
-///     using Base =  nil::marshalling::MessageBase<...>
+///     using Base =  nil::crypto3::marshalling::MessageBase<...>
 /// public:
 ///     static_assert(Base::do_min_length() == 1U, "Unexpected min length");
 ///     static_assert(Base::do_max_length() == 3U, "Unexpected max length");
@@ -1040,7 +1040,7 @@
 /// @section page_define_prot_customisation Application Specific Customisation
 /// As was mentioned in @ref page_field_tutorial, there may be a need to provide a way for
 /// extra application specific customisation for used fields, especially for fields like lists
-/// (@ref nil::marshalling::types::array_list) or strings (@ref nil::marshalling::types::String). By
+/// (@ref nil::crypto3::marshalling::types::array_list) or strings (@ref nil::crypto3::marshalling::types::String). By
 /// default they use @b std::vector and @b std::string respectively as
 /// their inner value storage types. They may be un-applicable to some aplications,
 /// especially bare-metal ones. In order to solve such problem the message classes
@@ -1050,7 +1050,7 @@
 /// <b>Recommended Practice</b>
 /// 
 /// It is recommended to have a separate class / struct called @b DefaultOptions
-/// wich defines relevant inner types to be @ref nil::marshalling::option::empty_option (option that
+/// wich defines relevant inner types to be @ref nil::crypto3::marshalling::option::empty_option (option that
 /// does nothing). For example, let's assume that third field in @b Message1
 /// message is a string. Then the @b DefaultOptions struct may be defined as
 /// @code
@@ -1060,7 +1060,7 @@
 ///     {
 ///         struct Message1Fields
 ///         {
-///             using field3 = nil::marshalling::option::empty_option; // no extra functionality by default
+///             using field3 = nil::crypto3::marshalling::option::empty_option; // no extra functionality by default
 ///         };
 ///     };
 /// };
@@ -1088,7 +1088,7 @@
 ///     using field1 = ...;
 ///     using field2 = ...
 ///     using field3 = 
-///         nil::marshalling::types::String<
+///         nil::crypto3::marshalling::types::String<
 ///             MyFieldBase,
 ///             typename TOpt::message::Message1Fields::field3 // Extra option(s) 
 ///         >
@@ -1105,11 +1105,11 @@
 /// // Definition of the message itself, described and explained later
 /// template <typename TBase, typename TOpt = DefaultOptions>
 /// class Message1 : public 
-///     nil::marshalling::MessageBase<
+///     nil::crypto3::marshalling::MessageBase<
 ///         TBase, 
-///         nil::marshalling::option::static_num_id_impl<MsgId_Message1>,
-///         nil::marshalling::option::fields_impl<Message1Fields<TOpt>::All>,
-///         nil::marshalling::option::msg_type<Message1<TBase, TOpt> >
+///         nil::crypto3::marshalling::option::static_num_id_impl<MsgId_Message1>,
+///         nil::crypto3::marshalling::option::fields_impl<Message1Fields<TOpt>::All>,
+///         nil::crypto3::marshalling::option::msg_type<Message1<TBase, TOpt> >
 ///     >
 /// {
 ///     ...
@@ -1124,11 +1124,11 @@
 /// and overriding selected number inner types with its own extension options.
 ///
 /// @b NOTE, that allowing additional customisation for fields like @b list
-/// (@ref nil::marshalling::types::array_list) and @b string (@ref nil::marshalling::types::String) is
+/// (@ref nil::crypto3::marshalling::types::array_list) and @b string (@ref nil::crypto3::marshalling::types::String) is
 /// a <b>must have</b> feature to allow usage of the same protocol definition in
 /// bare-metal applications. However, it would be wise to allow extra customisation
-/// for @b all the used fields, even for ones like <b>integral values</b> (@ref nil::marshalling::types::IntValue)
-/// or @b enum (@ref nil::marshalling::types::IntValue). The client application developer
+/// for @b all the used fields, even for ones like <b>integral values</b> (@ref nil::crypto3::marshalling::types::IntValue)
+/// or @b enum (@ref nil::crypto3::marshalling::types::IntValue). The client application developer
 /// may want to change the default value of some field, maybe even add or
 /// change (override) provided ranges of valid values, force failing of read
 /// operation on invalid values, etc... @b NOTE, that when allowing such
@@ -1137,12 +1137,12 @@
 /// @code
 /// template <typename... TExtraOpts>
 /// using MyField = 
-///     nil::marshalling::types::IntValue<
+///     nil::crypto3::marshalling::types::IntValue<
 ///         MyFieldBase,
 ///         std::uint16_t,
 ///         TExtraOpts..., // extra options
-///         nil::marshalling::option::default_num_value<10>, // default value
-///         nil::marshalling::option::valid_num_value_range<10, 20> // default range of valid values
+///         nil::crypto3::marshalling::option::default_num_value<10>, // default value
+///         nil::crypto3::marshalling::option::valid_num_value_range<10, 20> // default range of valid values
 ///     >;
 /// @endcode
 /// This is because earlier used options take priority over ones used later.
@@ -1152,17 +1152,17 @@
 /// (which will require both read and write operation for every message) except
 /// a only a few, that go only one direction (from client to server or the opposite).
 /// In this case the generated code will contain implementation for
-/// both polymorphic read (@ref nil::marshalling::MessageBase::readImpl()) and write
-/// (@ref nil::marshalling::MessageBase::write_impl()). For uni-directional messages some
+/// both polymorphic read (@ref nil::crypto3::marshalling::MessageBase::readImpl()) and write
+/// (@ref nil::crypto3::marshalling::MessageBase::write_impl()). For uni-directional messages some
 /// of these function may be redundant, which unnecessary increases the binary
 /// size. It may become a problem for bare-metal platforms with limited amount
 /// of ROM space. The @b Marshalling library provides options that may suppress automatic
-/// generation of some virtual functions by the @b nil::marshalling::MessageBase. The available
+/// generation of some virtual functions by the @b nil::crypto3::marshalling::MessageBase. The available
 /// options are:
-/// @li @ref nil::marshalling::option::no_read_impl
-/// @li @ref nil::marshalling::option::no_write_impl
-/// @li @ref nil::marshalling::option::no_valid_impl
-/// @li @ref nil::marshalling::option::no_length_impl
+/// @li @ref nil::crypto3::marshalling::option::no_read_impl
+/// @li @ref nil::crypto3::marshalling::option::no_write_impl
+/// @li @ref nil::crypto3::marshalling::option::no_valid_impl
+/// @li @ref nil::crypto3::marshalling::option::no_length_impl
 ///
 /// These options should not be used in the definition of protocol messages, but
 /// it would be wise to allow the client application use them when necessary. It
@@ -1172,8 +1172,8 @@
 /// {
 ///     struct message
 ///     {
-///         using Message1 = nil::marshalling::option::empty_option;
-///         using Message2 = nil::marshalling::option::empty_option;
+///         using Message1 = nil::crypto3::marshalling::option::empty_option;
+///         using Message2 = nil::crypto3::marshalling::option::empty_option;
 ///         ...
 ///     };
 /// };
@@ -1188,11 +1188,11 @@
 ///
 /// template <typename TBase, typename TOpt = DefaultOptions>
 /// class Message1 : public 
-///     nil::marshalling::MessageBase<
+///     nil::crypto3::marshalling::MessageBase<
 ///         TBase, 
-///         nil::marshalling::option::static_num_id_impl<MsgId_Message1>,
-///         nil::marshalling::option::fields_impl<Message1Fields<TOpt>::All>,
-///         nil::marshalling::option::msg_type<Message1<TBase, TOpt> >,
+///         nil::crypto3::marshalling::option::static_num_id_impl<MsgId_Message1>,
+///         nil::crypto3::marshalling::option::fields_impl<Message1Fields<TOpt>::All>,
+///         nil::crypto3::marshalling::option::msg_type<Message1<TBase, TOpt> >,
 ///         typename TOpt::message::Message1 // Extra options 
 ///     >
 /// {

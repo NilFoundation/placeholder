@@ -18,8 +18,8 @@
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/output_artifacts/assignment_table_writer.hpp>
 
-using Endianness = nil::marshalling::option::big_endian;
-using TTypeBase = nil::marshalling::field_type<Endianness>;
+using Endianness = nil::crypto3::marshalling::option::big_endian;
+using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
 using BlueprintField = typename nil::crypto3::algebra::curves::pallas::base_field_type;
 
@@ -55,7 +55,7 @@ class AssignmentTableWriterTest: public ::testing::Test {
             MarshalledTable marshalled_table;
             auto read_iter = table_bytes_.begin();
             auto const status = marshalled_table.read(read_iter, table_bytes_.size());
-            ASSERT_TRUE(status == nil::marshalling::status_type::success);
+            ASSERT_TRUE(status == nil::crypto3::marshalling::status_type::success);
 
             // unpack decoded data to table & description
             auto [desc, table] = nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTable>(marshalled_table);

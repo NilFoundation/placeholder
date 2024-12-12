@@ -36,47 +36,47 @@
 #include <nil/marshalling/types/detail/adapt_basic_field.hpp>
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
             /// @brief field_type that represent integral value.
             /// @tparam TFieldBase Base class for this field, expected to be a variant of
-            ///     nil::marshalling::field_type.
+            ///     nil::crypto3::marshalling::field_type.
             /// @tparam T Basic underlying integral type.
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field. If no option is provided The field's value is serialized as is.
             ///     @code
-            ///         using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
-            ///         using MyField = nil::marshalling::types::integral<MyFieldBase, std::uint16_t>;
+            ///         using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
+            ///         using MyField = nil::crypto3::marshalling::types::integral<MyFieldBase, std::uint16_t>;
             ///     @endcode
             ///     In the example above it will
             ///     consume 2 bytes (because sizeof(std::uint16_t) == 2) and will
             ///     be serialized using big endian notation.@n
             ///     Supported options are:
-            ///     @li @ref nil::marshalling::option::fixed_length
-            ///     @li @ref nil::marshalling::option::fixed_bit_length
-            ///     @li @ref nil::marshalling::option::var_length
-            ///     @li @ref nil::marshalling::option::num_value_ser_offset
-            ///     @li @ref nil::marshalling::option::default_value_initializer or
-            ///     nil::marshalling::option::default_num_value.
-            ///     @li @ref nil::marshalling::option::contents_validator
-            ///     @li @ref nil::marshalling::option::valid_num_value_range, @ref nil::marshalling::option::valid_num_value,
-            ///         @ref nil::marshalling::option::valid_big_unsigned_num_value_range, @ref
-            ///         nil::marshalling::option::valid_big_unsigned_num_value_range
-            ///     @li @ref nil::marshalling::option::valid_ranges_clear
-            ///     @li @ref nil::marshalling::option::contents_refresher
-            ///     @li @ref nil::marshalling::option::has_custom_read
-            ///     @li @ref nil::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::marshalling::option::fail_on_invalid
-            ///     @li @ref nil::marshalling::option::ignore_invalid
-            ///     @li @ref nil::marshalling::option::scaling_ratio
-            ///     @li @b nil::marshalling::option::Units* - all variants of value units, see
+            ///     @li @ref nil::crypto3::marshalling::option::fixed_length
+            ///     @li @ref nil::crypto3::marshalling::option::fixed_bit_length
+            ///     @li @ref nil::crypto3::marshalling::option::var_length
+            ///     @li @ref nil::crypto3::marshalling::option::num_value_ser_offset
+            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer or
+            ///     nil::crypto3::marshalling::option::default_num_value.
+            ///     @li @ref nil::crypto3::marshalling::option::contents_validator
+            ///     @li @ref nil::crypto3::marshalling::option::valid_num_value_range, @ref nil::crypto3::marshalling::option::valid_num_value,
+            ///         @ref nil::crypto3::marshalling::option::valid_big_unsigned_num_value_range, @ref
+            ///         nil::crypto3::marshalling::option::valid_big_unsigned_num_value_range
+            ///     @li @ref nil::crypto3::marshalling::option::valid_ranges_clear
+            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+            ///     @li @ref nil::crypto3::marshalling::option::fail_on_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::ignore_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::scaling_ratio
+            ///     @li @b nil::crypto3::marshalling::option::Units* - all variants of value units, see
             ///         @ref sec_field_tutorial_integral_units for details.
-            ///     @li nil::marshalling::option::empty_serialization
-            ///     @li @ref nil::marshalling::option::invalid_by_default
-            ///     @li @ref nil::marshalling::option::version_storage
-            /// @extends nil::marshalling::field_type
+            ///     @li nil::crypto3::marshalling::option::empty_serialization
+            ///     @li @ref nil::crypto3::marshalling::option::invalid_by_default
+            ///     @li @ref nil::crypto3::marshalling::option::version_storage
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/integral.hpp
             template<typename TFieldBase, typename T, typename... TOptions>
             class integral : private detail::adapt_basic_field_type<detail::basic_integral<TFieldBase, T>, TOptions...> {
@@ -117,9 +117,9 @@ namespace nil {
                 integral &operator=(const integral &) = default;
 
                 /// @brief Scales value according to ratio specified in provided
-                ///     nil::marshalling::option::scaling_ratio option.
-                /// @details If nil::marshalling::option::scaling_ratio option wasn't used, then
-                ///     nil::marshalling::option::scaling_ratio<1,1> is assumed.
+                ///     nil::crypto3::marshalling::option::scaling_ratio option.
+                /// @details If nil::crypto3::marshalling::option::scaling_ratio option wasn't used, then
+                ///     nil::crypto3::marshalling::option::scaling_ratio<1,1> is assumed.
                 /// @tparam TRet Return type for the scaled value.
                 /// @return "(value() * Scaling_Num) / Scaling_Denom" when all values are
                 ///     casted to TRet type.
@@ -236,7 +236,7 @@ namespace nil {
                 }
 
                 /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                 version_type get_version() const {
                     return base_impl_type::get_version();
                 }
@@ -340,52 +340,52 @@ namespace nil {
                 }
 
                 static_assert(!parsed_options_type::has_sequence_elem_length_forcing,
-                              "nil::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
                               "integral field");
                 static_assert(
                     !parsed_options_type::has_sequence_size_forcing,
-                    "nil::marshalling::option::sequence_size_forcing_enabled option is not applicable to integral field");
+                    "nil::crypto3::marshalling::option::sequence_size_forcing_enabled option is not applicable to integral field");
                 static_assert(!parsed_options_type::has_sequence_length_forcing,
-                              "nil::marshalling::option::sequence_length_forcing_enabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_length_forcing_enabled option is not applicable to "
                               "integral field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size,
-                    "nil::marshalling::option::sequence_fixed_size option is not applicable to integral field");
+                    "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to integral field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                    "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
+                    "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
                     "integral field");
                 static_assert(
                     !parsed_options_type::has_sequence_size_field_prefix,
-                    "nil::marshalling::option::sequence_size_field_prefix option is not applicable to integral field");
+                    "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to integral field");
                 static_assert(!parsed_options_type::has_sequence_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
                               "integral field");
                 static_assert(
                     !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                    "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
+                    "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
                     "integral field");
                 static_assert(
                     !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                    "nil::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
+                    "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
                     "integral field");
                 static_assert(!parsed_options_type::has_sequence_trailing_field_suffix,
-                              "nil::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
                               "integral field");
                 static_assert(!parsed_options_type::has_sequence_termination_field_suffix,
-                              "nil::marshalling::option::sequence_termination_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
                               "integral field");
                 static_assert(
                     !parsed_options_type::has_fixed_size_storage,
-                    "nil::marshalling::option::fixed_size_storage option is not applicable to integral field");
+                    "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to integral field");
                 static_assert(
                     !parsed_options_type::has_custom_storage_type,
-                    "nil::marshalling::option::custom_storage_type option is not applicable to integral field");
+                    "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to integral field");
                 static_assert(!parsed_options_type::has_orig_data_view,
-                              "nil::marshalling::option::orig_data_view option is not applicable to integral field");
+                              "nil::crypto3::marshalling::option::orig_data_view option is not applicable to integral field");
                 static_assert(
                     !parsed_options_type::has_versions_range,
-                    "nil::marshalling::option::exists_between_versions (or similar) option is not applicable to "
+                    "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
                     "integral field");
             };
 
@@ -422,17 +422,17 @@ namespace nil {
                 return field1.value() < field2.value();
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::integral type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::integral type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::integral
+            /// @related nil::crypto3::marshalling::types::integral
             template<typename TFieldBase, typename T, typename... TOptions>
             inline integral<TFieldBase, T, TOptions...> &to_field_base(integral<TFieldBase, T, TOptions...> &field) {
                 return field;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::integral type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::integral type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::integral
+            /// @related nil::crypto3::marshalling::types::integral
             template<typename TFieldBase, typename T, typename... TOptions>
             inline const integral<TFieldBase, T, TOptions...> &
                 to_field_base(const integral<TFieldBase, T, TOptions...> &field) {

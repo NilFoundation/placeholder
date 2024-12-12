@@ -722,8 +722,8 @@ namespace nil {
                             const auto &table = lookup_tables[t_id];
                             auto key = std::tuple(table.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
                             auto shifted_key = std::tuple(table.tag_index, 1, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            typename FieldType::value_type selector_value  = evaluations[key];;
-                            typename FieldType::value_type shifted_selector_value  = evaluations[shifted_key];;
+                            typename FieldType::value_type selector_value  = evaluations[key];
+                            typename FieldType::value_type shifted_selector_value  = evaluations[shifted_key];
                             for( std::size_t o_id = 0; o_id < table.lookup_options.size(); o_id++){
                                 typename FieldType::value_type v = selector_value * (t_id + 1);
                                 typename FieldType::value_type shifted_v = shifted_selector_value * (t_id + 1);
@@ -747,7 +747,7 @@ namespace nil {
                         for( std::size_t g_id = 0; g_id < lookup_gates.size(); g_id++ ){
                             const auto &gate = lookup_gates[g_id];
                             auto key = std::tuple(gate.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            typename FieldType::value_type selector_value= evaluations[key];
+                            typename FieldType::value_type selector_value = evaluations[key];
                             for( std::size_t c_id = 0; c_id < gate.constraints.size(); c_id++){
                                 const auto &constraint = gate.constraints[c_id];
                                 typename FieldType::value_type l = selector_value * constraint.table_id;

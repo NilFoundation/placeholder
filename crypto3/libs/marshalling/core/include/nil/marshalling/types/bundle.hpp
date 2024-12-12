@@ -35,57 +35,57 @@
 
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
             /// @brief Bundles multiple fields into a single field.
             /// @details The class wraps nicely multiple fields and provides
             ///     expected single field API functions, such as length(), read(), write(),
-            ///     valid(). It may be useful when a collection (nil::marshalling::types::array_list) of
+            ///     valid(). It may be useful when a collection (nil::crypto3::marshalling::types::array_list) of
             ///     complex fields is required.
             ///
             ///     Refer to @ref sec_field_tutorial_bundle for tutorial and usage examples.
             /// @tparam TFieldBase Base class for this field, expected to be a variant of
-            ///     nil::marshalling::field_type.
+            ///     nil::crypto3::marshalling::field_type.
             /// @tparam TMembers All wrapped fields bundled together in
             ///     <a href="http://en.cppreference.com/w/cpp/utility/tuple">std::tuple</a>.
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field.@n
             ///     Supported options are:
-            ///     @li @ref nil::marshalling::option::default_value_initializer - All wrapped fields may
+            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer - All wrapped fields may
             ///         specify their independent default value initializers. It is
             ///         also possible to provide initializer for the bundle field which
             ///         will set appropriate values to the fields based on some
             ///         internal logic.
-            ///     @li @ref nil::marshalling::option::contents_validator - All wrapped fields may specify
+            ///     @li @ref nil::crypto3::marshalling::option::contents_validator - All wrapped fields may specify
             ///         their independent validators. The bundle field considered to
             ///         be valid if all the wrapped fields are valid. This option though,
             ///         provides an ability to add extra validation logic that can
             ///         observe value of more than one wrapped fields. For example,
             ///         protocol specifies that if one specific field has value X, than
             ///         other field is NOT allowed to have value Y.
-            ///     @li @ref nil::marshalling::option::contents_refresher - The default refreshing
+            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher - The default refreshing
             ///         behaviour is to call the @b refresh() member function of every
             ///         member field. This option provides an ability to set a custom
             ///         "refreshing" logic.
-            ///     @li @ref nil::marshalling::option::custom_value_reader - It may be required to implement
+            ///     @li @ref nil::crypto3::marshalling::option::custom_value_reader - It may be required to implement
             ///         custom reading functionality instead of default behaviour of
             ///         invoking read() member function of every member field. It is possible
-            ///         to provide cusom reader functionality using nil::marshalling::option::custom_value_reader
+            ///         to provide cusom reader functionality using nil::crypto3::marshalling::option::custom_value_reader
             ///         option.
-            ///     @li @ref nil::marshalling::option::has_custom_read
-            ///     @li @ref nil::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::marshalling::option::empty_serialization
-            ///     @li @ref nil::marshalling::option::version_storage
-            /// @extends nil::marshalling::field_type
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
+            ///     @li @ref nil::crypto3::marshalling::option::version_storage
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/bundle.hpp
             /// @see @ref MARSHALLING_FIELD_MEMBERS_ACCESS()
             /// @see @ref MARSHALLING_FIELD_MEMBERS_ACCESS_NOTEMPLATE()
             template<typename TFieldBase, typename TMembers, typename... TOptions>
             class bundle : private detail::adapt_basic_field_type<detail::basic_bundle<TFieldBase, TMembers>, TOptions...> {
                 using base_impl_type = detail::adapt_basic_field_type<detail::basic_bundle<TFieldBase, TMembers>, TOptions...>;
-                static_assert(nil::detail::is_tuple<TMembers>::value,
+                static_assert(marshalling::detail::is_tuple<TMembers>::value,
                               "TMembers is expected to be a tuple of std::tuple<...>");
 
                 static_assert(1U <= std::tuple_size<TMembers>::value,
@@ -489,7 +489,7 @@ namespace nil {
                 }
 
                 /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                 version_type get_version() const {
                     return base_impl_type::get_version();
                 }
@@ -507,63 +507,63 @@ namespace nil {
             private:
                 static_assert(
                     !parsed_options_type::has_ser_offset,
-                    "nil::marshalling::option::num_value_ser_offset option is not applicable to bundle field");
+                    "nil::crypto3::marshalling::option::num_value_ser_offset option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_fixed_length_limit,
-                              "nil::marshalling::option::fixed_length option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::fixed_length option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                              "nil::marshalling::option::fixed_bit_length option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_var_length_limits,
-                              "nil::marshalling::option::var_length option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::var_length option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_sequence_elem_length_forcing,
-                              "nil::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
                               "bundle field");
                 static_assert(
                     !parsed_options_type::has_sequence_size_forcing,
-                    "nil::marshalling::option::sequence_size_forcing_enabled option is not applicable to bundle field");
+                    "nil::crypto3::marshalling::option::sequence_size_forcing_enabled option is not applicable to bundle field");
                 static_assert(
                     !parsed_options_type::has_sequence_length_forcing,
-                    "nil::marshalling::option::sequence_length_forcing_enabled option is not applicable to bundle field");
+                    "nil::crypto3::marshalling::option::sequence_length_forcing_enabled option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_sequence_fixed_size,
-                              "nil::marshalling::option::sequence_fixed_size option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                              "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable "
+                              "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable "
                               "to bundle field");
                 static_assert(
                     !parsed_options_type::has_sequence_size_field_prefix,
-                    "nil::marshalling::option::sequence_size_field_prefix option is not applicable to bundle field");
+                    "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_sequence_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
                               "bundle field");
                 static_assert(!parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
+                              "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
                               "applicable to bundle field");
                 static_assert(!parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                              "nil::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not "
+                              "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not "
                               "applicable to bundle field");
                 static_assert(!parsed_options_type::has_sequence_trailing_field_suffix,
-                              "nil::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
                               "bundle field");
                 static_assert(!parsed_options_type::has_sequence_termination_field_suffix,
-                              "nil::marshalling::option::sequence_termination_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
                               "bundle field");
                 static_assert(!parsed_options_type::has_fixed_size_storage,
-                              "nil::marshalling::option::fixed_size_storage option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_custom_storage_type,
-                              "nil::marshalling::option::custom_storage_type option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_scaling_ratio,
-                              "nil::marshalling::option::scaling_ratio_type option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::Units option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_orig_data_view,
-                              "nil::marshalling::option::orig_data_view option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::orig_data_view option is not applicable to bundle field");
                 static_assert(!parsed_options_type::has_multi_range_validation,
-                              "nil::marshalling::option::valid_num_value_range (or similar) option is not applicable "
+                              "nil::crypto3::marshalling::option::valid_num_value_range (or similar) option is not applicable "
                               "to bundle field");
                 static_assert(!parsed_options_type::has_versions_range,
-                              "nil::marshalling::option::exists_between_versions (or similar) option is not applicable "
+                              "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable "
                               "to bundle field");
                 static_assert(!parsed_options_type::has_invalid_by_default,
-                              "nil::marshalling::option::invalid_by_default option is not applicable to bundle field");
+                              "nil::crypto3::marshalling::option::invalid_by_default option is not applicable to bundle field");
             };
 
             /// @brief Equality comparison operator.
@@ -628,18 +628,18 @@ namespace nil {
                 return field1.value() >= field2.value();
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::bundle type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::bundle type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::bundle
+            /// @related nil::crypto3::marshalling::types::bundle
             template<typename TFieldBase, typename TMembers, typename... TOptions>
             inline bundle<TFieldBase, TMembers, TOptions...> &
                 to_field_base(bundle<TFieldBase, TMembers, TOptions...> &field) {
                 return field;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::bundle type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::bundle type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::bundle
+            /// @related nil::crypto3::marshalling::types::bundle
             template<typename TFieldBase, typename TMembers, typename... TOptions>
             inline const bundle<TFieldBase, TMembers, TOptions...> &
                 to_field_base(const bundle<TFieldBase, TMembers, TOptions...> &field) {

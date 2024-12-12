@@ -97,8 +97,8 @@ namespace nil {
         ){
             using ArithmetizationType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
             using AssignmentType = nil::crypto3::zk::snark::plonk_table<BlueprintFieldType, nil::crypto3::zk::snark::plonk_column<BlueprintFieldType>>;
-            using Endianness = nil::marshalling::option::big_endian;
-            using TTypeBase = nil::marshalling::field_type<Endianness>;
+            using Endianness = nil::crypto3::marshalling::option::big_endian;
+            using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
             {
                 std::ofstream otable;
@@ -107,7 +107,7 @@ namespace nil {
                 std::vector<std::uint8_t> cv;
                 cv.resize(filled_val.length(), 0x00);
                 auto write_iter = cv.begin();
-                nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
+                nil::crypto3::marshalling::status_type status = filled_val.write(write_iter, cv.size());
                 otable.write(reinterpret_cast<char*>(cv.data()), cv.size());
                 otable.close();
             }
@@ -119,7 +119,7 @@ namespace nil {
                 std::vector<std::uint8_t> cv;
                 cv.resize(filled_val.length(), 0x00);
                 auto write_iter = cv.begin();
-                nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
+                nil::crypto3::marshalling::status_type status = filled_val.write(write_iter, cv.size());
                 ocircuit.write(reinterpret_cast<char*>(cv.data()), cv.size());
                 ocircuit.close();
             }
@@ -153,8 +153,8 @@ namespace nil {
             using ColumnType = nil::crypto3::zk::snark::plonk_column<BlueprintFieldType>;
             using AssignmentTableType = nil::crypto3::zk::snark::plonk_table<BlueprintFieldType, ColumnType>;
             using TableDescriptionType = nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType>;
-            using Endianness = nil::marshalling::option::big_endian;
-            using TTypeBase = nil::marshalling::field_type<Endianness>;
+            using Endianness = nil::crypto3::marshalling::option::big_endian;
+            using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
             ConstraintSystemType constraint_system;
             {

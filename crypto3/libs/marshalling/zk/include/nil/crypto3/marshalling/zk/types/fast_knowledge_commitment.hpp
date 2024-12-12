@@ -60,7 +60,7 @@ namespace nil {
                         bool>::type,
                     typename... TOptions>
                 using fast_knowledge_commitment =
-                    nil::marshalling::types::bundle<TTypeBase,
+                    nil::crypto3::marshalling::types::bundle<TTypeBase,
                                                     std::tuple<
                                                         // g
                                                         fast_curve_element<TTypeBase, typename KnowledgeCommitment::type1>,
@@ -68,19 +68,19 @@ namespace nil {
                                                         fast_curve_element<TTypeBase, typename KnowledgeCommitment::type2>>>;
 
                 template<typename KnowledgeCommitment, typename Endianness>
-                fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>
+                fast_knowledge_commitment<nil::crypto3::marshalling::field_type<Endianness>, KnowledgeCommitment>
                     fill_fast_knowledge_commitment(const typename KnowledgeCommitment::value_type &kc) {
 
                     auto filled_g = fill_fast_curve_element<typename KnowledgeCommitment::type1, Endianness>(kc.g);
                     auto filled_h = fill_fast_curve_element<typename KnowledgeCommitment::type2, Endianness>(kc.h);
 
-                    return fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>(
+                    return fast_knowledge_commitment<nil::crypto3::marshalling::field_type<Endianness>, KnowledgeCommitment>(
                         std::make_tuple(filled_g, filled_h));
                 }
 
                 template<typename KnowledgeCommitment, typename Endianness>
                 typename KnowledgeCommitment::value_type
-                    make_fast_knowledge_commitment(const fast_knowledge_commitment<nil::marshalling::field_type<Endianness>,
+                    make_fast_knowledge_commitment(const fast_knowledge_commitment<nil::crypto3::marshalling::field_type<Endianness>,
                                                                          KnowledgeCommitment> &filled_kc) {
 
                     return typename KnowledgeCommitment::value_type(std::move(make_fast_curve_element<typename KnowledgeCommitment::type1, Endianness>(std::get<0>(filled_kc.value()))),
@@ -88,17 +88,17 @@ namespace nil {
                 }
 
                 template<typename KnowledgeCommitment, typename Endianness>
-                nil::marshalling::types::standard_array_list<
-                    nil::marshalling::field_type<Endianness>,
-                    fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>>
+                nil::crypto3::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::field_type<Endianness>,
+                    fast_knowledge_commitment<nil::crypto3::marshalling::field_type<Endianness>, KnowledgeCommitment>>
                     fill_fast_knowledge_commitment_vector(
                         const std::vector<typename KnowledgeCommitment::value_type> &kc_vector) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     using kc_element_type = fast_knowledge_commitment<TTypeBase, KnowledgeCommitment>;
 
-                    using kc_element_vector_type = nil::marshalling::types::standard_array_list<
+                    using kc_element_vector_type = nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         kc_element_type>;
 
@@ -113,14 +113,14 @@ namespace nil {
 
                 template<typename KnowledgeCommitment, typename Endianness>
                 std::vector<typename KnowledgeCommitment::value_type> make_fast_knowledge_commitment_vector(
-                    const nil::marshalling::types::standard_array_list<
-                        nil::marshalling::field_type<Endianness>,
-                        fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>>
+                    const nil::crypto3::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::field_type<Endianness>,
+                        fast_knowledge_commitment<nil::crypto3::marshalling::field_type<Endianness>, KnowledgeCommitment>>
                         &filled_kc_vector) {
 
                     std::vector<typename KnowledgeCommitment::value_type> result;
                     const std::vector<
-                        fast_knowledge_commitment<nil::marshalling::field_type<Endianness>, KnowledgeCommitment>> &values =
+                        fast_knowledge_commitment<nil::crypto3::marshalling::field_type<Endianness>, KnowledgeCommitment>> &values =
                         filled_kc_vector.value();
                     std::size_t size = values.size();
 

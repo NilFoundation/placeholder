@@ -55,9 +55,6 @@ namespace nil {
                                               extended_field_element<TTypeBase, FieldValueType, TOptions...>,
                                               pure_field_element<TTypeBase, FieldValueType, TOptions...>>::type;
             }    // namespace types
-        }        // namespace marshalling
-    }            // namespace crypto3
-    namespace marshalling {
 
         template<typename T, typename Enabled>
         class is_compatible;
@@ -79,13 +76,14 @@ namespace nil {
         public:
             template <typename TEndian = default_endianness>
             using type = nil::crypto3::marshalling::types::field_element<
-                nil::marshalling::field_type<TEndian>,
+                nil::crypto3::marshalling::field_type<TEndian>,
                 T>;
             static const bool value = true;
             static const bool fixed_size = true;
         };
 
-    }        // namespace marshalling
+        }        // namespace marshalling
+    }        // namespace crypto3
 }    // namespace nil
 
 #endif    // CRYPTO3_MARSHALLING_ALGEBRA_INFERENCE_TYPE_TRAITS_HPP

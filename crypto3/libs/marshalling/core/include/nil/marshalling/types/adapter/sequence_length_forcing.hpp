@@ -32,7 +32,7 @@
 #include <limits>
 #include <algorithm>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace adapter {

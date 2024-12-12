@@ -41,7 +41,7 @@
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/types/optional_mode.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             // We cannot include integral.hpp, it includes this file. So just declare the class.
@@ -72,39 +72,39 @@ namespace nil {
             // message/field_t common options
 
             /// @brief options to specify endian.
-            /// @tparam TEndian endian_type type. Must be either nil::marshalling::endian::big_endian or
-            ///     nil::marshalling::endian::little_endian.
+            /// @tparam TEndian endian_type type. Must be either nil::crypto3::marshalling::endian::big_endian or
+            ///     nil::crypto3::marshalling::endian::little_endian.
             /// @headerfile nil/marshalling/options.hpp
             template<typename TEndian>
             struct endian { };
 
             /// @brief Alias option to endian_type specifying big endian.
             /// @headerfile nil/marshalling/options.hpp
-            using big_endian = endian<nil::marshalling::endian::big_endian>;
+            using big_endian = endian<nil::crypto3::marshalling::endian::big_endian>;
 
             /// @brief Alias option to endian_type specifying little endian.
             /// @headerfile nil/marshalling/options.hpp
-            using little_endian = endian<nil::marshalling::endian::little_endian>;
+            using little_endian = endian<nil::crypto3::marshalling::endian::little_endian>;
 
             /// @brief No-op option, doesn't have any effect.
             /// @headerfile nil/marshalling/options.hpp
             struct empty_option { };
 
             /// @brief Option used to specify number of bytes that is used for field serialization.
-            /// @details Applicable only to numeric fields, such as nil::marshalling::types::integral or
-            ///     nil::marshalling::types::enumeration.
+            /// @details Applicable only to numeric fields, such as nil::crypto3::marshalling::types::integral or
+            ///     nil::crypto3::marshalling::types::enumeration.
             ///
             ///     For example, protocol specifies that some field is serialized using
             ///     only 3 bytes. There is no basic integral type that takes 3 bytes
             ///     of space exactly. The closest alternative is std::int32_t or
             ///     std::uint32_t. Such field may be defined as:
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::integral<
+            ///         nil::crypto3::marshalling::types::integral<
             ///             MyFieldBase,
             ///             std::uint32_t,
-            ///             nil::marshalling::option::fixed_length<3>
+            ///             nil::crypto3::marshalling::option::fixed_length<3>
             ///         >;
             ///     @endcode
             /// @tparam TLen length of the serialized value.
@@ -114,25 +114,25 @@ namespace nil {
             struct fixed_length { };
 
             /// @brief Option used to specify number of bits that is used for field serialization
-            ///     when a field is a member of nil::marshalling::types::bitfield.
+            ///     when a field is a member of nil::crypto3::marshalling::types::bitfield.
             /// @details For example, the protocol specifies that two independent integer
             ///     values of 6 and 10 bits respectively packed into two bytes to save space.
             ///     Such combined field may be defined as:
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::bitfield<
+            ///         nil::crypto3::marshalling::types::bitfield<
             ///             MyFieldBase,
             ///             std::tuple<
-            ///                 nil::marshalling::types::integral<
+            ///                 nil::crypto3::marshalling::types::integral<
             ///                     MyFieldBase,
             ///                     std::uint8_t,
-            ///                     nil::marshalling::option::fixed_bit_length<6>
+            ///                     nil::crypto3::marshalling::option::fixed_bit_length<6>
             ///                 >,
-            ///                 nil::marshalling::types::integral<
+            ///                 nil::crypto3::marshalling::types::integral<
             ///                     MyFieldBase,
             ///                     std::uint16_t,
-            ///                     nil::marshalling::option::fixed_bit_length<10>
+            ///                     nil::crypto3::marshalling::option::fixed_bit_length<10>
             ///                 >
             ///             >
             ///         >;
@@ -143,8 +143,8 @@ namespace nil {
             struct fixed_bit_length { };
 
             /// @brief Option used to specify that field may have variable serialization length
-            /// @details Applicable only to numeric fields, such as nil::marshalling::types::integral
-            ///     or nil::marshalling::types::enumeration.
+            /// @details Applicable only to numeric fields, such as nil::crypto3::marshalling::types::integral
+            ///     or nil::crypto3::marshalling::types::enumeration.
             ///     Use this option to specify that serialized value has
             ///     <a href="https://en.wikipedia.org/wiki/Variable-length_quantity">Base-128</a>
             ///     encoding, i.e. the most significant bit in the byte indicates whether
@@ -153,12 +153,12 @@ namespace nil {
             ///     which value can be serialized using between 1 and 4 bytes can be
             ///     defined as:
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::integral<
+            ///         nil::crypto3::marshalling::types::integral<
             ///             MyFieldBase,
             ///             std::uint32_t,
-            ///             nil::marshalling::option::var_length<1, 4>
+            ///             nil::crypto3::marshalling::option::var_length<1, 4>
             ///         >;
             ///         @endcode
             /// @tparam TMin Minimal length the field may consume.
@@ -171,8 +171,8 @@ namespace nil {
             };
 
             /// @brief Option to specify numeric value serialization offset.
-            /// @details Applicable only to numeric fields such as nil::marshalling::types::integral or
-            ///     nil::marshalling::types::enumeration.
+            /// @details Applicable only to numeric fields such as nil::crypto3::marshalling::types::integral or
+            ///     nil::crypto3::marshalling::types::enumeration.
             ///     The provided value will be added to the field's value and the
             ///     result will be written to the buffer when serialising. Good example
             ///     for such option would be serialising a "current year" value. Most protocols
@@ -180,21 +180,21 @@ namespace nil {
             ///     single byte, i.e. to specify year 2015 is to write value 15.
             ///     However it may be inconvenient to manually adjust serialized/deserialized
             ///     value by predefined offset 2000. To help with such case option
-            ///     nil::marshalling::option::num_value_ser_offset can be used. For example:
+            ///     nil::crypto3::marshalling::option::num_value_ser_offset can be used. For example:
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::integral<
+            ///         nil::crypto3::marshalling::types::integral<
             ///             MyFieldBase,
             ///             std::uint16_t,
-            ///             nil::marshalling::option::fixed_length<1>,
-            ///             nil::marshalling::option::num_value_ser_offset<-2000>
+            ///             nil::crypto3::marshalling::option::fixed_length<1>,
+            ///             nil::crypto3::marshalling::option::num_value_ser_offset<-2000>
             ///         >;
             ///     @endcode
             ///     Note that in the example above the field value (accessible by @b value() member
             ///     function of the field) will have type std::uint16_t and will be equal to
             ///     say 2015, while when serialized it consumes only 1 byte (thanks to
-            ///     nil::marshalling::option::fixed_length option) and reduced value of 15 is written.
+            ///     nil::crypto3::marshalling::option::fixed_length option) and reduced value of 15 is written.
             /// @tparam TOffset Offset value to be added when serialising field.
             /// @headerfile nil/marshalling/options.hpp
             template<std::intmax_t TOffset>
@@ -203,54 +203,54 @@ namespace nil {
             /// @brief Option that forces usage of embedded uninitialised data area instead
             ///     of dynamic memory allocation.
             /// @details Applicable to fields that represent collection of raw data or other
-            ///     fields, such as nil::marshalling::types::array_list or nil::marshalling::types::string. By
+            ///     fields, such as nil::crypto3::marshalling::types::array_list or nil::crypto3::marshalling::types::string. By
             ///     default, these fields will use
             ///     <a href="http://en.cppreference.com/w/cpp/container/vector">std::vector</a> or
             ///     <a href="http://en.cppreference.com/w/cpp/string/basic_string">std::string</a>
             ///     for their internal data storage. If this option is used, it will force
-            ///     such fields to use @ref nil::marshalling::container::static_vector or @ref
-            ///     nil::marshalling::container::static_string with the capacity provided by this option.
+            ///     such fields to use @ref nil::crypto3::marshalling::container::static_vector or @ref
+            ///     nil::crypto3::marshalling::container::static_string with the capacity provided by this option.
             /// @tparam TSize Size of the storage area in number of elements, for strings it does @b NOT include
             ///     the '\0' terminating character.
             /// @headerfile nil/marshalling/options.hpp
             template<std::size_t TSize>
             struct fixed_size_storage { };
 
-            /// @brief Set custom storage type for fields like nil::marshalling::types::string or
-            ///     nil::marshalling::types::array_list.
-            /// @details By default nil::marshalling::types::string uses
+            /// @brief Set custom storage type for fields like nil::crypto3::marshalling::types::string or
+            ///     nil::crypto3::marshalling::types::array_list.
+            /// @details By default nil::crypto3::marshalling::types::string uses
             ///     <a href="http://en.cppreference.com/w/cpp/string/basic_string">std::string</a>
-            ///     and nil::marshalling::types::array_list uses
+            ///     and nil::crypto3::marshalling::types::array_list uses
             ///     <a href="http://en.cppreference.com/w/cpp/container/vector">std::vector</a> as
             ///     their internal storage types. The @ref fixed_size_storage option forces
-            ///     them to use nil::marshalling::container::static_string and
-            ///     nil::marshalling::container::static_vector instead. This option can be used to provide any other
+            ///     them to use nil::crypto3::marshalling::container::static_string and
+            ///     nil::crypto3::marshalling::container::static_vector instead. This option can be used to provide any other
             ///     third party type. Such type must define the same public interface as @b std::string (when used with
-            ///     nil::marshalling::types::string) or @b std::vector (when used with
-            ///     nil::marshalling::types::array_list).
+            ///     nil::crypto3::marshalling::types::string) or @b std::vector (when used with
+            ///     nil::crypto3::marshalling::types::array_list).
             /// @tparam TType Custom storage type
             /// @headerfile nil/marshalling/options.hpp
             template<typename TType>
             struct custom_storage_type { };
 
             /// @brief Option to specify scaling ratio.
-            /// @details Applicable only to nil::marshalling::types::integral.
+            /// @details Applicable only to nil::crypto3::marshalling::types::integral.
             ///     Sometimes the protocol specifies values being transmitted in
             ///     one units while when handling the message they are better to be handled
             ///     in another. For example, some distance information is transmitted as
             ///     integer value of millimetres, but while processing it should be handled as floating
             ///     point value of meters. Such field is defined as:
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::integral<
+            ///         nil::crypto3::marshalling::types::integral<
             ///             MyFieldBase,
             ///             std::int32_t,
-            ///             nil::marshalling::option::scaling_ratio<1, 100>
+            ///             nil::crypto3::marshalling::option::scaling_ratio<1, 100>
             ///         >;
             ///     @endcode
             ///     Then, to accessed the scaled value of the field use @b scale_as() or
-            ///     @b set_scaled() methods of nil::marshalling::types::integral field:
+            ///     @b set_scaled() methods of nil::crypto3::marshalling::types::integral field:
             ///     @code
             ///     void processField(const MyField& field)
             ///     {
@@ -273,17 +273,17 @@ namespace nil {
             ///     prepended with one or more bytes indicating number of elements that will
             ///     follow.
             ///     Applicable to fields that represent collection of raw data or other
-            ///     fields, such as nil::marshalling::types::array_list or nil::marshalling::types::string.@n
+            ///     fields, such as nil::crypto3::marshalling::types::array_list or nil::crypto3::marshalling::types::string.@n
             ///     For example sequence of raw bytes must be prefixed with 2 bytes stating
             ///     the size of the sequence:
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::array_list<
+            ///         nil::crypto3::marshalling::types::array_list<
             ///             MyFieldBase,
             ///             std::uint8_t,
-            ///             nil::marshalling::option::sequence_size_field_prefix<
-            ///                 nil::marshalling::types::integral<MyFieldBase, std::uint16_t>
+            ///             nil::crypto3::marshalling::option::sequence_size_field_prefix<
+            ///                 nil::crypto3::marshalling::types::integral<MyFieldBase, std::uint16_t>
             ///             >
             ///         >;
             ///     @endcode
@@ -294,7 +294,7 @@ namespace nil {
 
             template <typename TTypeBase>
                 using size_t_sequence_size_field_prefix = sequence_size_field_prefix<
-                    nil::marshalling::types::integral<TTypeBase, std::size_t>>;
+                    nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>>;
 
             /// @brief Option that modifies the default behaviour of collection fields to
             ///     prepend the serialized data with number of @b bytes information.
@@ -302,18 +302,18 @@ namespace nil {
             ///     number of @b elements to follow, the prefix field contains number of
             ///     @b bytes that will follow.
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::array_list<
+            ///         nil::crypto3::marshalling::types::array_list<
             ///             MyFieldBase,
-            ///             nil::marshalling::types::bundle<
+            ///             nil::crypto3::marshalling::types::bundle<
             ///                 std::tuple<
-            ///                     nil::marshalling::types::integral<MyFieldBase, std::uint32_t>,
-            ///                     nil::marshalling::types::string<MyFieldBase>
+            ///                     nil::crypto3::marshalling::types::integral<MyFieldBase, std::uint32_t>,
+            ///                     nil::crypto3::marshalling::types::string<MyFieldBase>
             ///                 >
             ///             >,
-            ///             nil::marshalling::option::sequence_ser_length_field_prefix<
-            ///                 nil::marshalling::types::integral<MyFieldBase, std::uint16_t>
+            ///             nil::crypto3::marshalling::option::sequence_ser_length_field_prefix<
+            ///                 nil::crypto3::marshalling::types::integral<MyFieldBase, std::uint16_t>
             ///             >
             ///         >;
             ///     @endcode
@@ -324,7 +324,7 @@ namespace nil {
                      status_type TReadErrorStatus = status_type::invalid_msg_data>
             struct sequence_ser_length_field_prefix { };
 
-            /// @brief Option that forces <b>every element</b> of @ref nil::marshalling::types::array_list to
+            /// @brief Option that forces <b>every element</b> of @ref nil::crypto3::marshalling::types::array_list to
             ///     be prefixed with its serialization length.
             /// @details Similar to @ref sequence_ser_length_field_prefix but instead of the whole
             ///     list, every element is prepended with its serialization length.
@@ -335,7 +335,7 @@ namespace nil {
                      status_type TReadErrorStatus = status_type::invalid_msg_data>
             struct sequence_elem_ser_length_field_prefix { };
 
-            /// @brief Option that forces @b first element only of @ref nil::marshalling::types::array_list to
+            /// @brief Option that forces @b first element only of @ref nil::crypto3::marshalling::types::array_list to
             ///     be prefixed with its serialization length.
             /// @details Similar to @ref sequence_elem_ser_length_field_prefix, but
             ///     applicable only to the lists where elements are of the same
@@ -354,13 +354,13 @@ namespace nil {
             ///     prefixing them with their size. Below is an example of how to achieve
             ///     such termination using sequence_termination_field_suffix option.
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::string<
+            ///         nil::crypto3::marshalling::types::string<
             ///             MyFieldBase,
-            ///             nil::marshalling::option::sequence_termination_field_suffix<
-            ///                 nil::marshalling::types::integral<MyFieldBase, char,
-            ///                 nil::marshalling::option::default_num_value<0> >
+            ///             nil::crypto3::marshalling::option::sequence_termination_field_suffix<
+            ///                 nil::crypto3::marshalling::types::integral<MyFieldBase, char,
+            ///                 nil::crypto3::marshalling::option::default_num_value<0> >
             ///             >
             ///         >;
             ///     @endcode
@@ -378,14 +378,14 @@ namespace nil {
             ///     occupies exactly 6 bytes when serialized (padded with zeroes at the end)
             ///     will be defined like this:
             ///     @code
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::string<
+            ///         nil::crypto3::marshalling::types::string<
             ///             MyFieldBase,
-            ///             nil::marshalling::option::sequence_fixed_size<5>,
-            ///             nil::marshalling::option::sequence_trailing_field_suffix<
-            ///                 nil::marshalling::types::integral<MyFieldBase, char,
-            ///                 nil::marshalling::option::default_num_value<0> >
+            ///             nil::crypto3::marshalling::option::sequence_fixed_size<5>,
+            ///             nil::crypto3::marshalling::option::sequence_trailing_field_suffix<
+            ///                 nil::crypto3::marshalling::types::integral<MyFieldBase, char,
+            ///                 nil::crypto3::marshalling::option::default_num_value<0> >
             ///             >
             ///         >;
             ///     @endcode
@@ -401,8 +401,8 @@ namespace nil {
             ///     impossible to use @ref sequence_size_field_prefix option. Instead, the size
             ///     information must be provided by external calls. Usage of this option
             ///     enables @b force_read_elem_count() and @b clear_read_elem_count() functions in
-            ///     the collection fields, such as nil::marshalling::types::array_list or
-            ///     nil::marshalling::types::string which can be used to specify the size information after it was read
+            ///     the collection fields, such as nil::crypto3::marshalling::types::array_list or
+            ///     nil::crypto3::marshalling::types::string which can be used to specify the size information after it was read
             ///     independently.
             /// @headerfile nil/marshalling/options.hpp
             struct sequence_size_forcing_enabled { };
@@ -415,8 +415,8 @@ namespace nil {
             ///     impossible to use @ref sequence_ser_length_field_prefix option. Instead, the length
             ///     information must be provided by external calls. Usage of this option
             ///     enables @b force_read_length() and @b clear_read_length_forcing() functions in
-            ///     the collection fields, such as nil::marshalling::types::array_list or
-            ///     nil::marshalling::types::string which can be used to specify the size information after it was read
+            ///     the collection fields, such as nil::crypto3::marshalling::types::array_list or
+            ///     nil::crypto3::marshalling::types::string which can be used to specify the size information after it was read
             ///     independently.
             /// @headerfile nil/marshalling/options.hpp
             struct sequence_length_forcing_enabled { };
@@ -427,7 +427,7 @@ namespace nil {
             ///     length of a <b>single element</b> in addition to the number of elements
             ///     in the list. Usage of this option
             ///     enables @b force_read_elem_length() and @b clear_read_elem_length_forcing() functions in
-            ///     the nil::marshalling::types::array_list
+            ///     the nil::crypto3::marshalling::types::array_list
             ///     which can be used to specify the element serialization length after it was read
             ///     independently. @n
             /// @headerfile nil/marshalling/options.hpp
@@ -445,7 +445,7 @@ namespace nil {
             /// @brief Option that forces usage of fixed size storage for sequences with fixed
             ///     size.
             /// @details Equivalent to @ref fixed_size_storage option, but applicable only
-            ///     to sequence types @ref nil::marshalling::types::array_list or @ref nil::marshalling::types::string,
+            ///     to sequence types @ref nil::crypto3::marshalling::types::array_list or @ref nil::crypto3::marshalling::types::string,
             ///     that alrady use @ref sequence_fixed_size option. Usage of this option do not require knowledge of
             ///     the storage area size.
             /// @headerfile nil/marshalling/options.hpp
@@ -476,11 +476,11 @@ namespace nil {
             ///         }
             ///     };
             ///
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::string<
+            ///         nil::crypto3::marshalling::types::string<
             ///             MyFieldBase,
-            ///             nil::marshalling::option::default_value_initializer<MyStringInitialiser>
+            ///             nil::crypto3::marshalling::option::default_value_initializer<MyStringInitialiser>
             ///         >;
             ///     @endcode
             /// @tparam T Type of the initializer class.
@@ -516,16 +516,16 @@ namespace nil {
             ///         }
             ///     };
             ///
-            ///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+            ///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
             ///     using MyField =
-            ///         nil::marshalling::types::string<
+            ///         nil::crypto3::marshalling::types::string<
             ///             MyFieldBase,
-            ///             nil::marshalling::option::contents_validator<MyStringValidator>
+            ///             nil::crypto3::marshalling::option::contents_validator<MyStringValidator>
             ///         >;
             ///     @endcode
             ///     Note that in the example above the default constructed MyField will
             ///     have invalid value. To fix that you must also use
-            ///     nil::marshalling::option::default_value_initializer option to specify proper default
+            ///     nil::crypto3::marshalling::option::default_value_initializer option to specify proper default
             ///     value.
             /// @tparam T Type of the validator class.
             /// @headerfile nil/marshalling/options.hpp
@@ -555,28 +555,28 @@ namespace nil {
 
             /// @brief Option that specifies custom value reader class.
             /// @details It may be useful to override default reading functionality for complex
-            ///     fields, such as nil::marshalling::types::bundle, where the way members are read is
+            ///     fields, such as nil::crypto3::marshalling::types::bundle, where the way members are read is
             ///     defined by the values of other members. For example, bundle of two integer
             ///     fields, the first one is normal, and the second one is optional.
             ///     The optional mode of the latter is determined by
             ///     the value of the first field. If its value is 0, than the second
             ///     member exists, otherwise it's missing.
             ///     @code
-            ///     typedef nil::marshalling::types::bundle<
-            ///         nil::marshalling::field_type<BigEndianOpt>,
+            ///     typedef nil::crypto3::marshalling::types::bundle<
+            ///         nil::crypto3::marshalling::field_type<BigEndianOpt>,
             ///         std::tuple<
-            ///             nil::marshalling::types::integral<
-            ///                 nil::marshalling::field_type<BigEndianOpt>,
+            ///             nil::crypto3::marshalling::types::integral<
+            ///                 nil::crypto3::marshalling::field_type<BigEndianOpt>,
             ///                 std::uint8_t
             ///             >,
-            ///             nil::marshalling::types::optional<
-            ///                 nil::marshalling::types::integral<
-            ///                     nil::marshalling::field_type<BigEndianOpt>,
+            ///             nil::crypto3::marshalling::types::optional<
+            ///                 nil::crypto3::marshalling::types::integral<
+            ///                     nil::crypto3::marshalling::field_type<BigEndianOpt>,
             ///                     std::uint16_t
             ///                 >
             ///             >
             ///         >,
-            ///         nil::marshalling::option::custom_value_reader<MyCustomReader>
+            ///         nil::crypto3::marshalling::option::custom_value_reader<MyCustomReader>
             ///     > field_type;
             ///     @endcode
             ///     The @b MyCustomReader custom reading class may implement required
@@ -589,7 +589,7 @@ namespace nil {
             ///     struct MyCustomReader
             ///     {
             ///         template <typename TField, typename TIter>
-            ///         nil::marshalling::ErrorStatus operator()(TField& field, TIter& iter, std::size_t len) {...}
+            ///         nil::crypto3::marshalling::ErrorStatus operator()(TField& field, TIter& iter, std::size_t len) {...}
             ///     };
             ///     @endcode
             ///
@@ -598,22 +598,22 @@ namespace nil {
             ///     struct MyCustomReader
             ///     {
             ///         template <typename TField, typename TIter>
-            ///         nil::marshalling::ErrorStatus operator()(TField& field, TIter& iter, std::size_t len) const
+            ///         nil::crypto3::marshalling::ErrorStatus operator()(TField& field, TIter& iter, std::size_t len) const
             ///         {
             ///             auto& members = field.value();
             ///             auto& first = std::get<0>(members);
             ///             auto& second = std::get<1>(members);
             ///
             ///             auto es = first.read(iter, len);
-            ///             if (es != nil::marshalling::ErrorStatus::Success) {
+            ///             if (es != nil::crypto3::marshalling::ErrorStatus::Success) {
             ///                 return es;
             ///             }
             ///
             ///             if (first.value() != 0) {
-            ///                 second.set_mode(nil::marshalling::types::optional_mode::missing);
+            ///                 second.set_mode(nil::crypto3::marshalling::types::optional_mode::missing);
             ///             }
             ///             else {
-            ///                 second.set_mode(nil::marshalling::types::optional_mode::exists);
+            ///                 second.set_mode(nil::crypto3::marshalling::types::optional_mode::exists);
             ///             }
             ///
             ///             return second.read(iter, len - first.length());
@@ -629,7 +629,7 @@ namespace nil {
             ///     is received.
             /// @details Sometimes protocol is very strict about what field's values are
             ///     allowed and forces to abandon a message if invalid value is received.
-            ///     If nil::marshalling::option::fail_on_invalid is provided as an option to a field,
+            ///     If nil::crypto3::marshalling::option::fail_on_invalid is provided as an option to a field,
             ///     the validity is going to checked automatically after the read. If invalid
             ///     value is identified, error will be returned from the @b read() operation.
             /// @tparam TStatus Error status to return when the content of the read field is invalid.
@@ -647,7 +647,7 @@ namespace nil {
             struct ignore_invalid { };
 
             /// @brief options to specify units of the field.
-            /// @tparam TType Type of the unints, can be any type from nil::marshalling::traits::units
+            /// @tparam TType Type of the unints, can be any type from nil::crypto3::marshalling::traits::units
             ///     namespace.
             /// @tparam TRatio Ratio within the units type, must be a variant of
             ///     @b std::ratio type.
@@ -663,187 +663,187 @@ namespace nil {
             /// @brief Alias option, specifying field value units are "nanoseconds".
             /// @headerfile nil/marshalling/options.hpp
             using units_nanoseconds
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::nanoseconds_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::nanoseconds_ratio>;
 
             /// @brief Alias option, specifying field value units are "microseconds".
             /// @headerfile nil/marshalling/options.hpp
             using units_microseconds
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::microseconds_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::microseconds_ratio>;
 
             /// @brief Alias option, specifying field value units are "milliseconds".
             /// @headerfile nil/marshalling/options.hpp
             using units_milliseconds
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::milliseconds_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::milliseconds_ratio>;
 
             /// @brief Alias option, specifying field value units are "seconds".
             /// @headerfile nil/marshalling/options.hpp
             using units_seconds
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::seconds_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::seconds_ratio>;
 
             /// @brief Alias option, specifying field value units are "minutes".
             /// @headerfile nil/marshalling/options.hpp
             using units_minutes
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::minutes_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::minutes_ratio>;
 
             /// @brief Alias option, specifying field value units are "hours".
             /// @headerfile nil/marshalling/options.hpp
             using units_hours
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::hours_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::hours_ratio>;
 
             /// @brief Alias option, specifying field value units are "days".
             /// @headerfile nil/marshalling/options.hpp
             using units_days
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::days_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::days_ratio>;
 
             /// @brief Alias option, specifying field value units are "weeks".
             /// @headerfile nil/marshalling/options.hpp
             using units_weeks
-                = units<nil::marshalling::traits::units::Time, nil::marshalling::traits::units::weeks_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::Time, nil::crypto3::marshalling::traits::units::weeks_ratio>;
 
             /// @brief Alias option, specifying field value units are "nanometers".
             /// @headerfile nil/marshalling/options.hpp
             using units_nanometers
-                = units<nil::marshalling::traits::units::distance, nil::marshalling::traits::units::nanometers_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::distance, nil::crypto3::marshalling::traits::units::nanometers_ratio>;
 
             /// @brief Alias option, specifying field value units are "micrometers".
             /// @headerfile nil/marshalling/options.hpp
             using units_micrometers
-                = units<nil::marshalling::traits::units::distance, nil::marshalling::traits::units::micrometers_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::distance, nil::crypto3::marshalling::traits::units::micrometers_ratio>;
 
             /// @brief Alias option, specifying field value units are "millimeters".
             /// @headerfile nil/marshalling/options.hpp
             using units_millimeters
-                = units<nil::marshalling::traits::units::distance, nil::marshalling::traits::units::millimeters_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::distance, nil::crypto3::marshalling::traits::units::millimeters_ratio>;
 
             /// @brief Alias option, specifying field value units are "centimeters".
             /// @headerfile nil/marshalling/options.hpp
             using units_centimeters
-                = units<nil::marshalling::traits::units::distance, nil::marshalling::traits::units::centimeters_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::distance, nil::crypto3::marshalling::traits::units::centimeters_ratio>;
 
             /// @brief Alias option, specifying field value units are "meters".
             /// @headerfile nil/marshalling/options.hpp
             using units_meters
-                = units<nil::marshalling::traits::units::distance, nil::marshalling::traits::units::meters_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::distance, nil::crypto3::marshalling::traits::units::meters_ratio>;
 
             /// @brief Alias option, specifying field value units are "kilometers".
             /// @headerfile nil/marshalling/options.hpp
             using units_kilometers
-                = units<nil::marshalling::traits::units::distance, nil::marshalling::traits::units::kilometers_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::distance, nil::crypto3::marshalling::traits::units::kilometers_ratio>;
 
             /// @brief Alias option, specifying field value units are "nanometers per second".
             /// @headerfile nil/marshalling/options.hpp
-            using units_nanometers_per_second = units<nil::marshalling::traits::units::speed,
-                                                      nil::marshalling::traits::units::nanometers_per_second_ratio>;
+            using units_nanometers_per_second = units<nil::crypto3::marshalling::traits::units::speed,
+                                                      nil::crypto3::marshalling::traits::units::nanometers_per_second_ratio>;
 
             /// @brief Alias option, specifying field value units are "micrometers per second".
             /// @headerfile nil/marshalling/options.hpp
-            using units_micrometers_per_second = units<nil::marshalling::traits::units::speed,
-                                                       nil::marshalling::traits::units::micrometers_per_second_ratio>;
+            using units_micrometers_per_second = units<nil::crypto3::marshalling::traits::units::speed,
+                                                       nil::crypto3::marshalling::traits::units::micrometers_per_second_ratio>;
 
             /// @brief Alias option, specifying field value units are "millimeters per second".
             /// @headerfile nil/marshalling/options.hpp
-            using units_millimeters_per_second = units<nil::marshalling::traits::units::speed,
-                                                       nil::marshalling::traits::units::millimeters_per_second_ratio>;
+            using units_millimeters_per_second = units<nil::crypto3::marshalling::traits::units::speed,
+                                                       nil::crypto3::marshalling::traits::units::millimeters_per_second_ratio>;
 
             /// @brief Alias option, specifying field value units are "centimeters per second".
             /// @headerfile nil/marshalling/options.hpp
-            using units_centimeters_per_second = units<nil::marshalling::traits::units::speed,
-                                                       nil::marshalling::traits::units::centimeters_per_second_ratio>;
+            using units_centimeters_per_second = units<nil::crypto3::marshalling::traits::units::speed,
+                                                       nil::crypto3::marshalling::traits::units::centimeters_per_second_ratio>;
 
             /// @brief Alias option, specifying field value units are "meters per second".
             /// @headerfile nil/marshalling/options.hpp
-            using units_meters_per_second = units<nil::marshalling::traits::units::speed,
-                                                  nil::marshalling::traits::units::meters_per_second_ratio>;
+            using units_meters_per_second = units<nil::crypto3::marshalling::traits::units::speed,
+                                                  nil::crypto3::marshalling::traits::units::meters_per_second_ratio>;
 
             /// @brief Alias option, specifying field value units are "kilometers per second".
             /// @headerfile nil/marshalling/options.hpp
-            using units_kilometers_per_second = units<nil::marshalling::traits::units::speed,
-                                                      nil::marshalling::traits::units::kilometers_per_second_ratio>;
+            using units_kilometers_per_second = units<nil::crypto3::marshalling::traits::units::speed,
+                                                      nil::crypto3::marshalling::traits::units::kilometers_per_second_ratio>;
 
             /// @brief Alias option, specifying field value units are "kilometers per hour".
             /// @headerfile nil/marshalling/options.hpp
-            using units_kilometers_per_hour = units<nil::marshalling::traits::units::speed,
-                                                    nil::marshalling::traits::units::kilometers_per_hour_ratio>;
+            using units_kilometers_per_hour = units<nil::crypto3::marshalling::traits::units::speed,
+                                                    nil::crypto3::marshalling::traits::units::kilometers_per_hour_ratio>;
 
             /// @brief Alias option, specifying field value units are "hertz".
             /// @headerfile nil/marshalling/options.hpp
             using units_hertz
-                = units<nil::marshalling::traits::units::frequency, nil::marshalling::traits::units::hz_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::frequency, nil::crypto3::marshalling::traits::units::hz_ratio>;
 
             /// @brief Alias option, specifying field value units are "kilohertz".
             /// @headerfile nil/marshalling/options.hpp
             using units_kilohertz
-                = units<nil::marshalling::traits::units::frequency, nil::marshalling::traits::units::kilo_hz_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::frequency, nil::crypto3::marshalling::traits::units::kilo_hz_ratio>;
 
             /// @brief Alias option, specifying field value units are "megahertz".
             /// @headerfile nil/marshalling/options.hpp
             using units_megahertz
-                = units<nil::marshalling::traits::units::frequency, nil::marshalling::traits::units::mega_hz_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::frequency, nil::crypto3::marshalling::traits::units::mega_hz_ratio>;
 
             /// @brief Alias option, specifying field value units are "gigahertz".
             /// @headerfile nil/marshalling/options.hpp
             using units_gigahertz
-                = units<nil::marshalling::traits::units::frequency, nil::marshalling::traits::units::giga_hz_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::frequency, nil::crypto3::marshalling::traits::units::giga_hz_ratio>;
 
             /// @brief Alias option, specifying field value units are "degrees".
             /// @headerfile nil/marshalling/options.hpp
             using units_degrees
-                = units<nil::marshalling::traits::units::angle, nil::marshalling::traits::units::degrees_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::angle, nil::crypto3::marshalling::traits::units::degrees_ratio>;
 
             /// @brief Alias option, specifying field value units are "radians".
             /// @headerfile nil/marshalling/options.hpp
             using units_radians
-                = units<nil::marshalling::traits::units::angle, nil::marshalling::traits::units::radians_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::angle, nil::crypto3::marshalling::traits::units::radians_ratio>;
 
             /// @brief Alias option, specifying field value units are "nanoamps".
             /// @headerfile nil/marshalling/options.hpp
             using units_nanoamps
-                = units<nil::marshalling::traits::units::current, nil::marshalling::traits::units::nanoamps_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::current, nil::crypto3::marshalling::traits::units::nanoamps_ratio>;
 
             /// @brief Alias option, specifying field value units are "microamps".
             /// @headerfile nil/marshalling/options.hpp
             using units_microamps
-                = units<nil::marshalling::traits::units::current, nil::marshalling::traits::units::microamps_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::current, nil::crypto3::marshalling::traits::units::microamps_ratio>;
 
             /// @brief Alias option, specifying field value units are "milliamps".
             /// @headerfile nil/marshalling/options.hpp
             using units_milliamps
-                = units<nil::marshalling::traits::units::current, nil::marshalling::traits::units::milliamps_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::current, nil::crypto3::marshalling::traits::units::milliamps_ratio>;
 
             /// @brief Alias option, specifying field value units are "amps".
             /// @headerfile nil/marshalling/options.hpp
             using units_amps
-                = units<nil::marshalling::traits::units::current, nil::marshalling::traits::units::amps_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::current, nil::crypto3::marshalling::traits::units::amps_ratio>;
 
             /// @brief Alias option, specifying field value units are "kiloamps".
             /// @headerfile nil/marshalling/options.hpp
             using units_kiloamps
-                = units<nil::marshalling::traits::units::current, nil::marshalling::traits::units::kiloamps_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::current, nil::crypto3::marshalling::traits::units::kiloamps_ratio>;
 
             /// @brief Alias option, specifying field value units are "nanovolts".
             /// @headerfile nil/marshalling/options.hpp
             using units_nanovolts
-                = units<nil::marshalling::traits::units::voltage, nil::marshalling::traits::units::nanovolts_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::voltage, nil::crypto3::marshalling::traits::units::nanovolts_ratio>;
 
             /// @brief Alias option, specifying field value units are "microvolts".
             /// @headerfile nil/marshalling/options.hpp
             using units_microvolts
-                = units<nil::marshalling::traits::units::voltage, nil::marshalling::traits::units::microvolts_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::voltage, nil::crypto3::marshalling::traits::units::microvolts_ratio>;
 
             /// @brief Alias option, specifying field value units are "millivolts".
             /// @headerfile nil/marshalling/options.hpp
             using units_millivolts
-                = units<nil::marshalling::traits::units::voltage, nil::marshalling::traits::units::millivolts_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::voltage, nil::crypto3::marshalling::traits::units::millivolts_ratio>;
 
             /// @brief Alias option, specifying field value units are "volts".
             /// @headerfile nil/marshalling/options.hpp
             using units_volts
-                = units<nil::marshalling::traits::units::voltage, nil::marshalling::traits::units::volts_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::voltage, nil::crypto3::marshalling::traits::units::volts_ratio>;
 
             /// @brief Alias option, specifying field value units are "kilovolts".
             /// @headerfile nil/marshalling/options.hpp
             using units_kilovolts
-                = units<nil::marshalling::traits::units::voltage, nil::marshalling::traits::units::kilovolts_ratio>;
+                = units<nil::crypto3::marshalling::traits::units::voltage, nil::crypto3::marshalling::traits::units::kilovolts_ratio>;
 
             namespace detail {
 
@@ -915,7 +915,7 @@ namespace nil {
                     }
                 };
 
-                template<nil::marshalling::types::optional_mode TVal>
+                template<nil::crypto3::marshalling::types::optional_mode TVal>
                 struct default_opt_mode_initializer {
                     template<typename TField>
                     void operator()(TField &field) const {
@@ -958,8 +958,8 @@ namespace nil {
                 = default_value_initializer<detail::default_num_value_initializer<std::uintmax_t, TVal>>;
 
             /// @brief Provide range of valid numeric values.
-            /// @details Quite often numeric fields such as nil::marshalling::types::integral or
-            ///     nil::marshalling::types::enumeration have limited number of valid values ranges.
+            /// @details Quite often numeric fields such as nil::crypto3::marshalling::types::integral or
+            ///     nil::crypto3::marshalling::types::enumeration have limited number of valid values ranges.
             ///     This option can be used multiple times to provide several valid ranges.@n
             ///     If values are too big to fit into @b std::intmax_t type, please use
             ///     @ref valid_big_unsigned_num_value_range option instead.
@@ -1040,7 +1040,7 @@ namespace nil {
 
             /// @brief Alias to contents_validator, it defines validator class that checks
             ///     that reserved bits of the field have expected values.
-            /// @details It is usually used with nil::marshalling::types::BitmaskValue field to
+            /// @details It is usually used with nil::crypto3::marshalling::types::BitmaskValue field to
             ///     specify values of the unused/reserved bits.
             ///     The custom validator will return true if
             ///     @code
@@ -1058,30 +1058,30 @@ namespace nil {
             /// @see @ref MissingByDefault
             /// @see @ref ExistsByDefault
             /// @headerfile nil/marshalling/options.hpp
-            template<nil::marshalling::types::optional_mode TVal>
+            template<nil::crypto3::marshalling::types::optional_mode TVal>
             using default_optional_mode = default_value_initializer<detail::default_opt_mode_initializer<TVal>>;
 
             /// @brief Alias to @ref default_optional_mode.
             /// @details Equivalent to
             ///     @code
-            ///     default_optional_mode<nil::marshalling::types::optional_mode::missing>
+            ///     default_optional_mode<nil::crypto3::marshalling::types::optional_mode::missing>
             ///     @endcode
-            using missing_by_default = default_optional_mode<nil::marshalling::types::optional_mode::missing>;
+            using missing_by_default = default_optional_mode<nil::crypto3::marshalling::types::optional_mode::missing>;
 
             /// @brief Alias to @ref default_optional_mode.
             /// @details Equivalent to
             ///     @code
-            ///     default_optional_mode<nil::marshalling::types::optional_mode::exists>
+            ///     default_optional_mode<nil::crypto3::marshalling::types::optional_mode::exists>
             ///     @endcode
-            using exists_by_default = default_optional_mode<nil::marshalling::types::optional_mode::exists>;
+            using exists_by_default = default_optional_mode<nil::crypto3::marshalling::types::optional_mode::exists>;
 
-            /// @brief Alias to default_optional_mode<nil::marshalling::types::OptinalMode::missing>
+            /// @brief Alias to default_optional_mode<nil::crypto3::marshalling::types::OptinalMode::missing>
             using optional_missing_by_default = missing_by_default;
 
-            /// @brief Alias to default_optional_mode<nil::marshalling::types::OptinalMode::exists>
+            /// @brief Alias to default_optional_mode<nil::crypto3::marshalling::types::OptinalMode::exists>
             using optional_exists_by_default = exists_by_default;
 
-            /// @brief Alias to default_value_initializer, it initalises nil::marshalling::types::variant field
+            /// @brief Alias to default_value_initializer, it initalises nil::crypto3::marshalling::types::variant field
             ///     to contain valid default value of the specified member.
             /// @tparam TIdx Index of the default member.
             /// @headerfile nil/marshalling/options.hpp
@@ -1089,15 +1089,15 @@ namespace nil {
             using default_variant_index = default_value_initializer<detail::default_variant_index_initializer<TIdx>>;
 
             /// @brief Use "view" on original raw data instead of copying it.
-            /// @details Can be used with @ref nil::marshalling::types::string and raw data @ref
-            /// nil::marshalling::types::array_list,
-            ///     will force usage of @ref nil::marshalling::container::string_view and
-            ///     nil::marshalling::container::array_view respectively as data storage type.
+            /// @details Can be used with @ref nil::crypto3::marshalling::types::string and raw data @ref
+            /// nil::crypto3::marshalling::types::array_list,
+            ///     will force usage of @ref nil::crypto3::marshalling::container::string_view and
+            ///     nil::crypto3::marshalling::container::array_view respectively as data storage type.
             /// @note The original data must be preserved until destruction of the field
             ///     that uses the "view".
             /// @note Incompatible with other options that contol data storage type,
-            ///     such as @ref nil::marshalling::option::custom_storage_type or @ref
-            ///     nil::marshalling::option::fixed_size_storage
+            ///     such as @ref nil::crypto3::marshalling::option::custom_storage_type or @ref
+            ///     nil::crypto3::marshalling::option::fixed_size_storage
             /// @headerfile nil/marshalling/options.hpp
             struct orig_data_view { };
 
@@ -1134,7 +1134,7 @@ namespace nil {
             /// @headerfile nil/marshalling/options.hpp
             struct has_custom_version_update { };
 
-            /// @brief Mark an @ref nil::marshalling::types::optional field as existing
+            /// @brief Mark an @ref nil::crypto3::marshalling::types::optional field as existing
             ///     between specified versions.
             /// @tparam TFrom First version when field has been added
             /// @tparam TUntil Last version when field still hasn't been removed.
@@ -1144,14 +1144,14 @@ namespace nil {
                 static_assert(TFrom <= TUntil, "Invalid version parameters");
             };
 
-            /// @brief Mark an @ref nil::marshalling::types::optional field as existing
+            /// @brief Mark an @ref nil::crypto3::marshalling::types::optional field as existing
             ///     starting from specified version.
             /// @details Alias to @ref ExistsBetweenVersions
             /// @tparam TVer First version when field has been added
             template<std::uintmax_t TVer>
             using exists_since_version = exists_between_versions<TVer, std::numeric_limits<std::uintmax_t>::max()>;
 
-            /// @brief Mark an @ref nil::marshalling::types::optional field as existing
+            /// @brief Mark an @ref nil::crypto3::marshalling::types::optional field as existing
             ///     only until specified version.
             /// @details Alias to @ref ExistsBetweenVersions
             /// @tparam TVer Last version when field still hasn't been removed.

@@ -29,7 +29,7 @@
 #include <nil/marshalling/endianness.hpp>
 #include <nil/marshalling/options.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace detail {
 
@@ -40,26 +40,26 @@ namespace nil {
             class field_base<> {
             protected:
                 // Use big endian by default
-                using endian_type = nil::marshalling::endian::big_endian;
+                using endian_type = nil::crypto3::marshalling::endian::big_endian;
 
                 // Use unsigned type by default for versioning
                 using version_type = unsigned;
             };
 
             template<typename TEndian, typename... TOptions>
-            class field_base<nil::marshalling::option::endian<TEndian>, TOptions...> : public field_base<TOptions...> {
+            class field_base<nil::crypto3::marshalling::option::endian<TEndian>, TOptions...> : public field_base<TOptions...> {
             protected:
                 using endian_type = TEndian;
             };
 
             template<typename T, typename... TOptions>
-            class field_base<nil::marshalling::option::version_type<T>, TOptions...> : public field_base<TOptions...> {
+            class field_base<nil::crypto3::marshalling::option::version_type<T>, TOptions...> : public field_base<TOptions...> {
             protected:
                 using version_type = T;
             };
 
             template<typename... TOptions>
-            class field_base<nil::marshalling::option::empty_option, TOptions...> : public field_base<TOptions...> { };
+            class field_base<nil::crypto3::marshalling::option::empty_option, TOptions...> : public field_base<TOptions...> { };
 
             template<typename... TTuple, typename... TOptions>
             class field_base<std::tuple<TTuple...>, TOptions...> : public field_base<TTuple..., TOptions...> { };

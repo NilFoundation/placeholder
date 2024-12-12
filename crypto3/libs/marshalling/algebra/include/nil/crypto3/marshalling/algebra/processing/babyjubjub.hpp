@@ -62,7 +62,7 @@ namespace nil {
 
                 template<typename Coordinates>
                 struct curve_element_writer<
-                    nil::marshalling::endian::little_endian,
+                    nil::crypto3::marshalling::endian::little_endian,
                     typename algebra::curves::babyjubjub::template g1_type<Coordinates,
                                                                            algebra::curves::forms::twisted_edwards>> {
                     using group_type =
@@ -71,14 +71,14 @@ namespace nil {
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::little_endian;
+                    using endianness = nil::crypto3::marshalling::endian::little_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
                     using encoded_integral_type = typename algebra::fields::field<256>::integral_type;
 
                     template<typename TIter>
                     static typename std::enable_if<
                     std::is_same<std::uint8_t, typename std::iterator_traits<TIter>::value_type>::value,
-                        nil::marshalling::status_type>::type
+                        nil::crypto3::marshalling::status_type>::type
                         process(const group_value_type &point, TIter &iter) {
                         using base_field_type = typename group_type::field_type;
                         using base_integral_type = typename base_field_type::integral_type;
@@ -98,7 +98,7 @@ namespace nil {
                         uint8_t s = detail::sign_gf_p<base_field_type>(point_affine.X) ? (0x40) : 0;
 
                         auto tmp_iter = std::begin(encoded_value);
-                        write_data<encoded_size, endianness>(static_cast<base_integral_type>(point_affine.Y.data),
+                        multiprecision::processing::write_data<encoded_size, endianness>(static_cast<base_integral_type>(point_affine.Y.data),
                                 tmp_iter);
                         assert(!(encoded_value[encoded_size - 1] & 0xC0));
 
@@ -106,14 +106,14 @@ namespace nil {
 
                         std::copy(std::cbegin(encoded_value), std::cend(encoded_value), iter);
 
-                        return nil::marshalling::status_type::success;
+                        return nil::crypto3::marshalling::status_type::success;
                     }
                 };
 
 
                 template<typename Coordinates>
                 struct curve_element_reader<
-                    nil::marshalling::endian::little_endian,
+                    nil::crypto3::marshalling::endian::little_endian,
                     typename algebra::curves::babyjubjub::template g1_type<Coordinates,
                                                                            algebra::curves::forms::twisted_edwards>> {
                     using group_type =
@@ -122,7 +122,7 @@ namespace nil {
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::little_endian;
+                    using endianness = nil::crypto3::marshalling::endian::little_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
 
                     using group_affine_value_type =
@@ -132,7 +132,7 @@ namespace nil {
                     template<typename TIter>
                     static typename std::enable_if<
                         std::is_same<std::uint8_t, typename std::iterator_traits<TIter>::value_type>::value,
-                        nil::marshalling::status_type>::type
+                        nil::crypto3::marshalling::status_type>::type
                         process(group_value_type &point, TIter &iter)
                     {
                         using base_field_type = typename group_type::field_type;
@@ -146,7 +146,7 @@ namespace nil {
                                       "wrong size");
 
                         base_integral_type y =
-                            read_data<params_type::bit_length(), base_integral_type, endianness>(iter);
+                            multiprecision::processing::read_data<params_type::bit_length(), base_integral_type, endianness>(iter);
                         bool sign = *(iter + encoded_size - 1) & (1 << 6);
 
                         auto decoded_point_affine =
@@ -157,7 +157,7 @@ namespace nil {
                         }
 
                         point = decoded_point_affine.value();
-                        return nil::marshalling::status_type::success;
+                        return nil::crypto3::marshalling::status_type::success;
                     }
                 };
 

@@ -85,7 +85,7 @@ namespace nil {
                 MarshallingType marshalled_data;
                 auto read_iter = v->begin();
                 auto status = marshalled_data.read(read_iter, v->size());
-                if (status != nil::marshalling::status_type::success) {
+                if (status != nil::crypto3::marshalling::status_type::success) {
                     BOOST_LOG_TRIVIAL(error) << "When reading a Marshalled structure from file "
                         << path << ", decoding step failed.";
                     return std::nullopt;
@@ -102,8 +102,8 @@ namespace nil {
                 std::vector<std::uint8_t> v;
                 v.resize(data_for_marshalling.length(), 0x00);
                 auto write_iter = v.begin();
-                nil::marshalling::status_type status = data_for_marshalling.write(write_iter, v.size());
-                if (status != nil::marshalling::status_type::success) {
+                nil::crypto3::marshalling::status_type status = data_for_marshalling.write(write_iter, v.size());
+                if (status != nil::crypto3::marshalling::status_type::success) {
                     BOOST_LOG_TRIVIAL(error) << "Marshalled structure encoding failed";
                     return false;
                 }
@@ -171,12 +171,12 @@ namespace nil {
                 placeholder_private_preprocessor<BlueprintField, PlaceholderParams>::preprocessed_data_type;
             using ConstraintSystem = nil::blueprint::circuit<nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>>;
             using TableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
-            using Endianness = nil::marshalling::option::big_endian;
+            using Endianness = nil::crypto3::marshalling::option::big_endian;
             using FriType = typename Lpc::fri_type;
             using FriParams = typename FriType::params_type;
             using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
             using AssignmentTable = nil::crypto3::zk::snark::plonk_assignment_table<BlueprintField>;
-            using TTypeBase = nil::marshalling::field_type<Endianness>;
+            using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
             using TableMarshalling = nil::crypto3::marshalling::types::plonk_assignment_table<TTypeBase, AssignmentTable>;
 
@@ -400,7 +400,7 @@ namespace nil {
                 create_lpc_scheme();
 
                 using ProofMarshalling = nil::crypto3::marshalling::types::
-                    placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>;
+                    placeholder_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof>;
 
                 BOOST_LOG_TRIVIAL(info) << "Reading proof from file";
                 auto marshalled_proof = detail::decode_marshalling_from_file<ProofMarshalling>(proof_file_, true);
@@ -911,7 +911,7 @@ namespace nil {
 
                 /* Marshalling types */
                 using partial_proof_marshalled_type = nil::crypto3::marshalling::types::
-                    placeholder_proof<nil::marshalling::field_type<Endianness>, Proof>;
+                    placeholder_proof<nil::crypto3::marshalling::field_type<Endianness>, Proof>;
 
                 using initial_proof_marshalling_type = nil::crypto3::marshalling::types::
                     inital_eval_proof<TTypeBase, LpcScheme>;
@@ -995,7 +995,7 @@ namespace nil {
             bool save_proof_of_work(
                 const typename FriType::grinding_type::output_type &proof_of_work,
                 const boost::filesystem::path &output_file) {
-                using POW_marshalling_type = nil::marshalling::types::integral<TTypeBase, typename FriType::grinding_type::output_type>;
+                using POW_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, typename FriType::grinding_type::output_type>;
                 BOOST_LOG_TRIVIAL(info) << "Writing proof of work to " << output_file;
 
                 POW_marshalling_type marshalled_pow(proof_of_work);

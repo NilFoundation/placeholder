@@ -100,7 +100,7 @@ namespace nil {
 
                 struct construction {
                     struct params_type {
-                        typedef nil::marshalling::option::big_endian digest_endian;
+                        typedef nil::crypto3::marshalling::option::big_endian digest_endian;
                     };
                     typedef void type;
                 };
@@ -140,9 +140,9 @@ namespace nil {
                             std::copy(std::cbegin(uniform_bytes) + elm_offset,
                                       std::cbegin(uniform_bytes) + elm_offset + L,
                                       std::back_inserter(imported_octets));
-                            nil::marshalling::status_type status;
+                            nil::crypto3::marshalling::status_type status;
                             nil::crypto3::multiprecision::big_uint<L * CHAR_BIT> tmp =
-                                nil::marshalling::pack<nil::marshalling::option::big_endian>(imported_octets, status);
+                                nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(imported_octets, status);
                             THROW_IF_ERROR_STATUS(status, "h2f::process");
                             coordinates[j] = modular_type(tmp);
                         }
@@ -169,9 +169,9 @@ namespace nil {
                             std::copy(std::cbegin(uniform_bytes) + elm_offset,
                                       std::cbegin(uniform_bytes) + elm_offset + L,
                                       std::back_inserter(imported_octets));
-                            nil::marshalling::status_type status;
+                            nil::crypto3::marshalling::status_type status;
                             nil::crypto3::multiprecision::big_uint<L * CHAR_BIT> tmp =
-                                nil::marshalling::pack<nil::marshalling::option::big_endian>(imported_octets, status);
+                                nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(imported_octets, status);
                             THROW_IF_ERROR_STATUS(status, "h2f::process");
                             coordinates[j] = modular_type(tmp);
                         }

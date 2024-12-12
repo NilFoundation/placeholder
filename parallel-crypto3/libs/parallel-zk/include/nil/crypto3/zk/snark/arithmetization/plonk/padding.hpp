@@ -53,30 +53,30 @@ namespace nil {
                         padded_rows_amount = 8;
 
                     for (std::uint32_t w_index = 0; w_index <
-                                                   table._private_table.witnesses_amount(); w_index++) {
+                                                   table._private_table->witnesses_amount(); w_index++) {
 
-                        table._private_table._witnesses[w_index].resize(padded_rows_amount,
+                        table._private_table->_witnesses[w_index].resize(padded_rows_amount,
                                                                     FieldType::value_type::zero());
                     }
 
                     for (std::uint32_t pi_index = 0; pi_index <
-                                                   table._public_table.public_inputs_amount(); pi_index++) {
+                                                   table._public_table->public_inputs_amount(); pi_index++) {
 
-                        table._public_table._public_inputs[pi_index].resize(padded_rows_amount,
+                        table._public_table->_public_inputs[pi_index].resize(padded_rows_amount,
                                                                     FieldType::value_type::zero());
                     }
 
                     for (std::uint32_t c_index = 0; c_index <
-                                                  table._public_table.constants_amount(); c_index++) {
+                                                  table._public_table->constants_amount(); c_index++) {
 
-                        table._public_table._constants[c_index].resize(padded_rows_amount,
+                        table._public_table->_constants[c_index].resize(padded_rows_amount,
                                                                     FieldType::value_type::zero());
                     }
 
                     for (std::uint32_t s_index = 0; s_index <
-                                                  table._public_table.selectors_amount(); s_index++) {
+                                                  table._public_table->selectors_amount(); s_index++) {
 
-                        table._public_table._selectors[s_index].resize(padded_rows_amount,
+                        table._public_table->_selectors[s_index].resize(padded_rows_amount,
                                                                     FieldType::value_type::zero());
                     }
 
@@ -124,7 +124,6 @@ namespace nil {
                             table._private_table->_witnesses[w_index][i] = alg_rnd();
                         }
                     }
-
                     return padded_rows_amount;
                 }
             }    // namespace snark

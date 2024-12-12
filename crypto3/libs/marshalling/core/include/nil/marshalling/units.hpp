@@ -34,7 +34,7 @@
 
 #include <nil/marshalling/units_types.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace units {
             namespace detail {
@@ -209,7 +209,7 @@ namespace nil {
                 template<typename TRet, typename TConvRatio, typename TField>
                 TRet get_time(const TField &field) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::Time>(),
+                                                             nil::crypto3::marshalling::traits::units::Time>(),
                                   "The field is expected to contain \"time\" units.");
                     return units_value_converter::get_value<TRet, TConvRatio>(field);
                 }
@@ -217,7 +217,7 @@ namespace nil {
                 template<typename TConvRatio, typename TField, typename TVal>
                 void set_time(TField &field, TVal &&val) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::Time>(),
+                                                             nil::crypto3::marshalling::traits::units::Time>(),
                                   "The field is expected to contain \"time\" units.");
                     units_value_converter::set_value<TConvRatio>(field, std::forward<TVal>(val));
                 }
@@ -225,7 +225,7 @@ namespace nil {
                 template<typename TRet, typename TConvRatio, typename TField>
                 TRet get_distance(const TField &field) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::distance>(),
+                                                             nil::crypto3::marshalling::traits::units::distance>(),
                                   "The field is expected to contain \"distance\" units.");
                     return units_value_converter::get_value<TRet, TConvRatio>(field);
                 }
@@ -233,7 +233,7 @@ namespace nil {
                 template<typename TConvRatio, typename TField, typename TVal>
                 void set_distance(TField &field, TVal &&val) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::distance>(),
+                                                             nil::crypto3::marshalling::traits::units::distance>(),
                                   "The field is expected to contain \"distance\" units.");
                     units_value_converter::set_value<TConvRatio>(field, std::forward<TVal>(val));
                 }
@@ -241,7 +241,7 @@ namespace nil {
                 template<typename TRet, typename TConvRatio, typename TField>
                 TRet get_speed(const TField &field) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::speed>(),
+                                                             nil::crypto3::marshalling::traits::units::speed>(),
                                   "The field is expected to contain \"speed\" units.");
                     return units_value_converter::get_value<TRet, TConvRatio>(field);
                 }
@@ -249,7 +249,7 @@ namespace nil {
                 template<typename TConvRatio, typename TField, typename TVal>
                 void set_speed(TField &field, TVal &&val) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::speed>(),
+                                                             nil::crypto3::marshalling::traits::units::speed>(),
                                   "The field is expected to contain \"speed\" units.");
                     units_value_converter::set_value<TConvRatio>(field, std::forward<TVal>(val));
                 }
@@ -257,7 +257,7 @@ namespace nil {
                 template<typename TRet, typename TConvRatio, typename TField>
                 TRet get_frequency(const TField &field) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::frequency>(),
+                                                             nil::crypto3::marshalling::traits::units::frequency>(),
                                   "The field is expected to contain \"frequency\" units.");
                     return units_value_converter::get_value<TRet, TConvRatio>(field);
                 }
@@ -265,7 +265,7 @@ namespace nil {
                 template<typename TConvRatio, typename TField, typename TVal>
                 void set_frequency(TField &field, TVal &&val) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::frequency>(),
+                                                             nil::crypto3::marshalling::traits::units::frequency>(),
                                   "The field is expected to contain \"frequency\" units.");
                     units_value_converter::set_value<TConvRatio>(field, std::forward<TVal>(val));
                 }
@@ -280,14 +280,14 @@ namespace nil {
                     template<typename TRet, typename TConvRatio, typename TField>
                     static TRet get_value(const TField &field) {
                         using field_type = typename std::decay<decltype(field)>::type;
-                        static_assert(detail::has_expected_units<field_type, nil::marshalling::traits::units::angle>(),
+                        static_assert(detail::has_expected_units<field_type, nil::crypto3::marshalling::traits::units::angle>(),
                                       "The field is expected to contain \"angle\" units.");
 
                         using tag = typename std::conditional<
                             std::is_same<TConvRatio, typename field_type::parsed_options_type::units_ratio>::value,
                             same_units_tag,
                             typename ::std::conditional<
-                                std::is_same<TConvRatio, nil::marshalling::traits::units::radians_ratio>::value,
+                                std::is_same<TConvRatio, nil::crypto3::marshalling::traits::units::radians_ratio>::value,
                                 degrees_to_radians_tag,
                                 radians_to_degrees_tag>::type>::type;
 
@@ -297,7 +297,7 @@ namespace nil {
                     template<typename TConvRatio, typename TField, typename TVal>
                     static void set_value(TField &field, TVal &&val) {
                         using field_type = typename std::decay<decltype(field)>::type;
-                        static_assert(detail::has_expected_units<field_type, nil::marshalling::traits::units::angle>(),
+                        static_assert(detail::has_expected_units<field_type, nil::crypto3::marshalling::traits::units::angle>(),
                                       "The field is expected to contain \"angle\" units.");
 
                         using tag = typename std::conditional<
@@ -305,7 +305,7 @@ namespace nil {
                             same_units_tag,
                             typename ::std::conditional<
                                 std::is_same<TConvRatio,
-                                             typename nil::marshalling::traits::units::radians_ratio>::value,
+                                             typename nil::crypto3::marshalling::traits::units::radians_ratio>::value,
                                 radians_to_degrees_tag,
                                 degrees_to_radians_tag>::type>::type;
 
@@ -326,7 +326,7 @@ namespace nil {
                     static TRet get_value_internal(const TField &field, degrees_to_radians_tag) {
                         using field_type = typename std::decay<decltype(field)>::type;
                         static_assert(std::is_same<typename field_type::parsed_options_type::units_ratio,
-                                                   nil::marshalling::traits::units::degrees_ratio>::value,
+                                                   nil::crypto3::marshalling::traits::units::degrees_ratio>::value,
                                       "The field is expected to contain degrees.");
 
                         return PI<TRet>::value * units_value_converter::get_value<TRet, TConvRatio>(field);
@@ -336,7 +336,7 @@ namespace nil {
                     static TRet get_value_internal(const TField &field, radians_to_degrees_tag) {
                         using field_type = typename std::decay<decltype(field)>::type;
                         static_assert(std::is_same<typename field_type::parsed_options_type::units_ratio,
-                                                   nil::marshalling::traits::units::radians_ratio>::value,
+                                                   nil::crypto3::marshalling::traits::units::radians_ratio>::value,
                                       "The field is expected to contain radians.");
 
                         return units_value_converter::get_value<TRet, TConvRatio>(field) / PI<TRet>::value;
@@ -351,7 +351,7 @@ namespace nil {
                     static void set_value_internal(TField &field, TVal &&val, degrees_to_radians_tag) {
                         using field_type = typename std::decay<decltype(field)>::type;
                         static_assert(std::is_same<typename field_type::parsed_options_type::units_ratio,
-                                                   nil::marshalling::traits::units::radians_ratio>::value,
+                                                   nil::crypto3::marshalling::traits::units::radians_ratio>::value,
                                       "The field is expected to contain radians.");
 
                         using value_type = typename std::decay<decltype(val)>::type;
@@ -365,7 +365,7 @@ namespace nil {
                     static void set_value_internal(TField &field, TVal &&val, radians_to_degrees_tag) {
                         using field_type = typename std::decay<decltype(field)>::type;
                         static_assert(std::is_same<typename field_type::parsed_options_type::units_ratio,
-                                                   nil::marshalling::traits::units::degrees_ratio>::value,
+                                                   nil::crypto3::marshalling::traits::units::degrees_ratio>::value,
                                       "The field is expected to contain degrees.");
 
                         using value_type = typename std::decay<decltype(val)>::type;
@@ -390,7 +390,7 @@ namespace nil {
                 template<typename TRet, typename TConvRatio, typename TField>
                 TRet get_current(const TField &field) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::current>(),
+                                                             nil::crypto3::marshalling::traits::units::current>(),
                                   "The field is expected to contain \"current\" units.");
                     return units_value_converter::get_value<TRet, TConvRatio>(field);
                 }
@@ -398,7 +398,7 @@ namespace nil {
                 template<typename TConvRatio, typename TField, typename TVal>
                 void set_current(TField &field, TVal &&val) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::current>(),
+                                                             nil::crypto3::marshalling::traits::units::current>(),
                                   "The field is expected to contain \"current\" units.");
                     units_value_converter::set_value<TConvRatio>(field, std::forward<TVal>(val));
                 }
@@ -406,7 +406,7 @@ namespace nil {
                 template<typename TRet, typename TConvRatio, typename TField>
                 TRet get_voltage(const TField &field) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::voltage>(),
+                                                             nil::crypto3::marshalling::traits::units::voltage>(),
                                   "The field is expected to contain \"voltage\" units.");
                     return units_value_converter::get_value<TRet, TConvRatio>(field);
                 }
@@ -414,7 +414,7 @@ namespace nil {
                 template<typename TConvRatio, typename TField, typename TVal>
                 void set_voltage(TField &field, TVal &&val) {
                     static_assert(detail::has_expected_units<typename std::decay<decltype(field)>::type,
-                                                             nil::marshalling::traits::units::voltage>(),
+                                                             nil::crypto3::marshalling::traits::units::voltage>(),
                                   "The field is expected to contain \"voltage\" units.");
                     units_value_converter::set_value<TConvRatio>(field, std::forward<TVal>(val));
                 }
@@ -427,13 +427,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_nanoseconds(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::nanoseconds_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::nanoseconds_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing nanoseconds value.
@@ -441,14 +441,14 @@ namespace nil {
             ///     provided nanoseconds into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_nanoseconds(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::nanoseconds_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::nanoseconds_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as microseconds.
@@ -457,13 +457,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_microseconds(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::microseconds_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::microseconds_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing microseconds value.
@@ -471,14 +471,14 @@ namespace nil {
             ///     provided microseconds into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_microseconds(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::microseconds_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::microseconds_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as milliseconds.
@@ -487,13 +487,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_milliseconds(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::milliseconds_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::milliseconds_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing milliseconds value.
@@ -501,14 +501,14 @@ namespace nil {
             ///     provided milliseconds into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_milliseconds(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::milliseconds_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::milliseconds_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as seconds.
@@ -517,13 +517,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_seconds(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::seconds_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::seconds_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing seconds value.
@@ -531,14 +531,14 @@ namespace nil {
             ///     provided seconds into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_seconds(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::seconds_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::seconds_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as minutes.
@@ -547,13 +547,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_minutes(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::minutes_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::minutes_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing minutes value.
@@ -561,14 +561,14 @@ namespace nil {
             ///     provided minutes into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_minutes(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::minutes_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::minutes_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as hours.
@@ -577,13 +577,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_hours(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::hours_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::hours_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing hours value.
@@ -591,14 +591,14 @@ namespace nil {
             ///     provided hours into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_hours(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::hours_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::hours_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as days.
@@ -607,13 +607,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_days(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::days_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::days_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing days value.
@@ -621,14 +621,14 @@ namespace nil {
             ///     provided days into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_days(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::days_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::days_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as weeks.
@@ -637,13 +637,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TRet, typename TField>
             TRet get_weeks(const TField &field) {
-                return detail::get_time<TRet, nil::marshalling::traits::units::weeks_ratio>(field);
+                return detail::get_time<TRet, nil::crypto3::marshalling::traits::units::weeks_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing weeks value.
@@ -651,14 +651,14 @@ namespace nil {
             ///     provided weeks into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any time value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliseconds,
-            ///     nil::marshalling::option::UnitsSeconds, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliseconds,
+            ///     nil::crypto3::marshalling::option::UnitsSeconds, etc...
             template<typename TField, typename TVal>
             void set_weeks(TField &field, TVal &&val) {
-                detail::set_time<nil::marshalling::traits::units::weeks_ratio>(field, std::forward<TVal>(val));
+                detail::set_time<nil::crypto3::marshalling::traits::units::weeks_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as nanometers.
@@ -667,13 +667,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TRet, typename TField>
             TRet get_nanometers(const TField &field) {
-                return detail::get_distance<TRet, nil::marshalling::traits::units::nanometers_ratio>(field);
+                return detail::get_distance<TRet, nil::crypto3::marshalling::traits::units::nanometers_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing nanometers value.
@@ -681,14 +681,14 @@ namespace nil {
             ///     provided nanometers into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TField, typename TVal>
             void set_nanometers(TField &field, TVal &&val) {
-                detail::set_distance<nil::marshalling::traits::units::nanometers_ratio>(field, std::forward<TVal>(val));
+                detail::set_distance<nil::crypto3::marshalling::traits::units::nanometers_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as micrometers.
@@ -697,13 +697,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TRet, typename TField>
             TRet get_micrometers(const TField &field) {
-                return detail::get_distance<TRet, nil::marshalling::traits::units::micrometers_ratio>(field);
+                return detail::get_distance<TRet, nil::crypto3::marshalling::traits::units::micrometers_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing micrometers value.
@@ -711,14 +711,14 @@ namespace nil {
             ///     provided micrometers into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TField, typename TVal>
             void set_micrometers(TField &field, TVal &&val) {
-                detail::set_distance<nil::marshalling::traits::units::micrometers_ratio>(field,
+                detail::set_distance<nil::crypto3::marshalling::traits::units::micrometers_ratio>(field,
                                                                                          std::forward<TVal>(val));
             }
 
@@ -728,13 +728,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TRet, typename TField>
             TRet get_millimeters(const TField &field) {
-                return detail::get_distance<TRet, nil::marshalling::traits::units::millimeters_ratio>(field);
+                return detail::get_distance<TRet, nil::crypto3::marshalling::traits::units::millimeters_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing millimeters value.
@@ -742,14 +742,14 @@ namespace nil {
             ///     provided millimeters into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TField, typename TVal>
             void set_millimeters(TField &field, TVal &&val) {
-                detail::set_distance<nil::marshalling::traits::units::millimeters_ratio>(field,
+                detail::set_distance<nil::crypto3::marshalling::traits::units::millimeters_ratio>(field,
                                                                                          std::forward<TVal>(val));
             }
 
@@ -759,13 +759,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TRet, typename TField>
             TRet get_centimeters(const TField &field) {
-                return detail::get_distance<TRet, nil::marshalling::traits::units::centimeters_ratio>(field);
+                return detail::get_distance<TRet, nil::crypto3::marshalling::traits::units::centimeters_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing centimeters value.
@@ -773,14 +773,14 @@ namespace nil {
             ///     provided centimeters into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TField, typename TVal>
             void setCentimeters(TField &field, TVal &&val) {
-                detail::set_distance<nil::marshalling::traits::units::centimeters_ratio>(field,
+                detail::set_distance<nil::crypto3::marshalling::traits::units::centimeters_ratio>(field,
                                                                                          std::forward<TVal>(val));
             }
 
@@ -790,13 +790,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TRet, typename TField>
             TRet getMeters(const TField &field) {
-                return detail::get_distance<TRet, nil::marshalling::traits::units::meters_ratio>(field);
+                return detail::get_distance<TRet, nil::crypto3::marshalling::traits::units::meters_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing meters value.
@@ -804,14 +804,14 @@ namespace nil {
             ///     provided meters into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TField, typename TVal>
             void setMeters(TField &field, TVal &&val) {
-                detail::set_distance<nil::marshalling::traits::units::meters_ratio>(field, std::forward<TVal>(val));
+                detail::set_distance<nil::crypto3::marshalling::traits::units::meters_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as kilometers.
@@ -820,13 +820,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TRet, typename TField>
             TRet getKilometers(const TField &field) {
-                return detail::get_distance<TRet, nil::marshalling::traits::units::kilometers_ratio>(field);
+                return detail::get_distance<TRet, nil::crypto3::marshalling::traits::units::kilometers_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing kilometers value.
@@ -834,14 +834,14 @@ namespace nil {
             ///     provided kilometers into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any distance value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimeters,
-            ///     nil::marshalling::option::UnitsMeters, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimeters,
+            ///     nil::crypto3::marshalling::option::UnitsMeters, etc...
             template<typename TField, typename TVal>
             void setKilometers(TField &field, TVal &&val) {
-                detail::set_distance<nil::marshalling::traits::units::kilometers_ratio>(field, std::forward<TVal>(val));
+                detail::set_distance<nil::crypto3::marshalling::traits::units::kilometers_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as nanometers per second.
@@ -850,13 +850,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TRet, typename TField>
             TRet getNanometersPerSecond(const TField &field) {
-                return detail::get_speed<TRet, nil::marshalling::traits::units::nanometers_per_second_ratio>(field);
+                return detail::get_speed<TRet, nil::crypto3::marshalling::traits::units::nanometers_per_second_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing nanometers per second value.
@@ -864,14 +864,14 @@ namespace nil {
             ///     provided nm/s into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TField, typename TVal>
             void setNanometersPerSecond(TField &field, TVal &&val) {
-                detail::set_speed<nil::marshalling::traits::units::nanometers_per_second_ratio>(
+                detail::set_speed<nil::crypto3::marshalling::traits::units::nanometers_per_second_ratio>(
                     field, std::forward<TVal>(val));
             }
 
@@ -881,13 +881,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TRet, typename TField>
             TRet getMicrometersPerSecond(const TField &field) {
-                return detail::get_speed<TRet, nil::marshalling::traits::units::micrometers_per_second_ratio>(field);
+                return detail::get_speed<TRet, nil::crypto3::marshalling::traits::units::micrometers_per_second_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing micrometers per second value.
@@ -895,14 +895,14 @@ namespace nil {
             ///     provided um/s into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TField, typename TVal>
             void setMicrometersPerSecond(TField &field, TVal &&val) {
-                detail::set_speed<nil::marshalling::traits::units::micrometers_per_second_ratio>(
+                detail::set_speed<nil::crypto3::marshalling::traits::units::micrometers_per_second_ratio>(
                     field, std::forward<TVal>(val));
             }
 
@@ -912,13 +912,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TRet, typename TField>
             TRet getMillimetersPerSecond(const TField &field) {
-                return detail::get_speed<TRet, nil::marshalling::traits::units::millimeters_per_second_ratio>(field);
+                return detail::get_speed<TRet, nil::crypto3::marshalling::traits::units::millimeters_per_second_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing millimeters per second value.
@@ -926,14 +926,14 @@ namespace nil {
             ///     provided mm/s into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TField, typename TVal>
             void setMillimetersPerSecond(TField &field, TVal &&val) {
-                detail::set_speed<nil::marshalling::traits::units::millimeters_per_second_ratio>(
+                detail::set_speed<nil::crypto3::marshalling::traits::units::millimeters_per_second_ratio>(
                     field, std::forward<TVal>(val));
             }
 
@@ -943,13 +943,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TRet, typename TField>
             TRet getCentimetersPerSecond(const TField &field) {
-                return detail::get_speed<TRet, nil::marshalling::traits::units::centimeters_per_second_ratio>(field);
+                return detail::get_speed<TRet, nil::crypto3::marshalling::traits::units::centimeters_per_second_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing centimeters per second value.
@@ -957,14 +957,14 @@ namespace nil {
             ///     provided cm/s into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TField, typename TVal>
             void setCentimetersPerSecond(TField &field, TVal &&val) {
-                detail::set_speed<nil::marshalling::traits::units::centimeters_per_second_ratio>(
+                detail::set_speed<nil::crypto3::marshalling::traits::units::centimeters_per_second_ratio>(
                     field, std::forward<TVal>(val));
             }
 
@@ -974,13 +974,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TRet, typename TField>
             TRet getMetersPerSecond(const TField &field) {
-                return detail::get_speed<TRet, nil::marshalling::traits::units::meters_per_second_ratio>(field);
+                return detail::get_speed<TRet, nil::crypto3::marshalling::traits::units::meters_per_second_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing meters per second value.
@@ -988,14 +988,14 @@ namespace nil {
             ///     provided m/s into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TField, typename TVal>
             void setMetersPerSecond(TField &field, TVal &&val) {
-                detail::set_speed<nil::marshalling::traits::units::meters_per_second_ratio>(field,
+                detail::set_speed<nil::crypto3::marshalling::traits::units::meters_per_second_ratio>(field,
                                                                                             std::forward<TVal>(val));
             }
 
@@ -1005,13 +1005,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TRet, typename TField>
             TRet getKilometersPerSecond(const TField &field) {
-                return detail::get_speed<TRet, nil::marshalling::traits::units::kilometers_per_second_ratio>(field);
+                return detail::get_speed<TRet, nil::crypto3::marshalling::traits::units::kilometers_per_second_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing kilometers per second value.
@@ -1019,14 +1019,14 @@ namespace nil {
             ///     provided km/s into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TField, typename TVal>
             void setKilometersPerSecond(TField &field, TVal &&val) {
-                detail::set_speed<nil::marshalling::traits::units::kilometers_per_second_ratio>(
+                detail::set_speed<nil::crypto3::marshalling::traits::units::kilometers_per_second_ratio>(
                     field, std::forward<TVal>(val));
             }
 
@@ -1036,13 +1036,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TRet, typename TField>
             TRet getKilometersPerHour(const TField &field) {
-                return detail::get_speed<TRet, nil::marshalling::traits::units::kilometers_per_hour_ratio>(field);
+                return detail::get_speed<TRet, nil::crypto3::marshalling::traits::units::kilometers_per_hour_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing kilometers per hour value.
@@ -1050,14 +1050,14 @@ namespace nil {
             ///     provided km/h into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any speed value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillimetersPerSecond,
-            ///     nil::marshalling::option::UnitsMetersPerSecond, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillimetersPerSecond,
+            ///     nil::crypto3::marshalling::option::UnitsMetersPerSecond, etc...
             template<typename TField, typename TVal>
             void setKilometersPerHour(TField &field, TVal &&val) {
-                detail::set_speed<nil::marshalling::traits::units::kilometers_per_hour_ratio>(field,
+                detail::set_speed<nil::crypto3::marshalling::traits::units::kilometers_per_hour_ratio>(field,
                                                                                               std::forward<TVal>(val));
             }
 
@@ -1067,13 +1067,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TRet, typename TField>
             TRet getHertz(const TField &field) {
-                return detail::get_frequency<TRet, nil::marshalling::traits::units::hz_ratio>(field);
+                return detail::get_frequency<TRet, nil::crypto3::marshalling::traits::units::hz_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing hertz value.
@@ -1081,14 +1081,14 @@ namespace nil {
             ///     provided hertz into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TField, typename TVal>
             void setHertz(TField &field, TVal &&val) {
-                detail::set_frequency<nil::marshalling::traits::units::hz_ratio>(field, std::forward<TVal>(val));
+                detail::set_frequency<nil::crypto3::marshalling::traits::units::hz_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as kilohertz.
@@ -1097,13 +1097,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TRet, typename TField>
             TRet getKilohertz(const TField &field) {
-                return detail::get_frequency<TRet, nil::marshalling::traits::units::kilo_hz_ratio>(field);
+                return detail::get_frequency<TRet, nil::crypto3::marshalling::traits::units::kilo_hz_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing kilohertz value.
@@ -1111,14 +1111,14 @@ namespace nil {
             ///     provided kilohertz into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TField, typename TVal>
             void setKilohertz(TField &field, TVal &&val) {
-                detail::set_frequency<nil::marshalling::traits::units::kilo_hz_ratio>(field, std::forward<TVal>(val));
+                detail::set_frequency<nil::crypto3::marshalling::traits::units::kilo_hz_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as megahertz.
@@ -1127,13 +1127,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TRet, typename TField>
             TRet getMegahertz(const TField &field) {
-                return detail::get_frequency<TRet, nil::marshalling::traits::units::mega_hz_ratio>(field);
+                return detail::get_frequency<TRet, nil::crypto3::marshalling::traits::units::mega_hz_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing megahertz value.
@@ -1141,14 +1141,14 @@ namespace nil {
             ///     provided megahertz into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TField, typename TVal>
             void setMegahertz(TField &field, TVal &&val) {
-                detail::set_frequency<nil::marshalling::traits::units::mega_hz_ratio>(field, std::forward<TVal>(val));
+                detail::set_frequency<nil::crypto3::marshalling::traits::units::mega_hz_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as gigahertz.
@@ -1157,13 +1157,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TRet, typename TField>
             TRet getGigahertz(const TField &field) {
-                return detail::get_frequency<TRet, nil::marshalling::traits::units::giga_hz_ratio>(field);
+                return detail::get_frequency<TRet, nil::crypto3::marshalling::traits::units::giga_hz_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing gigahertz value.
@@ -1171,14 +1171,14 @@ namespace nil {
             ///     provided gigahertz into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any frequency value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsHertz,
-            ///     nil::marshalling::option::UnitsKilohertz, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsHertz,
+            ///     nil::crypto3::marshalling::option::UnitsKilohertz, etc...
             template<typename TField, typename TVal>
             void setGigahertz(TField &field, TVal &&val) {
-                detail::set_frequency<nil::marshalling::traits::units::giga_hz_ratio>(field, std::forward<TVal>(val));
+                detail::set_frequency<nil::crypto3::marshalling::traits::units::giga_hz_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as degrees.
@@ -1187,13 +1187,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any angle measurement value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsDegrees or
-            ///     nil::marshalling::option::UnitsRadians
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsDegrees or
+            ///     nil::crypto3::marshalling::option::UnitsRadians
             template<typename TRet, typename TField>
             TRet getDegrees(const TField &field) {
-                return detail::get_angle<TRet, nil::marshalling::traits::units::degrees_ratio>(field);
+                return detail::get_angle<TRet, nil::crypto3::marshalling::traits::units::degrees_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing degrees value.
@@ -1201,14 +1201,14 @@ namespace nil {
             ///     provided degrees into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any angle measurement value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsDegrees or
-            ///     nil::marshalling::option::UnitsRadians
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsDegrees or
+            ///     nil::crypto3::marshalling::option::UnitsRadians
             template<typename TField, typename TVal>
             void setDegrees(TField &field, TVal &&val) {
-                detail::set_angle<nil::marshalling::traits::units::degrees_ratio>(field, std::forward<TVal>(val));
+                detail::set_angle<nil::crypto3::marshalling::traits::units::degrees_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as radians.
@@ -1217,13 +1217,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any angle measurement value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsDegrees or
-            ///     nil::marshalling::option::UnitsRadians
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsDegrees or
+            ///     nil::crypto3::marshalling::option::UnitsRadians
             template<typename TRet, typename TField>
             TRet getRadians(const TField &field) {
-                return detail::get_angle<TRet, nil::marshalling::traits::units::radians_ratio>(field);
+                return detail::get_angle<TRet, nil::crypto3::marshalling::traits::units::radians_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing radians value.
@@ -1231,14 +1231,14 @@ namespace nil {
             ///     provided radians into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any angle measurement value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsDegrees or
-            ///     nil::marshalling::option::UnitsRadians
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsDegrees or
+            ///     nil::crypto3::marshalling::option::UnitsRadians
             template<typename TField, typename TVal>
             void setRadians(TField &field, TVal &&val) {
-                detail::set_angle<nil::marshalling::traits::units::radians_ratio>(field, std::forward<TVal>(val));
+                detail::set_angle<nil::crypto3::marshalling::traits::units::radians_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as nanoamps.
@@ -1247,13 +1247,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TRet, typename TField>
             TRet getNanoamps(const TField &field) {
-                return detail::get_current<TRet, nil::marshalling::traits::units::nanoamps_ratio>(field);
+                return detail::get_current<TRet, nil::crypto3::marshalling::traits::units::nanoamps_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing nanoamps value.
@@ -1261,14 +1261,14 @@ namespace nil {
             ///     provided nanoamps into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TField, typename TVal>
             void setNanoamps(TField &field, TVal &&val) {
-                detail::set_current<nil::marshalling::traits::units::nanoamps_ratio>(field, std::forward<TVal>(val));
+                detail::set_current<nil::crypto3::marshalling::traits::units::nanoamps_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as microamps.
@@ -1277,13 +1277,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TRet, typename TField>
             TRet getMicroamps(const TField &field) {
-                return detail::get_current<TRet, nil::marshalling::traits::units::microamps_ratio>(field);
+                return detail::get_current<TRet, nil::crypto3::marshalling::traits::units::microamps_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing microamps value.
@@ -1291,14 +1291,14 @@ namespace nil {
             ///     provided microamps into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TField, typename TVal>
             void setMicroamps(TField &field, TVal &&val) {
-                detail::set_current<nil::marshalling::traits::units::microamps_ratio>(field, std::forward<TVal>(val));
+                detail::set_current<nil::crypto3::marshalling::traits::units::microamps_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as milliamps.
@@ -1307,13 +1307,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TRet, typename TField>
             TRet getMilliamps(const TField &field) {
-                return detail::get_current<TRet, nil::marshalling::traits::units::milliamps_ratio>(field);
+                return detail::get_current<TRet, nil::crypto3::marshalling::traits::units::milliamps_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing milliamps value.
@@ -1321,14 +1321,14 @@ namespace nil {
             ///     provided milliamps into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TField, typename TVal>
             void setMilliamps(TField &field, TVal &&val) {
-                detail::set_current<nil::marshalling::traits::units::milliamps_ratio>(field, std::forward<TVal>(val));
+                detail::set_current<nil::crypto3::marshalling::traits::units::milliamps_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as amps.
@@ -1337,13 +1337,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TRet, typename TField>
             TRet getAmps(const TField &field) {
-                return detail::get_current<TRet, nil::marshalling::traits::units::amps_ratio>(field);
+                return detail::get_current<TRet, nil::crypto3::marshalling::traits::units::amps_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing amps value.
@@ -1351,14 +1351,14 @@ namespace nil {
             ///     provided amps into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TField, typename TVal>
             void setAmps(TField &field, TVal &&val) {
-                detail::set_current<nil::marshalling::traits::units::amps_ratio>(field, std::forward<TVal>(val));
+                detail::set_current<nil::crypto3::marshalling::traits::units::amps_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as kiloamps.
@@ -1367,13 +1367,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TRet, typename TField>
             TRet getKiloamps(const TField &field) {
-                return detail::get_current<TRet, nil::marshalling::traits::units::kiloamps_ratio>(field);
+                return detail::get_current<TRet, nil::crypto3::marshalling::traits::units::kiloamps_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing kiloamps value.
@@ -1381,14 +1381,14 @@ namespace nil {
             ///     provided kiloamps into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMilliamps,
-            ///     nil::marshalling::option::UnitsAmps, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMilliamps,
+            ///     nil::crypto3::marshalling::option::UnitsAmps, etc...
             template<typename TField, typename TVal>
             void setKiloamps(TField &field, TVal &&val) {
-                detail::set_current<nil::marshalling::traits::units::kiloamps_ratio>(field, std::forward<TVal>(val));
+                detail::set_current<nil::crypto3::marshalling::traits::units::kiloamps_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as nanovolts.
@@ -1397,13 +1397,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical current value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TRet, typename TField>
             TRet getNanovolts(const TField &field) {
-                return detail::get_voltage<TRet, nil::marshalling::traits::units::nanovolts_ratio>(field);
+                return detail::get_voltage<TRet, nil::crypto3::marshalling::traits::units::nanovolts_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing nanovolts value.
@@ -1411,14 +1411,14 @@ namespace nil {
             ///     provided nanovolts into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TField, typename TVal>
             void setNanovolts(TField &field, TVal &&val) {
-                detail::set_voltage<nil::marshalling::traits::units::nanovolts_ratio>(field, std::forward<TVal>(val));
+                detail::set_voltage<nil::crypto3::marshalling::traits::units::nanovolts_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as microvolts.
@@ -1427,13 +1427,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TRet, typename TField>
             TRet getMicrovolts(const TField &field) {
-                return detail::get_voltage<TRet, nil::marshalling::traits::units::microvolts_ratio>(field);
+                return detail::get_voltage<TRet, nil::crypto3::marshalling::traits::units::microvolts_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing microvolts value.
@@ -1441,14 +1441,14 @@ namespace nil {
             ///     provided microvolts into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TField, typename TVal>
             void setMicrovolts(TField &field, TVal &&val) {
-                detail::set_voltage<nil::marshalling::traits::units::microvolts_ratio>(field, std::forward<TVal>(val));
+                detail::set_voltage<nil::crypto3::marshalling::traits::units::microvolts_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as millivolts.
@@ -1457,13 +1457,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TRet, typename TField>
             TRet getMillivolts(const TField &field) {
-                return detail::get_voltage<TRet, nil::marshalling::traits::units::millivolts_ratio>(field);
+                return detail::get_voltage<TRet, nil::crypto3::marshalling::traits::units::millivolts_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing millivolts value.
@@ -1471,14 +1471,14 @@ namespace nil {
             ///     provided millivolts into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TField, typename TVal>
             void setMillivolts(TField &field, TVal &&val) {
-                detail::set_voltage<nil::marshalling::traits::units::millivolts_ratio>(field, std::forward<TVal>(val));
+                detail::set_voltage<nil::crypto3::marshalling::traits::units::millivolts_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as volts.
@@ -1487,13 +1487,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TRet, typename TField>
             TRet getVolts(const TField &field) {
-                return detail::get_voltage<TRet, nil::marshalling::traits::units::volts_ratio>(field);
+                return detail::get_voltage<TRet, nil::crypto3::marshalling::traits::units::volts_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing volts value.
@@ -1501,14 +1501,14 @@ namespace nil {
             ///     provided volts into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TField, typename TVal>
             void setVolts(TField &field, TVal &&val) {
-                detail::set_voltage<nil::marshalling::traits::units::volts_ratio>(field, std::forward<TVal>(val));
+                detail::set_voltage<nil::crypto3::marshalling::traits::units::volts_ratio>(field, std::forward<TVal>(val));
             }
 
             /// @brief Retrieve field's value as kilovolts.
@@ -1517,13 +1517,13 @@ namespace nil {
             ///     type.
             /// @tparam TRet Return type
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TRet, typename TField>
             TRet getKilovolts(const TField &field) {
-                return detail::get_voltage<TRet, nil::marshalling::traits::units::kilovolts_ratio>(field);
+                return detail::get_voltage<TRet, nil::crypto3::marshalling::traits::units::kilovolts_ratio>(field);
             }
 
             /// @brief Update field's value accordingly, while providing kilovolts value.
@@ -1531,14 +1531,14 @@ namespace nil {
             ///     provided kilovolts into the units stored by the field and update the
             ///     internal value of the latter accordingly.
             /// @tparam TField Type of the field, expected to be a field with integral
-            ///     internal value, such as a variant of nil::marshalling::types::integral.
+            ///     internal value, such as a variant of nil::crypto3::marshalling::types::integral.
             /// @tparam TVal Type of value to assign.
             /// @pre The @b TField type must be defined containing any electrical voltage value, using
-            ///     any of the relevant options: nil::marshalling::option::UnitsMillivolts,
-            ///     nil::marshalling::option::UnitsVolts, etc...
+            ///     any of the relevant options: nil::crypto3::marshalling::option::UnitsMillivolts,
+            ///     nil::crypto3::marshalling::option::UnitsVolts, etc...
             template<typename TField, typename TVal>
             void setKilovolts(TField &field, TVal &&val) {
-                detail::set_voltage<nil::marshalling::traits::units::kilovolts_ratio>(field, std::forward<TVal>(val));
+                detail::set_voltage<nil::crypto3::marshalling::traits::units::kilovolts_ratio>(field, std::forward<TVal>(val));
             }
         }    // namespace units
     }        // namespace marshalling

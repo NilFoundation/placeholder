@@ -245,9 +245,9 @@ namespace nil {
                 typename CurveType::scalar_field_type::integral_type integral_b =
                     typename CurveType::scalar_field_type::integral_type(b.data);
                 const std::size_t scalar_size = 255;
-                nil::marshalling::status_type status;
+                nil::crypto3::marshalling::status_type status;
                 std::array<bool, scalar_size> bits =
-                    nil::marshalling::pack<nil::marshalling::option::big_endian>(integral_b, status);
+                    nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integral_b, status);
                 THROW_IF_ERROR_STATUS(status, "curve_element_variable_base_scalar_mul::generate_assignments");
 
                 typename BlueprintFieldType::value_type z_n2;
@@ -267,7 +267,7 @@ namespace nil {
                     typename CurveType::scalar_field_type::integral_type(aux.data);
                 const std::size_t base_size = 255;
                 std::array<bool, base_size> aux_bits =
-                    nil::marshalling::pack<nil::marshalling::option::big_endian>(integral_aux, status);
+                    nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integral_aux, status);
                 THROW_IF_ERROR_STATUS(status, "curve_element_variable_base_scalar_mul::generate_assignments");
 
                 typename BlueprintFieldType::value_type n = 0;

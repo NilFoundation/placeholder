@@ -45,7 +45,7 @@ namespace nil {
             namespace types {
 
                 template<typename TTypeBase, typename PlonkPublicTable>
-                using plonk_public_polynomial_table = nil::marshalling::types::bundle<
+                using plonk_public_polynomial_table = nil::crypto3::marshalling::types::bundle<
                     TTypeBase, std::tuple<
                         // public_inputs
                         polynomial_vector<TTypeBase, typename PlonkPublicTable::column_type>,
@@ -57,12 +57,12 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename PlonkPublicTable>
-                plonk_public_polynomial_table<nil::marshalling::field_type<Endianness>, PlonkPublicTable> fill_plonk_public_table(
+                plonk_public_polynomial_table<nil::crypto3::marshalling::field_type<Endianness>, PlonkPublicTable> fill_plonk_public_table(
                     const PlonkPublicTable &public_table
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using PolynomialType = typename PlonkPublicTable::column_type;
-                    using result_type = plonk_public_polynomial_table<nil::marshalling::field_type<Endianness>, PlonkPublicTable>;
+                    using result_type = plonk_public_polynomial_table<nil::crypto3::marshalling::field_type<Endianness>, PlonkPublicTable>;
                     return result_type(std::make_tuple(
                         fill_polynomial_vector<Endianness, PolynomialType>(public_table.public_inputs()),
                         fill_polynomial_vector<Endianness, PolynomialType>(public_table.constants()),
@@ -73,10 +73,10 @@ namespace nil {
                 template<typename Endianness, typename PlonkPublicTable>
                 std::shared_ptr<PlonkPublicTable> make_plonk_public_table(
                     const plonk_public_polynomial_table<
-                        nil::marshalling::field_type<Endianness>,
+                        nil::crypto3::marshalling::field_type<Endianness>,
                         PlonkPublicTable> &filled_public_table)
                 {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using PolynomialType = typename PlonkPublicTable::column_type;
 
                     return std::make_shared<PlonkPublicTable>(

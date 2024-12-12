@@ -8,8 +8,8 @@ To read from one type and write to another type variable we will use such funtio
 ```cpp
 template<typename TField>
 static TField read_from_field(const char *buf, std::size_t size,
-                               nil::marshalling::status_type expectedStatus
-                               = nil::marshalling::status_type::success){
+                               nil::crypto3::marshalling::status_type expectedStatus
+                               = nil::crypto3::marshalling::status_type::success){
 
     typedef TField field_type;
     field_type field;
@@ -18,7 +18,7 @@ static TField read_from_field(const char *buf, std::size_t size,
     auto status = field.read(iter, size);
     BOOST_CHECK(status == expectedStatus);
 
-    if (status != nil::marshalling::status_type::success) {
+    if (status != nil::crypto3::marshalling::status_type::success) {
         return field;
     }
 
@@ -29,7 +29,7 @@ static TField read_from_field(const char *buf, std::size_t size,
     auto writeIter = &outDataBuf[0];
 
     status = field.write(writeIter, diff);
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
     BOOST_CHECK(std::equal(buf, buf + diff, static_cast<const char *>(&outDataBuf[0])));
 
     auto writeDiff = static_cast<std::size_t>(std::distance(&outDataBuf[0], writeIter));
@@ -43,8 +43,8 @@ Using this function we can easily pack data from one type to another:
 
 ```cpp
 using big_endian_array_type = 
-    nil::marshalling::types::array_list<
-        nil::marshalling::field_type<nil::marshalling::option::big_endian>,
+    nil::crypto3::marshalling::types::array_list<
+        nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>,
         std::uint32_t
     >;
 

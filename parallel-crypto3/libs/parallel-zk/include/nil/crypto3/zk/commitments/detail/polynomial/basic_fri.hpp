@@ -104,9 +104,9 @@ namespace nil {
                         // For initial proof only, size of all values are similar
                         typedef std::vector<polynomial_values_type> polynomials_values_type;
 
-                        using Endianness = nil::marshalling::option::big_endian;
+                        using Endianness = nil::crypto3::marshalling::option::big_endian;
                         using field_element_type = nil::crypto3::marshalling::types::field_element<
-                                nil::marshalling::field_type<Endianness>,
+                                nil::crypto3::marshalling::field_type<Endianness>,
                                 typename FieldType::value_type
                         >;
 

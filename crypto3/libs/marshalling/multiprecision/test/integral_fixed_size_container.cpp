@@ -72,10 +72,10 @@ void test_round_trip_fixed_size_container_fixed_precision_big_endian(
     using namespace nil::crypto3::marshalling;
     std::size_t units_bits = std::is_same_v<OutputType, bool> ? 1 : sizeof(OutputType) * 8;
     using unit_type = OutputType;
-    using integral_type = types::integral<nil::marshalling::field_type<nil::marshalling::option::big_endian>, T>;
+    using integral_type = types::integral<nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>, T>;
 
-    using container_type = nil::marshalling::types::standard_array_list<
-        nil::marshalling::field_type<nil::marshalling::option::little_endian>,
+    using container_type = nil::crypto3::marshalling::types::standard_array_list<
+        nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::little_endian>,
         integral_type>;
 
     std::size_t unitblob_size =
@@ -94,18 +94,18 @@ void test_round_trip_fixed_size_container_fixed_precision_big_endian(
         export_bits(val_container[i], cv.begin() + unitblob_size * i + begin_index, units_bits, true);
     }
 
-    nil::marshalling::status_type status;
+    nil::crypto3::marshalling::status_type status;
     std::array<T, TSize> test_val = 
-        nil::marshalling::pack<nil::marshalling::option::big_endian>(cv, status);
+        nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(cv, status);
 
     BOOST_CHECK(std::equal(val_container.begin(), val_container.end(), test_val.begin()));
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
     std::vector<unit_type> test_cv = 
-        nil::marshalling::pack<nil::marshalling::option::big_endian>(val_container, status);
+        nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(val_container, status);
 
     BOOST_CHECK(std::equal(test_cv.begin(), test_cv.end(), cv.begin()));
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 }
 
 template<class T, std::size_t TSize, typename OutputType>
@@ -114,10 +114,10 @@ void test_round_trip_fixed_size_container_fixed_precision_little_endian(
     using namespace nil::crypto3::marshalling;
     std::size_t units_bits = std::is_same_v<OutputType, bool> ? 1 : sizeof(OutputType) * 8;
     using unit_type = OutputType;
-    using integral_type = types::integral<nil::marshalling::field_type<nil::marshalling::option::little_endian>, T>;
+    using integral_type = types::integral<nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::little_endian>, T>;
 
-    using container_type = nil::marshalling::types::standard_array_list<
-        nil::marshalling::field_type<nil::marshalling::option::little_endian>,
+    using container_type = nil::crypto3::marshalling::types::standard_array_list<
+        nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::little_endian>,
         integral_type>;
 
     std::size_t unitblob_size =
@@ -132,18 +132,18 @@ void test_round_trip_fixed_size_container_fixed_precision_little_endian(
         export_bits(val_container[i], cv.begin() + unitblob_size * i, units_bits, false);
     }
 
-    nil::marshalling::status_type status;
+    nil::crypto3::marshalling::status_type status;
     std::array<T, TSize> test_val = 
-        nil::marshalling::pack<nil::marshalling::option::little_endian>(cv, status);
+        nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::little_endian>(cv, status);
 
     BOOST_CHECK(std::equal(val_container.begin(), val_container.end(), test_val.begin()));
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
     std::vector<unit_type> test_cv = 
-        nil::marshalling::pack<nil::marshalling::option::little_endian>(val_container, status);
+        nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::little_endian>(val_container, status);
 
     BOOST_CHECK(std::equal(test_cv.begin(), test_cv.end(), cv.begin()));
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 }
 
 template<class T, std::size_t TSize, typename OutputType>
