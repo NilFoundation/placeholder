@@ -159,6 +159,61 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        constexpr std::size_t used_limbs() const noexcept {
+            for (int i = internal_limb_count - 1; i >= 0; --i) {
+                if (limbs()[i] != 0) {
+                    return i + 1;
+                }
+            }
+            return 0;
+        }
+
+        constexpr std::size_t order() const noexcept {
+            for (int i = internal_limb_count - 1; i >= 0; --i) {
+                if (limbs()[i] != 0) {
+                    return i;
+                }
+            }
+            return 0;
+        }
+
+        // Assignment
+
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        constexpr void do_assign_integral(const T& a) noexcept {
+            if constexpr (sizeof(T) <= sizeof(limb_type)) {
+                this->limbs()[0] = a;
+                this->zero_after(1);
+            } else {
+                static_assert(sizeof(T) % sizeof(limb_type) == 0);
+                constexpr std::size_t n =
+                    std::min(internal_limb_count, sizeof(T) / sizeof(limb_type));
+                auto a_copy = a;
+                for (std::size_t i = 0; i < n; ++i) {
+                    limbs()[i] = a_copy & static_cast<T>(static_cast<limb_type>(-1));
+                    a_copy >>= limb_bits;
+                }
+                zero_after(n);
+            }
+            this->normalize();
+            if constexpr (sizeof(T) * CHAR_BIT > Bits) {
+                NIL_CO3_MP_ASSERT(big_uint<sizeof(T) * CHAR_BIT>(a).compare(*this) == 0);
+            }
+        }
+
+        template<std::size_t Bits2>
+        constexpr void do_assign(const big_uint<Bits2>& other) noexcept {
+            std::size_t count = (std::min)(other.limbs_count(), this->limbs_count());
+            for (std::size_t i = 0; i < count; ++i) {
+                this->limbs()[i] = other.limbs()[i];
+            }
+            // Zero out everything after (std::min)(other.limbs_count(), limbs_count()), so if size
+            // of other was less, we have 0s at the end.
+            this->zero_after((std::min)(other.limbs_count(), this->limbs_count()));
+            this->normalize();
+        }
+
       public:
         // TODO(ioxid): this should be private
         constexpr void normalize() noexcept { limbs()[internal_limb_count - 1] &= upper_limb_mask; }
@@ -999,24 +1054,6 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        constexpr std::size_t used_limbs() const noexcept {
-            for (int i = internal_limb_count - 1; i >= 0; --i) {
-                if (limbs()[i] != 0) {
-                    return i + 1;
-                }
-            }
-            return 0;
-        }
-
-        constexpr std::size_t order() const noexcept {
-            for (int i = internal_limb_count - 1; i >= 0; --i) {
-                if (limbs()[i] != 0) {
-                    return i;
-                }
-            }
-            return 0;
-        }
-
         // Modulus/divide
 
         // This should be called only for creation of Montgomery and Barett
@@ -1378,43 +1415,6 @@ namespace nil::crypto3::multiprecision {
         }
 
       private:
-        // Assignment
-
-        template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr void do_assign_integral(const T& a) noexcept {
-            if constexpr (sizeof(T) <= sizeof(limb_type)) {
-                this->limbs()[0] = a;
-                this->zero_after(1);
-            } else {
-                static_assert(sizeof(T) % sizeof(limb_type) == 0);
-                constexpr std::size_t n =
-                    std::min(internal_limb_count, sizeof(T) / sizeof(limb_type));
-                auto a_copy = a;
-                for (std::size_t i = 0; i < n; ++i) {
-                    limbs()[i] = a_copy & static_cast<T>(static_cast<limb_type>(-1));
-                    a_copy >>= limb_bits;
-                }
-                zero_after(n);
-            }
-            this->normalize();
-            if constexpr (sizeof(T) * CHAR_BIT > Bits) {
-                NIL_CO3_MP_ASSERT(big_uint<sizeof(T) * CHAR_BIT>(a).compare(*this) == 0);
-            }
-        }
-
-        template<std::size_t Bits2>
-        constexpr void do_assign(const big_uint<Bits2>& other) noexcept {
-            std::size_t count = (std::min)(other.limbs_count(), this->limbs_count());
-            for (std::size_t i = 0; i < count; ++i) {
-                this->limbs()[i] = other.limbs()[i];
-            }
-            // Zero out everything after (std::min)(other.limbs_count(), limbs_count()), so if size
-            // of other was less, we have 0s at the end.
-            this->zero_after((std::min)(other.limbs_count(), this->limbs_count()));
-            this->normalize();
-        }
-
         // Data
 
         // m_data[0] contains the lowest bits.
