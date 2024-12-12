@@ -211,7 +211,7 @@ namespace nil {
                 const compiler_manifest assignment_manifest(parent_assignment.witnesses_amount(), false);
                 const auto component_manifest = std::apply(ComponentType::get_manifest, params_tuple);
                 const auto intersection = assignment_manifest.intersect(component_manifest);
-                BOOST_ASSERT_MSG(intersection.is_satisfiable(), "Component either has a constant or does not fit");
+                BOOST_VERIFY_MSG(intersection.is_satisfiable(), "Component either has a constant or does not fit");
                 const std::size_t component_witness_amount = intersection.witness_amount->max_value_if_sat();
                 return component_witness_amount;
             }
@@ -239,7 +239,7 @@ namespace nil {
                         variable.get() = parent_assignment.add_batch_variable(0);
                     }
                     bool insertion_result = inputs_results.insert({input, {result, false}}).second;
-                    BOOST_ASSERT(insertion_result);
+                    BOOST_VERIFY(insertion_result);
                     return result;
                 }
 
@@ -265,21 +265,21 @@ namespace nil {
                         variable_transform(variable);
                     }
                     bool insertion_result = inputs_results.insert({input, {result, true}}).second;
-                    BOOST_ASSERT(insertion_result);
+                    BOOST_VERIFY(insertion_result);
                     return result;
                 } else {
                     // already have some vars
                     auto unassigned_result = inputs_results.find(input)->second.first;
                     auto unsassigned_vars = unassigned_result.all_vars();
                     auto result_vars = result.all_vars();
-                    BOOST_ASSERT(unsassigned_vars.size() == result_vars.size());
+                    BOOST_VERIFY(unsassigned_vars.size() == result_vars.size());
                     for (std::size_t i = 0; i < unsassigned_vars.size(); i++) {
                         parent_assignment.batch_private_storage(unsassigned_vars[i].get().rotation) =
                             var_value(internal_assignment, result_vars[i].get());
                     }
                     inputs_results.erase(input);
                     bool insertion_result = inputs_results.insert({input, {unassigned_result, true}}).second;
-                    BOOST_ASSERT(insertion_result);
+                    BOOST_VERIFY(insertion_result);
                     return unassigned_result;
                 }
             }
@@ -307,7 +307,7 @@ namespace nil {
                     const input_type &input = input_result.first;
                     result_type &result = input_result.second.first;
                     bool result_status = input_result.second.second;
-                    BOOST_ASSERT(result_status);
+                    BOOST_VERIFY(result_status);
                     if (col_offset == 0) {
                         parent_assignment.enable_selector(gate_id, row);
                     }
@@ -366,7 +366,7 @@ namespace nil {
                 ComponentType component_instance = build_component_instance(component_witness_amount);
                 generate_gates(component_instance, tmp_bp, parent_assignment, example_input);
                 const auto &gates = tmp_bp.gates();
-                BOOST_ASSERT(gates.size() == 1);
+                BOOST_VERIFY(gates.size() == 1);
 
                 std::vector<constraint_type> new_gate_constraints, one_gate_constraints;
                 auto curr_gate = gates[0];

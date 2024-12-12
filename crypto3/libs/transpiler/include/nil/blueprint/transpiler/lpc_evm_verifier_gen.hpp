@@ -331,12 +331,10 @@ namespace nil {
                 std::stringstream out;
 
                 out << "\t\tgate = 0;" << std::endl;
-                int c = 0;
                 for(const auto &constraint: gate.constraints){
                     out << constraint_computation_code_optimized(_var_indices, constraint);
                     out << "\t\tgate = addmod(gate, mulmod(theta_acc, sum, modulus), modulus);" << std::endl;
                     out << "\t\ttheta_acc = mulmod(theta_acc, theta, modulus);" << std::endl;
-                    c++;
                 }
                 variable_type sel_var(gate.selector_index, 0, true, variable_type::column_type::selector);
                 out << "\t\tgate = mulmod(gate, basic_marshalling.get_uint256_be(blob, " << _var_indices.at(sel_var) * 0x20 << "), modulus);" << std::endl;
@@ -527,9 +525,7 @@ namespace nil {
                     ++i;
                 }
 
-
                 std::size_t gate_modules_count = 0;
-                std::size_t current_selector = 0;
                 if (total_cost <= _gates_contract_size_threshold) {
                     auto it = constraints.begin();
                     gate_argument_str << "\t\tuint256 prod;" << std::endl;
@@ -604,9 +600,7 @@ namespace nil {
                     return "";
 
                 std::stringstream lookup_str;
-                std::size_t j = 0;
                 std::size_t i = 0;
-                std::size_t cur = 0;
                 std::unordered_map<std::size_t, std::string> lookup_codes;
                 std::vector<std::size_t> lookup_ids(lookup_count);
                 std::vector<std::pair<std::size_t, std::size_t>> lookup_costs(lookup_count);
@@ -686,7 +680,6 @@ namespace nil {
                     out.close();
                 }
 
-                j = 0;
                 std::size_t table_index = 1;
                 for(const auto &table: _constraint_system.lookup_tables()){
                     variable_type sel_var(table.tag_index, 0, true, variable_type::column_type::selector);
@@ -710,7 +703,6 @@ namespace nil {
                             lookup_str << "\t\t\tstate.theta_acc = mulmod(state.theta_acc, state.theta, modulus);" << std::endl;
                         }
                         lookup_str << "\t\t\tstate.g = mulmod(state.g, addmod( state.factor, addmod(l, mulmod(state.beta, state.l_shifted, modulus), modulus), modulus), modulus);" << std::endl;
-                        j++;
                     }
                     table_index++;
                 }
@@ -740,7 +732,6 @@ namespace nil {
                 poly_points += _desc.selector_columns;
                 eta_buf.resize( 32*poly_points );
 
-                std::array<std::uint8_t, 0> empty;
                 auto writer = eta_buf.begin();
 
                 result << "\t\t///* eta points check */" << std::endl;
@@ -880,9 +871,6 @@ namespace nil {
                 reps["$LOOKUP_PARTS_AMOUNT$"] = to_string(_placeholder_info.lookup_poly_amount);
                 reps["$LOOKUP_PARTS$"] = lookup_parts_hex_string(_constraint_system.lookup_parts(_common_data.max_quotient_chunks));
                 reps["$MAX_QUOTIENT_CHUNKS$"] = to_string(_common_data.max_quotient_chunks);
-
-                std::size_t _lookup_degree = _constraint_system.lookup_poly_degree_bound();
-                std::size_t _rows_amount = _desc.rows_amount;
 
                 commitment_scheme_replaces<PlaceholderParams>(
                     _placeholder_info,

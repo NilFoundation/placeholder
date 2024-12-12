@@ -498,13 +498,11 @@ namespace nil {
             static inline std::vector<std::string> split_point_string(std::string point){
                 std::vector<std::string> result;
                 std::size_t found = point.find("& ");
-                std::size_t j = 0;
                 std::size_t prev = 0;
                 while (found!=std::string::npos){
                     result.push_back(point.substr(prev, found-prev));
                     prev = found + 2;
                     found = point.find("& ",prev);
-                    j++;
                 }
                 return result;
             }
@@ -535,8 +533,6 @@ namespace nil {
                 for(std::size_t i = 0; i < fri_params.r; i++ ){
                     round_proof_layers_num += log2(fri_params.D[i]->m) -1;
                 }
-
-                std::size_t lookup_degree = constraint_system.lookup_poly_degree_bound();
 
                 std::size_t rows_amount = desc.rows_amount;
                 std::size_t quotient_polys = placeholder_info.quotient_size;
