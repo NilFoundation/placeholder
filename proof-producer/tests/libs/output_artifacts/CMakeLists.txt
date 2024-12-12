@@ -34,10 +34,8 @@ function(add_output_artifacts_test target)
         crypto3::common
     )
 
-    if (NOT target STREQUAL "test_range")
-      target_precompile_headers(${target}_single_thread REUSE_FROM test_range_single_thread)
-    endif()
-    target_precompile_headers(${target}_multi_thread   REUSE_FROM test_range_single_thread)
+    target_precompile_headers(${target}_single_thread REUSE_FROM proof_generatorOutputArtifacts)
+    target_precompile_headers(${target}_multi_thread  REUSE_FROM proof_generatorOutputArtifacts)
 
     add_dependencies(tests_output_artifacts_single_thread ${target}_single_thread)
     add_dependencies(tests_output_artifacts_multi_thread ${target}_multi_thread)
