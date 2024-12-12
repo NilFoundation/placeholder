@@ -24,6 +24,8 @@ namespace nil {
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
             typename ComponentType::input_type input;
+            input.rlc_challenge = limits::RLC_CHALLENGE;
+
             const auto bytecode_trace_path = get_bytecode_trace_path(trace_base_path);
             const auto contract_bytecodes = deserialize_bytecodes_from_file(bytecode_trace_path);
             if (!contract_bytecodes) {

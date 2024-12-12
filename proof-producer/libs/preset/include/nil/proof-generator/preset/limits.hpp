@@ -13,7 +13,7 @@ namespace nil {
             const std::size_t max_bytecode_size = 20000;
             const std::size_t max_rows = 500000;   
             const std::size_t max_mpt_size = 30;
-            const std::size_t max_zkevm_rows = 10000;
+            const std::size_t max_zkevm_rows = 50000;
 
             const std::size_t RLC_CHALLENGE = 7; // should be the same between all components
 
