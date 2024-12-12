@@ -66,22 +66,22 @@ template<class T, std::size_t TSize>
 void test_curve_element_fixed_size_container_big_endian(std::array<T, TSize> val_container) {
     using namespace nil::crypto3::marshalling;
 
-    using Endianness = nil::marshalling::option::big_endian;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
 
     using unit_type = unsigned char;
 
-    static_assert(nil::marshalling::is_compatible<T>::value);
+    static_assert(nil::crypto3::marshalling::is_compatible<T>::value);
 
-    nil::marshalling::status_type status;
+    nil::crypto3::marshalling::status_type status;
     std::vector<unit_type> cv =
-        nil::marshalling::pack<Endianness>(val_container, status);
+        nil::crypto3::marshalling::pack<Endianness>(val_container, status);
 
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
-   std::array<T, TSize> test_val = nil::marshalling::pack<Endianness>(cv, status);
+   std::array<T, TSize> test_val = nil::crypto3::marshalling::pack<Endianness>(cv, status);
 
    BOOST_CHECK(std::equal(val_container.begin(), val_container.end(), test_val.begin()));
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 }
 
 template<class CurveGroup, std::size_t TSize>

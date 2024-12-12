@@ -34,7 +34,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
 
         /// @brief Base class for any custom assertion behaviour.
@@ -103,7 +103,7 @@ namespace nil {
         ///          assertion failure.
         /// @tparam TAssert Class derived from Assert that implements new custom
         ///                 behaviour of the assertion failure.
-        /// @pre TAssert class must be derived from nil::marshalling::assert_type.
+        /// @pre TAssert class must be derived from nil::crypto3::marshalling::assert_type.
         /// @headerfile nil/marshalling/assert_type.hpp
         template<typename TAssert>
         class enable_assert {
@@ -154,7 +154,7 @@ namespace nil {
 #ifndef NOSTDLIB
 #define MARSHALLING_ASSERT_FAIL_FUNC(expr) assert(expr)
 #else    // #ifndef NOSTDLIB
-#define MARSHALLING_ASSERT_FAIL_FUNC(expr) nil::marshalling::assert_manager::instance().infinite_loop()
+#define MARSHALLING_ASSERT_FAIL_FUNC(expr) nil::crypto3::marshalling::assert_manager::instance().infinite_loop()
 #endif    // #ifndef NOSTDLIB
 
 /// @endcond
@@ -167,8 +167,8 @@ namespace nil {
 /// @param expr Boolean expression
 #define MARSHALLING_ASSERT(expr)                                                      \
     ((expr) ? static_cast<void>(0) :                                                  \
-              (nil::marshalling::assert_manager::instance().has_assert_registered() ? \
-                   nil::marshalling::assert_manager::instance().get_assert()->fail(   \
+              (nil::crypto3::marshalling::assert_manager::instance().has_assert_registered() ? \
+                   nil::crypto3::marshalling::assert_manager::instance().get_assert()->fail(   \
                        #expr, __FILE__, __LINE__, MARSHALLING_ASSERT_FUNCTION_STR) :  \
                    MARSHALLING_ASSERT_FAIL_FUNC(expr)))
 

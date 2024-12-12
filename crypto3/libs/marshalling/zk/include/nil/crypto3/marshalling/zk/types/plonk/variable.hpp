@@ -47,29 +47,29 @@ namespace nil {
                 //********************************* plonk_variable ***************************/
                 template<typename TTypeBase, typename VariableType>
                 struct variable<TTypeBase, VariableType> {
-                    using type = nil::marshalling::types::bundle<
+                    using type = nil::crypto3::marshalling::types::bundle<
                         TTypeBase,
                         std::tuple<
                             // std::size_t index
-                            nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                            nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>,
                             // std::int32_t rotation
-                            nil::marshalling::types::integral<TTypeBase, std::int32_t>,
+                            nil::crypto3::marshalling::types::integral<TTypeBase, std::int32_t>,
                             //bool relative
-                            nil::marshalling::types::integral<TTypeBase, bool>,
+                            nil::crypto3::marshalling::types::integral<TTypeBase, bool>,
                             // enum column_type : std::uint8_t { witness, public_input, constant, selector } type
-                            nil::marshalling::types::integral<TTypeBase, std::uint8_t>>
+                            nil::crypto3::marshalling::types::integral<TTypeBase, std::uint8_t>>
                         >;
                 };
 
                 template<typename Endianness, typename Variable>
-                typename variable<nil::marshalling::field_type<Endianness>, Variable>::type
+                typename variable<nil::crypto3::marshalling::field_type<Endianness>, Variable>::type
                 fill_variable(const Variable &var) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using result_type = typename variable<TTypeBase, Variable>::type;
-                    using size_t_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::size_t>;
-                    using int32_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::int32_t>;
-                    using octet_marshalling_type = nil::marshalling::types::integral<TTypeBase, std::uint8_t>;
-                    using bool_marshalling_type = nil::marshalling::types::integral<TTypeBase, bool>;
+                    using size_t_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>;
+                    using int32_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, std::int32_t>;
+                    using octet_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, std::uint8_t>;
+                    using bool_marshalling_type = nil::crypto3::marshalling::types::integral<TTypeBase, bool>;
 
                     return result_type(std::make_tuple(
                         size_t_marshalling_type(var.index), 
@@ -81,7 +81,7 @@ namespace nil {
 
                 template<typename Endianness, typename Variable>
                 Variable make_variable(
-                    const typename variable<nil::marshalling::field_type<Endianness>, Variable>::type &filled_var)
+                    const typename variable<nil::crypto3::marshalling::field_type<Endianness>, Variable>::type &filled_var)
                 {
                     return Variable(std::get<0>(filled_var.value()).value(),
                                     std::get<1>(filled_var.value()).value(),
@@ -91,15 +91,15 @@ namespace nil {
 
                 //****************** vector of plonk_variable *************************/
                 template<typename TTypeBase, typename VariableType>
-                using variables = nil::marshalling::types::standard_array_list<
+                using variables = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase, 
                     typename variable<TTypeBase, VariableType>::type
                 >;
 
                 template<typename Endianness, typename Variable>
-                variables<nil::marshalling::field_type<Endianness>, typename Variable::assignment_type>
+                variables<nil::crypto3::marshalling::field_type<Endianness>, typename Variable::assignment_type>
                 fill_variables(const std::vector<Variable> &vars) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using AssignmentType = typename Variable::assignment_type;
 
                     variables<TTypeBase, AssignmentType> filled_vars;
@@ -112,7 +112,7 @@ namespace nil {
 
                 template<typename Endianness, typename Variable>
                 std::vector<Variable> make_variables(
-                    const variables<nil::marshalling::field_type<Endianness>, typename Variable::assignment_type> &filled_vars)
+                    const variables<nil::crypto3::marshalling::field_type<Endianness>, typename Variable::assignment_type> &filled_vars)
                 {
                     std::vector<Variable> vars;
                     vars.reserve(filled_vars.value().size());

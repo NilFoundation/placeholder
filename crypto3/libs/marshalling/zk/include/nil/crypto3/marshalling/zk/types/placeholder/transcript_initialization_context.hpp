@@ -44,27 +44,27 @@ namespace nil {
             namespace types {
 
                 template<typename TTypeBase>
-                using marshalling_string_type = nil::marshalling::types::string<TTypeBase>;
+                using marshalling_string_type = nil::crypto3::marshalling::types::string<TTypeBase>;
 
                 // ******************* placeholder transcript initialization context ********************************* //
                 template<typename TTypeBase, typename TranscriptInitializationContextType>
-                using transcript_initialization_context = nil::marshalling::types::bundle<
+                using transcript_initialization_context = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
 //                      constexpr static const std::size_t witness_columns = PlaceholderParamsType::witness_columns;
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>,
 //                      constexpr static const std::size_t public_input_columns = PlaceholderParamsType::public_input_columns;
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>,
 //                      constexpr static const std::size_t constant_columns = PlaceholderParamsType::constant_columns;
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>,
 //                      constexpr static const std::size_t selector_columns = PlaceholderParamsType::selector_columns;
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>,
 //                      constexpr static const typename field_type::value_type delta = PlaceholderParamsType::delta;
                         field_element<TTypeBase, typename TranscriptInitializationContextType::field_type::value_type>,
 //                      std::size_t rows_amount;
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>,
 //                      std::size_t usable_rows_amount;
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>,
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>,
 //                      typename commitment_type::params_type commitment_params;
                         typename commitment_params<TTypeBase,
                             typename TranscriptInitializationContextType::commitment_scheme_type>::type,
@@ -76,9 +76,9 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename TranscriptInitializationContextType>
-                transcript_initialization_context<nil::marshalling::field_type<Endianness>, TranscriptInitializationContextType>
+                transcript_initialization_context<nil::crypto3::marshalling::field_type<Endianness>, TranscriptInitializationContextType>
                 fill_transcript_initialization_context(const TranscriptInitializationContextType &init_context) {
-                    using TTypeBase = typename nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = typename nil::crypto3::marshalling::field_type<Endianness>;
                     using result_type = transcript_initialization_context<TTypeBase, TranscriptInitializationContextType>;
                     using field_element_marshalling_type = field_element<TTypeBase, typename TranscriptInitializationContextType::field_type::value_type>;
 
@@ -90,13 +90,13 @@ namespace nil {
                     );
 
                     return result_type(std::make_tuple(
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(init_context.witness_columns),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(init_context.public_input_columns),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(init_context.constant_columns),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(init_context.selector_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(init_context.witness_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(init_context.public_input_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(init_context.constant_columns),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(init_context.selector_columns),
                         field_element_marshalling_type(init_context.delta),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(init_context.rows_amount),
-                        nil::marshalling::types::integral<TTypeBase, std::size_t>(init_context.usable_rows_amount),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(init_context.rows_amount),
+                        nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(init_context.usable_rows_amount),
                         filled_commitment_params,
                         field_element_marshalling_type(init_context.modulus),
                         marshalling_string_type<TTypeBase>(init_context.application_id)

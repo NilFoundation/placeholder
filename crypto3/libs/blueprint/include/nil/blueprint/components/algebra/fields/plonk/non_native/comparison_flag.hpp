@@ -311,9 +311,9 @@ namespace nil {
                         std::fill(bits[i].begin(), bits[i].end(), false);
                         bits[i].resize(arg_bits_amount + padding_bits);
 
-                        nil::marshalling::status_type status;
+                        nil::crypto3::marshalling::status_type status;
                         std::array<bool, BlueprintFieldType::modulus_bits> bytes_all =
-                            nil::marshalling::pack<nil::marshalling::option::big_endian>(integrals[i], status);
+                            nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integrals[i], status);
                         THROW_IF_ERROR_STATUS(status, "comparison_flag::calculate");
 
                         std::copy(bytes_all.end() - arg_bits_amount, bytes_all.end(),
@@ -468,9 +468,9 @@ namespace nil {
                         std::fill(bits[i].begin(), bits[i].end(), false);
                         bits[i].resize(component.bits_amount + component.padding_bits);
 
-                        nil::marshalling::status_type status;
+                        nil::crypto3::marshalling::status_type status;
                         std::array<bool, BlueprintFieldType::modulus_bits> bytes_all =
-                            nil::marshalling::pack<nil::marshalling::option::big_endian>(integrals[i], status);
+                            nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integrals[i], status);
                         THROW_IF_ERROR_STATUS(status, "comparison_flag::generate_assignments");
                         std::copy(bytes_all.end() - component.bits_amount, bytes_all.end(),
                                 bits[i].begin() + component.padding_bits);

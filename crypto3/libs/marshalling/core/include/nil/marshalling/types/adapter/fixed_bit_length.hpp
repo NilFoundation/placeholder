@@ -34,7 +34,7 @@
 #include <nil/marshalling/processing/bit_size_to_byte_size.hpp>
 #include <nil/marshalling/status_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace adapter {

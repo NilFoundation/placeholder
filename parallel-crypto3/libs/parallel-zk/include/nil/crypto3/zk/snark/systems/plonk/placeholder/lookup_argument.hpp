@@ -167,7 +167,8 @@ namespace nil {
                             0, basic_domain->m, FieldType::value_type::one());
                         polynomial_dfs_type zero_polynomial(
                             0, basic_domain->m, FieldType::value_type::zero());
-                        polynomial_dfs_type mask_assignment = one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
+                        polynomial_dfs_type mask_assignment =
+                            one_polynomial -  preprocessed_data.q_last - preprocessed_data.q_blind;
                         polynomial_dfs_type lagrange0 = preprocessed_data.common_data.lagrange_0;
 
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_value_ptr =
@@ -177,6 +178,7 @@ namespace nil {
                         std::unique_ptr<std::vector<polynomial_dfs_type>> lookup_input_ptr =
                             prepare_lookup_input(mask_assignment, lagrange0);
                         auto& lookup_input = *lookup_input_ptr;
+
 
                         // 3. Lookup_input and lookup_value are ready
                         //    Now sort them!
@@ -678,7 +680,6 @@ namespace nil {
                         );
                         std::size_t i1 = 0;
                         std::size_t j1 = 0;
-
                         auto append_to_sorted = [usable_rows_amount, &sorted, &i1, &j1] (
                                 const typename FieldType::value_type& value) {
                             sorted[i1][j1] = value;
@@ -773,8 +774,8 @@ namespace nil {
                             const auto &table = lookup_tables[t_id];
                             auto key = std::tuple(table.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
                             auto shifted_key = std::tuple(table.tag_index, 1, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            auto selector_value = evaluations[key];
-                            auto shifted_selector_value = evaluations[shifted_key];
+                            typename FieldType::value_type selector_value  = evaluations[key];
+                            typename FieldType::value_type shifted_selector_value  = evaluations[shifted_key];
                             for( std::size_t o_id = 0; o_id < table.lookup_options.size(); o_id++){
                                 typename FieldType::value_type v = selector_value * (t_id + 1);
                                 typename FieldType::value_type shifted_v = shifted_selector_value * (t_id + 1);
@@ -798,7 +799,7 @@ namespace nil {
                         for( std::size_t g_id = 0; g_id < lookup_gates.size(); g_id++ ){
                             const auto &gate = lookup_gates[g_id];
                             auto key = std::tuple(gate.tag_index, 0, plonk_variable<typename FieldType::value_type>::column_type::selector);
-                            auto selector_value = evaluations[key];
+                            typename FieldType::value_type selector_value = evaluations[key];
                             for( std::size_t c_id = 0; c_id < gate.constraints.size(); c_id++){
                                 const auto &constraint = gate.constraints[c_id];
                                 typename FieldType::value_type l = selector_value * constraint.table_id;

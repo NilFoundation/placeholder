@@ -49,13 +49,13 @@ namespace nil {
             namespace types {
                 template<typename TTypeBase, typename CurveGroupType, typename... TOptions>
                 class curve_element
-                    : private ::nil::marshalling::types::detail::adapt_basic_field_type<
+                    : private ::nil::crypto3::marshalling::types::detail::adapt_basic_field_type<
                           crypto3::marshalling::types::detail::basic_curve_element<TTypeBase, CurveGroupType>,
                           TOptions...> {
 
                     using curve_group_type = CurveGroupType;
 
-                    using base_impl_type = ::nil::marshalling::types::detail::adapt_basic_field_type<
+                    using base_impl_type = ::nil::crypto3::marshalling::types::detail::adapt_basic_field_type<
                         crypto3::marshalling::types::detail::basic_curve_element<TTypeBase, curve_group_type>,
                         TOptions...>;
 
@@ -67,7 +67,7 @@ namespace nil {
                     using version_type = typename base_impl_type::version_type;
 
                     /// @brief All the options provided to this class bundled into struct.
-                    using parsed_options_type = ::nil::marshalling::types::detail::options_parser<TOptions...>;
+                    using parsed_options_type = ::nil::crypto3::marshalling::types::detail::options_parser<TOptions...>;
 
                     /// @brief Type of underlying curve_element value.
                     /// @details Same as template parameter T to this class.
@@ -141,7 +141,7 @@ namespace nil {
                     /// @return Status of read operation.
                     /// @post Iterator is advanced.
                     template<typename TIter>
-                    nil::marshalling::status_type read(TIter &iter, std::size_t size) {
+                    nil::crypto3::marshalling::status_type read(TIter &iter, std::size_t size) {
                         return base_impl_type::read(iter, size);
                     }
 
@@ -161,7 +161,7 @@ namespace nil {
                     /// @return Status of write operation.
                     /// @post Iterator is advanced.
                     template<typename TIter>
-                    nil::marshalling::status_type write(TIter &iter, std::size_t size) const {
+                    nil::crypto3::marshalling::status_type write(TIter &iter, std::size_t size) const {
                         return base_impl_type::write(iter, size);
                     }
 
@@ -181,7 +181,7 @@ namespace nil {
                     }
 
                     /// @brief Get version of the field.
-                    /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                    /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                     version_type get_version() const {
                         return base_impl_type::get_version();
                     }
@@ -200,71 +200,71 @@ namespace nil {
                     // because such an adapter uses pure byte reading,
                     // incompatible with crypto3::curve_element
                     static_assert(!parsed_options_type::has_fixed_length_limit,
-                                  "nil::marshalling::option::fixed_length option is not applicable to "
+                                  "nil::crypto3::marshalling::option::fixed_length option is not applicable to "
                                   "crypto3::curve_element type");
 
                     // because such an adapter uses pure byte reading,
                     // incompatible with crypto3::curve_element
                     static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                                  "nil::marshalling::option::fixed_bit_length option is not applicable to "
+                                  "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to "
                                   "crypto3::curve_element type");
 
                     static_assert(!parsed_options_type::has_scaling_ratio,
-                                  "nil::marshalling::option::scaling_ratio option is not applicable to "
+                                  "nil::crypto3::marshalling::option::scaling_ratio option is not applicable to "
                                   "crypto3::curve_element type");
 
                     static_assert(
                         !parsed_options_type::has_sequence_elem_length_forcing,
-                        "nil::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
+                        "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
                         "crypto3::curve_element type");
                     static_assert(!parsed_options_type::has_sequence_size_forcing,
-                                  "nil::marshalling::option::SequenceSizeForcingEnabled option is not applicable to "
+                                  "nil::crypto3::marshalling::option::SequenceSizeForcingEnabled option is not applicable to "
                                   "crypto3::curve_element type");
                     static_assert(!parsed_options_type::has_sequence_length_forcing,
-                                  "nil::marshalling::option::SequenceLengthForcingEnabled option is not applicable to "
+                                  "nil::crypto3::marshalling::option::SequenceLengthForcingEnabled option is not applicable to "
                                   "crypto3::curve_element type");
                     static_assert(!parsed_options_type::has_sequence_fixed_size,
-                                  "nil::marshalling::option::sequence_fixed_size option is not applicable to "
+                                  "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to "
                                   "crypto3::curve_element type");
                     static_assert(
                         !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                        "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
+                        "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
                         "crypto3::curve_element type");
                     static_assert(!parsed_options_type::has_sequence_size_field_prefix,
-                                  "nil::marshalling::option::sequence_size_field_prefix option is not applicable to "
+                                  "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to "
                                   "crypto3::curve_element type");
                     static_assert(
                         !parsed_options_type::has_sequence_ser_length_field_prefix,
-                        "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
                         "crypto3::curve_element type");
                     static_assert(
                         !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                        "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
                         "crypto3::curve_element type");
                     static_assert(
                         !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                        "nil::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
+                        "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
                         "crypto3::curve_element type");
                     static_assert(
                         !parsed_options_type::has_sequence_trailing_field_suffix,
-                        "nil::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
                         "crypto3::curve_element type");
                     static_assert(
                         !parsed_options_type::has_sequence_termination_field_suffix,
-                        "nil::marshalling::option::sequence_termination_field_suffix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
                         "crypto3::curve_element type");
                     static_assert(!parsed_options_type::has_fixed_size_storage,
-                                  "nil::marshalling::option::fixed_size_storage option is not applicable to "
+                                  "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to "
                                   "crypto3::curve_element type");
                     static_assert(!parsed_options_type::has_custom_storage_type,
-                                  "nil::marshalling::option::custom_storage_type option is not applicable to "
+                                  "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to "
                                   "crypto3::curve_element type");
                     static_assert(!parsed_options_type::has_orig_data_view,
-                                  "nil::marshalling::option::orig_data_view option is not applicable to "
+                                  "nil::crypto3::marshalling::option::orig_data_view option is not applicable to "
                                   "crypto3::curve_element type");
                     static_assert(
                         !parsed_options_type::has_versions_range,
-                        "nil::marshalling::option::exists_between_versions (or similar) option is not applicable to "
+                        "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
                         "crypto3::curve_element type");
                 };
 
@@ -338,18 +338,18 @@ namespace nil {
                     return false;
                 }
 
-                /// @brief Upcast type of the field definition to its parent nil::marshalling::types::curve_element type
+                /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::curve_element type
                 ///     in order to have access to its internal types.
-                /// @related nil::marshalling::types::curve_element
+                /// @related nil::crypto3::marshalling::types::curve_element
                 template<typename TTypeBase, typename CurveGroupType, typename... TOptions>
                 inline curve_element<TTypeBase, CurveGroupType, TOptions...> &
                     to_field_base(curve_element<TTypeBase, CurveGroupType, TOptions...> &field) {
                     return field;
                 }
 
-                /// @brief Upcast type of the field definition to its parent nil::marshalling::types::curve_element type
+                /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::curve_element type
                 ///     in order to have access to its internal types.
-                /// @related nil::marshalling::types::curve_element
+                /// @related nil::crypto3::marshalling::types::curve_element
                 template<typename TTypeBase, typename CurveGroupType, typename... TOptions>
                 inline const curve_element<TTypeBase, CurveGroupType, TOptions...> &
                     to_field_base(const curve_element<TTypeBase, CurveGroupType, TOptions...> &field) {
@@ -357,16 +357,16 @@ namespace nil {
                 }
 
                 template<typename CurveGroupType, typename TTypeBase>
-                using curve_element_vector = nil::marshalling::types::standard_array_list<
+                using curve_element_vector = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase,
                     curve_element<TTypeBase, CurveGroupType>>;
 
                 template<typename CurveGroupType, typename Endianness>
-                curve_element_vector<CurveGroupType, nil::marshalling::field_type<Endianness>>
+                curve_element_vector<CurveGroupType, nil::crypto3::marshalling::field_type<Endianness>>
                     fill_curve_element_vector(
                         const std::vector<typename CurveGroupType::value_type> &curve_elem_vector) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     using curve_element_type = curve_element<TTypeBase, CurveGroupType>;
 
@@ -380,11 +380,11 @@ namespace nil {
 
                 template<typename CurveGroupType, typename Endianness>
                 std::vector<typename CurveGroupType::value_type> make_curve_element_vector(
-                    const curve_element_vector<CurveGroupType, nil::marshalling::field_type<Endianness>>
+                    const curve_element_vector<CurveGroupType, nil::crypto3::marshalling::field_type<Endianness>>
                         &curve_elem_vector) {
 
                     std::vector<typename CurveGroupType::value_type> result;
-                    const std::vector<curve_element<nil::marshalling::field_type<Endianness>, CurveGroupType>> &values =
+                    const std::vector<curve_element<nil::crypto3::marshalling::field_type<Endianness>, CurveGroupType>> &values =
                         curve_elem_vector.value();
                     std::size_t size = values.size();
 

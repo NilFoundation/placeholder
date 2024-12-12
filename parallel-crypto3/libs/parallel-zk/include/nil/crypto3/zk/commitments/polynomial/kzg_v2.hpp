@@ -109,9 +109,9 @@ namespace nil {
                         }
                     };
 
-                    using endianness = nil::marshalling::option::big_endian;
+                    using endianness = marshalling::option::big_endian;
                     using field_element_type = nil::crypto3::marshalling::types::field_element<
-                            nil::marshalling::field_type<endianness>,
+                            marshalling::field_type<endianness>,
                             commitment_type
                     >;
                 private:
@@ -208,9 +208,9 @@ namespace nil {
                         });
                         std::vector<std::uint8_t> result;
                         for (const auto& single_commitment : this->_ind_commitments[index]) {
-                            nil::marshalling::status_type status;
+                            nil::crypto3::marshalling::status_type status;
                             std::vector<uint8_t> single_commitment_bytes =
-                                    nil::marshalling::pack<endianness>(single_commitment, status);
+                                    marshalling::pack<endianness>(single_commitment, status);
                             THROW_IF_ERROR_STATUS(status, "kzg_v2::commit");
                             result.insert(result.end(), single_commitment_bytes.begin(), single_commitment_bytes.end());
                         }
@@ -332,7 +332,7 @@ namespace nil {
                         auto F = CommitmentSchemeType::single_commitment_type::zero();
                         auto rsum = CommitmentSchemeType::scalar_value_type::zero();
 
-                        nil::marshalling::status_type status;
+                        marshalling::status_type status;
 
                         for (const auto &it: this->_commitments) {
                             auto k = it.first;
@@ -344,7 +344,7 @@ namespace nil {
                                     byteblob[j] = this->_commitments[k][i * blob_size + j];
                                 }
                                 typename curve_type::template g1_type<>::value_type
-                                        cm_i = nil::marshalling::pack(byteblob, status);
+                                        cm_i = marshalling::pack(byteblob, status);
                                 THROW_IF_ERROR_STATUS(status, "kzg_v2::verify_eval");
                                 auto Z_T_S_i = set_difference_polynom(_merged_points, this->_points.at(k)[i]).evaluate(
                                         theta_2);

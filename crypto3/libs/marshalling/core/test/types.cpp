@@ -60,7 +60,7 @@
 #include <nil/marshalling/container/string_view.hpp>
 #include <nil/marshalling/container/type_traits.hpp>
 
-using namespace nil::marshalling;
+using namespace nil::crypto3::marshalling;
 
 static_assert(has_member_function_clear<std::string>::value, "Invalid function presence detection");
 static_assert(has_member_function_clear<std::vector<std::uint8_t>>::value, "Invalid function presence detection");

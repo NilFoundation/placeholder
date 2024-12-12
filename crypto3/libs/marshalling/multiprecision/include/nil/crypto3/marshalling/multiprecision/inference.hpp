@@ -27,6 +27,8 @@
 #define CRYPTO3_MARSHALLING_MULTIPRECISION_INFERENCE_TYPE_TRAITS_HPP
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
+#include <nil/marshalling/options.hpp>
+#include <nil/marshalling/field_type.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -35,25 +37,22 @@ namespace nil {
                 template<typename TTypeBase, typename IntegralContainer, typename... TOptions>
                 class integral;
             }        // namespace types
+
+            template<typename T, typename Enabled>
+            class is_compatible;
+
+            template<std::size_t Bits>
+            class is_compatible <nil::crypto3::multiprecision::big_uint<Bits>, void> {
+                using default_endianness = option::big_endian;
+                public:
+                template <typename TEndian = default_endianness, typename... TOptions>
+                    using type = typename nil::crypto3::marshalling::types::integral<field_type<TEndian>, 
+                          nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>;
+                static const bool value = true;
+                static const bool fixed_size = true;
+            };
         }        // namespace marshalling
-    }        // namespace crypto3
-    namespace marshalling {
-
-        template<typename T, typename Enabled>
-        class is_compatible;
-
-        template<std::size_t Bits>
-        class is_compatible <nil::crypto3::multiprecision::big_uint<Bits>, void> {
-            using default_endianness = option::big_endian;
-        public:
-            template <typename TEndian = default_endianness, typename... TOptions>
-            using type = typename nil::crypto3::marshalling::types::integral<field_type<TEndian>, 
-                nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>;
-            static const bool value = true;
-            static const bool fixed_size = true;
-        };
-
-    }        // namespace marshalling
+    }        // namespace crypto3 
 }    // namespace nil
 
 #endif    // CRYPTO3_MARSHALLING_MULTIPRECISION_INFERENCE_TYPE_TRAITS_HPP

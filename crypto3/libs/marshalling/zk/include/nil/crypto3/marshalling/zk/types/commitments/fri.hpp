@@ -55,15 +55,15 @@ namespace nil {
                 // fri::merkle_proofs marshalling
                 ///////////////////////////////////////////////////
                 template<typename TTypeBase, typename FRI>
-                using merkle_proof_vector_type = nil::marshalling::types::standard_array_list<
+                using merkle_proof_vector_type = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase,
                     types::merkle_proof<TTypeBase, typename FRI::merkle_proof_type>
                 >;
 
                 template< typename Endianness, typename FRI >
-                merkle_proof_vector_type<nil::marshalling::field_type<Endianness>, FRI>
+                merkle_proof_vector_type<nil::crypto3::marshalling::field_type<Endianness>, FRI>
                 fill_merkle_proof_vector(const std::vector<typename FRI::merkle_proof_type> &merkle_proofs) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using filled_type = merkle_proof_vector_type<TTypeBase, FRI>;
 
                     filled_type filled;
@@ -79,7 +79,7 @@ namespace nil {
 
                 template<typename Endianness, typename FRI>
                 std::vector<typename FRI::merkle_proof_type>
-                make_merkle_proof_vector(merkle_proof_vector_type<nil::marshalling::field_type<Endianness>, FRI> &filled) {
+                make_merkle_proof_vector(merkle_proof_vector_type<nil::crypto3::marshalling::field_type<Endianness>, FRI> &filled) {
                     std::vector<typename FRI::merkle_proof_type> merkle_proofs;
                     for( std::size_t i = 0; i < filled.value().size(); i++ ){
                         merkle_proofs.push_back(
@@ -93,15 +93,15 @@ namespace nil {
                 // fri::initial_proof_type marshalling
                 ///////////////////////////////////////////////////
                 template<typename TTypeBase, typename FRI>
-                using fri_initial_proof_type = nil::marshalling::types::bundle<
+                using fri_initial_proof_type = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // polynomials_values_type values;
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
-                                nil::marshalling::types::standard_array_list<
+                                nil::crypto3::marshalling::types::standard_array_list<
                                     TTypeBase,
                                     field_element<TTypeBase, typename FRI::field_type::value_type>>>
                         >,
@@ -111,20 +111,20 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename FRI>
-                fri_initial_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                fri_initial_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI>
                 fill_fri_initial_proof(
                     const typename FRI::initial_proof_type &initial_proof
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using filled_type = fri_initial_proof_type<TTypeBase, FRI>;
-                    using outer_list_type = nil::marshalling::types::standard_array_list<
+                    using outer_list_type = nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             field_element<TTypeBase, typename FRI::field_type::value_type>
                         >
                     >;
-                    using inner_list_type = nil::marshalling::types::standard_array_list<
+                    using inner_list_type = nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         field_element<TTypeBase, typename FRI::field_type::value_type>
                     >;
@@ -155,7 +155,7 @@ namespace nil {
                 template<typename Endianness, typename FRI>
                 typename FRI::initial_proof_type
                 make_fri_initial_proof(
-                    const fri_initial_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                    const fri_initial_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI> &filled
                 ) {
                     typename FRI::initial_proof_type initial_proof;
                     // polynomials_values_type values;
@@ -183,11 +183,11 @@ namespace nil {
                 // fri::round_proof_type marshalling
                 ///////////////////////////////////////////////////
                 template<typename TTypeBase, typename FRI>
-                using fri_round_proof_type = nil::marshalling::types::bundle<
+                using fri_round_proof_type = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> y;
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             field_element<TTypeBase, typename FRI::field_type::value_type>
                         >,
@@ -197,11 +197,11 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename FRI>
-                fri_round_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                fri_round_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI>
                 fill_fri_round_proof(
                     const typename FRI::round_proof_type &round_proof
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using filled_type = fri_round_proof_type<TTypeBase, FRI>;
 
                     filled_type filled;
@@ -224,7 +224,7 @@ namespace nil {
                 template<typename Endianness, typename FRI>
                 typename FRI::round_proof_type
                 make_fri_round_proof(
-                    const fri_round_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                    const fri_round_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI> &filled
                 ) {
                     typename FRI::round_proof_type round_proof;
                     // std::vector<std::array<typename FRI::field_type::value_type, FRI::m>> y;
@@ -255,16 +255,16 @@ namespace nil {
                 // fri::query_proof_type marshalling
                 ///////////////////////////////////////////////////
                 template<typename TTypeBase, typename FRI>
-                using fri_query_proof_type = nil::marshalling::types::bundle<
+                using fri_query_proof_type = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         // std::map<std::size_t, initial_proof_type> initial_proof;
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             fri_initial_proof_type<TTypeBase, FRI>
                         >,
                         // std::vector<round_proof_type> round_proofs;
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             fri_round_proof_type<TTypeBase, FRI>
                         >
@@ -272,11 +272,11 @@ namespace nil {
                 >;
 
                 template<typename Endianness, typename FRI>
-                fri_query_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                fri_query_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI>
                 fill_fri_query_proof(
                     const typename FRI::query_proof_type &query_proof
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using filled_type = fri_query_proof_type<TTypeBase, FRI>;
 
                     filled_type filled;
@@ -299,7 +299,7 @@ namespace nil {
                 template<typename Endianness, typename FRI>
                 typename FRI::query_proof_type
                 make_fri_query_proof(
-                    const fri_query_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled,
+                    const fri_query_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI> &filled,
                     const batch_info_type &batch_info,
                     const std::vector<std::uint8_t> &step_list)
                 {
@@ -339,27 +339,27 @@ namespace nil {
                 // fri::proof_type marshalling
                 ///////////////////////////////////////////////////
                 template <typename TTypeBase, typename FRI> struct fri_proof {
-                    using type = nil::marshalling::types::bundle<
+                    using type = nil::crypto3::marshalling::types::bundle<
                         TTypeBase,
                         std::tuple<
                             // step_list.size() merkle roots
                             // Fixed size. It's Ok
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
                                 typename types::merkle_node_value<TTypeBase, typename FRI::merkle_proof_type>::type
                             >,
 
                             // step_list.
                             // We'll check is it good for current EVM instance
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
-                                nil::marshalling::types::integral<TTypeBase, uint8_t>
+                                nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                             >,
 
                             // Polynomials' values for initial proofs
                             // Fixed size
                             // lambda * polynomials_num * m
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
                                 field_element<TTypeBase, typename FRI::field_type::value_type>
                             >,
@@ -367,21 +367,21 @@ namespace nil {
                             // Polynomials' values for round proofs
                             // Fixed size
                             // lambda * \sum_rounds{m^{r_i}}
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
                                 field_element<TTypeBase, typename FRI::field_type::value_type>
                             >,
 
                             // Merkle proofs for initial proofs
                             // Fixed size lambda * batches_num
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
                                 typename types::merkle_proof<TTypeBase, typename FRI::merkle_proof_type>
                             >,
 
                             // Merkle proofs for round proofs
                             // Fixed size lambda * |step_list|
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
                                 typename types::merkle_proof<TTypeBase, typename FRI::merkle_proof_type>
                             >,
@@ -391,7 +391,7 @@ namespace nil {
                             typename polynomial<TTypeBase, typename FRI::polynomial_type>::type,
 
                             // proof of work.
-                            nil::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>
+                            nil::crypto3::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>
                         >
                     >;
                 };
@@ -399,12 +399,12 @@ namespace nil {
                 using batch_info_type = std::map<std::size_t, std::size_t>;// batch_id->batch_size
 
                 template <typename Endianness, typename FRI>
-                typename fri_proof<nil::marshalling::field_type<Endianness>, FRI>::type
+                typename fri_proof<nil::crypto3::marshalling::field_type<Endianness>, FRI>::type
                 fill_fri_proof(const typename FRI::proof_type &proof, const batch_info_type &batch_info, const typename FRI::params_type& params) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     // merkle roots
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase, typename types::merkle_node_value<TTypeBase, typename FRI::merkle_proof_type>::type
                     > filled_fri_roots;
                     for( size_t i = 0; i < proof.fri_roots.size(); i++){
@@ -439,7 +439,7 @@ namespace nil {
                             }
                         }
                     }
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         field_element<TTypeBase, typename FRI::field_type::value_type>
                     > filled_initial_val = fill_field_element_vector<typename FRI::field_type::value_type, Endianness>(initial_val);
@@ -456,22 +456,22 @@ namespace nil {
                             }
                         }
                     }
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         field_element<TTypeBase, typename FRI::field_type::value_type>
                     > filled_round_val = fill_field_element_vector<typename FRI::field_type::value_type, Endianness>(round_val);
 
                     // step_list
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
-                        nil::marshalling::types::integral<TTypeBase, uint8_t>
+                        nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                     > filled_step_list;
                     for (const auto& step : params.step_list) {
-                        filled_step_list.value().push_back(nil::marshalling::types::integral<TTypeBase, std::uint8_t>(step));
+                        filled_step_list.value().push_back(nil::crypto3::marshalling::types::integral<TTypeBase, std::uint8_t>(step));
                     }
 
                     // initial merkle proofs
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         typename types::merkle_proof<TTypeBase, typename FRI::merkle_proof_type>
                     > filled_initial_merkle_proofs;
@@ -486,7 +486,7 @@ namespace nil {
                     }
 
                     // round merkle proofs
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         typename types::merkle_proof<TTypeBase, typename FRI::merkle_proof_type>
                     > filled_round_merkle_proofs;
@@ -504,11 +504,11 @@ namespace nil {
                     );
 
                     // proof_of_work
-                    return typename fri_proof<nil::marshalling::field_type<Endianness>, FRI>::type(
+                    return typename fri_proof<nil::crypto3::marshalling::field_type<Endianness>, FRI>::type(
                         std::tuple(
                             filled_fri_roots, filled_step_list, filled_initial_val, filled_round_val,
                             filled_initial_merkle_proofs, filled_round_merkle_proofs, filled_final_polynomial,
-                            nil::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>(
+                            nil::crypto3::marshalling::types::integral<TTypeBase, typename FRI::grinding_type::output_type>(
                                 proof.proof_of_work)
                         )
                     );
@@ -517,7 +517,7 @@ namespace nil {
                 template <typename Endianness, typename FRI>
                 typename FRI::proof_type
                 make_fri_proof(
-                    const typename fri_proof<nil::marshalling::field_type<Endianness>, FRI>::type &filled_proof,
+                    const typename fri_proof<nil::crypto3::marshalling::field_type<Endianness>, FRI>::type &filled_proof,
                     const batch_info_type &batch_info)
                 {
                     typename FRI::proof_type proof;
@@ -620,16 +620,16 @@ namespace nil {
                 }
 
                 template <typename TTypeBase, typename FRI>
-                using initial_proofs_batch_type = nil::marshalling::types::standard_array_list<
+                using initial_proofs_batch_type = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase,
-                    nil::marshalling::types::bundle<
+                    nil::crypto3::marshalling::types::bundle<
                         TTypeBase,
                         std::tuple<
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
-                                nil::marshalling::types::integral<TTypeBase, uint8_t>
+                                nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                             >,
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
                                 fri_initial_proof_type<TTypeBase, FRI>
                             >
@@ -638,18 +638,18 @@ namespace nil {
                 >;
 
                 template <typename Endianness, typename FRI>
-                initial_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI>
+                initial_proofs_batch_type<nil::crypto3::marshalling::field_type<Endianness>, FRI>
                 fill_initial_proofs_batch(const typename FRI::initial_proofs_batch_type &initial_proofs_batch) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using filled_type = initial_proofs_batch_type<TTypeBase, FRI>;
-                    using bundle_type = nil::marshalling::types::bundle<
+                    using bundle_type = nil::crypto3::marshalling::types::bundle<
                         TTypeBase,
                         std::tuple<
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
-                                nil::marshalling::types::integral<TTypeBase, uint8_t>
+                                nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                             >,
-                            nil::marshalling::types::standard_array_list<
+                            nil::crypto3::marshalling::types::standard_array_list<
                                 TTypeBase,
                                 fri_initial_proof_type<TTypeBase, FRI>
                             >
@@ -659,17 +659,17 @@ namespace nil {
                     filled_type filled;
 
                     for (const auto &inital_proof : initial_proofs_batch.initial_proofs) {
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
-                            nil::marshalling::types::integral<TTypeBase, uint8_t>
+                            nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>
                         > filled_step_list;
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             fri_initial_proof_type<TTypeBase, FRI>
                         > filled_initial_proofs;
                         for (const auto &[step_list, proof] : inital_proof) {
                             filled_step_list.value().push_back(
-                                nil::marshalling::types::integral<TTypeBase, uint8_t>(step_list));
+                                nil::crypto3::marshalling::types::integral<TTypeBase, uint8_t>(step_list));
                             filled_initial_proofs.value().push_back(fill_fri_initial_proof<Endianness, FRI>(
                                 proof));
                         }
@@ -682,7 +682,7 @@ namespace nil {
 
                 template <typename Endianness, typename FRI>
                 typename FRI::initial_proofs_batch_type make_initial_proofs_batch(
-                    const initial_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled)
+                    const initial_proofs_batch_type<nil::crypto3::marshalling::field_type<Endianness>, FRI> &filled)
                 {
                     typename FRI::initial_proofs_batch_type initial_proofs_batch;
                     for (const auto &batch : filled.value()) {
@@ -699,24 +699,24 @@ namespace nil {
                 }
 
                 template <typename TTypeBase, typename FRI>
-                using round_proofs_batch_type = nil::marshalling::types::standard_array_list<
+                using round_proofs_batch_type = nil::crypto3::marshalling::types::standard_array_list<
                     TTypeBase,
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         fri_round_proof_type<TTypeBase, FRI>
                     >
                 >;
 
                 template <typename Endianness, typename FRI>
-                round_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI>
+                round_proofs_batch_type<nil::crypto3::marshalling::field_type<Endianness>, FRI>
                 fill_round_proofs_batch(const typename FRI::round_proofs_batch_type &round_proofs_batch) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using filled_type = round_proofs_batch_type<TTypeBase, FRI>;
 
                     filled_type filled;
 
                     for (const auto &round_proof_vector : round_proofs_batch.round_proofs) {
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             fri_round_proof_type<TTypeBase, FRI>
                         > filled_round_proof_vector;
@@ -732,7 +732,7 @@ namespace nil {
 
                 template <typename Endianness, typename FRI>
                 typename FRI::round_proofs_batch_type make_round_proofs_batch(
-                    const round_proofs_batch_type<nil::marshalling::field_type<Endianness>, FRI> &filled)
+                    const round_proofs_batch_type<nil::crypto3::marshalling::field_type<Endianness>, FRI> &filled)
                 {
                     typename FRI::round_proofs_batch_type round_proofs_batch;
                     for (const auto &round_proof_vector : filled.value()) {
@@ -746,10 +746,10 @@ namespace nil {
                 }
 
                 template <typename TTypeBase, typename FRI>
-                using commitments_part_of_proof_type = nil::marshalling::types::bundle<
+                using commitments_part_of_proof_type = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
-                        nil::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::types::standard_array_list<
                             TTypeBase,
                             typename types::merkle_node_value<TTypeBase, typename FRI::merkle_proof_type>::type
                         >,
@@ -758,16 +758,16 @@ namespace nil {
                 >;
 
                 template <typename Endianness, typename FRI>
-                commitments_part_of_proof_type<nil::marshalling::field_type<Endianness>, FRI>
+                commitments_part_of_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI>
                 fill_commitments_part_of_proof(
                     const typename FRI::commitments_part_of_proof &commitments_part_of_proof
                 ) {
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                     using filled_type = commitments_part_of_proof_type<TTypeBase, FRI>;
 
                     filled_type filled;
 
-                    nil::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         typename types::merkle_node_value<TTypeBase, typename FRI::merkle_proof_type>::type
                     > filled_fri_roots;
@@ -786,7 +786,7 @@ namespace nil {
 
                 template <typename Endianness, typename FRI>
                 typename FRI::commitments_part_of_proof make_commitments_part_of_proof(
-                    const commitments_part_of_proof_type<nil::marshalling::field_type<Endianness>, FRI> &filled
+                    const commitments_part_of_proof_type<nil::crypto3::marshalling::field_type<Endianness>, FRI> &filled
                 ) {
                     typename FRI::commitments_part_of_proof commitments_part_of_proof;
                     for (const auto &fri_root : std::get<0>(filled.value()).value()) {

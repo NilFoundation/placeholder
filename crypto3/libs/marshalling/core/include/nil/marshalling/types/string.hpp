@@ -35,41 +35,41 @@
 
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
             /// @brief field_type that represents a string.
             /// @details By default uses
             ///     <a href="http://en.cppreference.com/w/cpp/string/basic_string">std::string</a>,
-            ///     for internal storage, unless nil::marshalling::option::fixed_size_storage option is used,
-            ///     which forces usage of nil::marshalling::container::static_string instead.
+            ///     for internal storage, unless nil::crypto3::marshalling::option::fixed_size_storage option is used,
+            ///     which forces usage of nil::crypto3::marshalling::container::static_string instead.
             /// @tparam TFieldBase Base class for this field, expected to be a variant of
-            ///     nil::marshalling::field_type.
+            ///     nil::crypto3::marshalling::field_type.
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field.@n
             ///     Supported options are:
-            ///     @li @ref nil::marshalling::option::fixed_size_storage
-            ///     @li @ref nil::marshalling::option::custom_storage_type
-            ///     @li @ref nil::marshalling::option::sequence_size_field_prefix
-            ///     @li @ref nil::marshalling::option::sequence_ser_length_field_prefix
-            ///     @li @ref nil::marshalling::option::sequence_size_forcing_enabled
-            ///     @li @ref nil::marshalling::option::sequence_length_forcing_enabled
-            ///     @li @ref nil::marshalling::option::sequence_fixed_size
-            ///     @li @ref nil::marshalling::option::sequence_termination_field_suffix
-            ///     @li @ref nil::marshalling::option::sequence_trailing_field_suffix
-            ///     @li @ref nil::marshalling::option::default_value_initializer
-            ///     @li @ref nil::marshalling::option::contents_validator
-            ///     @li @ref nil::marshalling::option::contents_refresher
-            ///     @li @ref nil::marshalling::option::has_custom_read
-            ///     @li @ref nil::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::marshalling::option::fail_on_invalid
-            ///     @li @ref nil::marshalling::option::ignore_invalid
-            ///     @li @ref nil::marshalling::option::orig_data_view
-            ///     @li @ref nil::marshalling::option::empty_serialization
-            ///     @li @ref nil::marshalling::option::invalid_by_default
-            ///     @li @ref nil::marshalling::option::version_storage
-            /// @extends nil::marshalling::field_type
+            ///     @li @ref nil::crypto3::marshalling::option::fixed_size_storage
+            ///     @li @ref nil::crypto3::marshalling::option::custom_storage_type
+            ///     @li @ref nil::crypto3::marshalling::option::sequence_size_field_prefix
+            ///     @li @ref nil::crypto3::marshalling::option::sequence_ser_length_field_prefix
+            ///     @li @ref nil::crypto3::marshalling::option::sequence_size_forcing_enabled
+            ///     @li @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled
+            ///     @li @ref nil::crypto3::marshalling::option::sequence_fixed_size
+            ///     @li @ref nil::crypto3::marshalling::option::sequence_termination_field_suffix
+            ///     @li @ref nil::crypto3::marshalling::option::sequence_trailing_field_suffix
+            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer
+            ///     @li @ref nil::crypto3::marshalling::option::contents_validator
+            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+            ///     @li @ref nil::crypto3::marshalling::option::fail_on_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::ignore_invalid
+            ///     @li @ref nil::crypto3::marshalling::option::orig_data_view
+            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
+            ///     @li @ref nil::crypto3::marshalling::option::invalid_by_default
+            ///     @li @ref nil::crypto3::marshalling::option::version_storage
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/string.hpp
             template<typename TFieldBase, typename... TOptions>
             class string : private detail::string_base_type<TFieldBase, TOptions...> {
@@ -89,10 +89,10 @@ namespace nil {
                 using tag = tag::string;
 
                 /// @brief Type of underlying value.
-                /// @details If nil::marshalling::option::fixed_size_storage option is NOT used, the
+                /// @details If nil::crypto3::marshalling::option::fixed_size_storage option is NOT used, the
                 ///     value_type is std::string, otherwise it becomes
-                ///     nil::marshalling::container::static_string<TSize>, where TSize is a size
-                ///     provided to nil::marshalling::option::fixed_size_storage option.
+                ///     nil::crypto3::marshalling::container::static_string<TSize>, where TSize is a size
+                ///     provided to nil::crypto3::marshalling::option::fixed_size_storage option.
                 using value_type = typename base_impl_type::value_type;
 
                 /// @brief Default constructor
@@ -129,10 +129,10 @@ namespace nil {
                 /// @brief Read field value from input data sequence
                 /// @details By default, the read operation will try to consume all the
                 ///     data available, unless size limiting option (such as
-                ///     nil::marshalling::option::sequence_size_field_prefix,
-                ///     nil::marshalling::option::sequence_fixed_size,
-                ///     nil::marshalling::option::sequence_size_forcing_enabled,
-                ///     nil::marshalling::option::sequence_length_forcing_enabled) is used.
+                ///     nil::crypto3::marshalling::option::sequence_size_field_prefix,
+                ///     nil::crypto3::marshalling::option::sequence_fixed_size,
+                ///     nil::crypto3::marshalling::option::sequence_size_forcing_enabled,
+                ///     nil::crypto3::marshalling::option::sequence_length_forcing_enabled) is used.
                 /// @param[in, out] iter Iterator to read the data.
                 /// @param[in] len Number of bytes available for reading.
                 /// @return Status of read operation.
@@ -191,7 +191,7 @@ namespace nil {
 
                 /// @brief Write current field value to output data sequence
                 /// @details By default, the write operation will write all the
-                ///     characters the field contains. If nil::marshalling::option::sequence_fixed_size option
+                ///     characters the field contains. If nil::crypto3::marshalling::option::sequence_fixed_size option
                 ///     is used, the number of characters, that is going to be written, is
                 ///     exactly as the option specifies. If underlying string storage
                 ///     doesn't contain enough data, the '\0' characters will
@@ -228,7 +228,7 @@ namespace nil {
 
                 /// @brief Force number of characters that must be read in the next read()
                 ///     invocation.
-                /// @details Exists only if nil::marshalling::option::sequence_size_forcing_enabled option has been
+                /// @details Exists only if nil::crypto3::marshalling::option::sequence_size_forcing_enabled option has been
                 ///     used.
                 /// @param[in] count Number of elements to read during following read operation.
                 void force_read_elem_count(std::size_t count) {
@@ -237,14 +237,14 @@ namespace nil {
 
                 /// @brief Clear forcing of the number of characters that must be read in
                 ///     the next read() invocation.
-                /// @details Exists only if nil::marshalling::option::sequence_size_forcing_enabled option has been
+                /// @details Exists only if nil::crypto3::marshalling::option::sequence_size_forcing_enabled option has been
                 ///     used.
                 void clear_read_elem_count() {
                     base_impl_type::clear_read_elem_count();
                 }
 
                 /// @brief Force available length for the next read() invocation.
-                /// @details Exists only if @ref nil::marshalling::option::sequence_length_forcing_enabled option has been
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled option has been
                 ///     used.
                 /// @param[in] count Number of elements to read during following read operation.
                 void force_read_length(std::size_t count) {
@@ -253,7 +253,7 @@ namespace nil {
 
                 /// @brief Clear forcing of the available length in the next read()
                 ///     invocation.
-                /// @details Exists only if @ref nil::marshalling::option::sequence_length_forcing_enabled option has been
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::sequence_length_forcing_enabled option has been
                 ///     used.
                 void clear_read_length_forcing() {
                     return base_impl_type::clear_read_length_forcing();
@@ -265,7 +265,7 @@ namespace nil {
                 }
 
                 /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                 version_type get_version() const {
                     return base_impl_type::get_version();
                 }
@@ -325,28 +325,28 @@ namespace nil {
 
                 static_assert(
                     !parsed_options_type::has_ser_offset,
-                    "nil::marshalling::option::num_value_ser_offset option is not applicable to string field");
+                    "nil::crypto3::marshalling::option::num_value_ser_offset option is not applicable to string field");
                 static_assert(!parsed_options_type::has_fixed_length_limit,
-                              "nil::marshalling::option::fixed_length option is not applicable to string field");
+                              "nil::crypto3::marshalling::option::fixed_length option is not applicable to string field");
                 static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                              "nil::marshalling::option::fixed_bit_length option is not applicable to string field");
+                              "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to string field");
                 static_assert(!parsed_options_type::has_var_length_limits,
-                              "nil::marshalling::option::var_length option is not applicable to string field");
+                              "nil::crypto3::marshalling::option::var_length option is not applicable to string field");
                 static_assert(!parsed_options_type::has_scaling_ratio,
-                              "nil::marshalling::option::scaling_ratio_type option is not applicable to string field");
+                              "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to string field");
                 static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to string field");
+                              "nil::crypto3::marshalling::option::Units option is not applicable to string field");
                 static_assert(!parsed_options_type::has_multi_range_validation,
-                              "nil::marshalling::option::valid_num_value_range (or similar) option is not applicable "
+                              "nil::crypto3::marshalling::option::valid_num_value_range (or similar) option is not applicable "
                               "to string field");
                 static_assert(!parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
+                              "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
                               "applicable to string field");
                 static_assert(!parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                              "nil::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not "
+                              "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not "
                               "applicable to string field");
                 static_assert(!parsed_options_type::has_versions_range,
-                              "nil::marshalling::option::exists_between_versions (or similar) option is not applicable "
+                              "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable "
                               "to string field");
             };
 
@@ -384,17 +384,17 @@ namespace nil {
                 return field1.value() < field2.value();
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::string type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::string type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::string
+            /// @related nil::crypto3::marshalling::types::string
             template<typename TFieldBase, typename... TOptions>
             inline string<TFieldBase, TOptions...> &to_field_base(string<TFieldBase, TOptions...> &field) {
                 return field;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::string type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::string type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::string
+            /// @related nil::crypto3::marshalling::types::string
             template<typename TFieldBase, typename... TOptions>
             inline const string<TFieldBase, TOptions...> &to_field_base(const string<TFieldBase, TOptions...> &field) {
                 return field;

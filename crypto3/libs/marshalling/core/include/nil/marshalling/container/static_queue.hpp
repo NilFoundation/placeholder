@@ -43,7 +43,7 @@
 #include <nil/marshalling/assert_type.hpp>
 #include <nil/marshalling/processing/size_to_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace container {
             namespace detail {

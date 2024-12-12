@@ -38,7 +38,7 @@
 #include <nil/marshalling/container/static_string.hpp>
 #include <nil/marshalling/types/detail/common_funcs.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -70,12 +70,12 @@ namespace nil {
 
                 template<typename T, std::size_t TSize>
                 struct array_list_max_length_retrieve_helper<
-                    nil::marshalling::container::static_vector<T, TSize>> {
+                    nil::crypto3::marshalling::container::static_vector<T, TSize>> {
                     static const std::size_t value = TSize;
                 };
 
                 template<std::size_t TSize>
-                struct array_list_max_length_retrieve_helper<nil::marshalling::container::static_string<TSize>> {
+                struct array_list_max_length_retrieve_helper<nil::crypto3::marshalling::container::static_string<TSize>> {
                     static const std::size_t value = TSize - 1;
                 };
 

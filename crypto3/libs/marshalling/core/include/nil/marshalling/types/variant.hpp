@@ -37,7 +37,7 @@
 
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
@@ -53,7 +53,7 @@ namespace nil {
             ///
             ///     Refer to @ref sec_field_tutorial_variant for tutorial and usage examples.
             /// @tparam TFieldBase Base class for this field, expected to be a variant of
-            ///     nil::marshalling::field_type.
+            ///     nil::crypto3::marshalling::field_type.
             /// @tparam TMembers All supported field types bundled together in
             ///     <a href="http://en.cppreference.com/w/cpp/utility/tuple">std::tuple</a>.
             ///     This parameter is used to determine the size of the contained buffer
@@ -61,35 +61,35 @@ namespace nil {
             /// @tparam TOptions Zero or more options that modify/refine default behaviour
             ///     of the field.@n
             ///     Supported options are:
-            ///     @li @ref nil::marshalling::option::default_value_initializer - All wrapped fields may
+            ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer - All wrapped fields may
             ///         specify their independent default value initializers. It is
             ///         also possible to provide initializer for the variant field which
             ///         will set appropriate values to the fields based on some
             ///         internal logic.
-            ///     @li @ref nil::marshalling::option::contents_validator - All wrapped fields may specify
+            ///     @li @ref nil::crypto3::marshalling::option::contents_validator - All wrapped fields may specify
             ///         their independent validators. The bundle field considered to
             ///         be valid if all the wrapped fields are valid. This option though,
             ///         provides an ability to add extra validation logic that can
             ///         observe value of more than one wrapped fields. For example,
             ///         protocol specifies that if one specific field has value X, than
             ///         other field is NOT allowed to have value Y.
-            ///     @li @ref nil::marshalling::option::contents_refresher - The default @b refresh()
+            ///     @li @ref nil::crypto3::marshalling::option::contents_refresher - The default @b refresh()
             ///         behavior is to call @b refresh() member function of the contained
             ///         field (if such exists). This option allows specifying the custom
             ///         refreshing behaviour.
-            ///     @li @ref nil::marshalling::option::custom_value_reader - It may be required to implement
+            ///     @li @ref nil::crypto3::marshalling::option::custom_value_reader - It may be required to implement
             ///         custom reading functionality instead of default behaviour of
             ///         invoking read() member function of every member field. It is possible
-            ///         to provide cusom reader functionality using nil::marshalling::option::custom_value_reader
+            ///         to provide cusom reader functionality using nil::crypto3::marshalling::option::custom_value_reader
             ///         option.
-            ///     @li @ref nil::marshalling::option::default_variant_index - By default the variant field
+            ///     @li @ref nil::crypto3::marshalling::option::default_variant_index - By default the variant field
             ///         doesn't have any valid contents. This option may be used to specify
             ///         the index of the default member field.
-            ///     @li @ref nil::marshalling::option::has_custom_read
-            ///     @li @ref nil::marshalling::option::has_custom_refresh
-            ///     @li @ref nil::marshalling::option::empty_serialization
-            ///     @li @ref nil::marshalling::option::version_storage
-            /// @extends nil::marshalling::field_type
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+            ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+            ///     @li @ref nil::crypto3::marshalling::option::empty_serialization
+            ///     @li @ref nil::crypto3::marshalling::option::version_storage
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/variant.hpp
             /// @see MARSHALLING_VARIANT_MEMBERS_ACCESS()
             /// @see MARSHALLING_VARIANT_MEMBERS_ACCESS_NOTEMPLATE()
@@ -98,7 +98,7 @@ namespace nil {
                 using base_impl_type
                     = detail::adapt_basic_field_type<detail::basic_variant<TFieldBase, TMembers>, TOptions...>;
 
-                static_assert(nil::detail::is_tuple<TMembers>::value,
+                static_assert(marshalling::detail::is_tuple<TMembers>::value,
                               "TMembers is expected to be a tuple of std::tuple<...>");
 
                 static_assert(1U < std::tuple_size<TMembers>::value, "Number of members is expected to be at least 2.");
@@ -173,7 +173,7 @@ namespace nil {
 
                 /// @brief Read field value from input data sequence
                 /// @details Invokes read() member function over every possible field
-                ///     in order of definition until nil::marshalling::ErrorStatus::Success is returned.
+                ///     in order of definition until nil::crypto3::marshalling::ErrorStatus::Success is returned.
                 /// @param[in, out] iter Iterator to read the data.
                 /// @param[in] size Number of bytes available for reading.
                 /// @return Status of read operation.
@@ -190,7 +190,7 @@ namespace nil {
                 /// @brief Write current field value to output data sequence
                 /// @details Invokes write() member function of the contained field if such
                 ///     exists. If the variant field doesn't contain any valid field, the
-                ///     function doesn't advance the iterator, but returns nil::marshalling::ErrorStatus::Success.
+                ///     function doesn't advance the iterator, but returns nil::crypto3::marshalling::ErrorStatus::Success.
                 /// @param[in, out] iter Iterator to write the data.
                 /// @param[in] size Maximal number of bytes that can be written.
                 /// @return Status of write operation.
@@ -356,7 +356,7 @@ namespace nil {
                 }
 
                 /// @brief Get version of the field.
-                /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                 version_type get_version() const {
                     return base_impl_type::get_version();
                 }
@@ -374,66 +374,66 @@ namespace nil {
             private:
                 static_assert(
                     !parsed_options_type::has_ser_offset,
-                    "nil::marshalling::option::num_value_ser_offset option is not applicable to variant field");
+                    "nil::crypto3::marshalling::option::num_value_ser_offset option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_fixed_length_limit,
-                              "nil::marshalling::option::fixed_length option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::fixed_length option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                              "nil::marshalling::option::fixed_bit_length option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_var_length_limits,
-                              "nil::marshalling::option::var_length option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::var_length option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_sequence_elem_length_forcing,
-                              "nil::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
+                              "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
                               "variant field");
                 static_assert(
                     !parsed_options_type::has_sequence_size_forcing,
-                    "nil::marshalling::option::sequence_size_forcing_enabled option is not applicable to variant field");
+                    "nil::crypto3::marshalling::option::sequence_size_forcing_enabled option is not applicable to variant field");
                 static_assert(
                     !parsed_options_type::has_sequence_length_forcing,
-                    "nil::marshalling::option::sequence_length_forcing_enabled option is not applicable to variant field");
+                    "nil::crypto3::marshalling::option::sequence_length_forcing_enabled option is not applicable to variant field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size,
-                    "nil::marshalling::option::sequence_fixed_size option is not applicable to variant field");
+                    "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                              "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable "
+                              "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable "
                               "to variant field");
                 static_assert(
                     !parsed_options_type::has_sequence_size_field_prefix,
-                    "nil::marshalling::option::sequence_size_field_prefix option is not applicable to variant field");
+                    "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_sequence_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
                               "variant field");
                 static_assert(!parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                              "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
+                              "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not "
                               "applicable to variant field");
                 static_assert(
                     !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                    "nil::marshalling::option::sequence_elem_fixed_ser_length_field_prefix option is not applicable "
+                    "nil::crypto3::marshalling::option::sequence_elem_fixed_ser_length_field_prefix option is not applicable "
                     "to variant field");
                 static_assert(!parsed_options_type::has_sequence_trailing_field_suffix,
-                              "nil::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
                               "variant field");
                 static_assert(!parsed_options_type::has_sequence_termination_field_suffix,
-                              "nil::marshalling::option::sequence_termination_field_suffix option is not applicable to "
+                              "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
                               "variant field");
                 static_assert(!parsed_options_type::has_fixed_size_storage,
-                              "nil::marshalling::option::fixed_size_storage option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to variant field");
                 static_assert(
                     !parsed_options_type::has_custom_storage_type,
-                    "nil::marshalling::option::custom_storage_type option is not applicable to variant field");
+                    "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_scaling_ratio,
-                              "nil::marshalling::option::scaling_ratio_type option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::scaling_ratio_type option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_units,
-                              "nil::marshalling::option::Units option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::Units option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_orig_data_view,
-                              "nil::marshalling::option::orig_data_view option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::orig_data_view option is not applicable to variant field");
                 static_assert(!parsed_options_type::has_multi_range_validation,
-                              "nil::marshalling::option::valid_num_value_range (or similar) option is not applicable "
+                              "nil::crypto3::marshalling::option::valid_num_value_range (or similar) option is not applicable "
                               "to variant field");
                 static_assert(!parsed_options_type::has_versions_range,
-                              "nil::marshalling::option::exists_between_versions (or similar) option is not applicable "
+                              "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable "
                               "to variant field");
                 static_assert(!parsed_options_type::has_invalid_by_default,
-                              "nil::marshalling::option::invalid_by_default option is not applicable to variant field");
+                              "nil::crypto3::marshalling::option::invalid_by_default option is not applicable to variant field");
             };
 
             namespace detail {
@@ -501,18 +501,18 @@ namespace nil {
                 return field1.value() != field2.value();
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::variant type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::variant type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::variant
+            /// @related nil::crypto3::marshalling::types::variant
             template<typename TFieldBase, typename TMembers, typename... TOptions>
             inline variant<TFieldBase, TMembers, TOptions...> &
                 to_field_base(variant<TFieldBase, TMembers, TOptions...> &field) {
                 return field;
             }
 
-            /// @brief Upcast type of the field definition to its parent nil::marshalling::types::variant type
+            /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::variant type
             ///     in order to have access to its internal types.
-            /// @related nil::marshalling::types::variant
+            /// @related nil::crypto3::marshalling::types::variant
             template<typename TFieldBase, typename TMembers, typename... TOptions>
             inline const variant<TFieldBase, TMembers, TOptions...> &
                 to_field_base(const variant<TFieldBase, TMembers, TOptions...> &field) {
@@ -520,19 +520,19 @@ namespace nil {
             }
 
 /// @brief Add convenience access enum and functions to the members of
-///     @ref nil::marshalling::types::variant field.
-/// @details All the possible field types the @ref nil::marshalling::types::variant field
+///     @ref nil::crypto3::marshalling::types::variant field.
+/// @details All the possible field types the @ref nil::crypto3::marshalling::types::variant field
 ///     can contain are bundled in
 ///     <a href="http://en.cppreference.com/w/cpp/utility/tuple">std::tuple</a>
 ///     and provided as a template parameter to the definition of the
-///     nil::marshalling::types::variant field.
+///     nil::crypto3::marshalling::types::variant field.
 ///     @code
-///     using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+///     using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::BigEndian>;
 ///     using ... Field1;
 ///     using ... Field2;
 ///     using ... Field3;
 ///     using MyField =
-///         nil::marshalling::types::variant<
+///         nil::crypto3::marshalling::types::variant<
 ///             MyFieldBase,
 ///             std::tuple<Field1, Field2, Field3>
 ///         >;
@@ -544,10 +544,10 @@ namespace nil {
 ///     However, it would be convenient to provide names and easier access to
 ///     all the poisble variants. The MARSHALLING_VARIANT_MEMBERS_ACCESS() macro does exactly
 ///     that when used inside the field class definition. Just inherit from
-///     the nil::marshalling::types::variant class and use the macro inside with the names for the
+///     the nil::crypto3::marshalling::types::variant class and use the macro inside with the names for the
 ///     member fields:
 ///     @code
-///     class MyField : public nil::marshalling::types::variant<...>
+///     class MyField : public nil::crypto3::marshalling::types::variant<...>
 ///     {
 ///     public:
 ///         MARSHALLING_FIELD_MEMBERS_ACCESS(member1, member2, member3);
@@ -556,7 +556,7 @@ namespace nil {
 ///     It would be equivalent to having the following types and functions
 ///     definitions:
 ///     @code
-///     class MyField : public nil::marshalling::types::variant<...>
+///     class MyField : public nil::crypto3::marshalling::types::variant<...>
 ///     {
 ///     public:
 ///         // Access indices for member fields
@@ -634,7 +634,7 @@ namespace nil {
 ///
 ///     See @ref sec_field_tutorial_variant for more examples and details
 /// @param[in] ... List of member fields' names.
-/// @related nil::marshalling::types::variant
+/// @related nil::crypto3::marshalling::types::variant
 /// @warning Some compilers, such as @b clang or early versions of @b g++
 ///     may have problems compiling code generated by this macro even
 ///     though it uses valid C++11 constructs in attempt to automatically identify the
@@ -643,11 +643,11 @@ namespace nil {
 ///     MARSHALLING_VARIANT_MEMBERS_ACCESS_NOTEMPLATE() macro instead. In
 ///     case this macro needs to reside inside a @b template class, then
 ///     there is a need to define inner @b Base type, which specifies
-///     exact type of the @ref nil::marshalling::types::variant class. For example:
+///     exact type of the @ref nil::crypto3::marshalling::types::variant class. For example:
 ///     @code
 ///     template <typename... TExtraOptions>
 ///     class MyField : public
-///         nil::marshalling::types::variant<
+///         nil::crypto3::marshalling::types::variant<
 ///             MyFieldBase,
 ///             std::tuple<Field1, Field2, Field3>,
 ///             TExtraOptions...
@@ -655,7 +655,7 @@ namespace nil {
 ///     {
 ///         // Duplicate the base class definition
 ///         using Base =
-///             nil::marshalling::types::variant<
+///             nil::crypto3::marshalling::types::variant<
 ///                 MyFieldBase,
 ///                 std::tuple<Field1, Field2, Field3>,
 ///                 TExtraOptions...
@@ -667,14 +667,14 @@ namespace nil {
 #define MARSHALLING_VARIANT_MEMBERS_ACCESS(...)                                                   \
     MARSHALLING_EXPAND(MARSHALLING_DEFINE_FIELD_ENUM(__VA_ARGS__))                                \
     MARSHALLING_AS_VARIANT_FUNC {                                                                 \
-        auto &var = nil::marshalling::types::to_field_base(*this);                                \
+        auto &var = nil::crypto3::marshalling::types::to_field_base(*this);                                \
         using Var = typename std::decay<decltype(var)>::type;                                     \
         static_assert(std::tuple_size<typename Var::members_type>::value == FieldIdx_numOfValues, \
                       "Invalid number of names for variant field");                               \
         return var;                                                                               \
     }                                                                                             \
     MARSHALLING_AS_VARIANT_CONST_FUNC {                                                           \
-        auto &var = nil::marshalling::types::to_field_base(*this);                                \
+        auto &var = nil::crypto3::marshalling::types::to_field_base(*this);                                \
         using Var = typename std::decay<decltype(var)>::type;                                     \
         static_assert(std::tuple_size<typename Var::members_type>::value == FieldIdx_numOfValues, \
                       "Invalid number of names for variant field");                               \
@@ -691,7 +691,7 @@ namespace nil {
 ///     compilation fails and the class it is being used in is @b NOT a
 ///     template one, please use @ref MARSHALLING_VARIANT_MEMBERS_ACCESS_NOTEMPLATE()
 ///     instead.
-/// @related nil::marshalling::types::variant
+/// @related nil::crypto3::marshalling::types::variant
 #define MARSHALLING_VARIANT_MEMBERS_ACCESS_NOTEMPLATE(...)         \
     MARSHALLING_EXPAND(MARSHALLING_DEFINE_FIELD_ENUM(__VA_ARGS__)) \
     MARSHALLING_DO_VARIANT_MEM_ACC_FUNC_NOTEMPLATE(__VA_ARGS__)

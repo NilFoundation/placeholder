@@ -35,7 +35,7 @@ namespace nil {
 
         template <typename Endianness, typename BlueprintField>
         class assignment_table_writer {
-            public:                
+            public:
                 using Column = nil::crypto3::zk::snark::plonk_column<BlueprintField>;
                 using ArithmetizationType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintField>;
 
@@ -43,23 +43,23 @@ namespace nil {
                 using AssignmentTableDescription = nil::crypto3::zk::snark::plonk_table_description<BlueprintField>;
 
                 // marshalling traits
-                using TTypeBase = nil::marshalling::field_type<Endianness>;
+                using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
                 using BlueprintFieldValueType = typename BlueprintField::value_type;
                 using MarshallingField = nil::crypto3::marshalling::types::field_element<
                     TTypeBase, 
                     BlueprintFieldValueType
                 >;
 
-            private:            
+            private:
                 /**
-                * @brief Write size_t serialized as nil::marshalling::types::integral into output stream.
+                * @brief Write size_t serialized as nil::crypto3::marshalling::types::integral into output stream.
                 */
                 static void write_size_t(std::ostream& out, size_t input) {
-                    auto integer_container = nil::marshalling::types::integral<TTypeBase, std::size_t>(input);
+                    auto integer_container = nil::crypto3::marshalling::types::integral<TTypeBase, std::size_t>(input);
                     std::array<std::uint8_t, integer_container.length()> char_array{};
                     auto write_iter = char_array.begin();
                     auto const status = integer_container.write(write_iter, char_array.size());
-                    assert(status == nil::marshalling::status_type::success);
+                    assert(status == nil::crypto3::marshalling::status_type::success);
 
                     out.write(reinterpret_cast<char*>(char_array.data()), char_array.size());
                 }
@@ -83,7 +83,7 @@ namespace nil {
                     std::array<std::uint8_t, field_container.length()> char_array{};
                     auto write_iter = char_array.begin();
                     auto const status = field_container.write(write_iter, char_array.size());
-                    assert(status == nil::marshalling::status_type::success);
+                    assert(status == nil::crypto3::marshalling::status_type::success);
 
                     out.write(reinterpret_cast<char*>(char_array.data()), char_array.size());
                 }

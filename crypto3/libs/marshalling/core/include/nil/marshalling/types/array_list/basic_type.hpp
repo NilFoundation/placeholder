@@ -39,7 +39,7 @@
 #include <nil/marshalling/types/array_list/type_traits.hpp>
 #include <nil/marshalling/container/type_traits.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
