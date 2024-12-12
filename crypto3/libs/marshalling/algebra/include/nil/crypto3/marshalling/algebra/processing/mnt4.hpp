@@ -82,7 +82,7 @@ namespace nil {
 
                 template<typename Coordinates>
                 struct curve_element_writer<
-                    nil::marshalling::endian::big_endian,
+                    endian::big_endian,
                     typename algebra::curves::mnt4_298::template g1_type<
                         Coordinates,
                         algebra::curves::forms::short_weierstrass>> {
@@ -93,11 +93,11 @@ namespace nil {
                     using g1_field_type = typename group_value_type::field_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
 
                     template<typename TIter>
-                    static nil::marshalling::status_type process(const group_value_type &point, TIter &iter) {
+                    static status_type process(const group_value_type &point, TIter &iter) {
 
                         /* Point is encoded in compressed form, only X coordinate.
                          * Highest bit is Infinity flag
@@ -121,13 +121,13 @@ namespace nil {
                             *iter |= S_bit;
                         }
 
-                        return nil::marshalling::status_type::success;
+                        return status_type::success;
                     }
                 };
 
                 template<typename Coordinates>
                 struct curve_element_writer<
-                    nil::marshalling::endian::big_endian,
+                    endian::big_endian,
                     typename algebra::curves::mnt4_298::template g2_type<
                         Coordinates,
                         algebra::curves::forms::short_weierstrass>> {
@@ -138,11 +138,11 @@ namespace nil {
                     using g2_field_type = typename group_value_type::field_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
 
                     template<typename TIter>
-                    static nil::marshalling::status_type process(const group_value_type &point, TIter &iter) {
+                    static status_type process(const group_value_type &point, TIter &iter) {
 
                         /* Point is always encoded in compressed form, only X coordinate.
                          * Highest bit is Infinity flag
@@ -179,13 +179,13 @@ namespace nil {
                             *iter |= S_bit;
                         }
 
-                        return nil::marshalling::status_type::success;
+                        return status_type::success;
                     }
                 };
 
                 template<typename Coordinates>
                 struct curve_element_reader<
-                    nil::marshalling::endian::big_endian,
+                    endian::big_endian,
                     typename algebra::curves::mnt4_298::template g1_type<
                         Coordinates,
                         algebra::curves::forms::short_weierstrass>> {
@@ -194,11 +194,11 @@ namespace nil {
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
 
                     template<typename TIter>
-                    static nil::marshalling::status_type process(group_value_type &point, TIter &iter) {
+                    static status_type process(group_value_type &point, TIter &iter) {
                         using chunk_type = typename TIter::value_type;
 
                         constexpr static const std::size_t sizeof_field_element =
@@ -216,7 +216,7 @@ namespace nil {
                         if (I_bit) {
                             // point at infinity
                             point = g1_value_type();
-                            return nil::marshalling::status_type::success;
+                            return status_type::success;
                         }
 
                         g1_field_value_type x_mod(x);
@@ -236,13 +236,13 @@ namespace nil {
                             point = result;
                         }
 
-                        return nil::marshalling::status_type::success;
+                        return status_type::success;
                     }
                 };
 
                 template<typename Coordinates>
                 struct curve_element_reader<
-                    nil::marshalling::endian::big_endian,
+                    endian::big_endian,
                     typename algebra::curves::mnt4_298::template g2_type<
                         Coordinates,
                         algebra::curves::forms::short_weierstrass>> {
@@ -251,11 +251,11 @@ namespace nil {
                     using group_value_type = typename group_type::value_type;
                     using coordinates = typename group_value_type::coordinates;
                     using form = typename group_value_type::form;
-                    using endianness = nil::marshalling::endian::big_endian;
+                    using endianness = endian::big_endian;
                     using params_type = curve_element_marshalling_params<group_type>;
 
                     template<typename TIter>
-                    static nil::marshalling::status_type process(group_value_type &point, TIter &iter) {
+                    static status_type process(group_value_type &point, TIter &iter) {
                         using chunk_type = typename TIter::value_type;
 
                         constexpr static const std::size_t sizeof_field_element =
@@ -280,7 +280,7 @@ namespace nil {
                         if (I_bit) {
                             // point at infinity
                             point = group_value_type();
-                            return nil::marshalling::status_type::success;
+                            return status_type::success;
                         }
 
                         g2_field_value_type x_mod(x_0, x_1);
@@ -300,7 +300,7 @@ namespace nil {
                             point = result;
                         }
 
-                        return nil::marshalling::status_type::success;
+                        return status_type::success;
                     }
                 };
             }    // namespace processing

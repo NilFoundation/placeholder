@@ -37,7 +37,7 @@
 
 #include <nil/marshalling/types/detail/common_funcs.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {

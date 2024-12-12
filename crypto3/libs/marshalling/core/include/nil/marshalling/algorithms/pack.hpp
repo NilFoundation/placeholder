@@ -29,7 +29,7 @@
 
 #include <nil/marshalling/detail/repack_value.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         /*!
          * @defgroup marshalling Marshalling

@@ -57,23 +57,23 @@ namespace nil {
                                      container::accumulation_vector<typename AccumulationVector::group_type>>::value,
                         bool>::type,
                     typename... TOptions>
-                using accumulation_vector = nil::marshalling::types::bundle<
+                using accumulation_vector = nil::crypto3::marshalling::types::bundle<
                     TTypeBase,
                     std::tuple<
                         curve_element<TTypeBase, typename AccumulationVector::group_type>,
                         sparse_vector<TTypeBase, container::sparse_vector<typename AccumulationVector::group_type>>>>;
 
                 template<typename AccumulationVector, typename Endianness>
-                accumulation_vector<nil::marshalling::field_type<Endianness>, AccumulationVector>
+                accumulation_vector<nil::crypto3::marshalling::field_type<Endianness>, AccumulationVector>
                     fill_accumulation_vector(const AccumulationVector &accumulation_vector_inp) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     using curve_element_type = curve_element<TTypeBase, typename AccumulationVector::group_type>;
 
                     curve_element_type filled_first = curve_element_type(accumulation_vector_inp.first);
 
-                    return accumulation_vector<nil::marshalling::field_type<Endianness>, AccumulationVector>(
+                    return accumulation_vector<nil::crypto3::marshalling::field_type<Endianness>, AccumulationVector>(
                         std::make_tuple(
                             filled_first,
                             fill_sparse_vector<container::sparse_vector<typename AccumulationVector::group_type>,
@@ -82,7 +82,7 @@ namespace nil {
 
                 template<typename AccumulationVector, typename Endianness>
                 AccumulationVector make_accumulation_vector(
-                    const accumulation_vector<nil::marshalling::field_type<Endianness>, AccumulationVector>
+                    const accumulation_vector<nil::crypto3::marshalling::field_type<Endianness>, AccumulationVector>
                         &filled_accumulation_vector) {
 
                     return AccumulationVector(

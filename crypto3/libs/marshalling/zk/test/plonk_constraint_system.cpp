@@ -79,8 +79,8 @@ struct plonk_constraint_system_test_runner {
 
     bool run_test()
     {
-        using Endianness = nil::marshalling::option::big_endian;
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using Endianness = nil::crypto3::marshalling::option::big_endian;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
         using value_marshalling_type = nil::crypto3::marshalling::types::plonk_constraint_system<TTypeBase, constraint_system>;
 
         auto filled_val = nil::crypto3::marshalling::types::fill_plonk_constraint_system<Endianness, constraint_system>(system);
@@ -91,11 +91,11 @@ struct plonk_constraint_system_test_runner {
         cv.resize(filled_val.length(), 0x00);
 
         auto write_iter = cv.begin();
-        nil::marshalling::status_type status = filled_val.write(write_iter, cv.size());
+        nil::crypto3::marshalling::status_type status = filled_val.write(write_iter, cv.size());
         value_marshalling_type test_val_read;
         auto read_iter = cv.begin();
         status = test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = types::make_plonk_constraint_system<Endianness, constraint_system>(test_val_read);
 
         BOOST_CHECK(system == constructed_val_read);
