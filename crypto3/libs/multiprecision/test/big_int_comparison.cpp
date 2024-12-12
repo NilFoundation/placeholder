@@ -6,7 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_int_comparision_test
+#define BOOST_TEST_MODULE big_int_comparison_test
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/random_device.hpp>

@@ -126,7 +126,7 @@ namespace nil::crypto3::multiprecision {
             m_negative = !m_negative;
         }
 
-        // Comparision
+        // Comparison
 
         template<std::size_t Bits2>
         constexpr int compare(const big_int<Bits2>& other) const noexcept {

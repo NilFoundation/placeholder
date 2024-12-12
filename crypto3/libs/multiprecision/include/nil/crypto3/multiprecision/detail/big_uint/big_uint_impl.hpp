@@ -406,7 +406,7 @@ namespace nil::crypto3::multiprecision {
 
         explicit constexpr operator bool() const { return !is_zero(); }
 
-        // Comparisions
+        // Comparisons
 
         template<std::size_t Bits2>
         constexpr int compare(const big_uint<Bits2>& b) const noexcept {
