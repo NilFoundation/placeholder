@@ -755,6 +755,9 @@ namespace nil::crypto3::multiprecision {
         NIL_CO3_MP_FORCEINLINE constexpr void increment() noexcept {
             if (limbs()[0] < big_uint::max_limb_value) {
                 ++limbs()[0];
+                if constexpr (Bits < limb_bits) {
+                    normalize();
+                }
             } else {
                 add(*this, *this, static_cast<limb_type>(1u));
             }
