@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(multilimb) {
 
 BOOST_AUTO_TEST_CASE(failing) {
     BOOST_CHECK_EQUAL(
-        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 % 2, 1u);
+        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 % 2u, 1u);
 }
 
 BOOST_AUTO_TEST_CASE(failing2) {

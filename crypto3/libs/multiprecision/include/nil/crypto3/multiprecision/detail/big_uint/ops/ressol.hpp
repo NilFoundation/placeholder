@@ -58,7 +58,7 @@ namespace nil::crypto3::multiprecision {
 
         montgomery_big_mod_rt<Bits> a_mod(a, p);
 
-        if (p % 4 == 3) {
+        if (p % 4u == 3) {
             big_uint_padded_t exp_padded = p;
 
             ++exp_padded;
