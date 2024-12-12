@@ -4,34 +4,29 @@
 #include <type_traits>
 
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
+#include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     constexpr std::size_t msb(T a) {
         // TODO(ioxid): optimize
-        return static_cast<big_uint<detail::get_bits<T>()>>(a).msb();
+        return detail::as_big_uint(detail::unsigned_or_throw(a)).msb();
     }
 
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     constexpr std::size_t lsb(T a) {
         // TODO(ioxid): optimize
-        return static_cast<big_uint<detail::get_bits<T>()>>(a).lsb();
+        return detail::as_big_uint(detail::unsigned_or_throw(a)).lsb();
     }
 
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     constexpr bool bit_test(T a, std::size_t index) {
         // TODO(ioxid): optimize
-        return static_cast<big_uint<detail::get_bits<T>()>>(a).bit_test(index);
+        return detail::as_big_uint(detail::unsigned_or_throw(a)).bit_test(index);
     }
 
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     constexpr bool is_zero(T a) {
         return a == 0;
-    }
-
-    template<typename T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-    constexpr std::make_unsigned_t<T> unsigned_abs(T x) {
-        std::make_unsigned_t<T> ux = x;
-        return (x < 0) ? -ux : ux;  // compare signed x, negate unsigned x
     }
 }  // namespace nil::crypto3::multiprecision

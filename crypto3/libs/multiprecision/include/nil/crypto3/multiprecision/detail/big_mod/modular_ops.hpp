@@ -22,8 +22,8 @@
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
-#include "nil/crypto3/multiprecision/detail/constexpr_support.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
+#include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
 #include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
@@ -637,8 +637,7 @@ namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits, typename SI, typename modular_ops_t,
              typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
     constexpr void init_raw_base(big_uint<Bits> &raw_base, SI b, const modular_ops_t &ops) {
-        ops.adjust_modular(raw_base,
-                           big_uint<sizeof(SI) * CHAR_BIT>(detail::constexpr_support::abs(b)));
+        ops.adjust_modular(raw_base, detail::as_big_uint(detail::unsigned_abs(b)));
         if (b < 0) {
             ops.negate(raw_base);
         }
@@ -647,6 +646,6 @@ namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits, typename UI, typename modular_ops_t,
              typename std::enable_if_t<std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
     constexpr void init_raw_base(big_uint<Bits> &raw_base, UI b, const modular_ops_t &ops) {
-        ops.adjust_modular(raw_base, big_uint<sizeof(UI) * CHAR_BIT>(b));
+        ops.adjust_modular(raw_base, detail::as_big_uint(b));
     }
 }  // namespace nil::crypto3::multiprecision::detail
