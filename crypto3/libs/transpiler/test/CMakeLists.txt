@@ -16,7 +16,8 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                       crypto3::math
                       crypto3::random
                       crypto3::zk
-                      ${Boost_LIBRARIES})
+                      Boost::unit_test_framework
+)
 set_target_properties(_cm_internal_tests-crypto3-transpiler-test PROPERTIES CXX_STANDARD 20)
 target_precompile_headers(_cm_internal_tests-crypto3-transpiler-test REUSE_FROM crypto3_precompiled_headers)
 
