@@ -3,8 +3,8 @@
 #include <boost/test/unit_test.hpp>
 #include <utility>
 
-#include "nil/crypto3/multiprecision/literals.hpp"
 #include "nil/crypto3/multiprecision/big_mod.hpp"
+#include "nil/crypto3/multiprecision/literals.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
@@ -82,13 +82,13 @@ BOOST_AUTO_TEST_CASE(ops) {
 #define TEST_BINARY_OP(op) \
     do {                   \
         b = a op a;        \
-        /* b = 2 op a; */  \
-        /* b = a op 2; */  \
-        /* b = 2u op a; */ \
-        /* b = a op 2u; */ \
+        b = 2 op a;        \
+        b = a op 2;        \
+        b = 2u op a;       \
+        b = a op 2u;       \
         b op## = a;        \
-        /* b op## = 2; */  \
-        /*b op## = 2u; */  \
+        b op## = 2;        \
+        b op## = 2u;       \
     } while (false)
 
     TEST_BINARY_OP(+);
@@ -100,6 +100,8 @@ BOOST_AUTO_TEST_CASE(ops) {
     --b;
     b--;
     b = -b;
+
+#undef TEST_BINARY_OP
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -107,8 +109,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(addition)
 
 BOOST_AUTO_TEST_CASE(simple) {
-    BOOST_CHECK_EQUAL(static_cast<big_mod_t>(0x2_big_uint64) + static_cast<big_mod_t>(0x3_big_uint64),
-                      static_cast<big_mod_t>(0x5_big_uint64));
+    BOOST_CHECK_EQUAL(
+        static_cast<big_mod_t>(0x2_big_uint64) + static_cast<big_mod_t>(0x3_big_uint64),
+        static_cast<big_mod_t>(0x5_big_uint64));
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
@@ -122,8 +125,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(multiplication)
 
 BOOST_AUTO_TEST_CASE(simple) {
-    BOOST_CHECK_EQUAL(static_cast<big_mod_t>(0x2_big_uint64) * static_cast<big_mod_t>(0x3_big_uint64),
-                      static_cast<big_mod_t>(0x6_big_uint64));
+    BOOST_CHECK_EQUAL(
+        static_cast<big_mod_t>(0x2_big_uint64) * static_cast<big_mod_t>(0x3_big_uint64),
+        static_cast<big_mod_t>(0x6_big_uint64));
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
@@ -133,7 +137,8 @@ BOOST_AUTO_TEST_CASE(multilimb) {
 }
 
 BOOST_AUTO_TEST_CASE(big) {
-    static constexpr auto mod = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
+    static constexpr auto mod =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
     big_mod<mod> a = 0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
 
     big_mod<mod> b = 0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
@@ -143,7 +148,8 @@ BOOST_AUTO_TEST_CASE(big) {
 }
 
 BOOST_AUTO_TEST_CASE(big_assign) {
-    static constexpr auto mod = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
+    static constexpr auto mod =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
     big_mod<mod> a = 0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
 
     big_mod<mod> b = 0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
