@@ -135,7 +135,8 @@ namespace nil {
                                 if constexpr (stage == GenerationStage::CONSTRAINTS) {
                                     TYPE pair_selector = block_selector[i][block_type] * block_row_selector[i][block_row];
                                     //std::cout << "Pair_selector = " << pair_selector << std::endl;
-                                    TYPE pair_selector_relative = context_object.relativize(pair_selector, -i);
+                                    //TYPE pair_selector_relative = context_object.relativize(pair_selector, -i);
+                                    TYPE pair_selector_relative = pair_selector.rotate(-i);
                                     //std::cout << "Pair_selector_relative = " << pair_selector_relative << std::endl;
                                     for( auto & constr_list: block_constraints[block_type] ){
                                         if( !constr_list.first.is_set(block_row) ) continue;

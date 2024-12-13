@@ -205,7 +205,7 @@ namespace nil {
                         bp.register_dynamic_table(name);
 
                         std::size_t selector_index = area.second;
-
+std::cout << "Dynamic table " << name << " uses selector index " << selector_index << std::endl;
                         //crypto3::zk::snark::plonk_lookup_table<FieldType> table_specs;
                         plonk_lookup_table table_specs;
                         table_specs.tag_index = selector_index;
