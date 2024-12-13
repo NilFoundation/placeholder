@@ -17,21 +17,21 @@ concurrency:
 
 jobs:
   test-linux-gcc:
-    name: Linux placeholder testing with gcc
+    name: Gcc release full Linux testing
     uses: ./.github/workflows/gcc-linux-nix-check.yml
     if: |
       always() && !cancelled()
     secrets: inherit
 
   test-linux-clang:
-    name: Linux placeholder testing with clang
+    name: Clang release full Linux testing
     uses: ./.github/workflows/clang-linux-nix-check.yml
     if: |
       always() && !cancelled()
     secrets: inherit
 
   test-linux-proof-producer-debug-gcc:
-    name: Linux proof-producer testing with debug gcc
+    name: Gcc debug proof-producer Linux testing
     uses: ./.github/workflows/gcc-debug-proof-producer-nix-check.yml
     if: |
       always() && !cancelled()

@@ -19,7 +19,7 @@ jobs:
 
       - name: Run checks for debug proof-producer
         run: |
-          nix build -L .?#checks.x86_64-linux.proof-producer-debug-tests
+          nix build -L .?#checks.x86_64-linux.proof-producer-debug-gcc
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
