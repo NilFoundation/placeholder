@@ -8,67 +8,87 @@
 
 #define BOOST_TEST_MODULE big_int_comparison_test
 
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/random_device.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
-#include <boost/test/unit_test.hpp>
 #include <cstddef>
+#include <ostream>
+#include <string>
+#include <vector>
 
-// We need cpp_int to compare to it.
-#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/test/data/monomorphic.hpp>
+#include <boost/test/data/test_case.hpp>
+#include <boost/test/unit_test.hpp>
+
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/detail/cpp_int_conversions.hpp"
 
-using namespace boost::multiprecision;
+using namespace nil::crypto3::multiprecision;
 
-using nil::crypto3::multiprecision::big_uint;
-using nil::crypto3::multiprecision::to_cpp_int;
-using nil::crypto3::multiprecision::unsigned_cpp_int_type;
-
-// This test case uses normal boost::cpp_int for comparison to our big_uint
-template<std::size_t Bits1, std::size_t Bits2>
-void value_comparisons_tests(const big_uint<Bits1>& a, const big_uint<Bits2>& b) {
-    typedef big_uint<Bits1> Backend1;
-    typedef big_uint<Bits2> Backend2;
-    typedef unsigned_cpp_int_type<Bits1> cpp_int_number1;
-    typedef unsigned_cpp_int_type<Bits2> cpp_int_number2;
-
-    // Convert from big_uint to cpp_int_backend numbers.
-    cpp_int_number1 a_cppint = to_cpp_int(a);
-    cpp_int_number2 b_cppint = to_cpp_int(b);
-
-    BOOST_CHECK_EQUAL(a > b, a_cppint > b_cppint);
-    BOOST_CHECK_EQUAL(a >= b, a_cppint >= b_cppint);
-    BOOST_CHECK_EQUAL(a == b, a_cppint == b_cppint);
-    BOOST_CHECK_EQUAL(a < b, a_cppint < b_cppint);
-    BOOST_CHECK_EQUAL(a <= b, a_cppint <= b_cppint);
-    BOOST_CHECK_EQUAL(a != b, a_cppint != b_cppint);
-}
-
-template<std::size_t Bits1, std::size_t Bits2>
-void value_comparisons_tests(const std::size_t N) {
-    using standard_number1 = big_uint<Bits1>;
-    using standard_number2 = big_uint<Bits2>;
-
-    int seed = 0;
-    boost::random::mt19937 gen(seed);
-    boost::random::uniform_int_distribution<standard_number1> d1;
-    boost::random::uniform_int_distribution<standard_number2> d2;
-
-    for (std::size_t i = 0; i < N; ++i) {
-        standard_number1 a = d1(gen);
-        standard_number2 b = d2(gen);
-        value_comparisons_tests(a, b);
+template<typename T>
+std::vector<T> as_vector(const boost::property_tree::ptree &pt) {
+    std::vector<T> r;
+    for (const auto &item : pt) {
+        r.push_back(item.second);
     }
+    return r;
 }
 
-BOOST_AUTO_TEST_SUITE(static_tests)
+template<typename T>
+auto test_dataset(const std::string &test_name) {
+    static std::string test_data = std::string(TEST_DATA_DIR) + R"(comparison.json)";
+    boost::property_tree::ptree test_dataset;
+    boost::property_tree::read_json(test_data, test_dataset);
 
-BOOST_AUTO_TEST_CASE(base_test_backend_12_17) { value_comparisons_tests<12, 17>(1000); }
+    return as_vector<T>(test_dataset.get_child(test_name));
+}
 
-BOOST_AUTO_TEST_CASE(base_test_backend_260_130) { value_comparisons_tests<260, 130>(1000); }
+template<std::size_t Bits1, std::size_t Bits2>
+struct ComparisonSample {
+    ComparisonSample(const boost::property_tree::ptree &sample) : ptree(sample) {
+        a = sample.get<std::string>("a");
+        b = sample.get<std::string>("b");
+        cmp_a_b = sample.get<int>("cmp_a_b");
+    }
 
-BOOST_AUTO_TEST_CASE(base_test_backend_128_256) { value_comparisons_tests<128, 256>(1000); }
+    friend std::ostream &operator<<(std::ostream &os, const ComparisonSample &sample) {
+        boost::property_tree::json_parser::write_json(os, sample.ptree);
+        return os;
+    }
+
+    big_uint<Bits1> a;
+    big_uint<Bits2> b;
+    int cmp_a_b;
+    boost::property_tree::ptree ptree;
+};
+
+template<typename Sample>
+void test_comparison(const Sample &sample) {
+    const auto &a = sample.a;
+    const auto &b = sample.b;
+    const auto &cmp_a_b = sample.cmp_a_b;
+    BOOST_CHECK_EQUAL(a > b, cmp_a_b > 0);
+    BOOST_CHECK_EQUAL(a >= b, cmp_a_b >= 0);
+    BOOST_CHECK_EQUAL(a == b, cmp_a_b == 0);
+    BOOST_CHECK_EQUAL(a < b, cmp_a_b < 0);
+    BOOST_CHECK_EQUAL(a <= b, cmp_a_b <= 0);
+    BOOST_CHECK_EQUAL(a != b, cmp_a_b != 0);
+}
+
+BOOST_AUTO_TEST_SUITE(fields_manual_tests)
+
+BOOST_DATA_TEST_CASE(test_comparison_12_17,
+                     (test_dataset<ComparisonSample<12, 17>>("test_comparison_12_17"))) {
+    test_comparison(sample);
+}
+
+BOOST_DATA_TEST_CASE(test_comparison_260_130,
+                     (test_dataset<ComparisonSample<260, 130>>("test_comparison_260_130"))) {
+    test_comparison(sample);
+}
+
+BOOST_DATA_TEST_CASE(test_comparison_128_256,
+                     (test_dataset<ComparisonSample<128, 256>>("test_comparison_128_256"))) {
+    test_comparison(sample);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
