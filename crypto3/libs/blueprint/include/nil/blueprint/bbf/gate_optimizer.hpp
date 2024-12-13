@@ -203,6 +203,7 @@ namespace nil {
 
 				/** Brooks' algorithm for graph coloring.
 				 *	\param[in] adj - Adjacency list of the graph.
+				 * 	\returns A map that maps the vertex id to its color.
 				 */
     			std::unordered_map<size_t, size_t> colorGraph(const std::vector<std::vector<size_t>>& adj) const {
 					size_t V = adj.size();	
@@ -231,30 +232,19 @@ namespace nil {
     			        while (usedColors.count(currColor)) {
     			            currColor++;
     			        }
+						color[u] = currColor;
     			    }
 
     			    return color;
     			}
 
-                /** This function tries to reduce the number of lookups by grouping them. If 2 lookups use non-intersecting 
-				 *	selectors, they can be merged into 1 like.
-				 *  Imagine lookup inputs {L0 ... Lm} with selector s1, and {l0 ... lm} with selector s2, then we can merge them into
-				 *	lookup inputs { s1 * L0 + s2 * l0, ...  , s1 * Lm + s2 * lm } with selector that selects all the rows.
-				 * 	We cannot optimally group the selectors into the minimal number of groups, that's an NP-complete problem
-				 *  called graph coloring problem. We will use Brooks' algorithm, it's some simple heuristic thing.
-                 */
-                void optimize_lookups_by_grouping(optimized_gates<FieldType>& gates) {
-					std::vector<std::vector<size_t>> adj; // Adjacency list
-					std::map<size_t, size_t> selector_id_to_index;
-					std::vector<size_t> used_selectors;
-
-					for (const auto& [row_list, selector_id]: gates.selectors_) {
-						if (gates.lookup_constraints.find(selector_id) != gates.lookup_constraints.end()) {
-							used_selectors.push_back(selector_id);
-							selector_id_to_index[selector_id] = used_selectors.size() - 1;
-						}
-					}
-
+				/** Creates and returns a graph in the form of an adjucency list.
+				 */
+				std::vector<std::vector<size_t>> create_selector_intersection_graph(
+						const optimized_gates<FieldType>& gates,
+						const std::vector<size_t>& used_selectors,
+						const std::map<size_t, size_t>& selector_id_to_index) {
+					std::vector<std::vector<size_t>> adj;
 					// Create the graph.
 					adj.resize(used_selectors.size());
 					for (const auto& [row_list1, selector_id1]: gates.selectors_) {
@@ -270,10 +260,88 @@ namespace nil {
 							}
 						}
 					}
+					return adj;
+				}
 
+				std::unordered_map<size_t, size_t> group_selectors(
+					const std::vector<std::vector<size_t>>& graph,
+					const std::unordered_map<size_t, size_t>& selector_id_to_index,
+					const std::vector<size_t>& used_selectors) {
+					std::vector<std::vector<size_t>> graph_subset = get_subset(
+						graph, selector_id_to_index, used_selectors);
 
-    				std::unordered_map<size_t, size_t> selector_groups = colorGraph(adj);
+					std::unordered_map<size_t, size_t> coloring = colorGraph(graph_subset);
 
+					// Now run over the returned coloring and map it back.
+					std::unordered_map<size_t, size_t> result;
+					for (const auto& [id, group_id]: coloring) {
+						result[used_selectors[id]] = group_id;
+					}
+					return result;
+				}
+
+                /** This function tries to reduce the number of lookups by grouping them. If 2 lookups use non-intersecting 
+				 *	selectors, they can be merged into 1 like.
+				 *  Imagine lookup inputs {L0 ... Lm} with selector s1, and {l0 ... lm} with selector s2, then we can merge them into
+				 *	lookup inputs { s1 * L0 + s2 * l0, ...  , s1 * Lm + s2 * lm } with selector that selects all the rows.
+				 * 	We cannot optimally group the selectors into the minimal number of groups, that's an NP-complete problem
+				 *  called graph coloring problem. We will use Brooks' algorithm, it's some simple heuristic thing.
+                 */
+                void optimize_lookups_by_grouping(optimized_gates<FieldType>& gates) {
+					std::vector<size_t> used_selectors;
+					std::unordered_map<size_t, size_t> selector_id_to_index;
+
+					for (const auto& [row_list, selector_id]: gates.selectors_) {
+						if (gates.lookup_constraints.find(selector_id) != gates.lookup_constraints.end()) {
+							used_selectors.push_back(selector_id);
+							selector_id_to_index[selector_id] = used_selectors.size() - 1;
+						}
+					}
+
+					// Create an adjacency list of the whole large graph, since taking intersections of selectors is not super fast.
+					std::vector<std::vector<size_t>> adj = create_selector_intersection_graph(
+						gates, used_selectors, selector_id_to_index);
+
+					// For each table, create the list of used selectors.
+					std::unordered_map<std::string, std::vector<size_t>> selectors_per_table;
+					for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
+						for(const auto& single_lookup_constraint : lookup_list) {
+							const auto& table_name = single_lookup_constraint.first;
+							selectors_per_table[table_name].push_back(selector_id);
+						}
+					}
+
+					// For each table, group the selectors.
+
+					// Maps table name to a [map of selector id -> # of the group it belongs to].
+    				std::unordered_map<std::string, std::unordered_map<size_t, size_t>> selector_groups;
+    				std::unordered_map<std::string, std::unordered_map<size_t, size_t>> group_sizes;
+					for (const auto& [table_name, selectors] : selectors_per_table) {
+						// Maps group_id -> # of selectors in it.
+						selector_groups[table_name] = group_selectors(adj, selector_id_to_index, selectors);
+						// Count the size of each group, we need to not touch groups of size 1.
+						for (const auto& [selector_id, group_index]: selector_groups[table_name]) {
+							group_sizes[table_name][group_index]++;
+						}
+					}
+
+					std::unordered_map<std::string, std::unordered_map<size_t, typename context_type::lookup_input_constraints_type>> merged_lookups;
+					// Now merge all the lookups on selectors in the same group.
+					for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
+                    	std::vector<lookup_constraint_type> lookup_gate;
+                    	for(const auto& single_lookup_constraint : lookup_list) {
+                    	    const std::string& table_name = single_lookup_constraint.first;
+							size_t group_id = selector_groups[table_name][selector_id];
+							// If the group size is 1, don't touch it.
+							if (group_sizes[table_name][group_id] == 1)
+								merged_lookups[table_name][selector_id] = single_lookup_constraint.second;
+							else {
+								// selector_by_id is a non-existant map, we will add it later.
+								merged_lookups[table_name][PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED] +=
+									selector_by_id[selector_id] * single_lookup_constraint.second;
+							}
+                    	}
+					}
 				}
  
                 /** This function tries to reduce the number of selectors required by rotating the constraints by +-1.
