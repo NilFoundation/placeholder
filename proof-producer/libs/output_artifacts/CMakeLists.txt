@@ -16,6 +16,7 @@ target_link_libraries(proof_generatorOutputArtifacts
                       PUBLIC
                       crypto3::common
                       Boost::program_options
+                      Boost::log
 )
 
 set_target_properties(proof_generatorOutputArtifacts PROPERTIES
