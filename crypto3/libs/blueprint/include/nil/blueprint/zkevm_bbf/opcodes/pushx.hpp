@@ -108,7 +108,9 @@ namespace nil {
                                     current_state.bytecode_hash_lo(1)
                                 };
                             }
-                            lookup(tmp, "zkevm_bytecode");
+                            // TODO(oclaw): bytecode check is disabled since hash algorithm for circuits is not finalized yet
+                            // https://github.com/NilFoundation/placeholder/issues/205
+                            // lookup(tmp, "zkevm_bytecode");
                         }
                     }
                 }
