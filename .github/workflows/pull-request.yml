@@ -30,6 +30,13 @@ jobs:
       always() && !cancelled()
     secrets: inherit
 
+  test-linux-clang:
+    name: Linux proof-producer testing with debug gcc
+    uses: ./.github/workflows/gcc-debug-proof-producer-nix-check.yml
+    if: |
+      always() && !cancelled()
+    secrets: inherit
+
   check-proof-producer:
     name: Check Proof Producer
     uses: ./.github/workflows/check-proof-producer.yml
