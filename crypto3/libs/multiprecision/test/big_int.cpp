@@ -45,9 +45,13 @@ BOOST_AUTO_TEST_CASE(to_string_decimal_zero) {
     BOOST_CHECK_EQUAL((0x0_big_uint60).str(std::ios_base::dec), "0");
 }
 
-BOOST_AUTO_TEST_CASE(to_string_decimal_trivial) { BOOST_CHECK_EQUAL((0x1_big_uint60).str(std::ios_base::dec), "1"); }
+BOOST_AUTO_TEST_CASE(to_string_decimal_trivial) {
+    BOOST_CHECK_EQUAL((0x1_big_uint60).str(std::ios_base::dec), "1");
+}
 
-BOOST_AUTO_TEST_CASE(to_string_decimal_small) { BOOST_CHECK_EQUAL((0x20_big_uint60).str(std::ios_base::dec), "32"); }
+BOOST_AUTO_TEST_CASE(to_string_decimal_small) {
+    BOOST_CHECK_EQUAL((0x20_big_uint60).str(std::ios_base::dec), "32");
+}
 
 BOOST_AUTO_TEST_CASE(to_string_decimal_medium) {
     constexpr auto a = 0x123456789ABCDEF1234321_big_uint85;
@@ -56,7 +60,8 @@ BOOST_AUTO_TEST_CASE(to_string_decimal_medium) {
 
 BOOST_AUTO_TEST_CASE(to_string_decimal_big) {
     constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
-    BOOST_CHECK_EQUAL(a.str(std::ios_base::dec), "26959946667150639794667015087019630673557916260026308143510066298881");
+    BOOST_CHECK_EQUAL(a.str(std::ios_base::dec),
+                      "26959946667150639794667015087019630673557916260026308143510066298881");
 }
 
 BOOST_AUTO_TEST_CASE(ops) {
@@ -76,14 +81,14 @@ BOOST_AUTO_TEST_CASE(ops) {
         b = 32u;           \
         a = 4;             \
         b = a op a;        \
-        /* b = 2 op a; */  \
-        /* b = a op 2; */  \
-        /* b = 2u op a; */ \
-        /* b = a op 2u; */ \
+        b = 2 op a;        \
+        b = a op 2;        \
+        b = 2u op a;       \
+        b = a op 2u;       \
         b = 32u;           \
         b op## = a;        \
-        /* b op## = 2; */  \
-        /*b op## = 2u; */  \
+        b op## = 2;        \
+        b op## = 2u;       \
     } while (false)
 
     TEST_BINARY_OP(+);
@@ -94,7 +99,7 @@ BOOST_AUTO_TEST_CASE(ops) {
     TEST_BINARY_OP(-);
     --b;
     b--;
-    // b = -b;
+    b = -b;
 
     TEST_BINARY_OP(%);
     TEST_BINARY_OP(/);
@@ -103,6 +108,7 @@ BOOST_AUTO_TEST_CASE(ops) {
     TEST_BINARY_OP(&);
     TEST_BINARY_OP(|);
     TEST_BINARY_OP(^);
+#undef TEST_BINARY_OP
 
     b = ~a;
 }
@@ -179,9 +185,10 @@ BOOST_AUTO_TEST_CASE(failing) {
 }
 
 BOOST_AUTO_TEST_CASE(failing2) {
-    BOOST_CHECK_EQUAL(0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 %
-                          0x200000000_big_uint,
-                      0x100000001_big_uint);
+    BOOST_CHECK_EQUAL(
+        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 %
+            0x200000000_big_uint,
+        0x100000001_big_uint);
 }
 
 BOOST_AUTO_TEST_CASE(failing3) {
