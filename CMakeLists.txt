@@ -41,10 +41,10 @@ set_target_properties(crypto3_precompiled_headers_23 PROPERTIES
 # End of precompiled headers
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/crypto3")
-if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))
+if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}))
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/parallel-crypto3")
 endif()
-if ((${PROOF_PRODUCER_ENABLE}) OR (${ZKEVM_FRAMEWORK_ENABLE}))
+if (${PROOF_PRODUCER_ENABLE})
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/proof-producer")
 endif()
 if (${DEBUG_TOOLS_ENABLE})

@@ -1,7 +1,0 @@
-@PACKAGE_INIT@
-
-include(CMakeFindDependencyMacro)
-find_dependency(intx REQUIRED)
-find_dependency(ethash REQUIRED)
-
-include("${CMAKE_CURRENT_LIST_DIR}/assignerTargets.cmake")
