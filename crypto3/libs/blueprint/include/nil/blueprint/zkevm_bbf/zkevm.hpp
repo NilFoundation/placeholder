@@ -527,7 +527,10 @@ namespace nil {
                         tmp[3] = context_object.relativize(evm_opcode_constraint, -1);
                         tmp[4] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_hi, -1);
                         tmp[5] = context_object.relativize(evm_opcode_constraint * all_states[1].bytecode_hash_lo, -1);
-                        context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
+                        
+                        // TODO(oclaw): bytecode check is disabled since hash algorithm for circuits is not finalized yet
+                        // https://github.com/NilFoundation/placeholder/issues/205
+                        // context_object.relative_lookup(tmp, "zkevm_bytecode", 1, max_zkevm_rows-1);
                    }
                 }
             protected:
