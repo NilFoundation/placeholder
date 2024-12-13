@@ -291,6 +291,11 @@ namespace nil {
                             result.selectors_.insert({ std::move(selector), new_selector_mapping[id] });
 					}
 
+					// Update the selector ids in dynamic lookups.
+					for(auto& [name, area] : gates.dynamic_lookup_tables) {
+						area.second = new_selector_mapping[area.second];
+					}
+
                     gates.constraint_list = std::move(result.constraint_list);
                     gates.lookup_constraints = std::move(result.lookup_constraints);
 					gates.selectors_ = result.selectors_;
