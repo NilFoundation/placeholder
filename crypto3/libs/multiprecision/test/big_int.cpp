@@ -68,11 +68,11 @@ BOOST_AUTO_TEST_CASE(ops) {
     nil::crypto3::multiprecision::big_uint<60> a = 2u, b;
 
     auto c1{a};
-    auto c2{std::move(a)};
+    auto c2{std::move(a)};  // NOLINT
     auto c3{2};
     auto c4{2u};
     b = a;
-    b = std::move(a);
+    b = std::move(a);  // NOLINT
     b = 2;
     b = 2u;
 
@@ -219,6 +219,20 @@ BOOST_AUTO_TEST_CASE(from_uint64_t) {
 BOOST_AUTO_TEST_CASE(from_int64_t) {
     nil::crypto3::multiprecision::big_uint<64> a = static_cast<std::int64_t>(0x123456789ABCDEFull);
     BOOST_CHECK_EQUAL(a, 0x123456789ABCDEF_big_uint64);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(truncation)
+
+BOOST_AUTO_TEST_CASE(conversion_to_shorter_number) {
+    using standart_number = nil::crypto3::multiprecision::big_uint<256>;
+    using short_number = nil::crypto3::multiprecision::big_uint<128>;
+    constexpr standart_number x =
+        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
+    short_number s = x.truncate<128>();
+    // 2nd half of the number must stay.
+    BOOST_CHECK_EQUAL(s, 0xfffffffffffffffffffffffefffffc2f_big_uint128);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
