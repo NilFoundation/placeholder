@@ -10,10 +10,11 @@
 
 #define BOOST_TEST_MODULE big_int_inverse_test
 
+#include <stdexcept>
+
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
-#include <stdexcept>
 
 #include "nil/crypto3/multiprecision/big_mod.hpp"
 #include "nil/crypto3/multiprecision/big_uint.hpp"
