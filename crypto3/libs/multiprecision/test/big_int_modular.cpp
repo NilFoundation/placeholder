@@ -1,9 +1,12 @@
 #define BOOST_TEST_MODULE big_int_modular_test
 
-#include <boost/test/unit_test.hpp>
+#include <cstdint>
 #include <utility>
 
+#include <boost/test/unit_test.hpp>
+
 #include "nil/crypto3/multiprecision/big_mod.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/literals.hpp"
 
 using namespace nil::crypto3::multiprecision;
@@ -71,11 +74,11 @@ BOOST_AUTO_TEST_CASE(ops) {
     big_mod_t a = 2u, b;
 
     auto c1{a};
-    auto c2{std::move(a)};
+    auto c2{std::move(a)};  // NOLINT
     auto c3{2};
     auto c4{2u};
     b = a;
-    b = std::move(a);
+    b = std::move(a);  // NOLINT
     b = 2;
     b = 2u;
 
@@ -162,22 +165,49 @@ BOOST_AUTO_TEST_CASE(big_assign) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(bugs)
+
+BOOST_AUTO_TEST_CASE(secp256k1_incorrect_multiplication) {
+    using standart_number = nil::crypto3::multiprecision::big_uint<256>;
+    using modular_number = nil::crypto3::multiprecision::montgomery_big_mod_rt<256>;
+
+    constexpr standart_number modulus =
+        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
+    constexpr standart_number x_standard =
+        0xb5d724ce6f44c3c587867bbcb417e9eb6fa05e7e2ef029166568f14eb3161387_big_uint256;
+    constexpr standart_number res_standard =
+        0xad6e1fcc680392abfb075838eafa513811112f14c593e0efacb6e9d0d7770b4_big_uint256;
+    constexpr modular_number x(x_standard, modulus);
+    constexpr modular_number res(res_standard, modulus);
+    BOOST_CHECK_EQUAL(x * x, res);
+}
+
+BOOST_AUTO_TEST_CASE(bad_negation) {
+    using standart_number = nil::crypto3::multiprecision::big_uint<256>;
+    using modular_number = nil::crypto3::multiprecision::montgomery_big_mod_rt<256>;
+
+    constexpr standart_number modulus =
+        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
+    constexpr modular_number x(0u, modulus);
+    constexpr modular_number res = -x;
+
+    BOOST_CHECK(res == 0u);
+    BOOST_CHECK(res == x);
+    BOOST_CHECK(-res == x);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(convert)
 
-// BOOST_AUTO_TEST_CASE(to_uint64_t) {
-//     std::uint64_t a =
-//         static_cast<std::uint64_t>(static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
-//     BOOST_CHECK_EQUAL(a, 0x123456789ABCDEF);
-// }
+BOOST_AUTO_TEST_CASE(from_uint64_t) {
+    big_mod_t a = static_cast<std::uint64_t>(0x123456789ABCDEFull);
+    BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
+}
 
-// BOOST_AUTO_TEST_CASE(from_uint64_t) {
-//     big_mod_impl a = static_cast<std::uint64_t>(0x123456789ABCDEFull);
-//     BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
-// }
-
-// BOOST_AUTO_TEST_CASE(from_int64_t) {
-//     big_mod_impl a = static_cast<std::int64_t>(0x123456789ABCDEFull);
-//     BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
-// }
+BOOST_AUTO_TEST_CASE(from_int64_t) {
+    big_mod_t a = static_cast<std::int64_t>(0x123456789ABCDEFull);
+    BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
+}
 
 BOOST_AUTO_TEST_SUITE_END()

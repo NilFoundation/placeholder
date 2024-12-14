@@ -85,7 +85,7 @@ namespace nil::crypto3::multiprecision {
             bit_location = limb_bits - bit_location;
 
             NIL_CO3_MP_ASSERT(
-                !((bit_location < sizeof(bits) * CHAR_BIT) && (bits >>= bit_location)));
+                !((bit_location < sizeof(bits) * CHAR_BIT) && (bits >> bit_location)));
         }
 
         template<std::size_t Bits>
