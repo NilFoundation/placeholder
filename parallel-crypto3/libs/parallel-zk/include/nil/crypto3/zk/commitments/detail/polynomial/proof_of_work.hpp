@@ -178,7 +178,7 @@ namespace nil {
                         return pow_seed + (std::size_t)pow_value_offset;
                     }
 
-                    static inline bool verify(transcript_type &transcript, value_type proof_of_work, std::size_t GrindingBits=16) {
+                    static inline bool verify(transcript_type &transcript, value_type proof_of_work, std::size_t GrindingBits = 16) {
                         transcript(proof_of_work);
                         integral_type mask =
                             (GrindingBits > 0 ?

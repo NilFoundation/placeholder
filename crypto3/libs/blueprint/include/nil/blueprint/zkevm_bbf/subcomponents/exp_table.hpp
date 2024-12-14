@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <boost/multiprecision/cpp_int.hpp>
 #include <functional>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>

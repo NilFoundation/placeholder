@@ -39,7 +39,7 @@ namespace nil {
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
                 using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, rw_operations_vector, std::nullptr_t>::type;
-                using integral_type =  boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type =  nil::crypto3::multiprecision::big_uint<257>;
             public:
                 // For connection with upper-level circuits
                 std::vector<TYPE> op;
@@ -67,7 +67,8 @@ namespace nil {
                         //std::cout << "RW assign size = " << rw_trace.size() << std::endl;
                         BOOST_ASSERT(rw_trace.size() < max_rw_size);
                         for( std::size_t i = 0; i < rw_trace.size(); i++ ){
-                            //if( rw_trace[i].op != nil::blueprint::PADDING_OP ) std::cout << "\t" << i << "." << rw_trace[i] << std::endl;
+                            //if( rw_trace[i].op != rw_operation_type::padding )
+                            //    std::cout << "\t" << i << "." << rw_trace[i] << std::endl;
                             op[i] = rw_op_to_num(rw_trace[i].op);
                             id[i] = rw_trace[i].call_id;
                             address[i] = integral_type(rw_trace[i].address);

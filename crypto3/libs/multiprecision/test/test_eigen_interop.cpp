@@ -2,16 +2,16 @@
 //  Software License, Version 1.0. (See accompanying file
 //  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <nil/crypto3/multiprecision/cpp_dec_float.hpp>
-#include <nil/crypto3/multiprecision/cpp_bin_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_dec_float.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_bin_float.hpp>
 #include <iostream>
 #include <Eigen/Dense>
 
-#include <nil/crypto3/multiprecision/mpfr.hpp>
-#include <nil/crypto3/multiprecision/logged_adaptor.hpp>
-#include <nil/crypto3/multiprecision/gmp.hpp>
-#include <nil/crypto3/multiprecision/mpc.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpfr.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/logged_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/gmp.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/mpc.hpp>
 
 #include "test.hpp"
 

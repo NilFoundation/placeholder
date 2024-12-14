@@ -43,11 +43,10 @@ namespace nil {
     namespace crypto3 {
         namespace zk {
             namespace commitments {
-                template<typename T1, typename T2, typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates>
+                template<typename T1, typename T2, std::size_t Bits>
                 typename knowledge_commitment<T1, T2>::value_type
                     opt_window_wnaf_exp(const typename knowledge_commitment<T1, T2>::value_type &base,
-                                        const boost::multiprecision::number<Backend, ExpressionTemplates> &scalar,
+                                        const nil::crypto3::multiprecision::big_uint<Bits> &scalar,
                                         const std::size_t scalar_bits) {
                     return typename knowledge_commitment<T1, T2>::value_type(
                         opt_window_wnaf_exp(base.g, scalar, scalar_bits),

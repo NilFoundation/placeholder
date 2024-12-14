@@ -52,9 +52,9 @@
     FUNC_AUTO_REF_RETURN_CONST(MARSHALLING_CONCATENATE(transportField_, n_), \
                                decltype(std::get<MARSHALLING_CONCATENATE(TransportFieldIdx_, n_)>(t_)))
 #define MARSHALLING_MSG_TRANSPORT_FIELDS_ACCESS_FUNC \
-    FUNC_AUTO_REF_RETURN(transport_fields, decltype(nil::marshalling::to_message(*this).transport_fields()))
+    FUNC_AUTO_REF_RETURN(transport_fields, decltype(nil::crypto3::marshalling::to_message(*this).transport_fields()))
 #define MARSHALLING_MSG_TRANSPORT_FIELDS_ACCESS_CONST_FUNC \
-    FUNC_AUTO_REF_RETURN_CONST(transport_fields, decltype(nil::marshalling::to_message(*this).transport_fields()))
+    FUNC_AUTO_REF_RETURN_CONST(transport_fields, decltype(nil::crypto3::marshalling::to_message(*this).transport_fields()))
 #endif    // #ifdef MARSHALLING_MUST_DEFINE_BASE
 
 #define MARSHALLING_TRANSPORT_FIELD_ACC_FUNC(T_, t_, n_)                      \

@@ -95,9 +95,9 @@ namespace nil {
                             );
                             acc(data);
                         } else {
-                            nil::marshalling::status_type status;
+                            nil::crypto3::marshalling::status_type status;
                             typename hash_type::construction::type::block_type byte_data =
-                                nil::marshalling::pack(data, status);
+                                nil::crypto3::marshalling::pack(data, status);
                             THROW_IF_ERROR_STATUS(status, "fiat_shamir_heuristic_accumulative::operator()");
                             acc(byte_data);
                         }
@@ -140,7 +140,7 @@ namespace nil {
                 struct fiat_shamir_heuristic_sequential
                 {
                     typedef Hash hash_type;
-                    typedef typename boost::multiprecision::cpp_int_modular_backend<hash_type::digest_bits> modular_backend_of_hash_size;
+                    typedef nil::crypto3::multiprecision::big_uint<hash_type::digest_bits> big_uint_of_hash_size;
 
                     fiat_shamir_heuristic_sequential() : state(hash<hash_type>({0})) {
                     }
@@ -177,9 +177,9 @@ namespace nil {
                         algebra::is_field_element<element>::value
                         >
                     operator()(element const& data) {
-                        nil::marshalling::status_type status;
+                        nil::crypto3::marshalling::status_type status;
                         std::vector<std::uint8_t> byte_data =
-                            nil::marshalling::pack<nil::marshalling::option::big_endian>(data, status);
+                            nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(data, status);
                         THROW_IF_ERROR_STATUS(status, "fiat_shamir_heuristic_sequential::operator()");
                         auto acc_convertible = hash<hash_type>(state);
                         state = accumulators::extract::hash<hash_type>(
@@ -203,9 +203,9 @@ namespace nil {
                         std::size_t count = std::min(data.size(), state.size());
                         std::copy(state.begin(), state.begin() + count, data.begin() + data.size() - count);
                         
-                        nil::marshalling::status_type status;
-                        boost::multiprecision::number<modular_backend_of_hash_size> raw_result = 
-                            nil::marshalling::pack(state, status);
+                        nil::crypto3::marshalling::status_type status;
+                        big_uint_of_hash_size raw_result =
+                            nil::crypto3::marshalling::pack(state, status);
                         THROW_IF_ERROR_STATUS(status, "fiat_shamir_heuristic_sequential::challenge");
                         return raw_result;
                     }
@@ -213,8 +213,8 @@ namespace nil {
                     template<typename Integral>
                     Integral int_challenge() {
                         state = hash<hash_type>(state);
-                        nil::marshalling::status_type status;
-                        boost::multiprecision::number<modular_backend_of_hash_size> raw_result = nil::marshalling::pack(state, status);
+                        nil::crypto3::marshalling::status_type status;
+                        big_uint_of_hash_size raw_result = nil::crypto3::marshalling::pack(state, status);
                         // If we remove the next line, raw_result is a much larger number, conversion to 'Integral' will overflow
                         // and in debug mode an assert will fire. In release mode nothing will change.
                         raw_result &= ~Integral(0);
@@ -333,7 +333,7 @@ namespace nil {
                         Integral result = 0u;
                         Integral factor = 1u;
                         size_t bytes_to_fill = sizeof(Integral);
-                        // TODO(martun): consider using export_bits here, or nil::marshalling::pack, instead of this.
+                        // TODO(martun): consider using export_bits here, or nil::crypto3::marshalling::pack, instead of this.
                         while (intermediate_result > 0u && bytes_to_fill != 0u) {
                             auto last_byte = intermediate_result % 0x100u;
                             Integral last_byte_integral = static_cast<Integral>(last_byte);

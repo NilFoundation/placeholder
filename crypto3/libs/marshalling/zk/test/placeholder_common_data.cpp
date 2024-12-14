@@ -15,9 +15,6 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/pallas.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/pallas.hpp>
@@ -103,8 +100,8 @@ struct placeholder_common_data_test_runner {
 
     void test_placeholder_common_data(common_data_type const& common_data)
     {
-        using Endianness = nil::marshalling::option::big_endian;
-        using TTypeBase = nil::marshalling::field_type<Endianness>;
+        using Endianness = nil::crypto3::marshalling::option::big_endian;
+        using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
         auto filled_common_data = nil::crypto3::marshalling::types::fill_placeholder_common_data<Endianness, common_data_type>(common_data);
         auto _common_data = nil::crypto3::marshalling::types::make_placeholder_common_data<Endianness, common_data_type>(filled_common_data);
@@ -114,12 +111,12 @@ struct placeholder_common_data_test_runner {
         cv.resize(filled_common_data.length(), 0x00);
         auto write_iter = cv.begin();
         auto status = filled_common_data.write(write_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
         nil::crypto3::marshalling::types::placeholder_common_data<TTypeBase, common_data_type> test_val_read;
         auto read_iter = cv.begin();
         test_val_read.read(read_iter, cv.size());
-        BOOST_CHECK(status == nil::marshalling::status_type::success);
+        BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
         auto constructed_val_read = nil::crypto3::marshalling::types::make_placeholder_common_data<Endianness, common_data_type>(
                 test_val_read
                 );

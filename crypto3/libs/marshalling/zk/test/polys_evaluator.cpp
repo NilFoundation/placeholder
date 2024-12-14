@@ -39,9 +39,6 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
@@ -82,7 +79,7 @@ using namespace nil::crypto3;
 
 template<typename Endianness, typename PolysEvaluator>
 void test_polys_evaluator_marshalling(PolysEvaluator &evaluator) {
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
     auto filled_evaluator = nil::crypto3::marshalling::types::fill_polys_evaluator<Endianness, PolysEvaluator>(evaluator);
     auto _evaluator = nil::crypto3::marshalling::types::make_polys_evaluator<Endianness, PolysEvaluator>(filled_evaluator);
@@ -92,12 +89,12 @@ void test_polys_evaluator_marshalling(PolysEvaluator &evaluator) {
     cv.resize(filled_evaluator.length(), 0x00);
     auto write_iter = cv.begin();
     auto status = filled_evaluator.write(write_iter, cv.size());
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
     nil::crypto3::marshalling::types::polys_evaluator<TTypeBase, PolysEvaluator> test_val_read;
     auto read_iter = cv.begin();
     test_val_read.read(read_iter, cv.size());
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
     PolysEvaluator constructed_val_read =
             nil::crypto3::marshalling::types::make_polys_evaluator<Endianness, PolysEvaluator>(test_val_read);
@@ -106,7 +103,7 @@ void test_polys_evaluator_marshalling(PolysEvaluator &evaluator) {
 
 BOOST_AUTO_TEST_SUITE(marshalling_real)
     // Setup common types.
-    using Endianness = nil::marshalling::option::big_endian;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
     using curve_type = nil::crypto3::algebra::curves::vesta;
     using field_type = curve_type::scalar_field_type;
     using merkle_hash_type = nil::crypto3::hashes::keccak_1600<256>;

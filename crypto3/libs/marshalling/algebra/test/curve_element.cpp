@@ -43,7 +43,6 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <iostream>
-#include <boost/multiprecision/number.hpp>
 
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
@@ -90,14 +89,14 @@ void test_group_element(T val) {
 
     using unit_type = unsigned char;
 
-    static_assert(nil::marshalling::is_compatible<T>::value);
-    nil::marshalling::status_type status;
+    static_assert(nil::crypto3::marshalling::is_compatible<T>::value);
+    nil::crypto3::marshalling::status_type status;
 
-    std::vector<unit_type> cv = nil::marshalling::pack<endianness>(val, status);
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    std::vector<unit_type> cv = nil::crypto3::marshalling::pack<endianness>(val, status);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
-    T test_val = nil::marshalling::pack<endianness>(cv, status);
-    BOOST_CHECK(status == nil::marshalling::status_type::success);
+    T test_val = nil::crypto3::marshalling::pack<endianness>(cv, status);
+    BOOST_CHECK(status == nil::crypto3::marshalling::status_type::success);
 
     BOOST_CHECK_EQUAL(val.to_affine(), test_val.to_affine());
 }
@@ -137,8 +136,8 @@ void test_pairing_curve(std::string curve_name)
 
 BOOST_AUTO_TEST_SUITE(curve_element_test_suite)
 
-using big_endian = nil::marshalling::option::big_endian;
-using little_endian = nil::marshalling::option::little_endian;
+using big_endian = nil::crypto3::marshalling::option::big_endian;
+using little_endian = nil::crypto3::marshalling::option::little_endian;
 
 BOOST_AUTO_TEST_CASE(curve_element_mnt4) {
     test_pairing_curve<nil::crypto3::algebra::curves::mnt4_298, big_endian>("mnt4_298");

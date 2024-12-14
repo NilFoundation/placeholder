@@ -49,7 +49,7 @@ namespace nil {
                 using rw_table_type = rw_table<FieldType, stage>;
                 using input_type = typename rw_table_type::input_type;
                 using value = typename FieldType::value_type;
-                using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                using integral_type = nil::crypto3::multiprecision::big_uint<257>;
             public:
                 static constexpr std::size_t op_bits_amount = 4;
                 static constexpr std::size_t diff_index_bits_amount = 5;
@@ -141,7 +141,7 @@ namespace nil {
                             integral_type mask = (1 << op_bits_amount);
                             for( std::size_t j = 0; j < op_bits_amount; j++){
                                 mask >>= 1;
-                                op_bits[i][j] = (((rw_trace[i].op & mask) == 0) ? 0 : 1);
+                                op_bits[i][j] = (((static_cast<unsigned>(rw_trace[i].op) & mask) == 0) ? 0 : 1);
                             }
                             std::size_t cur_chunk = 0;
                             // id
@@ -377,7 +377,7 @@ namespace nil {
                         special_constraints[STACK_OP].push_back(context_object.relativize(stack_selector * is_first[1] * (1 - is_write[1]), -1));  // 4. First stack operation is obviously write
                         //if(i!=0) {
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (is_write[1] - 1), -1));                  // 5. First operation is always write
-                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (address[1] - address[0]) * (address[1] - address[0] - 1), -1)); // 6. Stack pointer always grows and only by one
+                            non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (address[1] - address[0]) * (address[1] - address[0] - 1), -1));      // 6. Stack pointer always grows and only by one
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_hi[1] - state_root_before_hi[0]), -1));
                             non_first_row_constraints.push_back(context_object.relativize(stack_selector * (1 - is_first[1]) * (state_root_lo[1] - state_root_before_lo[0]), -1));
                         //}

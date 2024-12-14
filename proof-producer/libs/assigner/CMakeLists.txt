@@ -25,9 +25,10 @@ foreach(PROTO_FILE ${PROTO_FILES})
     list(APPEND GENERATED_HEADERS ${PROTO_HDR})
 endforeach()
 
-add_library(proof_generatorAssigner SHARED
+add_library(proof_generatorAssigner STATIC
             ${PROTO_SRC}
 )
+set_target_properties(proof_generatorAssigner PROPERTIES CXX_STANDARD 20)
 
 target_include_directories(proof_generatorAssigner
                             PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${PROTOBUF_INCLUDE_DIR}

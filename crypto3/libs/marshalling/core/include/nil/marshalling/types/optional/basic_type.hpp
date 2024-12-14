@@ -31,18 +31,18 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/types/optional_mode.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
 
                 template<typename TField>
-                class basic_optional : public nil::marshalling::field_type<
-                                     nil::marshalling::option::endian<typename TField::endian_type>,
-                                     nil::marshalling::option::version_type<typename TField::version_type>> {
-                    using base_impl_type = nil::marshalling::field_type<
-                        nil::marshalling::option::endian<typename TField::endian_type>,
-                        nil::marshalling::option::version_type<typename TField::version_type>>;
+                class basic_optional : public nil::crypto3::marshalling::field_type<
+                                     nil::crypto3::marshalling::option::endian<typename TField::endian_type>,
+                                     nil::crypto3::marshalling::option::version_type<typename TField::version_type>> {
+                    using base_impl_type = nil::crypto3::marshalling::field_type<
+                        nil::crypto3::marshalling::option::endian<typename TField::endian_type>,
+                        nil::crypto3::marshalling::option::version_type<typename TField::version_type>>;
 
                 public:
                     using field_type = TField;

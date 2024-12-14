@@ -208,10 +208,6 @@ namespace nil {
                         return _public_inputs;
                     }
 
-                    public_input_container_type move_public_inputs() {
-                        return std::move(_public_inputs);
-                    }
-
                     std::uint32_t constants_amount() const {
                         return _constants.size();
                     }
@@ -231,10 +227,6 @@ namespace nil {
 
                     const constant_container_type& constants() const {
                         return _constants;
-                    }
-
-                    constant_container_type move_constants() {
-                        return std::move(_constants);
                     }
 
                     constexpr std::uint32_t selectors_amount() const {
@@ -489,12 +481,12 @@ namespace nil {
                         return _private_table;
                     }
 
-                    std::shared_ptr<private_table_type> move_private_table() {
-                        return std::move(_private_table);
-                    }
-
                     std::shared_ptr<public_table_type> public_table() const {
                         return _public_table;
+                    }
+
+                    std::shared_ptr<private_table_type> move_private_table() {
+                        return std::move(_private_table);
                     }
 
                     std::shared_ptr<public_table_type> move_public_table() {

@@ -65,9 +65,9 @@ namespace nil {
                     using scalar_field_type = typename curve_type::scalar_field_type;
                     using base_field_type = typename curve_type::base_field_type;
                     constexpr static const typename scalar_field_type::value_type endo_r =
-                        0x12CCCA834ACDBA712CAAD5DC57AAB1B01D1F8BD237AD31491DAD5EBDFDFE4AB9_cppui_modular255;
+                        0x12CCCA834ACDBA712CAAD5DC57AAB1B01D1F8BD237AD31491DAD5EBDFDFE4AB9_big_uint255;
                     constexpr static const typename base_field_type::value_type endo_q =
-                        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_cppui_modular255;
+                        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_big_uint255;
                 };
 
                 template<>
@@ -76,9 +76,9 @@ namespace nil {
                     using scalar_field_type = typename curve_type::scalar_field_type;
                     using base_field_type = typename curve_type::base_field_type;
                     constexpr static const typename scalar_field_type::value_type endo_r =
-                        0x397E65A7D7C1AD71AEE24B27E308F0A61259527EC1D4752E619D1840AF55F1B1_cppui_modular255;
+                        0x397E65A7D7C1AD71AEE24B27E308F0A61259527EC1D4752E619D1840AF55F1B1_big_uint255;
                     constexpr static const typename base_field_type::value_type endo_q =
-                        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_cppui_modular255;
+                        0x2D33357CB532458ED3552A23A8554E5005270D29D19FC7D27B7FD22F0201B547_big_uint255;
                 };
 
                 template<typename BlueprintFieldType, typename CurveType>
@@ -214,11 +214,11 @@ namespace nil {
                             typename BlueprintFieldType::integral_type(scalar.data);
                         std::vector<bool> bits_msb(component.scalar_size);
                         {
-                            nil::marshalling::status_type status;
+                            nil::crypto3::marshalling::status_type status;
                             assert(component.scalar_size <= BlueprintFieldType::modulus_bits);
 
                             std::array<bool, BlueprintFieldType::modulus_bits> bits_msb_all =
-                                nil::marshalling::pack<nil::marshalling::option::big_endian>(integral_scalar, status);
+                                nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(integral_scalar, status);
 
                             THROW_IF_ERROR_STATUS(status, "plonk_endo_scalar::generate_assignments");
 

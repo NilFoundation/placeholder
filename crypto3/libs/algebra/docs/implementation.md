@@ -130,7 +130,7 @@ For example, `extension_params` structure keeps all the parameters needed for fi
 ### Field Element Algorithms ### {#field_element_algorithms}
 
 Field element corresponds an element of the field and has all the needed methods and overloaded arithmetic operators. The corresponding 
-algorithms are also defined here. As the backend they use now Boost::multiprecision, but it can be easily changed.
+algorithms are also defined here. As the backend they use nil::crypto3::multiprecision.
 
 ## Elliptic Curves Architecture ## {#curves_architecture}
 

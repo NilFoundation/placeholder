@@ -34,9 +34,6 @@
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/algebra/curves/mnt4.hpp>
 #include <nil/crypto3/algebra/pairing/mnt4.hpp>
 #include <nil/crypto3/algebra/fields/arithmetic_params/mnt4.hpp>
@@ -92,7 +89,7 @@ struct placeholder_class_test_initializer {
         using kzg_type = zk::commitments::batched_kzg<curve_type, transcript_hash_type>;
         typedef typename kzg_type::transcript_type transcript_type;
         using kzg_scheme_type = typename zk::commitments::kzg_commitment_scheme_v2<kzg_type>;
-        using endianness = nil::marshalling::option::big_endian;
+        using endianness = nil::crypto3::marshalling::option::big_endian;
 
         scalar_value_type alpha = 7u;
         auto params = kzg_scheme_type::create_params(8, alpha);

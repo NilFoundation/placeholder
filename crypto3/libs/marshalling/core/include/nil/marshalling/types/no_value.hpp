@@ -37,15 +37,15 @@
 
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
 
             /// @brief Dummy field with "do-nothing" read/write operations.
             /// @details Can be used with other classes that require field types.
             /// @tparam TFieldBase Base class for this field, expected to be a variant of
-            ///     nil::marshalling::field_type.
-            /// @extends nil::marshalling::field_type
+            ///     nil::crypto3::marshalling::field_type.
+            /// @extends nil::crypto3::marshalling::field_type
             /// @headerfile nil/marshalling/types/no_value.hpp
             template<typename TFieldBase>
             class no_value : private detail::adapt_basic_field_type<detail::basic_no_value<TFieldBase>> {

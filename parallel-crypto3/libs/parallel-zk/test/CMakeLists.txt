@@ -19,6 +19,8 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
     Boost::unit_test_framework
     Boost::log
     )
+set_target_properties(_cm_internal_tests-actor-zk-test PROPERTIES CXX_STANDARD 20)
+target_precompile_headers(_cm_internal_tests-actor-zk-test REUSE_FROM crypto3_precompiled_headers)
 
 if(PROFILING_ENABLED)
     add_definitions(-DPROFILING_ENABLED)
@@ -37,7 +39,7 @@ macro(define_zk_test test)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-steps=2147483647")
@@ -45,6 +47,7 @@ macro(define_zk_test test)
         target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
     endif()
 
+    target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(TESTS_NAMES

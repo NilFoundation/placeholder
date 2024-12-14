@@ -109,10 +109,9 @@ namespace nil {
                             : X(X), Y(Y), T(X*Y), Z(field_value_type::one())
                         { }
 
-                        template<typename Backend,
-                                 boost::multiprecision::expression_template_option ExpressionTemplates>
+                        template<std::size_t Bits>
                         explicit constexpr curve_element(
-                                  const boost::multiprecision::number<Backend, ExpressionTemplates> &value) {
+                                  const nil::crypto3::multiprecision::big_uint<Bits> &value) {
                             *this = one() * value;
                         }
 
@@ -229,10 +228,9 @@ namespace nil {
                             return *this;
                         }
 
-                        template<typename Backend,
-                                 boost::multiprecision::expression_template_option ExpressionTemplates>
+                        template<std::size_t Bits>
                         constexpr const curve_element& operator=(
-                                  const boost::multiprecision::number<Backend, ExpressionTemplates> &value) {
+                                  const nil::crypto3::multiprecision::big_uint<Bits> &value) {
                             *this = one() * value;
                             return *this;
                         }

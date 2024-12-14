@@ -28,7 +28,7 @@
 #include <nil/marshalling/container/static_vector.hpp>
 #include <nil/marshalling/container/static_string.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace container {
             namespace detail {
@@ -39,7 +39,7 @@ namespace nil {
                 };
 
                 template<std::size_t TSize>
-                struct is_static_string<nil::marshalling::container::static_string<TSize>> {
+                struct is_static_string<nil::crypto3::marshalling::container::static_string<TSize>> {
                     static const bool value = true;
                 };
 
@@ -49,23 +49,23 @@ namespace nil {
                 };
 
                 template<typename T, std::size_t TSize>
-                struct is_static_vector<nil::marshalling::container::static_vector<T, TSize>> {
+                struct is_static_vector<nil::crypto3::marshalling::container::static_vector<T, TSize>> {
                     static const bool value = true;
                 };
 
             }    // namespace detail
 
             /// @brief Compile time check whether the provided type is a variant of
-            ///     @ref nil::marshalling::container::static_string
-            /// @related nil::marshalling::container::static_string
+            ///     @ref nil::crypto3::marshalling::container::static_string
+            /// @related nil::crypto3::marshalling::container::static_string
             template<typename T>
             static constexpr bool is_static_string() {
                 return detail::is_static_string<T>::value;
             }            
 
             /// @brief Compile time check whether the provided type is a variant of
-            ///     @ref nil::marshalling::container::static_vector
-            /// @related nil::marshalling::container::static_vector
+            ///     @ref nil::crypto3::marshalling::container::static_vector
+            /// @related nil::crypto3::marshalling::container::static_vector
             template<typename T>
             static constexpr bool is_static_vector() {
                 return detail::is_static_vector<T>::value;

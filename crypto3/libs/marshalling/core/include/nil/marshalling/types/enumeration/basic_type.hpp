@@ -32,7 +32,7 @@
 
 #include <nil/marshalling/types/integral/basic_type.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {

@@ -32,7 +32,7 @@
 
 #include <nil/marshalling/accumulators/marshalling.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         template<typename TypeToProcess,
                  typename =

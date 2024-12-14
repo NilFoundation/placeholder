@@ -28,7 +28,7 @@
 
 #include <cstdint>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace processing {
 

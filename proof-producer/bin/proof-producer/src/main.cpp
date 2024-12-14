@@ -72,7 +72,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     }
                     break;
                 case nil::proof_generator::detail::ProverStage::ASSIGNMENT:
-                    prover_result = prover.setup_prover() && prover.fill_assignment_table(prover_options.trace_file_path);
+                    prover_result = prover.setup_prover() && prover.fill_assignment_table(prover_options.trace_base_path);
                     if (!prover_options.assignment_table_file_path.empty() && prover_result) {
                         prover_result = prover.save_binary_assignment_table_to_file(prover_options.assignment_table_file_path);
                     }
@@ -129,7 +129,7 @@ int run_prover(const nil::proof_generator::ProverOptions& prover_options) {
                     // Preset, fill assignment table, preprocess
                     prover_result =
                         prover.setup_prover() &&
-                        prover.fill_assignment_table(prover_options.trace_file_path) &&
+                        prover.fill_assignment_table(prover_options.trace_base_path) &&
                         prover.preprocess_public_data() &&
                         prover.save_preprocessed_common_data_to_file(prover_options.preprocessed_common_data_path) &&
                         prover.preprocess_private_data() &&

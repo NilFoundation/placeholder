@@ -53,7 +53,7 @@ namespace nil {
             }    // namespace types
         }        // namespace marshalling
     }            // namespace crypto3
-    namespace marshalling {
+    namespace crypto3::marshalling {
 
         /// @brief Compile time check function of whether a provided type is any
         ///     variant of nil::crypto3::marshalling::types::curve_element.

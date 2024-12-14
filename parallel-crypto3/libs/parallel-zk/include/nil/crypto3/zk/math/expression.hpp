@@ -117,9 +117,9 @@ namespace nil {
                     update_hash();
                 }
 
-                // Constructor for number<cpp_int_backend<...>>.
-                template<class BackendType>
-                expression(const boost::multiprecision::number<BackendType>& coeff)
+                // Constructor for big_uint.
+                template<std::size_t Bits>
+                expression(const nil::crypto3::multiprecision::big_uint<Bits>& coeff)
                   : expr(term<VariableType>((assignment_type)coeff)) {
                     update_hash();
                 }
@@ -213,7 +213,7 @@ namespace nil {
 
                 // Every number type will be accepted here,
                 // if it can be converted to 'assignment_type'.
-                // This will include integral types and number<cpp_int_backend<...>>
+                // This will include integral types and big_uint
                 template<class NumberType>
                 term(const NumberType &field_val) : coeff(field_val) {
                     update_hash();

@@ -60,19 +60,12 @@ namespace nil {
 #else
 
                     constexpr static const integral_type modulus =
-                        0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001_cppui_modular255;
+                        0x73EDA753299D7D483339D80809A1D80553BDA402FFFE5BFEFFFFFFFF00000001_big_uint255;
 
                     constexpr static const integral_type group_order_minus_one_half =
-                        0x39F6D3A994CEBEA4199CEC0404D0EC02A9DED2017FFF2DFF7FFFFFFF80000000_cppui_modular255;
+                        0x39F6D3A994CEBEA4199CEC0404D0EC02A9DED2017FFF2DFF7FFFFFFF80000000_big_uint255;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<bls12_scalar_field<381>>> value_type;
 #endif
                 };
@@ -92,18 +85,11 @@ namespace nil {
 #else
 
                     constexpr static const integral_type modulus =
-                        0x12AB655E9A2CA55660B44D1E5C37B00159AA76FED00000010A11800000000001_cppui_modular253;
+                        0x12AB655E9A2CA55660B44D1E5C37B00159AA76FED00000010A11800000000001_big_uint253;
                     constexpr static const integral_type group_order_minus_one_half =
-                        0x0955B2AF4D1652AB305A268F2E1BD800ACD53B7F680000008508C00000000000_cppui_modular253;
+                        0x0955B2AF4D1652AB305A268F2E1BD800ACD53B7F680000008508C00000000000_big_uint253;
 
-                    typedef typename policy_type::modular_backend modular_backend;
-                    constexpr static const modular_params_type modulus_params = modulus.backend();
-                    typedef boost::multiprecision::number<
-                        boost::multiprecision::backends::modular_adaptor<
-                            modular_backend,
-                            boost::multiprecision::backends::modular_params_ct<modular_backend, modulus_params>>>
-                        modular_type;
-
+                    typedef nil::crypto3::multiprecision::auto_big_mod<modulus> modular_type;
                     typedef typename detail::element_fp<params<bls12_scalar_field<377>>> value_type;
 #endif
                 };
@@ -123,11 +109,6 @@ namespace nil {
                 constexpr typename bls12_scalar_field<377>::integral_type const bls12_scalar_field<377>::modulus;
                 constexpr typename bls12_scalar_field<381>::integral_type const bls12_scalar_field<381>::group_order_minus_one_half;
                 constexpr typename bls12_scalar_field<377>::integral_type const bls12_scalar_field<377>::group_order_minus_one_half;
-
-                constexpr
-                    typename bls12_scalar_field<381>::modular_params_type const bls12_scalar_field<381>::modulus_params;
-                constexpr
-                    typename bls12_scalar_field<377>::modular_params_type const bls12_scalar_field<377>::modulus_params;
 #endif
                 template<std::size_t Version = 381>
                 using bls12_fr = bls12_scalar_field<Version>;

@@ -7,9 +7,6 @@
 #include <cstdint>
 #include <algorithm>
 
-#include <boost/multiprecision/cpp_int.hpp>
-#include <boost/multiprecision/number.hpp>
-
 #include <nil/crypto3/hash/detail/poseidon/poseidon_sponge.hpp>
 
 #include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
@@ -32,15 +29,15 @@ namespace nil {
 
                 template<typename integral_type>
                 integral_type pack(std::vector<uint64_t> limbs_lsb) {
-                    nil::marshalling::status_type status;
+                    nil::crypto3::marshalling::status_type status;
                     std::size_t byte_size =
-                            boost::multiprecision::backends::max_precision<typename integral_type::backend_type>::value /
+                            integral_type::Bits / // TODO(ioxid): should round up here
                             CHAR_BIT;
                     std::size_t size = byte_size / sizeof(uint64_t) + (byte_size % sizeof(uint64_t) ? 1 : 0);
                     limbs_lsb.resize(size);
                     std::reverse(limbs_lsb.begin(), limbs_lsb.end());
 
-                    integral_type res = nil::marshalling::pack<nil::marshalling::option::big_endian>(limbs_lsb, status);
+                    integral_type res = nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(limbs_lsb, status);
                     THROW_IF_ERROR_STATUS(status, "std::vector<uint64_t> to integral_type");
 
                     return res;
@@ -48,10 +45,10 @@ namespace nil {
 
                 template<typename value_type, typename integral_type>
                 std::vector<std::uint64_t> unpack(value_type &value) {
-                    nil::marshalling::status_type status;
+                    nil::crypto3::marshalling::status_type status;
                     integral_type scalar_value = integral_type(value.data);
                     std::vector<std::uint64_t> limbs_lsb =
-                        nil::marshalling::pack<nil::marshalling::option::big_endian>(scalar_value, status);
+                        nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(scalar_value, status);
                     THROW_IF_ERROR_STATUS(status, "integral_type to std::vector<uint64_t>");
 
                     std::reverse(limbs_lsb.begin(), limbs_lsb.end());
@@ -255,10 +252,10 @@ namespace nil {
                                     typename base_field_type::integral_type(f.data));
                             this->sponge.absorb(casted_to_base_value);
                         } else {
-                            nil::marshalling::status_type status;
+                            nil::crypto3::marshalling::status_type status;
                             typename scalar_field_type::integral_type scalar_f(f.data);
                             std::vector<bool> bits =
-                                nil::marshalling::pack<nil::marshalling::option::big_endian>(scalar_f, status);
+                                nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(scalar_f, status);
                             THROW_IF_ERROR_STATUS(status, "FqSponge::absorb_fr");
                             std::vector<bool> shifted_bits(bits.size(), false);
 
@@ -270,7 +267,7 @@ namespace nil {
                                     typename base_field_type::integral_type(0);
 
                             typename base_field_type::integral_type high_bits =
-                                nil::marshalling::pack<nil::marshalling::option::big_endian>(shifted_bits, status);
+                                nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(shifted_bits, status);
                             THROW_IF_ERROR_STATUS(status, "FqSponge::absorb_fr");
 
                             typename base_field_type::value_type high_bits_field =

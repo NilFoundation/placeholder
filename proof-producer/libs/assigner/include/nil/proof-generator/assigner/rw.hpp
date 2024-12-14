@@ -17,34 +17,21 @@ namespace nil {
         /// @brief Fill assignment table
         template<typename BlueprintFieldType>
         std::optional<std::string> fill_rw_assignment_table(nil::crypto3::zk::snark::plonk_assignment_table<BlueprintFieldType>& assignment_table,
-                                                            const boost::filesystem::path& trace_file_path) {
-            BOOST_LOG_TRIVIAL(debug) << "fill rw table from " << trace_file_path << "\n";
+                                                            const boost::filesystem::path& trace_base_path) {
+            BOOST_LOG_TRIVIAL(debug) << "fill rw table from " << trace_base_path << "\n";
 
             using ComponentType = nil::blueprint::bbf::rw<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT>;
 
             typename nil::blueprint::bbf::context<BlueprintFieldType, nil::blueprint::bbf::GenerationStage::ASSIGNMENT> context_object(assignment_table, limits::max_rows);
 
-            nil::blueprint::bbf::rw_operations_vector input;
-            const auto rw_operations = deserialize_rw_traces_from_file(trace_file_path);
-            if (!rw_operations) {
-                return "can't read rw from file";
+            const auto rw_trace_path = get_rw_trace_path(trace_base_path);
+            auto input = deserialize_rw_traces_from_file(rw_trace_path);
+            if (!input) {
+                return "can't read rw from file: " + rw_trace_path.string();
             }
-            for (const auto& stack_op : rw_operations->stack_ops) {
-                input.push_back(stack_op);
-            }
-            for (const auto& memory_op : rw_operations->memory_ops) {
-                input.push_back(memory_op);
-            }
-            for (const auto& storage_op : rw_operations->storage_ops) {
-                input.push_back(storage_op);
-            }
-            BOOST_LOG_TRIVIAL(debug) << "number RW operations " << input.size() << ":\n"
-             << "stack   " << rw_operations->stack_ops.size() << "\n"
-             << "memory  " << rw_operations->memory_ops.size() << "\n"
-             << "storage " << rw_operations->storage_ops.size() << "\n";
 
             auto start = std::chrono::high_resolution_clock::now();
-            ComponentType instance(context_object, std::move(input), limits::max_rw_size, limits::max_mpt_size);
+            ComponentType instance(context_object, input.value(), limits::max_rw_size, limits::max_mpt_size);
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start);
             std::cout << "FILL ASSIGNMENT TABLE: " << duration.count() << "\n";
             return {};

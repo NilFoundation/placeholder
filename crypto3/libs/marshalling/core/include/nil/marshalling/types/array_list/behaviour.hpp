@@ -37,7 +37,7 @@
 
 #include <nil/marshalling/types/tag.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace types {
             namespace detail {
@@ -48,7 +48,7 @@ namespace nil {
                 template<>
                 struct array_list_orig_data_view_storage_type<true> {
                     template<typename TElement>
-                    using type = nil::marshalling::container::array_view<TElement>;
+                    using type = nil::crypto3::marshalling::container::array_view<TElement>;
                 };
 
                 template<>
@@ -63,7 +63,7 @@ namespace nil {
                 template<>
                 struct array_list_sequence_fixed_size_use_fixed_size_storage_type<true> {
                     template<typename TElement, typename TOpt>
-                    using type = nil::marshalling::container::static_vector<TElement, TOpt::sequence_fixed_size>;
+                    using type = nil::crypto3::marshalling::container::static_vector<TElement, TOpt::sequence_fixed_size>;
                 };
 
                 template<>
@@ -80,7 +80,7 @@ namespace nil {
                 template<>
                 struct array_list_fixed_size_storage_type<true> {
                     template<typename TElement, typename TOpt>
-                    using type = nil::marshalling::container::static_vector<TElement, TOpt::fixed_size_storage>;
+                    using type = nil::crypto3::marshalling::container::static_vector<TElement, TOpt::fixed_size_storage>;
                 };
 
                 template<>

@@ -79,13 +79,37 @@ namespace nil {
                 bool operator< (const rw_operation &other) const {
                     if( op != other.op ) return op < other.op;
                     if( call_id != other.call_id ) return call_id < other.call_id;
-                    if( address != other.address ) return address < other.address;
+                    if( address != other.address ) return address.base() < other.address.base();
                     if( field != other.field ) return field < other.field;
-                    if( storage_key != other.storage_key ) return storage_key < other.storage_key;
+                    if( storage_key != other.storage_key ) return storage_key.base() < other.storage_key.base();
                     if( rw_counter != other.rw_counter) return rw_counter < other.rw_counter;
                     return false;
                 }
             };
+
+            // For testing purposes
+            std::ostream& operator<<(std::ostream& os, const rw_operation& obj){
+                if(obj.op == rw_operation_type::start )                           os << "START                              : ";
+                if(obj.op == rw_operation_type::stack )                           os << "STACK                              : ";
+                if(obj.op == rw_operation_type::memory )                          os << "MEMORY                             : ";
+                if(obj.op == rw_operation_type::storage )                          os << "STORAGE                            : ";
+                if(obj.op == rw_operation_type::transient_storage )               os << "TRANSIENT_STORAGE                  : ";
+                if(obj.op == rw_operation_type::call_context )                    os << "CALL_CONTEXT_OP                    : ";
+                if(obj.op == rw_operation_type::account )                         os << "ACCOUNT_OP                         : ";
+                if(obj.op == rw_operation_type::tx_refund_op )                       os << "TX_REFUND_OP                       : ";
+                if(obj.op == rw_operation_type::tx_access_list_account )          os << "TX_ACCESS_LIST_ACCOUNT_OP          : ";
+                if(obj.op == rw_operation_type::tx_access_list_account_storage )  os << "TX_ACCESS_LIST_ACCOUNT_STORAGE_OP  : ";
+                if(obj.op == rw_operation_type::tx_log )                          os << "TX_LOG_OP                          : ";
+                if(obj.op == rw_operation_type::tx_receipt )                      os << "TX_RECEIPT_OP                      : ";
+                if(obj.op == rw_operation_type::padding )                         os << "PADDING_OP                         : ";
+                os << obj.rw_counter << " call_id = " << obj.call_id << ", addr =" << std::hex << obj.address << std::dec;
+                if(obj.op == rw_operation_type::storage || obj.op == rw_operation_type::transient_storage)
+                    os << " storage_key = " << obj.storage_key;
+                if(obj.is_write) os << " W "; else os << " R ";
+                os << "[" << std::hex << obj.initial_value << std::dec <<"] => ";
+                os << "[" << std::hex << obj.value << std::dec <<"]";
+                return os;
+            }
 
             rw_operation start_rw_operation(){
                 return rw_operation({rw_operation_type::start, 0, 0, 0, 0, 0, 0, 0});

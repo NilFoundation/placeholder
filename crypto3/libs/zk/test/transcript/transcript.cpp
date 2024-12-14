@@ -63,12 +63,12 @@ BOOST_AUTO_TEST_CASE(zk_transcript_manual_test) {
     auto ch2 = tr.challenge<field_type>();
     auto ch_n = tr.challenges<field_type, 3>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0xe858ba005424eabd6d97de7e930779def59a85c1a9ff7e8a5d001cdb07f6e4_cppui_modular254).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0xf61f38f58a55b3bbee0480fc5ec3cf8df81603579f4f7134f764bfd3ca5938b_cppui_modular254).data);
+    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0xe858ba005424eabd6d97de7e930779def59a85c1a9ff7e8a5d001cdb07f6e4_big_uint254).data);
+    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0xf61f38f58a55b3bbee0480fc5ec3cf8df81603579f4f7134f764bfd3ca5938b_big_uint254).data);
 
-    BOOST_CHECK_EQUAL(ch_n[0].data, field_type::value_type(0x4f6b97a9bc99d6996fab5e03d1cd0b418a9b3c97ed64cca070e15777e7cc99a_cppui_modular254).data);
-    BOOST_CHECK_EQUAL(ch_n[1].data, field_type::value_type(0x2414ddf7ecff246500beb2c01b0c5912a400bc3cdca6d7f24bd2bd4987b21e04_cppui_modular254).data);
-    BOOST_CHECK_EQUAL(ch_n[2].data, field_type::value_type(0x10bfe2f4a414eec551dda5fd9899e9b46e327648b4fa564ed0517b6a99396aec_cppui_modular254).data);
+    BOOST_CHECK_EQUAL(ch_n[0].data, field_type::value_type(0x4f6b97a9bc99d6996fab5e03d1cd0b418a9b3c97ed64cca070e15777e7cc99a_big_uint254).data);
+    BOOST_CHECK_EQUAL(ch_n[1].data, field_type::value_type(0x2414ddf7ecff246500beb2c01b0c5912a400bc3cdca6d7f24bd2bd4987b21e04_big_uint254).data);
+    BOOST_CHECK_EQUAL(ch_n[2].data, field_type::value_type(0x10bfe2f4a414eec551dda5fd9899e9b46e327648b4fa564ed0517b6a99396aec_big_uint254).data);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -90,8 +90,8 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
     auto ch2 = tr.challenge<field_type>();
     int ch_int = tr.int_challenge<int>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x27B1BE8A820DE1A5E91A441F59F29D42D9DB9FC7778A0852819F331D5CD60B43_cppui_modular255).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x12096E03B2ADEC9B317042D36F048C06AF123EED4A3FC040579E66DCE46C0AEE_cppui_modular255).data);
+    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x27B1BE8A820DE1A5E91A441F59F29D42D9DB9FC7778A0852819F331D5CD60B43_big_uint255).data);
+    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x12096E03B2ADEC9B317042D36F048C06AF123EED4A3FC040579E66DCE46C0AEE_big_uint255).data);
     BOOST_CHECK_EQUAL(ch_int, 0x6296);
 
     init_blob = {};
@@ -100,8 +100,8 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_init_test) {
     ch2 = tr.challenge<field_type>();
     ch_int = tr.int_challenge<int>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x35626947FA1063436F4E5434029CCAEC64075C9FC80034C0923054A2B1D30BD2_cppui_modular255).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x1B961886411EE8722DD6B576CBA5876EB30999B5237FE0E14255E6D006CFF63C_cppui_modular255).data);
+    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x35626947FA1063436F4E5434029CCAEC64075C9FC80034C0923054A2B1D30BD2_big_uint255).data);
+    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x1B961886411EE8722DD6B576CBA5876EB30999B5237FE0E14255E6D006CFF63C_big_uint255).data);
     BOOST_CHECK_EQUAL(ch_int, 0xC92);
 }
 
@@ -115,8 +115,8 @@ BOOST_AUTO_TEST_CASE(zk_poseidon_transcript_no_init_test) {
     auto ch2 = tr.challenge<field_type>();
     int ch_int = tr.int_challenge<int>();
 
-    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x35626947fa1063436f4e5434029ccaec64075c9fc80034c0923054a2b1d30bd2_cppui_modular255).data);
-    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x1b961886411ee8722dd6b576cba5876eb30999b5237fe0e14255e6d006cff63c_cppui_modular255).data);
+    BOOST_CHECK_EQUAL(ch1.data, field_type::value_type(0x35626947fa1063436f4e5434029ccaec64075c9fc80034c0923054a2b1d30bd2_big_uint255).data);
+    BOOST_CHECK_EQUAL(ch2.data, field_type::value_type(0x1b961886411ee8722dd6b576cba5876eb30999b5237fe0e14255e6d006cff63c_big_uint255).data);
     BOOST_CHECK_EQUAL(ch_int, 0xc92);
 }
 
@@ -141,20 +141,20 @@ void test_transcript(typename curve_type::base_field_type::value_type const& exp
 
 BOOST_AUTO_TEST_CASE(mnt4_keccak) {
     test_transcript<algebra::curves::mnt4_298, hashes::keccak_1600<256>>
-        (0xb985b0419fda7e26db3867b38cbb55465717e8d3ff208768cac6949bd68c2b7_cppui_modular298);
+        (0xb985b0419fda7e26db3867b38cbb55465717e8d3ff208768cac6949bd68c2b7_big_uint298);
 }
 
 BOOST_AUTO_TEST_CASE(mnt6_keccak) {
     test_transcript<algebra::curves::mnt6_298, hashes::keccak_1600<256>>
-        (0x56d23a0a6f75fe3a7670906b341b29cdde80696fc418771e3c84910217546ef1_cppui_modular298);
+        (0x56d23a0a6f75fe3a7670906b341b29cdde80696fc418771e3c84910217546ef1_big_uint298);
 }
 
 BOOST_AUTO_TEST_CASE(bls12_keccak) {
     test_transcript<algebra::curves::bls12_381, hashes::keccak_1600<256>>
-        (0x7cc24317960f68f067e0a1cfe610fe3db024d52b064ff2115ea0f594602f0784_cppui_modular381);
+        (0x7cc24317960f68f067e0a1cfe610fe3db024d52b064ff2115ea0f594602f0784_big_uint381);
     /* TODO: no marshalling for bls12-377 curve
     test_transcript<algebra::curves::bls12_377, hashes::keccak_1600<256>>
-        (0x0_cppui_modular377);
+        (0x0_big_uint377);
     */
 }
 
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(pallas_poseidon) {
     using hash_type = hashes::poseidon<nil::crypto3::hashes::detail::mina_poseidon_policy<field_type>>;
 
     test_transcript<curve_type, hash_type>
-        (0xb4a4cca5ad2d998a81ce64953c1fe0b16e27e4d298808165644421eebd2bc3a_cppui_modular256);
+        (0xb4a4cca5ad2d998a81ce64953c1fe0b16e27e4d298808165644421eebd2bc3a_big_uint256);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

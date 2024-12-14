@@ -44,7 +44,7 @@
 
 #include <nil/detail/type_traits.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace detail {
 
@@ -60,7 +60,7 @@ namespace nil {
 
                 template<typename T, typename = typename std::enable_if<
                                          std::is_same<T, T>::value && is_marshalling_type<TInput>::value
-                                         && !nil::marshalling::is_supported_representation_type<T>::value>::type>
+                                         && !nil::crypto3::marshalling::is_supported_representation_type<T>::value>::type>
                 inline operator T() {
                     status_type status_unpack, status_pack;
                     std::vector<std::uint8_t> buffer = value_unpack_impl<TInput>(input, status_unpack);
@@ -75,7 +75,7 @@ namespace nil {
                 template<typename T,
                          typename = typename std::enable_if<
                              std::is_same<T, T>::value && !is_marshalling_type<TInput>::value
-                             && !nil::marshalling::is_supported_representation_type<T>::value>::type,
+                             && !nil::crypto3::marshalling::is_supported_representation_type<T>::value>::type,
                          bool Enable = true>
                 inline operator T() {
                     status_type status_unpack, status_pack;
@@ -93,7 +93,7 @@ namespace nil {
                 template<typename T,
                          typename = typename std::enable_if<
                              std::is_same<T, T>::value && !is_marshalling_type<TInput>::value
-                             && nil::marshalling::is_supported_representation_type<T>::value>::type,
+                             && nil::crypto3::marshalling::is_supported_representation_type<T>::value>::type,
                          bool Enable1 = true, bool Enable2 = true>
                 inline operator T() {
                     status_type status_unpack;
@@ -109,7 +109,7 @@ namespace nil {
                 template<typename T,
                          typename = typename std::enable_if<
                              std::is_same<T, T>::value && is_marshalling_type<TInput>::value
-                             && nil::marshalling::is_supported_representation_type<T>::value>::type,
+                             && nil::crypto3::marshalling::is_supported_representation_type<T>::value>::type,
                          bool Enable1 = true, bool Enable2 = true, bool Enable3 = true>
                 inline operator T() {
                     status_type status_unpack;
@@ -146,7 +146,7 @@ namespace nil {
                 template<typename T,
                          typename = typename std::enable_if<
                              std::is_same<T, T>::value
-                             && nil::marshalling::is_supported_representation_type<input_value>::value>::type>
+                             && nil::crypto3::marshalling::is_supported_representation_type<input_value>::value>::type>
                 inline operator T() {
                     T result = range_pack_impl<TOutputEndian, Iter>(iterator, count_elements, status_pack);
 
@@ -157,9 +157,9 @@ namespace nil {
                 template<typename T,
                          typename = typename std::enable_if<
                              std::is_same<T, T>::value
-                             && !nil::marshalling::is_supported_representation_type<input_value>::value
-                             && (nil::marshalling::is_supported_representation_type<T>::value
-                                 || nil::marshalling::is_supported_representation_type<
+                             && !nil::crypto3::marshalling::is_supported_representation_type<input_value>::value
+                             && (nil::crypto3::marshalling::is_supported_representation_type<T>::value
+                                 || nil::crypto3::marshalling::is_supported_representation_type<
                                      typename T::value_type>::value)>::type,
                          bool Enable = true>
                 inline operator T() {
@@ -171,8 +171,8 @@ namespace nil {
                 template<typename T,
                          typename = typename std::enable_if<
                              std::is_same<T, T>::value
-                             && !nil::marshalling::is_supported_representation_type<input_value>::value
-                             && !nil::marshalling::is_supported_representation_type<T>::value>::type,
+                             && !nil::crypto3::marshalling::is_supported_representation_type<input_value>::value
+                             && !nil::crypto3::marshalling::is_supported_representation_type<T>::value>::type,
                          bool Enable1 = true, bool Enable2 = true>
                 inline operator T() {
                     std::vector<std::uint8_t> buffer
@@ -211,7 +211,7 @@ namespace nil {
                 template<typename T,
                          typename
                          = typename std::enable_if<std::is_same<T, T>::value
-                                                   && nil::marshalling::is_supported_representation_type<
+                                                   && nil::crypto3::marshalling::is_supported_representation_type<
                                                        typename std::iterator_traits<Iter>::value_type>::value>::type>
                 inline operator T() {
                     status_type status_pack;
@@ -226,8 +226,8 @@ namespace nil {
                 template<typename T,
                          typename = typename std::enable_if<
                              std::is_same<T, T>::value
-                             && !nil::marshalling::is_supported_representation_type<input_value>::value
-                             && nil::marshalling::is_supported_representation_type<T>::value>::type,
+                             && !nil::crypto3::marshalling::is_supported_representation_type<input_value>::value
+                             && nil::crypto3::marshalling::is_supported_representation_type<T>::value>::type,
                          bool Enable = true>
                 inline operator T() {
                     status_type status_unpack;
@@ -242,7 +242,7 @@ namespace nil {
                 template<typename T,
                          typename
                          = typename std::enable_if<std::is_same<T, T>::value
-                                                   && !nil::marshalling::is_supported_representation_type<
+                                                   && !nil::crypto3::marshalling::is_supported_representation_type<
                                                        typename std::iterator_traits<Iter>::value_type>::value>::type,
                          bool Enable1 = true, bool Enable2 = true>
                 inline operator T() {

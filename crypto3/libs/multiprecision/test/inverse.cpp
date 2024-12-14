@@ -18,15 +18,15 @@
 #define _SCL_SECURE_NO_WARNINGS
 #endif
 
-#include <nil/crypto3/multiprecision/cpp_int_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular.hpp>
 
-#include <nil/crypto3/multiprecision/inverse.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_adaptor.hpp>
-#include <nil/crypto3/multiprecision/modular/modular_params.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/inverse.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/modular/modular_adaptor.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/modular/modular_params.hpp>
 #include <boost/multiprecision/number.hpp>
-#include <nil/crypto3/multiprecision/cpp_modular.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_modular.hpp>
 
-#include <nil/crypto3/multiprecision/cpp_int_modular/literals.hpp>
+#include <nil/crypto3/multiprecision/boost_backends/cpp_int_modular/literals.hpp>
 
 using namespace boost::multiprecision;
 

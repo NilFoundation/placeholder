@@ -52,9 +52,8 @@ namespace nil {
                         _bytecodes.new_buffer(bytecode);
                     }
 
-                    std::size_t call_id = 0;
                     std::size_t rw_counter = 0;
-                    //_rw_operations.push_back(start_rw_operation());
+                    std::size_t call_id = 0;
                     for( auto &pt: pts){
                         boost::property_tree::ptree ptrace = pt.get_child("result.structLogs");
                         std::cout << "PT = " << ptrace.size() << std::endl;
@@ -75,7 +74,7 @@ namespace nil {
                                 memory_next = byte_vector_from_ptree(std::next(it)->second.get_child("memory"));
                                 storage_next = key_value_storage_from_ptree(it->second.get_child("storage"));
                             }
-                            using integral_type = boost::multiprecision::number<boost::multiprecision::backends::cpp_int_modular_backend<257>>;
+                            using integral_type = nil::crypto3::multiprecision::big_uint<257>;
 
                             zkevm_state state; // TODO:optimize
                             state.tx_hash = 0;  // TODO: change it
@@ -84,7 +83,7 @@ namespace nil {
                             state.gas = atoi(it->second.get_child("gas").data().c_str());
                             state.pc = atoi(it->second.get_child("pc").data().c_str());
                             state.rw_counter = rw_counter;
-                            state.bytecode_hash = _bytecodes.get_data()[0].second; // TODO: fix it if possible
+                            state.bytecode_hash = _bytecodes.get_data()[call_id].second; // TODO: fix it if possible
                             state.additional_input = opcode.substr(0,4) == "PUSH"? stack_next[stack_next.size() - 1]: 0;
                             state.tx_finish = (std::distance(it, ptrace.end()) != 1);
                             state.stack_size = stack.size();

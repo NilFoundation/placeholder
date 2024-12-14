@@ -44,7 +44,7 @@ namespace nil {
             boost::filesystem::path preprocessed_public_data_path = "preprocessed_data.dat";
             boost::filesystem::path commitment_scheme_state_path = "commitment_scheme_state.dat";
             boost::filesystem::path updated_commitment_scheme_state_path = "updated_commitment_scheme_state.dat";
-            boost::filesystem::path trace_file_path;
+            boost::filesystem::path trace_base_path;
             boost::filesystem::path circuit_file_path;
             boost::filesystem::path assignment_table_file_path;
             boost::filesystem::path assignment_description_file_path;

@@ -145,7 +145,7 @@ namespace nil {
                             _proof.commitments[VARIABLE_VALUES_BATCH] = _commitment_scheme.commit(VARIABLE_VALUES_BATCH);
                         }
                         transcript(_proof.commitments[VARIABLE_VALUES_BATCH]);
-                        
+
                         // 4. permutation_argument
                         if( constraint_system.copy_constraints().size() > 0 ){
                             auto permutation_argument = placeholder_permutation_argument<FieldType, ParamsType>::prove_eval(

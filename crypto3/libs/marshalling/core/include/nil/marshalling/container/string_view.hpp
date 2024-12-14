@@ -24,7 +24,7 @@
 //---------------------------------------------------------------------------//
 
 /// @file
-/// @brief Contains nil::marshalling::container::string_view class.
+/// @brief Contains nil::crypto3::marshalling::container::string_view class.
 
 #ifndef MARSHALLING_STRING_VIEW_HPP
 #define MARSHALLING_STRING_VIEW_HPP
@@ -37,7 +37,7 @@
 #include <nil/marshalling/assert_type.hpp>
 #include <nil/marshalling/container/array_view.hpp>
 
-namespace nil {
+namespace nil::crypto3 {
     namespace marshalling {
         namespace container {
 
@@ -604,8 +604,8 @@ namespace std {
 
     /// @brief Specializes the std::swap algorithm.
     /// @see <a href="http://en.cppreference.com/w/cpp/string/basic_string/swap2">Reference</a>
-    /// @related nil::marshalling::container::string_view
-    inline void swap(nil::marshalling::container::string_view &str1, nil::marshalling::container::string_view &str2) {
+    /// @related nil::crypto3::marshalling::container::string_view
+    inline void swap(nil::crypto3::marshalling::container::string_view &str1, nil::crypto3::marshalling::container::string_view &str2) {
         str1.swap(str2);
     }
 

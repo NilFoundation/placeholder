@@ -74,7 +74,6 @@ function(setup_proof_generator_target)
         EXPORT_NAME ${ARG_TARGET_NAME}
         CXX_STANDARD 23
         CXX_STANDARD_REQUIRED TRUE)
-
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${ARG_TARGET_NAME} PRIVATE "-fconstexpr-steps=2147483647")
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -85,11 +84,13 @@ endfunction()
 
 set(SINGLE_THREADED_TARGET "${CURRENT_PROJECT_NAME}-single-threaded")
 setup_proof_generator_target(TARGET_NAME ${SINGLE_THREADED_TARGET} ADDITIONAL_DEPENDENCIES crypto3::all)
+target_precompile_headers(${SINGLE_THREADED_TARGET} REUSE_FROM proof_generatorOutputArtifacts)
+
 set(MULTI_THREADED_TARGET "${CURRENT_PROJECT_NAME}-multi-threaded")
 setup_proof_generator_target(TARGET_NAME ${MULTI_THREADED_TARGET} ADDITIONAL_DEPENDENCIES parallel-crypto3::all crypto3::common)
+target_precompile_headers(${MULTI_THREADED_TARGET} REUSE_FROM proof_generatorOutputArtifacts)
 
 # Install
-
 install(TARGETS ${SINGLE_THREADED_TARGET} RUNTIME DESTINATION bin)
 install(TARGETS ${MULTI_THREADED_TARGET} RUNTIME DESTINATION bin)
 

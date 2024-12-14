@@ -26,13 +26,12 @@
 #ifndef CRYPTO3_MARSHALLING_INTEGRAL_HPP
 #define CRYPTO3_MARSHALLING_INTEGRAL_HPP
 
+#include <cstddef>
 #include <ratio>
 #include <limits>
 #include <type_traits>
 
-#include <boost/type_traits/is_integral.hpp>
-
-#include <boost/multiprecision/number.hpp>
+#include <nil/crypto3/multiprecision/big_uint.hpp>
 
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/types/integral.hpp>
@@ -42,9 +41,9 @@
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/options.hpp>
 
-#include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_fixed_precision_type.hpp>
-#include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_non_fixed_precision_type.hpp>
+#include <nil/crypto3/marshalling/multiprecision/types/detail/integral/basic_type.hpp>
 #include <nil/crypto3/marshalling/multiprecision/inference.hpp>
+#include <vector>
 
 namespace nil {
     namespace crypto3 {
@@ -53,61 +52,56 @@ namespace nil {
 
                 /// @brief field_type that represent integral value.
                 /// @tparam TTypeBase Base class for this field, expected to be a variant of
-                ///     nil::marshalling::field_type.
+                ///     nil::crypto3::marshalling::field_type.
                 /// @tparam T Basic underlying integral type.
                 /// @tparam TOptions Zero or more options that modify/refine default behaviour
                 ///     of the field. If no option is provided The field's value is serialized as is.
                 ///     @code
-                ///         using MyFieldBase = nil::marshalling::field_type<nil::marshalling::option::BigEndian>;
+                ///         using MyFieldBase = nil::crypto3::marshalling::field_type<nil::crypto3::marshalling::option::big_endian>;
                 ///
                 ///         constexpr static const std::size_t modulus_bits = 381;
-                ///         using modulus_type =
-                ///         boost::multiprecision::number<boost::multiprecision::backends::cpp_int_backend<
-                ///            modulus_bits, modulus_bits, boost::multiprecision::unsigned_magnitude,
-                ///            boost::multiprecision::unchecked, void>>;
+                ///         using modulus_type = nil::crypto3::multiprecision::big_uint<modulus_bits>;
                 ///         using MyField = nil::crypto3::marshalling::types::integral<MyFieldBase, modulus_type>;
                 ///     @endcode
                 ///     In the example above it will
                 ///     consume ?? bytes (because sizeof(modulus_type) == ??) and will
                 ///     be serialized using big endian notation.@n
                 ///     Supported options are:
-                ///     @li @ref nil::marshalling::option::var_length
-                ///     @li @ref nil::marshalling::option::num_value_ser_offset
-                ///     @li @ref nil::marshalling::option::default_value_initializer or
-                ///     nil::marshalling::option::default_num_value.
-                ///     @li @ref nil::marshalling::option::contents_validator
-                ///     @li @ref nil::marshalling::option::valid_num_value_range, @ref
-                ///     nil::marshalling::option::ValidNumValue,
-                ///         @ref nil::marshalling::option::ValidBigUnsignedNumValueRange, @ref
-                ///         nil::marshalling::option::ValidBigUnsignedNumValue
-                ///     @li @ref nil::marshalling::option::valid_ranges_clear
-                ///     @li @ref nil::marshalling::option::contents_refresher
-                ///     @li @ref nil::marshalling::option::has_custom_read
-                ///     @li @ref nil::marshalling::option::has_custom_refresh
-                ///     @li @ref nil::marshalling::option::fail_on_invalid
-                ///     @li @ref nil::marshalling::option::ignore_invalid
-                ///     @li @b nil::marshalling::option::Units* - all variants of value units, see
+                ///     @li @ref nil::crypto3::marshalling::option::var_length
+                ///     @li @ref nil::crypto3::marshalling::option::num_value_ser_offset
+                ///     @li @ref nil::crypto3::marshalling::option::default_value_initializer or
+                ///     nil::crypto3::marshalling::option::default_num_value.
+                ///     @li @ref nil::crypto3::marshalling::option::contents_validator
+                ///     @li @ref nil::crypto3::marshalling::option::valid_num_value_range, @ref
+                ///     nil::crypto3::marshalling::option::ValidNumValue,
+                ///         @ref nil::crypto3::marshalling::option::ValidBigUnsignedNumValueRange, @ref
+                ///         nil::crypto3::marshalling::option::ValidBigUnsignedNumValue
+                ///     @li @ref nil::crypto3::marshalling::option::valid_ranges_clear
+                ///     @li @ref nil::crypto3::marshalling::option::contents_refresher
+                ///     @li @ref nil::crypto3::marshalling::option::has_custom_read
+                ///     @li @ref nil::crypto3::marshalling::option::has_custom_refresh
+                ///     @li @ref nil::crypto3::marshalling::option::fail_on_invalid
+                ///     @li @ref nil::crypto3::marshalling::option::ignore_invalid
+                ///     @li @b nil::crypto3::marshalling::option::Units* - all variants of value units, see
                 ///         @ref sec_field_tutorial_integral_units for details.
-                ///     @li nil::marshalling::option::empty_serialization
-                ///     @li @ref nil::marshalling::option::invalid_by_default
-                ///     @li @ref nil::marshalling::option::version_storage
-                /// @extends nil::marshalling::field_type
+                ///     @li nil::crypto3::marshalling::option::empty_serialization
+                ///     @li @ref nil::crypto3::marshalling::option::invalid_by_default
+                ///     @li @ref nil::crypto3::marshalling::option::version_storage
+                /// @extends nil::crypto3::marshalling::field_type
                 /// @headerfile nil/marshalling/types/integral.hpp
                 template<typename TTypeBase, typename IntegralContainer, typename... TOptions>
                 class integral;
 
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
-                class integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
-                    : public ::nil::marshalling::types::detail::adapt_basic_field_type<
-                          crypto3::marshalling::types::detail::basic_integral<TTypeBase, Backend, ExpressionTemplates>,
-                          TOptions...> {
+                class integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
+                    : public detail::adapt_basic_field_type<
+                          detail::basic_integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>>, TOptions...>
+                {
 
-                    using base_impl_type = ::nil::marshalling::types::detail::adapt_basic_field_type<
-                        crypto3::marshalling::types::detail::basic_integral<TTypeBase, Backend, ExpressionTemplates>,
-                        TOptions...>;
+                    using base_impl_type = detail::adapt_basic_field_type<
+                          detail::basic_integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>>, TOptions...>;
 
                 public:
                     /// @brief endian_type used for serialization.
@@ -117,10 +111,10 @@ namespace nil {
                     using version_type = typename base_impl_type::version_type;
 
                     /// @brief All the options provided to this class bundled into struct.
-                    using parsed_options_type = ::nil::marshalling::types::detail::options_parser<TOptions...>;
+                    using parsed_options_type = ::nil::crypto3::marshalling::types::detail::options_parser<TOptions...>;
 
                     /// @brief Tag indicating type of the field
-                    using tag = ::nil::marshalling::types::tag::integral;
+                    using tag = ::nil::crypto3::marshalling::types::tag::integral;
 
                     /// @brief Type of underlying integral value.
                     /// @details Same as template parameter T to this class.
@@ -194,7 +188,7 @@ namespace nil {
                     /// @return Status of read operation.
                     /// @post Iterator is advanced.
                     template<typename TIter>
-                    nil::marshalling::status_type read(TIter &iter, std::size_t size) {
+                    nil::crypto3::marshalling::status_type read(TIter &iter, std::size_t size) {
                         return base_impl_type::read(iter, size);
                     }
 
@@ -214,7 +208,7 @@ namespace nil {
                     /// @return Status of write operation.
                     /// @post Iterator is advanced.
                     template<typename TIter>
-                    nil::marshalling::status_type write(TIter &iter, std::size_t size) const {
+                    nil::crypto3::marshalling::status_type write(TIter &iter, std::size_t size) const {
                         return base_impl_type::write(iter, size);
                     }
 
@@ -234,7 +228,7 @@ namespace nil {
                     }
 
                     /// @brief Get version of the field.
-                    /// @details Exists only if @ref nil::marshalling::option::version_storage option has been provided.
+                    /// @details Exists only if @ref nil::crypto3::marshalling::option::version_storage option has been provided.
                     version_type get_version() const {
                         return base_impl_type::get_version();
                     }
@@ -253,71 +247,71 @@ namespace nil {
                     // because such an adapter uses pure byte reading,
                     // incompatible with crypto3::multiprecision
                     static_assert(!parsed_options_type::has_fixed_length_limit,
-                                  "nil::marshalling::option::fixed_length option is not applicable to "
+                                  "nil::crypto3::marshalling::option::fixed_length option is not applicable to "
                                   "crypto3::integral type");
 
                     // because such an adapter uses pure byte reading,
                     // incompatible with crypto3::multiprecision
                     static_assert(!parsed_options_type::has_fixed_bit_length_limit,
-                                  "nil::marshalling::option::fixed_bit_length option is not applicable to "
+                                  "nil::crypto3::marshalling::option::fixed_bit_length option is not applicable to "
                                   "crypto3::integral type");
 
                     static_assert(!parsed_options_type::has_scaling_ratio,
-                                  "nil::marshalling::option::scaling_ratio option is not applicable to "
+                                  "nil::crypto3::marshalling::option::scaling_ratio option is not applicable to "
                                   "crypto3::integral type");
 
                     static_assert(
                         !parsed_options_type::has_sequence_elem_length_forcing,
-                        "nil::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
+                        "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
                         "crypto3::integral type");
                     static_assert(!parsed_options_type::has_sequence_size_forcing,
-                                  "nil::marshalling::option::SequenceSizeForcingEnabled option is not applicable to "
+                                  "nil::crypto3::marshalling::option::SequenceSizeForcingEnabled option is not applicable to "
                                   "crypto3::integral type");
                     static_assert(!parsed_options_type::has_sequence_length_forcing,
-                                  "nil::marshalling::option::SequenceLengthForcingEnabled option is not applicable to "
+                                  "nil::crypto3::marshalling::option::SequenceLengthForcingEnabled option is not applicable to "
                                   "crypto3::integral type");
                     static_assert(!parsed_options_type::has_sequence_fixed_size,
-                                  "nil::marshalling::option::sequence_fixed_size option is not applicable to "
+                                  "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to "
                                   "crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
-                        "nil::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
+                        "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
                         "crypto3::integral type");
                     static_assert(!parsed_options_type::has_sequence_size_field_prefix,
-                                  "nil::marshalling::option::sequence_size_field_prefix option is not applicable to "
+                                  "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to "
                                   "crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_sequence_ser_length_field_prefix,
-                        "nil::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
                         "crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                        "nil::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
                         "crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                        "nil::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
+                        "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
                         "crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_sequence_trailing_field_suffix,
-                        "nil::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
                         "crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_sequence_termination_field_suffix,
-                        "nil::marshalling::option::sequence_termination_field_suffix option is not applicable to "
+                        "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
                         "crypto3::integral type");
                     static_assert(!parsed_options_type::has_fixed_size_storage,
-                                  "nil::marshalling::option::fixed_size_storage option is not applicable to "
+                                  "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to "
                                   "crypto3::integral type");
                     static_assert(!parsed_options_type::has_custom_storage_type,
-                                  "nil::marshalling::option::custom_storage_type option is not applicable to "
+                                  "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to "
                                   "crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_orig_data_view,
-                        "nil::marshalling::option::orig_data_view option is not applicable to crypto3::integral type");
+                        "nil::crypto3::marshalling::option::orig_data_view option is not applicable to crypto3::integral type");
                     static_assert(
                         !parsed_options_type::has_versions_range,
-                        "nil::marshalling::option::exists_between_versions (or similar) option is not applicable to "
+                        "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
                         "crypto3::integral type");
                 };
 
@@ -327,13 +321,12 @@ namespace nil {
                 /// @return true in case fields are equal, false otherwise.
                 /// @related integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
                 bool operator==(
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field1,
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field2) {
                     return field1.value() == field2.value();
                 }
@@ -344,13 +337,12 @@ namespace nil {
                 /// @return true in case fields are NOT equal, false otherwise.
                 /// @related integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
                 bool operator!=(
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field1,
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field2) {
                     return field1.value() != field2.value();
                 }
@@ -361,55 +353,52 @@ namespace nil {
                 /// @return true in case value of the first field is lower than than the value of the second.
                 /// @related integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
                 bool operator<(
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field1,
-                    const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                    const integral<nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                         &field2) {
                     return field1.value() < field2.value();
                 }
 
-                /// @brief Upcast type of the field definition to its parent nil::marshalling::types::integral type
+                /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::integral type
                 ///     in order to have access to its internal types.
-                /// @related nil::marshalling::types::integral
+                /// @related nil::crypto3::marshalling::types::integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
-                inline integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...> &
+                inline integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...> &
                     to_field_base(
-                        integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...> &field) {
+                        integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...> &field) {
                     return field;
                 }
 
-                /// @brief Upcast type of the field definition to its parent nil::marshalling::types::integral type
+                /// @brief Upcast type of the field definition to its parent nil::crypto3::marshalling::types::integral type
                 ///     in order to have access to its internal types.
-                /// @related nil::marshalling::types::integral
+                /// @related nil::crypto3::marshalling::types::integral
                 template<typename TTypeBase,
-                         typename Backend,
-                         boost::multiprecision::expression_template_option ExpressionTemplates,
+                         std::size_t Bits,
                          typename... TOptions>
-                inline const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...> &
+                inline const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...> &
                     to_field_base(
-                        const integral<TTypeBase, boost::multiprecision::number<Backend, ExpressionTemplates>, TOptions...>
+                        const integral<TTypeBase, nil::crypto3::multiprecision::big_uint<Bits>, TOptions...>
                             &field) {
                     return field;
                 }
 
                 template<typename IntegralContainer, typename Endianness>
-                nil::marshalling::types::standard_array_list<
-                    nil::marshalling::field_type<Endianness>,
-                    integral<nil::marshalling::field_type<Endianness>, IntegralContainer>>
+                nil::crypto3::marshalling::types::standard_array_list<
+                    nil::crypto3::marshalling::field_type<Endianness>,
+                    integral<nil::crypto3::marshalling::field_type<Endianness>, IntegralContainer>>
                     fill_integral_vector(std::vector<IntegralContainer> integral_vector) {
 
-                    using TTypeBase = nil::marshalling::field_type<Endianness>;
+                    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
                     using integral_type = integral<TTypeBase, IntegralContainer>;
 
-                    using integral_vector_type = nil::marshalling::types::standard_array_list<
+                    using integral_vector_type = nil::crypto3::marshalling::types::standard_array_list<
                         TTypeBase,
                         integral_type>;
 
@@ -424,12 +413,12 @@ namespace nil {
 
                 template<typename IntegralContainer, typename Endianness>
                 std::vector<IntegralContainer> make_integral_vector(
-                    nil::marshalling::types::standard_array_list<
-                        nil::marshalling::field_type<Endianness>,
-                        integral<nil::marshalling::field_type<Endianness>, IntegralContainer>>
+                    nil::crypto3::marshalling::types::standard_array_list<
+                        nil::crypto3::marshalling::field_type<Endianness>,
+                        integral<nil::crypto3::marshalling::field_type<Endianness>, IntegralContainer>>
                         const& integral_vector)
                 {
-                    std::vector<integral<nil::marshalling::field_type<Endianness>, IntegralContainer>> const& values =
+                    std::vector<integral<nil::crypto3::marshalling::field_type<Endianness>, IntegralContainer>> const& values =
                         integral_vector.value();
                     std::size_t size = values.size();
                     std::vector<IntegralContainer> result;

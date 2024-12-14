@@ -130,11 +130,11 @@ BOOST_AUTO_TEST_CASE(blueprint_non_native_range_test0) {
 
 BOOST_AUTO_TEST_CASE(blueprint_non_native_range_test_must_fail) {
     test_field_range<typename crypto3::algebra::curves::pallas::base_field_type>( //ed25519 modulus
-        {0x3ffffffffffffffed_cppui_modular255, 0x3ffffffffffffffff_cppui_modular255, 0x3ffffffffffffffff_cppui_modular255, 0x1ffffffffffffff_cppui_modular255}, false
+        {0x3ffffffffffffffed_big_uint255, 0x3ffffffffffffffff_big_uint255, 0x3ffffffffffffffff_big_uint255, 0x1ffffffffffffff_big_uint255}, false
     );
 
     test_field_range<typename crypto3::algebra::curves::pallas::base_field_type>(
-        {0x3ffffffffffffffff_cppui_modular255, 0x3ffffffffffffffff_cppui_modular255, 0x3ffffffffffffffff_cppui_modular255, 0x1ffffffffffffff_cppui_modular255}, false
+        {0x3ffffffffffffffff_big_uint255, 0x3ffffffffffffffff_big_uint255, 0x3ffffffffffffffff_big_uint255, 0x1ffffffffffffff_big_uint255}, false
     );
 }
 

@@ -91,8 +91,8 @@ struct default_zkllvm_params {
         nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
     using table_description_type =
         nil::crypto3::zk::snark::plonk_table_description<field_type>;
-    using Endianness = nil::marshalling::option::big_endian;
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
+    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
     using ColumnType = nil::crypto3::zk::snark::plonk_column<field_type>;
     using assignment_table_type =
@@ -175,8 +175,8 @@ template<typename SrcParams>
     static nil::crypto3::zk::snark::placeholder_proof<typename SrcParams::field_type, SrcParams> load_proof(std::string filename) {
     std::cout << "Loading proof from " << filename << std::endl;
 
-    using Endianness = nil::marshalling::option::big_endian;
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
+    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
     std::ifstream iproof;
     iproof.open(filename);
@@ -193,7 +193,7 @@ template<typename SrcParams>
     proof_marshalling_type marshalled_proof_data;
     auto read_iter = v.begin();
     auto status = marshalled_proof_data.read(read_iter, v.size());
-    if (status != nil::marshalling::status_type::success) {
+    if (status != nil::crypto3::marshalling::status_type::success) {
         std::cerr << "Status is " << make_error_code(status) << std::endl;
         throw "Reading a marshalled object from buffer failed.";
     }
@@ -221,7 +221,7 @@ static typename nil::crypto3::zk::snark::placeholder_public_preprocessor<typenam
     nil::crypto3::marshalling::types::placeholder_common_data<default_zkllvm_params::TTypeBase, common_data_type> marshalled_data;
     auto read_iter = v.begin();
     auto status = marshalled_data.read(read_iter, v.size());
-    return nil::crypto3::marshalling::types::make_placeholder_common_data<nil::marshalling::option::big_endian, common_data_type>(
+    return nil::crypto3::marshalling::types::make_placeholder_common_data<nil::crypto3::marshalling::option::big_endian, common_data_type>(
         marshalled_data
     );
 }
@@ -239,8 +239,8 @@ struct dst_params{
         nil::crypto3::zk::snark::plonk_constraint_system<field_type>;
     using table_description_type =
         nil::crypto3::zk::snark::plonk_table_description<field_type>;
-    using Endianness = nil::marshalling::option::big_endian;
-    using TTypeBase = nil::marshalling::field_type<Endianness>;
+    using Endianness = nil::crypto3::marshalling::option::big_endian;
+    using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
     using ColumnType = nil::crypto3::zk::snark::plonk_column<field_type>;
     using assignment_table_type =

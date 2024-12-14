@@ -162,14 +162,14 @@ namespace nil {
                     typename ArithmetizationType::field_type::integral_type(
                         var_value(assignment, instance_input.k[7]).data)};
 
-                auto L = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular512;
-                auto k = 0x00_cppui_modular512;
-                auto shft = 0x01_cppui_modular512;
+                auto L = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint512;
+                auto k = 0x00_big_uint512;
+                auto shft = 0x01_big_uint512;
 
                 for (std::size_t i = 0; i < 8; i++) {
                     assignment.witness(component.W(i), row + 3) = data[i];
                     k = k + data[i] * (shft % L);
-                    shft *= 0x10000000000000000_cppui_modular512; 
+                    shft *= 0x10000000000000000_big_uint512; 
                 }
 
                 auto r = k % L;
@@ -256,23 +256,23 @@ namespace nil {
 
                 using var = typename plonk_reduction<BlueprintFieldType>::var;
 
-                auto L = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_cppui_modular512;
+                auto L = 0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed_big_uint512;
 
                 auto constraint_1 =
-                    var(component.W(0), +1) * 0x01_cppui_modular512 + var(component.W(1), +1) * 0x10000000000000000_cppui_modular512 +
-                    var(component.W(2), +1) * 0x100000000000000000000000000000000_cppui_modular512 +
-                    var(component.W(3), +1) * 0x1000000000000000000000000000000000000000000000000_cppui_modular512 +
+                    var(component.W(0), +1) * 0x01_big_uint512 + var(component.W(1), +1) * 0x10000000000000000_big_uint512 +
+                    var(component.W(2), +1) * 0x100000000000000000000000000000000_big_uint512 +
+                    var(component.W(3), +1) * 0x1000000000000000000000000000000000000000000000000_big_uint512 +
                     var(component.W(4), +1) *
-                        0xffffffffffffffffffffffffffffffec6ef5bf4737dcf70d6ec31748d98951d_cppui_modular512 +
+                        0xffffffffffffffffffffffffffffffec6ef5bf4737dcf70d6ec31748d98951d_big_uint512 +
                     var(component.W(5), +1) *
-                        0xffffffffffffffeb2106215d086329a93b8c838d39a5e065812631a5cf5d3ed_cppui_modular512 +
+                        0xffffffffffffffeb2106215d086329a93b8c838d39a5e065812631a5cf5d3ed_big_uint512 +
                     var(component.W(6), +1) *
-                        0x2106215d086329a7ed9ce5a30a2c131b64a7f435e4fdd9539822129a02a6271_cppui_modular512 +
+                        0x2106215d086329a7ed9ce5a30a2c131b64a7f435e4fdd9539822129a02a6271_big_uint512 +
                     var(component.W(7), +1) *
-                        0xed9ce5a30a2c131b399411b7c309a3de24babbe38d1d7a979daf520a00acb65_cppui_modular512 -
+                        0xed9ce5a30a2c131b399411b7c309a3de24babbe38d1d7a979daf520a00acb65_big_uint512 -
                     var(component.W(4), -1) -
-                    (var(component.W(0), 0) * 0x800000000000_cppui_modular512 + var(component.W(1), 0) * 0x8000000_cppui_modular512 +
-                     var(component.W(2), 0) * 0x80_cppui_modular512 + var(component.W(3), 0)) *
+                    (var(component.W(0), 0) * 0x800000000000_big_uint512 + var(component.W(1), 0) * 0x8000000_big_uint512 +
+                     var(component.W(2), 0) * 0x80_big_uint512 + var(component.W(3), 0)) *
                         L;
 
                 auto s_r = var(component.W(0), -1) + var(component.W(1), -1) + var(component.W(2), -1) +
@@ -283,18 +283,18 @@ namespace nil {
 
                 auto constraint_2 =
                     var(component.W(4), 0) -
-                    (var(component.W(3), 0) + var(component.W(2), 0) * 0x2000_cppui_modular255 +
-                     var(component.W(1), 0) * 0x200000000_cppui_modular255 +
-                     var(component.W(0), 0) * 0x20000000000000_cppui_modular255 +
-                     var(component.W(8), -1) * 0x2000000000000000000_cppui_modular255 +
-                     var(component.W(7), -1) * 0x200000000000000000000000_cppui_modular255 +
-                     var(component.W(6), -1) * 0x20000000000000000000000000000_cppui_modular255 +
-                     var(component.W(5), -1) * 0x2000000000000000000000000000000000_cppui_modular255 +
-                     var(component.W(4), -1) * 0x200000000000000000000000000000000000000_cppui_modular255 +
-                     var(component.W(3), -1) * 0x20000000000000000000000000000000000000000000_cppui_modular255 +
-                     var(component.W(2), -1) * 0x2000000000000000000000000000000000000000000000000_cppui_modular255 +
-                     var(component.W(1), -1) * 0x200000000000000000000000000000000000000000000000000000_cppui_modular255 +
-                     var(component.W(0), -1) * 0x20000000000000000000000000000000000000000000000000000000000_cppui_modular255);
+                    (var(component.W(3), 0) + var(component.W(2), 0) * 0x2000_big_uint255 +
+                     var(component.W(1), 0) * 0x200000000_big_uint255 +
+                     var(component.W(0), 0) * 0x20000000000000_big_uint255 +
+                     var(component.W(8), -1) * 0x2000000000000000000_big_uint255 +
+                     var(component.W(7), -1) * 0x200000000000000000000000_big_uint255 +
+                     var(component.W(6), -1) * 0x20000000000000000000000000000_big_uint255 +
+                     var(component.W(5), -1) * 0x2000000000000000000000000000000000_big_uint255 +
+                     var(component.W(4), -1) * 0x200000000000000000000000000000000000000_big_uint255 +
+                     var(component.W(3), -1) * 0x20000000000000000000000000000000000000000000_big_uint255 +
+                     var(component.W(2), -1) * 0x2000000000000000000000000000000000000000000000000_big_uint255 +
+                     var(component.W(1), -1) * 0x200000000000000000000000000000000000000000000000000000_big_uint255 +
+                     var(component.W(0), -1) * 0x20000000000000000000000000000000000000000000000000000000000_big_uint255);
 
                 auto constraint_3 = (s_r) * ((s_r)*var(component.W(5), 0) - 1);
 
@@ -311,8 +311,8 @@ namespace nil {
                     var(component.W(5), +1) * (m[2] & ((one << 73) - 1)) +
                     var(component.W(6), +1) * (m[3] & ((one << 73) - 1)) +
                     var(component.W(7), +1) * (m[4] & ((one << 73) - 1)) +
-                    (var(component.W(0), 0) * 0x800000000000_cppui_modular512 + var(component.W(1), 0) * 0x8000000_cppui_modular512 +
-                     var(component.W(2), 0) * 0x80_cppui_modular512 + var(component.W(3), 0)) *
+                    (var(component.W(0), 0) * 0x800000000000_big_uint512 + var(component.W(1), 0) * 0x8000000_big_uint512 +
+                     var(component.W(2), 0) * 0x80_big_uint512 + var(component.W(3), 0)) *
                         ((one << 73) - (crypto3::algebra::curves::ed25519::scalar_field_type::extended_integral_type(L) % (one << 73))) -
                     (var(component.W(3), -1) + var(component.W(2), -1) * (one << 13) +
                      var(component.W(1), -1) * (one << 33) + var(component.W(0), -1) * (one << 53)) -

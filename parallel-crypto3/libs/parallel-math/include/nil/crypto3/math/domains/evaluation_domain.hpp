@@ -32,7 +32,6 @@
 
 #include <vector>
 
-#include <boost/multiprecision/integer.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
 namespace nil {
@@ -59,7 +58,7 @@ namespace nil {
                  *
                  * (See the function get_evaluation_domain below.)
                  */
-                evaluation_domain(const std::size_t m) : m(m), log2_size(boost::multiprecision::msb(m)) {};
+                evaluation_domain(const std::size_t m) : m(m), log2_size(nil::crypto3::multiprecision::msb(m)) {};
 
                 inline std::size_t size() const {
                     return m;

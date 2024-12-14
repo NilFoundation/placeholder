@@ -18,8 +18,8 @@
 #include <nil/proof-generator/output_artifacts/output_artifacts.hpp>
 #include <nil/proof-generator/output_artifacts/assignment_table_writer.hpp>
 
-using Endianness = nil::marshalling::option::big_endian;
-using TTypeBase = nil::marshalling::field_type<Endianness>;
+using Endianness = nil::crypto3::marshalling::option::big_endian;
+using TTypeBase = nil::crypto3::marshalling::field_type<Endianness>;
 
 using BlueprintField = typename nil::crypto3::algebra::curves::pallas::base_field_type;
 
@@ -55,7 +55,7 @@ class AssignmentTableWriterTest: public ::testing::Test {
             MarshalledTable marshalled_table;
             auto read_iter = table_bytes_.begin();
             auto const status = marshalled_table.read(read_iter, table_bytes_.size());
-            ASSERT_TRUE(status == nil::marshalling::status_type::success);
+            ASSERT_TRUE(status == nil::crypto3::marshalling::status_type::success);
 
             // unpack decoded data to table & description
             auto [desc, table] = nil::crypto3::marshalling::types::make_assignment_table<Endianness, AssignmentTable>(marshalled_table);
@@ -147,28 +147,28 @@ TEST_F(AssignmentTableWriterTest, WriteFullTextAssignment)
         for (auto col = 0; col < table_.witnesses_amount(); col++) {
             auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.public_inputs_amount(); col++) {
             auto expected = table_.public_input(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.constants_amount(); col++) {
             auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream);
 
         for (auto col = 0; col < table_.selectors_amount(); col++) {
             auto expected = table_.selector(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_rest_of_line(mem_stream);
     }
@@ -191,7 +191,7 @@ TEST_F(AssignmentTableWriterTest, WritePartialColumns)
         for (auto col = 0; col <= WitnessColumnsToDump; col++) {
             auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
 
         read_separator(mem_stream); // witnesses
@@ -231,14 +231,14 @@ TEST_F(AssignmentTableWriterTest, TextWrite_Smoke)
         for (auto col = 0; col <= 2; col++) {
             auto expected = table_.witness(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream); // witnesses
 
         for (auto col = 0; col < table_.public_inputs_amount(); col++) {
             auto expected = table_.public_input(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream); // public inputs
 
@@ -246,12 +246,12 @@ TEST_F(AssignmentTableWriterTest, TextWrite_Smoke)
         for (auto col = 1; col <= 3; col++) {
             auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         for (auto col = 5; col <= 7; col++) {
             auto expected = table_.constant(col)[row];
             auto str = read_stringified_field(mem_stream);
-            ASSERT_EQ(expected.data.str(str.size(), std::ios_base::hex), str) << "row: " << row << " col: " << col; 
+            ASSERT_EQ(expected.data.str(std::ios_base::hex), str) << "row: " << row << " col: " << col; 
         }
         read_separator(mem_stream); // constants
 

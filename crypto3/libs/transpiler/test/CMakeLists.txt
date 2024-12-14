@@ -16,37 +16,44 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
                       crypto3::math
                       crypto3::random
                       crypto3::zk
-                      ${Boost_LIBRARIES})
+                      Boost::unit_test_framework
+)
+set_target_properties(_cm_internal_tests-crypto3-transpiler-test PROPERTIES CXX_STANDARD 20)
+target_precompile_headers(_cm_internal_tests-crypto3-transpiler-test REUSE_FROM crypto3_precompiled_headers)
 
 add_custom_target(compile_and_run_transpiler_tests)
 
 macro(define_transpiler_test name)
-    cm_test(NAME transpiler_${name}_test SOURCES ${name}.cpp)
+    set(full_test_name transpiler_${name}_test)
+    cm_test(NAME ${full_test_name} SOURCES ${name}.cpp)
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(transpiler_${name}_test PRIVATE "-fconstexpr-steps=2147483647")
-    endif()
+        target_compile_options(${full_test_name} PRIVATE "-fconstexpr-steps=2147483647")
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${full_test_name} PRIVATE "-fconstexpr-ops-limit=4294967295")
+    endif ()
 
-    target_include_directories(transpiler_${name}_test PRIVATE
+    target_include_directories(${full_test_name} PRIVATE
                                "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                                "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>"
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(transpiler_${name}_test PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${full_test_name} PROPERTIES CXX_STANDARD 20)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
     if(target_type STREQUAL "SHARED_LIB")
-        target_compile_definitions(transpiler_${name}_test PRIVATE BOOST_TEST_DYN_LINK)
+        target_compile_definitions(${full_test_name} PRIVATE BOOST_TEST_DYN_LINK)
     elseif(target_type STREQUAL "STATIC_LIB")
 
     endif()
-    add_custom_target(transpiler_${name}_test_run
-        COMMAND $<TARGET_FILE:transpiler_${name}_test>
-        DEPENDS transpiler_${name}_test $<TARGET_FILE:transpiler_${name}_test>
+    add_custom_target(${full_test_name}_run
+        COMMAND $<TARGET_FILE:${full_test_name}>
+        DEPENDS ${full_test_name} $<TARGET_FILE:${full_test_name}>
     )
-    add_dependencies(compile_and_run_transpiler_tests transpiler_${name}_test_run)
+    add_dependencies(compile_and_run_transpiler_tests ${full_test_name}_run)
 
+    target_precompile_headers(${full_test_name} REUSE_FROM crypto3_precompiled_headers)
 endmacro()
 
 set(TESTS_NAMES
