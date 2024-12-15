@@ -30,6 +30,10 @@ set_target_properties(crypto3_precompiled_headers PROPERTIES
     CXX_STANDARD_REQUIRED TRUE
 )
 
+if (ENABLE_TESTS)
+    enable_testing()
+endif()
+
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/crypto3")
 if ((${PARALLEL_CRYPTO3_ENABLE}) OR (${PROOF_PRODUCER_ENABLE}))
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/parallel-crypto3")
