@@ -749,6 +749,13 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
+        // IO
+
+        friend std::ostream& operator<<(std::ostream& os, const big_uint& value) {
+            os << value.str(os.flags());
+            return os;
+        }
+
         // Misc ops
 
         NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
@@ -1082,15 +1089,7 @@ namespace nil::crypto3::multiprecision {
         return result;
     }
 
-    // IO
-
-    template<std::size_t Bits>
-    std::ostream& operator<<(std::ostream& os, const big_uint<Bits>& value) {
-        os << value.str(os.flags());
-        return os;
-    }
-
-    // Common ops
+    // Misc ops
 
     template<std::size_t Bits>
     constexpr std::size_t msb(const big_uint<Bits>& a) {
