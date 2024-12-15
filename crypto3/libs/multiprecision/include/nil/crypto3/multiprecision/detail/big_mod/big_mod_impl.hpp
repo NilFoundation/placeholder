@@ -24,162 +24,150 @@
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
+#include "nil/crypto3/multiprecision/detail/big_mod/type_traits.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"  // IWYU pragma: keep (used for is_zero)
 
 namespace nil::crypto3::multiprecision {
-    namespace detail {
-        template<std::size_t Bits_, typename modular_ops_storage_t_>
-        class big_mod_impl {
-          public:
-            static constexpr std::size_t Bits = Bits_;
-            using big_uint_t = big_uint<Bits>;
-            using modular_ops_storage_t = modular_ops_storage_t_;
-            using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
+    template<std::size_t Bits_, typename modular_ops_storage_t_>
+    class big_mod_impl {
+      public:
+        static constexpr std::size_t Bits = Bits_;
+        using big_uint_t = big_uint<Bits>;
+        using modular_ops_storage_t = modular_ops_storage_t_;
+        using modular_ops_t = typename modular_ops_storage_t::modular_ops_t;
 
-            // Constructors
+        // Constructors
 
-          protected:
-            template<typename T>
-            constexpr big_mod_impl(const T& b, const modular_ops_storage_t& modular_ops_storage)
-                : m_modular_ops_storage(modular_ops_storage) {
-                if (!nil::crypto3::multiprecision::is_zero(b)) {
-                    init_raw_base(m_raw_base, b, ops());
-                }
-            }
+        // Only available in compile-time big_mod, initializes to zero
+        constexpr big_mod_impl() : big_mod_impl(modular_ops_storage_t{}) {}
 
-            constexpr big_mod_impl(const modular_ops_storage_t& modular_ops_storage)
-                : m_modular_ops_storage(modular_ops_storage) {
-                // NB: m_raw_base is initialized to zero, this is correct for Montgomery form too
-            }
-
-          public:
-            // Components
-
-            constexpr big_uint_t base() const {
-                big_uint_t result;
-                ops().adjust_regular(result, m_raw_base);
-                return result;
-            }
-
-            constexpr const big_uint_t& mod() const { return ops().mod(); }
-
-            explicit constexpr operator big_uint_t() const { return base(); }
-
-            explicit constexpr operator bool() const { return !is_zero(); }
-
-            // String conversion
-
-            constexpr std::string str(
-                std::ios_base::fmtflags flags = std::ios_base::hex | std::ios_base::showbase |
-                                                std::ios_base::uppercase) const {
-                return base().str(flags);
-            }
-
-            // Mathemetical operations
-
-            constexpr void negate() { ops().negate(m_raw_base); }
-
-            // Misc ops
-
-            constexpr bool is_zero() const noexcept {
-                // In barrett form raw_base is the same as base
-                // In montgomery form raw_base is base multiplied by r, so it is zero iff base is
-                return raw_base().is_zero();
-            }
-
-            // Accessing raw base value. Should only be used internally by multiprecision library.
-            constexpr auto& raw_base() { return m_raw_base; }
-            constexpr const auto& raw_base() const { return m_raw_base; }
-
-            constexpr const auto& ops_storage() const { return m_modular_ops_storage; }
-            constexpr const auto& ops() const { return m_modular_ops_storage.ops(); }
-
-          protected:
-            modular_ops_storage_t m_modular_ops_storage;
-            big_uint_t m_raw_base;
-        };
-    }  // namespace detail
-
-    template<const auto& modulus, template<std::size_t> typename modular_ops_template>
-    struct big_mod_ct_impl : public detail::big_mod_impl<
-                                 std::decay_t<decltype(modulus)>::Bits,
-                                 detail::modular_ops_storage_ct<modulus, modular_ops_template>> {
-        using base_type =
-            detail::big_mod_impl<std::decay_t<decltype(modulus)>::Bits,
-                                 detail::modular_ops_storage_ct<modulus, modular_ops_template>>;
-
-        using typename base_type::big_uint_t;
-        using typename base_type::modular_ops_storage_t;
-        using typename base_type::modular_ops_t;
-
-        constexpr big_mod_ct_impl() : base_type({}) {}
-
+        // Only available in compile-time big_mod, initializes with the given base
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr big_mod_ct_impl(const T& b) : base_type(b, {}) {}
+        constexpr big_mod_impl(const T& b) : big_mod_impl(b, modular_ops_storage_t{}) {}
 
-        // For generic code
-
-        constexpr big_mod_ct_impl(const modular_ops_storage_t& ops_storage)
-            : base_type(ops_storage) {}
-
-        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr big_mod_ct_impl(const T& b, const modular_ops_storage_t& ops_storage)
-            : base_type(b, ops_storage) {}
-    };
-
-    template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
-    struct big_mod_rt_impl
-        : public detail::big_mod_impl<Bits,
-                                      detail::modular_ops_storage_rt<Bits, modular_ops_template>> {
-        using base_type =
-            detail::big_mod_impl<Bits, detail::modular_ops_storage_rt<Bits, modular_ops_template>>;
-
-        using typename base_type::big_uint_t;
-        using typename base_type::modular_ops_storage_t;
-        using typename base_type::modular_ops_t;
-
-        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr big_mod_rt_impl(const T& m) : base_type(m) {}
-
+        // Only available in runtime big_mod, initializes with the given base and modulus
         template<typename T1, typename T2,
                  std::enable_if_t<detail::is_integral_v<T1> && detail::is_integral_v<T2>, int> = 0>
-        constexpr big_mod_rt_impl(const T1& b, const T2& m) : base_type(b, m) {}
+        constexpr big_mod_impl(const T1& b, const T2& m)
+            : big_mod_impl(b, modular_ops_storage_t{m}) {}
 
         // For generic code
 
-        constexpr big_mod_rt_impl(const modular_ops_storage_t& ops_storage)
-            : base_type(ops_storage) {}
-
-        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr big_mod_rt_impl(const T& b, const modular_ops_storage_t& ops_storage)
-            : base_type(b, ops_storage) {}
-    };
-
-    namespace detail {
-        template<typename T>
-        constexpr bool is_big_mod_v = false;
-
-        template<const auto& modulus, template<std::size_t> typename modular_ops_storage_t>
-        constexpr bool is_big_mod_v<big_mod_ct_impl<modulus, modular_ops_storage_t>> = true;
-
-        template<std::size_t Bits, template<std::size_t> typename modular_ops_storage_t>
-        constexpr bool is_big_mod_v<big_mod_rt_impl<Bits, modular_ops_storage_t>> = true;
-
-        template<typename T>
-        constexpr bool is_modular_integral_v =
-            std::is_integral_v<T> || detail::is_big_uint_v<T> || is_big_mod_v<T>;
-
-        template<typename T, std::enable_if_t<detail::is_big_mod_v<T>, int> = 0>
-        constexpr std::size_t get_bits() {
-            return T::Bits;
+        // Avaiable both in compile-time and runtime big_mod, avoids costs of initializing
+        // modular_ops_storage in runtime case
+        constexpr big_mod_impl(const modular_ops_storage_t& modular_ops_storage)
+            : m_modular_ops_storage(modular_ops_storage) {
+            // NB: m_raw_base is initialized to zero, this is correct for Montgomery form too
         }
 
-        template<typename S, typename modular_ops_t,
-                 std::enable_if_t<detail::is_integral_v<S>, int> = 0>
+        // Avaiable both in compile-time and runtime big_mod, avoids costs of initializing
+        // modular_ops_storage in runtime case
+        template<typename T>
+        constexpr big_mod_impl(const T& b, const modular_ops_storage_t& modular_ops_storage)
+            : m_modular_ops_storage(modular_ops_storage) {
+            if (!nil::crypto3::multiprecision::is_zero(b)) {
+                init_raw_base(m_raw_base, b, ops());
+            }
+        }
+
+        // Components
+
+        constexpr big_uint_t base() const {
+            big_uint_t result;
+            ops().adjust_regular(result, m_raw_base);
+            return result;
+        }
+
+        constexpr const big_uint_t& mod() const { return ops().mod(); }
+
+        explicit constexpr operator big_uint_t() const { return base(); }
+
+        explicit constexpr operator bool() const { return !is_zero(); }
+
+        // String conversion
+
+        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
+                                                                  std::ios_base::showbase |
+                                                                  std::ios_base::uppercase) const {
+            return base().str(flags);
+        }
+
+        // Mathemetical operations
+
+        constexpr void negate() { ops().negate(m_raw_base); }
+
+        constexpr auto& operator++() noexcept {
+            ops().increment(raw_base());
+            return *this;
+        }
+
+        constexpr auto operator++(int) noexcept {
+            auto copy = *this;
+            ++*this;
+            return copy;
+        }
+
+        constexpr auto operator+() const noexcept { return *this; }
+
+        constexpr auto& operator--() noexcept {
+            ops().decrement(raw_base());
+            return *this;
+        }
+
+        constexpr auto operator--(int) noexcept {
+            auto copy = *this;
+            --*this;
+            return copy;
+        }
+
+        constexpr auto operator-() const noexcept {
+            auto result = *this;
+            result.negate();
+            return result;
+        }
+
+        // IO
+
+        friend std::ostream& operator<<(std::ostream& os, const big_mod_impl& value) {
+            os << value.str(os.flags());
+            return os;
+        }
+
+        // Misc ops
+
+        constexpr bool is_zero() const noexcept {
+            // In barrett form raw_base is the same as base
+            // In montgomery form raw_base is base multiplied by r, so it is zero iff base is
+            return raw_base().is_zero();
+        }
+
+        // Accessing raw base value. Should only be used internally by multiprecision library.
+        constexpr auto& raw_base() { return m_raw_base; }
+        constexpr const auto& raw_base() const { return m_raw_base; }
+
+        constexpr const auto& ops_storage() const { return m_modular_ops_storage; }
+        constexpr const auto& ops() const { return m_modular_ops_storage.ops(); }
+
+      protected:
+        modular_ops_storage_t m_modular_ops_storage;
+        big_uint_t m_raw_base;
+    };
+
+    template<const auto& modulus, template<std::size_t> typename modular_ops_template>
+    using big_mod_ct_impl =
+        big_mod_impl<std::decay_t<decltype(modulus)>::Bits,
+                     detail::modular_ops_storage_ct<modulus, modular_ops_template>>;
+
+    template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
+    using big_mod_rt_impl =
+        big_mod_impl<Bits, detail::modular_ops_storage_rt<Bits, modular_ops_template>>;
+
+    namespace detail {
+        template<typename S, typename modular_ops_t, std::enable_if_t<is_integral_v<S>, int> = 0>
         typename modular_ops_t::big_uint_t convert_to_raw_base(const S& s,
                                                                const modular_ops_t& ops) {
-            if (nil::crypto3::multiprecision::is_zero(s)) {
+            if (is_zero(s)) {
                 return typename modular_ops_t::big_uint_t{};
             }
             typename modular_ops_t::big_uint_t result;
@@ -187,7 +175,7 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        template<typename T, std::enable_if_t<detail::is_big_mod_v<T>, int> = 0>
+        template<typename T, std::enable_if_t<is_big_mod_v<T>, int> = 0>
         constexpr typename T::big_uint_t convert_to_raw_base(
             const T& s, const typename T::modular_ops_t& /*ops*/) {
             return s.raw_base();
@@ -195,7 +183,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T1, typename T2>
         constexpr void assert_equal_ops_in_operands(const T1& a, const T2& b) {
-            if constexpr (detail::is_big_mod_v<T1> && detail::is_big_mod_v<T2>) {
+            if constexpr (is_big_mod_v<T1> && is_big_mod_v<T2>) {
                 NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
             }
         }
@@ -203,9 +191,9 @@ namespace nil::crypto3::multiprecision {
         template<typename T1, typename T2>
         constexpr const auto& get_ops_storage_from_operands(const T1& a, const T2& b) {
             assert_equal_ops_in_operands(a, b);
-            if constexpr (detail::is_big_mod_v<T1>) {
+            if constexpr (is_big_mod_v<T1>) {
                 return a.ops_storage();
-            } else if constexpr (detail::is_big_mod_v<T2>) {
+            } else if constexpr (is_big_mod_v<T2>) {
                 return b.ops_storage();
             } else {
                 static_assert(false, "none of the types are big_mod");
@@ -214,17 +202,17 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T1, typename T2>
         constexpr bool are_valid_operand_types() {
-            if (detail::is_big_mod_v<T1> && detail::is_big_mod_v<T2>) {
+            if (is_big_mod_v<T1> && is_big_mod_v<T2>) {
                 return std::is_same_v<T1, T2>;
             }
-            return detail::is_modular_integral_v<T1> && detail::is_modular_integral_v<T2> &&
-                   (detail::is_big_mod_v<T1> || detail::is_big_mod_v<T2>);
+            return is_modular_integral_v<T1> && is_modular_integral_v<T2> &&
+                   (is_big_mod_v<T1> || is_big_mod_v<T2>);
         }
     }  // namespace detail
 
     // Comparison
 
-#define NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(OP_)                           \
+#define NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(OP_)                                    \
     template<typename T1, typename T2,                                             \
              std::enable_if_t<detail::are_valid_operand_types<T1, T2>(), int> = 0> \
     constexpr bool operator OP_(const T1& a, const T2& b) noexcept {               \
@@ -237,19 +225,19 @@ namespace nil::crypto3::multiprecision {
         }                                                                          \
     }
 
-    NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(==)
-    NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(!=)
+    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(==)
+    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(!=)
     // TODO(ioxid) remove these
-    NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(<)
-    NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(<=)
-    NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(>)
-    NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL(>=)
+    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(<)
+    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(<=)
+    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(>)
+    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(>=)
 
-#undef NIL_CO3_MP_MODULAR_BIG_UINT_COMPARISON_IMPL
+#undef NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL
 
     // Arithmetic operations
 
-#define NIL_CO3_MP_MODULAR_BIG_UINT_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                   \
+#define NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                            \
     template<typename T1, typename T2,                                                        \
              std::enable_if_t<detail::are_valid_operand_types<T1, T2>(), int> = 0,            \
              typename big_mod_t = std::conditional_t<detail::is_big_mod_v<T1>, T1, T2>>       \
@@ -271,53 +259,11 @@ namespace nil::crypto3::multiprecision {
         return a;                                                                             \
     }
 
-#define NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE \
-    template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
+    NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(+, +=, add)
+    NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(-, -=, subtract)
+    NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(*, *=, mul)
 
-    NIL_CO3_MP_MODULAR_BIG_UINT_OPERATOR_IMPL(+, +=, add)
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto& operator++(big_mod_t& a) noexcept {
-        a.ops().increment(a.raw_base());
-        return a;
-    }
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto operator++(big_mod_t& a, int) noexcept {
-        auto copy = a;
-        ++a;
-        return copy;
-    }
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto operator+(const big_mod_t& a) noexcept { return a; }
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_OPERATOR_IMPL(-, -=, subtract)
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto& operator--(big_mod_t& a) noexcept {
-        a.ops().decrement(a.raw_base());
-        return a;
-    }
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    constexpr auto operator--(big_mod_t& a, int) noexcept {
-        auto copy = a;
-        --a;
-        return copy;
-    }
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-    constexpr big_mod_t operator-(const big_mod_t& a) noexcept {
-        big_mod_t result = a;
-        result.negate();
-        return result;
-    }
-
-    NIL_CO3_MP_MODULAR_BIG_UINT_OPERATOR_IMPL(*, *=, mul)
-
-#undef NIL_CO3_MP_MODULAR_BIG_UINT_UNARY_TEMPLATE
-#undef NIL_CO3_MP_MODULAR_BIG_UINT_OPERATOR_IMPL
+#undef NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL
 
     // Hash
 
@@ -336,15 +282,7 @@ namespace nil::crypto3::multiprecision {
         return result;
     }
 
-    // IO
-
-    template<typename T, std::enable_if_t<detail::is_big_mod_v<T>, int> = 0>
-    std::ostream& operator<<(std::ostream& os, const T& value) {
-        os << value.str(os.flags());
-        return os;
-    }
-
-    // Common ops
+    // Misc ops
 
     template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
     constexpr bool is_zero(const big_mod_t& a) {
