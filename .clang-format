@@ -9,4 +9,5 @@ InsertNewlineAtEOF: true
 NamespaceIndentation: All
 SpaceAfterTemplateKeyword: false
 TabWidth: 4
+IncludeBlocks: Preserve
 ...

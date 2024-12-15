@@ -347,6 +347,7 @@ modules.xml
 ### CMake ###
 CMakeLists.txt.user
 CMakeCache.txt
+CMakeUserPresets.json
 CMakeFiles
 CMakeScripts
 Testing
@@ -640,3 +641,9 @@ callgrind.*
 
 .ycm_extra_config.py
 .color_coded
+
+# VSCode configuration
+.vscode
+
+# direnv outputs
+.direnv
