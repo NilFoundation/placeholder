@@ -157,10 +157,11 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits2, std::size_t Bits3,
                  std::enable_if_t<
                      /// result should fit in the output parameter
-                     Bits2 >= big_uint_t::Bits, int> = 0>
+                     Bits2 >= Bits, int> = 0>
         constexpr void barrett_reduce(big_uint<Bits2> &result, big_uint<Bits3> input) const {
             if (!input.is_zero()) {
                 if (input.msb() < 2u * mod().msb() + 1u) {
+                    // TODO(ioxid): too small size here
                     big_uint_quadruple_1 t1(input);
 
                     t1 *= m_barrett_mu;
@@ -168,10 +169,10 @@ namespace nil::crypto3::multiprecision::detail {
                     t1 >>= shift_size;
                     t1 *= mod();
 
-                    input -= t1;
+                    input -= static_cast<big_uint<Bits3>>(t1);
 
                     if (input >= mod()) {
-                        input -= mod();
+                        input -= static_cast<big_uint<Bits3>>(mod());
                     }
                 } else {
                     input %= mod();
