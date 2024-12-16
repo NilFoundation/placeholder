@@ -91,7 +91,7 @@ set(COMMON_TEST_FILES
     #"mock/mocked_components"
     "component_batch"
     "bbf/bbf_wrapper"
-    "bbf/bbf_tester"
+    "bbf/tester"
     "bbf/opcode_poc"
     "bbf/row_seletor_test"
     "bbf/gate_optimizer"
