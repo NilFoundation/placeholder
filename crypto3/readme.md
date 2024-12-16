@@ -12,7 +12,7 @@ Crypto3 cryptography suite's purpose is:
 
 Libraries are designed to be state of the art, highly performant and providing a one-stop solution for
 all cryptographic operations. They are supported on all operating systems (*nix, windows, macOS)
-and architectures(x86/ARM).
+and architectures (x86/ARM).
 
 Developed by [=nil; Crypto3](https://crypto3.nil.foundation) and supported by [=nil; Foundation](https://nil.foundation).
 
@@ -22,8 +22,8 @@ Rationale, tutorials and references are available [here](https://crypto3.nil.fou
 1. [Repository Structure](#repository-structure)
 2. [Installation](#installation)
 3. [Usage](#usage)
-3. [Contributing](#contributing)
-4. [Community](#community)
+4. [Contributing](#contributing)
+5. [Support](#support)
 
 ## Repository Structure
 This repository is an umbrella-repository for the whole suite. Single-purposed libraries repositories (e.g. [block
@@ -32,7 +32,7 @@ used outside this suite or properly constructed CMake project and should be hand
 ```
 root
 ├── cmake: cmake sub-module with helper functions/macros to build crypto3 library umbrella-repository
-├── docs: documentation , tutorials and guides
+├── docs: documentation, tutorials and guides
 ├── libs: all directories added as submodules which are independent projects.
 │   ├── algebra: algebraic operations and structures being used for elliptic-curve cryptography
 │   ├── benchmark_tools: utilities to run benchmarks
@@ -86,7 +86,7 @@ nix flake check
 To run single test:
 
 ```bash
-nix develop . -c cmake -B build -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=FALSE -DCMAKE_ENABLE_TESTS=TRUE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug  -DCMAKE_CXX_FLAGS=-ggdb
+nix develop . -c cmake -B build -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=FALSE -DCMAKE_ENABLE_TESTS=TRUE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_FLAGS=-ggdb
 nix develop -c cmake --build build -t <test_target> // for example multiprecision_modular_adaptor_fixed_test
 ```
 
@@ -102,11 +102,11 @@ The suite is used as a header-only and is currently statically linked. Future ve
 #### Generic
 Generic usage of cryptography suite consists of all modules available at
 [GitHub =nil; Crypto3 Team Repositories](https://github.com/orgs/NilFoundation/teams/nil-crypto3/repositories).
-This is an umbrella-repository where  Modules
+This is an umbrella-repository where Modules
 are added as submodules emplaced in `libs` directory. A developer can thus add this  
 project as a submodule and would not need to resolve dependencies. See [crypto3-scaffold](https://github.com/NilFoundation/crypto3-scaffold) as an example of usage.
 
-The generic module can be added to your c++ project as follows
+The generic module can be added to your c++ project as follows:
 
 ``` git submodule add https://github.com/NilFoundation/crypto3.git <dir>```
 
