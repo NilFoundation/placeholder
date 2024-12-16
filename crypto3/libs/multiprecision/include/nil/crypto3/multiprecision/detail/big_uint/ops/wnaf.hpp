@@ -12,88 +12,53 @@
 
 #include <array>
 #include <cstddef>
-#include <limits>
 #include <vector>
 
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
-#include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 
 namespace nil::crypto3::multiprecision {
+    namespace detail {
+        template<std::size_t Bits, typename T>
+        constexpr void find_wnaf_impl(T& res, const std::size_t window_size,
+                                      big_uint<Bits> c) noexcept {
+            std::size_t j = 0;
+            while (!c.is_zero()) {
+                long u = 0;
+                if (c.bit_test(0u)) {
+                    u = static_cast<long>(c & ((1u << (window_size + 1)) - 1));
+                    if (u > (1 << window_size)) {
+                        u = u - (1 << (window_size + 1));
+                    }
+                    c -= u;
+                }
+                res[j] = u;
+                ++j;
+                c >>= 1;
+            }
+        }
+    }  // namespace detail
+
     /* Vector version */
     template<std::size_t Bits>
-    std::vector<long> find_wnaf(const std::size_t window_size,
-                                const big_uint<Bits>& scalar) noexcept {
-        using big_uint_t = big_uint<Bits>;
-        using ui_type = detail::limb_type;
-
+    constexpr std::vector<long> find_wnaf(const std::size_t window_size,
+                                          const big_uint<Bits>& c) noexcept {
         // upper bound
-        constexpr std::size_t length =
-            big_uint_t::internal_limb_count * std::numeric_limits<ui_type>::digits;
-        std::vector<long> res(length + 1);
+        constexpr std::size_t length = Bits + 1;
+        std::vector<long> res(length);
 
-        big_uint_t c(scalar);
-        ui_type j = 0;
-
-        while (!c.is_zero()) {
-            long u = 0;
-            if (c.bit_test(0u)) {
-                u = c.limbs()[0] % (1u << (window_size + 1));
-                if (u > (1 << window_size)) {
-                    u = u - (1 << (window_size + 1));
-                }
-
-                if (u > 0) {
-                    c -= ui_type(u);
-                } else {
-                    c += ui_type(-u);
-                }
-            } else {
-                u = 0;
-            }
-            res[j] = u;
-            ++j;
-
-            c >>= 1;
-        }
+        detail::find_wnaf_impl(res, window_size, c);
 
         return res;
     }
 
     /* Array version */
     template<std::size_t Bits>
-    constexpr auto find_wnaf_a(const std::size_t window_size,
-                               const big_uint<Bits>& scalar) noexcept {
-        using big_uint_t = big_uint<Bits>;
-        using ui_type = detail::limb_type;
-
+    constexpr auto find_wnaf_a(const std::size_t window_size, const big_uint<Bits>& c) noexcept {
         // upper bound
-        constexpr std::size_t length =
-            big_uint_t::internal_limb_count * std::numeric_limits<ui_type>::digits;
+        constexpr std::size_t length = Bits + 1;
+        std::array<long, length> res{0};
 
-        std::array<long, length + 1> res{0};
-
-        big_uint_t c(scalar);
-        ui_type j = 0;
-
-        while (!c.is_zero()) {
-            long u = 0;
-            if (c.bit_test(0u)) {
-                u = c.limbs()[0] % (1u << (window_size + 1));
-                if (u > (1 << window_size)) {
-                    u = u - (1 << (window_size + 1));
-                }
-
-                if (u > 0) {
-                    c -= u;
-                } else {
-                    c += ui_type(-u);
-                }
-            }
-
-            res[j] = u;
-            ++j;
-            c >>= 1;
-        }
+        detail::find_wnaf_impl(res, window_size, c);
 
         return res;
     }
