@@ -285,16 +285,16 @@ namespace nil {
                             }
                         }
                     }
-					// Update the selector ids.
-                	for (auto& [selector, id]: gates.selectors_) {
-						if (new_selector_mapping.find(id) != new_selector_mapping.end())
+                    // Update the selector ids.
+                    for (auto& [selector, id]: gates.selectors_) {
+                        if (new_selector_mapping.find(id) != new_selector_mapping.end())
                             result.selectors_.insert({ std::move(selector), new_selector_mapping[id] });
-					}
+                    }
 
-					// Update the selector ids in dynamic lookups.
-					for(auto& [name, area] : gates.dynamic_lookup_tables) {
-						area.second = new_selector_mapping[area.second];
-					}
+                    // Update the selector ids in dynamic lookups.
+                    for(auto& [name, area] : gates.dynamic_lookup_tables) {
+                        area.second = new_selector_mapping[area.second];
+                    }
 
                     gates.constraint_list = std::move(result.constraint_list);
                     gates.lookup_constraints = std::move(result.lookup_constraints);

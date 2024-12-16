@@ -74,7 +74,7 @@ namespace nil {
                     TYPE res;
 
                     static table_params get_minimal_requirements() {
-                        return {13,0,0,8191}; // W, PI, C, rows (so many rows, because carry_on_addition has a built-in range check
+                        return {13,0,1,8191}; // W, PI, C, rows (so many rows, because carry_on_addition has a built-in range check
                     }
 
                     static std::tuple<TYPE, TYPE, std::array<TYPE,3>, std::array<TYPE,3>>
@@ -108,6 +108,9 @@ namespace nil {
                         using Carry_On_Addition = carry_on_addition<FieldType, stage, 3, 16>;
                         using Useless = useless<FieldType, stage>;
 
+                        TYPE const_test = 5;
+                        allocate(const_test,0,0,column_type::constant);
+
                         Is_Zero(context_object, X, make_links); // make_links delegated to subcomponent
 
                         std::vector<std::size_t> ct2_area = {2,3,4,5};
@@ -119,7 +122,7 @@ namespace nil {
                         auto c3 = Carry_On_Addition(ct3, CX, CY, make_links);
 
                         std::vector<std::size_t> ct4_area = {12};
-                        context_type ct4 = context_object.subcontext(ct4_area,0,4);
+                        context_type ct4 = context_object.subcontext(ct4_area,1,4);
                         auto c4 = Useless(ct4);
                     }
             };
