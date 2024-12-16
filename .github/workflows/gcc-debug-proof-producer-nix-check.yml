@@ -1,11 +1,11 @@
-name: Build and Test on Linux Platforms
+name: Build and run on Linux Platforms
 
 on:
   workflow_call:
 
 jobs:
-  build-and-test:
-    name: "Build and test Linux with gcc"
+  build-and-run:
+    name: "Build proof-producer binary in debug mode"
     runs-on: [self-hosted, Linux, X64, aws_autoscaling]
     steps:
       # https://github.com/actions/checkout/issues/1552
@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run checks for debug proof-producer
+      - name: Build and run proof-producer in debug mode
         run: |
           nix run .#multi-threaded  -- --help
           nix run .#single-threaded -- --help
