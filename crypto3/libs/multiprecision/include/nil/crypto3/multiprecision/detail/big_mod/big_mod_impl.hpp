@@ -85,6 +85,34 @@ namespace nil::crypto3::multiprecision {
 
         explicit constexpr operator bool() const { return !is_zero(); }
 
+        // Comparison
+
+#define NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(OP_)                                      \
+    constexpr bool operator OP_(const big_mod_impl& o) const noexcept {              \
+        NIL_CO3_MP_ASSERT(ops().compare_eq(o.ops()));                                \
+        return raw_base() OP_ o.raw_base();                                          \
+    }                                                                                \
+                                                                                     \
+    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>        \
+    constexpr bool operator OP_(const T& o) const noexcept {                         \
+        return base() OP_ o;                                                         \
+    }                                                                                \
+                                                                                     \
+    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>        \
+    friend constexpr bool operator OP_(const T& a, const big_mod_impl& b) noexcept { \
+        return a OP_ b.base();                                                       \
+    }
+
+        NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(==)
+        NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(!=)
+        // TODO(ioxid) remove these
+        NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(<)
+        NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(<=)
+        NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(>)
+        NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(>=)
+
+#undef NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL
+
         // String conversion
 
         constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
@@ -93,7 +121,7 @@ namespace nil::crypto3::multiprecision {
             return base().str(flags);
         }
 
-        // Mathemetical operations
+        // Arithmetic operations
 
         constexpr void negate() { ops().negate(m_raw_base); }
 
@@ -126,6 +154,61 @@ namespace nil::crypto3::multiprecision {
             result.negate();
             return result;
         }
+
+      private:
+        template<typename S, std::enable_if_t<detail::is_integral_v<S>, int> = 0>
+        static big_uint_t convert_to_raw_base(const S& s, const modular_ops_t& ops) {
+            if (nil::crypto3::multiprecision::is_zero(s)) {
+                return big_uint_t{};
+            }
+            big_uint_t result;
+            init_raw_base(result, s, ops);
+            return result;
+        }
+
+        static constexpr const big_uint_t& convert_to_raw_base(const big_mod_impl& s,
+                                                               const modular_ops_t& /*ops*/) {
+            return s.raw_base();
+        }
+
+      public:
+#define NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                                \
+    template<typename T,                                                                          \
+             std::enable_if_t<std::is_same_v<big_mod_impl, T> || detail::is_integral_v<T>, int> = \
+                 0>                                                                               \
+    constexpr auto operator OP_(const T& b) const noexcept {                                      \
+        if constexpr (detail::is_big_mod_v<T>) {                                                  \
+            NIL_CO3_MP_ASSERT(ops().compare_eq(b.ops()));                                         \
+        }                                                                                         \
+        big_mod_impl result = *this;                                                              \
+        ops().METHOD_(result.raw_base(), convert_to_raw_base(b, ops()));                          \
+        return result;                                                                            \
+    }                                                                                             \
+                                                                                                  \
+    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>                     \
+    friend constexpr auto operator OP_(const T& a, const big_mod_impl& b) noexcept {              \
+        big_mod_impl result(b.ops_storage());                                                     \
+        result.raw_base() = convert_to_raw_base(a, b.ops());                                      \
+        b.ops().METHOD_(result.raw_base(), b.raw_base());                                         \
+        return result;                                                                            \
+    }                                                                                             \
+                                                                                                  \
+    template<typename T,                                                                          \
+             std::enable_if_t<std::is_same_v<big_mod_impl, T> || detail::is_integral_v<T>, int> = \
+                 0>                                                                               \
+    constexpr auto& operator OP_ASSIGN_(const T & b) noexcept {                                   \
+        if constexpr (detail::is_big_mod_v<T>) {                                                  \
+            NIL_CO3_MP_ASSERT(ops().compare_eq(b.ops()));                                         \
+        }                                                                                         \
+        ops().METHOD_(raw_base(), convert_to_raw_base(b, ops()));                                 \
+        return *this;                                                                             \
+    }
+
+        NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(+, +=, add)
+        NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(-, -=, subtract)
+        NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(*, *=, mul)
+
+#undef NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL
 
         // IO
 
@@ -162,108 +245,6 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits, template<std::size_t> typename modular_ops_template>
     using big_mod_rt_impl =
         big_mod_impl<Bits, detail::modular_ops_storage_rt<Bits, modular_ops_template>>;
-
-    namespace detail {
-        template<typename S, typename modular_ops_t, std::enable_if_t<is_integral_v<S>, int> = 0>
-        typename modular_ops_t::big_uint_t convert_to_raw_base(const S& s,
-                                                               const modular_ops_t& ops) {
-            if (is_zero(s)) {
-                return typename modular_ops_t::big_uint_t{};
-            }
-            typename modular_ops_t::big_uint_t result;
-            init_raw_base(result, s, ops);
-            return result;
-        }
-
-        template<typename T, std::enable_if_t<is_big_mod_v<T>, int> = 0>
-        constexpr typename T::big_uint_t convert_to_raw_base(
-            const T& s, const typename T::modular_ops_t& /*ops*/) {
-            return s.raw_base();
-        }
-
-        template<typename T1, typename T2>
-        constexpr void assert_equal_ops_in_operands(const T1& a, const T2& b) {
-            if constexpr (is_big_mod_v<T1> && is_big_mod_v<T2>) {
-                NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));
-            }
-        }
-
-        template<typename T1, typename T2>
-        constexpr const auto& get_ops_storage_from_operands(const T1& a, const T2& b) {
-            assert_equal_ops_in_operands(a, b);
-            if constexpr (is_big_mod_v<T1>) {
-                return a.ops_storage();
-            } else if constexpr (is_big_mod_v<T2>) {
-                return b.ops_storage();
-            } else {
-                static_assert(false, "none of the types are big_mod");
-            }
-        }
-
-        template<typename T1, typename T2>
-        constexpr bool are_valid_operand_types() {
-            if (is_big_mod_v<T1> && is_big_mod_v<T2>) {
-                return std::is_same_v<T1, T2>;
-            }
-            return is_modular_integral_v<T1> && is_modular_integral_v<T2> &&
-                   (is_big_mod_v<T1> || is_big_mod_v<T2>);
-        }
-    }  // namespace detail
-
-    // Comparison
-
-#define NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(OP_)                                    \
-    template<typename T1, typename T2,                                             \
-             std::enable_if_t<detail::are_valid_operand_types<T1, T2>(), int> = 0> \
-    constexpr bool operator OP_(const T1& a, const T2& b) noexcept {               \
-        if constexpr (detail::is_big_mod_v<T1> && detail::is_big_mod_v<T2>) {      \
-            return a.raw_base() OP_ b.raw_base();                                  \
-        } else if constexpr (detail::is_big_mod_v<T1>) {                           \
-            return a.base() OP_ b;                                                 \
-        } else {                                                                   \
-            return a OP_ b.base();                                                 \
-        }                                                                          \
-    }
-
-    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(==)
-    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(!=)
-    // TODO(ioxid) remove these
-    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(<)
-    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(<=)
-    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(>)
-    NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(>=)
-
-#undef NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL
-
-    // Arithmetic operations
-
-#define NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                            \
-    template<typename T1, typename T2,                                                        \
-             std::enable_if_t<detail::are_valid_operand_types<T1, T2>(), int> = 0,            \
-             typename big_mod_t = std::conditional_t<detail::is_big_mod_v<T1>, T1, T2>>       \
-    constexpr auto operator OP_(const T1& a, const T2& b) noexcept {                          \
-        const auto& ops_storage = detail::get_ops_storage_from_operands(a, b);                \
-        big_mod_t result(ops_storage);                                                        \
-        result.raw_base() = detail::convert_to_raw_base(a, ops_storage.ops());                \
-        ops_storage.ops().METHOD_(result.raw_base(),                                          \
-                                  detail::convert_to_raw_base(b, ops_storage.ops()));         \
-        return result;                                                                        \
-    }                                                                                         \
-    template<typename big_mod_t, typename T,                                                  \
-             std::enable_if_t<detail::is_big_mod_v<big_mod_t> &&                              \
-                                  (std::is_same_v<big_mod_t, T> || detail::is_integral_v<T>), \
-                              int> = 0>                                                       \
-    constexpr auto& operator OP_ASSIGN_(big_mod_t & a, const T & b) noexcept {                \
-        detail::assert_equal_ops_in_operands(a, b);                                           \
-        a.ops().METHOD_(a.raw_base(), detail::convert_to_raw_base(b, a.ops()));               \
-        return a;                                                                             \
-    }
-
-    NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(+, +=, add)
-    NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(-, -=, subtract)
-    NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(*, *=, mul)
-
-#undef NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL
 
     // Hash
 
