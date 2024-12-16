@@ -25,45 +25,76 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         constexpr void add_constexpr(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                      const big_uint<Bits3>& b) noexcept {
-            // TODO(ioxid): fix this
+            static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
             //
             // This is the generic, C++ only version of addition.
             // It's also used for all constexpr branches, hence the name.
-            // Nothing fancy, just let uintmax_t take the strain:
             //
             double_limb_type carry = 0;
-            std::size_t s = a.limbs_count();
-            if (s == 1) {
-                double_limb_type r = static_cast<double_limb_type>(*a.limbs()) +
+            std::size_t as = a.used_limbs();
+            std::size_t bs = b.used_limbs();
+            auto [m, x] = std::minmax(as, bs);
+            if (x == 1) {
+                double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
                                      static_cast<double_limb_type>(*b.limbs());
-                double_limb_type mask = big_uint<Bits1>::upper_limb_mask;
-                if (r & ~mask) {
-                    result = r & mask;
-                    result.set_carry(true);
-                } else {
-                    result = r;
+                if (result.limbs_count() == 1) {
+                    double_limb_type mask = big_uint<Bits1>::upper_limb_mask;
+                    if (v & ~mask) {
+                        v &= mask;
+                        result.set_carry(true);
+                    }
                 }
+                result = v;
                 return;
             }
+            result.zero_after(x);
 
             const_limb_pointer pa = a.limbs();
             const_limb_pointer pb = b.limbs();
             limb_pointer pr = result.limbs();
+            limb_pointer pr_end = pr + m;
+
+            if (as < bs) {
+                std::swap(pa, pb);
+            }
 
             // First where a and b overlap:
-            for (std::size_t i = 0; i < s; ++i) {
+            while (pr != pr_end) {
                 carry += static_cast<double_limb_type>(*pa) + static_cast<double_limb_type>(*pb);
                 *pr = static_cast<limb_type>(carry);
                 carry >>= limb_bits;
                 ++pr, ++pa, ++pb;
             }
+            pr_end += x - m;
+
+            // Now where only a has digits:
+            while (pr != pr_end) {
+                if (!carry) {
+                    if (pa != pr) {
+                        std::copy(pa, pa + (pr_end - pr), pr);
+                    }
+                    break;
+                }
+                carry += static_cast<double_limb_type>(*pa);
+                *pr = static_cast<limb_type>(carry);
+                carry >>= limb_bits;
+                ++pr, ++pa;
+            }
+
+            if (carry) {
+                if (result.limbs_count() > x) {
+                    result.limbs()[x] = static_cast<limb_type>(1u);
+                    carry = 0;
+                }
+            }
+
             if constexpr (Bits1 % limb_bits == 0) {
                 result.set_carry(carry);
             } else {
                 limb_type mask = big_uint<Bits1>::upper_limb_mask;
                 // If we have set any bit above "Bits", then we have a carry.
-                if (result.limbs()[s - 1] & ~mask) {
-                    result.limbs()[s - 1] &= mask;
+                if (result.limbs()[result.limbs_count() - 1] & ~mask) {
+                    result.limbs()[result.limbs_count() - 1] &= mask;
                     result.set_carry(true);
                 }
             }
@@ -75,6 +106,7 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         constexpr void subtract_constexpr(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                           const big_uint<Bits3>& b) noexcept {
+            static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
             //
             // This is the generic, C++ only version of subtraction.
             // It's also used for all constexpr branches, hence the name.
@@ -165,11 +197,10 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                            const big_uint<Bits3>& b) noexcept {
+            static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
             if (std::is_constant_evaluated()) {
                 add_constexpr(result, a, b);
             } else {
-                // TODO(ioxid): fix this
-                // Nothing fancy, just let uintmax_t take the strain:
                 std::size_t as = a.used_limbs();
                 std::size_t bs = b.used_limbs();
                 auto [m, x] = std::minmax(as, bs);
@@ -215,7 +246,7 @@ namespace nil::crypto3::multiprecision {
                     if (big_uint<Bits1>::internal_limb_count > x) {
                         result.limbs()[x] = static_cast<limb_type>(1u);
                     }
-                } else if (x != i) {
+                } else if ((x != i) && (pa != pr)) {
                     // Copy remaining digits only if we need to:
                     std::copy(pa + i, pa + x, pr + i);
                 }
@@ -236,6 +267,8 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
         constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                 const big_uint<Bits3>& b) noexcept {
+            static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
+
             if (std::is_constant_evaluated()) {
                 subtract_constexpr(result, a, b);
             } else {
@@ -321,9 +354,7 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits1, std::size_t Bits2>
         constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                            const limb_type& o) noexcept {
-            // TODO(ioxid): fix this
-            // Addition using modular arithmetic.
-            // Nothing fancy, just let uintmax_t take the strain:
+            static_assert(Bits1 >= Bits2, "invalid argument size");
 
             double_limb_type carry = o;
             limb_pointer pr = result.limbs();
@@ -339,6 +370,14 @@ namespace nil::crypto3::multiprecision {
             if (&a != &result) {
                 std::copy(pa + i, pa + a.limbs_count(), pr + i);
             }
+
+            if (carry) {
+                if (result.limbs_count() > a.limbs_count()) {
+                    result.limbs()[a.limbs_count()] = static_cast<limb_type>(carry);
+                    carry = 0;
+                }
+            }
+
             if constexpr (Bits1 % limb_bits == 0) {
                 result.set_carry(carry);
             } else {
@@ -357,6 +396,8 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits1, std::size_t Bits2>
         constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                 const limb_type& b) noexcept {
+            static_assert(Bits1 >= Bits2, "invalid argument size");
+
             // Subtract one limb.
             std::size_t as = a.used_limbs();
             result.zero_after(as);
