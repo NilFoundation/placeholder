@@ -62,6 +62,13 @@ namespace nil {
                 }
             };
 
+            template<typename FieldType>
+            struct opcode_poc_raw_input {
+                using TYPE = typename FieldType::value_type;
+
+                std::vector<std::uint8_t> B;
+            };
+
             template<typename FieldType, GenerationStage stage>
             class opcode_poc : public generic_component<FieldType, stage> {
                 using typename generic_component<FieldType, stage>::context_type;
@@ -70,12 +77,27 @@ namespace nil {
 
             public:
                 using typename generic_component<FieldType,stage>::TYPE;
+                using typename generic_component<FieldType,stage>::table_params;
+                using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT,
+                                               opcode_poc_raw_input<FieldType>,std::tuple<>>::type;
                 using input_type = typename std::conditional<stage==GenerationStage::ASSIGNMENT, std::vector<std::uint8_t>, std::nullptr_t>::type;
             public:
                 static nil::crypto3::zk::snark::plonk_table_description<FieldType>  get_table_description(std::size_t max_rows_amount){
                     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(11, 1, 0, 10);
                     desc.usable_rows_amount = max_rows_amount;
                     return desc;
+                }
+
+                static table_params get_minimal_requirements(std::size_t max_rows_amount) {
+                     return {11,1,0,max_rows_amount};
+                }
+
+                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
+                     input_type res;
+                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                         res = raw_input.B;
+                     }
+                     return std::make_tuple(res);
                 }
 
                 opcode_poc(context_type &context_object, const input_type &input, std::size_t max_rows) :
@@ -135,8 +157,7 @@ namespace nil {
                                 if constexpr (stage == GenerationStage::CONSTRAINTS) {
                                     TYPE pair_selector = block_selector[i][block_type] * block_row_selector[i][block_row];
                                     //std::cout << "Pair_selector = " << pair_selector << std::endl;
-                                    //TYPE pair_selector_relative = context_object.relativize(pair_selector, -i);
-                                    TYPE pair_selector_relative = pair_selector.rotate(-i);
+                                    TYPE pair_selector_relative = context_object.relativize(pair_selector, -i);
                                     //std::cout << "Pair_selector_relative = " << pair_selector_relative << std::endl;
                                     for( auto & constr_list: block_constraints[block_type] ){
                                         if( !constr_list.first.is_set(block_row) ) continue;
@@ -149,9 +170,8 @@ namespace nil {
                             }
                         }
                     }
-                };
+                }
             };
         } // namespace bbf
     } // namespace blueprint
 } // namespace nil
-
