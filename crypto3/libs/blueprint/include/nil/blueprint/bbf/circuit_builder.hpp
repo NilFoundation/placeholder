@@ -77,8 +77,8 @@ namespace nil {
                 // query component for minimal requirements
                 circuit_builder(ComponentStaticInfoArgs... component_static_info_args) {
                     using generator = Component<FieldType,GenerationStage::CONSTRAINTS>;
-                    typename generator::table_params min_params = std::apply(generator::get_minimal_requirements, static_info_args_storage);
                     static_info_args_storage = {component_static_info_args...};
+                    typename generator::table_params min_params = std::apply(generator::get_minimal_requirements, static_info_args_storage);
                     prepare_circuit_parameters(min_params.witnesses,
                                                std::max(min_params.public_inputs,std::size_t(1)), // assure at least 1 PI column is present
                                                min_params.constants,
