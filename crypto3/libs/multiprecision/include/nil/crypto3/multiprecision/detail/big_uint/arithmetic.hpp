@@ -11,10 +11,10 @@
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/type_traits.hpp"
+#include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
 #include "nil/crypto3/multiprecision/detail/intel_intrinsics.hpp"
 
 namespace nil::crypto3::multiprecision {
-
     template<std::size_t Bits>
     class big_uint;
 
@@ -23,8 +23,8 @@ namespace nil::crypto3::multiprecision {
         // Addition/subtraction
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        constexpr void add_constexpr(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                     const big_uint<Bits3>& b) noexcept {
+        constexpr void add_constexpr_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                              const big_uint<Bits3>& b) noexcept {
             static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
             //
             // This is the generic, C++ only version of addition.
@@ -104,8 +104,9 @@ namespace nil::crypto3::multiprecision {
         // Core subtraction routine:
         //
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        constexpr void subtract_constexpr(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                          const big_uint<Bits3>& b) noexcept {
+        constexpr void subtract_constexpr_unsigned(big_uint<Bits1>& result,
+                                                   const big_uint<Bits2>& a,
+                                                   const big_uint<Bits3>& b) noexcept {
             static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
             //
             // This is the generic, C++ only version of subtraction.
@@ -195,11 +196,11 @@ namespace nil::crypto3::multiprecision {
         // are required to support these intrinsics.
         //
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                           const big_uint<Bits3>& b) noexcept {
+        constexpr void add_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                    const big_uint<Bits3>& b) noexcept {
             static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
             if (std::is_constant_evaluated()) {
-                add_constexpr(result, a, b);
+                add_constexpr_unsigned(result, a, b);
             } else {
                 std::size_t as = a.used_limbs();
                 std::size_t bs = b.used_limbs();
@@ -265,12 +266,12 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                const big_uint<Bits3>& b) noexcept {
+        constexpr void subtract_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                         const big_uint<Bits3>& b) noexcept {
             static_assert(Bits1 >= Bits2 && Bits1 >= Bits3, "invalid argument size");
 
             if (std::is_constant_evaluated()) {
-                subtract_constexpr(result, a, b);
+                subtract_constexpr_unsigned(result, a, b);
             } else {
                 std::size_t as = a.used_limbs();
                 std::size_t bs = b.used_limbs();
@@ -338,25 +339,25 @@ namespace nil::crypto3::multiprecision {
 #else
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                           const big_uint<Bits3>& b) noexcept {
-            add_constexpr(result, a, b);
+        constexpr void add_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                    const big_uint<Bits3>& b) noexcept {
+            add_constexpr_unsigned(result, a, b);
         }
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                const big_uint<Bits3>& b) noexcept {
-            subtract_constexpr(result, a, b);
+        constexpr void subtract_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                         const big_uint<Bits3>& b) noexcept {
+            subtract_constexpr_unsigned(result, a, b);
         }
 
 #endif
 
         template<std::size_t Bits1, std::size_t Bits2>
-        constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                           const limb_type& o) noexcept {
+        constexpr void add_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                    const limb_type& b) noexcept {
             static_assert(Bits1 >= Bits2, "invalid argument size");
 
-            double_limb_type carry = o;
+            double_limb_type carry = b;
             limb_pointer pr = result.limbs();
             const_limb_pointer pa = a.limbs();
             std::size_t i = 0;
@@ -394,8 +395,8 @@ namespace nil::crypto3::multiprecision {
         // And again to subtract a single limb:
         //
         template<std::size_t Bits1, std::size_t Bits2>
-        constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                const limb_type& b) noexcept {
+        constexpr void subtract_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                         const limb_type& b) noexcept {
             static_assert(Bits1 >= Bits2, "invalid argument size");
 
             // Subtract one limb.
@@ -428,10 +429,41 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
+        template<std::size_t Bits1, std::size_t Bits2, typename T>
+        constexpr void add(big_uint<Bits1>& result, const big_uint<Bits2>& a, const T& b) noexcept {
+            static_assert(detail::is_integral_v<T>);
+            if constexpr (std::is_signed_v<T>) {
+                auto b_abs = unsigned_abs(b);
+                if (b < 0) {
+                    subtract_unsigned(result, a, detail::as_limb_type_or_big_uint(b_abs));
+                }
+                add_unsigned(result, a, detail::as_limb_type_or_big_uint(b_abs));
+            } else {
+                add_unsigned(result, a, detail::as_limb_type_or_big_uint(b));
+            }
+        }
+
+        template<std::size_t Bits1, std::size_t Bits2, typename T>
+        constexpr void subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
+                                const T& b) noexcept {
+            static_assert(detail::is_integral_v<T>);
+            if constexpr (std::is_signed_v<T>) {
+                auto b_abs = unsigned_abs(b);
+                if (b < 0) {
+                    detail::add_unsigned(result, a, detail::as_limb_type_or_big_uint(b_abs));
+                } else {
+                    detail::subtract_unsigned(result, a, detail::as_limb_type_or_big_uint(b_abs));
+                }
+            } else {
+                detail::subtract_unsigned(result, a, detail::as_limb_type_or_big_uint(b));
+            }
+        }
+
         // Modulus/divide
 
-        // This should be called only for creation of Montgomery and Barett
-        // params, not during "normal" execution, so we do not care about the execution speed.
+        // This should be called only for creation of Montgomery and
+        // Barett params, not during "normal" execution, so we do not
+        // care about the execution speed.
 
         template<std::size_t Bits1, std::size_t Bits2>
         constexpr void divide(big_uint<Bits1>* div, const big_uint<Bits1>& x,
@@ -451,7 +483,8 @@ namespace nil::crypto3::multiprecision {
             Note that there are more efficient algorithms than this
             available, in particular see Knuth Vol 2.  However for small
             numbers of limbs this generally outperforms the alternatives
-            and avoids the normalisation step which would require extra storage.
+            and avoids the normalisation step which would require extra
+            storage.
             */
 
             if (y.is_zero()) {
@@ -477,9 +510,9 @@ namespace nil::crypto3::multiprecision {
                 *div = 0u;
             }
             //
-            // Check if the remainder is already less than the divisor, if so
-            // we already have the result.  Note we try and avoid a full compare
-            // if we can:
+            // Check if the remainder is already less than the divisor,
+            // if so we already have the result.  Note we try and avoid
+            // a full compare if we can:
             //
             if (rem < y) {
                 return;
@@ -489,7 +522,8 @@ namespace nil::crypto3::multiprecision {
             bool rem_neg = false;
 
             //
-            // See if we can short-circuit long division, and use basic arithmetic instead:
+            // See if we can short-circuit long division, and use basic
+            // arithmetic instead:
             //
             if (rem_order == 0) {
                 if (div) {
@@ -509,8 +543,8 @@ namespace nil::crypto3::multiprecision {
                 return;
             }
             const_limb_pointer prem = rem.limbs();
-            // This is initialised just to keep the compiler from emitting useless warnings later
-            // on:
+            // This is initialised just to keep the compiler from
+            // emitting useless warnings later on:
             limb_pointer pdiv = limb_pointer();
             if (div) {
                 pdiv = div->limbs();
@@ -522,7 +556,8 @@ namespace nil::crypto3::multiprecision {
 
             do {
                 //
-                // Calculate our best guess for how many times y divides into rem:
+                // Calculate our best guess for how many times y divides
+                // into rem:
                 //
                 limb_type guess = 1;
                 if (rem_order > 0 && prem[rem_order] <= py[y_order]) {
@@ -549,7 +584,8 @@ namespace nil::crypto3::multiprecision {
                     double_limb_type v = a / b;
                     guess = static_cast<limb_type>(v);
                 }
-                NIL_CO3_MP_ASSERT(guess);  // If the guess ever gets to zero we go on forever....
+                NIL_CO3_MP_ASSERT(guess);  // If the guess ever gets to
+                                           // zero we go on forever....
                 //
                 // Update result:
                 //
@@ -572,12 +608,13 @@ namespace nil::crypto3::multiprecision {
                     }
                 }
                 //
-                // Calculate guess * y, we use a fused mutiply-shift O(N) for this
-                // rather than a full O(N^2) multiply:
+                // Calculate guess * y, we use a fused mutiply-shift
+                // O(N) for this rather than a full O(N^2) multiply:
                 //
                 double_limb_type carry = 0;
-                // t.resize(y.limbs_count() + shift + 1, y.limbs_count() + shift);
-                // bool truncated_t = (t.limbs_count() != y.limbs_count() + shift + 1);
+                // t.resize(y.limbs_count() + shift + 1, y.limbs_count()
+                // + shift); bool truncated_t = (t.limbs_count() !=
+                // y.limbs_count() + shift + 1);
                 const bool truncated_t = y_order + shift + 2 > big_uint<Bits1>::internal_limb_count;
                 t = 0u;
                 limb_pointer pt = t.limbs();
@@ -590,18 +627,20 @@ namespace nil::crypto3::multiprecision {
                 if (carry && !truncated_t) {
                     pt[y_order + shift + 1] = static_cast<limb_type>(carry);
                 } else if (!truncated_t) {
-                    // t.resize(t.limbs_count() - 1, t.limbs_count() - 1);
+                    // t.resize(t.limbs_count() - 1, t.limbs_count() -
+                    // 1);
                 }
                 //
-                // Update rem in a way that won't actually produce a negative result
-                // in case the argument types are unsigned:
+                // Update rem in a way that won't actually produce a
+                // negative result in case the argument types are
+                // unsigned:
                 //
                 if (truncated_t && carry) {
                     NIL_CO3_MP_ASSERT_MSG(false, "how can this even happen");
                     // We need to calculate 2^n + t - rem
                     // where n is the number of bits in this type.
-                    // Simplest way is to get 2^n - rem by complementing and incrementing
-                    // rem, then add t to it.
+                    // Simplest way is to get 2^n - rem by complementing
+                    // and incrementing rem, then add t to it.
                     for (std::size_t i = 0; i <= rem_order; ++i) {
                         rem.limbs()[i] = ~prem[i];
                     }
@@ -618,21 +657,22 @@ namespace nil::crypto3::multiprecision {
                     rem_neg = !rem_neg;
                 }
                 //
-                // First time through we need to strip any leading zero, otherwise
-                // the termination condition goes belly-up:
+                // First time through we need to strip any leading zero,
+                // otherwise the termination condition goes belly-up:
                 //
                 // if (div && first_pass) {
                 //     first_pass = false;
                 //     // while (pdiv[div->limbs_count() - 1] == 0)
-                //     //     div->resize(div->limbs_count() - 1, div->limbs_count() - 1);
+                //     //     div->resize(div->limbs_count() - 1,
+                //     div->limbs_count() - 1);
                 // }
                 //
                 // Update rem_order:
                 //
                 rem_order = rem.order();
             }
-            // Termination condition is really just a check that rem > y, but with a common
-            // short-circuit case handled first:
+            // Termination condition is really just a check that rem >
+            // y, but with a common short-circuit case handled first:
             while ((rem_order >= y_order) && ((rem_order > y_order) || (rem >= y)));
 
             //
@@ -646,7 +686,8 @@ namespace nil::crypto3::multiprecision {
                 rem = y - rem;
             }
 
-            // remainder must be less than the divisor or our code has failed
+            // remainder must be less than the divisor or our code has
+            // failed
             NIL_CO3_MP_ASSERT(rem < y);
         }
 

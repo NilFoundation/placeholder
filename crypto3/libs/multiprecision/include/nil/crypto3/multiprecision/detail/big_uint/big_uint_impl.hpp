@@ -28,7 +28,6 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/type_traits.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 #include "nil/crypto3/multiprecision/detail/endian.hpp"
-#include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
 #include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
@@ -341,7 +340,7 @@ namespace nil::crypto3::multiprecision {
 
         explicit constexpr operator bool() const { return !is_zero(); }
 
-        // Comparisons
+        // Comparison
 
         template<std::size_t Bits2>
         constexpr int compare(const big_uint<Bits2>& b) const noexcept {
@@ -388,6 +387,28 @@ namespace nil::crypto3::multiprecision {
                 return dbl == b ? 0 : dbl > b ? 1 : -1;
             }
         }
+
+        // Comparison
+
+#define NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(OP_)                        \
+    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>    \
+    constexpr bool operator OP_(const T& o) const noexcept {                     \
+        return compare(o) OP_ 0;                                                 \
+    }                                                                            \
+                                                                                 \
+    template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>       \
+    friend constexpr bool operator OP_(const T& a, const big_uint& b) noexcept { \
+        return (-(b.compare(a)))OP_ 0;                                           \
+    }
+
+        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(<)
+        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(<=)
+        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(>)
+        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(>=)
+        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(==)
+        NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(!=)
+
+#undef NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR
 
         // Arithmetic operations
 
@@ -441,9 +462,141 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
-        // Bitwise operations
+        // Arithmetic operations
 
-        // Bitwise
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto operator+(const T& b) const noexcept {
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::add(result, *this, b);
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto operator+(const T& a, const big_uint& b) noexcept {
+            return b + a;
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto& operator+=(const T& b) noexcept {
+            detail::add(*this, *this, b);
+            return *this;
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto operator-(const T& b) const noexcept {
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::subtract(result, *this, b);
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto operator-(const T& a, const big_uint& b) noexcept {
+            return (-b) + a;
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto& operator-=(const T& b) noexcept {
+            detail::subtract(*this, *this, b);
+            return *this;
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto operator*(const T& b) const noexcept {
+            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::multiply(result, *this, detail::as_big_uint(b_unsigned));
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto operator*(const T& a, const big_uint& b) noexcept {
+            return b * a;
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto& operator*=(const T& b) noexcept {
+            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            big_uint result;
+            detail::multiply(result, *this, detail::as_big_uint(b_unsigned));
+            *this = result;
+            return *this;
+        }
+
+        template<typename T1, typename T2,
+                 std::enable_if_t<(std::is_same_v<T1, big_uint> && detail::is_integral_v<T2>) ||
+                                      (std::is_integral_v<T1> && std::is_same_v<T2, big_uint>),
+                                  int> = 0>
+        friend constexpr auto operator/(const T1& a, const T2& b) noexcept {
+            decltype(auto) a_unsigned = detail::unsigned_or_throw(a);
+            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            using big_uint_a = std::decay_t<decltype(detail::as_big_uint(a_unsigned))>;
+            big_uint_a result;
+            big_uint_a modulus;
+            detail::divide(&result, detail::as_big_uint(a_unsigned),
+                           detail::as_big_uint(b_unsigned), modulus);
+            return static_cast<detail::largest_big_uint_t<T1, T2>>(result);
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto& operator/=(const T& b) noexcept {
+            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            big_uint result;
+            big_uint modulus;
+            detail::divide(&result, *this, detail::as_big_uint(b_unsigned), modulus);
+            *this = result;
+            return *this;
+        }
+
+        template<typename T1, typename T2,
+                 std::enable_if_t<(std::is_same_v<T1, big_uint> && detail::is_integral_v<T2>) ||
+                                      (std::is_integral_v<T1> && std::is_same_v<T2, big_uint>),
+                                  int> = 0>
+        friend constexpr auto operator%(const T1& a, const T2& b) {
+            decltype(auto) a_unsigned = detail::unsigned_or_throw(a);
+            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            using big_uint_a = std::decay_t<decltype(detail::as_big_uint(a_unsigned))>;
+            big_uint_a modulus;
+            detail::divide(static_cast<big_uint_a*>(nullptr), detail::as_big_uint(a_unsigned),
+                           detail::as_big_uint(b_unsigned), modulus);
+            return static_cast<detail::largest_big_uint_t<T1, T2>>(modulus);
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        constexpr auto& operator%=(const T& b) {
+            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
+            big_uint modulus;
+            detail::divide(static_cast<big_uint*>(nullptr), *this, detail::as_big_uint(b_unsigned),
+                           modulus);
+            *this = modulus;
+            return *this;
+        }
+
+#define NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)             \
+    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>           \
+    constexpr auto operator OP_(const T& b) const noexcept {                            \
+        detail::largest_big_uint_t<big_uint, T> result = *this;                         \
+        result.METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b))); \
+        return result;                                                                  \
+    }                                                                                   \
+                                                                                        \
+    template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>              \
+    friend constexpr auto operator OP_(const T& a, const big_uint& b) noexcept {        \
+        return b OP_ a;                                                                 \
+    }                                                                                   \
+                                                                                        \
+    template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>           \
+    constexpr auto& operator OP_ASSIGN_(const T & b) noexcept {                         \
+        METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b)));        \
+        return *this;                                                                   \
+    }
+
+        NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(&, &=, bitwise_and)
+        NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(|, |=, bitwise_or)
+        NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(^, ^=, bitwise_xor)
+
+#undef NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL
+
+        // Bitwise operations
 
       private:
         template<std::size_t Bits2, typename Op>
@@ -471,7 +624,6 @@ namespace nil::crypto3::multiprecision {
             normalize();
         }
 
-      public:
         template<std::size_t Bits2>
         NIL_CO3_MP_FORCEINLINE constexpr void bitwise_and(const big_uint<Bits2>& o) noexcept {
             bitwise_op(o, std::bit_and());
@@ -500,7 +652,6 @@ namespace nil::crypto3::multiprecision {
 
         NIL_CO3_MP_FORCEINLINE constexpr void bitwise_xor(limb_type l) noexcept { limbs()[0] ^= l; }
 
-      private:
         NIL_CO3_MP_FORCEINLINE constexpr void complement(const big_uint<Bits>& o) noexcept {
             std::size_t os = o.limbs_count();
             for (std::size_t i = 0; i < os; ++i) {
@@ -861,25 +1012,28 @@ namespace nil::crypto3::multiprecision {
         friend class big_uint;
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::add_constexpr(big_uint<Bits1>& result,
-                                                    const big_uint<Bits2>& a,
-                                                    const big_uint<Bits3>& b) noexcept;
+        friend constexpr void detail::add_constexpr_unsigned(big_uint<Bits1>& result,
+                                                             const big_uint<Bits2>& a,
+                                                             const big_uint<Bits3>& b) noexcept;
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::subtract_constexpr(big_uint<Bits1>& result,
-                                                         const big_uint<Bits2>& a,
-                                                         const big_uint<Bits3>& b) noexcept;
+        friend constexpr void detail::subtract_constexpr_unsigned(
+            big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b) noexcept;
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                          const big_uint<Bits3>& b) noexcept;
+        friend constexpr void detail::add_unsigned(big_uint<Bits1>& result,
+                                                   const big_uint<Bits2>& a,
+                                                   const big_uint<Bits3>& b) noexcept;
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                               const big_uint<Bits3>& b) noexcept;
+        friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
+                                                        const big_uint<Bits2>& a,
+                                                        const big_uint<Bits3>& b) noexcept;
         template<std::size_t Bits1, std::size_t Bits2>
-        friend constexpr void detail::add(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                          const limb_type& o) noexcept;
+        friend constexpr void detail::add_unsigned(big_uint<Bits1>& result,
+                                                   const big_uint<Bits2>& a,
+                                                   const limb_type& o) noexcept;
         template<std::size_t Bits1, std::size_t Bits2>
-        friend constexpr void detail::subtract(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                               const limb_type& b) noexcept;
+        friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
+                                                        const big_uint<Bits2>& a,
+                                                        const limb_type& b) noexcept;
         template<std::size_t Bits1, std::size_t Bits2>
         friend constexpr void detail::divide(big_uint<Bits1>* div, const big_uint<Bits1>& x,
                                              const big_uint<Bits2>& y, big_uint<Bits1>& rem);
@@ -887,196 +1041,6 @@ namespace nil::crypto3::multiprecision {
         friend constexpr void detail::multiply(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                                const T& b) noexcept;
     };
-
-#define NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                                               \
-    template<typename T1, typename T2,                                                      \
-             std::enable_if_t<detail::is_integral_v<T1> && detail::is_integral_v<T2> &&     \
-                                  (detail::is_big_uint_v<T1> || detail::is_big_uint_v<T2>), \
-                              int> = 0>
-
-#define NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE \
-    template<                                            \
-        typename big_uint_t, typename T,                 \
-        std::enable_if_t<detail::is_big_uint_v<big_uint_t> && detail::is_integral_v<T>, int> = 0>
-
-#define NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE \
-    template<typename big_uint_t, std::enable_if_t<detail::is_big_uint_v<big_uint_t>, int> = 0>
-
-    // Comparison
-
-#define NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(OP_)            \
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                            \
-    constexpr bool operator OP_(const T1& a, const T2& b) noexcept { \
-        if constexpr (detail::is_big_uint_v<T1>) {                   \
-            return a.compare(b) OP_ 0;                               \
-        } else {                                                     \
-            return (-(b.compare(a)))OP_ 0;                           \
-        }                                                            \
-    }
-
-    NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(<)
-    NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(<=)
-    NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(>)
-    NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(>=)
-    NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(==)
-    NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(!=)
-
-#undef NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR
-
-    // Arithmetic operations
-
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    constexpr auto operator+(const T1& a, const T2& b) noexcept {
-        if constexpr (detail::is_big_uint_v<T1>) {
-            detail::largest_big_uint_t<T1, T2> result;
-            if constexpr (std::is_signed_v<T2>) {
-                auto b_abs = detail::unsigned_abs(b);
-                if (b < 0) {
-                    detail::subtract(result, a, detail::as_limb_type_or_big_uint(b_abs));
-                }
-                detail::add(result, a, detail::as_limb_type_or_big_uint(b_abs));
-            } else {
-                detail::add(result, a, detail::as_limb_type_or_big_uint(b));
-            }
-            return result;
-        } else {
-            return b + a;
-        }
-    }
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator+=(big_uint_t& a, const T& b) noexcept {
-        if constexpr (std::is_signed_v<T>) {
-            auto b_abs = detail::unsigned_abs(b);
-            if (b < 0) {
-                detail::subtract(a, a, detail::as_limb_type_or_big_uint(b_abs));
-            }
-            detail::add(a, a, detail::as_limb_type_or_big_uint(b_abs));
-        } else {
-            detail::add(a, a, detail::as_limb_type_or_big_uint(b));
-        }
-        return a;
-    }
-
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    constexpr auto operator-(const T1& a, const T2& b) noexcept {
-        if constexpr (detail::is_big_uint_v<T1>) {
-            detail::largest_big_uint_t<T1, T2> result;
-            if constexpr (std::is_signed_v<T2>) {
-                auto b_abs = detail::unsigned_abs(b);
-                if (b < 0) {
-                    detail::add(result, a, detail::as_limb_type_or_big_uint(b_abs));
-                }
-                detail::subtract(result, a, detail::as_limb_type_or_big_uint(b_abs));
-            } else {
-                detail::subtract(result, a, detail::as_limb_type_or_big_uint(b));
-            }
-            return result;
-        } else {
-            return (-b) + a;
-        }
-    }
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator-=(big_uint_t& a, const T& b) noexcept {
-        if constexpr (std::is_signed_v<T>) {
-            auto b_abs = detail::unsigned_abs(b);
-            if (b < 0) {
-                detail::add(a, a, detail::as_limb_type_or_big_uint(b_abs));
-            } else {
-                detail::subtract(a, a, detail::as_limb_type_or_big_uint(b_abs));
-            }
-        } else {
-            detail::subtract(a, a, detail::as_limb_type_or_big_uint(b));
-        }
-        return a;
-    }
-
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    constexpr auto operator*(const T1& a, const T2& b) noexcept {
-        if constexpr (detail::is_big_uint_v<T1>) {
-            decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
-            detail::largest_big_uint_t<T1, T2> result;
-            detail::multiply(result, a, detail::as_big_uint(b_unsigned));
-            return result;
-        } else {
-            return b * a;
-        }
-    }
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator*=(big_uint_t& a, const T& b) noexcept {
-        decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
-        big_uint_t result;
-        detail::multiply(result, a, detail::as_big_uint(b_unsigned));
-        a = result;
-        return a;
-    }
-
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    constexpr auto operator/(const T1& a, const T2& b) noexcept {
-        decltype(auto) a_unsigned = detail::unsigned_or_throw(a);
-        decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
-        using big_uint_a = std::decay_t<decltype(detail::as_big_uint(a_unsigned))>;
-        big_uint_a result;
-        big_uint_a modulus;
-        detail::divide(&result, detail::as_big_uint(a_unsigned), detail::as_big_uint(b_unsigned),
-                       modulus);
-        return static_cast<detail::largest_big_uint_t<T1, T2>>(result);
-    }
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator/=(big_uint_t& a, const T& b) noexcept {
-        decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
-        big_uint_t result;
-        big_uint_t modulus;
-        detail::divide(&result, a, detail::as_big_uint(b_unsigned), modulus);
-        a = result;
-        return a;
-    }
-
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
-    constexpr auto operator%(const T1& a, const T2& b) {
-        decltype(auto) a_unsigned = detail::unsigned_or_throw(a);
-        decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
-        using big_uint_a = std::decay_t<decltype(detail::as_big_uint(a_unsigned))>;
-        big_uint_a modulus;
-        detail::divide(static_cast<big_uint_a*>(nullptr), detail::as_big_uint(a_unsigned),
-                       detail::as_big_uint(b_unsigned), modulus);
-        return static_cast<detail::largest_big_uint_t<T1, T2>>(modulus);
-    }
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator%=(big_uint_t& a, const T& b) {
-        decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
-        big_uint_t modulus;
-        detail::divide(static_cast<big_uint_t*>(nullptr), a, detail::as_big_uint(b_unsigned),
-                       modulus);
-        a = modulus;
-        return a;
-    }
-
-#define NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)                 \
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE                                                   \
-    constexpr auto operator OP_(const T1& a, const T2& b) noexcept {                        \
-        if constexpr (detail::is_big_uint_v<T1>) {                                          \
-            detail::largest_big_uint_t<T1, T2> result = a;                                  \
-            result.METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b))); \
-            return result;                                                                  \
-        } else {                                                                            \
-            return b OP_ a;                                                                 \
-        }                                                                                   \
-    }                                                                                       \
-    NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE                                        \
-    constexpr auto& operator OP_ASSIGN_(big_uint_t & a, const T & b) noexcept {             \
-        a.METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b)));          \
-        return a;                                                                           \
-    }
-
-    NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(&, &=, bitwise_and)
-    NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(|, |=, bitwise_or)
-    NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(^, ^=, bitwise_xor)
-
-#undef NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL
-
-#undef NIL_CO3_MP_BIG_UINT_UNARY_TEMPLATE
-#undef NIL_CO3_MP_BIG_UINT_INTEGRAL_ASSIGNMENT_TEMPLATE
-#undef NIL_CO3_MP_BIG_UINT_INTEGRAL_TEMPLATE
 
     // Hash
 
