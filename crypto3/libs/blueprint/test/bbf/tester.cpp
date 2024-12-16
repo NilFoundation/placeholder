@@ -42,7 +42,7 @@
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/bbf/circuit_builder.hpp>
 
-#include <nil/blueprint/bbf/bbf_tester.hpp>
+#include <nil/blueprint/bbf/tester.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::blueprint::bbf;
