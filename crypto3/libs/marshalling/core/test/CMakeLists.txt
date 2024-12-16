@@ -35,7 +35,6 @@ endmacro()
 set(TESTS_NAMES
     "pack"
     "processing"
-    "types"
     "interfaces")
 
 foreach(TEST_NAME ${TESTS_NAMES})

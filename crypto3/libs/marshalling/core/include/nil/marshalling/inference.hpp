@@ -31,7 +31,6 @@
 
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/types/integral.hpp>
-#include <nil/marshalling/types/float_value.hpp>
 #include <nil/marshalling/types/array_list.hpp>
 
 namespace nil::crypto3 {
@@ -46,16 +45,6 @@ namespace nil::crypto3 {
         public:
             template <typename TEndian = default_endianness>
             using type = typename types::integral<field_type<TEndian>, T>;
-            static const bool value = true;
-            static const bool fixed_size = true;
-        };
-
-        template<typename T>
-        class is_compatible <T, typename std::enable_if<std::is_floating_point<T>::value>::type> {
-            using default_endianness = option::big_endian;
-        public:
-            template <typename TEndian = default_endianness>
-            using type = typename types::float_value<field_type<TEndian>, T>;
             static const bool value = true;
             static const bool fixed_size = true;
         };

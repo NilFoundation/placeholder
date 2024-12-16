@@ -32,13 +32,15 @@
 #include <iostream>
 #include <iomanip>
 
-#include <nil/marshalling/types/integral.hpp>
+#include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
+
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/field_type.hpp>
 #include <nil/marshalling/endianness.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
+#include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 
 #include <nil/marshalling/algorithms/pack.hpp>
 #include <nil/crypto3/marshalling/algebra/types/field_element.hpp>

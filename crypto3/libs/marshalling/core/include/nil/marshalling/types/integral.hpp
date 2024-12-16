@@ -116,41 +116,6 @@ namespace nil::crypto3 {
                 /// @brief Copy assignment
                 integral &operator=(const integral &) = default;
 
-                /// @brief Scales value according to ratio specified in provided
-                ///     nil::crypto3::marshalling::option::scaling_ratio option.
-                /// @details If nil::crypto3::marshalling::option::scaling_ratio option wasn't used, then
-                ///     nil::crypto3::marshalling::option::scaling_ratio<1,1> is assumed.
-                /// @tparam TRet Return type for the scaled value.
-                /// @return "(value() * Scaling_Num) / Scaling_Denom" when all values are
-                ///     casted to TRet type.
-                template<typename TRet>
-                constexpr TRet get_scaled() const {
-                    using TagTmp = typename std::conditional<parsed_options_type::has_scaling_ratio,
-                                                             has_scaling_ratio_tag,
-                                                             no_scaling_ratio_tag>::type;
-
-                    return scale_as_internal<TRet>(TagTmp());
-                }
-
-                /// @brief Same as get_scaled()
-                template<typename TRet>
-                constexpr TRet scale_as() const {
-                    return get_scaled<TRet>();
-                }
-
-                /// @brief Opposite operation to get_scaled().
-                /// @details Allows to assign scaled value, assigns "(val * Scaling_Denom) / Scaling_Num"
-                ///     to the value of the field.
-                /// @param[in] val Scaled value.
-                template<typename TScaled>
-                void set_scaled(TScaled val) {
-                    using TagTmp = typename std::conditional<parsed_options_type::has_scaling_ratio,
-                                                             has_scaling_ratio_tag,
-                                                             no_scaling_ratio_tag>::type;
-
-                    return scale_scaled_internal(val, TagTmp());
-                }
-
                 /// @brief Get access to integral value storage.
                 const value_type &value() const {
                     return base_impl_type::value();
@@ -252,105 +217,7 @@ namespace nil::crypto3 {
                 using base_impl_type::write_data;
 
             private:
-                struct has_scaling_ratio_tag { };
-                struct no_scaling_ratio_tag { };
-                struct scale_as_fp_tag { };
-                struct scale_as_int_tag { };
 
-                template<typename TRet>
-                TRet scale_as_internal(has_scaling_ratio_tag) const {
-                    using TagTmp = typename std::
-                        conditional<std::is_floating_point<TRet>::value, scale_as_fp_tag, scale_as_int_tag>::type;
-
-                    return scale_as_internal<TRet>(TagTmp());
-                }
-
-                template<typename TRet>
-                TRet scale_as_internal(scale_as_fp_tag) const {
-                    static_assert(std::is_floating_point<TRet>::value, "TRet is expected to be floating point type");
-                    return static_cast<TRet>(base_impl_type::value())
-                           * (static_cast<TRet>(parsed_options_type::scaling_ratio_type::num)
-                              / static_cast<TRet>(parsed_options_type::scaling_ratio_type::den));
-                }
-
-                template<typename TRet>
-                TRet scale_as_internal(scale_as_int_tag) const {
-                    static_assert(std::is_integral<TRet>::value, "TRet is expected to be integral type");
-
-                    using CastType =
-                        typename std::conditional<std::is_signed<TRet>::value, std::intmax_t, std::uintmax_t>::type;
-
-                    return static_cast<TRet>(
-                        (static_cast<CastType>(base_impl_type::value()) * parsed_options_type::scaling_ratio_type::num)
-                        / parsed_options_type::scaling_ratio_type::den);
-                }
-
-                template<typename TRet>
-                TRet scale_as_internal(no_scaling_ratio_tag) const {
-                    return static_cast<TRet>(base_impl_type::value());
-                }
-
-                template<typename TScaled>
-                void scale_scaled_internal(TScaled val, has_scaling_ratio_tag) {
-                    using TagTmp = typename std::conditional<
-                        std::is_floating_point<typename std::decay<decltype(val)>::type>::value,
-                        scale_as_fp_tag,
-                        scale_as_int_tag>::type;
-
-                    scale_scaled_internal(val, TagTmp());
-                }
-
-                template<typename TScaled>
-                void scale_scaled_internal(TScaled val, scale_as_fp_tag) {
-                    using DecayedType = typename std::decay<decltype(val)>::type;
-                    auto epsilon = DecayedType(0);
-                    if (parsed_options_type::scaling_ratio_type::num < parsed_options_type::scaling_ratio_type::den) {
-                        epsilon = static_cast<DecayedType>(parsed_options_type::scaling_ratio_type::num)
-                                  / static_cast<DecayedType>(parsed_options_type::scaling_ratio_type::den + 1);
-                    }
-
-                    if (epsilon < DecayedType(0)) {
-                        epsilon = -epsilon;
-                    }
-
-                    if (val < DecayedType(0)) {
-                        epsilon = -epsilon;
-                    }
-
-                    base_impl_type::value() = static_cast<value_type>(
-                        ((val + epsilon) * static_cast<DecayedType>(parsed_options_type::scaling_ratio_type::den))
-                        / static_cast<DecayedType>(parsed_options_type::scaling_ratio_type::num));
-                }
-
-                template<typename TScaled>
-                void scale_scaled_internal(TScaled val, scale_as_int_tag) {
-                    using CastType =
-                        typename std::conditional<std::is_signed<typename std::decay<decltype(val)>::type>::value,
-                                                  std::intmax_t,
-                                                  std::uintmax_t>::type;
-
-                    base_impl_type::value() = static_cast<value_type>(
-                        (static_cast<CastType>(val) * parsed_options_type::scaling_ratio_type::den)
-                        / static_cast<CastType>(parsed_options_type::scaling_ratio_type::num));
-                }
-
-                template<typename TScaled>
-                void scale_scaled_internal(TScaled val, no_scaling_ratio_tag) {
-                    base_impl_type::value() = static_cast<value_type>(val);
-                }
-
-                static_assert(!parsed_options_type::has_sequence_elem_length_forcing,
-                              "nil::crypto3::marshalling::option::SequenceElemLengthForcingEnabled option is not applicable to "
-                              "integral field");
-                static_assert(
-                    !parsed_options_type::has_sequence_size_forcing,
-                    "nil::crypto3::marshalling::option::sequence_size_forcing_enabled option is not applicable to integral field");
-                static_assert(!parsed_options_type::has_sequence_length_forcing,
-                              "nil::crypto3::marshalling::option::sequence_length_forcing_enabled option is not applicable to "
-                              "integral field");
-                static_assert(
-                    !parsed_options_type::has_sequence_fixed_size,
-                    "nil::crypto3::marshalling::option::sequence_fixed_size option is not applicable to integral field");
                 static_assert(
                     !parsed_options_type::has_sequence_fixed_size_use_fixed_size_storage,
                     "nil::crypto3::marshalling::option::SequenceFixedSizeUseFixedSizeStorage option is not applicable to "
@@ -358,23 +225,6 @@ namespace nil::crypto3 {
                 static_assert(
                     !parsed_options_type::has_sequence_size_field_prefix,
                     "nil::crypto3::marshalling::option::sequence_size_field_prefix option is not applicable to integral field");
-                static_assert(!parsed_options_type::has_sequence_ser_length_field_prefix,
-                              "nil::crypto3::marshalling::option::sequence_ser_length_field_prefix option is not applicable to "
-                              "integral field");
-                static_assert(
-                    !parsed_options_type::has_sequence_elem_ser_length_field_prefix,
-                    "nil::crypto3::marshalling::option::sequence_elem_ser_length_field_prefix option is not applicable to "
-                    "integral field");
-                static_assert(
-                    !parsed_options_type::has_sequence_elem_fixed_ser_length_field_prefix,
-                    "nil::crypto3::marshalling::option::SequenceElemSerLengthFixedFieldPrefix option is not applicable to "
-                    "integral field");
-                static_assert(!parsed_options_type::has_sequence_trailing_field_suffix,
-                              "nil::crypto3::marshalling::option::sequence_trailing_field_suffix option is not applicable to "
-                              "integral field");
-                static_assert(!parsed_options_type::has_sequence_termination_field_suffix,
-                              "nil::crypto3::marshalling::option::sequence_termination_field_suffix option is not applicable to "
-                              "integral field");
                 static_assert(
                     !parsed_options_type::has_fixed_size_storage,
                     "nil::crypto3::marshalling::option::fixed_size_storage option is not applicable to integral field");
@@ -383,10 +233,6 @@ namespace nil::crypto3 {
                     "nil::crypto3::marshalling::option::custom_storage_type option is not applicable to integral field");
                 static_assert(!parsed_options_type::has_orig_data_view,
                               "nil::crypto3::marshalling::option::orig_data_view option is not applicable to integral field");
-                static_assert(
-                    !parsed_options_type::has_versions_range,
-                    "nil::crypto3::marshalling::option::exists_between_versions (or similar) option is not applicable to "
-                    "integral field");
             };
 
             /// @brief Equality comparison operator.
