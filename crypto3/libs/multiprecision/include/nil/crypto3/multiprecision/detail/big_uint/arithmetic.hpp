@@ -37,7 +37,7 @@ namespace nil::crypto3::multiprecision {
             if (x == 1) {
                 double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
                                      static_cast<double_limb_type>(*b.limbs());
-                if (result.limbs_count() == 1) {
+                if (result.limb_count() == 1) {
                     double_limb_type mask = big_uint<Bits1>::upper_limb_mask;
                     if (v & ~mask) {
                         v &= mask;
@@ -82,7 +82,7 @@ namespace nil::crypto3::multiprecision {
             }
 
             if (carry) {
-                if (result.limbs_count() > x) {
+                if (result.limb_count() > x) {
                     result.limbs()[x] = static_cast<limb_type>(1u);
                     carry = 0;
                 }
@@ -93,8 +93,8 @@ namespace nil::crypto3::multiprecision {
             } else {
                 limb_type mask = big_uint<Bits1>::upper_limb_mask;
                 // If we have set any bit above "Bits", then we have a carry.
-                if (result.limbs()[result.limbs_count() - 1] & ~mask) {
-                    result.limbs()[result.limbs_count() - 1] &= mask;
+                if (result.limbs()[result.limb_count() - 1] & ~mask) {
+                    result.limbs()[result.limb_count() - 1] &= mask;
                     result.set_carry(true);
                 }
             }
@@ -209,7 +209,7 @@ namespace nil::crypto3::multiprecision {
                 if (x == 1) {
                     double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
                                          static_cast<double_limb_type>(*b.limbs());
-                    if (result.limbs_count() == 1) {
+                    if (result.limb_count() == 1) {
                         double_limb_type mask = big_uint<Bits1>::upper_limb_mask;
                         if (v & ~mask) {
                             v &= mask;
@@ -244,7 +244,7 @@ namespace nil::crypto3::multiprecision {
                     carry = detail::addcarry_limb(0, pa[i], 1, pr + i);
                 }
                 if (i == x && carry) {
-                    if (big_uint<Bits1>::internal_limb_count > x) {
+                    if (result.limb_count() > x) {
                         result.limbs()[x] = static_cast<limb_type>(1u);
                     }
                 } else if ((x != i) && (pa != pr)) {
@@ -257,8 +257,8 @@ namespace nil::crypto3::multiprecision {
                 } else {
                     limb_type mask = big_uint<Bits1>::upper_limb_mask;
                     // If we have set any bit above "Bits", then we have a carry.
-                    if (result.limbs()[result.limbs_count() - 1] & ~mask) {
-                        result.limbs()[result.limbs_count() - 1] &= mask;
+                    if (result.limbs()[result.limb_count() - 1] & ~mask) {
+                        result.limbs()[result.limb_count() - 1] &= mask;
                         result.set_carry(true);
                     }
                 }
@@ -362,19 +362,19 @@ namespace nil::crypto3::multiprecision {
             const_limb_pointer pa = a.limbs();
             std::size_t i = 0;
             // Addition with carry until we either run out of digits or carry is zero:
-            for (; carry && (i < result.limbs_count()); ++i) {
+            for (; carry && (i < result.limb_count()); ++i) {
                 carry += static_cast<double_limb_type>(pa[i]);
                 pr[i] = static_cast<limb_type>(carry);
                 carry >>= limb_bits;
             }
             // Just copy any remaining digits:
             if (&a != &result) {
-                std::copy(pa + i, pa + a.limbs_count(), pr + i);
+                std::copy(pa + i, pa + a.limb_count(), pr + i);
             }
 
             if (carry) {
-                if (result.limbs_count() > a.limbs_count()) {
-                    result.limbs()[a.limbs_count()] = static_cast<limb_type>(carry);
+                if (result.limb_count() > a.limb_count()) {
+                    result.limbs()[a.limb_count()] = static_cast<limb_type>(carry);
                     carry = 0;
                 }
             }
@@ -384,8 +384,8 @@ namespace nil::crypto3::multiprecision {
             } else {
                 limb_type mask = big_uint<Bits1>::upper_limb_mask;
                 // If we have set any bit above "Bits", then we have a carry.
-                if (pr[result.limbs_count() - 1] & ~mask) {
-                    pr[result.limbs_count() - 1] &= mask;
+                if (pr[result.limb_count() - 1] & ~mask) {
+                    pr[result.limb_count() - 1] &= mask;
                     result.set_carry(true);
                 }
             }
@@ -612,10 +612,10 @@ namespace nil::crypto3::multiprecision {
                 // O(N) for this rather than a full O(N^2) multiply:
                 //
                 double_limb_type carry = 0;
-                // t.resize(y.limbs_count() + shift + 1, y.limbs_count()
-                // + shift); bool truncated_t = (t.limbs_count() !=
-                // y.limbs_count() + shift + 1);
-                const bool truncated_t = y_order + shift + 2 > big_uint<Bits1>::internal_limb_count;
+                // t.resize(y.limb_count() + shift + 1, y.limb_count()
+                // + shift); bool truncated_t = (t.limb_count() !=
+                // y.limb_count() + shift + 1);
+                const bool truncated_t = y_order + shift + 2 > big_uint<Bits1>::static_limb_count;
                 t = 0u;
                 limb_pointer pt = t.limbs();
                 for (std::size_t i = 0; i < y_order + 1; ++i) {
@@ -627,7 +627,7 @@ namespace nil::crypto3::multiprecision {
                 if (carry && !truncated_t) {
                     pt[y_order + shift + 1] = static_cast<limb_type>(carry);
                 } else if (!truncated_t) {
-                    // t.resize(t.limbs_count() - 1, t.limbs_count() -
+                    // t.resize(t.limb_count() - 1, t.limb_count() -
                     // 1);
                 }
                 //
@@ -662,9 +662,9 @@ namespace nil::crypto3::multiprecision {
                 //
                 // if (div && first_pass) {
                 //     first_pass = false;
-                //     // while (pdiv[div->limbs_count() - 1] == 0)
-                //     //     div->resize(div->limbs_count() - 1,
-                //     div->limbs_count() - 1);
+                //     // while (pdiv[div->limb_count() - 1] == 0)
+                //     //     div->resize(div->limb_count() - 1,
+                //     div->limb_count() - 1);
                 // }
                 //
                 // Update rem_order:
@@ -710,17 +710,17 @@ namespace nil::crypto3::multiprecision {
             const_limb_pointer pa = a.limbs();
             const_limb_pointer pb = b.limbs();
             limb_pointer pr = result.limbs();
-            for (std::size_t i = 0; i < result.limbs_count(); ++i) {
+            for (std::size_t i = 0; i < result.limb_count(); ++i) {
                 pr[i] = 0;
             }
 
             double_limb_type carry = 0;
             for (std::size_t i = 0; i < as; ++i) {
-                NIL_CO3_MP_ASSERT(result.limbs_count() > i);
-                std::size_t inner_limit = (std::min)(result.limbs_count() - i, bs);
+                NIL_CO3_MP_ASSERT(result.limb_count() > i);
+                std::size_t inner_limit = (std::min)(result.limb_count() - i, bs);
                 std::size_t j = 0;
                 for (; j < inner_limit; ++j) {
-                    NIL_CO3_MP_ASSERT(i + j < result.limbs_count());
+                    NIL_CO3_MP_ASSERT(i + j < result.limb_count());
                     carry +=
                         static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
                     NIL_CO3_MP_ASSERT(
@@ -732,8 +732,8 @@ namespace nil::crypto3::multiprecision {
                     NIL_CO3_MP_ASSERT(carry <= max_limb_value);
                 }
                 if (carry) {
-                    NIL_CO3_MP_ASSERT(result.limbs_count() > i + j);
-                    if (i + j < result.limbs_count()) {
+                    NIL_CO3_MP_ASSERT(result.limb_count() > i + j);
+                    if (i + j < result.limb_count()) {
                         pr[i + j] = static_cast<limb_type>(carry);
                     }
                 }

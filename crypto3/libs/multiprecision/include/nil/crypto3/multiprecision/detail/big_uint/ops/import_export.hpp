@@ -42,7 +42,7 @@ namespace nil::crypto3::multiprecision {
                 // TODO(ioxid): when should we throw?
                 // We are ignoring any bits that will not fit into the number.
                 // We are not throwing, we will use as many bits from the input as we need to.
-                if (val.limbs_count() > limb) {
+                if (val.limb_count() > limb) {
                     val.limbs()[limb] |= value;
                 }
             }
@@ -101,7 +101,7 @@ namespace nil::crypto3::multiprecision {
                 result = extract_bits(val, location + limb_bits - shift, count - limb_bits + shift);
                 result <<= limb_bits - shift;
             }
-            if (limb < val.limbs_count()) {
+            if (limb < val.limb_count()) {
                 result |= (val.limbs()[limb] >> shift) & mask;
             }
             return result;
@@ -153,11 +153,11 @@ namespace nil::crypto3::multiprecision {
                 ++limb_len;
             }
 
-            NIL_CO3_MP_ASSERT(result.limbs_count() > limb_len);
+            NIL_CO3_MP_ASSERT(result.limb_count() > limb_len);
 
-            result.limbs()[result.limbs_count() - 1] = 0u;
+            result.limbs()[result.limb_count() - 1] = 0u;
             std::memcpy(result.limbs(), i,
-                        (std::min)(byte_len, result.limbs_count() * sizeof(limb_type)));
+                        (std::min)(byte_len, result.limb_count() * sizeof(limb_type)));
 
             // This is probably unneeded, but let it stay for now.
             result.normalize();

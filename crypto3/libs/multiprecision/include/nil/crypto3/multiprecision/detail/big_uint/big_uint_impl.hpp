@@ -64,7 +64,7 @@ namespace nil::crypto3::multiprecision {
         static constexpr std::size_t limb_bits = detail::limb_bits;
         static constexpr limb_type max_limb_value = detail::max_limb_value;
 
-        static constexpr std::size_t internal_limb_count =
+        static constexpr std::size_t static_limb_count =
             (Bits / limb_bits) + (((Bits % limb_bits) != 0u) ? 1u : 0u);
         static constexpr limb_type upper_limb_mask =
             (Bits % limb_bits) ? (limb_type(1) << (Bits % limb_bits)) - 1 : (~limb_type(0u));
@@ -72,9 +72,9 @@ namespace nil::crypto3::multiprecision {
         //
         // Helper functions for getting at our internal data, and manipulating storage:
         //
-        constexpr std::size_t limbs_count() const noexcept {
-            static_assert(internal_limb_count != 0, "No limbs in storage.");
-            return internal_limb_count;
+        constexpr std::size_t limb_count() const noexcept {
+            static_assert(static_limb_count != 0, "No limbs in storage.");
+            return static_limb_count;
         }
         constexpr limb_pointer limbs() noexcept { return m_data.data(); }
         constexpr const_limb_pointer limbs() const noexcept { return m_data.data(); }
@@ -85,13 +85,13 @@ namespace nil::crypto3::multiprecision {
         // Zeros out everything after limb[i], replaces resizing.
         constexpr void zero_after(std::size_t start_index) {
             auto pr = this->limbs();
-            for (std::size_t i = start_index; i < this->limbs_count(); ++i) {
+            for (std::size_t i = start_index; i < this->limb_count(); ++i) {
                 pr[i] = 0;
             }
         }
 
         constexpr std::size_t used_limbs() const noexcept {
-            for (int i = internal_limb_count - 1; i >= 0; --i) {
+            for (int i = static_limb_count - 1; i >= 0; --i) {
                 if (limbs()[i] != 0) {
                     return i + 1;
                 }
@@ -100,7 +100,7 @@ namespace nil::crypto3::multiprecision {
         }
 
         constexpr std::size_t order() const noexcept {
-            for (int i = internal_limb_count - 1; i >= 0; --i) {
+            for (int i = static_limb_count - 1; i >= 0; --i) {
                 if (limbs()[i] != 0) {
                     return i;
                 }
@@ -119,7 +119,7 @@ namespace nil::crypto3::multiprecision {
             } else {
                 static_assert(sizeof(T) % sizeof(limb_type) == 0);
                 constexpr std::size_t n =
-                    std::min(internal_limb_count, sizeof(T) / sizeof(limb_type));
+                    std::min(static_limb_count, sizeof(T) / sizeof(limb_type));
                 auto a_copy = a;
                 for (std::size_t i = 0; i < n; ++i) {
                     limbs()[i] = a_copy & static_cast<T>(static_cast<limb_type>(-1));
@@ -135,19 +135,19 @@ namespace nil::crypto3::multiprecision {
 
         template<std::size_t Bits2>
         constexpr void do_assign(const big_uint<Bits2>& other) noexcept {
-            std::size_t count = (std::min)(other.limbs_count(), this->limbs_count());
+            std::size_t count = (std::min)(other.limb_count(), this->limb_count());
             for (std::size_t i = 0; i < count; ++i) {
                 this->limbs()[i] = other.limbs()[i];
             }
-            // Zero out everything after (std::min)(other.limbs_count(), limbs_count()), so if size
+            // Zero out everything after (std::min)(other.limb_count(), limb_count()), so if size
             // of other was less, we have 0s at the end.
-            this->zero_after((std::min)(other.limbs_count(), this->limbs_count()));
+            this->zero_after((std::min)(other.limb_count(), this->limb_count()));
             this->normalize();
         }
 
       public:
         // TODO(ioxid): this should be private
-        constexpr void normalize() noexcept { limbs()[internal_limb_count - 1] &= upper_limb_mask; }
+        constexpr void normalize() noexcept { limbs()[static_limb_count - 1] &= upper_limb_mask; }
 
         constexpr bool has_carry() const noexcept { return m_carry; }
         constexpr void set_carry(bool carry) noexcept { m_carry = carry; }
@@ -269,7 +269,7 @@ namespace nil::crypto3::multiprecision {
             std::string result;
             result.reserve(used_limbs() * limb_bits / 4);
             bool found_first = false;
-            for (int i = internal_limb_count - 1; i >= 0; --i) {
+            for (int i = static_limb_count - 1; i >= 0; --i) {
                 auto limb = limbs()[i];
                 bool should_pad = found_first;
                 found_first = found_first || limb != 0;
@@ -322,7 +322,7 @@ namespace nil::crypto3::multiprecision {
                 return static_cast<T>(this->limbs()[0]);
             } else {
                 constexpr std::size_t n =
-                    std::min(sizeof(T) / sizeof(limb_type), internal_limb_count);
+                    std::min(sizeof(T) / sizeof(limb_type), static_limb_count);
                 T result = 0;
                 for (std::size_t i = 0; i < n; ++i) {
                     result <<= limb_bits;
@@ -606,8 +606,8 @@ namespace nil::crypto3::multiprecision {
             //
             // First figure out how big the result needs to be and set up some data:
             //
-            std::size_t rs = limbs_count();
-            std::size_t os = o.limbs_count();
+            std::size_t rs = limb_count();
+            std::size_t os = o.limb_count();
             auto [m, x] = std::minmax(rs, os);
             limb_pointer pr = limbs();
             const_limb_pointer po = o.limbs();
@@ -653,7 +653,7 @@ namespace nil::crypto3::multiprecision {
         NIL_CO3_MP_FORCEINLINE constexpr void bitwise_xor(limb_type l) noexcept { limbs()[0] ^= l; }
 
         NIL_CO3_MP_FORCEINLINE constexpr void complement(const big_uint<Bits>& o) noexcept {
-            std::size_t os = o.limbs_count();
+            std::size_t os = o.limb_count();
             for (std::size_t i = 0; i < os; ++i) {
                 limbs()[i] = ~o.limbs()[i];
             }
@@ -671,7 +671,7 @@ namespace nil::crypto3::multiprecision {
                 zero_after(0);
             } else {
                 unsigned char* pc = reinterpret_cast<unsigned char*>(pr);
-                std::memmove(pc + bytes, pc, limbs_count() * sizeof(limb_type) - bytes);
+                std::memmove(pc + bytes, pc, limb_count() * sizeof(limb_type) - bytes);
                 std::memset(pc, 0, bytes);
             }
         }
@@ -691,9 +691,9 @@ namespace nil::crypto3::multiprecision {
                 zero_after(0);
             } else {
                 std::size_t i = offset;
-                std::size_t rs = limbs_count() + offset;
-                for (; i < limbs_count(); ++i) {
-                    pr[rs - 1 - i] = pr[limbs_count() - 1 - i];
+                std::size_t rs = limb_count() + offset;
+                for (; i < limb_count(); ++i) {
+                    pr[rs - 1 - i] = pr[limb_count() - 1 - i];
                 }
                 for (; i < rs; ++i) {
                     pr[rs - 1 - i] = 0;
@@ -713,7 +713,7 @@ namespace nil::crypto3::multiprecision {
 
                 limb_pointer pr = limbs();
                 std::size_t i = 0;
-                std::size_t rs = limbs_count();
+                std::size_t rs = limb_count();
                 // This code only works when shift is non-zero, otherwise we invoke undefined
                 // behaviour!
                 NIL_CO3_MP_ASSERT(shift);
@@ -734,7 +734,7 @@ namespace nil::crypto3::multiprecision {
         void right_shift_byte(double_limb_type s) noexcept {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             NIL_CO3_MP_ASSERT((s % CHAR_BIT) == 0);
-            std::size_t ors = limbs_count();
+            std::size_t ors = limb_count();
             std::size_t rs = ors;
             if (offset >= rs) {
                 zero_after(0);
@@ -759,7 +759,7 @@ namespace nil::crypto3::multiprecision {
         constexpr void right_shift_limb(double_limb_type s) noexcept {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             NIL_CO3_MP_ASSERT((s % limb_bits) == 0);
-            std::size_t ors = limbs_count();
+            std::size_t ors = limb_count();
             std::size_t rs = ors;
             if (offset >= rs) {
                 zero_after(0);
@@ -778,7 +778,7 @@ namespace nil::crypto3::multiprecision {
         constexpr void right_shift_generic(double_limb_type s) noexcept {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
             limb_type shift = static_cast<limb_type>(s % limb_bits);
-            std::size_t ors = limbs_count();
+            std::size_t ors = limb_count();
             std::size_t rs = ors;
 
             if (offset >= rs) {
@@ -910,7 +910,7 @@ namespace nil::crypto3::multiprecision {
         // Misc ops
 
         NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
-            for (std::size_t i = 0; i < limbs_count(); ++i) {
+            for (std::size_t i = 0; i < limb_count(); ++i) {
                 if (limbs()[i] != 0) {
                     return false;
                 }
@@ -923,11 +923,11 @@ namespace nil::crypto3::multiprecision {
             // Find the index of the least significant limb that is non-zero:
             //
             std::size_t index = 0;
-            while ((index < limbs_count()) && !limbs()[index]) {
+            while ((index < limb_count()) && !limbs()[index]) {
                 ++index;
             }
 
-            if (index == limbs_count()) {
+            if (index == limb_count()) {
                 throw std::invalid_argument("zero has no lsb");
             }
 
@@ -943,7 +943,7 @@ namespace nil::crypto3::multiprecision {
             //
             // Find the index of the most significant bit that is non-zero:
             //
-            for (std::size_t i = limbs_count() - 1; i > 0; --i) {
+            for (std::size_t i = limb_count() - 1; i > 0; --i) {
                 if (limbs()[i] != 0) {
                     return i * limb_bits + std::bit_width(limbs()[i]) - 1;
                 }
@@ -1000,7 +1000,7 @@ namespace nil::crypto3::multiprecision {
         // Data
 
         // m_data[0] contains the lowest bits.
-        std::array<limb_type, internal_limb_count> m_data{0};
+        std::array<limb_type, static_limb_count> m_data{0};
 
         // This is a temporary value which is set when carry has happend during addition.
         // If this value is true, reduction by modulus must happen next.
@@ -1047,7 +1047,7 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr std::size_t hash_value(const big_uint<Bits>& val) noexcept {
         std::size_t result = 0;
-        for (std::size_t i = 0; i < val.limbs_count(); ++i) {
+        for (std::size_t i = 0; i < val.limb_count(); ++i) {
             boost::hash_combine(result, val.limbs()[i]);
         }
         return result;
