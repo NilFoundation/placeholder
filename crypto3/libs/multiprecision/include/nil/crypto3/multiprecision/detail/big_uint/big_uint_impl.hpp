@@ -83,7 +83,7 @@ namespace nil::crypto3::multiprecision {
 
       private:
         // Zeros out everything after limb[i], replaces resizing.
-        constexpr void zero_after(std::size_t start_index) {
+        constexpr void zero_after(std::size_t start_index) noexcept {
             auto pr = this->limbs();
             for (std::size_t i = start_index; i < this->limb_count(); ++i) {
                 pr[i] = 0;
@@ -112,7 +112,7 @@ namespace nil::crypto3::multiprecision {
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr void do_assign_integral(const T& a) noexcept {
+        constexpr void do_assign_integral_unchecked(const T& a) noexcept {
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
                 this->limbs()[0] = a;
                 this->zero_after(1);
@@ -128,13 +128,21 @@ namespace nil::crypto3::multiprecision {
                 zero_after(n);
             }
             this->normalize();
+        }
+
+        template<typename T,
+                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        constexpr void do_assign_integral(const T& a) {
+            do_assign_integral_unchecked(a);
             if constexpr (sizeof(T) * CHAR_BIT > Bits) {
-                NIL_CO3_MP_ASSERT(big_uint<sizeof(T) * CHAR_BIT>(a).compare(*this) == 0);
+                if (big_uint<sizeof(T) * CHAR_BIT>(a).compare(*this) != 0) {
+                    throw std::range_error("big_uint: out of range");
+                }
             }
         }
 
         template<std::size_t Bits2>
-        constexpr void do_assign(const big_uint<Bits2>& other) noexcept {
+        constexpr void do_assign_unchecked(const big_uint<Bits2>& other) noexcept {
             std::size_t count = (std::min)(other.limb_count(), this->limb_count());
             for (std::size_t i = 0; i < count; ++i) {
                 this->limbs()[i] = other.limbs()[i];
@@ -145,12 +153,23 @@ namespace nil::crypto3::multiprecision {
             this->normalize();
         }
 
+        template<std::size_t Bits2>
+        constexpr void do_assign(const big_uint<Bits2>& other) {
+            do_assign_unchecked(other);
+            if constexpr (Bits2 > Bits) {
+                if (other.compare(*this) != 0) {
+                    throw std::range_error("big_uint: out of range");
+                }
+            }
+        }
+
       public:
         // TODO(ioxid): this should be private
-        constexpr void normalize() noexcept { limbs()[static_limb_count - 1] &= upper_limb_mask; }
-
-        constexpr bool has_carry() const noexcept { return m_carry; }
-        constexpr void set_carry(bool carry) noexcept { m_carry = carry; }
+        constexpr bool normalize() noexcept {
+            bool result = limbs()[static_limb_count - 1] & ~upper_limb_mask;
+            limbs()[static_limb_count - 1] &= upper_limb_mask;
+            return result;
+        }
 
         // Constructor
 
@@ -158,26 +177,25 @@ namespace nil::crypto3::multiprecision {
 
         constexpr big_uint(std::string_view str) { *this = str; }
         constexpr big_uint(const char* str) { *this = str; }
-        constexpr big_uint(const std::string &str) { *this = str; }
+        constexpr big_uint(const std::string& str) { *this = str; }
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_uint(T val) noexcept {
-            NIL_CO3_MP_ASSERT_MSG(val >= 0, "big_uint: assignment from negative integer");
+        constexpr big_uint(T val) {
+            if (val < 0) {
+                throw std::range_error("big_uint: assignment from negative integer");
+            }
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
         }
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr big_uint(T val) noexcept {
+        constexpr big_uint(T val) {
             do_assign_integral(val);
         }
 
         // TODO(ioxid): make this explicit for the case when Bits2 > Bits
         template<std::size_t Bits2>
-        constexpr big_uint(const big_uint<Bits2>& other) noexcept {
+        constexpr big_uint(const big_uint<Bits2>& other) {
             do_assign(other);
-            if constexpr (Bits2 > Bits) {
-                NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
-            }
         }
 
         template<std::size_t N>
@@ -195,15 +213,17 @@ namespace nil::crypto3::multiprecision {
             *this = detail::parse_int<Bits>(str);
             return *this;
         }
-        constexpr big_uint& operator=(const std::string &str) {
+        constexpr big_uint& operator=(const std::string& str) {
             *this = detail::parse_int<Bits>(str);
             return *this;
         }
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_uint& operator=(T val) noexcept {
-            NIL_CO3_MP_ASSERT_MSG(val >= 0, "big_uint: assignment from negative integer");
+        constexpr big_uint& operator=(T val) {
+            if (val < 0) {
+                throw std::range_error("big_uint: assignment from negative integer");
+            }
             do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
             return *this;
         }
@@ -216,11 +236,8 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits2>
-        constexpr big_uint& operator=(const big_uint<Bits2>& other) noexcept {
+        constexpr big_uint& operator=(const big_uint<Bits2>& other) {
             do_assign(other);
-            if constexpr (Bits2 > Bits) {
-                NIL_CO3_MP_ASSERT(other.compare(*this) == 0);
-            }
             return *this;
         }
 
@@ -239,7 +256,7 @@ namespace nil::crypto3::multiprecision {
                 }
             }
             if (bits > Bits) {
-                throw std::invalid_argument("not enough bits");
+                throw std::range_error("big_uint: not enough bits to store bytes");
             }
             return *this;
         }
@@ -308,7 +325,7 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
         constexpr big_uint<Bits2> truncate() const noexcept {
             big_uint<Bits2> result;
-            result.do_assign(*this);
+            result.do_assign_unchecked(*this);
             return result;
         }
 
@@ -412,12 +429,18 @@ namespace nil::crypto3::multiprecision {
 
         // Arithmetic operations
 
-        constexpr void negate() noexcept {
+        constexpr void negate_wrapping() noexcept {
             if (is_zero()) {
                 return;
             }
             complement(*this);
             ++*this;
+        }
+
+        constexpr auto negated_wrapping() const noexcept {
+            auto result = *this;
+            result.negate_wrapping();
+            return result;
         }
 
         constexpr auto& operator++() noexcept {
@@ -427,7 +450,8 @@ namespace nil::crypto3::multiprecision {
                     normalize();
                 }
             } else {
-                detail::add(*this, *this, static_cast<limb_type>(1u));
+                detail::add<detail::operation_mode::checked>(*this, *this,
+                                                             static_cast<limb_type>(1u));
             }
             return *this;
         }
@@ -446,7 +470,8 @@ namespace nil::crypto3::multiprecision {
             if (limbs()[0]) {
                 --limbs()[0];
             } else {
-                detail::subtract(*this, *this, static_cast<limb_type>(1u));
+                detail::subtract<detail::operation_mode::checked>(*this, *this,
+                                                                  static_cast<limb_type>(1u));
             }
             return *this;
         }
@@ -456,77 +481,144 @@ namespace nil::crypto3::multiprecision {
             return copy;
         }
 
-        constexpr big_uint operator-() const noexcept {
-            big_uint result = *this;
-            result.negate();
-            return result;
-        }
-
-        // Arithmetic operations
-
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto operator+(const T& b) const noexcept {
+        friend constexpr auto operator+(const big_uint& a, const T& b) {
             detail::largest_big_uint_t<big_uint, T> result;
-            detail::add(result, *this, b);
+            detail::add<detail::operation_mode::checked>(result, a, b);
             return result;
         }
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        friend constexpr auto operator+(const T& a, const big_uint& b) noexcept {
+        friend constexpr auto operator+(const T& a, const big_uint& b) {
             return b + a;
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto& operator+=(const T& b) noexcept {
-            detail::add(*this, *this, b);
-            return *this;
+        friend constexpr auto& operator+=(big_uint& a, const T& b) {
+            detail::add<detail::operation_mode::checked>(a, a, b);
+            return a;
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto operator-(const T& b) const noexcept {
+        friend constexpr auto add_wrapping(const big_uint& a, const T& b) noexcept {
             detail::largest_big_uint_t<big_uint, T> result;
-            detail::subtract(result, *this, b);
+            detail::add<detail::operation_mode::wrapping>(result, a, b);
             return result;
         }
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        friend constexpr auto operator-(const T& a, const big_uint& b) noexcept {
-            return (-b) + a;
+        friend constexpr auto add_wrapping(const T& a, const big_uint& b) noexcept {
+            return add_wrapping(b, a);
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto& operator-=(const T& b) noexcept {
-            detail::subtract(*this, *this, b);
-            return *this;
+        friend constexpr auto& add_assign_wrapping(big_uint& a, const T& b) noexcept {
+            detail::add<detail::operation_mode::wrapping>(a, a, b);
+            return a;
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto operator*(const T& b) const noexcept {
+        friend constexpr auto operator-(const big_uint& a, const T& b) {
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::subtract<detail::operation_mode::checked>(result, a, b);
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto operator-(const T& a, const big_uint& b) {
+            auto a_unsigned = detail::unsigned_or_throw(a);
+            if (a_unsigned < b) {
+                throw std::overflow_error("big_uint: subtraction overflow");
+            }
+            return add_wrapping(b.negated_wrapping(), a);
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        friend constexpr auto& operator-=(big_uint& a, const T& b) {
+            detail::subtract<detail::operation_mode::checked>(a, a, b);
+            return a;
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        friend constexpr auto subtract_wrapping(const big_uint& a, const T& b) noexcept {
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::subtract<detail::operation_mode::wrapping>(result, a, b);
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto subtract_wrapping(const T& a, const big_uint& b) noexcept {
+            return add_wrapping(b.negated_wrapping(), a);
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        friend constexpr auto& subtract_assign_wrapping(big_uint& a, const T& b) noexcept {
+            detail::subtract<detail::operation_mode::wrapping>(a, a, b);
+            return a;
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        friend constexpr auto operator*(const big_uint& a, const T& b) {
             decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
             detail::largest_big_uint_t<big_uint, T> result;
-            detail::multiply(result, *this, detail::as_big_uint(b_unsigned));
+            detail::multiply<detail::operation_mode::checked>(result, a,
+                                                              detail::as_big_uint(b_unsigned));
             return result;
         }
 
         template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-        friend constexpr auto operator*(const T& a, const big_uint& b) noexcept {
+        friend constexpr auto operator*(const T& a, const big_uint& b) {
             return b * a;
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto& operator*=(const T& b) noexcept {
+        friend constexpr auto& operator*=(big_uint& a, const T& b) {
             decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
-            big_uint result;
-            detail::multiply(result, *this, detail::as_big_uint(b_unsigned));
-            *this = result;
-            return *this;
+            detail::multiply<detail::operation_mode::checked>(a, a,
+                                                              detail::as_big_uint(b_unsigned));
+            return a;
         }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        friend constexpr auto multiply_wrapping(const big_uint& a, const T& b) {
+            decltype(auto) b_unsigned = detail::unsigned_abs(b);
+            detail::largest_big_uint_t<big_uint, T> result;
+            detail::multiply<detail::operation_mode::wrapping>(result, a,
+                                                               detail::as_big_uint(b_unsigned));
+            if constexpr (std::is_signed_v<T>) {
+                if (b < 0) {
+                    result.negate_wrapping();
+                }
+            }
+            return result;
+        }
+
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        friend constexpr auto multiply_wrapping(const T& a, const big_uint& b) {
+            return multiply_wrapping(b, a);
+        }
+
+        template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
+        friend constexpr auto& multiply_assign_wrapping(big_uint& a, const T& b) {
+            decltype(auto) b_unsigned = detail::unsigned_abs(b);
+            detail::multiply<detail::operation_mode::wrapping>(a, a,
+                                                               detail::as_big_uint(b_unsigned));
+            if constexpr (std::is_signed_v<T>) {
+                if (b < 0) {
+                    a.negate_wrapping();
+                }
+            }
+            return a;
+        }
+
+        // TODO(ioxid): maybe add wrapping version of division and modulus, which accepts negative
+        // arguments
 
         template<typename T1, typename T2,
                  std::enable_if_t<(std::is_same_v<T1, big_uint> && detail::is_integral_v<T2>) ||
                                       (std::is_integral_v<T1> && std::is_same_v<T2, big_uint>),
                                   int> = 0>
-        friend constexpr auto operator/(const T1& a, const T2& b) noexcept {
+        friend constexpr auto operator/(const T1& a, const T2& b) {
             decltype(auto) a_unsigned = detail::unsigned_or_throw(a);
             decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
             using big_uint_a = std::decay_t<decltype(detail::as_big_uint(a_unsigned))>;
@@ -538,13 +630,13 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto& operator/=(const T& b) noexcept {
+        friend constexpr auto& operator/=(big_uint& a, const T& b) {
             decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
             big_uint result;
             big_uint modulus;
-            detail::divide(&result, *this, detail::as_big_uint(b_unsigned), modulus);
-            *this = result;
-            return *this;
+            detail::divide(&result, a, detail::as_big_uint(b_unsigned), modulus);
+            a = result;
+            return a;
         }
 
         template<typename T1, typename T2,
@@ -562,32 +654,32 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
-        constexpr auto& operator%=(const T& b) {
+        friend constexpr auto& operator%=(big_uint& a, const T& b) {
             decltype(auto) b_unsigned = detail::unsigned_or_throw(b);
             big_uint modulus;
-            detail::divide(static_cast<big_uint*>(nullptr), *this, detail::as_big_uint(b_unsigned),
+            detail::divide(static_cast<big_uint*>(nullptr), a, detail::as_big_uint(b_unsigned),
                            modulus);
-            *this = modulus;
-            return *this;
+            a = modulus;
+            return a;
         }
 
 #define NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(OP_, OP_ASSIGN_, METHOD_)             \
     template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>           \
-    constexpr auto operator OP_(const T& b) const noexcept {                            \
-        detail::largest_big_uint_t<big_uint, T> result = *this;                         \
+    friend constexpr auto operator OP_(const big_uint& a, const T& b) {                 \
+        detail::largest_big_uint_t<big_uint, T> result = a;                             \
         result.METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b))); \
         return result;                                                                  \
     }                                                                                   \
                                                                                         \
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>              \
-    friend constexpr auto operator OP_(const T& a, const big_uint& b) noexcept {        \
+    friend constexpr auto operator OP_(const T& a, const big_uint& b) {                 \
         return b OP_ a;                                                                 \
     }                                                                                   \
                                                                                         \
     template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>           \
-    constexpr auto& operator OP_ASSIGN_(const T & b) noexcept {                         \
-        METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b)));        \
-        return *this;                                                                   \
+    friend constexpr auto& operator OP_ASSIGN_(big_uint & a, const T & b) {             \
+        a.METHOD_(detail::as_limb_type_or_big_uint(detail::unsigned_or_throw(b)));      \
+        return a;                                                                       \
     }
 
         NIL_CO3_MP_BIG_UINT_BITWISE_OPERATOR_IMPL(&, &=, bitwise_and)
@@ -1002,45 +1094,52 @@ namespace nil::crypto3::multiprecision {
         // m_data[0] contains the lowest bits.
         std::array<limb_type, static_limb_count> m_data{0};
 
-        // This is a temporary value which is set when carry has happend during addition.
-        // If this value is true, reduction by modulus must happen next.
-        bool m_carry = false;
-
         // Friends
 
         template<std::size_t>
         friend class big_uint;
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::add_constexpr_unsigned(big_uint<Bits1>& result,
+        friend constexpr bool detail::add_constexpr_unsigned(big_uint<Bits1>& result,
                                                              const big_uint<Bits2>& a,
                                                              const big_uint<Bits3>& b) noexcept;
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
+        friend constexpr void detail::subtract_constexpr_unsigned(big_uint<Bits1>& result,
+                                                                  const big_uint<Bits2>& a,
+                                                                  const big_uint<Bits3>& b);
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::subtract_constexpr_unsigned(
-            big_uint<Bits1>& result, const big_uint<Bits2>& a, const big_uint<Bits3>& b) noexcept;
-        template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
-        friend constexpr void detail::add_unsigned(big_uint<Bits1>& result,
+        friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
                                                    const big_uint<Bits3>& b) noexcept;
-        template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2,
+                 std::size_t Bits3>
         friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
                                                         const big_uint<Bits2>& a,
-                                                        const big_uint<Bits3>& b) noexcept;
+                                                        const big_uint<Bits3>& b);
         template<std::size_t Bits1, std::size_t Bits2>
-        friend constexpr void detail::add_unsigned(big_uint<Bits1>& result,
+        friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
                                                    const big_uint<Bits2>& a,
                                                    const limb_type& o) noexcept;
-        template<std::size_t Bits1, std::size_t Bits2>
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
         friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
                                                         const big_uint<Bits2>& a,
-                                                        const limb_type& b) noexcept;
+                                                        const limb_type& b);
         template<std::size_t Bits1, std::size_t Bits2>
         friend constexpr void detail::divide(big_uint<Bits1>* div, const big_uint<Bits1>& x,
                                              const big_uint<Bits2>& y, big_uint<Bits1>& rem);
-        template<std::size_t Bits1, std::size_t Bits2, typename T>
+        template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
         friend constexpr void detail::multiply(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                               const T& b) noexcept;
+                                               const T& b);
     };
+
+    // Addition with carry
+
+    template<std::size_t Bits1, std::size_t Bits2>
+    [[nodiscard]] constexpr bool add_assign_with_carry(big_uint<Bits1>& a,
+                                                       const big_uint<Bits2>& b) noexcept {
+        return detail::add_unsigned(a, a, b);
+    }
 
     // Hash
 

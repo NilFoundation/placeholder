@@ -49,7 +49,7 @@ namespace nil::crypto3::multiprecision {
                 }
             }
             if (bits > Bits) {
-                throw std::invalid_argument("not enough bits to store literal");
+                throw std::range_error("not enough bits to store literal");
             }
             return result;
         }
