@@ -29,7 +29,9 @@
 #include <boost/test/unit_test.hpp>
 #include <cstdlib>
 #include <ctime>
-#include <nil/blueprint/bbf/hashes/keccak/keccak_dynamic_bbf_wrapper.hpp>
+#include <random>
+// #include <nil/blueprint/bbf/hashes/keccak/keccak_dynamic_bbf_wrapper.hpp>
+#include <nil/blueprint/bbf/hashes/keccak/keccak_dynamic.hpp>
 #include <nil/blueprint/blueprint/plonk/assignment.hpp>
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/crypto3/algebra/curves/vesta.hpp>
@@ -42,10 +44,10 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/vesta.hpp>
 #include <nil/crypto3/hash/keccak.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
-#include <random>
+#include <nil/blueprint/bbf/circuit_builder.hpp>
+#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 
 #include "../../../test_plonk_component.hpp"
-#include <nil/crypto3/test_tools/random_test_initializer.hpp>
 
 using namespace nil::crypto3;
 using namespace nil::blueprint;
@@ -56,54 +58,14 @@ void test_keccaks(
         std::vector<uint8_t>,
         std::pair<typename BlueprintFieldType::value_type, typename BlueprintFieldType::value_type>
     >> input,
-    nil::crypto3::test_tools::random_test_initializer<BlueprintFieldType> &rnd,
-    std::string output_path = ""
+    nil::crypto3::test_tools::random_test_initializer<BlueprintFieldType> &rnd
 ){
     std::cout << "Test keccak with " << input.size() << " messages, max_blocks = " << max_blocks << std::endl;
 
-    constexpr std::size_t WitnessesAmount = 15; // May be changed in next version
-    constexpr std::size_t PublicInputColumns = 1;
-    constexpr std::size_t ConstantColumns = 1;
-    constexpr std::size_t SelectorColumns = 50;
-    nil::crypto3::zk::snark::plonk_table_description<BlueprintFieldType> desc(WitnessesAmount, PublicInputColumns,
-                                                                              ConstantColumns, SelectorColumns);
-    using ArithmetizationType = nil::crypto3::zk::snark::plonk_constraint_system<BlueprintFieldType>;
-    using AssignmentType = nil::blueprint::assignment<ArithmetizationType>;
-    using hash_type = nil::crypto3::hashes::keccak_1600<256>;
-    constexpr std::size_t Lambda = 1;
-
-    using component_type = nil::blueprint::components::keccak_dynamic_bbf_wrapper<ArithmetizationType, BlueprintFieldType>;
-    using var = nil::crypto3::zk::snark::plonk_variable<typename BlueprintFieldType::value_type>;
-
-    var rlc_challenge(0, 0, false, var::column_type::public_input);
-    typename component_type::input_type instance_input;
-    instance_input.rlc_challenge = rlc_challenge;
-    instance_input.input = input;
-
-    std::size_t limit_permutation_columns = 15;
-
-    auto result_check = [](AssignmentType &assignment, typename component_type::result_type &real_res) {};
-
-    if (!(WitnessesAmount == 15)) {
-        BOOST_ASSERT_MSG(false, "Please add support for WitnessesAmount that you passed here!");
-    }
-    std::array<std::uint32_t, WitnessesAmount> witnesses;
-    for (std::uint32_t i = 0; i < WitnessesAmount; i++) {
-        witnesses[i] = i;
-    }
-
-    std::vector<typename BlueprintFieldType::value_type> public_input = {
-        rnd.alg_random_engines.template get_alg_engine<BlueprintFieldType>()()
-    };
-
-    // Last parameter is LPC
-    component_type component_instance =
-        component_type(witnesses, std::array<std::uint32_t, 1> {0}, std::array<std::uint32_t, 1> {0}, max_blocks);
-
-    nil::crypto3::test_component_extended<component_type, BlueprintFieldType, hash_type, Lambda>(
-        component_instance, desc, public_input, result_check, instance_input,
-        true, nil::blueprint::connectedness_check_type::type::NONE,
-        "", false, max_blocks);
+    typename bbf::keccak_dynamic<BlueprintFieldType, bbf::GenerationStage::ASSIGNMENT>::raw_input_type raw_input = {rnd.alg_random_engines.template get_alg_engine<BlueprintFieldType>()(), input};
+    auto B = bbf::circuit_builder<BlueprintFieldType, bbf::keccak_dynamic, std::size_t>(max_blocks);
+    auto [at, A, desc] = B.assign(raw_input);
+    std::cout << "Is_satisfied = " << B.is_satisfied(at) << std::endl;
 }
 
 template <typename BlueprintFieldType>
@@ -125,7 +87,7 @@ BOOST_AUTO_TEST_SUITE(bn254_test_suite)
 
 BOOST_AUTO_TEST_CASE(keccak_1_short_message) {
     nil::crypto3::test_tools::random_test_initializer<field_type> rnd;
-    test_keccaks<field_type, 1>({{{0},calculate_hash<field_type>({0})}}, rnd, "./keccak_1_short_message");
+    test_keccaks<field_type, 1>({{{0},calculate_hash<field_type>({0})}}, rnd);
 }
 
 BOOST_AUTO_TEST_CASE(keccak_2_short_messages) {
