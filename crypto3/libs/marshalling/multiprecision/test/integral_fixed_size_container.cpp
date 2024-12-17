@@ -26,24 +26,28 @@
 #define BOOST_TEST_MODULE crypto3_marshalling_integral_fixed_size_container_test
 
 #include <boost/test/unit_test.hpp>
+
+#include <array>
+#include <cstddef>
+#include <iostream>
+#include <limits>
+#include <vector>
+
 #include <boost/algorithm/string/case_conv.hpp>
+
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
-#include <iostream>
-//#include <type_traits>
 
-#include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
-
+#include <nil/marshalling/algorithms/pack.hpp>
+#include <nil/marshalling/endianness.hpp>
+#include <nil/marshalling/field_type.hpp>
+#include <nil/marshalling/options.hpp>
 #include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/types/array_list.hpp>
-//#include <nil/marshalling/container/static_vector.hpp>
-#include <nil/marshalling/field_type.hpp>
-#include <nil/marshalling/endianness.hpp>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
 
-#include <nil/marshalling/algorithms/pack.hpp>
-
+#include <nil/crypto3/marshalling/multiprecision/types/integral.hpp>
 
 template<class T>
 T generate_random() {
