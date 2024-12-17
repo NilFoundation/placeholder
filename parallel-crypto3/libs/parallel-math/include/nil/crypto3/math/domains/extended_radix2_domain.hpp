@@ -44,11 +44,12 @@ namespace nil {
 
             using namespace nil::crypto3::algebra;
 
-            template<typename FieldType, typename ValueType>
+            template<typename FieldType, typename ValueType, typename Allocator>
             class evaluation_domain;
 
-            template<typename FieldType, typename ValueType = typename FieldType::value_type>
-            class extended_radix2_domain : public evaluation_domain<FieldType, ValueType> {
+            template<typename FieldType, typename ValueType = typename FieldType::value_type,
+                     typename Allocator = std::allocator<ValueType>>
+            class extended_radix2_domain : public evaluation_domain<FieldType, ValueType, Allocator> {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
                 typedef std::pair<std::vector<field_value_type>, std::vector<field_value_type>> cache_type;

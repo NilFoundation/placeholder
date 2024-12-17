@@ -41,14 +41,17 @@ namespace nil {
             /**
              * An evaluation domain.
              */
-            template<typename FieldType, typename ValueType = typename FieldType::value_type>
+            template<typename FieldType, typename ValueType = typename FieldType::value_type,
+                     typename Allocator = std::allocator<ValueType>>
             class evaluation_domain {
 
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
+                typedef std::vector<field_value_type, Allocator> container_type;
 
             public:
                 typedef FieldType field_type;
+                typedef polynomial_dfs<field_value_type, Allocator> polynomial_dfs_type;
 
                 std::size_t m;
                 std::size_t log2_size;
@@ -82,12 +85,12 @@ namespace nil {
                 /**
                  * Compute the FFT, over the domain S, of the vector a.
                  */
-                virtual void fft(std::vector<value_type> &a) = 0;
+                virtual void fft(polynomial_dfs_type &a, std::size_t zero_from_size) = 0;
 
                 /**
                  * Compute the inverse FFT, over the domain S, of the vector a.
                  */
-                virtual void inverse_fft(std::vector<value_type> &a) = 0;
+                virtual void inverse_fft(polynomial_dfs_type &a) = 0;
 
                 /**
                  * Evaluate all Lagrange polynomials.
@@ -98,7 +101,7 @@ namespace nil {
                  * The output is a vector (b_{0},...,b_{m-1})
                  * where b_{i} is the evaluation of L_{i,S}(z) at z = t.
                  */
-                virtual std::vector<field_value_type> evaluate_all_lagrange_polynomials(const field_value_type &t) = 0;
+                virtual container_type evaluate_all_lagrange_polynomials(const field_value_type &t) = 0;
 
                 /**
                  * Evaluate all Lagrange polynomials.
@@ -109,9 +112,9 @@ namespace nil {
                  * The output is a vector (b_{0},...,b_{m-1})
                  * where b_{i} is the evaluation of L_{i,S}(z) at z = t.
                  */
-                virtual std::vector<value_type> evaluate_all_lagrange_polynomials(
-                    const typename std::vector<value_type>::const_iterator &t_powers_begin,
-                    const typename std::vector<value_type>::const_iterator &t_powers_end) = 0;
+                virtual container_type evaluate_all_lagrange_polynomials(
+                    const typename container_type::const_iterator &t_powers_begin,
+                    const typename container_type::const_iterator &t_powers_end) = 0;
 
                 /**
                  * Evaluate the vanishing polynomial of S at the field element t.
@@ -126,12 +129,18 @@ namespace nil {
                 /**
                  * Add the coefficients of the vanishing polynomial of S to the coefficients of the polynomial H.
                  */
-                virtual void add_poly_z(const field_value_type &coeff, std::vector<field_value_type> &H) = 0;
+                virtual void add_poly_z(const field_value_type &coeff, container_type &H) = 0;
 
                 /**
                  * Multiply by the evaluation, on a coset of S, of the inverse of the vanishing polynomial of S.
                  */
-                virtual void divide_by_z_on_coset(std::vector<field_value_type> &P) = 0;
+                virtual void divide_by_z_on_coset(container_type &P) = 0;
+
+                /**
+                 * Prefetch fft cache data to the device.
+                 */
+
+                //virtual const void prefetch_fft_cache() = 0;
 
                 bool operator==(const evaluation_domain &rhs) const {
                     return m == rhs.m && log2_size == rhs.log2_size;
