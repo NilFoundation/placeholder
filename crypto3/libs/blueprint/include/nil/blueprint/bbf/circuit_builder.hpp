@@ -47,11 +47,6 @@
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/params.hpp>
 
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/prover.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/verifier.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/params.hpp>
-#include <nil/crypto3/zk/snark/systems/plonk/placeholder/preprocessor.hpp>
-
 namespace nil {
     namespace blueprint {
         namespace bbf {
@@ -232,7 +227,7 @@ namespace nil {
                     std::vector<plonk_lookup_table> bp_lookup_tables(lookup_table_ids.size());
                     std::size_t start_constant_column = presets.constants_amount();
                     std::size_t prev_columns_number = 0;
-                    int full_selector_id = 0;
+                    int full_selector_id = -1;
 
                     for(const auto &table_name : ordered_table_names) {
                         const auto &table = lookup_tables.at(table_name);
@@ -250,7 +245,7 @@ namespace nil {
                             for(std::size_t i = start_constant_column; i < start_constant_column + prev_columns_number; i++)
                                 presets.constant(i,usable_rows-1) = 0;
 
-                            if (full_selector_id == 0) {
+                            if (full_selector_id == -1) {
                                 row_selector selector_column(usable_rows);
                                 for(std::size_t i = 1; i < usable_rows; i++)
                                     selector_column.set_row(i);
@@ -260,12 +255,12 @@ namespace nil {
                             if (table->get_rows_number() % usable_rows == 0) options_number--;
                             std::size_t cur = 0;
                             for(std::size_t i = 0; i < options_number; i++) {
-                                for(std::size_t start_row = 1; start_row < usable_rows; start_row++, cur++) {
+                                for(std::size_t local_start_row = 1; local_start_row < usable_rows; local_start_row++, cur++) {
                                     for(std::size_t k = 0; k < table->get_columns_number(); k++) {
                                         if (cur < table->get_rows_number())
-                                            presets.constant(cur_constant_column + k,start_row) = table->get_table()[k][cur];
+                                            presets.constant(cur_constant_column + k,local_start_row) = table->get_table()[k][cur];
                                         else
-                                            presets.constant(cur_constant_column + k,start_row) =
+                                            presets.constant(cur_constant_column + k,local_start_row) =
                                                 table->get_table()[k][table->get_rows_number()-1];
                                     }
                                 }
@@ -408,7 +403,7 @@ namespace nil {
                 std::tuple<
                     crypto3::zk::snark::plonk_assignment_table<FieldType>,
                     Component<FieldType, GenerationStage::ASSIGNMENT>,
-                    zk::snark::plonk_table_description<FieldType>
+                    crypto3::zk::snark::plonk_table_description<FieldType>
                 >
                 assign(typename Component<FieldType, GenerationStage::ASSIGNMENT>::raw_input_type raw_input) {
                     using generator = Component<FieldType,GenerationStage::ASSIGNMENT>;
@@ -433,7 +428,7 @@ namespace nil {
                     auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
                     auto o = std::make_from_tuple<generator>(v);
 
-                    zk::snark::plonk_table_description<FieldType> desc = at.get_description();
+                    crypto3::zk::snark::plonk_table_description<FieldType> desc = at.get_description();
                     std::cout << "Rows amount = " << at.rows_amount() << std::endl;
                     desc.usable_rows_amount = at.rows_amount();
                     nil::crypto3::zk::snark::basic_padding(at);
@@ -596,54 +591,6 @@ namespace nil {
                         }
                     }
                     return true;
-                }
-
-                bool check_proof(
-                    const crypto3::zk::snark::plonk_assignment_table<FieldType> &assignment,
-                    const zk::snark::plonk_table_description<FieldType> &desc) {
-
-                    std::size_t Lambda = 9;
-
-                    typedef nil::crypto3::zk::snark::placeholder_circuit_params<FieldType> circuit_params;
-                    using transcript_hash_type = nil::crypto3::hashes::keccak_1600<256>;
-                    using merkle_hash_type = nil::crypto3::hashes::keccak_1600<256>;
-                    using transcript_type = typename nil::crypto3::zk::transcript::fiat_shamir_heuristic_sequential<transcript_hash_type>;
-                    using lpc_params_type = nil::crypto3::zk::commitments::list_polynomial_commitment_params<
-                        merkle_hash_type,
-                        transcript_hash_type,
-                        2 //m
-                    >;
-
-                    using lpc_type = nil::crypto3::zk::commitments::list_polynomial_commitment<FieldType, lpc_params_type>;
-                    using lpc_scheme_type = typename nil::crypto3::zk::commitments::lpc_commitment_scheme<lpc_type>;
-                    using lpc_placeholder_params_type = nil::crypto3::zk::snark::placeholder_params<circuit_params, lpc_scheme_type>;
-                    typename lpc_type::fri_type::params_type fri_params(1, std::ceil(log2(assignment.rows_amount())), Lambda, 2);
-                    lpc_scheme_type lpc_scheme(fri_params);
-
-                    std::cout << "Public preprocessor" << std::endl;
-                    typename nil::crypto3::zk::snark::placeholder_public_preprocessor<FieldType,
-                        lpc_placeholder_params_type>::preprocessed_data_type lpc_preprocessed_public_data =
-                            nil::crypto3::zk::snark::placeholder_public_preprocessor<FieldType, lpc_placeholder_params_type>::process(
-                            bp, assignment.public_table(), desc, lpc_scheme, 10);
-
-                    std::cout << "Private preprocessor" << std::endl;
-                    typename nil::crypto3::zk::snark::placeholder_private_preprocessor<FieldType,
-                       lpc_placeholder_params_type>::preprocessed_data_type lpc_preprocessed_private_data =
-                            nil::crypto3::zk::snark::placeholder_private_preprocessor<FieldType, lpc_placeholder_params_type>::process(
-                            bp, assignment.private_table(), desc);
-
-                    std::cout << "Prover" << std::endl;
-                    auto lpc_proof = nil::crypto3::zk::snark::placeholder_prover<FieldType, lpc_placeholder_params_type>::process(
-                            lpc_preprocessed_public_data, std::move(lpc_preprocessed_private_data), desc, bp,
-                            lpc_scheme);
-
-                    // We must not use the same instance of lpc_scheme.
-                    lpc_scheme_type verifier_lpc_scheme(fri_params);
-
-                    std::cout << "Verifier" << std::endl;
-                    bool verifier_res = nil::crypto3::zk::snark::placeholder_verifier<FieldType, lpc_placeholder_params_type>::process(
-                            lpc_preprocessed_public_data.common_data, lpc_proof, desc, bp, verifier_lpc_scheme);
-                    return verifier_res;
                 }
 
                 circuit<crypto3::zk::snark::plonk_constraint_system<FieldType>>& get_circuit() {
