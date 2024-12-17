@@ -227,7 +227,6 @@ namespace nil {
                         zkevm_word_type v = zkevm_word_type(integral_type(q_abs) +
                                                             integral_type(t_last) * zkevm_modulus -
                                                             integral_type(b_abs));
-                        zkevm_word_type result = is_div ? r : q_out;
 
                         a_chunks = zkevm_word_to_field_element<FieldType>(a);
                         b_input_chunks = zkevm_word_to_field_element<FieldType>(b_input);

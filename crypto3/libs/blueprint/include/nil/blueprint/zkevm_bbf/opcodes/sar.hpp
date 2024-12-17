@@ -233,7 +233,6 @@ namespace nil {
                         q_chunks = zkevm_word_to_field_element<FieldType>(q);
                         v_chunks = zkevm_word_to_field_element<FieldType>(v);
 
-                        integral_type two_15 = 32768;
                         integral_type biggest_input_a_chunk = integral_type(input_a) >> (256 - 16);
 
                         b0p = integral_type(input_b) % 16;

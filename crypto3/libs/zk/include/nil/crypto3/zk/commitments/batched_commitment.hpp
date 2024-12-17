@@ -199,7 +199,7 @@ namespace nil {
                                         break;
                                     }
                                 }
-                                BOOST_ASSERT(found);
+                                BOOST_VERIFY(found);
                             }
                         }
                         return eval_map;
