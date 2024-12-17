@@ -419,7 +419,7 @@ namespace nil {
                 }
 
                 void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
-                    if (!is_relative(C_rel)) {
+                    if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                         throw std::logic_error(ss.str());
@@ -481,7 +481,7 @@ namespace nil {
 
                 void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
                     for(const TYPE c_part : C) {
-                        if (!is_relative(c_part)) {
+                        if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
                             throw std::logic_error(ss.str());

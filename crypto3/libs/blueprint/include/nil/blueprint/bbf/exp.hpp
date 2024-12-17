@@ -32,7 +32,6 @@
 #include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
-// #include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/bbf/generic.hpp>
 #include <nil/blueprint/bbf/exp_table.hpp>
 #include <nil/blueprint/zkevm/zkevm_word.hpp>
@@ -56,7 +55,7 @@ namespace nil {
 
                 std::size_t max_rows;
                 std::size_t max_exponentiations;
-                
+
 
                 constexpr static std::size_t num_chunks = 2;
                 constexpr static const typename FieldType::value_type one    = 1;
@@ -81,7 +80,7 @@ namespace nil {
                 T chunk_sum_128(const std::vector<V> &chunks, const unsigned char chunk_idx) const {
                     BOOST_ASSERT(chunk_idx < 2);
                     return chunks[8 * chunk_idx] + chunks[8 * chunk_idx + 1] * two_16 +
-                           chunks[8 * chunk_idx + 2] * two_32 + chunks[8 * chunk_idx + 3] * two_48 + 
+                           chunks[8 * chunk_idx + 2] * two_32 + chunks[8 * chunk_idx + 3] * two_48 +
                            chunks[8 * chunk_idx + 4] * two_64 + chunks[8 * chunk_idx + 5] * two_80 +
                            chunks[8 * chunk_idx + 6] * two_96 + chunks[8 * chunk_idx + 7] * two112;
                 }
@@ -110,16 +109,16 @@ namespace nil {
 
               public:
 
-                exp_circuit(context_type &context_object, 
+                exp_circuit(context_type &context_object,
                             const exp_table_input_type &input,
                             std::size_t max_rows_amount, std::size_t max_exponentiations_,
-                            bool make_links = true) : 
+                            bool make_links = true) :
                     max_rows(max_rows_amount),
                     max_exponentiations(max_exponentiations_),
                     generic_component<FieldType, stage>(context_object)
                     {
 
-                        std::size_t num_proving_blocks = (max_rows) / 3; 
+                        std::size_t num_proving_blocks = (max_rows) / 3;
                         std::vector<std::array<TYPE, num_chunks>> base = std::vector<std::array<TYPE, num_chunks>>(max_rows);
                         std::vector<std::array<TYPE, num_chunks>> exponent = std::vector<std::array<TYPE, num_chunks>>(max_rows);
                         std::vector<std::array<TYPE, num_chunks>> exponentiation = std::vector<std::array<TYPE, num_chunks>>(max_rows);
@@ -138,7 +137,7 @@ namespace nil {
                         std::vector<TYPE> exp_is_even = std::vector<TYPE>(num_proving_blocks);
                         std::vector<TYPE> is_last = std::vector<TYPE>(max_rows);
                         std::vector<TYPE> header_selector = std::vector<TYPE>(max_rows);
-                        
+
 
 
                         if constexpr (stage == GenerationStage::ASSIGNMENT) {
@@ -150,7 +149,7 @@ namespace nil {
                                 word_type exp_a = triplets[i][0];
                                 word_type exp_d = triplets[i][1];
                                 word_type exp_A = triplets[i][2];
-                                
+
                                 word_type e = exp_d;
                                 std::vector<bool> bitmap;
                                 std::vector<word_type> tmp_exp;
@@ -165,7 +164,7 @@ namespace nil {
                                     }
                                 }
                                 std::reverse(bitmap.begin(), bitmap.end());
-                                std::vector<std::array<word_type, 3>> intermediate_triplets; 
+                                std::vector<std::array<word_type, 3>> intermediate_triplets;
                                 word_type a, b;
 
                                 e = exp_a;
@@ -183,10 +182,10 @@ namespace nil {
                                 BOOST_ASSERT(tmp_exp.size() == bitmap.size());
 
                                 std::size_t its = intermediate_triplets.size();
-                                
-                                for(std::size_t j = 0; j < its; j++){ 
+
+                                for(std::size_t j = 0; j < its; j++){
                                     BOOST_ASSERT(cur < num_proving_blocks);
-                                    
+
                                     header_selector[3*cur] = (j == 0) ? 1 : 0;
                                     header_selector[3*cur + 1] = 0;
                                     header_selector[3*cur + 2] = 0;
@@ -221,31 +220,31 @@ namespace nil {
 
                                     exp_is_even[cur] = (bitmap[its - j - 1]) ? 0 : 1;
                                     hi_last[cur] = static_cast<TYPE>(exponent[3*cur][0].data & one.data);
-                                    
+
                                     is_last[3*cur] = (j == its - 1) ? 1 : 0;
                                     is_last[3*cur + 1] = is_last[3*cur];
                                     is_last[3*cur + 2] = is_last[3*cur];
-                                    
+
 
                                     a_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][0]);
                                     b_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][1]);
                                     r_chunks[cur] = zkevm_word_to_field_element<FieldType>(intermediate_triplets[its - j - 1][2]);
 
-                                    std::vector<TYPE> a_64_chunks, b_64_chunks, r_64_chunks; 
+                                    std::vector<TYPE> a_64_chunks, b_64_chunks, r_64_chunks;
                                     for (std::size_t k = 0; k < 4; k++) {
-                                        a_64_chunks.push_back(chunk_sum_64<TYPE>(a_chunks[cur], k)); 
+                                        a_64_chunks.push_back(chunk_sum_64<TYPE>(a_chunks[cur], k));
                                         b_64_chunks.push_back(chunk_sum_64<TYPE>(b_chunks[cur], k));
                                         r_64_chunks.push_back(chunk_sum_64<TYPE>(r_chunks[cur], k));
                                     }
 
-                                    auto first_row_carries = first_carryless_consrtruct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks).data.base() >> 128; 
+                                    auto first_row_carries = first_carryless_consrtruct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks).data.base() >> 128;
                                     TYPE c_1 = static_cast<TYPE>(first_row_carries & (two_64 - 1).data.base());
                                     c_2[cur] = static_cast<TYPE>(first_row_carries >> 64);
                                     c_1_chunks[cur] = chunk_64_to_16<FieldType>(c_1);
                                     // no need for c_2 chunks as there is only a single chunk
-                                    auto second_row_carries = (second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks) + c_1 + c_2[cur] * two_64).data.base() >> 128; 
+                                    auto second_row_carries = (second_carryless_construct<TYPE>(a_64_chunks, b_64_chunks, r_64_chunks) + c_1 + c_2[cur] * two_64).data.base() >> 128;
                                     TYPE c_3 = static_cast<TYPE>(second_row_carries & (two_64 - 1).data.base());
-                                    c_4[cur] = static_cast<TYPE>(second_row_carries >> 64); 
+                                    c_4[cur] = static_cast<TYPE>(second_row_carries >> 64);
                                     c_3_chunks[cur] = chunk_64_to_16<FieldType>(c_3);
 
                                     cur++;
@@ -261,7 +260,7 @@ namespace nil {
 
                         for(std::size_t i = 0; i < max_rows; i++){
                             allocate(header_selector[i], 0, i);
-                            
+
                             for(std::size_t j = 0; j < num_chunks; j++){
                                 allocate(base[i][j], j + 1, i);
                                 allocate(exponent[i][j], num_chunks + j + 1, i);
@@ -283,7 +282,7 @@ namespace nil {
                             }
                             allocate(c_2[i], 3*num_chunks + 18, 3*i + 2);
                             allocate(c_4[i], 3*num_chunks + 19, 3*i + 2);
-                            
+
                             allocate(exp_is_even[i], 3*num_chunks + 20, 3*i + 2);
                             allocate(hi_last[i], 3*num_chunks + 21, 3*i + 2);
                         }
@@ -293,15 +292,15 @@ namespace nil {
                         }
 
                         for(std::size_t i = 0; i < max_rows; i++){
-                            lookup(std::vector<TYPE>({header_selector[i]*base[i][0], header_selector[i]*base[i][1], 
+                            lookup(std::vector<TYPE>({header_selector[i]*base[i][0], header_selector[i]*base[i][1],
                                     header_selector[i]*exponent[i][0], header_selector[i]*exponent[i][1] + (1 - header_selector[i]),
                                     header_selector[i]*exponentiation[i][0],header_selector[i]*exponentiation[i][1]}), "exp_table");
-                            
+
                             constrain(header_selector[i]*(1-header_selector[i]));
                             constrain(is_last[i]*(1-is_last[i]));
                         }
-                        
-                        for(std::size_t i = 0; i < num_proving_blocks; i++){ 
+
+                        for(std::size_t i = 0; i < num_proving_blocks; i++){
                             copy_constrain(base[3*i][0], base[3*i+1][0]);
                             copy_constrain(base[3*i][0], base[3*i+2][0]);
 
@@ -336,8 +335,8 @@ namespace nil {
                             constrain((1-exp_is_even[i])*(chunk_sum_128<TYPE>(b_chunks[i], 1) - base[3*i][0])); // if exp is odd b[8:15] = base_hi
 
                             // if is_last ==> exp_is_even and exp_lo = 2, exp_lo = 0, and a = b = base
-                            // One constraint is enough. The other can be decuded from exp_is_even => a=b constraint 
-                            constrain(is_last[3*i]*(exponent[3*i][1]- 2)); 
+                            // One constraint is enough. The other can be decuded from exp_is_even => a=b constraint
+                            constrain(is_last[3*i]*(exponent[3*i][1]- 2));
                             constrain(is_last[3*i]*(exponent[3*i][0]));
                             constrain(is_last[3*i]*(1 - exp_is_even[i]));
                             constrain(is_last[3*i]*(chunk_sum_128<TYPE>(b_chunks[i], 1) - base[3*i][0]));
@@ -348,7 +347,7 @@ namespace nil {
                                constrain((1 - exp_is_even[i-1])*(exponent[3*i - 1][0] - exponent[3*i][0]));   // that is prev_exp_hi = cur_exp_hi
                                constrain((1 - exp_is_even[i-1])*(exponent[3*i - 1][1] - exponent[3*i][1] - 1)); // prev_exp_lo = cur_exp_lo + 1
                             //     if prev_exp is even prev_exp = cur_exp * 2 except is_last = 1
-                                constrain((1-is_last[3*i-1])*exp_is_even[i-1]*(exponent[3*i - 1][0] - 2 * exponent[3*i][0] - hi_last[i-1]));    //  that is prev_exp_hi = 2* cur_exp_hi + prev_exp_hi & 2 
+                                constrain((1-is_last[3*i-1])*exp_is_even[i-1]*(exponent[3*i - 1][0] - 2 * exponent[3*i][0] - hi_last[i-1]));    //  that is prev_exp_hi = 2* cur_exp_hi + prev_exp_hi & 2
                                 constrain((1-is_last[3*i-1])*exp_is_even[i-1]*(exponent[3*i - 1][1] - 2 * exponent[3*i][1] + two128*hi_last[i-1]));   //  prev_exp_lo = cur_exp_lo * 2 - (prev_exp_hi & 2) << 128
                             }
 
@@ -381,7 +380,7 @@ namespace nil {
                             constrain(second_carryless + c_1_64 + c_2[i] * two_64 - c_3_64 * two128 - c_4[i] * two192);
                             constrain(c_2[i] * (c_2[i] - 1));
                             constrain(c_4[i] * (c_4[i] - 1) * (c_4[i] - 2) * (c_4[i] - 3));
-                        }                        
+                        }
 
                     };
                 };
