@@ -92,7 +92,7 @@ set(COMMON_TEST_FILES
     "proxy"
     #"mock/mocked_components"
     "component_batch"
-    "bbf/bbf_wrapper"
+    "bbf/tester"
     "bbf/opcode_poc"
     )
 
