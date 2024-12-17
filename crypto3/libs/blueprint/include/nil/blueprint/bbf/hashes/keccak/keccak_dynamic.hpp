@@ -30,6 +30,14 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+            template<typename FieldType>
+            struct keccak_dynamic_raw_input {
+                using TYPE = typename FieldType::value_type;
+
+                TYPE rlc_challenge;
+                std::vector<std::tuple<std::vector<std::uint8_t>, std::pair<TYPE, TYPE>>> input;
+            };
+
             // Component for keccak table
             template<typename FieldType, GenerationStage stage>
             class keccak_dynamic : public generic_component<FieldType, stage> {
@@ -42,6 +50,8 @@ namespace nil {
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
+                using typename generic_component<FieldType,stage>::table_params;
+                using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, keccak_dynamic_raw_input<FieldType>,std::tuple<>>::type;
                 using integral_type = typename FieldType::integral_type;
                 using value_type = typename FieldType::value_type;
                 using KECCAK_ROUND = typename bbf::keccak_round<FieldType, stage>;
@@ -51,7 +61,7 @@ namespace nil {
                     std::vector<std::tuple<std::vector<std::uint8_t>, std::pair<value_type, value_type>>> input;
                 };
 
-                const std::size_t block_rows_amount = 6020;
+                const std::size_t block_rows_amount = 6247;
                 const std::size_t state_rows_amount = 5;
                 const std::size_t chunks_rows_amount = 34;
                 const std::size_t unsparser_rows_amount = 4;
@@ -170,6 +180,27 @@ namespace nil {
                     chunks_map c[34];
                     unsparser_map u[4];
                 };
+
+                static table_params get_minimal_requirements(std::size_t max_blocks) {
+                    constexpr std::size_t witness = 15;
+                    constexpr std::size_t public_inputs = 1;
+                    constexpr std::size_t constants = 1;
+                    std::size_t rows = 6247 * max_blocks;
+                    return {witness, public_inputs, constants, rows};
+                }
+
+                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
+                    
+                    input_type input;
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        input.input = raw_input.input;
+                        input.rlc_challenge = raw_input.rlc_challenge;
+                    }
+
+                    context_object.allocate(input.rlc_challenge, 0, 0, column_type::public_input);
+
+                    return std::make_tuple(input);
+                }
 
                 keccak_dynamic(context_type &context_object, input_type instance_input,
                                std::size_t max_blocks, bool make_links = true)
