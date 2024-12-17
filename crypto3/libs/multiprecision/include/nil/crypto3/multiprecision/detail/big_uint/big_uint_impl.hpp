@@ -361,14 +361,20 @@ namespace nil::crypto3::multiprecision {
 
         template<std::size_t Bits2>
         constexpr int compare(const big_uint<Bits2>& b) const noexcept {
-            std::size_t as = used_limbs();
-            std::size_t bs = b.used_limbs();
-            if (as != bs) {
-                return as > bs ? 1 : -1;
-            }
             auto pa = limbs();
             auto pb = b.limbs();
-            for (auto i = static_cast<std::ptrdiff_t>(as) - 1; i >= 0; --i) {
+            constexpr std::size_t m = std::min(static_limb_count, big_uint<Bits2>::static_limb_count);
+            for (auto i = static_cast<std::ptrdiff_t>(limb_count()) - 1; i >= b.limb_count(); --i) {
+                if (pa[i]) {
+                    return 1;
+                }
+            }
+            for (auto i = static_cast<std::ptrdiff_t>(b.limb_count()) - 1; i >= limb_count(); --i) {
+                if (pb[i]) {
+                    return -1;
+                }
+            }
+            for (auto i = static_cast<std::ptrdiff_t>(m) - 1; i >= 0; --i) {
                 if (pa[i] != pb[i]) {
                     return pa[i] > pb[i] ? 1 : -1;
                 }
@@ -1096,7 +1102,7 @@ namespace nil::crypto3::multiprecision {
 
         // Friends
 
-        template<std::size_t>
+        template<std::size_t Bits1>
         friend class big_uint;
 
         template<std::size_t Bits1, std::size_t Bits2, std::size_t Bits3>
