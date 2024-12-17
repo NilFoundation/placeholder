@@ -37,7 +37,7 @@ namespace nil::crypto3::multiprecision {
                               int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
         if (e < 0) {
-            return pow(inverse_extended_euclidean_algorithm(b), detail::unsigned_abs(e));
+            return pow(inverse(b), detail::unsigned_abs(e));
         }
         return pow(b, static_cast<std::make_unsigned_t<T>>(e));
     }

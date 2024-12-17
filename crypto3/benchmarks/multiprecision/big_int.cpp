@@ -297,8 +297,8 @@ BOOST_AUTO_TEST_CASE(inverse_extended_euclidean_algorithm_test) {
     auto x_modular = x_mod_ct_odd;
 
     nil::crypto3::bench::run_benchmark<>(
-        "[odd modulus][compile time] inverse_extended_euclidean_algorithm_test", [&]() {
-            x_modular = inverse_extended_euclidean_algorithm(x_modular);
+        "[odd modulus][compile time] inverse with extended euclidean algorithm", [&]() {
+            x_modular = inverse(x_modular);
             ++x_modular;
             return x_modular;
         });

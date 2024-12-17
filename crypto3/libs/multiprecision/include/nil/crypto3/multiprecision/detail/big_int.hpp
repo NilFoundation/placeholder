@@ -1,13 +1,12 @@
 #pragma once
 
+#include <boost/functional/hash.hpp>
 #include <climits>
 #include <cmath>
 #include <cstring>
 #include <ostream>
 #include <string>
 #include <type_traits>
-
-#include <boost/functional/hash.hpp>
 
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
@@ -41,9 +40,7 @@ namespace nil::crypto3::multiprecision {
         constexpr big_int(const big_uint<Bits2>& b) : m_abs(b) {}
 
         template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_int(T val) : m_abs(abs(val)) {
-            // for ADL
-            using std::abs;
+        constexpr big_int(T val) : m_abs(unsigned_abs(val)) {
             if (val < 0) {
                 negate();
             }
@@ -53,7 +50,7 @@ namespace nil::crypto3::multiprecision {
         constexpr big_int(T val) : m_abs(val) {}
 
         template<std::size_t Bits2>
-        constexpr big_int(const big_int<Bits2>& other) noexcept
+        constexpr big_int(const big_int<Bits2>& other)
             : m_negative(other.negative()), m_abs(other.abs()) {}
 
         // Assignment
@@ -74,8 +71,8 @@ namespace nil::crypto3::multiprecision {
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         constexpr big_int& operator=(T val) {
-            using std::abs;
-            m_abs = abs(val);
+            m_negative = false;
+            m_abs = unsigned_abs(val);
             if (val < 0) {
                 negate();
             }
@@ -90,8 +87,8 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        constexpr std::string str() const {
-            return (negative() ? std::string("-") : std::string("")) + m_abs.str();
+        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::dec) const {
+            return (negative() ? std::string("-") : std::string("")) + m_abs.str(flags);
         }
 
         template<std::size_t Bits2, std::enable_if_t<(Bits2 < Bits), int> = 0>
@@ -143,78 +140,137 @@ namespace nil::crypto3::multiprecision {
             return this->m_abs.compare(other.m_abs);
         }
 
+#define NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(op)                                         \
+    friend constexpr bool operator op(const big_int& a, const big_int& b) noexcept { \
+        return a.compare(b) op 0;                                                    \
+    }
+
+        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<)
+        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<=)
+        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(>)
+        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(>=)
+        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(==)
+        NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(!=)
+
+#undef NIL_CO3_MP_BIG_INT_IMPL_OPERATOR
+
         // Arithmetic operations
 
-        // Addition/subtraction
-
-        static constexpr big_int<Bits + 1> add(const big_int& a, const big_int& b) {
-            if (!a.negative() && !b.negative()) {
-                return big_uint<Bits + 1>(a.m_abs) + b.m_abs;
-            }
-            if (!a.negative() && b.negative()) {
-                if (a.m_abs >= b.m_abs) {
-                    return a.m_abs - b.m_abs;
-                }
-                return -big_int<Bits + 1>(b.m_abs - a.m_abs);
-            }
-            if (a.negative() && !b.negative()) {
-                return add(b, a);
-            }
-            return -big_int<Bits + 1>(big_uint<Bits + 1>(a.m_abs) + b.m_abs);
+        friend constexpr big_int operator+(big_int a, const big_int& b) noexcept {
+            a += b;
+            return a;
         }
 
-        static constexpr big_int<Bits + 1> subtract(const big_int& a, const big_int& b) {
-            return add(a, -b);
+        friend constexpr auto& operator+=(big_int& a, const big_int& b) noexcept {
+            if (a.negative() == b.negative()) {
+                a.m_abs += b.m_abs;
+                return a;
+            }
+            if (a.m_abs >= b.m_abs) {
+                a.m_abs -= b.m_abs;
+            } else {
+                auto a_m_abs = a.m_abs;
+                a.m_abs = b.m_abs;
+                a.m_abs -= a_m_abs;
+                a.negate();
+            }
+            return a;
         }
 
-        NIL_CO3_MP_FORCEINLINE constexpr void increment() {
+        constexpr auto& operator++() {
             if (negative()) {
                 --m_abs;
                 normalize();
-                return;
+                return *this;
             }
             ++m_abs;
+            return *this;
         }
 
-        NIL_CO3_MP_FORCEINLINE constexpr void decrement() {
+        friend constexpr auto operator++(big_int& a, int) {
+            auto copy = a;
+            ++a;
+            return copy;
+        }
+
+        friend constexpr auto operator+(const big_int& a) noexcept { return a; }
+
+        friend constexpr auto operator-(const big_int& a, const big_int& b) { return a + (-b); }
+
+        friend constexpr auto& operator-=(big_int& a, const big_int& b) {
+            a = a - b;
+            return a;
+        }
+
+        constexpr auto& operator--() {
             if (negative()) {
                 ++m_abs;
-                return;
+                return *this;
             }
             if (is_zero(m_abs)) {
                 m_negative = true;
                 ++m_abs;
-                return;
+                return *this;
             }
             --m_abs;
+            return *this;
         }
 
-        // Modulus
-
-        static constexpr big_int modulus(const big_int& x, const big_int& y) {
-            return static_cast<big_int>(x - static_cast<big_int>((x / y) * y));
+        friend constexpr auto operator--(big_int& a, int) {
+            auto copy = a;
+            --a;
+            return copy;
         }
 
-        // Division
+        friend constexpr auto operator-(big_int a) noexcept {
+            a.negate();
+            return a;
+        }
 
-        static constexpr big_int divide(const big_int& x, const big_int& y) {
-            big_int result = x.m_abs / y.m_abs;
-            if (x.negative() != y.negative()) {
+        friend constexpr auto operator*(const big_int& a, const big_int& b) {
+            big_int result = a.m_abs * b.m_abs;
+            if (a.sign() * b.sign() < 0) {
+                result = -result;
+            }
+            return result;
+        }
+
+        friend constexpr auto& operator*=(big_int& a, const big_int& b) {
+            a = a * b;
+            return a;
+        }
+
+        friend constexpr auto operator/(const big_int& a, const big_int& b) {
+            big_int result = a.m_abs / b.m_abs;
+            if (a.negative() != b.negative()) {
                 result.negate();
             }
             return result;
         }
 
-        // Multiplication
+        friend constexpr auto& operator/=(big_int& a, const big_int& b) {
+            a = a / b;
+            return a;
+        }
 
-        template<std::size_t Bits2>
-        static constexpr big_int<Bits + Bits2> multiply(const big_int& a,
-                                                        const big_int<Bits2>& b) noexcept {
-            big_int<Bits + Bits2> result = a.m_abs * b.m_abs;
-            if (a.sign() * b.sign() < 0) {
-                result = -result;
+        friend constexpr auto operator%(const big_int& a, const big_int& b) {
+            big_int result = a.m_abs % b.m_abs;
+            if (a.negative() != b.negative()) {
+                result.negate();
             }
             return result;
+        }
+
+        friend constexpr auto& operator%=(big_int& a, const big_int& b) {
+            a = a % b;
+            return a;
+        }
+
+        // IO
+
+        friend std::ostream& operator<<(std::ostream& os, const big_int& value) {
+            os << value.str(os.flags());
+            return os;
         }
 
         // Misc ops
@@ -244,140 +300,15 @@ namespace nil::crypto3::multiprecision {
 
         bool m_negative = false;
         big_uint<Bits> m_abs;
+
+        // Friends
+
+        template<std::size_t Bits1, std::size_t Bits2>
+        friend constexpr void divide_qr(const big_int<Bits1>& a, const big_int<Bits2>& b,
+                                        big_int<Bits1>& q, big_int<Bits1>& r);
     };
 
-    namespace detail {
-        template<typename T>
-        constexpr bool is_big_int_v = false;
-
-        template<std::size_t Bits>
-        constexpr bool is_big_int_v<big_int<Bits>> = true;
-
-        template<typename T>
-        constexpr bool is_signed_integral_v = is_integral_v<T> || is_big_int_v<T>;
-
-        template<typename T, std::enable_if_t<is_big_int_v<T>, int> = 0>
-        constexpr std::size_t get_bits() {
-            return T::Bits;
-        }
-    }  // namespace detail
-
-#define NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE                                                     \
-    template<                                                                                    \
-        typename T1, typename T2,                                                                \
-        std::enable_if_t<detail::is_signed_integral_v<T1> && detail::is_signed_integral_v<T2> && \
-                             (detail::is_big_int_v<T1> || detail::is_big_int_v<T2>),             \
-                         int> = 0,                                                               \
-        typename largest_t = big_int<std::max(detail::get_bits<T1>(), detail::get_bits<T2>())>>
-
-#define NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE                                           \
-    template<typename big_int_t, typename T,                                                      \
-             std::enable_if_t<detail::is_big_int_v<big_int_t> && detail::is_signed_integral_v<T>, \
-                              int> = 0>
-
-#define NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE \
-    template<typename big_int_t, std::enable_if_t<detail::is_big_int_v<big_int_t>, int> = 0>
-
-    // Comparison
-
-#define NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(op)                        \
-    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE                            \
-    constexpr bool operator op(const T1& a, const T2& b) noexcept { \
-        largest_t ap = a;                                           \
-        largest_t bp = b;                                           \
-        return ap.compare(bp) op 0;                                 \
-    }
-
-    NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<)
-    NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(<=)
-    NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(>)
-    NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(>=)
-    NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(==)
-    NIL_CO3_MP_BIG_INT_IMPL_OPERATOR(!=)
-
-#undef NIL_CO3_MP_BIG_INT_IMPL_OPERATOR
-
     // Arithmetic operations
-
-    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    constexpr auto operator+(const T1& a, const T2& b) noexcept {
-        big_int<largest_t::Bits + 1> result;
-        result = decltype(result)::add(a, b);
-        return result;
-    }
-    NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator+=(big_int_t& a, const T& b) noexcept {
-        a = a + b;
-        return a;
-    }
-    NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    constexpr auto& operator++(big_int_t& a) {
-        a.increment();
-        return a;
-    }
-    NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    constexpr auto operator++(big_int_t& a, int) {
-        auto copy = a;
-        ++a;
-        return copy;
-    }
-    NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    constexpr auto operator+(const big_int_t& a) noexcept { return a; }
-
-    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    constexpr auto operator-(const T1& a, const T2& b) { return T1::subtract(a, b); }
-    NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator-=(big_int_t& a, const T& b) {
-        a = a - b;
-        return a;
-    }
-    NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    constexpr auto& operator--(big_int_t& a) {
-        a.decrement();
-        return a;
-    }
-    NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    constexpr auto operator--(big_int_t& a, int) {
-        auto copy = a;
-        --a;
-        return copy;
-    }
-
-    NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    constexpr big_int_t operator-(big_int_t a) noexcept {
-        a.negate();
-        return a;
-    }
-
-    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    constexpr auto operator*(const T1& a, const T2& b) noexcept {
-        return std::decay_t<decltype(a)>::multiply(a, b);
-    }
-    NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator*=(big_int_t& a, const T& b) noexcept {
-        a = a * b;
-        return a;
-    }
-
-    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    constexpr auto operator/(const T1& a, const T2& b) noexcept {
-        return largest_t::divide(static_cast<largest_t>(a), static_cast<largest_t>(b));
-    }
-    NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator/=(big_int_t& a, const T& b) noexcept {
-        a = a / b;
-        return a;
-    }
-
-    NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-    constexpr auto operator%(const T1& a, const T2& b) noexcept {
-        return largest_t::modulus(static_cast<largest_t>(a), static_cast<largest_t>(b));
-    }
-    NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-    constexpr auto& operator%=(big_int_t& a, const T& b) {
-        a = a % b;
-        return a;
-    }
 
     template<std::size_t Bits>
     constexpr std::size_t hash_value(const big_int<Bits>& val) noexcept {
@@ -387,16 +318,29 @@ namespace nil::crypto3::multiprecision {
         return result;
     }
 
-    // IO
+    // Misc ops
 
-    NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-    std::ostream& operator<<(std::ostream& os, const big_int_t& value) {
-        os << value.str();
-        return os;
+    template<std::size_t Bits>
+    constexpr bool is_zero(const big_int<Bits>& a) {
+        return a.is_zero();
     }
 
-#undef NIL_CO3_MP_BIG_INT_UNARY_TEMPLATE
-#undef NIL_CO3_MP_BIG_INT_INTEGRAL_ASSIGNMENT_TEMPLATE
-#undef NIL_CO3_MP_BIG_INT_INTEGRAL_TEMPLATE
-
+    template<std::size_t Bits1, std::size_t Bits2>
+    constexpr void divide_qr(const big_int<Bits1>& a, const big_int<Bits2>& b, big_int<Bits1>& q,
+                             big_int<Bits1>& r) {
+        detail::divide(&q.m_abs, a.m_abs, b.m_abs, r.m_abs);
+        q.m_negative = false;
+        r.m_negative = false;
+        if (a.negative() != b.negative()) {
+            q.negate();
+            r.negate();
+        }
+    }
 }  // namespace nil::crypto3::multiprecision
+
+template<std::size_t Bits>
+struct std::hash<nil::crypto3::multiprecision::big_int<Bits>> {
+    std::size_t operator()(const nil::crypto3::multiprecision::big_int<Bits>& a) const noexcept {
+        return boost::hash<nil::crypto3::multiprecision::big_int<Bits>>{}(a);
+    }
+};

@@ -36,6 +36,7 @@ namespace nil::crypto3::multiprecision {
             std::size_t as = a.used_limbs();
             std::size_t bs = b.used_limbs();
             auto [m, x] = std::minmax(as, bs);
+
             if (x == 1) {
                 double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
                                      static_cast<double_limb_type>(*b.limbs());
