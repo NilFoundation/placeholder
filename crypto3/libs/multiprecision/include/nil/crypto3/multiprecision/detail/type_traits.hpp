@@ -20,7 +20,7 @@ namespace nil::crypto3::multiprecision::detail {
     template<typename T, std::enable_if_t<std::is_signed_v<T>, int> = 0>
     constexpr std::make_unsigned_t<T> unsigned_or_throw(const T& a) {
         if (a < 0) {
-            throw std::invalid_argument("nonnegative value expected");
+            throw std::range_error("nonnegative value expected");
         }
         return static_cast<std::make_unsigned_t<T>>(a);
     }

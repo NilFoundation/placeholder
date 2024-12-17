@@ -176,12 +176,12 @@ namespace nil::crypto3::multiprecision {
     template<typename T,                                                                          \
              std::enable_if_t<std::is_same_v<big_mod_impl, T> || detail::is_integral_v<T>, int> = \
                  0>                                                                               \
-    constexpr auto operator OP_(const T& b) const noexcept {                                      \
+    friend constexpr auto operator OP_(const big_mod_impl& a, const T& b) noexcept {              \
         if constexpr (detail::is_big_mod_v<T>) {                                                  \
-            NIL_CO3_MP_ASSERT(ops().compare_eq(b.ops()));                                         \
+            NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));                                       \
         }                                                                                         \
-        big_mod_impl result = *this;                                                              \
-        ops().METHOD_(result.raw_base(), convert_to_raw_base(b, ops()));                          \
+        big_mod_impl result = a;                                                                  \
+        a.ops().METHOD_(result.raw_base(), convert_to_raw_base(b, a.ops()));                      \
         return result;                                                                            \
     }                                                                                             \
                                                                                                   \
@@ -196,12 +196,12 @@ namespace nil::crypto3::multiprecision {
     template<typename T,                                                                          \
              std::enable_if_t<std::is_same_v<big_mod_impl, T> || detail::is_integral_v<T>, int> = \
                  0>                                                                               \
-    constexpr auto& operator OP_ASSIGN_(const T & b) noexcept {                                   \
+    friend constexpr auto& operator OP_ASSIGN_(big_mod_impl & a, const T & b) noexcept {          \
         if constexpr (detail::is_big_mod_v<T>) {                                                  \
-            NIL_CO3_MP_ASSERT(ops().compare_eq(b.ops()));                                         \
+            NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));                                       \
         }                                                                                         \
-        ops().METHOD_(raw_base(), convert_to_raw_base(b, ops()));                                 \
-        return *this;                                                                             \
+        a.ops().METHOD_(a.raw_base(), convert_to_raw_base(b, a.ops()));                           \
+        return a;                                                                                 \
     }
 
         NIL_CO3_MP_BIG_MOD_OPERATOR_IMPL(+, +=, add)
