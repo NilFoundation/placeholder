@@ -97,14 +97,14 @@ namespace nil::crypto3::multiprecision::detail {
         constexpr void add(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
             NIL_CO3_MP_ASSERT(result < mod() && y < mod());
 
-            result += y;
-            // If we overflow and set the carry, we need to subtract the modulus, which is
+            bool carry = add_assign_with_carry(result, y);
+
+            // If we overflow, we need to subtract the modulus, which is
             // the same as adding 2 ^ Bits - Modulus to the remaining part of the number.
             // After this we know for sure that the result < Modulus, do not waste time on
             // checking again.
-            if (result.has_carry()) {
+            if (carry) {
                 result += mod_compliment();
-                result.set_carry(false);
             } else if (result >= mod()) {
                 result -= mod();
             }

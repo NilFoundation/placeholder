@@ -1,8 +1,10 @@
 #define BOOST_TEST_MODULE big_int_test
 
 #include <boost/test/unit_test.hpp>
+
 #include <cstdint>
 #include <ios>
+#include <stdexcept>
 #include <utility>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
@@ -79,12 +81,12 @@ BOOST_AUTO_TEST_CASE(ops) {
 #define TEST_BINARY_OP(op) \
     do {                   \
         b = 32u;           \
-        a = 4;             \
+        a = 30;            \
         b = a op a;        \
-        b = 2 op a;        \
-        b = a op 2;        \
-        b = 2u op a;       \
-        b = a op 2u;       \
+        b = 200 op a;      \
+        b = a op 20;       \
+        b = 200u op a;     \
+        b = a op 20u;      \
         b = 32u;           \
         b op## = a;        \
         b op## = 2;        \
@@ -99,7 +101,7 @@ BOOST_AUTO_TEST_CASE(ops) {
     TEST_BINARY_OP(-);
     --b;
     b--;
-    b = -b;
+    // b = -b;
 
     TEST_BINARY_OP(%);
     TEST_BINARY_OP(/);
@@ -119,12 +121,12 @@ BOOST_AUTO_TEST_SUITE(addition)
 
 BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x2_big_uint60 + 0x3_big_uint60, 0x5_big_uint60); }
 
-BOOST_AUTO_TEST_CASE(wraps) {
-    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint32 + 0x2_big_uint32, 0x00000001_big_uint32);
+BOOST_AUTO_TEST_CASE(overflow_throws) {
+    BOOST_CHECK_THROW(0xFFFFFFFF_big_uint32 + 0x2_big_uint32, std::overflow_error);
 }
 
-BOOST_AUTO_TEST_CASE(wraps_rev) {
-    BOOST_CHECK_EQUAL(0x2_big_uint32 + 0xFFFFFFFF_big_uint32, 0x00000001_big_uint32);
+BOOST_AUTO_TEST_CASE(overflow_throws_rev) {
+    BOOST_CHECK_THROW(0x2_big_uint32 + 0xFFFFFFFF_big_uint32, std::overflow_error);
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
@@ -141,12 +143,16 @@ BOOST_AUTO_TEST_SUITE(multiplication)
 
 BOOST_AUTO_TEST_CASE(simple) { BOOST_CHECK_EQUAL(0x2_big_uint60 * 0x3_big_uint60, 0x6_big_uint60); }
 
-BOOST_AUTO_TEST_CASE(wraps) {
-    BOOST_CHECK_EQUAL(0xFFFFFFFF_big_uint32 * 0x2_big_uint32, 0xFFFFFFFE_big_uint32);
+BOOST_AUTO_TEST_CASE(multilimb) {
+    BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_uint37 * 0x2_big_uint37, 0x15FFFFFFFE_big_uint37);
 }
 
-BOOST_AUTO_TEST_CASE(multilimb) {
-    BOOST_CHECK_EQUAL(0xAFFFFFFFF_big_uint36 * 0x2_big_uint36, 0x5FFFFFFFE_big_uint36);
+BOOST_AUTO_TEST_CASE(overflow_throws) {
+    BOOST_CHECK_THROW(0xFFFFFFFF_big_uint32 * 0x2_big_uint32, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(multilimb_overflow_throws) {
+    BOOST_CHECK_THROW(0xAFFFFFFFF_big_uint36 * 0x2_big_uint36, std::overflow_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

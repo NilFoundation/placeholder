@@ -24,6 +24,7 @@ namespace nil::crypto3::multiprecision::detail {
 
     static constexpr std::size_t limb_bits = sizeof(limb_type) * CHAR_BIT;
     static constexpr limb_type max_limb_value = ~static_cast<limb_type>(0u);
+    static constexpr double_limb_type max_double_limb_value = ~static_cast<double_limb_type>(0u);
 
     // Given a value represented in 'double_limb_type', decomposes it into
     // two 'limb_type' variables, based on high order bits and low order bits.
