@@ -207,7 +207,7 @@ namespace nil {
                 BBF bbf_instance(ct, instance_input, component_static_info_args...);
 
 
-                ct.optimize_gates();
+//                ct.optimize_gates();
 
                 // compatibility layer: constraint list => gates & selectors
                 std::unordered_map<row_selector<>, std::vector<TYPE>> constraint_list =
