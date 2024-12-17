@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_SUITE(runtime_odd_tests)
 // This directly calls montgomery mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
     auto raw_base = x_mod_rt_odd.raw_base();
-    auto mod_ops = x_mod_rt_odd.ops();
+    const auto &mod_ops = x_mod_rt_odd.ops();
 
     nil::crypto3::bench::run_benchmark<>(
             "[odd modulus][runtime] montgomery mul (direct call)",
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_SUITE(compile_time_odd_tests)
 // This directly calls montgomery mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
     auto raw_base = x_mod_ct_odd.raw_base();
-    auto mod_ops = x_mod_ct_odd.ops();
+    const auto &mod_ops = x_mod_ct_odd.ops();
 
     nil::crypto3::bench::run_benchmark<>(
             "[odd modulus][compile time] montgomery mul (direct call)",
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_SUITE(runtime_even_tests)
 // This directly calls barrett mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
     auto raw_base = x_mod_rt_even.raw_base();
-    auto mod_ops = x_mod_rt_even.ops();
+    const auto &mod_ops = x_mod_rt_even.ops();
 
     nil::crypto3::bench::run_benchmark<>(
             "[even modulus][runtime] barrett mul (direct call)",
@@ -235,7 +235,7 @@ BOOST_AUTO_TEST_SUITE(compile_time_even_tests)
 // This directly calls mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
     auto raw_base = x_mod_ct_even.raw_base();
-    auto mod_ops = x_mod_ct_even.ops();
+    const auto &mod_ops = x_mod_ct_even.ops();
 
     nil::crypto3::bench::run_benchmark<>(
             "[even modulus][compile time] barrett mul (direct call)",
