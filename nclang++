@@ -239,7 +239,6 @@ if [[ "${#positionalArgs[@]}" -gt 0 ]]; then
     extraAfter+=(-- "${positionalArgs[@]}")
 fi
 
-#NIX_DEBUG=1
 # Optionally print debug info.
 if (( "${NIX_DEBUG:-0}" >= 1 )); then
     # Old bash workaround, see ld-wrapper for explanation.
