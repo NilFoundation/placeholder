@@ -14,20 +14,19 @@
 #include <cstddef>
 #include <stdexcept>
 
+#include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
         // a^(-1) mod p
         // http://www-math.ucdenver.edu/~wcherowi/courses/m5410/exeucalg.html
         template<std::size_t Bits>
-        constexpr big_int<Bits> extended_euclidean_algorithm(const big_int<Bits>& num1,
-                                                             const big_int<Bits>& num2,
+        constexpr big_int<Bits> extended_euclidean_algorithm(big_int<Bits> num1, big_int<Bits> num2,
                                                              big_int<Bits>& bezout_x,
                                                              big_int<Bits>& bezout_y) {
-            big_int<Bits> x, y, tmp_num1 = num1, tmp_num2 = num2;
+            big_int<Bits> x, y;
             y = 1u;
             x = 0u;
 
@@ -35,29 +34,24 @@ namespace nil::crypto3::multiprecision {
             bezout_y = 0u;
 
             // Extended Euclidean Algorithm
-            while (!tmp_num2.is_zero()) {
-                big_int<Bits> quotient = tmp_num1;
-                big_int<Bits> remainder = tmp_num1;
-                big_int<Bits> placeholder;
+            while (!num2.is_zero()) {
+                big_int<Bits> quotient;
+                big_int<Bits> remainder;
 
-                quotient /= tmp_num2;
-                remainder %= tmp_num2;
+                divide_qr(num1, num2, quotient, remainder);
 
-                tmp_num1 = tmp_num2;
-                tmp_num2 = remainder;
+                num1 = num2;
+                num2 = remainder;
 
                 big_int<Bits> temp_x = x, temp_y = y;
-                placeholder = quotient * x;
-                placeholder = bezout_x - placeholder;
-                x = placeholder;
+                x = bezout_x - quotient * x;
                 bezout_x = temp_x;
 
-                placeholder = quotient * y;
-                placeholder = bezout_y - placeholder;
-                y = placeholder;
+                y = bezout_y - quotient * y;
                 bezout_y = temp_y;
             }
-            return tmp_num1;
+
+            return num1;
         }
     }  // namespace detail
 
@@ -70,8 +64,7 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<std::size_t Bits>
-    constexpr big_uint<Bits> inverse_extended_euclidean_algorithm(const big_uint<Bits>& a,
-                                                                  const big_uint<Bits>& m) {
+    constexpr big_uint<Bits> inverse_mod(const big_uint<Bits>& a, const big_uint<Bits>& m) {
         big_int<Bits> aa = a, mm = m, x, y, g;
         g = detail::extended_euclidean_algorithm(aa, mm, x, y);
         if (g != 1u) {
