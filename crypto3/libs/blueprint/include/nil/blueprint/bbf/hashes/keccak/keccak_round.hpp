@@ -41,6 +41,7 @@ namespace nil {
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
                 using integral_type = typename FieldType::integral_type;
+
                 struct input_type {
                     std::array<TYPE, 25> inner_state;
                     std::array<TYPE, 17> padded_message_chunk;
@@ -66,7 +67,7 @@ namespace nil {
                 const std::array<std::size_t, 25> rho_offsets = {0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44};
 
                 const std::size_t perm[25] = {1,  10, 7,  11, 17, 18, 3,  5,  16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2,  20, 14, 22, 9, 6,  1};
-                const integral_type sparse_3 = 0x6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB_cppui_modular256;
+                const integral_type sparse_3 = 0x6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB6DB_big_uint256;
                 const integral_type sparse_x80 = calculate_sparse(integral_type(0x8000000000000000));
                 const integral_type sparse_x7f = calculate_sparse(integral_type(0x8000000000000000 - 1));
 
@@ -122,17 +123,37 @@ namespace nil {
                     return result;
                 }
 
+                static table_params get_minimal_requirements(bool xor_with_mes) {
+                    constexpr std::size_t witness = 15;
+                    constexpr std::size_t public_inputs = 1;
+                    constexpr std::size_t constants = 1;
+                    std::size_t rows = (xor_with_mes) ? 291 : 257;
+                    return {witness, public_inputs, constants, rows};
+                }
 
-                // static nil::crypto3::zk::snark::plonk_table_description<FieldType>  get_table_description(
-                //     bool xor_with_mes = false,
-                //     bool last_round_call = false,
-                //     bool make_links = true
-                // ){
-                //     nil::crypto3::zk::snark::plonk_table_description<FieldType> desc(15, 1, 30, 21);
-                //     desc.usable_rows_amount = (xor_with_mes) ? 291 : 257;
+                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
+                    
+                    input_type input;
+                    if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                        for(std::size_t i = 0; i < 25; i++) {
+                            input.inner_state[i] = raw_input.inner_state[i];   
+                        }
+                        for(std::size_t i = 0; i < 17; i++) {
+                            input.padded_message_chunk[i] = raw_input.padded_message_chunk[i];
+                        }
+                        input.round_constant = raw_input.round_constant;
+                    }
 
-                //     return desc;
-                // }
+                    for(std::size_t i = 0; i < 25; i++) {
+                        context_object.allocate(input.inner_state[i], 0, i, column_type::public_input);
+                    }
+                    for(std::size_t i = 0; i < 17; i++) {
+                        context_object.allocate(input.padded_message_chunk[i], 0, 25 + i, column_type::public_input);
+                    }
+                    context_object.allocate(input.round_constant, 0, 42, column_type::public_input);
+
+                    return std::make_tuple(input);
+                }
 
                 keccak_round(context_type &context_object, input_type input,
                              bool xor_with_mes = false, bool last_round_call = false, bool make_links = true)
@@ -223,31 +244,6 @@ namespace nil {
                                     A0_normalized_chunks[index][j] = integral_normalized_chunks[j];
                                 }
                             }
-                            if(last_round_call){
-                                state[16] = input.inner_state[16];
-                                message[16] = input.padded_message_chunk[16];
-                                TYPE sum = state[16] + message[16] + TYPE(sparse_x80);
-                                integral_type integral_sum = integral_type(sum.data);
-                                std::vector<integral_type> integral_chunks;
-                                std::vector<integral_type> integral_normalized_chunks;
-                                integral_type mask = (integral_type(1) << normalize4_chunk_size) - 1;
-                                integral_type power = 1;
-                                integral_type integral_normalized_sum = 0;
-                                for (std::size_t j = 0; j < normalize4_num_chunks; ++j) {
-                                    integral_chunks.push_back(integral_sum & mask);
-                                    integral_sum >>= normalize4_chunk_size;
-                                    integral_normalized_chunks.push_back(normalize(integral_chunks.back()));
-                                    integral_normalized_sum += integral_normalized_chunks.back() * power;
-                                    power <<= normalize4_chunk_size;
-                                }
-                                A0[16] = TYPE(integral_normalized_sum);
-                                A0_sum[16] = sum;
-                                for (std::size_t j = 0; j < normalize4_num_chunks; ++j) {
-                                    last_round_chunks[j] = integral_chunks[j];
-                                    last_round_normalized_chunks[j] = integral_normalized_chunks[j];
-                                }
-                            }
-                            
                             for (int i = 0; i < 17; ++i) {
                                 A1[i] = A0[i];
                             }
@@ -654,22 +650,13 @@ namespace nil {
                             TYPE constraint_chunk = A0_sum[index];
                             TYPE constraint_normalized_chunk = A0[index];
                             for (std::size_t k = 0; k < normalize3_num_chunks; ++k) {
-                                constraint_chunk -= A0_chunks[index][k] * (integral_type(1) << (k * normalize3_chunk_size));
-                                constraint_normalized_chunk -= A0_normalized_chunks[index][k] * (integral_type(1) << (k * normalize3_chunk_size));
+                                constraint_chunk -=
+                                    A0_chunks[index][k] *
+                                    (integral_type(1) << (k * normalize3_chunk_size));
+                                constraint_normalized_chunk -=
+                                    A0_normalized_chunks[index][k] *
+                                    (integral_type(1) << (k * normalize3_chunk_size));
                                 lookup({A0_chunks[index][k], A0_normalized_chunks[index][k]}, "keccak_normalize3_table/full");
-                            }
-                            constrain(constraint_chunk);
-                            constrain(constraint_normalized_chunk);
-                        }
-                        if(last_round_call){
-                            copy_constrain(A0[16], A1[16]);
-                            constrain(A0_sum[16] - message[16] - state[16] - x80_const);
-                            TYPE constraint_chunk = A0_sum[16];
-                            TYPE constraint_normalized_chunk = A0[16];
-                            for (std::size_t k = 0; k < normalize4_num_chunks; ++k) {
-                                constraint_chunk -= last_round_chunks[k] * (integral_type(1) << (k * normalize4_chunk_size));
-                                constraint_normalized_chunk -= last_round_normalized_chunks[k] * (integral_type(1) << (k * normalize4_chunk_size));
-                                lookup({last_round_chunks[k], last_round_normalized_chunks[k]}, "keccak_normalize4_table/full");
                             }
                             constrain(constraint_chunk);
                             constrain(constraint_normalized_chunk);
@@ -701,10 +688,16 @@ namespace nil {
 
                         TYPE constraint_small_chunks = C_bound_smaller[index];
                         TYPE constraint_big_chunks = C_bound_bigger[index];
-                        for(std::size_t k = 0; k < rotate_num_chunks; k++){
-                            constraint_small_chunks -= C_rot_small_chunks[index][k] * (integral_type(1) << (k * rotate_chunk_size));
-                            constraint_big_chunks -= C_rot_big_chunks[index][k] * (integral_type(1) << (k * rotate_chunk_size));
-                            //TODO:: add range/sparse lookup constraints
+                        for (std::size_t k = 0; k < rotate_num_chunks; k++) {
+                            constraint_small_chunks -=
+                                C_rot_small_chunks[index][k] *
+                                (integral_type(1) << (k * rotate_chunk_size));
+                            constraint_big_chunks -= C_rot_big_chunks[index][k] *
+                                                     (integral_type(1) << (k * rotate_chunk_size));
+                            // lookup(C_rot_small_chunks[index][k],
+                            //        "keccak_pack_table/range_check_sparse");
+                            // lookup(C_rot_big_chunks[index][k],
+                                //    "keccak_pack_table/range_check_sparse");
                         }
                         constrain(constraint_small_chunks);
                         constrain(constraint_big_chunks);                       
@@ -739,11 +732,15 @@ namespace nil {
 
                         TYPE constraint_small_chunks = B_bound_smaller[index];
                         TYPE constraint_big_chunks = B_bound_bigger[index];
-                        for(std::size_t k = 0; k < rotate_num_chunks; k++){
-                            constraint_small_chunks -= B_small_chunks[index][k] * (integral_type(1) << (k * rotate_chunk_size));
-                            constraint_big_chunks -= B_big_chunks[index][k] * (integral_type(1) << (k * rotate_chunk_size));
-                            lookup(B_small_chunks[index][k], "keccak_pack_table/range_check_sparse");
-                            lookup(B_big_chunks[index][k], "keccak_pack_table/range_check_sparse");
+                        for (std::size_t k = 0; k < rotate_num_chunks; k++) {
+                            constraint_small_chunks -=
+                                B_small_chunks[index][k] *
+                                (integral_type(1) << (k * rotate_chunk_size));
+                            constraint_big_chunks -= B_big_chunks[index][k] *
+                                                     (integral_type(1) << (k * rotate_chunk_size));
+                            // lookup(B_small_chunks[index][k],
+                                //    "keccak_pack_table/range_check_sparse");
+                            // lookup(B_big_chunks[index][k], "keccak_pack_table/range_check_sparse");
                         }
                         constrain(constraint_small_chunks);
                         constrain(constraint_big_chunks);                       
@@ -774,9 +771,11 @@ namespace nil {
 
                         TYPE constraint_chunks = A3_sum[index];
                         TYPE constraint_chi_chunks = A3[index];
-                        for(std::size_t k = 0; k < chi_num_chunks; k++){
-                            constraint_chunks -= A3_chunks[index][k] * (integral_type(1) << (k * chi_chunk_size));
-                            constraint_chi_chunks -= A3_chi_chunks[index][k] * (integral_type(1) << (k * chi_chunk_size));
+                        for (std::size_t k = 0; k < chi_num_chunks; k++) {
+                            constraint_chunks -=
+                                A3_chunks[index][k] * (integral_type(1) << (k * chi_chunk_size));
+                            constraint_chi_chunks -= A3_chi_chunks[index][k] *
+                                                     (integral_type(1) << (k * chi_chunk_size));
                             lookup({A3_chunks[index][k], A3_chi_chunks[index][k]}, "keccak_chi_table/full");
                         }
                         constrain(constraint_chunks);
@@ -812,8 +811,8 @@ namespace nil {
                         for(std::size_t k = 0; k < rotate_num_chunks; k++){
                             constraint_small -= ROT_extra_small_chunks[index][k] * (integral_type(1) << (k * rotate_chunk_size));
                             constraint_big   -= ROT_extra_big_chunks[index][k] * (integral_type(1) << (k * rotate_chunk_size));
-                            lookup(ROT_extra_small_chunks[index][k], "keccak_pack_table/range_check_sparse");
-                            lookup(ROT_extra_big_chunks[index][k], "keccak_pack_table/range_check_sparse");
+                            // lookup(ROT_extra_small_chunks[index][k], "keccak_pack_table/range_check_sparse");
+                            // lookup(ROT_extra_big_chunks[index][k], "keccak_pack_table/range_check_sparse");
                         }
                         constrain(constraint_small);
                         constrain(constraint_big);

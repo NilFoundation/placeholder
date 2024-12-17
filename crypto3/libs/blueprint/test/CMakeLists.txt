@@ -92,7 +92,7 @@ set(COMMON_TEST_FILES
     "proxy"
     #"mock/mocked_components"
     "component_batch"
-    "bbf/bbf_wrapper"
+    "bbf/tester"
     "bbf/opcode_poc"
     )
 
@@ -132,6 +132,7 @@ set(PLONK_TESTS_FILES
     "hashes/plonk/sha512_process"
     "hashes/plonk/decomposition"
     "bbf/hashes/keccak/keccak_round"
+    "bbf/hashes/keccak/keccak_dynamic"
     #"hashes/plonk/detail/sha_table_generators_base4"
     #"hashes/plonk/detail/sha_table_generators_base7"
     #"verifiers/kimchi/base_field"

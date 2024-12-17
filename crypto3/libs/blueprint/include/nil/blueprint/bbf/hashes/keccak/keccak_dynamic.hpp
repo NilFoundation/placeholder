@@ -50,11 +50,8 @@ namespace nil {
 
               public:
                 using typename generic_component<FieldType, stage>::TYPE;
-                using typename generic_component<FieldType, stage>::table_params;
-                using raw_input_type =
-                    typename std::conditional<stage == GenerationStage::ASSIGNMENT,
-                                              keccak_dynamic_raw_input<FieldType>,
-                                              std::tuple<>>::type;
+                using typename generic_component<FieldType,stage>::table_params;
+                using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT, keccak_dynamic_raw_input<FieldType>,std::tuple<>>::type;
                 using integral_type = typename FieldType::integral_type;
                 using value_type = typename FieldType::value_type;
                 using KECCAK_ROUND = typename bbf::keccak_round<FieldType, stage>;
@@ -191,12 +188,11 @@ namespace nil {
                     constexpr std::size_t public_inputs = 1;
                     constexpr std::size_t constants = 1;
                     std::size_t rows = 6247 * max_blocks;
-                    rows = rows < 72000 ? 72000 : rows;
                     return {witness, public_inputs, constants, rows};
                 }
 
-                static std::tuple<input_type> form_input(context_type &context_object,
-                                                         raw_input_type raw_input) {
+                static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
+                    
                     input_type input;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         input.input = raw_input.input;
