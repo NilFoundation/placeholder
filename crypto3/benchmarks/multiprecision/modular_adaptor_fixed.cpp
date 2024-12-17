@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_SUITE(runtime_odd_tests)
 // This directly calls montgomery_mul from modular_functions_fixed.hpp.
 BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
     auto base_data = x_mod_rt_odd.backend().base_data();
-    auto mod_object = x_mod_rt_odd.backend().mod_data().get_mod_obj();
+    const auto &mod_object = x_mod_rt_odd.backend().mod_data().get_mod_obj();
 
     nil::crypto3::bench::run_benchmark<>(
             "[odd modulus][runtime] montgomery_mul (direct call)",
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_SUITE(compile_time_odd_tests)
 // This directly calls montgomery_mul from modular_functions_fixed.hpp.
 BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
     auto base_data = x_mod_ct_odd.backend().base_data();
-    auto mod_object = x_mod_ct_odd.backend().mod_data().get_mod_obj();
+    const auto &mod_object = x_mod_ct_odd.backend().mod_data().get_mod_obj();
 
     nil::crypto3::bench::run_benchmark<>(
             "[odd modulus][compile time] montgomery_mul (direct call)",
@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_SUITE(runtime_even_tests)
 // This directly calls regular_mul from modular_functions_fixed.hpp.
 BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
     auto base_data = x_mod_rt_even.backend().base_data();
-    auto mod_object = x_mod_rt_even.backend().mod_data().get_mod_obj();
+    const auto &mod_object = x_mod_rt_even.backend().mod_data().get_mod_obj();
 
     nil::crypto3::bench::run_benchmark<>(
             "[even modulus][runtime] regular_mul (direct call)",
@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_SUITE(compile_time_even_tests)
 // This directly calls regular_mul from modular_functions_fixed.hpp.
 BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
     auto base_data = x_mod_ct_even.backend().base_data();
-    auto mod_object = x_mod_ct_even.backend().mod_data().get_mod_obj();
+    const auto &mod_object = x_mod_ct_even.backend().mod_data().get_mod_obj();
 
     nil::crypto3::bench::run_benchmark<>(
             "[even modulus][compile time] regular_mul (direct call)",
