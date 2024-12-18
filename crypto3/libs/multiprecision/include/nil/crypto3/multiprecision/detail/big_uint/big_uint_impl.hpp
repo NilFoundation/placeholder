@@ -24,6 +24,7 @@
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
+#include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_fwd.hpp"  // IWYU pragma: keep (used for friend declarations)
 #include "nil/crypto3/multiprecision/detail/big_uint/arithmetic.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/parsing.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
@@ -51,14 +52,14 @@ namespace nil::crypto3::multiprecision {
     class big_uint {
       public:
         static constexpr std::size_t Bits = Bits_;
-        using self_type = big_uint;
 
+        // Storage
+
+      private:
         using limb_type = detail::limb_type;
         using double_limb_type = detail::double_limb_type;
         using signed_limb_type = detail::signed_limb_type;
         using signed_double_limb_type = detail::signed_double_limb_type;
-
-        // Storage
 
         using limb_pointer = detail::limb_pointer;
         using const_limb_pointer = detail::const_limb_pointer;
@@ -70,20 +71,20 @@ namespace nil::crypto3::multiprecision {
         static constexpr limb_type upper_limb_mask =
             (Bits % limb_bits) ? (limb_type(1) << (Bits % limb_bits)) - 1 : (~limb_type(0u));
 
-        //
-        // Helper functions for getting at our internal data, and manipulating storage:
-        //
         constexpr std::size_t limb_count() const noexcept {
             static_assert(static_limb_count != 0, "No limbs in storage.");
             return static_limb_count;
         }
         constexpr limb_pointer limbs() noexcept { return m_data.data(); }
         constexpr const_limb_pointer limbs() const noexcept { return m_data.data(); }
-        constexpr auto& limbs_array() noexcept { return m_data; }
-        constexpr const auto& limbs_array() const noexcept { return m_data; }
 
-      private:
-        // Zeros out everything after limb[i], replaces resizing.
+        constexpr bool normalize() noexcept {
+            bool result = limbs()[static_limb_count - 1] & ~upper_limb_mask;
+            limbs()[static_limb_count - 1] &= upper_limb_mask;
+            return result;
+        }
+
+        // Zeros out everything after limb[i]
         constexpr void zero_after(std::size_t start_index) noexcept {
             auto pr = this->limbs();
             for (std::size_t i = start_index; i < this->limb_count(); ++i) {
@@ -165,13 +166,6 @@ namespace nil::crypto3::multiprecision {
         }
 
       public:
-        // TODO(ioxid): this should be private
-        constexpr bool normalize() noexcept {
-            bool result = limbs()[static_limb_count - 1] & ~upper_limb_mask;
-            limbs()[static_limb_count - 1] &= upper_limb_mask;
-            return result;
-        }
-
         // Constructor
 
         constexpr big_uint() noexcept {}
@@ -476,8 +470,6 @@ namespace nil::crypto3::multiprecision {
             ++*this;
             return copy;
         }
-
-        NIL_CO3_MP_FORCEINLINE constexpr void decrement() noexcept {}
 
         constexpr auto operator+() const noexcept { return *this; }
 
@@ -1292,6 +1284,12 @@ namespace nil::crypto3::multiprecision {
         template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2, typename T>
         friend constexpr void detail::multiply(big_uint<Bits1>& result, const big_uint<Bits2>& a,
                                                const T& b);
+
+        template<std::size_t Bits1>
+        friend struct detail::modular_policy;
+
+        template<std::size_t Bits1>
+        friend class detail::montgomery_modular_ops;
     };
 
     // Addition with carry

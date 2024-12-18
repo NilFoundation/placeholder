@@ -31,7 +31,6 @@ namespace nil::crypto3::multiprecision {
     class big_int {
       public:
         static constexpr std::size_t Bits = Bits_;
-        using self_type = big_int<Bits>;
 
         using unsigned_type = big_uint<Bits>;
 
