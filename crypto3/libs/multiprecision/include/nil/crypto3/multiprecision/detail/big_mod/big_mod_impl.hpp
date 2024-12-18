@@ -114,6 +114,12 @@ namespace nil::crypto3::multiprecision {
 
 #undef NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL
 
+        constexpr bool is_zero() const noexcept {
+            // In barrett form raw_base is the same as base
+            // In montgomery form raw_base is base multiplied by r, so it is zero iff base is
+            return raw_base().is_zero();
+        }
+
         // String conversion
 
         constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
@@ -218,17 +224,13 @@ namespace nil::crypto3::multiprecision {
             return os;
         }
 
-        // Misc ops
-
-        constexpr bool is_zero() const noexcept {
-            // In barrett form raw_base is the same as base
-            // In montgomery form raw_base is base multiplied by r, so it is zero iff base is
-            return raw_base().is_zero();
-        }
-
         // Accessing raw base value. Should only be used internally by multiprecision library.
+
         constexpr auto& raw_base() { return m_raw_base; }
         constexpr const auto& raw_base() const { return m_raw_base; }
+
+        // Accessing operations. Can be used to efficiently initialize a new big_mod_rt instance by
+        // copying operations storage from an existing big_mod_rt instance.
 
         constexpr const auto& ops_storage() const { return m_modular_ops_storage; }
         constexpr const auto& ops() const { return m_modular_ops_storage.ops(); }
@@ -264,7 +266,7 @@ namespace nil::crypto3::multiprecision {
         return result;
     }
 
-    // Misc ops
+    // For generic code
 
     template<typename big_mod_t, std::enable_if_t<detail::is_big_mod_v<big_mod_t>, int> = 0>
     constexpr bool is_zero(const big_mod_t& a) {
