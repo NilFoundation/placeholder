@@ -25,7 +25,7 @@ namespace nil::crypto3::multiprecision::literals {
 #define NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(Bits)                                        \
     namespace nil::crypto3::multiprecision::literals {                                  \
         template<char... C>                                                             \
-        constexpr auto operator"" _big_uint##Bits() {                                      \
+        constexpr auto operator"" _big_uint##Bits() {                                   \
             constexpr std::size_t N = sizeof...(C);                                     \
             constexpr std::array<char, N> str{C...};                                    \
             constexpr auto result =                                                     \
