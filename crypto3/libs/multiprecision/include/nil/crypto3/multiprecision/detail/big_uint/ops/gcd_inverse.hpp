@@ -14,7 +14,8 @@
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include <boost/assert.hpp>
+
 #include "nil/crypto3/multiprecision/detail/big_int.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 
@@ -59,7 +60,7 @@ namespace nil::crypto3::multiprecision {
     constexpr big_uint<Bits> gcd(const big_uint<Bits>& a, const big_uint<Bits>& b) {
         big_int<Bits> aa = a, bb = b, x, y, g;
         g = detail::extended_euclidean_algorithm(aa, bb, x, y);
-        NIL_CO3_MP_ASSERT(!g.negative());
+        BOOST_ASSERT(!g.negative());
         return g.abs();
     }
 
@@ -74,7 +75,7 @@ namespace nil::crypto3::multiprecision {
         if (x.negative()) {
             x += m;
         }
-        NIL_CO3_MP_ASSERT(x < m && !x.negative());
+        BOOST_ASSERT(x < m && !x.negative());
         return x.abs();
     }
 }  // namespace nil::crypto3::multiprecision
