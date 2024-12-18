@@ -99,8 +99,8 @@ namespace nil {
                             },
                             seed_bytes.begin());
                         res = ::nil::crypto3::hash<hash_type>(seed_bytes);
-                        ::nil::crypto3::multiprecision::import_bits(
-                            result, res.begin(), res.begin() + bincode::modulus_chunks, 8, false);
+                        result.import_bits(res.begin(), res.begin() + bincode::modulus_chunks, 8,
+                                           false);
 
                         ++iter;
                     } while (result >= result_type::field_type::modulus);

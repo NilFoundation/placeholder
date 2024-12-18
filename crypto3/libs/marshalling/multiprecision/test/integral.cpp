@@ -83,10 +83,10 @@ void test_round_trip_fixed_precision_big_endian(T val) {
 
     std::vector<unit_type> cv;
     cv.resize(unitblob_size, 0x00);
-    std::size_t begin_index = cv.size() - ((nil::crypto3::multiprecision::msb(val) + 1) / units_bits +
-                                           (((nil::crypto3::multiprecision::msb(val) + 1) % units_bits) ? 1 : 0));
+    std::size_t begin_index =
+        cv.size() - ((val.msb() + 1) / units_bits + (((val.msb() + 1) % units_bits) ? 1 : 0));
 
-    export_bits(val, cv.begin() + begin_index, units_bits, true);
+    val.export_bits(cv.begin() + begin_index, units_bits, true);
 
     nil::crypto3::marshalling::status_type status;
     T test_val = nil::crypto3::marshalling::pack<nil::crypto3::marshalling::option::big_endian>(cv, status);
@@ -111,7 +111,7 @@ void test_round_trip_fixed_precision_little_endian(T val) {
 
     std::vector<unit_type> cv;
 
-    export_bits(val, std::back_inserter(cv), units_bits, false);
+    val.export_bits(std::back_inserter(cv), units_bits, false);
     cv.resize(unitblob_size, 0x00);
 
     nil::crypto3::marshalling::status_type status;
@@ -148,8 +148,8 @@ void test_round_trip_non_fixed_precision(T val) {
     using unit_type = OutputType;
 
     std::vector<unit_type> cv;
-    export_bits(
-        val, std::back_inserter(cv), units_bits,
+    val.export_bits(
+        std::back_inserter(cv), units_bits,
         static_cast<bool>(
             std::is_same<TEndianness, nil::crypto3::marshalling::option::big_endian>::value));
 

@@ -94,10 +94,11 @@ void test_round_trip_fixed_size_container_fixed_precision_big_endian(
 
     for (std::size_t i = 0; i < TSize; i++) {
         std::size_t begin_index =
-            unitblob_size - ((nil::crypto3::multiprecision::msb(val_container[i]) + 1) / units_bits +
-                             (((nil::crypto3::multiprecision::msb(val_container[i]) + 1) % units_bits) ? 1 : 0));
+            unitblob_size - ((val_container[i].msb() + 1) / units_bits +
+                             (((val_container[i].msb() + 1) % units_bits) ? 1 : 0));
 
-        export_bits(val_container[i], cv.begin() + unitblob_size * i + begin_index, units_bits, true);
+        val_container[i].export_bits(cv.begin() + unitblob_size * i + begin_index, units_bits,
+                                     true);
     }
 
     nil::crypto3::marshalling::status_type status;
@@ -135,7 +136,7 @@ void test_round_trip_fixed_size_container_fixed_precision_little_endian(
     cv.resize(unitblob_size * TSize, 0x00);
 
     for (std::size_t i = 0; i < TSize; i++) {
-        export_bits(val_container[i], cv.begin() + unitblob_size * i, units_bits, false);
+        val_container[i].export_bits(cv.begin() + unitblob_size * i, units_bits, false);
     }
 
     nil::crypto3::marshalling::status_type status;
