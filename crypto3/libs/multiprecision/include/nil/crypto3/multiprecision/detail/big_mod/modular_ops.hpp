@@ -199,6 +199,7 @@ namespace nil::crypto3::multiprecision::detail {
                                  detail::is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                              int> = 0>
         constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
+            /// input parameter should be less than modulus
             BOOST_ASSERT(a < mod());
 
             if (is_zero(exp)) {
@@ -572,10 +573,6 @@ namespace nil::crypto3::multiprecision::detail {
             /// input parameter should be less than modulus
             BOOST_ASSERT(a < this->mod());
 
-            big_uint_t R_mod_m = m_one;
-
-            big_uint_t base(a);
-
             if (is_zero(exp)) {
                 result = m_one;
                 return;
@@ -585,18 +582,20 @@ namespace nil::crypto3::multiprecision::detail {
                 return;
             }
 
+            big_uint_t base(a), res = m_one;
+
             while (true) {
                 bool lsb = bit_test(exp, 0u);
                 exp >>= 1u;
                 if (lsb) {
-                    mul(R_mod_m, base);
+                    mul(res, base);
                     if (is_zero(exp)) {
                         break;
                     }
                 }
                 mul(base, base);
             }
-            result = R_mod_m;
+            result = res;
         }
 
         // Adjust to/from modular form
@@ -637,18 +636,18 @@ namespace nil::crypto3::multiprecision::detail {
         ops.adjust_modular(raw_base, b);
     }
 
-    template<std::size_t Bits, typename SI, typename modular_ops_t,
-             typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-    constexpr void init_raw_base(big_uint<Bits> &raw_base, SI b, const modular_ops_t &ops) {
+    template<std::size_t Bits, typename T, typename modular_ops_t,
+             typename std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+    constexpr void init_raw_base(big_uint<Bits> &raw_base, T b, const modular_ops_t &ops) {
         ops.adjust_modular(raw_base, detail::as_big_uint(detail::unsigned_abs(b)));
         if (b < 0) {
             ops.negate(raw_base);
         }
     }
 
-    template<std::size_t Bits, typename UI, typename modular_ops_t,
-             typename std::enable_if_t<std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
-    constexpr void init_raw_base(big_uint<Bits> &raw_base, UI b, const modular_ops_t &ops) {
+    template<std::size_t Bits, typename T, typename modular_ops_t,
+             typename std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+    constexpr void init_raw_base(big_uint<Bits> &raw_base, T b, const modular_ops_t &ops) {
         ops.adjust_modular(raw_base, detail::as_big_uint(b));
     }
 }  // namespace nil::crypto3::multiprecision::detail

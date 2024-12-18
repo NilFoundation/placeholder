@@ -26,9 +26,7 @@ namespace nil::crypto3::multiprecision {
                                   !std::numeric_limits<T>::is_signed,
                               int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
-        big_mod_t result(b.ops_storage());
-        result.ops().pow(result.raw_base(), b.raw_base(), e);
-        return result;
+        return pow_unsigned(b, e);
     }
 
     template<typename big_mod_t, typename T,
@@ -37,8 +35,8 @@ namespace nil::crypto3::multiprecision {
                               int> = 0>
     constexpr big_mod_t pow(const big_mod_t &b, const T &e) {
         if (e < 0) {
-            return pow(inverse(b), detail::unsigned_abs(e));
+            return pow_unsigned(inverse(b), detail::unsigned_abs(e));
         }
-        return pow(b, static_cast<std::make_unsigned_t<T>>(e));
+        return pow_unsigned(b, static_cast<std::make_unsigned_t<T>>(e));
     }
 }  // namespace nil::crypto3::multiprecision
