@@ -270,12 +270,13 @@ namespace nil {
                             std::size_t cur = 0;
                             for(std::size_t i = 0; i < options_number; i++) {
                                 for(std::size_t local_start_row = 1; local_start_row < usable_rows; local_start_row++, cur++) {
-                                    for(std::size_t k = 0; k < table->get_columns_number(); k++) {
-                                        if (cur < table->get_rows_number())
-                                            presets.constant(cur_constant_column + k,local_start_row) = table->get_table()[k][cur];
+                                    for(std::size_t k = 0; k < table_columns_number; k++) {
+                                        if (cur < table_rows_number)
+                                            presets.constant(cur_constant_column + k,local_start_row) =
+                                                table->get_table()[column_map[k]][table_row_shift + cur];
                                         else
                                             presets.constant(cur_constant_column + k,local_start_row) =
-                                                table->get_table()[k][table->get_rows_number()-1];
+                                                table->get_table()[column_map[k]][table_row_shift + table_rows_number-1];
                                     }
                                 }
                                 cur_constant_column += table_columns_number;
