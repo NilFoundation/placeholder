@@ -413,8 +413,6 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-        // Comparison
-
 #define NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(OP_)                        \
     template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>    \
     constexpr bool operator OP_(const T& o) const noexcept {                     \
@@ -434,6 +432,15 @@ namespace nil::crypto3::multiprecision {
         NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(!=)
 
 #undef NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR
+
+        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
+            for (std::size_t i = 0; i < limb_count(); ++i) {
+                if (limbs()[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         // Arithmetic operations
 
@@ -1000,6 +1007,84 @@ namespace nil::crypto3::multiprecision {
             return result;
         }
 
+        constexpr std::size_t lsb() const {
+            //
+            // Find the index of the least significant limb that is non-zero:
+            //
+            std::size_t index = 0;
+            while ((index < limb_count()) && !limbs()[index]) {
+                ++index;
+            }
+
+            if (index == limb_count()) {
+                throw std::invalid_argument("zero has no lsb");
+            }
+
+            //
+            // Find the index of the least significant bit within that limb:
+            //
+            std::size_t result = std::countr_zero(limbs()[index]);
+
+            return result + index * limb_bits;
+        }
+
+        constexpr std::size_t msb() const {
+            //
+            // Find the index of the most significant bit that is non-zero:
+            //
+            for (std::size_t i = limb_count() - 1; i > 0; --i) {
+                if (limbs()[i] != 0) {
+                    return i * limb_bits + std::bit_width(limbs()[i]) - 1;
+                }
+            }
+            if (limbs()[0] == 0) {
+                throw std::invalid_argument("zero has no msb");
+            }
+            return std::bit_width(limbs()[0]) - 1;
+        }
+
+        constexpr bool bit_test(std::size_t index) const {
+            if (index >= Bits) {
+                return false;
+                // TODO(ioxid): this throws in multiexp tests
+                // throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            return static_cast<bool>(limbs()[offset] & mask);
+        }
+
+        constexpr void bit_set(std::size_t index) {
+            if (index >= Bits) {
+                throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            limbs()[offset] |= mask;
+        }
+
+        constexpr void bit_unset(std::size_t index) {
+            if (index >= Bits) {
+                throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            limbs()[offset] &= ~mask;
+        }
+
+        constexpr void bit_flip(big_uint<Bits>& val, std::size_t index) {
+            if (index >= Bits) {
+                throw std::invalid_argument("fixed precision overflow");
+            }
+            std::size_t offset = index / limb_bits;
+            std::size_t shift = index % limb_bits;
+            limb_type mask = limb_type(1u) << shift;
+            val.limbs()[offset] ^= mask;
+        }
+
         // Import / export
 
       private:
@@ -1147,100 +1232,21 @@ namespace nil::crypto3::multiprecision {
             return out;
         }
 
+        // Hash
+
+        friend constexpr std::size_t hash_value(const big_uint& val) noexcept {
+            std::size_t result = 0;
+            for (std::size_t i = 0; i < val.limb_count(); ++i) {
+                boost::hash_combine(result, val.limbs()[i]);
+            }
+            return result;
+        }
+
         // IO
 
-        friend std::ostream& operator<<(std::ostream& os, const big_uint& value) {
+        friend constexpr std::ostream& operator<<(std::ostream& os, const big_uint& value) {
             os << value.str(os.flags());
             return os;
-        }
-
-        // Misc ops
-
-        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept {
-            for (std::size_t i = 0; i < limb_count(); ++i) {
-                if (limbs()[i] != 0) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        constexpr std::size_t lsb() const {
-            //
-            // Find the index of the least significant limb that is non-zero:
-            //
-            std::size_t index = 0;
-            while ((index < limb_count()) && !limbs()[index]) {
-                ++index;
-            }
-
-            if (index == limb_count()) {
-                throw std::invalid_argument("zero has no lsb");
-            }
-
-            //
-            // Find the index of the least significant bit within that limb:
-            //
-            std::size_t result = std::countr_zero(limbs()[index]);
-
-            return result + index * limb_bits;
-        }
-
-        constexpr std::size_t msb() const {
-            //
-            // Find the index of the most significant bit that is non-zero:
-            //
-            for (std::size_t i = limb_count() - 1; i > 0; --i) {
-                if (limbs()[i] != 0) {
-                    return i * limb_bits + std::bit_width(limbs()[i]) - 1;
-                }
-            }
-            if (limbs()[0] == 0) {
-                throw std::invalid_argument("zero has no msb");
-            }
-            return std::bit_width(limbs()[0]) - 1;
-        }
-
-        constexpr bool bit_test(std::size_t index) const {
-            if (index >= Bits) {
-                return false;
-                // TODO(ioxid): this throws in multiexp tests
-                // throw std::invalid_argument("fixed precision overflow");
-            }
-            std::size_t offset = index / limb_bits;
-            std::size_t shift = index % limb_bits;
-            limb_type mask = limb_type(1u) << shift;
-            return static_cast<bool>(limbs()[offset] & mask);
-        }
-
-        constexpr void bit_set(std::size_t index) {
-            if (index >= Bits) {
-                throw std::invalid_argument("fixed precision overflow");
-            }
-            std::size_t offset = index / limb_bits;
-            std::size_t shift = index % limb_bits;
-            limb_type mask = limb_type(1u) << shift;
-            limbs()[offset] |= mask;
-        }
-
-        constexpr void bit_unset(std::size_t index) {
-            if (index >= Bits) {
-                throw std::invalid_argument("fixed precision overflow");
-            }
-            std::size_t offset = index / limb_bits;
-            std::size_t shift = index % limb_bits;
-            limb_type mask = limb_type(1u) << shift;
-            limbs()[offset] &= ~mask;
-        }
-
-        constexpr void bit_flip(big_uint<Bits>& val, std::size_t index) {
-            if (index >= Bits) {
-                throw std::invalid_argument("fixed precision overflow");
-            }
-            std::size_t offset = index / limb_bits;
-            std::size_t shift = index % limb_bits;
-            limb_type mask = limb_type(1u) << shift;
-            val.limbs()[offset] ^= mask;
         }
 
       private:
@@ -1296,18 +1302,7 @@ namespace nil::crypto3::multiprecision {
         return detail::add_unsigned(a, a, b);
     }
 
-    // Hash
-
-    template<std::size_t Bits>
-    constexpr std::size_t hash_value(const big_uint<Bits>& val) noexcept {
-        std::size_t result = 0;
-        for (std::size_t i = 0; i < val.limb_count(); ++i) {
-            boost::hash_combine(result, val.limbs()[i]);
-        }
-        return result;
-    }
-
-    // Misc ops
+    // For generic code
 
     template<std::size_t Bits>
     constexpr std::size_t msb(const big_uint<Bits>& a) {
@@ -1328,6 +1323,8 @@ namespace nil::crypto3::multiprecision {
     constexpr bool is_zero(const big_uint<Bits>& a) {
         return a.is_zero();
     }
+
+    // To efficiently compute quotient and remainder at the same time
 
     template<std::size_t Bits1, std::size_t Bits2>
     constexpr void divide_qr(const big_uint<Bits1>& a, const big_uint<Bits2>& b, big_uint<Bits1>& q,
