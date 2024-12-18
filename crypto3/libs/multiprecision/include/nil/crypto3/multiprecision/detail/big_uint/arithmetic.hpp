@@ -188,7 +188,7 @@ namespace nil::crypto3::multiprecision {
             }
         }
 
-#ifdef NIL_CO3_MP_HAS_IMMINTRIN_H
+#ifdef NIL_CO3_MP_HAS_INTRINSICS
         //
         // This is the key addition routine:
         //
