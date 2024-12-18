@@ -24,7 +24,6 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
-#include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
@@ -195,7 +194,8 @@ namespace nil::crypto3::multiprecision::detail {
         template<
             std::size_t Bits2, std::size_t Bits3, typename T,
             /// result should fit in the output parameter
-            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
+            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
+                                 detail::is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                              int> = 0>
         constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             NIL_CO3_MP_ASSERT(a < mod());
@@ -564,7 +564,8 @@ namespace nil::crypto3::multiprecision::detail {
         template<
             std::size_t Bits2, std::size_t Bits3, typename T,
             /// result should fit in the output parameter
-            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
+            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
+                                 detail::is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                              int> = 0>
         constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             /// input parameter should be less than modulus
