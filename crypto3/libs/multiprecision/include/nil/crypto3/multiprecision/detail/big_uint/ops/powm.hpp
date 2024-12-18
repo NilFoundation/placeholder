@@ -19,12 +19,11 @@
 #include "nil/crypto3/multiprecision/detail/big_mod/big_mod_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/ops/pow.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
-#include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
     template<typename T1, std::size_t Bits, typename T2,
-             std::enable_if_t<detail::is_integer_v<std::decay_t<T1>> &&
-                                  detail::is_integer_v<std::decay_t<T2>>,
+             std::enable_if_t<detail::is_integral_v<std::decay_t<T1>> &&
+                                  detail::is_integral_v<std::decay_t<T2>>,
                               int> = 0>
     constexpr big_uint<Bits> powm(T1 &&b, T2 &&e, const big_uint<Bits> &m) {
         return pow(big_mod_rt<Bits>(std::forward<T1>(b), m), std::forward<T2>(e)).base();

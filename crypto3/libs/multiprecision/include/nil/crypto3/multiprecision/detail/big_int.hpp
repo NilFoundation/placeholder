@@ -1,12 +1,15 @@
 #pragma once
 
-#include <boost/functional/hash.hpp>
 #include <climits>
 #include <cmath>
 #include <cstring>
+#include <functional>
+#include <ios>
 #include <ostream>
 #include <string>
 #include <type_traits>
+
+#include <boost/functional/hash.hpp>
 
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"

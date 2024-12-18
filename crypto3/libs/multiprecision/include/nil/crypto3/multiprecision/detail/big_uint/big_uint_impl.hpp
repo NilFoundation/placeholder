@@ -30,7 +30,6 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/type_traits.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 #include "nil/crypto3/multiprecision/detail/endian.hpp"
-#include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision {
     /**
