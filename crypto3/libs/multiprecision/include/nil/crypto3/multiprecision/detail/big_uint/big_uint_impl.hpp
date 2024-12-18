@@ -1067,14 +1067,14 @@ namespace nil::crypto3::multiprecision {
             limbs()[offset] &= ~mask;
         }
 
-        constexpr void bit_flip(big_uint<Bits>& val, std::size_t index) {
+        constexpr void bit_flip(std::size_t index) {
             if (index >= Bits) {
                 throw std::invalid_argument("fixed precision overflow");
             }
             std::size_t offset = index / limb_bits;
             std::size_t shift = index % limb_bits;
             limb_type mask = limb_type(1u) << shift;
-            val.limbs()[offset] ^= mask;
+            limbs()[offset] ^= mask;
         }
 
         // Import / export
