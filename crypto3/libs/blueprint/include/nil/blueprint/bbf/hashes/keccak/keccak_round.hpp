@@ -36,7 +36,7 @@ namespace nil {
                 std::array<TYPE, 17> padded_message_chunk;
                 TYPE round_constant;
             };
-            
+
             // Component for keccak round
             template<typename FieldType, GenerationStage stage>
             class keccak_round : public generic_component<FieldType, stage> {
@@ -138,16 +138,17 @@ namespace nil {
                     constexpr std::size_t witness = 15;
                     constexpr std::size_t public_inputs = 1;
                     constexpr std::size_t constants = 1;
-                    std::size_t rows = (xor_with_mes) ? 291 : 257;
+//                    std::size_t rows = (xor_with_mes) ? 291 : 257;
+                    std::size_t rows = 8191;
                     return {witness, public_inputs, constants, rows};
                 }
 
                 static std::tuple<input_type> form_input(context_type &context_object, raw_input_type raw_input) {
-                    
+
                     input_type input;
                     if constexpr (stage == GenerationStage::ASSIGNMENT) {
                         for(std::size_t i = 0; i < 25; i++) {
-                            input.inner_state[i] = raw_input.inner_state[i];   
+                            input.inner_state[i] = raw_input.inner_state[i];
                         }
                         for(std::size_t i = 0; i < 17; i++) {
                             input.padded_message_chunk[i] = raw_input.padded_message_chunk[i];
@@ -305,7 +306,7 @@ namespace nil {
                                 power <<= normalize6_chunk_size;
                             }
                             C[index] = TYPE(integral_normalized_sum);
-                            
+
                             for (std::size_t j = 0; j < normalize6_num_chunks; ++j) {
                                 C_chunks[index][j] = integral_chunks[j];
                                 C_chunks_normalized[index][j] = integral_normalized_chunks[j];
@@ -324,7 +325,7 @@ namespace nil {
                             integral_type bigger_part = integral_C & ((integral_type(1) << 189) - 1);
                             integral_type integral_C_rot = (bigger_part << 3) + smaller_part;
                             C_rot[index] = TYPE(integral_C_rot);
-                            
+
                             additional_rot_chunks.push_back(smaller_part);
                             additional_rot_chunks.push_back(bigger_part);
                             // integral_type bound_smaller = smaller_part - (integral_type(1) << 3) + (integral_type(1) << 192);
@@ -350,7 +351,7 @@ namespace nil {
                             C_smaller_part[index] = TYPE(smaller_part);
                             C_bigger_part[index]  = TYPE(bigger_part);
                             C_bound_smaller[index]= TYPE(copy_bound_smaller);
-                            C_bound_bigger[index] = TYPE(copy_bound_bigger); 
+                            C_bound_bigger[index] = TYPE(copy_bound_bigger);
                             C_rot_shift[index] = TYPE(integral_type(1) << 3);
                             C_rot_shift_minus[index] = TYPE(integral_type(1) << 189);
 
@@ -384,10 +385,10 @@ namespace nil {
                             }
                             A2_copy[index] = A2[index];
                         }
-                    
+
 
                         // rho/pi
-                        
+
                         B[0] = A2[0];
                         for (int index = 1; index < 25; ++index) {
                             int r = 3 * rho_offsets[index];
@@ -428,7 +429,7 @@ namespace nil {
                             B_rot_shift_minus[index - 1] = TYPE(integral_type(1) << minus_r);
                         }
 
-                        // chi 
+                        // chi
                         for (int index = 0; index < 25; ++index) {
                             int x = index % 5;
                             int y = index / 5;
@@ -715,10 +716,10 @@ namespace nil {
                                 (integral_type(1) << (k * rotate_chunk_size));
                             constraint_big_chunks -= C_rot_big_chunks[index][k] *
                                                      (integral_type(1) << (k * rotate_chunk_size));
-                            // lookup(C_rot_small_chunks[index][k],
-                            //        "keccak_pack_table/range_check_sparse");
-                            // lookup(C_rot_big_chunks[index][k],
-                                //    "keccak_pack_table/range_check_sparse");
+                            lookup(C_rot_small_chunks[index][k],
+                                    "keccak_pack_table/range_check_sparse");
+                            lookup(C_rot_big_chunks[index][k],
+                                    "keccak_pack_table/range_check_sparse");
                         }
                         constrain(constraint_small_chunks);
                         constrain(constraint_big_chunks);
