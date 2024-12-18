@@ -7,7 +7,8 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include <boost/assert.hpp>
+
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/type_traits.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
@@ -85,7 +86,7 @@ namespace nil::crypto3::multiprecision {
                 ++pr, ++pa;
             }
 
-            NIL_CO3_MP_ASSERT(carry <= 1);
+            BOOST_ASSERT(carry <= 1);
 
             if (carry) {
                 if (result.limb_count() > x) {
@@ -181,7 +182,7 @@ namespace nil::crypto3::multiprecision {
             if ((x != i) && (pa != pr)) {
                 std::copy(pa + i, pa + x, pr + i);
             }
-            NIL_CO3_MP_ASSERT(0 == borrow);
+            BOOST_ASSERT(0 == borrow);
 
             if (swapped) {
                 result.negate_wrapping();
@@ -269,7 +270,7 @@ namespace nil::crypto3::multiprecision {
                 std::copy(pa + i, pa + x, pr + i);
             }
 
-            NIL_CO3_MP_ASSERT(carry <= 1);
+            BOOST_ASSERT(carry <= 1);
 
             if constexpr (Bits1 % limb_bits != 0) {
                 // If we have set any bit above "Bits", then we have a carry.
@@ -349,7 +350,7 @@ namespace nil::crypto3::multiprecision {
             if ((x != i) && (pa != pr)) {
                 std::copy(pa + i, pa + x, pr + i);
             }
-            NIL_CO3_MP_ASSERT(0 == borrow);
+            BOOST_ASSERT(0 == borrow);
 
             if (swapped) {
                 result.negate_wrapping();
@@ -393,7 +394,7 @@ namespace nil::crypto3::multiprecision {
                 std::copy(pa + i, pa + a.limb_count(), pr + i);
             }
 
-            NIL_CO3_MP_ASSERT(carry <= 1);
+            BOOST_ASSERT(carry <= 1);
 
             if (carry) {
                 if (result.limb_count() > a.limb_count()) {
@@ -612,12 +613,12 @@ namespace nil::crypto3::multiprecision {
                         (y_order > 0) ? (static_cast<double_limb_type>(py[y_order]) << limb_bits) |
                                             py[y_order - 1]
                                       : (static_cast<double_limb_type>(py[y_order]) << limb_bits);
-                    NIL_CO3_MP_ASSERT(b);
+                    BOOST_ASSERT(b);
                     double_limb_type v = a / b;
                     guess = static_cast<limb_type>(v);
                 }
-                NIL_CO3_MP_ASSERT(guess);  // If the guess ever gets to
-                                           // zero we go on forever....
+                BOOST_ASSERT(guess);  // If the guess ever gets to
+                                      // zero we go on forever....
                 //
                 // Update result:
                 //
@@ -668,7 +669,7 @@ namespace nil::crypto3::multiprecision {
                 // unsigned:
                 //
                 if (truncated_t && carry) {
-                    NIL_CO3_MP_ASSERT_MSG(false, "how can this even happen");
+                    BOOST_ASSERT_MSG(false, "how can this even happen");
                     // We need to calculate 2^n + t - rem
                     // where n is the number of bits in this type.
                     // Simplest way is to get 2^n - rem by complementing
@@ -720,7 +721,7 @@ namespace nil::crypto3::multiprecision {
 
             // remainder must be less than the divisor or our code has
             // failed
-            NIL_CO3_MP_ASSERT(rem < y);
+            BOOST_ASSERT(rem < y);
         }
 
         // Multiplication
@@ -754,19 +755,19 @@ namespace nil::crypto3::multiprecision {
 
             double_limb_type carry = 0;
             for (std::size_t i = 0; i < as; ++i) {
-                NIL_CO3_MP_ASSERT(result.limb_count() > i);
+                BOOST_ASSERT(result.limb_count() > i);
                 std::size_t inner_limit = (std::min)(result.limb_count() - i, bs);
                 multiplication_overflow_when<Mode>(inner_limit < bs);
                 std::size_t j = 0;
                 for (; j < inner_limit; ++j) {
-                    NIL_CO3_MP_ASSERT(i + j < result.limb_count());
+                    BOOST_ASSERT(i + j < result.limb_count());
                     carry +=
                         static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
-                    NIL_CO3_MP_ASSERT(max_double_limb_value - carry >= pr[i + j]);
+                    BOOST_ASSERT(max_double_limb_value - carry >= pr[i + j]);
                     carry += pr[i + j];
                     pr[i + j] = static_cast<limb_type>(carry);
                     carry >>= limb_bits;
-                    NIL_CO3_MP_ASSERT(carry <= max_limb_value);
+                    BOOST_ASSERT(carry <= max_limb_value);
                 }
                 if (carry) {
                     multiplication_overflow_when<Mode>(i + j >= result.limb_count());

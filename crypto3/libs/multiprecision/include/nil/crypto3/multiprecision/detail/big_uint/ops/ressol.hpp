@@ -15,7 +15,8 @@
 #include <cstddef>
 #include <stdexcept>
 
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include <boost/assert.hpp>
+
 #include "nil/crypto3/multiprecision/detail/big_mod/big_mod_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/ops/pow.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
@@ -42,13 +43,13 @@ namespace nil::crypto3::multiprecision {
         if (a.is_zero()) {
             return 0u;
         }
-        NIL_CO3_MP_ASSERT(a < p);
+        BOOST_ASSERT(a < p);
 
         if (p == two) {
             return a;
         }
-        NIL_CO3_MP_ASSERT(p > 1u);
-        NIL_CO3_MP_ASSERT(p % 2u != 0u);
+        BOOST_ASSERT(p > 1u);
+        BOOST_ASSERT(p % 2u != 0u);
 
         if (jacobi(a, p) != 1) {
             throw std::invalid_argument("Not a quadratic residue");

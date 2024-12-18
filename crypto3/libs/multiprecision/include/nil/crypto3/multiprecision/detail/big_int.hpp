@@ -9,9 +9,9 @@
 #include <string>
 #include <type_traits>
 
+#include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 
@@ -108,7 +108,7 @@ namespace nil::crypto3::multiprecision {
 
         template<std::size_t Bits2>
         explicit constexpr operator big_uint<Bits2>() const {
-            NIL_CO3_MP_ASSERT(!this->negative());
+            BOOST_ASSERT(!this->negative());
             return m_abs;
         }
 

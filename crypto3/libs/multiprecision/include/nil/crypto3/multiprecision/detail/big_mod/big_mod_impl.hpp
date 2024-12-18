@@ -21,7 +21,8 @@
 #include <string>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include <boost/assert.hpp>
+
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/modular_ops_storage.hpp"
 #include "nil/crypto3/multiprecision/detail/big_mod/type_traits.hpp"  // IWYU pragma: export
@@ -89,7 +90,7 @@ namespace nil::crypto3::multiprecision {
 
 #define NIL_CO3_MP_BIG_MOD_COMPARISON_IMPL(OP_)                                      \
     constexpr bool operator OP_(const big_mod_impl& o) const noexcept {              \
-        NIL_CO3_MP_ASSERT(ops().compare_eq(o.ops()));                                \
+        BOOST_ASSERT(ops().compare_eq(o.ops()));                                     \
         return raw_base() OP_ o.raw_base();                                          \
     }                                                                                \
                                                                                      \
@@ -178,7 +179,7 @@ namespace nil::crypto3::multiprecision {
                  0>                                                                               \
     friend constexpr auto operator OP_(const big_mod_impl& a, const T& b) noexcept {              \
         if constexpr (detail::is_big_mod_v<T>) {                                                  \
-            NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));                                       \
+            BOOST_ASSERT(a.ops().compare_eq(b.ops()));                                            \
         }                                                                                         \
         big_mod_impl result = a;                                                                  \
         a.ops().METHOD_(result.raw_base(), convert_to_raw_base(b, a.ops()));                      \
@@ -198,7 +199,7 @@ namespace nil::crypto3::multiprecision {
                  0>                                                                               \
     friend constexpr auto& operator OP_ASSIGN_(big_mod_impl & a, const T & b) noexcept {          \
         if constexpr (detail::is_big_mod_v<T>) {                                                  \
-            NIL_CO3_MP_ASSERT(a.ops().compare_eq(b.ops()));                                       \
+            BOOST_ASSERT(a.ops().compare_eq(b.ops()));                                            \
         }                                                                                         \
         a.ops().METHOD_(a.raw_base(), convert_to_raw_base(b, a.ops()));                           \
         return a;                                                                                 \

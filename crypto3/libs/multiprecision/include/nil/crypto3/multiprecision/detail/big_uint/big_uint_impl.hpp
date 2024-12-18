@@ -21,9 +21,9 @@
 #include <system_error>
 #include <type_traits>
 
+#include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
 
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/arithmetic.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/parsing.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
@@ -305,7 +305,7 @@ namespace nil::crypto3::multiprecision {
                     auto ec = std::to_chars(result.data() + start_offset,
                                             result.data() + result.size(), limb, 16)
                                   .ec;
-                    NIL_CO3_MP_ASSERT(ec == std::errc{});
+                    BOOST_ASSERT(ec == std::errc{});
                 }
             }
             if (flags & std::ios_base::uppercase) {
@@ -781,7 +781,7 @@ namespace nil::crypto3::multiprecision {
 
         constexpr void left_shift_limb(double_limb_type s) noexcept {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
-            NIL_CO3_MP_ASSERT(static_cast<limb_type>(s % limb_bits) == 0);
+            BOOST_ASSERT(static_cast<limb_type>(s % limb_bits) == 0);
 
             limb_pointer pr = limbs();
 
@@ -815,7 +815,7 @@ namespace nil::crypto3::multiprecision {
                 std::size_t rs = limb_count();
                 // This code only works when shift is non-zero, otherwise we invoke undefined
                 // behaviour!
-                NIL_CO3_MP_ASSERT(shift);
+                BOOST_ASSERT(shift);
                 for (; rs - i >= 2 + offset; ++i) {
                     pr[rs - 1 - i] = pr[rs - 1 - i - offset] << shift;
                     pr[rs - 1 - i] |= pr[rs - 2 - i - offset] >> (limb_bits - shift);
@@ -832,7 +832,7 @@ namespace nil::crypto3::multiprecision {
 
         void right_shift_byte(double_limb_type s) noexcept {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
-            NIL_CO3_MP_ASSERT((s % CHAR_BIT) == 0);
+            BOOST_ASSERT((s % CHAR_BIT) == 0);
             std::size_t ors = limb_count();
             std::size_t rs = ors;
             if (offset >= rs) {
@@ -857,7 +857,7 @@ namespace nil::crypto3::multiprecision {
 
         constexpr void right_shift_limb(double_limb_type s) noexcept {
             limb_type offset = static_cast<limb_type>(s / limb_bits);
-            NIL_CO3_MP_ASSERT((s % limb_bits) == 0);
+            BOOST_ASSERT((s % limb_bits) == 0);
             std::size_t ors = limb_count();
             std::size_t rs = ors;
             if (offset >= rs) {
@@ -895,7 +895,7 @@ namespace nil::crypto3::multiprecision {
             std::size_t i = 0;
 
             // This code only works for non-zero shift, otherwise we invoke undefined behaviour!
-            NIL_CO3_MP_ASSERT(shift);
+            BOOST_ASSERT(shift);
             for (; i + offset + 1 < ors; ++i) {
                 pr[i] = pr[i + offset] >> shift;
                 pr[i] |= pr[i + offset + 1] << (limb_bits - shift);

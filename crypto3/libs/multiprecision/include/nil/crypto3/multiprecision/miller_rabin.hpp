@@ -12,10 +12,10 @@
 #include <random>
 #include <type_traits>
 
+#include <boost/assert.hpp>
 #include <boost/random.hpp>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
 #include "nil/crypto3/multiprecision/integer.hpp"
 
 namespace nil::crypto3::multiprecision {
@@ -34,7 +34,7 @@ namespace nil::crypto3::multiprecision {
             std::uint32_t m1 = integer_modulus(n, pp1);
 
             for (std::size_t i = 0; i < sizeof(small_factors1) / sizeof(small_factors1[0]); ++i) {
-                NIL_CO3_MP_ASSERT(pp1 % small_factors1[i] == 0);
+                BOOST_ASSERT(pp1 % small_factors1[i] == 0);
                 if (m1 % small_factors1[i] == 0) {
                     return false;
                 }
@@ -46,7 +46,7 @@ namespace nil::crypto3::multiprecision {
             m1 = integer_modulus(n, pp2);
 
             for (std::size_t i = 0; i < sizeof(small_factors2) / sizeof(small_factors2[0]); ++i) {
-                NIL_CO3_MP_ASSERT(pp2 % small_factors2[i] == 0);
+                BOOST_ASSERT(pp2 % small_factors2[i] == 0);
                 if (m1 % small_factors2[i] == 0) {
                     return false;
                 }
@@ -58,7 +58,7 @@ namespace nil::crypto3::multiprecision {
             m1 = integer_modulus(n, pp3);
 
             for (std::size_t i = 0; i < sizeof(small_factors3) / sizeof(small_factors3[0]); ++i) {
-                NIL_CO3_MP_ASSERT(pp3 % small_factors3[i] == 0);
+                BOOST_ASSERT(pp3 % small_factors3[i] == 0);
                 if (m1 % small_factors3[i] == 0) {
                     return false;
                 }
@@ -70,7 +70,7 @@ namespace nil::crypto3::multiprecision {
             m1 = integer_modulus(n, pp4);
 
             for (std::size_t i = 0; i < sizeof(small_factors4) / sizeof(small_factors4[0]); ++i) {
-                NIL_CO3_MP_ASSERT(pp4 % small_factors4[i] == 0);
+                BOOST_ASSERT(pp4 % small_factors4[i] == 0);
                 if (m1 % small_factors4[i] == 0) {
                     return false;
                 }
@@ -90,7 +90,7 @@ namespace nil::crypto3::multiprecision {
                 m1 = integer_modulus(n, pp5[k]);
 
                 for (std::size_t i = 0; i < 4; ++i) {
-                    NIL_CO3_MP_ASSERT(pp5[k] % small_factors5[k][i] == 0);
+                    BOOST_ASSERT(pp5[k] % small_factors5[k][i] == 0);
                     if (m1 % small_factors5[k][i] == 0) {
                         return false;
                     }
