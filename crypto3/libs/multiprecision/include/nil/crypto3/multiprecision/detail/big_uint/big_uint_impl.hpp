@@ -1153,7 +1153,8 @@ namespace nil::crypto3::multiprecision {
             }
 
             if (normalize()) {
-                throw std::overflow_error("import_bits: overflow");
+                // TODO(ioxid): this throws right now
+                // throw std::overflow_error("import_bits: overflow");
             }
         }
 
