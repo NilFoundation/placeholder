@@ -364,7 +364,8 @@ namespace nil::crypto3::multiprecision {
         constexpr int compare(const big_uint<Bits2>& b) const noexcept {
             auto pa = limbs();
             auto pb = b.limbs();
-            constexpr std::size_t m = std::min(static_limb_count, big_uint<Bits2>::static_limb_count);
+            constexpr std::size_t m =
+                std::min(static_limb_count, big_uint<Bits2>::static_limb_count);
             for (auto i = static_cast<std::ptrdiff_t>(limb_count()) - 1; i >= b.limb_count(); --i) {
                 if (pa[i]) {
                     return 1;
