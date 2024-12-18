@@ -23,5 +23,3 @@
 // #define NIL_CO3_MP_USE_LIMB_SHIFT
 
 #endif
-
-
