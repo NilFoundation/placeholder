@@ -38,7 +38,7 @@ namespace nil::crypto3::multiprecision {
             std::size_t bs = b.used_limbs();
             auto [m, x] = std::minmax(as, bs);
 
-            if (x == 1) {
+            if (x <= 1) {
                 double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
                                      static_cast<double_limb_type>(*b.limbs());
                 if (result.limb_count() == 1) {
@@ -129,7 +129,7 @@ namespace nil::crypto3::multiprecision {
             //
             // special cases for small limb counts:
             //
-            if (x == 1) {
+            if (x <= 1) {
                 bool s = false;
                 limb_type al = *a.limbs();
                 limb_type bl = *b.limbs();
@@ -219,7 +219,7 @@ namespace nil::crypto3::multiprecision {
             std::size_t bs = b.used_limbs();
             auto [m, x] = std::minmax(as, bs);
 
-            if (x == 1) {
+            if (x <= 1) {
                 double_limb_type v = static_cast<double_limb_type>(*a.limbs()) +
                                      static_cast<double_limb_type>(*b.limbs());
                 bool carry = false;
@@ -296,7 +296,7 @@ namespace nil::crypto3::multiprecision {
             //
             // special cases for small limb counts:
             //
-            if (x == 1) {
+            if (x <= 1) {
                 bool s = false;
                 limb_type al = *a.limbs();
                 limb_type bl = *b.limbs();
@@ -432,7 +432,7 @@ namespace nil::crypto3::multiprecision {
                 if (&result != &a) {
                     std::copy(pa + 1, pa + as, pr + 1);
                 }
-            } else if (as == 1) {
+            } else if (as <= 1) {
                 subtract_overflow<Mode>();
                 *pr = b - *pa;
                 result.negate_wrapping();

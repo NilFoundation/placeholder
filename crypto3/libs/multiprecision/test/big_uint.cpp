@@ -1,11 +1,12 @@
 #define BOOST_TEST_MODULE big_int_test
 
-#include <boost/test/unit_test.hpp>
-
 #include <cstdint>
 #include <ios>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
+
+#include <boost/test/unit_test.hpp>
 
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/literals.hpp"
@@ -19,13 +20,11 @@ NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(83)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(85)
 NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(133)
 
-using namespace nil::crypto3::multiprecision::literals;
+using namespace nil::crypto3::multiprecision;
 
 BOOST_AUTO_TEST_SUITE(smoke)
 
-BOOST_AUTO_TEST_CASE(construct_constexpr) {
-    constexpr nil::crypto3::multiprecision::big_uint<60> a = 0x123_big_uint60;
-}
+BOOST_AUTO_TEST_CASE(construct_constexpr) { constexpr big_uint<60> a = 0x123_big_uint60; }
 
 BOOST_AUTO_TEST_CASE(to_string_zero) { BOOST_CHECK_EQUAL((0x0_big_uint60).str(), "0x0"); }
 
@@ -67,7 +66,7 @@ BOOST_AUTO_TEST_CASE(to_string_decimal_big) {
 }
 
 BOOST_AUTO_TEST_CASE(ops) {
-    nil::crypto3::multiprecision::big_uint<60> a = 2u, b;
+    big_uint<60> a = 2u, b;
 
     auto c1{a};
     auto c2{std::move(a)};  // NOLINT
@@ -87,7 +86,7 @@ BOOST_AUTO_TEST_CASE(ops) {
         b = a op 20;       \
         b = 200u op a;     \
         b = a op 20u;      \
-        b = 32u;           \
+        b = 36u;           \
         b op## = a;        \
         b op## = 2;        \
         b op## = 2u;       \
@@ -218,12 +217,12 @@ BOOST_AUTO_TEST_CASE(to_uint64_t) {
 }
 
 BOOST_AUTO_TEST_CASE(from_uint64_t) {
-    nil::crypto3::multiprecision::big_uint<64> a = static_cast<std::uint64_t>(0x123456789ABCDEFull);
+    big_uint<64> a = static_cast<std::uint64_t>(0x123456789ABCDEFull);
     BOOST_CHECK_EQUAL(a, 0x123456789ABCDEF_big_uint64);
 }
 
 BOOST_AUTO_TEST_CASE(from_int64_t) {
-    nil::crypto3::multiprecision::big_uint<64> a = static_cast<std::int64_t>(0x123456789ABCDEFull);
+    big_uint<64> a = static_cast<std::int64_t>(0x123456789ABCDEFull);
     BOOST_CHECK_EQUAL(a, 0x123456789ABCDEF_big_uint64);
 }
 
@@ -232,13 +231,264 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(truncation)
 
 BOOST_AUTO_TEST_CASE(conversion_to_shorter_number) {
-    using standart_number = nil::crypto3::multiprecision::big_uint<256>;
-    using short_number = nil::crypto3::multiprecision::big_uint<128>;
+    using standart_number = big_uint<256>;
+    using short_number = big_uint<128>;
     constexpr standart_number x =
         0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
     short_number s = x.truncate<128>();
     // 2nd half of the number must stay.
     BOOST_CHECK_EQUAL(s, 0xfffffffffffffffffffffffefffffc2f_big_uint128);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+using int_types = std::tuple<std::int8_t, std::int16_t, std::int32_t, std::int64_t,  //
+                             std::uint8_t, std::uint16_t, std::uint32_t, uint64_t,   //
+                             big_uint<7>>;
+
+using signed_types = std::tuple<std::int8_t, std::int16_t, std::int32_t, std::int64_t>;
+
+BOOST_AUTO_TEST_SUITE(checked_operations)
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(addition_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(20_big_uint7 + static_cast<T>(10), 30_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(10) + 20_big_uint7, 30_big_uint7);
+    BOOST_CHECK_THROW(120_big_uint7 + static_cast<T>(10), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(10) + 120_big_uint7, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(addition_negative, T, signed_types) {
+    BOOST_CHECK_EQUAL(20_big_uint7 + static_cast<T>(-5), 15_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(-5) + 20_big_uint7, 15_big_uint7);
+    BOOST_CHECK_THROW(5_big_uint7 + static_cast<T>(-20), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(-20) + 5_big_uint7, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE(unary_plus) {
+    BOOST_CHECK_EQUAL(+20_big_uint7, 20_big_uint7);
+    BOOST_CHECK_EQUAL(+0_big_uint7, 0_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(subtraction_positive, T, int_types) {
+    BOOST_CHECK_THROW(0_big_uint7 - static_cast<T>(1), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(0) - 1_big_uint7, std::overflow_error);
+    BOOST_CHECK_EQUAL(20_big_uint7 - static_cast<T>(5), 15_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(20) - 5_big_uint7, 15_big_uint7);
+    BOOST_CHECK_THROW(5_big_uint7 - static_cast<T>(20), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(5) - 20_big_uint7, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(subtraction_negative, T, signed_types) {
+    BOOST_CHECK_EQUAL(0_big_uint7 - static_cast<T>(-1), 1_big_uint7);
+    BOOST_CHECK_THROW(static_cast<T>(-1) - 0_big_uint7, std::range_error);
+    BOOST_CHECK_EQUAL(20_big_uint7 - static_cast<T>(-10), 30_big_uint7);
+    BOOST_CHECK_THROW(120_big_uint7 - static_cast<T>(-10), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(-10) - 5_big_uint7, std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(multiplication_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(20_big_uint7 * static_cast<T>(2), 40_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(2) * 20_big_uint7, 40_big_uint7);
+    BOOST_CHECK_THROW(70_big_uint7 * static_cast<T>(2), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(2) * 70_big_uint7, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(multiplication_negative, T, signed_types) {
+    BOOST_CHECK_THROW(20_big_uint7 * static_cast<T>(-2), std::range_error);
+    BOOST_CHECK_THROW(static_cast<T>(-2) * 20_big_uint7, std::range_error);
+    BOOST_CHECK_THROW(70_big_uint7 * static_cast<T>(-2), std::range_error);
+    BOOST_CHECK_THROW(static_cast<T>(-2) * 70_big_uint7, std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(division_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(21_big_uint7 / static_cast<T>(5), 4_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(21) / 5_big_uint7, 4_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(division_negative, T, signed_types) {
+    BOOST_CHECK_THROW(21_big_uint7 / static_cast<T>(-5), std::range_error);
+    BOOST_CHECK_THROW(static_cast<T>(-21) / 5_big_uint7, std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(division_zero, T, int_types) {
+    BOOST_CHECK_THROW(21_big_uint7 / static_cast<T>(0), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(21) / 0_big_uint7, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(modulus_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(21_big_uint7 % static_cast<T>(5), 1_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(21) % 5_big_uint7, 1_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(modulus_negative, T, signed_types) {
+    BOOST_CHECK_THROW(21_big_uint7 % static_cast<T>(-5), std::range_error);
+    BOOST_CHECK_THROW(static_cast<T>(-21) % 5_big_uint7, std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(modulus_zero, T, int_types) {
+    BOOST_CHECK_THROW(21_big_uint7 % static_cast<T>(0), std::overflow_error);
+    BOOST_CHECK_THROW(static_cast<T>(21) % 0_big_uint7, std::overflow_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(wrapping_operations)
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(addition_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(add_wrapping(20_big_uint7, static_cast<T>(10)), 30_big_uint7);
+    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(10), 20_big_uint7), 30_big_uint7);
+    BOOST_CHECK_EQUAL(add_wrapping(120_big_uint7, static_cast<T>(10)), 2_big_uint7);
+    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(10), 120_big_uint7), 2_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(addition_negative, T, signed_types) {
+    BOOST_CHECK_EQUAL(add_wrapping(20_big_uint7, static_cast<T>(-5)), 15_big_uint7);
+    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(-5), 20_big_uint7), 15_big_uint7);
+    BOOST_CHECK_EQUAL(add_wrapping(5_big_uint7, static_cast<T>(-20)), 113_big_uint7);
+    BOOST_CHECK_EQUAL(add_wrapping(static_cast<T>(-20), 5_big_uint7), 113_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE(negated_wrapping) {
+    BOOST_CHECK_EQUAL(20_big_uint7 .negated_wrapping(), 108_big_uint7);
+    BOOST_CHECK_EQUAL(0_big_uint7 .negated_wrapping(), 0_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(subtraction_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(subtract_wrapping(0_big_uint7, 1), 127_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(0, 1_big_uint7), 127_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(20_big_uint7, static_cast<T>(5)), 15_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(20), 5_big_uint7), 15_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(5_big_uint7, static_cast<T>(20)), 113_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(5), 20_big_uint7), 113_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(subtraction_negative, T, signed_types) {
+    BOOST_CHECK_EQUAL(subtract_wrapping(0_big_uint7, -1), 1_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(-1, 0_big_uint7), 127_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(20_big_uint7, static_cast<T>(-10)), 30_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(-10), 20_big_uint7), 98_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(120_big_uint7, static_cast<T>(-10)), 2_big_uint7);
+    BOOST_CHECK_EQUAL(subtract_wrapping(static_cast<T>(-10), 120_big_uint7), 126_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(multiplication_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(multiply_wrapping(20_big_uint7, static_cast<T>(2)), 40_big_uint7);
+    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(2), 20_big_uint7), 40_big_uint7);
+    BOOST_CHECK_EQUAL(multiply_wrapping(70_big_uint7, static_cast<T>(2)), 12_big_uint7);
+    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(2), 70_big_uint7), 12_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(multiplication_negative, T, signed_types) {
+    BOOST_CHECK_EQUAL(multiply_wrapping(20_big_uint7, static_cast<T>(-2)), 88_big_uint7);
+    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(-2), 20_big_uint7), 88_big_uint7);
+    BOOST_CHECK_EQUAL(multiply_wrapping(70_big_uint7, static_cast<T>(-2)), 116_big_uint7);
+    BOOST_CHECK_EQUAL(multiply_wrapping(static_cast<T>(-2), 70_big_uint7), 116_big_uint7);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(bit_operations)
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(and_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(21_big_uint7 & static_cast<T>(7), 5_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(7) & 21_big_uint7, 5_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(and_negative, T, signed_types) {
+    BOOST_CHECK_THROW(21_big_uint7 & static_cast<T>(-7), std::range_error);
+    BOOST_CHECK_THROW(static_cast<T>(-7) & 21_big_uint7, std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(or_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(21_big_uint7 | static_cast<T>(7), 23_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(7) | 21_big_uint7, 23_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(or_negative, T, signed_types) {
+    BOOST_CHECK_THROW(21_big_uint7 | static_cast<T>(-7), std::range_error);
+    BOOST_CHECK_THROW(static_cast<T>(-7) | 21_big_uint7, std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(xor_positive, T, int_types) {
+    BOOST_CHECK_EQUAL(21_big_uint7 ^ static_cast<T>(7), 18_big_uint7);
+    BOOST_CHECK_EQUAL(static_cast<T>(7) ^ 21_big_uint7, 18_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(xor_negative, T, signed_types) {
+    BOOST_CHECK_THROW(21_big_uint7 ^ static_cast<T>(-7), std::range_error);
+    BOOST_CHECK_THROW(static_cast<T>(-7) ^ 21_big_uint7, std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE(complement) {
+    BOOST_CHECK_EQUAL(~21_big_uint7, 106_big_uint7);
+    BOOST_CHECK_EQUAL(~0_big_uint7, 127_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE(shift_left) {
+    BOOST_CHECK_EQUAL(21_big_uint7 << 1, 42_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 << 3, 40_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 << 5, 32_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 << 7, 0_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 << 0, 21_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 << -1, 0_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE(shift_right) {
+    BOOST_CHECK_EQUAL(21_big_uint7 >> 1, 10_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 >> 3, 2_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 >> 5, 0_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 >> 7, 0_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 >> 0, 21_big_uint7);
+    BOOST_CHECK_EQUAL(21_big_uint7 >> -1, 0_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE(bit_set) {
+    auto n = 21_big_uint7;
+    n.bit_set(6);
+    BOOST_CHECK_EQUAL(n, 85_big_uint7);
+    n.bit_set(6);
+    BOOST_CHECK_EQUAL(n, 85_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE(bit_flip) {
+    auto n = 21_big_uint7;
+    n.bit_flip(6);
+    BOOST_CHECK_EQUAL(n, 85_big_uint7);
+    n.bit_flip(6);
+    BOOST_CHECK_EQUAL(n, 21_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE(bit_unset) {
+    auto n = 21_big_uint7;
+    n.bit_unset(0);
+    BOOST_CHECK_EQUAL(n, 20_big_uint7);
+    n.bit_unset(0);
+    BOOST_CHECK_EQUAL(n, 20_big_uint7);
+}
+
+BOOST_AUTO_TEST_CASE(bit_test) {
+    BOOST_CHECK_EQUAL(21_big_uint7 .bit_test(0), true);
+    BOOST_CHECK_EQUAL(21_big_uint7 .bit_test(1), false);
+    BOOST_CHECK_EQUAL(21_big_uint7 .bit_test(2), true);
+    BOOST_CHECK_EQUAL(21_big_uint7 .bit_test(3), false);
+    BOOST_CHECK_EQUAL(21_big_uint7 .bit_test(4), true);
+    BOOST_CHECK_EQUAL(21_big_uint7 .bit_test(5), false);
+}
+
+BOOST_AUTO_TEST_CASE(msb) {
+    BOOST_CHECK_EQUAL(21_big_uint7 .msb(), 4);
+    BOOST_CHECK_THROW(0_big_uint7 .msb(), std::invalid_argument);
+    BOOST_CHECK_EQUAL(32_big_uint7 .msb(), 5);
+    BOOST_CHECK_EQUAL(1_big_uint7 .msb(), 0);
+    BOOST_CHECK_EQUAL(2_big_uint7 .msb(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(lsb) {
+    BOOST_CHECK_EQUAL(21_big_uint7 .lsb(), 0);
+    BOOST_CHECK_THROW(0_big_uint7 .lsb(), std::invalid_argument);
+    BOOST_CHECK_EQUAL(32_big_uint7 .lsb(), 5);
+    BOOST_CHECK_EQUAL(1_big_uint7 .lsb(), 0);
+    BOOST_CHECK_EQUAL(2_big_uint7 .lsb(), 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
