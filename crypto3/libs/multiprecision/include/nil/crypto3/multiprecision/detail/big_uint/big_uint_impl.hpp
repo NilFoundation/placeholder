@@ -13,6 +13,8 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -996,6 +998,153 @@ namespace nil::crypto3::multiprecision {
             big_uint result = *this;
             result >>= s;
             return result;
+        }
+
+        // Import / export
+
+      private:
+        template<typename Unsigned>
+        void assign_bits(Unsigned bits, std::size_t bit_location, std::size_t chunk_bits) {
+            std::size_t limb = bit_location / limb_bits;
+            std::size_t shift = bit_location % limb_bits;
+
+            limb_type mask = chunk_bits >= limb_bits
+                                 ? ~static_cast<limb_type>(0u)
+                                 : (static_cast<limb_type>(1u) << chunk_bits) - 1;
+
+            limb_type value = static_cast<limb_type>(bits & mask) << shift;
+            if (value) {
+                if (limb >= limb_count()) {
+                    throw std::overflow_error("import_bits: overflow");
+                }
+                limbs()[limb] |= value;
+            }
+
+            /* If some extra bits need to be assigned to the next limb */
+            if (chunk_bits > limb_bits - shift) {
+                shift = limb_bits - shift;
+                chunk_bits -= shift;
+                bit_location += shift;
+                auto extra_bits = bits >> shift;
+                if (extra_bits) {
+                    assign_bits(extra_bits, bit_location, chunk_bits);
+                }
+            }
+        }
+
+        std::uintmax_t extract_bits(std::size_t location, std::size_t count) const {
+            std::size_t limb = location / limb_bits;
+            std::size_t shift = location % limb_bits;
+            std::uintmax_t result = 0;
+            std::uintmax_t mask = count == std::numeric_limits<std::uintmax_t>::digits
+                                      ? ~static_cast<std::uintmax_t>(0)
+                                      : (static_cast<std::uintmax_t>(1u) << count) - 1;
+            if (count > (limb_bits - shift)) {
+                result = extract_bits(location + limb_bits - shift, count - limb_bits + shift);
+                result <<= limb_bits - shift;
+            }
+            if (limb < limb_count()) {
+                result |= (limbs()[limb] >> shift) & mask;
+            }
+            return result;
+        }
+
+        template<typename Iterator>
+        void import_bits_generic(Iterator i, Iterator j, std::size_t chunk_size = 0,
+                                 bool msv_first = true) {
+            zero_after(0);
+
+            using value_type = typename std::iterator_traits<Iterator>::value_type;
+            using difference_type = typename std::iterator_traits<Iterator>::difference_type;
+            using size_type = typename std::make_unsigned<difference_type>::type;
+
+            if (!chunk_size) {
+                chunk_size = std::numeric_limits<value_type>::digits;
+            }
+
+            size_type limbs = std::distance(i, j);
+            size_type bits = limbs * chunk_size;
+
+            difference_type bit_location = msv_first ? bits - chunk_size : 0;
+            difference_type bit_location_change =
+                msv_first ? -static_cast<difference_type>(chunk_size) : chunk_size;
+
+            while (i != j) {
+                assign_bits(*i, static_cast<std::size_t>(bit_location), chunk_size);
+                ++i;
+                bit_location += bit_location_change;
+            }
+
+            if (normalize()) {
+                throw std::overflow_error("import_bits: overflow");
+            }
+        }
+
+        template<typename T>
+        void import_bits_fast(T* i, T* j) {
+            std::size_t byte_len = (j - i) * sizeof(*i);
+            std::size_t limb_len = byte_len / sizeof(limb_type);
+            if (byte_len % sizeof(limb_type)) {
+                ++limb_len;
+            }
+
+            std::size_t copy_len = (std::min)(byte_len, limb_count() * sizeof(limb_type));
+
+            if (std::any_of(reinterpret_cast<const char*>(i), reinterpret_cast<const char*>(j),
+                            [](char c) { return c != 0; })) {
+                throw std::overflow_error("import_bits: overflow");
+            }
+
+            std::memcpy(limbs(), i, copy_len);
+            std::memset(limbs() + copy_len, 0, limb_count() * sizeof(limb_type) - copy_len);
+
+            if (normalize()) {
+                throw std::overflow_error("import_bits: overflow");
+            }
+        }
+
+      public:
+        template<typename Iterator, std::enable_if_t<!std::is_pointer_v<Iterator>, int> = 0>
+        void import_bits(Iterator i, Iterator j, std::size_t chunk_size = 0,
+                         bool msv_first = true) {
+            return import_bits_generic(i, j, chunk_size, msv_first);
+        }
+
+        template<typename T>
+        void import_bits(T* i, T* j, std::size_t chunk_size = 0, bool msv_first = true) {
+#if NIL_CO3_MP_ENDIAN_LITTLE_BYTE
+            if (((chunk_size % CHAR_BIT) == 0) && !msv_first &&
+                (sizeof(*i) * CHAR_BIT == chunk_size)) {
+                return import_bits_fast(i, j);
+            }
+#endif
+            return import_bits_generic(i, j, chunk_size, msv_first);
+        }
+
+        template<typename OutputIterator>
+        OutputIterator export_bits(OutputIterator out, std::size_t chunk_size,
+                                   bool msv_first = true) const {
+            if (!*this) {
+                *out = 0;
+                ++out;
+                return out;
+            }
+            std::size_t bitcount = msb() + 1;
+
+            std::ptrdiff_t bit_location =
+                msv_first ? static_cast<std::ptrdiff_t>(bitcount - chunk_size) : 0;
+            const std::ptrdiff_t bit_step = msv_first ? (-static_cast<std::ptrdiff_t>(chunk_size))
+                                                      : static_cast<std::ptrdiff_t>(chunk_size);
+            while (bit_location % bit_step) {
+                ++bit_location;
+            }
+            do {
+                *out = extract_bits(bit_location, chunk_size);
+                ++out;
+                bit_location += bit_step;
+            } while ((bit_location >= 0) && (bit_location < static_cast<std::ptrdiff_t>(bitcount)));
+
+            return out;
         }
 
         // IO
