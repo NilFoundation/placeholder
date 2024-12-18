@@ -157,6 +157,8 @@ namespace nil::crypto3::multiprecision {
 
 #undef NIL_CO3_MP_BIG_INT_IMPL_OPERATOR
 
+        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept { return abs().is_zero(); }
+
         // Arithmetic operations
 
         friend constexpr big_int operator+(big_int a, const big_int& b) noexcept {
@@ -269,16 +271,21 @@ namespace nil::crypto3::multiprecision {
             return a;
         }
 
+        // Hash
+
+        friend constexpr std::size_t hash_value(const big_int& val) noexcept {
+            std::size_t result = 0;
+            boost::hash_combine(result, val.abs());
+            boost::hash_combine(result, val.negative());
+            return result;
+        }
+
         // IO
 
         friend std::ostream& operator<<(std::ostream& os, const big_int& value) {
             os << value.str(os.flags());
             return os;
         }
-
-        // Misc ops
-
-        NIL_CO3_MP_FORCEINLINE constexpr bool is_zero() const noexcept { return abs().is_zero(); }
 
       private:
         constexpr void normalize() noexcept {
@@ -311,22 +318,14 @@ namespace nil::crypto3::multiprecision {
                                         big_int<Bits1>& q, big_int<Bits1>& r);
     };
 
-    // Arithmetic operations
-
-    template<std::size_t Bits>
-    constexpr std::size_t hash_value(const big_int<Bits>& val) noexcept {
-        std::size_t result = 0;
-        boost::hash_combine(result, val.abs());
-        boost::hash_combine(result, val.negative());
-        return result;
-    }
-
-    // Misc ops
+    // For generic code
 
     template<std::size_t Bits>
     constexpr bool is_zero(const big_int<Bits>& a) {
         return a.is_zero();
     }
+
+    // To efficiently compute quotient and remainder at the same time
 
     template<std::size_t Bits1, std::size_t Bits2>
     constexpr void divide_qr(const big_int<Bits1>& a, const big_int<Bits2>& b, big_int<Bits1>& q,
