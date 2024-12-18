@@ -7,7 +7,7 @@
 # http://www.boost.org/LICENSE_1_0.txt
 #---------------------------------------------------------------------------#
 
-add_custom_target(${CURRENT_PROJECT_NAME}_test_suite_big_int_tests)
+add_custom_target(${CURRENT_PROJECT_NAME}_test_suite)
 
 cm_test_link_libraries(
     ${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
@@ -36,29 +36,21 @@ macro(define_multiprecision_test name)
     endif()
 
     target_compile_definitions(${test_name} PRIVATE TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/")
+
+    add_dependencies(${CURRENT_PROJECT_NAME}_test_suite ${test_name})
 endmacro(define_multiprecision_test)
 
-macro(define_big_int_test name)
-    define_multiprecision_test(${name})
-
-    set(test_name "${CURRENT_PROJECT_NAME}_${name}_test")
-    target_compile_definitions(${test_name} PUBLIC -DTEST_CPP_INT)
-    # target_link_libraries(${test_name} no_eh_support)
-    add_dependencies(${CURRENT_PROJECT_NAME}_test_suite_big_int_tests ${test_name})
-
-endmacro(define_big_int_test)
-
-set(BIG_INT_TESTS_NAMES
-    "big_int"
-    "big_int_comparison"
-    "big_int_inverse"
-    "big_int_jacobi"
-    "big_int_miller_rabin"
-    "big_int_modular"
-    "big_int_modular_comprehensive"
-    "big_int_ressol"
+set(MULTIPRECISION_TESTS_NAMES
+    "big_mod_basic"
+    "big_mod_randomized"
+    "big_uint_comparison_randomized"
+    "big_uint"
+    "inverse"
+    "jacobi"
+    "miller_rabin"
+    "ressol"
 )
 
-foreach(TEST_NAME ${BIG_INT_TESTS_NAMES})
-    define_big_int_test(${TEST_NAME})
+foreach(TEST_NAME ${MULTIPRECISION_TESTS_NAMES})
+    define_multiprecision_test(${TEST_NAME})
 endforeach()
