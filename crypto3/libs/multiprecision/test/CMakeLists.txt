@@ -42,10 +42,11 @@ macro(define_multiprecision_test name)
 endmacro(define_multiprecision_test)
 
 set(MULTIPRECISION_TESTS_NAMES
+    "big_mod_arithmetic"
     "big_mod_basic"
-    "big_mod_randomized"
-    "big_uint_comparison_randomized"
-    "big_uint"
+    "big_uint_arithmetic"
+    "big_uint_basic"
+    "big_uint_comparison"
     "inverse"
     "jacobi"
     "miller_rabin"

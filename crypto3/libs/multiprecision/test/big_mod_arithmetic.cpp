@@ -9,7 +9,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_int_modular_comprehensive_test
+#define BOOST_TEST_MODULE big_mod_arithmetic_test
 
 #include <cstddef>
 #include <ostream>
