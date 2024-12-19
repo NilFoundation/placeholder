@@ -82,7 +82,7 @@ namespace nil::crypto3::multiprecision::detail {
             big_uint_padded_limbs compliment = 1u, modulus = m_mod;
             compliment <<= Bits;
             compliment -= modulus;
-            m_mod_compliment = compliment;
+            m_mod_compliment = static_cast<big_uint_t>(compliment);
         }
 
         // Common public methods
@@ -178,7 +178,7 @@ namespace nil::crypto3::multiprecision::detail {
                     input %= mod();
                 }
             }
-            result = input;
+            result = static_cast<big_uint<Bits2>>(input);
         }
 
         // Methods which are customized: mul and exp
@@ -226,7 +226,7 @@ namespace nil::crypto3::multiprecision::detail {
                 base *= base;
                 barrett_reduce(base);
             }
-            result = res;
+            result = static_cast<big_uint<Bits2>>(res);
         }
 
         // Adjust to/from modular form
@@ -346,7 +346,7 @@ namespace nil::crypto3::multiprecision::detail {
                 accum -= this->mod();
             }
 
-            result = accum;
+            result = static_cast<big_uint<Bits2>>(accum);
         }
 
         // Delegates Montgomery multiplication to one of corresponding algorithms.
@@ -609,7 +609,7 @@ namespace nil::crypto3::multiprecision::detail {
             this->barrett_reduce(tmp, input);
             tmp *= r2();
             montgomery_reduce(tmp);
-            result = tmp;
+            result = static_cast<big_uint_t>(tmp);
         }
 
         template<std::size_t Bits2, std::size_t Bits3,
