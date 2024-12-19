@@ -165,16 +165,14 @@ namespace nil {
 
             // Sometimes we want to connect new constraints to existing selector
             // Use only with deep understanding
-            virtual std::size_t add_gate(std::size_t selector_id, const std::vector<constraint_type> &args) {
+            virtual void add_gate(std::size_t selector_id, const std::vector<constraint_type> &args) {
                 this->_gates.push_back({selector_id, args});
-                return selector_id;
             }
 
             // Sometimes existing gate is already on existing selector
             //   and we are sure that lookup and usual part are always together
-            virtual std::size_t add_lookup_gate(std::size_t selector_id, const std::vector<lookup_constraint_type> &args) {
+            virtual void add_lookup_gate(std::size_t selector_id, const std::vector<lookup_constraint_type> &args) {
                 this->_lookup_gates.push_back({selector_id, args});
-                return selector_id;
             }
 
             virtual const typename ArithmetizationType::lookup_table_type &lookup_table(std::size_t table_id) const {

@@ -1,10 +1,13 @@
 #define BOOST_TEST_MODULE big_int_modular_test
 
-#include <boost/test/unit_test.hpp>
+#include <cstdint>
 #include <utility>
 
-#include "nil/crypto3/multiprecision/literals.hpp"
+#include <boost/test/unit_test.hpp>
+
 #include "nil/crypto3/multiprecision/big_mod.hpp"
+#include "nil/crypto3/multiprecision/big_uint.hpp"
+#include "nil/crypto3/multiprecision/literals.hpp"
 
 using namespace nil::crypto3::multiprecision;
 using namespace nil::crypto3::multiprecision::literals;
@@ -71,24 +74,24 @@ BOOST_AUTO_TEST_CASE(ops) {
     big_mod_t a = 2u, b;
 
     auto c1{a};
-    auto c2{std::move(a)};
+    auto c2{std::move(a)};  // NOLINT
     auto c3{2};
     auto c4{2u};
     b = a;
-    b = std::move(a);
+    b = std::move(a);  // NOLINT
     b = 2;
     b = 2u;
 
 #define TEST_BINARY_OP(op) \
     do {                   \
         b = a op a;        \
-        /* b = 2 op a; */  \
-        /* b = a op 2; */  \
-        /* b = 2u op a; */ \
-        /* b = a op 2u; */ \
+        b = 2 op a;        \
+        b = a op 2;        \
+        b = 2u op a;       \
+        b = a op 2u;       \
         b op## = a;        \
-        /* b op## = 2; */  \
-        /*b op## = 2u; */  \
+        b op## = 2;        \
+        b op## = 2u;       \
     } while (false)
 
     TEST_BINARY_OP(+);
@@ -100,6 +103,8 @@ BOOST_AUTO_TEST_CASE(ops) {
     --b;
     b--;
     b = -b;
+
+#undef TEST_BINARY_OP
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -107,8 +112,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(addition)
 
 BOOST_AUTO_TEST_CASE(simple) {
-    BOOST_CHECK_EQUAL(static_cast<big_mod_t>(0x2_big_uint64) + static_cast<big_mod_t>(0x3_big_uint64),
-                      static_cast<big_mod_t>(0x5_big_uint64));
+    BOOST_CHECK_EQUAL(
+        static_cast<big_mod_t>(0x2_big_uint64) + static_cast<big_mod_t>(0x3_big_uint64),
+        static_cast<big_mod_t>(0x5_big_uint64));
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
@@ -122,8 +128,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(multiplication)
 
 BOOST_AUTO_TEST_CASE(simple) {
-    BOOST_CHECK_EQUAL(static_cast<big_mod_t>(0x2_big_uint64) * static_cast<big_mod_t>(0x3_big_uint64),
-                      static_cast<big_mod_t>(0x6_big_uint64));
+    BOOST_CHECK_EQUAL(
+        static_cast<big_mod_t>(0x2_big_uint64) * static_cast<big_mod_t>(0x3_big_uint64),
+        static_cast<big_mod_t>(0x6_big_uint64));
 }
 
 BOOST_AUTO_TEST_CASE(multilimb) {
@@ -133,7 +140,8 @@ BOOST_AUTO_TEST_CASE(multilimb) {
 }
 
 BOOST_AUTO_TEST_CASE(big) {
-    static constexpr auto mod = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
+    static constexpr auto mod =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
     big_mod<mod> a = 0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
 
     big_mod<mod> b = 0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
@@ -143,7 +151,8 @@ BOOST_AUTO_TEST_CASE(big) {
 }
 
 BOOST_AUTO_TEST_CASE(big_assign) {
-    static constexpr auto mod = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
+    static constexpr auto mod =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
     big_mod<mod> a = 0xC5067EE5D80302E0561545A8467C6D5C98BC4D37672EB301C38CE9A9_big_uint224;
 
     big_mod<mod> b = 0xE632329C42040E595D127EB6889D22215DBE56F540425C705D6BF83_big_uint224;
@@ -156,22 +165,49 @@ BOOST_AUTO_TEST_CASE(big_assign) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(bugs)
+
+BOOST_AUTO_TEST_CASE(secp256k1_incorrect_multiplication) {
+    using standart_number = nil::crypto3::multiprecision::big_uint<256>;
+    using modular_number = nil::crypto3::multiprecision::montgomery_big_mod_rt<256>;
+
+    constexpr standart_number modulus =
+        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
+    constexpr standart_number x_standard =
+        0xb5d724ce6f44c3c587867bbcb417e9eb6fa05e7e2ef029166568f14eb3161387_big_uint256;
+    constexpr standart_number res_standard =
+        0xad6e1fcc680392abfb075838eafa513811112f14c593e0efacb6e9d0d7770b4_big_uint256;
+    constexpr modular_number x(x_standard, modulus);
+    constexpr modular_number res(res_standard, modulus);
+    BOOST_CHECK_EQUAL(x * x, res);
+}
+
+BOOST_AUTO_TEST_CASE(bad_negation) {
+    using standart_number = nil::crypto3::multiprecision::big_uint<256>;
+    using modular_number = nil::crypto3::multiprecision::montgomery_big_mod_rt<256>;
+
+    constexpr standart_number modulus =
+        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
+    constexpr modular_number x(0u, modulus);
+    constexpr modular_number res = -x;
+
+    BOOST_CHECK(res == 0u);
+    BOOST_CHECK(res == x);
+    BOOST_CHECK(-res == x);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(convert)
 
-// BOOST_AUTO_TEST_CASE(to_uint64_t) {
-//     std::uint64_t a =
-//         static_cast<std::uint64_t>(static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
-//     BOOST_CHECK_EQUAL(a, 0x123456789ABCDEF);
-// }
+BOOST_AUTO_TEST_CASE(from_uint64_t) {
+    big_mod_t a = static_cast<std::uint64_t>(0x123456789ABCDEFull);
+    BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
+}
 
-// BOOST_AUTO_TEST_CASE(from_uint64_t) {
-//     big_mod_impl a = static_cast<std::uint64_t>(0x123456789ABCDEFull);
-//     BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
-// }
-
-// BOOST_AUTO_TEST_CASE(from_int64_t) {
-//     big_mod_impl a = static_cast<std::int64_t>(0x123456789ABCDEFull);
-//     BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
-// }
+BOOST_AUTO_TEST_CASE(from_int64_t) {
+    big_mod_t a = static_cast<std::int64_t>(0x123456789ABCDEFull);
+    BOOST_CHECK_EQUAL(a, static_cast<big_mod_t>(0x123456789ABCDEF_big_uint64));
+}
 
 BOOST_AUTO_TEST_SUITE_END()

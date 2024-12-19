@@ -41,6 +41,12 @@
 namespace nil {
     namespace blueprint {
         namespace bbf {
+            template<typename FieldType>
+            struct is_zero_raw_input {
+                using TYPE = typename FieldType::value_type;
+
+                TYPE X;
+            };
 
             template<typename FieldType, GenerationStage stage>
             class is_zero : public generic_component<FieldType, stage> {
@@ -53,10 +59,25 @@ namespace nil {
 
                 public:
                     using typename generic_component<FieldType,stage>::TYPE;
+                    using typename generic_component<FieldType,stage>::table_params;
+                    using raw_input_type = typename std::conditional<stage == GenerationStage::ASSIGNMENT,
+                                               is_zero_raw_input<FieldType>,std::tuple<>>::type;
 
-                public:
                     TYPE input;
                     TYPE res;
+
+                    static table_params get_minimal_requirements() {
+                        return {1,0,0,3}; // W, PI, C, rows
+                    }
+
+                    static std::tuple<TYPE> form_input(context_type &context_object, raw_input_type raw_input) {
+                        TYPE X;
+                        if constexpr (stage == GenerationStage::ASSIGNMENT) {
+                            X = raw_input.X;
+                        }
+                        context_object.allocate(X,0,0,column_type::public_input);
+                        return std::make_tuple(X);
+                    }
 
                     is_zero(context_type &context_object, TYPE input_x, bool make_links = true) :
                         generic_component<FieldType,stage>(context_object) {
@@ -82,7 +103,7 @@ namespace nil {
 
                         input = X;
                         res = R;
-                    };
+                    }
             };
         } // namespace bbf
     } // namespace blueprint

@@ -10,13 +10,15 @@
 
 #define BOOST_TEST_MODULE big_int_inverse_test
 
+#include <stdexcept>
+
 #include <boost/test/data/monomorphic.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
+#include "nil/crypto3/multiprecision/big_mod.hpp"
 #include "nil/crypto3/multiprecision/big_uint.hpp"
 #include "nil/crypto3/multiprecision/literals.hpp"
-#include "nil/crypto3/multiprecision/big_mod.hpp"
 
 using namespace nil::crypto3::multiprecision;
 
@@ -41,13 +43,13 @@ void test_inverse_extended_euclidean_algorithm() {
           "00000000000000000000"
           "0000000000000000000000000"));
     BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(3), T(8)), T(3));
-    BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(46), T(207)), T(0));
-    BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(2), T(2)), T(0));
-    BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(0), T(2)), T(0));
-    BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(46), T(46)), T(0));
+    BOOST_CHECK_THROW(inverse_extended_euclidean_algorithm(T(46), T(207)), std::invalid_argument);
+    BOOST_CHECK_THROW(inverse_extended_euclidean_algorithm(T(2), T(2)), std::invalid_argument);
+    BOOST_CHECK_THROW(inverse_extended_euclidean_algorithm(T(0), T(2)), std::invalid_argument);
+    BOOST_CHECK_THROW(inverse_extended_euclidean_algorithm(T(46), T(46)), std::invalid_argument);
     BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(1), T(7)), T(1));
     BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(35), T(118)), T(27));
-    BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(37), T(37)), T(0));
+    BOOST_CHECK_THROW(inverse_extended_euclidean_algorithm(T(37), T(37)), std::invalid_argument);
     BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(32), T(247)), T(193));
     BOOST_CHECK_EQUAL(inverse_extended_euclidean_algorithm(T(3), T(232)), T(155));
 
@@ -261,7 +263,7 @@ BOOST_AUTO_TEST_SUITE(runtime_tests)
 BOOST_AUTO_TEST_CASE(inverse_tests) {
     // test_monty_inverse<big_uint<4096>>();
     // test_inverse_mod<big_uint<4096>>();
-    // test_inverse_extended_euclidean_algorithm<big_uint<4096>>();
+    test_inverse_extended_euclidean_algorithm<big_uint<4096>>();
 }
 
 BOOST_AUTO_TEST_CASE(test_big_mod_6_bits) {

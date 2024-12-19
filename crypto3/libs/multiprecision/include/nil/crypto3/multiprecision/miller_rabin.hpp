@@ -5,16 +5,18 @@
 
 #pragma once
 
-#include <boost/random.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
 #include <random>
 #include <type_traits>
 
+#include <boost/random.hpp>
+
 #include "nil/crypto3/multiprecision/big_uint.hpp"
-#include "nil/crypto3/multiprecision/integer.hpp"
 #include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include "nil/crypto3/multiprecision/integer.hpp"
 
 namespace nil::crypto3::multiprecision {
     namespace detail {
@@ -33,7 +35,9 @@ namespace nil::crypto3::multiprecision {
 
             for (std::size_t i = 0; i < sizeof(small_factors1) / sizeof(small_factors1[0]); ++i) {
                 NIL_CO3_MP_ASSERT(pp1 % small_factors1[i] == 0);
-                if (m1 % small_factors1[i] == 0) return false;
+                if (m1 % small_factors1[i] == 0) {
+                    return false;
+                }
             }
 
             constexpr std::uint32_t small_factors2[] = {29u, 31u, 37u, 41u, 43u, 47u};
@@ -43,7 +47,9 @@ namespace nil::crypto3::multiprecision {
 
             for (std::size_t i = 0; i < sizeof(small_factors2) / sizeof(small_factors2[0]); ++i) {
                 NIL_CO3_MP_ASSERT(pp2 % small_factors2[i] == 0);
-                if (m1 % small_factors2[i] == 0) return false;
+                if (m1 % small_factors2[i] == 0) {
+                    return false;
+                }
             }
 
             constexpr std::uint32_t small_factors3[] = {53u, 59u, 61u, 67u, 71u};
@@ -53,7 +59,9 @@ namespace nil::crypto3::multiprecision {
 
             for (std::size_t i = 0; i < sizeof(small_factors3) / sizeof(small_factors3[0]); ++i) {
                 NIL_CO3_MP_ASSERT(pp3 % small_factors3[i] == 0);
-                if (m1 % small_factors3[i] == 0) return false;
+                if (m1 % small_factors3[i] == 0) {
+                    return false;
+                }
             }
 
             constexpr std::uint32_t small_factors4[] = {73u, 79u, 83u, 89u, 97u};
@@ -63,7 +71,9 @@ namespace nil::crypto3::multiprecision {
 
             for (std::size_t i = 0; i < sizeof(small_factors4) / sizeof(small_factors4[0]); ++i) {
                 NIL_CO3_MP_ASSERT(pp4 % small_factors4[i] == 0);
-                if (m1 % small_factors4[i] == 0) return false;
+                if (m1 % small_factors4[i] == 0) {
+                    return false;
+                }
             }
 
             constexpr std::uint32_t small_factors5[6][4] = {
@@ -76,12 +86,14 @@ namespace nil::crypto3::multiprecision {
                                               181u * 191u * 193u * 197u,
                                               199u * 211u * 223u * 227u};
 
-            for (std::size_t k = 0; k < sizeof(pp5) / sizeof(*pp5); ++k) {
+            for (std::size_t k = 0; k < std::size(pp5); ++k) {
                 m1 = integer_modulus(n, pp5[k]);
 
                 for (std::size_t i = 0; i < 4; ++i) {
                     NIL_CO3_MP_ASSERT(pp5[k] % small_factors5[k][i] == 0);
-                    if (m1 % small_factors5[k][i] == 0) return false;
+                    if (m1 % small_factors5[k][i] == 0) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -93,8 +105,10 @@ namespace nil::crypto3::multiprecision {
                 43u,  47u,  53u,  59u,  61u,  67u,  71u,  73u,  79u,  83u,  89u,  97u,
                 101u, 103u, 107u, 109u, 113u, 127u, 131u, 137u, 139u, 149u, 151u, 157u,
                 163u, 167u, 173u, 179u, 181u, 191u, 193u, 197u, 199u, 211u, 223u, 227u};
-            for (std::size_t i = 0; i < sizeof(p) / sizeof(*p); ++i) {
-                if (n == p[i]) return true;
+            for (std::size_t i = 0; i < std::size(p); ++i) {
+                if (n == p[i]) {
+                    return true;
+                }
             }
             return false;
         }
@@ -105,27 +119,37 @@ namespace nil::crypto3::multiprecision {
         const I& n, std::size_t trials, Engine& gen) {
         using number_type = I;
 
-        if (n == 2) return true;                // Trivial special case.
-        if (bit_test(n, 0) == 0) return false;  // n is even
-        if (n <= 227) return detail::is_small_prime(static_cast<unsigned>(n));
+        if (n == 2) {
+            return true;  // Trivial special case.
+        }
+        if (bit_test(n, 0) == 0) {
+            return false;  // n is even
+        }
+        if (n <= 227) {
+            return detail::is_small_prime(static_cast<unsigned>(n));
+        }
 
-        if (!detail::check_small_factors(n)) return false;
+        if (!detail::check_small_factors(n)) {
+            return false;
+        }
 
-        number_type nm1 = n - 1;
+        number_type nm1 = n - 1u;
         //
         // Begin with a single Fermat test - it excludes a lot of candidates:
         //
         number_type q(228), x,
             y;  // We know n is greater than this, as we've excluded small factors
         x = powm(q, nm1, n);
-        if (x != 1u) return false;
+        if (x != 1u) {
+            return false;
+        }
 
-        q = n - 1;
+        q = n - 1u;
         std::size_t k = lsb(q);
         q >>= k;
 
         // Declare our random number generator:
-        boost::random::uniform_int_distribution<number_type> dist(2, n - 2);
+        boost::random::uniform_int_distribution<number_type> dist(2u, n - 2u);
 
         //
         // Execute the trials:
@@ -135,12 +159,18 @@ namespace nil::crypto3::multiprecision {
             y = powm(x, q, n);
             std::size_t j = 0;
             while (true) {
-                if (y == nm1) break;
+                if (y == nm1) {
+                    break;
+                }
                 if (y == 1) {
-                    if (j == 0) break;
+                    if (j == 0) {
+                        break;
+                    }
                     return false;  // test failed
                 }
-                if (++j == k) return false;  // failed
+                if (++j == k) {
+                    return false;  // failed
+                }
                 y = powm(y, 2, n);
             }
         }

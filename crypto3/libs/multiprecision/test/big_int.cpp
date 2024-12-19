@@ -45,9 +45,13 @@ BOOST_AUTO_TEST_CASE(to_string_decimal_zero) {
     BOOST_CHECK_EQUAL((0x0_big_uint60).str(std::ios_base::dec), "0");
 }
 
-BOOST_AUTO_TEST_CASE(to_string_decimal_trivial) { BOOST_CHECK_EQUAL((0x1_big_uint60).str(std::ios_base::dec), "1"); }
+BOOST_AUTO_TEST_CASE(to_string_decimal_trivial) {
+    BOOST_CHECK_EQUAL((0x1_big_uint60).str(std::ios_base::dec), "1");
+}
 
-BOOST_AUTO_TEST_CASE(to_string_decimal_small) { BOOST_CHECK_EQUAL((0x20_big_uint60).str(std::ios_base::dec), "32"); }
+BOOST_AUTO_TEST_CASE(to_string_decimal_small) {
+    BOOST_CHECK_EQUAL((0x20_big_uint60).str(std::ios_base::dec), "32");
+}
 
 BOOST_AUTO_TEST_CASE(to_string_decimal_medium) {
     constexpr auto a = 0x123456789ABCDEF1234321_big_uint85;
@@ -56,18 +60,19 @@ BOOST_AUTO_TEST_CASE(to_string_decimal_medium) {
 
 BOOST_AUTO_TEST_CASE(to_string_decimal_big) {
     constexpr auto a = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF000000000000000000000001_big_uint224;
-    BOOST_CHECK_EQUAL(a.str(std::ios_base::dec), "26959946667150639794667015087019630673557916260026308143510066298881");
+    BOOST_CHECK_EQUAL(a.str(std::ios_base::dec),
+                      "26959946667150639794667015087019630673557916260026308143510066298881");
 }
 
 BOOST_AUTO_TEST_CASE(ops) {
     nil::crypto3::multiprecision::big_uint<60> a = 2u, b;
 
     auto c1{a};
-    auto c2{std::move(a)};
+    auto c2{std::move(a)};  // NOLINT
     auto c3{2};
     auto c4{2u};
     b = a;
-    b = std::move(a);
+    b = std::move(a);  // NOLINT
     b = 2;
     b = 2u;
 
@@ -76,14 +81,14 @@ BOOST_AUTO_TEST_CASE(ops) {
         b = 32u;           \
         a = 4;             \
         b = a op a;        \
-        /* b = 2 op a; */  \
-        /* b = a op 2; */  \
-        /* b = 2u op a; */ \
-        /* b = a op 2u; */ \
+        b = 2 op a;        \
+        b = a op 2;        \
+        b = 2u op a;       \
+        b = a op 2u;       \
         b = 32u;           \
         b op## = a;        \
-        /* b op## = 2; */  \
-        /*b op## = 2u; */  \
+        b op## = 2;        \
+        b op## = 2u;       \
     } while (false)
 
     TEST_BINARY_OP(+);
@@ -94,7 +99,7 @@ BOOST_AUTO_TEST_CASE(ops) {
     TEST_BINARY_OP(-);
     --b;
     b--;
-    // b = -b;
+    b = -b;
 
     TEST_BINARY_OP(%);
     TEST_BINARY_OP(/);
@@ -103,6 +108,7 @@ BOOST_AUTO_TEST_CASE(ops) {
     TEST_BINARY_OP(&);
     TEST_BINARY_OP(|);
     TEST_BINARY_OP(^);
+#undef TEST_BINARY_OP
 
     b = ~a;
 }
@@ -175,13 +181,14 @@ BOOST_AUTO_TEST_CASE(multilimb) {
 
 BOOST_AUTO_TEST_CASE(failing) {
     BOOST_CHECK_EQUAL(
-        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 % 2, 1u);
+        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 % 2u, 1u);
 }
 
 BOOST_AUTO_TEST_CASE(failing2) {
-    BOOST_CHECK_EQUAL(0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 %
-                          0x200000000_big_uint,
-                      0x100000001_big_uint);
+    BOOST_CHECK_EQUAL(
+        0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001_big_uint256 %
+            0x200000000_big_uint,
+        0x100000001_big_uint);
 }
 
 BOOST_AUTO_TEST_CASE(failing3) {
@@ -212,6 +219,20 @@ BOOST_AUTO_TEST_CASE(from_uint64_t) {
 BOOST_AUTO_TEST_CASE(from_int64_t) {
     nil::crypto3::multiprecision::big_uint<64> a = static_cast<std::int64_t>(0x123456789ABCDEFull);
     BOOST_CHECK_EQUAL(a, 0x123456789ABCDEF_big_uint64);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(truncation)
+
+BOOST_AUTO_TEST_CASE(conversion_to_shorter_number) {
+    using standart_number = nil::crypto3::multiprecision::big_uint<256>;
+    using short_number = nil::crypto3::multiprecision::big_uint<128>;
+    constexpr standart_number x =
+        0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f_big_uint256;
+    short_number s = x.truncate<128>();
+    // 2nd half of the number must stay.
+    BOOST_CHECK_EQUAL(s, 0xfffffffffffffffffffffffefffffc2f_big_uint128);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

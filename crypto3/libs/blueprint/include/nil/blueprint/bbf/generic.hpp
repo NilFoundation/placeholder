@@ -35,14 +35,15 @@
 #include <boost/log/trivial.hpp>
 
 #include <nil/crypto3/zk/math/expression.hpp>
+#include <nil/crypto3/zk/math/expression_visitors.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 #include <nil/crypto3/zk/snark/arithmetization/plonk/assignment.hpp>
 // #include <nil/crypto3/zk/snark/arithmetization/plonk/copy_constraint.hpp> // NB: part of the previous include
 
+#include <nil/blueprint/blueprint/plonk/circuit.hpp>
 #include <nil/blueprint/component.hpp>
 //#include <nil/blueprint/manifest.hpp>
 #include <nil/blueprint/gate_id.hpp>
-#include <nil/blueprint/bbf/expresion_visitor_helpers.hpp>
 #include <nil/blueprint/bbf/allocation_log.hpp>
 #include <nil/blueprint/bbf/enums.hpp>
 #include <nil/blueprint/bbf/row_selector.hpp>
@@ -271,8 +272,9 @@ namespace nil {
                     assignment_type &at;
             };
 
+            // circuit-specific definition
             template<typename FieldType>
-            class context<FieldType, GenerationStage::CONSTRAINTS> : public basic_context<FieldType> { // circuit-specific definition
+            class context<FieldType, GenerationStage::CONSTRAINTS> : public basic_context<FieldType> {
             public:
                 using constraint_id_type = gate_id<FieldType>;
                 using value_type = typename FieldType::value_type;
@@ -328,7 +330,7 @@ namespace nil {
                     //   BOOST_LOG_TRIVIAL(warning) << "RE-allocation of " << t << " cell at col = " << col << ", row = " << row << ".\n";
                     }
                     if (t == column_type::constant) {
-                        auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(C);
+                        auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(C);
                         if (has_vars) {
                             std::stringstream error;
                             error << "Trying to assign constraint " << C << " to constant cell!";
@@ -349,7 +351,7 @@ namespace nil {
                 }
 
                 void copy_constrain(TYPE &A, TYPE &B) {
-                    auto is_var = expression_is_variable_visitor<var>::is_var;
+                    auto is_var = nil::crypto3::math::expression_is_variable_visitor<var>::is_var;
 
                     if (!is_var(A) || !is_var(B)) {
                         BOOST_LOG_TRIVIAL(error) << "Copy constraint applied to non-variable: " << A << " = " << B << ".\n";
@@ -364,31 +366,32 @@ namespace nil {
                     }
                 }
 
-                bool is_absolute(TYPE C) {
-                    return expression_relativity_check_visitor<var>::is_absolute(C);
+                TYPE relativize(const TYPE& C, int32_t shift) {
+                     auto constraint = C.rotate(shift);
+                     if (!constraint)
+                         throw std::logic_error("Can't shift the constraint in the given direction.");
+                     return *constraint;
                 }
-                bool is_relative(TYPE C) {
-                    return expression_relativity_check_visitor<var>::is_relative(C);
-                }
-                TYPE relativize(TYPE C, int32_t shift) {
-                    return expression_relativize_visitor<var>::relativize(C, shift);
-                }
-                std::vector<TYPE> relativize(std::vector<TYPE> C, int32_t shift) {
+
+                std::vector<TYPE> relativize(const std::vector<TYPE>& C, int32_t shift) {
                     std::vector<TYPE> res;
-                    for(TYPE c_part : C) {
-                        res.push_back(expression_relativize_visitor<var>::relativize(c_part,shift));
+                    for(const TYPE& c_part : C) {
+                        auto constraint = c_part.rotate(shift);
+                        if (!constraint)
+                            throw std::logic_error("Can't shift the constraint in the given direction.");
+                        res.push_back(*constraint);
                     }
                     return res;
                 }
 
-                void constrain(TYPE C, std::string constraint_name) {
-                    if (!is_absolute(C)) {
+                void constrain(const TYPE& C, std::string constraint_name) {
+                    if (!C.is_absolute()) {
                         std::stringstream ss;
                         ss << "Constraint " << C << " has relative variables, cannot constrain.";
                         throw std::logic_error(ss.str());
                     }
 
-                    auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(C);
+                    auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(C);
                     if (!has_vars) {
                         BOOST_LOG_TRIVIAL(error) << "Constraint " << C << " has no variables!\n";
                     }
@@ -398,14 +401,16 @@ namespace nil {
                     }
                     std::size_t row = (min_row + max_row)/2;
 
-                    TYPE C_rel = relativize(C, -row);
-
-                    add_constraint(C_rel, row);
+                    std::optional<TYPE> C_rel = C.rotate(-row);
+                    if (!C_rel) {
+                        throw std::logic_error("Can't shift the constraint in the given direction.");
+                    }
+                    add_constraint(*C_rel, row);
                 }
 
                 // accesible only at GenerationStage::CONSTRAINTS !
                 void relative_constrain(TYPE C_rel, std::size_t row) {
-                    if (!is_relative(C_rel)) {
+                    if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                         throw std::logic_error(ss.str());
@@ -414,7 +419,7 @@ namespace nil {
                 }
 
                 void relative_constrain(TYPE C_rel, std::size_t start_row,  std::size_t end_row) {
-                    if (!is_relative(C_rel)) {
+                    if (!C_rel.is_relative()) {
                         std::stringstream ss;
                         ss << "Constraint " << C_rel << " has absolute variables, cannot constrain.";
                         throw std::logic_error(ss.str());
@@ -430,7 +435,7 @@ namespace nil {
                     // up to 3 different rows for relativization. We take the intersection for all expressions in
                     // the constraint.
                     for(TYPE c_part : C) {
-                        auto [has_vars, min_row, max_row] = expression_row_range_visitor<var>::row_range(c_part);
+                        auto [has_vars, min_row, max_row] = nil::crypto3::math::expression_row_range_visitor<var>::row_range(c_part);
                         if (has_vars) { // NB: not having variables seems to be ok for a part of a lookup expression
                             if (max_row - min_row > 2) {
                                 BOOST_LOG_TRIVIAL(warning) << "Expression " << c_part << " in lookup constraint spans over 3 rows!\n";
@@ -440,7 +445,7 @@ namespace nil {
                             if (max_row - min_row <= 1) {
                                 current_base_rows.insert(row+1);
                             }
-                            if (max_row == min_row) {
+                            if ((max_row == min_row) && (row > 0)) {
                                 current_base_rows.insert(row-1);
                             }
                             if (base_rows.empty()) {
@@ -458,20 +463,14 @@ namespace nil {
                         BOOST_LOG_TRIVIAL(error) << "Lookup constraint expressions have no variables or have incompatible spans!\n";
                     }
                     BOOST_ASSERT(!base_rows.empty());
-
                     std::size_t row = (base_rows.size() == 3) ? *(std::next(base_rows.begin())) : *(base_rows.begin());
-                    std::vector<TYPE> res;
-                    for(TYPE c_part : C) {
-                        TYPE c_part_rel = expression_relativize_visitor<var>::relativize(c_part, -row);
-                        res.push_back(c_part_rel);
-                    }
-                    add_lookup_constraint(table_name, res, row);
+                    add_lookup_constraint(table_name, relativize(C, -row), row);
                 }
 
                 // accesible only at GenerationStage::CONSTRAINTS !
                 void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t row) {
                     for(const TYPE c_part : C) {
-                        if (!is_relative(c_part)) {
+                        if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
                             throw std::logic_error(ss.str());
@@ -482,7 +481,7 @@ namespace nil {
 
                 void relative_lookup(std::vector<TYPE> &C, std::string table_name, std::size_t start_row, std::size_t end_row) {
                     for(const TYPE c_part : C) {
-                        if (!is_relative(c_part)) {
+                        if (!c_part.is_relative()) {
                             std::stringstream ss;
                             ss << "Constraint " << c_part << " has absolute variables, cannot constrain.";
                             throw std::logic_error(ss.str());
@@ -507,21 +506,6 @@ namespace nil {
                     }
 
                     lookup_tables->insert({name,{cols,rows}});
-                }
-
-                void optimize_gates() {
-                    // NB: std::map<constraint_id_type, std::pair<constraint_type, row_selector<>>> constraints;
-                    // intended to
-                    // shift some of the constraints so that we have less selectors
-                    /*
-                    for(const auto& [id, data] : *constraints) {
-                        std::cout << "Constraint: " << data.first << "\n";
-                        for(std::size_t row : data.second) {
-                            std::cout << row << " ";
-                        }
-                        std::cout << "\n";
-                    }
-                    */
                 }
 
                 std::unordered_map<row_selector<>, std::vector<TYPE>> get_constraints() {
@@ -556,11 +540,11 @@ namespace nil {
                     std::unordered_map<row_selector<>, std::vector<lookup_constraint_type>> res;
                     for(const auto& [id, data] : *lookup_constraints) {
                         auto it = res.find(data.second);
-		                if (it == res.end()) {
-		                	res[data.second] = {{id.first, data.first}};
-		                } else {
-		                	it->second.push_back({id.first, data.first});
-		                }
+		        if (it == res.end()) {
+		            res[data.second] = {{id.first, data.first}};
+		        } else {
+		            it->second.push_back({id.first, data.first});
+		        }
                     }
 
                     /*
@@ -678,17 +662,27 @@ namespace nil {
 
             template<typename FieldType, GenerationStage stage>
             class generic_component {
-            public:
-                using TYPE = typename std::conditional<static_cast<bool>(stage),
-                             crypto3::zk::snark::plonk_constraint<FieldType>,
-                             typename FieldType::value_type>::type;
-                using context_type = context<FieldType, stage>;
-                using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
+                public:
+                    struct table_params {
+                        std::size_t witnesses;
+                        std::size_t public_inputs;
+                        std::size_t constants;
+                        std::size_t rows;
+                    };
+                    using TYPE = typename std::conditional<static_cast<bool>(stage),
+                                 crypto3::zk::snark::plonk_constraint<FieldType>,
+                                 typename FieldType::value_type>::type;
+                    using context_type = context<FieldType, stage>;
+                    using plonk_copy_constraint = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
 
-            private:
-                context_type &ct;
+                private:
+                    context_type &ct;
 
-            public:
+                public:
+                static table_params get_minimal_requirements() {
+                    return {0,0,0,0};
+                }
+
                 void allocate(TYPE &C, column_type t = column_type::witness) {
                     auto [col, row] = ct.next_free_cell(t);
                     ct.allocate(C, col, row, t);
@@ -725,7 +719,7 @@ namespace nil {
                     if (crlf) { // TODO: Implement crlf parameter consequences
                         ct.new_line(column_type::witness);
                     }
-                };
+                }
             };
 
         } // namespace bbf
