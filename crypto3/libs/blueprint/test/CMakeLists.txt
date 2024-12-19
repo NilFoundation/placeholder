@@ -95,6 +95,9 @@ set(COMMON_TEST_FILES
     "bbf/poseidon"
     "bbf/test_circuit_builder"
     "bbf/detail/range_check_multi"
+    "bbf/detail/carry_on_addition"
+    "bbf/algebra/fields/non_native/check_mod_p"
+    "bbf/algebra/fields/non_native/flexible_multiplication"
     )
 
 set(NON_NATIVE_TESTS_FILES
