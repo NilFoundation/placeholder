@@ -27,9 +27,8 @@
 #define CRYPTO3_MARSHALLING_MULTIPRECISION_INFERENCE_TYPE_TRAITS_HPP
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
-#include <boost/multiprecision/number.hpp>
-#include <nil/marshalling/options.hpp>
 #include <nil/marshalling/field_type.hpp>
+#include <nil/marshalling/options.hpp>
 
 namespace nil::crypto3 {
 

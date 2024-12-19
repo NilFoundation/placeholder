@@ -1,7 +1,11 @@
-///////////////////////////////////////////////////////////////
-//  Copyright 2013 John Maddock. Distributed under the Boost
-//  Software License, Version 1.0. (See accompanying file
-//  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt
+//---------------------------------------------------------------------------//
+// Copyright (c) 2013 John Maddock
+// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
+//
+// Distributed under the Boost Software License, Version 1.0
+// See accompanying file LICENSE_1_0.txt or copy at
+// http://www.boost.org/LICENSE_1_0.txt
+//---------------------------------------------------------------------------//
 
 #pragma once
 
@@ -25,7 +29,7 @@ namespace nil::crypto3::multiprecision::literals {
 #define NIL_CO3_MP_DEFINE_BIG_UINT_LITERAL(Bits)                                        \
     namespace nil::crypto3::multiprecision::literals {                                  \
         template<char... C>                                                             \
-        constexpr auto operator"" _big_uint##Bits() {                                      \
+        constexpr auto operator"" _big_uint##Bits() {                                   \
             constexpr std::size_t N = sizeof...(C);                                     \
             constexpr std::array<char, N> str{C...};                                    \
             constexpr auto result =                                                     \

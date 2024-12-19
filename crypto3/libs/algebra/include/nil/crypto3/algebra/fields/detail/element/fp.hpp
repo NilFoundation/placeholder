@@ -208,7 +208,7 @@ namespace nil {
                         }
 
                         constexpr element_fp inversed() const {
-                            return element_fp(inverse_extended_euclidean_algorithm(data));
+                            return element_fp(inverse(data));
                         }
 
                         constexpr element_fp squared() const {

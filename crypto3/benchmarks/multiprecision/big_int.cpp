@@ -20,6 +20,8 @@
 #include <nil/crypto3/multiprecision/literals.hpp>
 #include <nil/crypto3/multiprecision/big_mod.hpp>
 
+#include <nil/crypto3/multiprecision/detail/big_mod/test_support.hpp>
+
 #include <nil/crypto3/bench/benchmark.hpp>
 
 using namespace nil::crypto3::multiprecision::literals;
@@ -51,15 +53,14 @@ BOOST_AUTO_TEST_SUITE(runtime_odd_tests)
 
 // This directly calls montgomery mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
-    auto raw_base = x_mod_rt_odd.raw_base();
-    auto mod_ops = x_mod_rt_odd.ops();
+    auto raw_base = nil::crypto3::multiprecision::detail::get_raw_base(x_mod_rt_odd);
+    const auto &mod_ops = x_mod_rt_odd.ops_storage().ops();
 
     nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][runtime] montgomery mul (direct call)",
-            [&]() {
-                mod_ops.mul(raw_base, y_mod_rt_odd.raw_base());
-                return raw_base;
-            });
+        "[odd modulus][runtime] montgomery mul (direct call)", [&]() {
+            mod_ops.mul(raw_base, nil::crypto3::multiprecision::detail::get_raw_base(y_mod_rt_odd));
+            return raw_base;
+        });
 
     std::cout << raw_base << std::endl;
 }
@@ -112,15 +113,14 @@ BOOST_AUTO_TEST_SUITE(compile_time_odd_tests)
 
 // This directly calls montgomery mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(montgomery_mul_perf_test) {
-    auto raw_base = x_mod_ct_odd.raw_base();
-    auto mod_ops = x_mod_ct_odd.ops();
+    auto raw_base = nil::crypto3::multiprecision::detail::get_raw_base(x_mod_ct_odd);
+    const auto &mod_ops = x_mod_ct_odd.ops_storage().ops();  // NOLINT
 
     nil::crypto3::bench::run_benchmark<>(
-            "[odd modulus][compile time] montgomery mul (direct call)",
-            [&]() {
-                mod_ops.mul(raw_base, y_mod_ct_odd.raw_base());
-                return raw_base;
-            });
+        "[odd modulus][compile time] montgomery mul (direct call)", [&]() {
+            mod_ops.mul(raw_base, nil::crypto3::multiprecision::detail::get_raw_base(y_mod_ct_odd));
+            return raw_base;
+        });
 
     std::cout << raw_base << std::endl;
 }
@@ -173,15 +173,15 @@ BOOST_AUTO_TEST_SUITE(runtime_even_tests)
 
 // This directly calls barrett mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
-    auto raw_base = x_mod_rt_even.raw_base();
-    auto mod_ops = x_mod_rt_even.ops();
+    auto raw_base = nil::crypto3::multiprecision::detail::get_raw_base(x_mod_rt_even);
+    const auto &mod_ops = x_mod_rt_even.ops_storage().ops();
 
     nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][runtime] barrett mul (direct call)",
-            [&]() {
-                mod_ops.mul(raw_base, y_mod_rt_even.raw_base());
-                return raw_base;
-            });
+        "[even modulus][runtime] barrett mul (direct call)", [&]() {
+            mod_ops.mul(raw_base,
+                        nil::crypto3::multiprecision::detail::get_raw_base(y_mod_rt_even));
+            return raw_base;
+        });
 
     std::cout << raw_base << std::endl;
 }
@@ -234,15 +234,15 @@ BOOST_AUTO_TEST_SUITE(compile_time_even_tests)
 
 // This directly calls mul from modular_ops.hpp.
 BOOST_AUTO_TEST_CASE(barrett_mul_perf_test) {
-    auto raw_base = x_mod_ct_even.raw_base();
-    auto mod_ops = x_mod_ct_even.ops();
+    auto raw_base = nil::crypto3::multiprecision::detail::get_raw_base(x_mod_ct_even);
+    const auto &mod_ops = x_mod_ct_even.ops_storage().ops();  // NOLINT
 
     nil::crypto3::bench::run_benchmark<>(
-            "[even modulus][compile time] barrett mul (direct call)",
-            [&]() {
-                mod_ops.mul(raw_base, y_mod_ct_even.raw_base());
-                return raw_base;
-            });
+        "[even modulus][compile time] barrett mul (direct call)", [&]() {
+            mod_ops.mul(raw_base,
+                        nil::crypto3::multiprecision::detail::get_raw_base(y_mod_ct_even));
+            return raw_base;
+        });
 
     std::cout << raw_base << std::endl;
 }
@@ -284,6 +284,24 @@ BOOST_AUTO_TEST_CASE(big_mod_mul_perf_test) {
                 x_modular *= y_mod_ct_even;
                 return x_modular;
             });
+
+    // Print something so the whole computation is not optimized out.
+    std::cout << x_modular << std::endl;
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(compile_time_inverse_tests)
+
+BOOST_AUTO_TEST_CASE(inverse_extended_euclidean_algorithm_test) {
+    auto x_modular = x_mod_ct_odd;
+
+    nil::crypto3::bench::run_benchmark<>(
+        "[odd modulus][compile time] inverse with extended euclidean algorithm", [&]() {
+            x_modular = inverse(x_modular);
+            ++x_modular;
+            return x_modular;
+        });
 
     // Print something so the whole computation is not optimized out.
     std::cout << x_modular << std::endl;

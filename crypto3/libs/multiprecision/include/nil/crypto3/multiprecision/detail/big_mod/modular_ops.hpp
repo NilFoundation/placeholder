@@ -19,12 +19,12 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "nil/crypto3/multiprecision/detail/assert.hpp"
+#include <boost/assert.hpp>
+
 #include "nil/crypto3/multiprecision/detail/big_uint/big_uint_impl.hpp"
 #include "nil/crypto3/multiprecision/detail/big_uint/storage.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_ops_base.hpp"
 #include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
-#include "nil/crypto3/multiprecision/detail/type_traits.hpp"
 
 namespace nil::crypto3::multiprecision::detail {
     template<std::size_t Bits>
@@ -37,14 +37,14 @@ namespace nil::crypto3::multiprecision::detail {
     struct modular_policy {
         using big_uint_t = big_uint<Bits>;
 
-        static constexpr std::size_t limbs_count = big_uint_t::internal_limb_count;
+        static constexpr std::size_t limb_count = big_uint_t::static_limb_count;
         static constexpr std::size_t limb_bits = big_uint_t::limb_bits;
 
         static constexpr std::size_t BitsCount_doubled = 2u * Bits;
         static constexpr std::size_t BitsCount_doubled_1 = BitsCount_doubled + 1;
         static constexpr std::size_t BitsCount_quadruple_1 = 2u * BitsCount_doubled + 1;
-        static constexpr std::size_t BitsCount_padded_limbs = limbs_count * limb_bits + limb_bits;
-        static constexpr std::size_t BitsCount_doubled_limbs = 2u * limbs_count * limb_bits;
+        static constexpr std::size_t BitsCount_padded_limbs = limb_count * limb_bits + limb_bits;
+        static constexpr std::size_t BitsCount_doubled_limbs = 2u * limb_count * limb_bits;
         static constexpr std::size_t BitsCount_doubled_padded_limbs =
             BitsCount_doubled_limbs + limb_bits;
 
@@ -69,7 +69,7 @@ namespace nil::crypto3::multiprecision::detail {
         using big_uint_doubled_limbs = typename policy_type::big_uint_doubled_limbs;
         using big_uint_doubled_padded_limbs = typename policy_type::big_uint_doubled_padded_limbs;
 
-        static constexpr std::size_t limbs_count = policy_type::limbs_count;
+        static constexpr std::size_t limb_count = policy_type::limb_count;
         static constexpr std::size_t limb_bits = policy_type::limb_bits;
 
         constexpr barrett_modular_ops(const big_uint_t &m) : m_mod(m), m_barrett_mu(0u) {
@@ -95,16 +95,16 @@ namespace nil::crypto3::multiprecision::detail {
                  // result should fit in the output parameter
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
         constexpr void add(big_uint<Bits2> &result, const big_uint<Bits3> &y) const {
-            NIL_CO3_MP_ASSERT(result < mod() && y < mod());
+            BOOST_ASSERT(result < mod() && y < mod());
 
-            result += y;
-            // If we overflow and set the carry, we need to subtract the modulus, which is
+            bool carry = add_assign_with_carry(result, y);
+
+            // If we overflow, we need to subtract the modulus, which is
             // the same as adding 2 ^ Bits - Modulus to the remaining part of the number.
             // After this we know for sure that the result < Modulus, do not waste time on
             // checking again.
-            if (result.has_carry()) {
+            if (carry) {
                 result += mod_compliment();
-                result.set_carry(false);
             } else if (result >= mod()) {
                 result -= mod();
             }
@@ -195,10 +195,12 @@ namespace nil::crypto3::multiprecision::detail {
         template<
             std::size_t Bits2, std::size_t Bits3, typename T,
             /// result should fit in the output parameter
-            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
+            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
+                                 detail::is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                              int> = 0>
         constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
-            NIL_CO3_MP_ASSERT(a < mod());
+            /// input parameter should be less than modulus
+            BOOST_ASSERT(a < mod());
 
             if (is_zero(exp)) {
                 result = 1u;
@@ -241,7 +243,7 @@ namespace nil::crypto3::multiprecision::detail {
                  /// input number should fit in result
                  std::enable_if_t<Bits2 >= Bits3, int> = 0>
         constexpr void adjust_regular(big_uint<Bits2> &result, const big_uint<Bits3> &input) const {
-            NIL_CO3_MP_ASSERT(input < mod());
+            BOOST_ASSERT(input < mod());
             result = input;
         }
 
@@ -265,7 +267,7 @@ namespace nil::crypto3::multiprecision::detail {
         using big_uint_doubled_limbs = typename policy_type::big_uint_doubled_limbs;
         using big_uint_doubled_padded_limbs = typename policy_type::big_uint_doubled_padded_limbs;
 
-        static constexpr std::size_t limbs_count = policy_type::limbs_count;
+        static constexpr std::size_t limb_count = policy_type::limb_count;
         static constexpr std::size_t limb_bits = policy_type::limb_bits;
 
         constexpr montgomery_modular_ops(const big_uint_t &m) : barrett_modular_ops<Bits_>(m) {
@@ -276,7 +278,7 @@ namespace nil::crypto3::multiprecision::detail {
             m_montgomery_p_dash = monty_inverse(this->m_mod.limbs()[0]);
 
             big_uint_doubled_padded_limbs r;
-            r.bit_set(2 * this->m_mod.limbs_count() * limb_bits);
+            r.bit_set(2 * this->m_mod.limb_count() * limb_bits);
             this->barrett_reduce(r);
 
             // Here we are intentionally throwing away half of the bits of r, it's
@@ -328,7 +330,7 @@ namespace nil::crypto3::multiprecision::detail {
             big_uint_doubled_padded_limbs accum(result);
             big_uint_doubled_padded_limbs prod;
 
-            for (std::size_t i = 0; i < this->mod().limbs_count(); ++i) {
+            for (std::size_t i = 0; i < this->mod().limb_count(); ++i) {
                 limb_type limb_accum = accum.limbs()[i];
                 double_limb_type mult_res = limb_accum * static_cast<double_limb_type>(p_dash());
                 limb_type mult_res_limb = static_cast<limb_type>(mult_res);
@@ -338,7 +340,7 @@ namespace nil::crypto3::multiprecision::detail {
                 prod <<= i * limb_bits;
                 accum += prod;
             }
-            accum >>= this->mod().limbs_count() * limb_bits;
+            accum >>= this->mod().limb_count() * limb_bits;
 
             if (accum >= this->mod()) {
                 accum -= this->mod();
@@ -366,7 +368,7 @@ namespace nil::crypto3::multiprecision::detail {
             // additional "unused" bit in the number.
             // 2. Some other bit in modulus is 0.
             // 3. The number has < 12 limbs.
-            return this->mod().limbs_count() < 12 && (Bits % sizeof(limb_type) != 0) &&
+            return this->mod().limb_count() < 12 && (Bits % sizeof(limb_type) != 0) &&
                    this->mod_compliment() != limb_type(1u);
         }
 
@@ -377,11 +379,11 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits2>
         constexpr void montgomery_mul_no_carry_impl(big_uint<Bits2> &c,
                                                     const big_uint<Bits2> &b) const {
-            NIL_CO3_MP_ASSERT(c < this->mod() && b < this->mod());
-            NIL_CO3_MP_ASSERT(is_applicable_for_no_carry_montgomery_mul());
+            BOOST_ASSERT(c < this->mod() && b < this->mod());
+            BOOST_ASSERT(is_applicable_for_no_carry_montgomery_mul());
 
             // Obtain number of limbs
-            constexpr int N = big_uint<Bits2>::internal_limb_count;
+            constexpr int N = big_uint<Bits2>::static_limb_count;
 
             const big_uint<Bits2> a(c);  // Copy the first argument, as the implemented
                                          // algorithm doesn't work in-place.
@@ -472,10 +474,10 @@ namespace nil::crypto3::multiprecision::detail {
         template<std::size_t Bits2>
         constexpr void montgomery_mul_CIOS_impl(big_uint<Bits2> &result,
                                                 const big_uint<Bits2> &y) const {
-            NIL_CO3_MP_ASSERT(result < this->mod() && y < this->mod());
+            BOOST_ASSERT(result < this->mod() && y < this->mod());
 
             big_uint_t A(limb_type(0u));
-            const std::size_t mod_size = this->mod().limbs_count();
+            const std::size_t mod_size = this->mod().limb_count();
             auto *mod_limbs = this->mod().limbs();
             auto mod_last_limb = static_cast<double_limb_type>(mod_limbs[0]);
             auto y_last_limb = y.limbs()[0];
@@ -564,15 +566,12 @@ namespace nil::crypto3::multiprecision::detail {
         template<
             std::size_t Bits2, std::size_t Bits3, typename T,
             /// result should fit in the output parameter
-            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits && is_unsigned_integer_v<T>,
+            std::enable_if_t<big_uint<Bits2>::Bits >= big_uint_t::Bits &&
+                                 detail::is_integral_v<T> && !std::numeric_limits<T>::is_signed,
                              int> = 0>
         constexpr void pow(big_uint<Bits2> &result, const big_uint<Bits3> &a, T exp) const {
             /// input parameter should be less than modulus
-            NIL_CO3_MP_ASSERT(a < this->mod());
-
-            big_uint_t R_mod_m = m_one;
-
-            big_uint_t base(a);
+            BOOST_ASSERT(a < this->mod());
 
             if (is_zero(exp)) {
                 result = m_one;
@@ -583,18 +582,20 @@ namespace nil::crypto3::multiprecision::detail {
                 return;
             }
 
+            big_uint_t base(a), res = m_one;
+
             while (true) {
                 bool lsb = bit_test(exp, 0u);
                 exp >>= 1u;
                 if (lsb) {
-                    mul(R_mod_m, base);
+                    mul(res, base);
                     if (is_zero(exp)) {
                         break;
                     }
                 }
                 mul(base, base);
             }
-            result = R_mod_m;
+            result = res;
         }
 
         // Adjust to/from modular form
@@ -635,18 +636,18 @@ namespace nil::crypto3::multiprecision::detail {
         ops.adjust_modular(raw_base, b);
     }
 
-    template<std::size_t Bits, typename SI, typename modular_ops_t,
-             typename std::enable_if_t<std::is_integral_v<SI> && std::is_signed_v<SI>, int> = 0>
-    constexpr void init_raw_base(big_uint<Bits> &raw_base, SI b, const modular_ops_t &ops) {
+    template<std::size_t Bits, typename T, typename modular_ops_t,
+             typename std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+    constexpr void init_raw_base(big_uint<Bits> &raw_base, T b, const modular_ops_t &ops) {
         ops.adjust_modular(raw_base, detail::as_big_uint(detail::unsigned_abs(b)));
         if (b < 0) {
             ops.negate(raw_base);
         }
     }
 
-    template<std::size_t Bits, typename UI, typename modular_ops_t,
-             typename std::enable_if_t<std::is_integral_v<UI> && std::is_unsigned_v<UI>, int> = 0>
-    constexpr void init_raw_base(big_uint<Bits> &raw_base, UI b, const modular_ops_t &ops) {
+    template<std::size_t Bits, typename T, typename modular_ops_t,
+             typename std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+    constexpr void init_raw_base(big_uint<Bits> &raw_base, T b, const modular_ops_t &ops) {
         ops.adjust_modular(raw_base, detail::as_big_uint(b));
     }
 }  // namespace nil::crypto3::multiprecision::detail
