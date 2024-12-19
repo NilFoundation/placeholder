@@ -54,6 +54,9 @@ namespace nil {
                     typedef boost::multiprecision::backends::cpp_int_modular_backend<modulus_bits> modular_backend;
 
                     typedef boost::multiprecision::number<modular_backend> integral_type;
+                    typedef boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<16 * modulus_bits>>
+                        extended_integral_type;
 
                     typedef boost::multiprecision::backends::modular_params<modular_backend> modular_params_type;
 #endif
