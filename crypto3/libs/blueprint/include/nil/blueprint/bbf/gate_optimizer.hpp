@@ -57,7 +57,13 @@ namespace nil {
                 std::unordered_map<size_t, std::vector<constraint_type>> constraint_list;
                 std::vector<plonk_copy_constraint> copy_constraints;
                 std::map<std::string, std::pair<std::vector<std::size_t>, size_t>> dynamic_lookup_tables;
-                std::unordered_map<size_t, std::vector<typename context_type::lookup_constraint_type>> lookup_constraints;
+
+                // Lookup constraints with single selector are stored here.
+                std::unordered_map<size_t, std::vector<lookup_constraint_type>> lookup_constraints;
+
+                // The following lookup constraints are grouped with non-intersecting selectors.
+                // grouped_lookups[table_name][group_id][selector_id] maps to the lookup inputs for the given selector.
+                std::unordered_map<std::string, std::unordered_map<size_t, std::unordered_map<size_t, lookup_input_constraints_type>>> grouped_lookups;
 
                 // We will map each selector to the corresponding id.
                 std::unordered_map<row_selector<>, size_t> selectors_;
@@ -201,38 +207,98 @@ namespace nil {
 
             private:
 
-                /** Brooks' algorithm for graph coloring.
+                /** RLF (Recursive Largest First) algorithm for graph coloring.
                  *  \param[in] adj - Adjacency list of the graph.
-                 *  \returns A map that maps the vertex id to its color.
+                 *  \returns A vector that contains color of each vertex.
                  */
-                std::unordered_map<size_t, size_t> colorGraph(const std::vector<std::vector<size_t>>& adj) const {
-                    size_t V = adj.size();  
-                    std::unordered_map<size_t, size_t> color;
+                std::vector<size_t> colorGraph(const std::vector<std::vector<size_t>>& adj) {
+                    size_t n = adj.size();
+                    if (n == 0)
+                        return {};
 
-                    // Sort vertices by degree in descending order
-                    std::vector<size_t> vertices(V);
-                    for (size_t i = 0; i < V; ++i)
-                        vertices[i] = i;
+                    // Compute vertex degrees
+                    std::vector<size_t> degrees(n, 0);
+                    for (size_t i = 0; i < n; i++) {
+                        degrees[i] = adj[i].size();
+                    }
 
-                    std::sort(vertices.begin(), vertices.end(), 
-                        [&adj](size_t a, size_t b) { return adj[a].size() > adj[b].size(); });
+                    // All vertices initially uncolored
+                    std::vector<size_t> color(n, std::numeric_limits<size_t>::max());  
+                    std::unordered_set<size_t> uncolored; 
+                    for (size_t i = 0; i < n; i++)
+                        uncolored.insert(i);
 
-                    // Color vertices
-                    for (size_t u : vertices) {
-                        // Collect colors of adjacent vertices
-                        std::unordered_set<size_t> usedColors;
-                        for (size_t v : adj[u]) {
-                            if (color.count(v)) {
-                                usedColors.insert(color[v]);
+                    size_t currentColor = 0;
+
+                    while (!uncolored.empty()) {
+                        // Step 1: Pick the vertex with the largest degree from the uncolored set
+                        size_t startVertex = *std::max_element(uncolored.begin(), uncolored.end(), 
+                                                          [&](size_t a, size_t b) {
+                                                              return degrees[a] < degrees[b];
+                                                          });
+
+                        // Start a new color class
+                        std::vector<size_t> colorClass;
+                        colorClass.push_back(startVertex);
+                        uncolored.erase(startVertex);
+
+                        // H is the set of vertices to consider adding
+                        // Initially, it's all remaining uncolored vertices
+                        std::unordered_set<size_t> H = uncolored;
+
+                        // We'll keep track of how many neighbors in the color class each vertex has
+                        std::vector<size_t> inClassNeighborsCount(n, 0);
+
+                        // Update counts for the startVertex's neighbors
+                        for (auto w : adj[startVertex]) {
+                            if (H.find(w) != H.end()) {
+                                inClassNeighborsCount[w]++;
                             }
                         }
 
-                        // Find first available color
-                        size_t currColor = 0;
-                        while (usedColors.count(currColor)) {
-                            currColor++;
+                        // Iteratively add vertices to the color class
+                        while (!H.empty()) {
+                            // Pick the vertex in H with the largest inClassNeighborsCount
+                            // Tie-break by highest degree
+                            size_t candidate = 0;
+                            bool found = false;
+                            size_t bestValue = 0;   // best number of neighbors in class
+                            size_t bestDegree = 0;  // tie-break by degree
+
+                            for (auto v : H) {
+                                size_t val = inClassNeighborsCount[v];
+                                if (!found || val > bestValue || (val == bestValue && degrees[v] > bestDegree)) {
+                                    bestValue = val;
+                                    bestDegree = degrees[v];
+                                    candidate = v;
+                                    found = true;
+                                }
+                            }
+
+                            if (!found || bestValue == 0) {
+                                // No vertex in H is connected to the color class, so we can't grow it further
+                                break;
+                            }
+
+                            // Add candidate to the color class
+                            colorClass.push_back(candidate);
+                            H.erase(candidate);
+                            uncolored.erase(candidate);
+
+                            // Update inClassNeighborsCount for the neighbors of the candidate
+                            for (auto w : adj[candidate]) {
+                                if (H.find(w) != H.end()) {
+                                    inClassNeighborsCount[w]++;
+                                }
+                            }
                         }
-                        color[u] = currColor;
+
+                        // Assign the currentColor to all vertices in colorClass
+                        for (auto v : colorClass) {
+                            color[v] = currentColor;
+                        }
+
+                        currentColor++;
                     }
 
                     return color;
@@ -243,7 +309,7 @@ namespace nil {
                 std::vector<std::vector<size_t>> create_selector_intersection_graph(
                         const optimized_gates<FieldType>& gates,
                         const std::vector<size_t>& used_selectors,
-                        const std::map<size_t, size_t>& selector_id_to_index) {
+                        const std::unordered_map<size_t, size_t>& selector_id_to_index) {
                     std::vector<std::vector<size_t>> adj;
                     // Create the graph.
                     adj.resize(used_selectors.size());
@@ -255,27 +321,49 @@ namespace nil {
                                 continue;
                             if (row_list1.intersects(row_list2))    {
                                 // Add an edge.
-                                adj[selector_id_to_index[selector_id1]].push_back(selector_id_to_index[selector_id2]);
-                                adj[selector_id_to_index[selector_id2]].push_back(selector_id_to_index[selector_id1]);
+                                adj[selector_id_to_index.at(selector_id1)].push_back(selector_id_to_index.at(selector_id2));
+                                adj[selector_id_to_index.at(selector_id2)].push_back(selector_id_to_index.at(selector_id1));
                             }
                         }
                     }
                     return adj;
                 }
 
-                std::unordered_map<size_t, size_t> group_selectors(
-                    const std::vector<std::vector<size_t>>& graph,
-                    const std::unordered_map<size_t, size_t>& selector_id_to_index,
-                    const std::vector<size_t>& used_selectors) {
-                    std::vector<std::vector<size_t>> graph_subset = get_subset(
-                        graph, selector_id_to_index, used_selectors);
+                std::vector<std::vector<size_t>> get_subgraph(
+                        const std::vector<std::vector<size_t>>& graph,
+                        const std::vector<size_t>& all_lookup_selectors,
+                        const std::unordered_map<size_t, size_t>& selector_id_to_index,
+                        const std::vector<size_t>& subset_selectors) {
+                    std::unordered_map<size_t, size_t> selector_id_to_subset_index;
+                    for (size_t i = 0; i < subset_selectors.size(); ++i) {
+                        selector_id_to_subset_index[subset_selectors[i]] = i;
+                    }
 
-                    std::unordered_map<size_t, size_t> coloring = colorGraph(graph_subset);
+                    std::vector<std::vector<size_t>> result(subset_selectors.size());
+                    for (size_t i = 0; i < subset_selectors.size(); ++i) {
+                        // 'id' is actually an index of selector in the 'all_lookup_selectors'.
+                        for (size_t id: graph[selector_id_to_index.at(subset_selectors[i])]) {
+                            result[i].push_back(selector_id_to_subset_index[all_lookup_selectors[id]]);
+                        }
+                    }
+                    return result;
+                }
+
+                std::unordered_map<size_t, size_t> group_selectors(
+                        const std::vector<std::vector<size_t>>& graph,
+                        const std::vector<size_t>& all_lookup_selectors,
+                        const std::unordered_map<size_t, size_t>& selector_id_to_index,
+                        const std::vector<size_t>& used_selectors) {
+                    std::vector<std::vector<size_t>> graph_subset = get_subgraph(
+                        graph, all_lookup_selectors, selector_id_to_index, used_selectors);
+
+                    // coloring[i] is the group_id of used_selectors[i].
+                    std::vector<size_t> coloring = colorGraph(graph_subset);
 
                     // Now run over the returned coloring and map it back.
                     std::unordered_map<size_t, size_t> result;
-                    for (const auto& [id, group_id]: coloring) {
-                        result[used_selectors[id]] = group_id;
+                    for (size_t i = 0; i < coloring.size(); ++i) {
+                        result[used_selectors[i]] = coloring[i];
                     }
                     return result;
                 }
@@ -288,19 +376,19 @@ namespace nil {
                  *  called graph coloring problem. We will use Brooks' algorithm, it's some simple heuristic thing.
                  */
                 void optimize_lookups_by_grouping(optimized_gates<FieldType>& gates) {
-                    std::vector<size_t> used_selectors;
+                    std::vector<size_t> all_lookup_selectors;
                     std::unordered_map<size_t, size_t> selector_id_to_index;
 
                     for (const auto& [row_list, selector_id]: gates.selectors_) {
                         if (gates.lookup_constraints.find(selector_id) != gates.lookup_constraints.end()) {
-                            used_selectors.push_back(selector_id);
-                            selector_id_to_index[selector_id] = used_selectors.size() - 1;
+                            all_lookup_selectors.push_back(selector_id);
+                            selector_id_to_index[selector_id] = all_lookup_selectors.size() - 1;
                         }
                     }
 
                     // Create an adjacency list of the whole large graph, since taking intersections of selectors is not super fast.
                     std::vector<std::vector<size_t>> adj = create_selector_intersection_graph(
-                        gates, used_selectors, selector_id_to_index);
+                        gates, all_lookup_selectors, selector_id_to_index);
 
                     // For each table, create the list of used selectors.
                     std::unordered_map<std::string, std::vector<size_t>> selectors_per_table;
@@ -318,30 +406,35 @@ namespace nil {
                     std::unordered_map<std::string, std::unordered_map<size_t, size_t>> group_sizes;
                     for (const auto& [table_name, selectors] : selectors_per_table) {
                         // Maps group_id -> # of selectors in it.
-                        selector_groups[table_name] = group_selectors(adj, selector_id_to_index, selectors);
+                        selector_groups[table_name] = group_selectors(adj, all_lookup_selectors, selector_id_to_index, selectors);
+
                         // Count the size of each group, we need to not touch groups of size 1.
                         for (const auto& [selector_id, group_index]: selector_groups[table_name]) {
                             group_sizes[table_name][group_index]++;
                         }
                     }
 
-                    std::unordered_map<std::string, std::unordered_map<size_t, typename context_type::lookup_input_constraints_type>> merged_lookups;
+                    std::unordered_map<size_t, std::vector<typename context_type::lookup_constraint_type>> new_lookup_constraints;
+
                     // Now merge all the lookups on selectors in the same group.
                     for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                         std::vector<lookup_constraint_type> lookup_gate;
                         for(const auto& single_lookup_constraint : lookup_list) {
                             const std::string& table_name = single_lookup_constraint.first;
                             size_t group_id = selector_groups[table_name][selector_id];
+
                             // If the group size is 1, don't touch it.
-                            if (group_sizes[table_name][group_id] == 1)
-                                merged_lookups[table_name][selector_id] = single_lookup_constraint.second;
-                            else {
-                                // selector_by_id is a non-existant map, we will add it later.
-                                merged_lookups[table_name][PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED] +=
-                                    selector_by_id[selector_id] * single_lookup_constraint.second;
+                            if (group_sizes[table_name][group_id] == 1) {
+                                new_lookup_constraints[selector_id].push_back(
+                                    {table_name, std::move(single_lookup_constraint.second)});
+                            } else {
+                                gates.grouped_lookups[table_name][group_id][selector_id] =
+                                    std::move(single_lookup_constraint.second);
                             }
                         }
                     }
+
+                    gates.lookup_constraints = std::move(new_lookup_constraints);
                 }
  
                 /** This function tries to reduce the number of selectors required by rotating the constraints by +-1.
