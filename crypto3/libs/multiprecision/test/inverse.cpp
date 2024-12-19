@@ -9,7 +9,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_int_inverse_test
+#define BOOST_TEST_MODULE inverse_test
 
 #include <stdexcept>
 

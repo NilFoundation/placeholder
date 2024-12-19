@@ -42,6 +42,7 @@
 #include "nil/crypto3/multiprecision/detail/big_uint/type_traits.hpp"  // IWYU pragma: export
 #include "nil/crypto3/multiprecision/detail/config.hpp"
 #include "nil/crypto3/multiprecision/detail/endian.hpp"
+#include "nil/crypto3/multiprecision/detail/integer_utils.hpp"
 
 namespace nil::crypto3::multiprecision {
     /**
@@ -143,13 +144,12 @@ namespace nil::crypto3::multiprecision {
             this->normalize();
         }
 
-        template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
         constexpr void do_assign_integral(const T& a) {
-            do_assign_integral_unchecked(a);
+            do_assign_integral_unchecked(detail::unsigned_or_throw(a));
             if constexpr (sizeof(T) * CHAR_BIT > Bits) {
-                if (big_uint<sizeof(T) * CHAR_BIT>(a).compare(*this) != 0) {
-                    throw std::range_error("big_uint: out of range");
+                if (compare(a) != 0) {
+                    throw std::range_error("big_uint: overflow");
                 }
             }
         }
@@ -171,7 +171,7 @@ namespace nil::crypto3::multiprecision {
             do_assign_unchecked(other);
             if constexpr (Bits2 > Bits) {
                 if (other.compare(*this) != 0) {
-                    throw std::range_error("big_uint: out of range");
+                    throw std::range_error("big_uint: overflow");
                 }
             }
         }
@@ -185,17 +185,9 @@ namespace nil::crypto3::multiprecision {
         constexpr big_uint(const char* str) { *this = str; }
         constexpr big_uint(const std::string& str) { *this = str; }
 
-        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_uint(T val) {
-            if (val < 0) {
-                throw std::range_error("big_uint: assignment from negative integer");
-            }
-            do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
-        }
-
-        template<class T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr big_uint(T val) {
-            do_assign_integral(val);
+        template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        constexpr big_uint(T a) {
+            do_assign_integral(a);
         }
 
         // TODO(ioxid): make this explicit for the case when Bits2 > Bits
@@ -224,20 +216,9 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
-        constexpr big_uint& operator=(T val) {
-            if (val < 0) {
-                throw std::range_error("big_uint: assignment from negative integer");
-            }
-            do_assign_integral(static_cast<std::make_unsigned_t<T>>(val));
-            return *this;
-        }
-
-        template<typename T,
-                 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-        constexpr big_uint& operator=(T val) noexcept {
-            do_assign_integral(val);
+        template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+        constexpr big_uint& operator=(T a) {
+            do_assign_integral(a);
             return *this;
         }
 
@@ -269,26 +250,23 @@ namespace nil::crypto3::multiprecision {
 
         // String conversion
 
-        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
-                                                                  std::ios_base::showbase |
-                                                                  std::ios_base::uppercase) const {
-            if (flags & std::ios_base::dec) {
-                // TODO(ioxid): this is inefficient
-                std::string result;
-                auto copy = *this;
-                while (!copy.is_zero()) {
-                    result += static_cast<char>(static_cast<unsigned int>(copy % 10u) + '0');
-                    copy /= 10u;
-                }
-                std::reverse(result.begin(), result.end());
-                if (result.empty()) {
-                    result += '0';
-                }
-                return result;
+      private:
+        constexpr std::string decimal_str() const {
+            // TODO(ioxid): this is inefficient
+            std::string result;
+            auto copy = *this;
+            while (!copy.is_zero()) {
+                result += static_cast<char>(static_cast<unsigned>(copy % 10u) + '0');
+                copy /= 10u;
             }
-            if (!(flags & std::ios_base::hex)) {
-                throw std::invalid_argument("big_uint: unsupported format flags");
+            std::reverse(result.begin(), result.end());
+            if (result.empty()) {
+                result += '0';
             }
+            return result;
+        }
+
+        constexpr std::string hex_str() const {
             std::string result;
             result.reserve(used_limbs() * limb_bits / 4);
             bool found_first = false;
@@ -313,14 +291,28 @@ namespace nil::crypto3::multiprecision {
                     BOOST_ASSERT(ec == std::errc{});
                 }
             }
+            if (result.empty()) {
+                result += '0';
+            }
+            return result;
+        }
+
+      public:
+        constexpr std::string str(std::ios_base::fmtflags flags = std::ios_base::hex |
+                                                                  std::ios_base::showbase |
+                                                                  std::ios_base::uppercase) const {
+            if (flags & std::ios_base::dec) {
+                return decimal_str();
+            }
+            if (!(flags & std::ios_base::hex)) {
+                throw std::invalid_argument("big_uint: unsupported format flags");
+            }
+            auto result = hex_str();
             if (flags & std::ios_base::uppercase) {
                 for (std::size_t i = 0; i < result.size(); ++i) {
                     result[i] =
                         static_cast<char>(std::toupper(static_cast<unsigned char>(result[i])));
                 }
-            }
-            if (result.size() == 0) {
-                result += '0';
             }
             if (flags & std::ios_base::showbase) {
                 result = "0x" + result;
@@ -341,24 +333,37 @@ namespace nil::crypto3::multiprecision {
                                                   std::is_unsigned_v<T>,
                                               int> = 0>
         explicit constexpr operator T() const {
+            T result;
             if constexpr (sizeof(T) <= sizeof(limb_type)) {
-                return static_cast<T>(this->limbs()[0]);
+                result = static_cast<T>(this->limbs()[0]);
             } else {
+                static_assert(sizeof(T) % sizeof(limb_type) == 0);
                 constexpr std::size_t n =
                     std::min(sizeof(T) / sizeof(limb_type), static_limb_count);
-                T result = 0;
+                result = 0;
                 for (std::size_t i = 0; i < n; ++i) {
                     result <<= limb_bits;
                     result |= limbs()[n - i - 1];
                 }
-                return result;
             }
+            if constexpr (sizeof(T) * CHAR_BIT < Bits) {
+                if (compare(result) != 0) {
+                    throw std::overflow_error("big_uint: overflow");
+                }
+            }
+            return result;
         }
 
         template<typename T,
                  std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
         explicit constexpr operator T() const {
-            return static_cast<T>(static_cast<std::make_unsigned_t<T>>(*this));
+            T result = static_cast<T>(static_cast<std::make_unsigned_t<T>>(*this));
+            if constexpr (sizeof(T) * CHAR_BIT <= Bits) {
+                if (compare(result) != 0) {
+                    throw std::overflow_error("big_uint: overflow");
+                }
+            }
+            return result;
         }
 
         explicit constexpr operator bool() const { return !is_zero(); }
@@ -420,8 +425,8 @@ namespace nil::crypto3::multiprecision {
 
 #define NIL_CO3_MP_BIG_UINT_IMPL_COMPARISON_OPERATOR(OP_)                        \
     template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>    \
-    constexpr bool operator OP_(const T& o) const noexcept {                     \
-        return compare(o) OP_ 0;                                                 \
+    friend constexpr bool operator OP_(const big_uint& a, const T& b) noexcept { \
+        return a.compare(b) OP_ 0;                                               \
     }                                                                            \
                                                                                  \
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>       \
@@ -735,18 +740,18 @@ namespace nil::crypto3::multiprecision {
         }
 
         template<std::size_t Bits2>
-        NIL_CO3_MP_FORCEINLINE constexpr void bitwise_and(const big_uint<Bits2>& o) noexcept {
-            bitwise_op(o, std::bit_and());
+        NIL_CO3_MP_FORCEINLINE constexpr void bitwise_and(const big_uint<Bits2>& other) noexcept {
+            bitwise_op(other, std::bit_and());
         }
 
         template<std::size_t Bits2>
-        NIL_CO3_MP_FORCEINLINE constexpr void bitwise_or(const big_uint<Bits2>& o) noexcept {
-            bitwise_op(o, std::bit_or());
+        NIL_CO3_MP_FORCEINLINE constexpr void bitwise_or(const big_uint<Bits2>& other) noexcept {
+            bitwise_op(other, std::bit_or());
         }
 
         template<std::size_t Bits2>
-        NIL_CO3_MP_FORCEINLINE constexpr void bitwise_xor(const big_uint<Bits2>& o) noexcept {
-            bitwise_op(o, std::bit_xor());
+        NIL_CO3_MP_FORCEINLINE constexpr void bitwise_xor(const big_uint<Bits2>& other) noexcept {
+            bitwise_op(other, std::bit_xor());
         }
 
         //
@@ -762,10 +767,10 @@ namespace nil::crypto3::multiprecision {
 
         NIL_CO3_MP_FORCEINLINE constexpr void bitwise_xor(limb_type l) noexcept { limbs()[0] ^= l; }
 
-        NIL_CO3_MP_FORCEINLINE constexpr void complement(const big_uint<Bits>& o) noexcept {
-            std::size_t os = o.limb_count();
+        NIL_CO3_MP_FORCEINLINE constexpr void complement(const big_uint<Bits>& other) noexcept {
+            std::size_t os = other.limb_count();
             for (std::size_t i = 0; i < os; ++i) {
-                limbs()[i] = ~o.limbs()[i];
+                limbs()[i] = ~other.limbs()[i];
             }
             normalize();
         }
@@ -925,10 +930,13 @@ namespace nil::crypto3::multiprecision {
         }
 
         // Shifting left throws away upper Bits.
-        constexpr big_uint& operator<<=(double_limb_type s) noexcept {
-            if (!s) {
+        template<typename T>
+        constexpr big_uint& operator<<=(T s_original) {
+            static_assert(std::is_integral_v<T>);
+            if (!s_original) {
                 return *this;
             }
+            auto s = detail::unsigned_or_throw(s_original);
 
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(NIL_CO3_MP_USE_LIMB_SHIFT)
             constexpr limb_type limb_shift_mask = limb_bits - 1;
@@ -962,16 +970,20 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        constexpr big_uint operator<<(double_limb_type s) const noexcept {
+        template<typename T>
+        constexpr big_uint operator<<(T s) const {
             big_uint result = *this;
             result <<= s;
             return result;
         }
 
-        constexpr big_uint& operator>>=(double_limb_type s) noexcept {
-            if (!s) {
+        template<typename T>
+        constexpr big_uint& operator>>=(T s_original) {
+            static_assert(std::is_integral_v<T>);
+            if (!s_original) {
                 return *this;
             }
+            auto s = detail::unsigned_or_throw(s_original);
 
 #if NIL_CO3_MP_ENDIAN_LITTLE_BYTE && defined(NIL_CO3_MP_USE_LIMB_SHIFT)
             constexpr limb_type limb_shift_mask = limb_bits - 1;
@@ -1004,7 +1016,8 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        constexpr big_uint operator>>(double_limb_type s) const noexcept {
+        template<typename T>
+        constexpr big_uint operator>>(T s) const {
             big_uint result = *this;
             result >>= s;
             return result;
@@ -1058,7 +1071,7 @@ namespace nil::crypto3::multiprecision {
             return static_cast<bool>(limbs()[offset] & mask);
         }
 
-        constexpr void bit_set(std::size_t index) {
+        constexpr big_uint& bit_set(std::size_t index) {
             if (index >= Bits) {
                 throw std::invalid_argument("fixed precision overflow");
             }
@@ -1066,9 +1079,10 @@ namespace nil::crypto3::multiprecision {
             std::size_t shift = index % limb_bits;
             limb_type mask = limb_type(1u) << shift;
             limbs()[offset] |= mask;
+            return *this;
         }
 
-        constexpr void bit_unset(std::size_t index) {
+        constexpr big_uint& bit_unset(std::size_t index) {
             if (index >= Bits) {
                 throw std::invalid_argument("fixed precision overflow");
             }
@@ -1076,9 +1090,10 @@ namespace nil::crypto3::multiprecision {
             std::size_t shift = index % limb_bits;
             limb_type mask = limb_type(1u) << shift;
             limbs()[offset] &= ~mask;
+            return *this;
         }
 
-        constexpr void bit_flip(std::size_t index) {
+        constexpr big_uint& bit_flip(std::size_t index) {
             if (index >= Bits) {
                 throw std::invalid_argument("fixed precision overflow");
             }
@@ -1086,6 +1101,7 @@ namespace nil::crypto3::multiprecision {
             std::size_t shift = index % limb_bits;
             limb_type mask = limb_type(1u) << shift;
             limbs()[offset] ^= mask;
+            return *this;
         }
 
         // Import / export
@@ -1238,19 +1254,26 @@ namespace nil::crypto3::multiprecision {
 
         // Hash
 
-        friend constexpr std::size_t hash_value(const big_uint& val) noexcept {
+        friend constexpr std::size_t hash_value(const big_uint& a) noexcept {
             std::size_t result = 0;
-            for (std::size_t i = 0; i < val.limb_count(); ++i) {
-                boost::hash_combine(result, val.limbs()[i]);
+            for (std::size_t i = 0; i < a.limb_count(); ++i) {
+                boost::hash_combine(result, a.limbs()[i]);
             }
             return result;
         }
 
         // IO
 
-        friend constexpr std::ostream& operator<<(std::ostream& os, const big_uint& value) {
-            os << value.str(os.flags());
+        friend constexpr std::ostream& operator<<(std::ostream& os, const big_uint& a) {
+            os << a.str(os.flags());
             return os;
+        }
+
+        friend constexpr std::istream& operator>>(std::istream& is, big_uint& a) {
+            std::string s;
+            is >> s;
+            a = s;
+            return is;
         }
 
       private:
@@ -1327,6 +1350,21 @@ namespace nil::crypto3::multiprecision {
     template<std::size_t Bits>
     constexpr bool bit_test(const big_uint<Bits>& a, std::size_t index) {
         return a.bit_test(index);
+    }
+
+    template<std::size_t Bits>
+    constexpr big_uint<Bits>& bit_set(big_uint<Bits>& a, std::size_t index) {
+        return a.bit_set(index);
+    }
+
+    template<std::size_t Bits>
+    constexpr big_uint<Bits>& bit_unset(big_uint<Bits>& a, std::size_t index) {
+        return a.bit_unset(index);
+    }
+
+    template<std::size_t Bits>
+    constexpr big_uint<Bits>& bit_flip(big_uint<Bits>& a, std::size_t index) {
+        return a.bit_flip(index);
     }
 
     template<std::size_t Bits>
