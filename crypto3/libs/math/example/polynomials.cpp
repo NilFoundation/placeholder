@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
-// Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -22,39 +21,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// This example demonstrates generation of elements for different structures:
-// * Field modulo p
-// * Elliptic curve point
-// * Extended Field - GT group for pairing-friendly curve
+// This example demonstrates operations on polynomials
 
 #include <iostream>
 
-#include <nil/crypto3/multiprecision/literals.hpp>
+#include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/crypto3/math/polynomial/xgcd.hpp>
+#include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
 
-#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
-#include <nil/crypto3/algebra/curves/bls12.hpp>
-
-#include <nil/crypto3/algebra/random_element.hpp>
-
-using namespace nil::crypto3::algebra;
-
-
-template<typename Type>
-void random_element_example() {
-    typename Type::value_type v = random_element<Type>();
-
-    std::cout << "Got random value:" << v << std::endl;
-}
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
 
 int main() {
-    std::cout << "ALT_BN128-254 Fq random element choice:" << std::endl;
-    random_element_example<typename fields::alt_bn128_fq<254>>();
+    using field_type = typename nil::crypto3::algebra::fields::bls12_scalar_field<381>::value_type;
+    using polynomial = nil::crypto3::math::polynomial<field_type>;
 
-    std::cout << "BLS12-381 G1 random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::g1_type<>>();
+    /* 3x^2 + 2x + 1 */
+    polynomial a({1,2,3});
+    std::cout << "a = " << a << std::endl;
+    
+    /* 7x^5 */
+    polynomial b({0,0,0,0,0,7});
+    std::cout << "b = " << b << std::endl;
 
-    std::cout << "BLS12-381 Gt random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::gt_type>();
+    polynomial c = a + b;
+    std::cout << "a+b = " << c << std::endl;
 
+    polynomial d = a * b;
+    std::cout << "a*b = " << d << std::endl;
+
+    field_type x = 2;
+    std::cout << std::dec;
+    std::cout << "a(" << x << ") = " << a.evaluate(x) << std::endl;
+    std::cout << "b(" << x << ") = " << b.evaluate(x) << std::endl;
     return 0;
 }

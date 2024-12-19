@@ -22,11 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+// This example demonstrates the usage of different coordinates systems representing
+// a point on an elliptic curve
 
 #include <nil/crypto3/multiprecision/literals.hpp>
 
 
 #include <nil/crypto3/algebra/curves/secp_r1.hpp>
+#include "nil/crypto3/algebra/curves/detail/forms/short_weierstrass/coordinates.hpp"
 
 using namespace nil::crypto3::algebra;
 
@@ -35,14 +38,16 @@ void coordinates_examples() {
     typedef typename FpCurveGroup::value_type group_value_type;
     typedef typename FpCurveGroup::field_type::value_type field_value_type;
 
-    field_value_type e1 = field_value_type(0xfadaf4efc388b9fb1f5f6286032868c8c29a4d7b359f17bff792511cdbcea8ba_big_uint256),
-    e2(0x609eaeb55609889d764de70df4536a52a6773ce14244d2109afb1f6140d64ed2_big_uint256), e3(1),
-    e4(0x72213568b6cec6bad10c649c22d9388857085132ea254320c7d3c12727f55d97_big_uint256),
-    e5(0xff9d5ca60a4f5ae00b2abdb6dddb3f4fc5c853ed56a33a85ccaa7d3093084579_big_uint256), e6(1);
-  
+    /* Affine coordinates of two points */
+    field_value_type 
+        e1(0xfadaf4efc388b9fb1f5f6286032868c8c29a4d7b359f17bff792511cdbcea8ba_big_uint256),
+        e2(0x609eaeb55609889d764de70df4536a52a6773ce14244d2109afb1f6140d64ed2_big_uint256),
+        e3(1),
+        e4(0x72213568b6cec6bad10c649c22d9388857085132ea254320c7d3c12727f55d97_big_uint256),
+        e5(0xff9d5ca60a4f5ae00b2abdb6dddb3f4fc5c853ed56a33a85ccaa7d3093084579_big_uint256),
+        e6(1);
 
-	
-    group_value_type c1(e1, e2, e3), c2(e4, e5, e6);//, c3(e7,e8,e9),c4(e10,e11,e12);
+    group_value_type c1(e1, e2, e3), c2(e4, e5, e6);
 
     std::cout << "Curve element values: " << std::endl;
     std::cout << "c1 value: " << (c1) << std::endl;
@@ -55,15 +60,11 @@ void coordinates_examples() {
 
 int main() {
     std::cout << "Secp256r1 Jacobian coordinates with a4=-3" << std::endl;
-
-    coordinates_examples<curves::secp_r1<256>::g1_type< curves::coordinates::jacobian_with_a4_minus_3,  curves::forms::short_weierstrass>>();//<coordinates::jacobian_with_a4_minus_3>>()//()_g1_params<160, forms::short_weierstrass>
-
+    coordinates_examples<curves::secp_r1<256>::g1_type<curves::coordinates::jacobian_with_a4_minus_3, curves::forms::short_weierstrass>>();
     std::cout << "----------------------------" << std::endl;
 
-    std::cout << "Secp256r1 Jacobian coordinates" << std::endl;
-
-    coordinates_examples<curves::secp_r1<256>::g1_type< curves::coordinates::jacobian,  curves::forms::short_weierstrass>>();//<coordinates::jacobian_with_a4_minus_3>>()//()_g1_params<160, forms::short_weierstrass>
-
+    std::cout << "Secp256r1 projective coordinates" << std::endl;
+    coordinates_examples<curves::secp_r1<256>::g1_type<curves::coordinates::projective_with_a4_minus_3, curves::forms::short_weierstrass>>();
     std::cout << "----------------------------" << std::endl;
     return 0;
 }

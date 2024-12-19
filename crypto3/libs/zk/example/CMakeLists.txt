@@ -1,6 +1,5 @@
 #---------------------------------------------------------------------------#
-# Copyright (c) 2018-2020 Mikhail Komarov <nemo@nil.foundation>
-# Copyright (c) 2020 Ilias Khairullin <ilias@nil.foundation>
+# Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 #
 # Distributed under the Boost Software License, Version 1.0
 # See accompanying file LICENSE_1_0.txt or copy at
@@ -12,20 +11,24 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include"
 
         ${Boost_INCLUDE_DIRS})
 
-macro(define_random_example name)
-    add_executable(random_${name}_example ${name}.cpp)
-    target_link_libraries(random_${name}_example PRIVATE
+macro(define_zk_example name)
+    add_executable(zk_${name}_example ${name}.cpp)
+    target_link_libraries(zk_${name}_example PRIVATE
             ${CMAKE_WORKSPACE_NAME}::algebra
             ${CMAKE_WORKSPACE_NAME}::hash
             ${CMAKE_WORKSPACE_NAME}::multiprecision
+            ${CMAKE_WORKSPACE_NAME}::zk
 
             Boost::container)
-    set_target_properties(random_${name}_example PROPERTIES CXX_STANDARD 20)
+    set_target_properties(zk_${name}_example PROPERTIES CXX_STANDARD 20)
 endmacro()
 
 set(EXAMPLES_NAMES
-        "generate")
+    "transcript"
+    "fri"
+    "kzg"
+)
 
 foreach(EXAMPLE_NAME ${EXAMPLES_NAMES})
-    define_random_example(${EXAMPLE_NAME})
+    define_zk_example(${EXAMPLE_NAME})
 endforeach()
