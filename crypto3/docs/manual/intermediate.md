@@ -4,7 +4,7 @@ BLS weighted threshold signature [WIP]
 =============================
 
 In this tutorial we dive deeper into the cryptography constructs which crypto3 library implements.
-By the end of this tutorial , a user will understand how to sign data and use different modes.
+By the end of this tutorial, a user will understand how to sign data and use different modes.
 
 
 Pre-requisites
@@ -38,7 +38,7 @@ which an algorithm needs to be performed.
 - Finalisation: This steps requires accumulated data to be finalised padded before running an algorithm.
 
 Algorithms in the crypto3 library will carry out the above steps for the user. Algorithms can do operations
-such as signing , aggregating , verifying.
+such as signing, aggregating, verifying.
 
 
 Starting point to use any public key operations in crypto3 library is to create a cryptographic scheme. 
@@ -74,7 +74,7 @@ using pubkey_type = public_key<scheme_type>;
 
 
 Next we set up some types which we will use throughout the example
-- `sss_public_key_group_type` : TODO : Describe them. Which one of these are accumulators?
+- `sss_public_key_group_type` : TODO: Describe them. Which one of these are accumulators?
 - `shares_dealing_processing_mode`
 - `signing_processing_mode_type`
 - `verification_processing_mode_type`
@@ -102,7 +102,7 @@ We now take a closer look at our main.
     std::size_t n = 20;
     std::size_t t = 10;
 ```
-Next , we assign weights to our threshold values using the `weights_type` type which is a pair of (TODO)
+Next, we assign weights to our threshold values using the `weights_type` type which is a pair of (TODO)
 
 ```c++
     auto i = 1;
