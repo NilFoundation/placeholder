@@ -44,18 +44,13 @@
         using Yes = char[2];                                                                                           \
         using No = char[1];                                                                                            \
                                                                                                                        \
-        struct Fallback {                                                                                              \
-            struct Type { };                                                                                           \
-        };                                                                                                             \
-        struct Derived : T, Fallback { };                                                                              \
-                                                                                                                       \
         template<class U>                                                                                              \
-        static No &test(typename U::Type *);                                                                           \
+        static Yes &test(typename U::Type *);                                                                           \
         template<typename U>                                                                                           \
-        static Yes &test(U *);                                                                                         \
+        static No &test(U *);                                                                                         \
                                                                                                                        \
     public:                                                                                                            \
-        static constexpr bool RESULT = sizeof(test<Derived>(nullptr)) == sizeof(Yes);                                  \
+        static constexpr bool RESULT = sizeof(test<T>(nullptr)) == sizeof(Yes);                                         \
     };                                                                                                                 \
                                                                                                                        \
     template<class T>                                                                                                  \
@@ -74,18 +69,13 @@
         using Yes = char[2];                                                                                         \
         using No = char[1];                                                                                          \
                                                                                                                      \
-        struct Fallback {                                                                                            \
-            int member;                                                                                              \
-        };                                                                                                           \
-        struct Derived : T, Fallback { };                                                                            \
-                                                                                                                     \
         template<class U>                                                                                            \
-        static No &test(decltype(U::member) *);                                                                      \
+        static Yes &test(decltype(U::member) *);                                                                      \
         template<typename U>                                                                                         \
-        static Yes &test(U *);                                                                                       \
+        static No &test(U *);                                                                                       \
                                                                                                                      \
     public:                                                                                                          \
-        static constexpr bool RESULT = sizeof(test<Derived>(nullptr)) == sizeof(Yes);                                \
+        static constexpr bool RESULT = sizeof(test<T>(nullptr)) == sizeof(Yes);                                \
     };                                                                                                               \
                                                                                                                      \
     template<class T>                                                                                                \
@@ -303,8 +293,8 @@ namespace nil {
 
             public:
                 static const bool value = has_digest_type<T>::value && has_digest_bits<T>::value &&
-                                          sizeof(test_construction_type<T>(0)) == sizeof(one) &&
-                                          sizeof(test_construction_params<T>(0)) == sizeof(one);
+                                          sizeof(test_construction_type<T>(nullptr)) == sizeof(one) &&
+                                          sizeof(test_construction_params<T>(nullptr)) == sizeof(one);
                 typedef T type;
             };
 

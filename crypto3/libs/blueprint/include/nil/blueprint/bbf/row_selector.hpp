@@ -138,6 +138,10 @@ namespace nil {
                     return used_rows_.none();
                 }
 
+				bool intersects(const row_selector& other) const {
+    				return used_rows_.intersects(other.used_rows_);
+				}
+
                 // TODO: delete this, if not used.
                 /*
                 row_selector& operator|=(const row_selector& other) {
