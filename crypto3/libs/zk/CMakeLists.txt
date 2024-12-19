@@ -43,6 +43,7 @@ target_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME} INTERFACE
                       ${CMAKE_WORKSPACE_NAME}::containers
                       ${CMAKE_WORKSPACE_NAME}::math
 
+                      crypto3::random
                       crypto3::algebra
                       crypto3::hash
                       crypto3::multiprecision
@@ -56,3 +57,7 @@ add_tests(test)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+if(BUILD_EXAMPLES)
+    add_subdirectory(example)
+endif()

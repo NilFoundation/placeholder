@@ -28,6 +28,7 @@
 #define CRYPTO3_ALGEBRA_MULTIEXP_BASIC_POLICIES_HPP
 
 #include <vector>
+#include <boost/assert.hpp>
 
 #include <nil/crypto3/algebra/wnaf.hpp>
 

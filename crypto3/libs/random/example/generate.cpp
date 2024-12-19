@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------//
-// Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
-// Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -22,39 +21,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
-// This example demonstrates generation of elements for different structures:
-// * Field modulo p
-// * Elliptic curve point
-// * Extended Field - GT group for pairing-friendly curve
+// This example demonstrates usage of random engines to generate algebraic
+// structures: field elements and elliptic curve points
 
-#include <iostream>
+#include <nil/crypto3/algebra/curves/mnt4.hpp>
 
-#include <nil/crypto3/multiprecision/literals.hpp>
-
-#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
-#include <nil/crypto3/algebra/curves/bls12.hpp>
-
-#include <nil/crypto3/algebra/random_element.hpp>
-
-using namespace nil::crypto3::algebra;
-
-
-template<typename Type>
-void random_element_example() {
-    typename Type::value_type v = random_element<Type>();
-
-    std::cout << "Got random value:" << v << std::endl;
-}
+#include <nil/crypto3/random/algebraic_engine.hpp>
 
 int main() {
-    std::cout << "ALT_BN128-254 Fq random element choice:" << std::endl;
-    random_element_example<typename fields::alt_bn128_fq<254>>();
+    using curve_type = typename ::nil::crypto3::algebra::curves::mnt4<298>;
+    using scalar_type = typename curve_type::scalar_field_type;
 
-    std::cout << "BLS12-381 G1 random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::g1_type<>>();
+    using scalar_generator_type = nil::crypto3::random::algebraic_engine<scalar_type>;
+    scalar_generator_type scalar_generator;
 
-    std::cout << "BLS12-381 Gt random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::gt_type>();
+    std::cout << "Some random elements from scalar group:" << std::endl;
+    std::cout << scalar_generator() << std::endl;
+    std::cout << scalar_generator() << std::endl;
+    std::cout << scalar_generator() << std::endl;
+
+    using g2_group = typename curve_type::template g2_type<>;
+    using g2_generator_type = nil::crypto3::random::algebraic_engine<g2_group>;
+    g2_generator_type g2_generator;
+
+    std::cout << "Some random elements from G2 group:" << std::endl;
+    std::cout << g2_generator() << std::endl;
+    std::cout << g2_generator() << std::endl;
+    std::cout << g2_generator() << std::endl;
 
     return 0;
 }
