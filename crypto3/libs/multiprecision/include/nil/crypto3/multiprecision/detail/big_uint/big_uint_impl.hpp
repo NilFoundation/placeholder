@@ -80,6 +80,8 @@ namespace nil::crypto3::multiprecision {
 
         static constexpr std::size_t static_limb_count =
             (Bits / limb_bits) + (((Bits % limb_bits) != 0u) ? 1u : 0u);
+        static constexpr std::size_t upper_limb_bits =
+            (Bits % limb_bits) ? Bits % limb_bits : limb_bits;
         static constexpr limb_type upper_limb_mask =
             (Bits % limb_bits) ? (limb_type(1) << (Bits % limb_bits)) - 1 : (~limb_type(0u));
 
@@ -90,10 +92,15 @@ namespace nil::crypto3::multiprecision {
         constexpr limb_pointer limbs() noexcept { return m_data.data(); }
         constexpr const_limb_pointer limbs() const noexcept { return m_data.data(); }
 
-        constexpr bool normalize() noexcept {
-            bool result = limbs()[static_limb_count - 1] & ~upper_limb_mask;
-            limbs()[static_limb_count - 1] &= upper_limb_mask;
-            return result;
+        constexpr limb_type normalize() noexcept {
+            if constexpr (Bits % limb_bits != 0) {
+                limb_type result =
+                    (limbs()[static_limb_count - 1] & ~upper_limb_mask) >> upper_limb_bits;
+                limbs()[static_limb_count - 1] &= upper_limb_mask;
+                return result;
+            } else {
+                return 0;
+            }
         }
 
         // Zeros out everything after limb[i]
@@ -542,6 +549,12 @@ namespace nil::crypto3::multiprecision {
         friend constexpr auto& add_assign_wrapping(big_uint& a, const T& b) noexcept {
             detail::add<detail::operation_mode::wrapping>(a, a, b);
             return a;
+        }
+
+        template<std::size_t Bits2>
+        [[nodiscard]] friend constexpr bool add_assign_with_carry(
+            big_uint& a, const big_uint<Bits2>& b) noexcept {
+            return detail::add_unsigned(a, a, b);
         }
 
         template<typename T, std::enable_if_t<detail::is_integral_v<T>, int> = 0>
@@ -1310,9 +1323,9 @@ namespace nil::crypto3::multiprecision {
                                                         const big_uint<Bits2>& a,
                                                         const big_uint<Bits3>& b);
         template<std::size_t Bits1, std::size_t Bits2>
-        friend constexpr bool detail::add_unsigned(big_uint<Bits1>& result,
-                                                   const big_uint<Bits2>& a,
-                                                   const limb_type& o) noexcept;
+        friend constexpr limb_type detail::add_unsigned(big_uint<Bits1>& result,
+                                                        const big_uint<Bits2>& a,
+                                                        const limb_type& o) noexcept;
         template<detail::operation_mode Mode, std::size_t Bits1, std::size_t Bits2>
         friend constexpr void detail::subtract_unsigned(big_uint<Bits1>& result,
                                                         const big_uint<Bits2>& a,
@@ -1330,14 +1343,6 @@ namespace nil::crypto3::multiprecision {
         template<std::size_t Bits1>
         friend class detail::montgomery_modular_ops;
     };
-
-    // Addition with carry
-
-    template<std::size_t Bits1, std::size_t Bits2>
-    [[nodiscard]] constexpr bool add_assign_with_carry(big_uint<Bits1>& a,
-                                                       const big_uint<Bits2>& b) noexcept {
-        return detail::add_unsigned(a, a, b);
-    }
 
     // For generic code
 
