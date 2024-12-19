@@ -39,6 +39,10 @@ namespace nil {
     namespace blueprint {
         namespace bbf {
             namespace components {
+            // Constraints value to be of a certain bit size at most
+            // Parameters: num_chunks, bit_size_chunk
+            // Input: x
+            // Output: none
 
                 template<typename FieldType>
                 struct range_check_multi_raw_input {
@@ -69,8 +73,11 @@ namespace nil {
 
                     static table_params get_minimal_requirements(std::size_t num_chunks,
                                                                  std::size_t bit_size_chunk) {
-                        // Constraint spanning over 3 rows with witness = num_chunks
-                        std::size_t witness = 2 * num_chunks;
+                        std::size_t num_rc_chunks = (bit_size_chunk / bit_size_rc) + (bit_size_chunk % bit_size_rc > 0);
+                        // (num_rc_chunks + 1)/3 + 1 is the theoretical minimum, but X[i] is always allocated in a distinct column than (Y[i][j]
+                        // for some reason, even if it is allocated right before the Y[i][j]
+                        // ceil(num_rc_chunks/2) + 1 is the practical minimum (Y[i][j] over 2 rows, and X[i] in the other)
+                        std::size_t witness = (num_rc_chunks+1)/2 + 1;
                         constexpr std::size_t public_inputs = 1;
                         constexpr std::size_t constants = 0;
                         // rows = 4096-1 so that lookup table is not too hard to fit and padding
@@ -129,7 +136,7 @@ namespace nil {
                         }
 
                         for (std::size_t i = 0; i < num_chunks; ++i) {
-                            integral_type power = 1;
+                            integral_type power = 1;      
                             allocate(X[i]);
                             C[i] = X[i];
                             for (std::size_t j = 0; j < num_rc_chunks; ++j) {
@@ -138,6 +145,7 @@ namespace nil {
                                 C[i] -= Y[i][j] * power;
                                 power <<= bit_size_rc;
                             }
+                            allocate(C[i]);
                             constrain(C[i]);
 
                             if (first_chunk_size != 0) {

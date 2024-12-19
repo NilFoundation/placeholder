@@ -46,7 +46,19 @@ namespace nil {
                     constexpr static const std::size_t modulus_bits = ModulusBits;
                     constexpr static const std::size_t number_bits = ModulusBits;
 
-                    typedef nil::crypto3::multiprecision::big_uint<modulus_bits> integral_type;
+#ifdef __ZKLLVM__
+                    typedef int integral_type;
+                    typedef int extended_integral_type;
+#else
+                    typedef boost::multiprecision::backends::cpp_int_modular_backend<modulus_bits> modular_backend;
+
+                    typedef boost::multiprecision::number<modular_backend> integral_type;
+                    typedef boost::multiprecision::number<
+                        boost::multiprecision::backends::cpp_int_modular_backend<16 * modulus_bits>>
+                        extended_integral_type;
+
+                    typedef boost::multiprecision::backends::modular_params<modular_backend> modular_params_type;
+#endif
                 };
 
             }    // namespace fields
