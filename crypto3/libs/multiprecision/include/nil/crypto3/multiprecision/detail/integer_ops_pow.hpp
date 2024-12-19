@@ -8,5 +8,4 @@
 
 #pragma once
 
-// Reusing big_uint's implementation. TODO(ioxid): optimize for builtin types
-#include "nil/crypto3/multiprecision/detail/big_uint/ops/powm.hpp"  // IWYU pragma: export
+#include "nil/crypto3/multiprecision/detail/big_uint/ops/pow.hpp"  // IWYU pragma: export

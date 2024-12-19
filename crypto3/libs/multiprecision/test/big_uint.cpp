@@ -254,7 +254,34 @@ using int_types = std::tuple<std::int8_t, std::int16_t, std::int32_t, std::int64
                              std::uint8_t, std::uint16_t, std::uint32_t, uint64_t,   //
                              big_uint<7>>;
 
+using unsigned_builtin_types =
+    std::tuple<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
+
 using signed_types = std::tuple<std::int8_t, std::int16_t, std::int32_t, std::int64_t>;
+
+BOOST_AUTO_TEST_SUITE(assignment)
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(assignment_signed, T, signed_types) {
+    BOOST_CHECK_EQUAL(big_uint<7>(static_cast<T>(2)), 2_big_uint7);
+    BOOST_CHECK_THROW(big_uint<7>(static_cast<T>(-1)), std::range_error);
+    BOOST_CHECK_THROW(big_uint<7>(static_cast<T>(128)), std::range_error);
+    BOOST_CHECK_THROW(big_uint<7>(static_cast<T>(129)), std::range_error);
+    big_uint<7> n;
+    BOOST_CHECK_EQUAL(n = static_cast<T>(2), 2_big_uint7);
+    BOOST_CHECK_THROW(n = static_cast<T>(-1), std::range_error);
+    BOOST_CHECK_THROW(n = static_cast<T>(128), std::range_error);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(assignment_unsigned, T, unsigned_builtin_types) {
+    BOOST_CHECK_EQUAL(big_uint<7>(static_cast<T>(2)), 2_big_uint7);
+    BOOST_CHECK_THROW(big_uint<7>(static_cast<T>(128)), std::range_error);
+    BOOST_CHECK_THROW(big_uint<7>(static_cast<T>(129)), std::range_error);
+    big_uint<7> n;
+    BOOST_CHECK_EQUAL(n = static_cast<T>(2), 2_big_uint7);
+    BOOST_CHECK_THROW(n = static_cast<T>(128), std::range_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(checked_operations)
 
@@ -387,6 +414,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(multiplication_negative, T, signed_types) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_CASE(add_assign_with_carry_test) {
+    auto n = 122_big_uint7;
+    BOOST_CHECK_EQUAL(add_assign_with_carry(n, 4_big_uint7), false);
+    BOOST_CHECK_EQUAL(add_assign_with_carry(n, 4_big_uint7), true);
+}
+
 BOOST_AUTO_TEST_SUITE(bit_operations)
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(and_positive, T, int_types) {
@@ -430,7 +463,7 @@ BOOST_AUTO_TEST_CASE(shift_left) {
     BOOST_CHECK_EQUAL(21_big_uint7 << 5, 32_big_uint7);
     BOOST_CHECK_EQUAL(21_big_uint7 << 7, 0_big_uint7);
     BOOST_CHECK_EQUAL(21_big_uint7 << 0, 21_big_uint7);
-    BOOST_CHECK_EQUAL(21_big_uint7 << -1, 0_big_uint7);
+    BOOST_CHECK_THROW(21_big_uint7 << -1, std::range_error);
 }
 
 BOOST_AUTO_TEST_CASE(shift_right) {
@@ -439,7 +472,7 @@ BOOST_AUTO_TEST_CASE(shift_right) {
     BOOST_CHECK_EQUAL(21_big_uint7 >> 5, 0_big_uint7);
     BOOST_CHECK_EQUAL(21_big_uint7 >> 7, 0_big_uint7);
     BOOST_CHECK_EQUAL(21_big_uint7 >> 0, 21_big_uint7);
-    BOOST_CHECK_EQUAL(21_big_uint7 >> -1, 0_big_uint7);
+    BOOST_CHECK_THROW(21_big_uint7 >> -1, std::range_error);
 }
 
 BOOST_AUTO_TEST_CASE(bit_set) {
@@ -492,3 +525,10 @@ BOOST_AUTO_TEST_CASE(lsb) {
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(powm_test) {
+    BOOST_CHECK_EQUAL(powm(2_big_uint7, 4_big_uint7, 5_big_uint7), 1_big_uint7);
+    BOOST_CHECK_EQUAL(powm(2_big_uint7, 4_big_uint7, 5), 1);
+    BOOST_CHECK_EQUAL(powm(2_big_uint7, 4, 5_big_uint7), 1_big_uint7);
+    BOOST_CHECK_EQUAL(powm(2, 4, 5), 1);
+}

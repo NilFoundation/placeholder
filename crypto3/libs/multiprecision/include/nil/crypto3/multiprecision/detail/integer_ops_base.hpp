@@ -33,6 +33,27 @@ namespace nil::crypto3::multiprecision {
     }
 
     template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    constexpr T &bit_set(T &a, std::size_t index) {
+        // TODO(ioxid): optimize
+        a = detail::as_big_uint(detail::unsigned_or_throw(a)).bit_set(index);
+        return a;
+    }
+
+    template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    constexpr T &bit_unset(T &a, std::size_t index) {
+        // TODO(ioxid): optimize
+        a = detail::as_big_uint(detail::unsigned_or_throw(a)).bit_unset(index);
+        return a;
+    }
+
+    template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    constexpr T &bit_flip(T &a, std::size_t index) {
+        // TODO(ioxid): optimize
+        a = detail::as_big_uint(detail::unsigned_or_throw(a)).bit_flip(index);
+        return a;
+    }
+
+    template<typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     constexpr bool is_zero(T a) {
         return a == 0;
     }

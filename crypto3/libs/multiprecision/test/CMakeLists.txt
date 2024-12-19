@@ -46,6 +46,7 @@ set(MULTIPRECISION_TESTS_NAMES
     "big_mod_randomized"
     "big_uint_comparison_randomized"
     "big_uint"
+    "boost_arithmetic_test"
     "inverse"
     "jacobi"
     "miller_rabin"
