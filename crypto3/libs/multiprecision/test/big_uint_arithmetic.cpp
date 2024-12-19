@@ -7,7 +7,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE boost_arithmetic_test
+#define BOOST_TEST_MODULE big_uint_arithmetic_test
 
 #include <algorithm>
 #include <climits>

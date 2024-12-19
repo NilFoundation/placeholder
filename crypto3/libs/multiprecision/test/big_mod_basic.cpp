@@ -6,7 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_int_modular_test
+#define BOOST_TEST_MODULE big_mod_basic_test
 
 #include <cstdint>
 #include <utility>
