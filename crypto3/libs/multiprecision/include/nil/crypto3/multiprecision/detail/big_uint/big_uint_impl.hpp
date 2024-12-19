@@ -190,9 +190,13 @@ namespace nil::crypto3::multiprecision {
             do_assign_integral(a);
         }
 
-        // TODO(ioxid): make this explicit for the case when Bits2 > Bits
-        template<std::size_t Bits2>
+        template<std::size_t Bits2, std::enable_if_t<Bits2 <= Bits, int> = 0>
         constexpr big_uint(const big_uint<Bits2>& other) {
+            do_assign(other);
+        }
+
+        template<std::size_t Bits2, std::enable_if_t<(Bits2 > Bits), int> = 0>
+        explicit constexpr big_uint(const big_uint<Bits2>& other) {
             do_assign(other);
         }
 
@@ -222,7 +226,7 @@ namespace nil::crypto3::multiprecision {
             return *this;
         }
 
-        template<std::size_t Bits2>
+        template<std::size_t Bits2, std::enable_if_t<Bits2 <= Bits, int> = 0>
         constexpr big_uint& operator=(const big_uint<Bits2>& other) {
             do_assign(other);
             return *this;

@@ -727,7 +727,7 @@ namespace nil::crypto3::multiprecision {
                 if (div) {
                     --*div;
                 }
-                rem = y - rem;
+                rem = static_cast<big_uint<Bits1>>(y - rem);
             }
 
             // remainder must be less than the divisor or our code has
