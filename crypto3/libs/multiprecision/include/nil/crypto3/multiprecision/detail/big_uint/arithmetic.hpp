@@ -109,6 +109,7 @@ namespace nil::crypto3::multiprecision {
             if constexpr (Bits1 % limb_bits != 0) {
                 // If we have set any bit above "Bits", then we have a carry.
                 carry = result.normalize();
+                BOOST_ASSERT(carry <= 1);
             }
 
             return carry;
@@ -286,6 +287,7 @@ namespace nil::crypto3::multiprecision {
             if constexpr (Bits1 % limb_bits != 0) {
                 // If we have set any bit above "Bits", then we have a carry.
                 carry = result.normalize();
+                BOOST_ASSERT(carry <= 1);
             }
 
             return carry;
@@ -385,8 +387,9 @@ namespace nil::crypto3::multiprecision {
 #endif
 
         template<std::size_t Bits1, std::size_t Bits2>
-        [[nodiscard]] constexpr bool add_unsigned(big_uint<Bits1>& result, const big_uint<Bits2>& a,
-                                                  const limb_type& b) noexcept {
+        [[nodiscard]] constexpr limb_type add_unsigned(big_uint<Bits1>& result,
+                                                       const big_uint<Bits2>& a,
+                                                       const limb_type& b) noexcept {
             static_assert(Bits1 >= Bits2, "invalid argument size");
 
             double_limb_type carry = b;
@@ -418,6 +421,8 @@ namespace nil::crypto3::multiprecision {
                 // If we have set any bit above "Bits", then we have a carry.
                 carry = result.normalize();
             }
+
+            BOOST_ASSERT(carry <= max_limb_value);
 
             return carry;
         }
