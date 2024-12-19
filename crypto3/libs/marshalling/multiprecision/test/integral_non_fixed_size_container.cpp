@@ -26,6 +26,12 @@
 #define BOOST_TEST_MODULE crypto3_marshalling_integral_non_fixed_size_container_test
 
 #include <boost/test/unit_test.hpp>
+
+#include <cstddef>
+#include <iostream>
+#include <limits>
+#include <vector>
+
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <boost/container/vector.hpp>
@@ -35,12 +41,10 @@
 
 #include <boost/predef.h>
 
-#include <iostream>
-#include <iomanip>
-
 #include <nil/marshalling/algorithms/pack.hpp>
-#include <nil/marshalling/status_type.hpp>
 #include <nil/marshalling/endianness.hpp>
+#include <nil/marshalling/options.hpp>
+#include <nil/marshalling/status_type.hpp>
 
 #include <nil/crypto3/multiprecision/big_uint.hpp>
 

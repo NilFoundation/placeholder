@@ -1,12 +1,13 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2024 Martun Karapetyan <martun@nil.foundation>
+// Copyright (c) 2024 Andrey Nefedov <ioxid@nil.foundation>
 //
 // Distributed under the Boost Software License, Version 1.0
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //---------------------------------------------------------------------------//
 
-#define BOOST_TEST_MODULE big_int_comparison_test
+#define BOOST_TEST_MODULE big_uint_comparison_test
 
 #include <cstddef>
 #include <ostream>
