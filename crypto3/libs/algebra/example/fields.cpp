@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+// This example shows different field operations: addition, multiplication,
+// squaring and inverting
 
 #include <iostream>
 
@@ -34,14 +36,10 @@
 #include <nil/crypto3/algebra/fields/alt_bn128/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
 #include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/bn128/base_field.hpp>
-#include <nil/crypto3/algebra/fields/bn128/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt4/scalar_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
 #include <nil/crypto3/algebra/fields/mnt6/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/dsa_botan.hpp>
-#include <nil/crypto3/algebra/fields/dsa_jce.hpp>
 
 #include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
 #include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
@@ -287,21 +285,6 @@ int main() {
 
     std::cout << "----------------------------" << std::endl;
 
-    std::cout << "BN128-254 Fq basic math:" << std::endl;
-    fields_fp_basic_math_examples<fields::bn128_fq<254>>();
-
-    std::cout << "----------------------------" << std::endl;
-
-    std::cout << "BN128-254 Fq2 basic math:" << std::endl;
-    fields_fp2_basic_math_examples<fields::fp2<fields::bn128_fq<254>>>();
-
-    std::cout << "----------------------------" << std::endl;
-
-    std::cout << "BN128-254 Fr basic math:" << std::endl;
-    fields_fp_basic_math_examples<fields::bn128_fr<254>>();
-
-    std::cout << "----------------------------" << std::endl;
-
     std::cout << "MNT4 Fq basic math:" << std::endl;
     fields_fp_basic_math_examples<fields::mnt4_fq<298>>();
 
@@ -331,14 +314,6 @@ int main() {
     fields_fp_basic_math_examples<fields::mnt6_fr<298>>();
 
     std::cout << "----------------------------" << std::endl;
-
-    std::cout << "DSA Botan 2048 basic math:" << std::endl;
-    fields_fp_basic_math_examples<fields::dsa_botan<2048>>();
-
-    std::cout << "----------------------------" << std::endl;
-
-    std::cout << "DSA JCE 1024 basic math:" << std::endl;
-    fields_fp_basic_math_examples<fields::dsa_jce<1024>>();
 
     return 0;
 }

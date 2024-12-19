@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2024 Vasiliy Olekhov <vasiliy.olekhov@nil.foundation>
 //
 // MIT License
 //
@@ -22,133 +23,57 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+// This example demonstrates the multiexp function with different implementations:
+// * Naive
+// * Bernstein, Doumen, Lange, Oosterwijk (BDLO)
+// * Bos-Coster
 
 #include <iostream>
-
-#include <cstdio>
 #include <vector>
-#include <chrono>
-#include <ctime>
+#include <boost/assert.hpp>
 
-#include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
-#include <nil/crypto3/algebra/curves/mnt4.hpp>
-#include <nil/crypto3/algebra/curves/mnt6.hpp>
-
-#include <nil/crypto3/algebra/curves/params/multiexp/alt_bn128.hpp>
 #include <nil/crypto3/algebra/curves/params/multiexp/bls12.hpp>
-#include <nil/crypto3/algebra/curves/params/multiexp/mnt4.hpp>
-#include <nil/crypto3/algebra/curves/params/multiexp/mnt6.hpp>
-
-#include <nil/crypto3/algebra/curves/params/wnaf/alt_bn128.hpp>
 #include <nil/crypto3/algebra/curves/params/wnaf/bls12.hpp>
-#include <nil/crypto3/algebra/curves/params/wnaf/mnt4.hpp>
-#include <nil/crypto3/algebra/curves/params/wnaf/mnt6.hpp>
-
 #include <nil/crypto3/algebra/multiexp/multiexp.hpp>
 #include <nil/crypto3/algebra/multiexp/policies.hpp>
-
 #include <nil/crypto3/algebra/random_element.hpp>
 
 using namespace nil::crypto3::algebra;
 
-template<typename GroupType>
-using run_result_t = std::pair<long long, std::vector<typename GroupType::value_type>>;
-
-template<typename BaseType>
-using test_instances_t = std::vector<std::vector<typename BaseType::value_type>>;
-
-template<typename GroupType>
-test_instances_t<GroupType> generate_group_elements(std::size_t count, std::size_t size) {
-    // generating a random group element is expensive,
-    // so for now we only generate a single one and repeat it
-    test_instances_t<GroupType> result(count);
-
-    for (size_t i = 0; i < count; i++) {
-        auto x = random_element<GroupType>();
-        for (size_t j = 0; j < size; j++) {
-            result[i].push_back(x);
-        }
-    }
-
-    return result;
-}
-
-template<typename FieldType>
-test_instances_t<FieldType> generate_scalars(size_t count, std::size_t size) {
-    test_instances_t<FieldType> result(count);
-
-    for (size_t i = 0; i < count; i++) {
-        for (size_t j = 0; j < size; j++) {
-            result[i].push_back(random_element<FieldType>());
-        }
-    }
-
-    return result;
-}
-
-long long get_nsec_time()
+template<typename curve_group_type>
+bool example_multiexp()
 {
-    auto timepoint = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(timepoint.time_since_epoch()).count();
-}
 
-template<typename GroupType, typename FieldType, typename MultiexpMethod>
-run_result_t<GroupType> profile_multiexp(test_instances_t<GroupType> group_elements,
-                                         test_instances_t<FieldType> scalars) {
-    long long start_time = get_nsec_time();
+    using point = typename curve_group_type::value_type;
+    using scalar = typename curve_group_type::params_type::scalar_field_type;
 
-    std::vector<typename GroupType::value_type> answers;
-    for (size_t i = 0; i < group_elements.size(); i++) {
-        answers.push_back(
-            multiexp<MultiexpMethod>(
-                group_elements[i].cbegin(), group_elements[i].cend(),
-                scalars[i].cbegin(), scalars[i].cend(), 1));
+    std::size_t N = 8;
+
+    std::vector<point> points(N);
+    std::vector<typename scalar::value_type> scalars(N);
+
+    for(auto & p: points) {
+        p = random_element<curve_group_type>();
     }
 
-    long long time_delta = get_nsec_time() - start_time;
-
-    return run_result_t<GroupType>(time_delta, answers);
-}
-
-template<typename GroupType, typename FieldType>
-void print_performance_csv(
-    size_t expn_start, std::size_t expn_end_fast, std::size_t expn_end_naive, bool compare_answers
-) {
-    for (size_t expn = expn_start; expn <= expn_end_fast; expn++) {
-        printf("%ld", expn);
-        fflush(stdout);
-
-        test_instances_t<GroupType> group_elements = generate_group_elements<GroupType>(10, 1 << expn);
-        test_instances_t<FieldType> scalars = generate_scalars<FieldType>(10, 1 << expn);
-
-        run_result_t<GroupType> result_bos_coster =
-            profile_multiexp<GroupType, FieldType, policies::multiexp_method_bos_coster>(group_elements, scalars);
-        printf("\t%lld", result_bos_coster.first);
-        fflush(stdout);
-
-        run_result_t<GroupType> result_djb =
-            profile_multiexp<GroupType, FieldType, policies::multiexp_method_BDLO12>(group_elements, scalars);
-        printf("\t%lld", result_djb.first);
-        fflush(stdout);
-
-        if (compare_answers && (result_bos_coster.second != result_djb.second)) {
-            fprintf(stderr, "Answers NOT MATCHING (bos coster != djb)\n");
-        }
-
-        if (expn <= expn_end_naive) {
-            run_result_t<GroupType> result_naive =
-                profile_multiexp<GroupType, FieldType, policies::multiexp_method_naive_plain>(group_elements, scalars);
-            printf("\t%lld", result_naive.first);
-            fflush(stdout);
-
-            if (compare_answers && (result_bos_coster.second != result_naive.second)) {
-                fprintf(stderr, "Answers NOT MATCHING (bos coster != naive)\n");
-            }
-        }
-
-        printf("\n");
+    for(auto & s: scalars) {
+        s = random_element<scalar>();
     }
+
+    point naive_result = policies::multiexp_method_naive_plain::process(
+            points.begin(), points.end(),
+            scalars.begin(), scalars.end());
+
+    point bdlo12_result = policies::multiexp_method_BDLO12::process(
+            points.begin(), points.end(),
+            scalars.begin(), scalars.end());
+
+    point bos_coster_result = policies::multiexp_method_bos_coster::process(
+            points.begin(), points.end(),
+            scalars.begin(), scalars.end());
+
+    return (naive_result == bdlo12_result) && (naive_result == bos_coster_result);
 }
 
 int main() {
@@ -156,11 +81,8 @@ int main() {
     using g2 = curves::bls12<381>::g2_type<>;
     using scalar_field_type = curves::bls12<381>::scalar_field_type;
 
-    std::cout << "Testing BLS12-381 G1" << std::endl;
-    print_performance_csv<g1, scalar_field_type>(2, 20, 14, true);
-
-    std::cout << "Testing BLS12-381 G2" << std::endl;
-    print_performance_csv<g2, scalar_field_type>(2, 20, 14, true);
+    std::cout << "Checking for BLS12-381 G1: " << std::boolalpha << example_multiexp<g1>() << std::endl;
+    std::cout << "Checking for BLS12-381 G2: " << std::boolalpha << example_multiexp<g2>() << std::endl;
 
     return 0;
 }

@@ -22,37 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+// This example demonstrates generation of elements for different structures:
+// * Field modulo p
+// * Elliptic curve point
+// * Extended Field - GT group for pairing-friendly curve
 
 #include <iostream>
 
 #include <nil/crypto3/multiprecision/literals.hpp>
 
-
-#include <nil/crypto3/algebra/fields/fp2.hpp>
-#include <nil/crypto3/algebra/fields/fp3.hpp>
-#include <nil/crypto3/algebra/fields/alt_bn128/base_field.hpp>
-#include <nil/crypto3/algebra/fields/alt_bn128/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/bls12/base_field.hpp>
-#include <nil/crypto3/algebra/fields/bls12/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/bn128/base_field.hpp>
-#include <nil/crypto3/algebra/fields/bn128/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/mnt4/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mnt4/scalar_field.hpp>
-#include <nil/crypto3/algebra/fields/mnt6/base_field.hpp>
-#include <nil/crypto3/algebra/fields/mnt6/scalar_field.hpp>
-
 #include <nil/crypto3/algebra/curves/alt_bn128.hpp>
 #include <nil/crypto3/algebra/curves/bls12.hpp>
-#include <nil/crypto3/algebra/curves/mnt4.hpp>
-#include <nil/crypto3/algebra/curves/mnt6.hpp>
-
-#include <nil/crypto3/algebra/fields/detail/element/fp.hpp>
-#include <nil/crypto3/algebra/fields/detail/element/fp2.hpp>
-#include <nil/crypto3/algebra/fields/detail/element/fp3.hpp>
-#include <nil/crypto3/algebra/fields/detail/element/fp4.hpp>
-#include <nil/crypto3/algebra/fields/detail/element/fp6_2over3.hpp>
-#include <nil/crypto3/algebra/fields/detail/element/fp6_3over2.hpp>
-#include <nil/crypto3/algebra/fields/detail/element/fp12_2over3over2.hpp>
 
 #include <nil/crypto3/algebra/random_element.hpp>
 
@@ -70,11 +50,11 @@ int main() {
     std::cout << "ALT_BN128-254 Fq random element choice:" << std::endl;
     random_element_example<typename fields::alt_bn128_fq<254>>();
 
-    std::cout << "BLS12-381 Gt random element choice:" << std::endl;
-    random_element_example<typename curves::bls12<381>::gt_type>();
-
     std::cout << "BLS12-381 G1 random element choice:" << std::endl;
     random_element_example<typename curves::bls12<381>::g1_type<>>();
+
+    std::cout << "BLS12-381 Gt random element choice:" << std::endl;
+    random_element_example<typename curves::bls12<381>::gt_type>();
 
     return 0;
 }

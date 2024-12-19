@@ -22,11 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //---------------------------------------------------------------------------//
+// This example demonstrates the usage of different coordinates systems representing
+// a point on an elliptic curve
 
 #include <nil/crypto3/multiprecision/literals.hpp>
 
 
 #include <nil/crypto3/algebra/curves/secp_r1.hpp>
+#include "nil/crypto3/algebra/curves/detail/forms/short_weierstrass/coordinates.hpp"
 
 using namespace nil::crypto3::algebra;
 
@@ -56,13 +59,13 @@ void coordinates_examples() {
 int main() {
     std::cout << "Secp256r1 Jacobian coordinates with a4=-3" << std::endl;
 
-    coordinates_examples<curves::secp_r1<256>::g1_type< curves::coordinates::jacobian_with_a4_minus_3,  curves::forms::short_weierstrass>>();//<coordinates::jacobian_with_a4_minus_3>>()//()_g1_params<160, forms::short_weierstrass>
+    coordinates_examples<curves::secp_r1<256>::g1_type< curves::coordinates::jacobian_with_a4_minus_3,  curves::forms::short_weierstrass>>();
 
     std::cout << "----------------------------" << std::endl;
 
     std::cout << "Secp256r1 Jacobian coordinates" << std::endl;
 
-    coordinates_examples<curves::secp_r1<256>::g1_type< curves::coordinates::jacobian,  curves::forms::short_weierstrass>>();//<coordinates::jacobian_with_a4_minus_3>>()//()_g1_params<160, forms::short_weierstrass>
+    coordinates_examples<curves::secp_r1<256>::g1_type< curves::coordinates::projective_with_a4_minus_3,  curves::forms::short_weierstrass>>();
 
     std::cout << "----------------------------" << std::endl;
     return 0;
