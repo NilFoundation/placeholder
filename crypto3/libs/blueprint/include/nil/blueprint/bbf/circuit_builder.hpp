@@ -29,6 +29,7 @@
 #define CRYPTO3_BLUEPRINT_PLONK_BBF_CIRCUIT_BUILDER_HPP
 
 #include <functional>
+#include <algorithm>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/constraint_system.hpp>
 
@@ -40,6 +41,7 @@
 #include <nil/blueprint/bbf/generic.hpp>
 
 #include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_table_definition.hpp>
+#include <nil/crypto3/zk/snark/arithmetization/plonk/lookup_constraint.hpp>
 
 #include <nil/crypto3/hash/algorithm/hash.hpp>
 #include <nil/crypto3/hash/sha2.hpp>
@@ -119,12 +121,29 @@ namespace nil {
                     generate_constraints();
                 }
 
+                size_t create_table(const std::string& table_name, std::set<std::string>& lookup_table_names,
+                                    const optimized_gates<FieldType>& gates) {
+                    if (lookup_table_names.find(table_name) == lookup_table_names.end()) {
+                        if (gates.dynamic_lookup_tables.find(table_name) != gates.dynamic_lookup_tables.end()) {
+                            bp.reserve_dynamic_table(table_name);
+                        } else {
+                            bp.reserve_table(table_name);
+                        }
+                        lookup_table_names.insert(table_name);
+                    }
+                    size_t table_index = bp.get_reserved_indices().at(table_name);
+                    return table_index;
+                }
+
                 void generate_constraints() {
                     using generator = Component<FieldType,GenerationStage::CONSTRAINTS>;
                     using context_type = typename nil::blueprint::bbf::context<FieldType, nil::blueprint::bbf::GenerationStage::CONSTRAINTS>;
                     using constraint_type = crypto3::zk::snark::plonk_constraint<FieldType>;
+                    using expression_type = typename constraint_type::base_type;
+
                     using copy_constraint_type = crypto3::zk::snark::plonk_copy_constraint<FieldType>;
                     using lookup_constraint_type = crypto3::zk::snark::plonk_lookup_constraint<FieldType>;
+                    using lookup_input_constraints_type = crypto3::zk::snark::lookup_input_constraints<FieldType>;
                     using value_type = typename FieldType::value_type;
                     using var = crypto3::zk::snark::plonk_variable<value_type>;
                     using TYPE = typename generator::TYPE;
@@ -140,7 +159,8 @@ namespace nil {
                         );
 
                     raw_input_type raw_input = {};
-                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input), static_info_args_storage);
+                    auto v = std::tuple_cat(std::make_tuple(ct), generator::form_input(ct,raw_input),
+                        static_info_args_storage);
                     std::make_from_tuple<generator>(v);
 
                     // constants
@@ -153,9 +173,18 @@ namespace nil {
                         }
                     }
 
+                    // assure minimum inflation after padding
+                    size_t usable_rows = std::pow(2, std::ceil(std::log2(rows_amount))) - 1; 
+
                     //////////////////////////  Don't use 'ct' below this line, we just moved it!!! /////////////////////////////
                     gates_optimizer<FieldType> optimizer(std::move(ct));
                     optimized_gates<FieldType> gates = optimizer.optimize_gates();
+
+                    // TODO: replace with PLONK_SPECIAL_SELECTOR_ALL_USABLE_ROWS_SELECTED.
+                    row_selector selector_column(usable_rows);
+                    for (std::size_t i = 1; i < usable_rows; i++)
+                        selector_column.set_row(i);
+                    size_t full_selector_id = gates.add_selector(selector_column);
 
                     for(const auto& [selector_id, constraints] : gates.constraint_list) {
                         /*
@@ -176,23 +205,26 @@ namespace nil {
                     }
 
                     std::set<std::string> lookup_table_names;
-                    for(const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
+                    for (const auto& [selector_id, lookup_list] : gates.lookup_constraints) {
                         std::vector<lookup_constraint_type> lookup_gate;
-                        for(const auto& single_lookup_constraint : lookup_list) {
+                        for (const auto& single_lookup_constraint : lookup_list) {
                             std::string table_name = single_lookup_constraint.first;
-                            if (lookup_table_names.find(table_name) == lookup_table_names.end()) {
-                                if (gates.dynamic_lookup_tables.find(table_name) != gates.dynamic_lookup_tables.end()) {
-                                    bp.reserve_dynamic_table(table_name);
-                                } else {
-                                    bp.reserve_table(table_name);
-                                }
-                                lookup_table_names.insert(table_name);
-                            }
-                            std::size_t table_index = bp.get_reserved_indices().at(table_name);
+                            size_t table_index = create_table(table_name, lookup_table_names, gates);
                             lookup_gate.push_back({table_index, single_lookup_constraint.second});
                         }
 
                         bp.add_lookup_gate(selector_id, lookup_gate);
+                    }
+
+                    for (const auto& [table_name, grouped_lookups] : gates.grouped_lookups) {
+                        size_t table_index = create_table(table_name, lookup_table_names, gates);
+                        for (const auto& [ group_id, lookups] : grouped_lookups) {
+                            lookup_input_constraints_type lookup_gate;
+                            for (const auto& [selector_id, lookup_inputs] : lookups) {
+                                lookup_gate += lookup_inputs * expression_type(var(selector_id, 0, false, var::column_type::selector));
+                            }
+                            bp.add_lookup_gate(full_selector_id, (const std::vector<lookup_constraint_type>&)lookup_gate);
+                        }
                     }
 
                     // compatibility layer: dynamic lookup tables - continued
@@ -215,7 +247,7 @@ namespace nil {
                     }
 
                     // this is where we pack lookup tables into constant columns and assign them selectors
-                    std::size_t usable_rows = std::pow(2, std::ceil(std::log2(rows_amount))) - 1; // assure minimum inflation after padding
+
                     const auto &lookup_table_ids = bp.get_reserved_indices();
                     const auto &lookup_tables = bp.get_reserved_tables();
                     const auto &dynamic_tables = bp.get_reserved_dynamic_tables();
@@ -227,7 +259,6 @@ namespace nil {
                     std::vector<plonk_lookup_table> bp_lookup_tables(lookup_table_ids.size());
                     std::size_t start_constant_column = presets.constants_amount();
                     std::size_t prev_columns_number = 0;
-                    int full_selector_id = -1;
 
                     for(const auto &table_name : ordered_table_names) {
                         const auto &table = lookup_tables.at(table_name);
@@ -243,14 +274,9 @@ namespace nil {
                             }
                             // assure all added columns have same amount of usable_rows and need no resizement later
                             for(std::size_t i = start_constant_column; i < start_constant_column + prev_columns_number; i++)
-                                presets.constant(i,usable_rows-1) = 0;
+                                presets.constant(i, usable_rows - 1) = 0;
 
-                            if (full_selector_id == -1) {
-                                row_selector selector_column(usable_rows);
-                                for(std::size_t i = 1; i < usable_rows; i++)
-                                    selector_column.set_row(i);
-                                full_selector_id = gates.add_selector(selector_column);
-                            }
+                            
 
                             if (table->get_rows_number() % usable_rows == 0) options_number--;
                             std::size_t cur = 0;
@@ -286,7 +312,7 @@ namespace nil {
                             start_constant_column = cur_constant_column;
                             continue;
                         } else if (start_row + table->get_rows_number() < usable_rows) {
-                            if (prev_columns_number < table->get_columns_number()) prev_columns_number = table->get_columns_number();
+                            prev_columns_number = std::max(prev_columns_number,  table->get_columns_number());
                         } else if (table->get_rows_number() < usable_rows) {
                             start_row = 1;
                             start_constant_column += prev_columns_number;

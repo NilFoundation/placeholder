@@ -59,7 +59,7 @@ namespace nil {
                         return *this;
                     }
 
-                    lookup_input_constraints operator*(const expression_type& other) {
+                    lookup_input_constraints operator*(const expression_type& other) const {
                         lookup_input_constraints result = *this;
                         result *= other;
                         return result;
@@ -67,9 +67,11 @@ namespace nil {
 
                     // Allow multiplication with any container of the same type.
                     template <typename Container>
-                    lookup_input_constraints& operator*=(const typename std::enable_if_t<
-                            nil::crypto3::detail::is_range<Container>::value && std::is_same<typename Container::value_type, expression_type>::value,
-                            Container>& other) {
+                    typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && (
+                                std::is_same<typename Container::value_type, expression_type>::value ||
+                                std::is_same<typename Container::value_type, constraint_type>::value),
+                        lookup_input_constraints>& operator*=(const Container& other) {
                         if (this->size() < other.size())
                             this->resize(other.size());
 
@@ -82,11 +84,74 @@ namespace nil {
                     }
 
                     template <typename Container>
-                    lookup_input_constraints& operator*(const typename std::enable_if_t<
-                            nil::crypto3::detail::is_range<Container>::value && std::is_same<typename Container::value_type, expression_type>::value,
-                            Container>& other) {
+                    typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && (
+                                std::is_same<typename Container::value_type, expression_type>::value ||
+                                std::is_same<typename Container::value_type, constraint_type>::value),
+                            lookup_input_constraints>
+                    operator*(const Container& other) {
                         lookup_input_constraints result = *this;
                         result *= other;
+                        return result;
+                    }
+
+                    // Allow addition with any container of the same type.
+                    template <typename Container>
+                    typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && (
+                                std::is_same<typename Container::value_type, expression_type>::value ||
+                                std::is_same<typename Container::value_type, constraint_type>::value),
+                            lookup_input_constraints>& operator+=(const Container& other) {
+                        if (this->size() < other.size())
+                            this->resize(other.size());
+
+                        auto it1 = this->begin();
+                        auto it2 = other.begin();
+                        for (; it2 != other.end(); ++it1, ++it2) {
+                            *it1 += *it2;
+                        }
+                        return *this;
+                    }
+
+                    template <typename Container>
+                    typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && (
+                                std::is_same<typename Container::value_type, expression_type>::value ||
+                                std::is_same<typename Container::value_type, constraint_type>::value),
+                            lookup_input_constraints>
+                    operator+(const Container& other) {
+                        lookup_input_constraints result = *this;
+                        result += other;
+                        return result;
+                    }
+
+                    // Allow subtraction with any container of the same type.
+                    template <typename Container>
+                    typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && (
+                                std::is_same<typename Container::value_type, expression_type>::value ||
+                                std::is_same<typename Container::value_type, constraint_type>::value),
+                            lookup_input_constraints>& operator-=(const Container& other) {
+                        if (this->size() < other.size())
+                            this->resize(other.size());
+
+                        auto it1 = this->begin();
+                        auto it2 = other.begin();
+                        for (; it2 != other.end(); ++it1, ++it2) {
+                            *it1 -= *it2;
+                        }
+                        return *this;
+                    }
+
+                    template <typename Container>
+                    typename std::enable_if_t<
+                            nil::crypto3::detail::is_range<Container>::value && (
+                                std::is_same<typename Container::value_type, expression_type>::value ||
+                                std::is_same<typename Container::value_type, constraint_type>::value),
+                            lookup_input_constraints>
+                    operator-(const Container& other) {
+                        lookup_input_constraints result = *this;
+                        result -= other;
                         return result;
                     }
                 };
